@@ -1,0 +1,3 @@
+# Můj PHP projekt
+
+Popis co aplikace dělá...
