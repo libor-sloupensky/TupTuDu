@@ -42,7 +42,7 @@ jobs:
       uses: wlixcc/SFTP-Deploy-Action@v1.2.4
       with:
         server: ftp.tuptudu.cz
-        port: 22
+        port: 222
         username: libor.tuptudu.cz
         password: ${{ secrets.FTP_PASSWORD }}
         local_path: ./deploy/*
