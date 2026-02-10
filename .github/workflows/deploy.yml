@@ -11,6 +11,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
@@ -24,26 +26,41 @@ jobs:
     - name: Generate last push timestamp
       run: echo "$(TZ='Europe/Prague' date '+%d.%m.%Y %H:%M:%S')" > ./public/last_push.txt
 
-    - name: Prepare deploy structure
+    - name: Check if vendor needs deploy
+      id: check_vendor
       run: |
-        mkdir -p deploy/public_html
-        # Copy Laravel core to deploy root
-        cp -r app bootstrap config database resources routes storage vendor deploy/
-        cp artisan composer.json composer.lock deploy/
-        # Copy public files to public_html
-        cp -r public/. deploy/public_html/
-        # Create storage directories
-        mkdir -p deploy/storage/framework/sessions
-        mkdir -p deploy/storage/framework/views
-        mkdir -p deploy/storage/framework/cache/data
-        mkdir -p deploy/storage/app/private/invoices
+        if git diff --name-only HEAD~1 HEAD | grep -q "composer.lock"; then
+          echo "vendor_changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "vendor_changed=false" >> $GITHUB_OUTPUT
+        fi
 
-    - name: Deploy via lftp
+    - name: Deploy app files via lftp
       run: |
         sudo apt-get install -y lftp
         lftp -e "
           set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p 222';
           open sftp://libor.tuptudu.cz:${{ secrets.FTP_PASSWORD }}@ftp.tuptudu.cz;
-          mirror --reverse --parallel=5 --verbose deploy/ /;
+          mirror --reverse --verbose --only-newer app/ /app/;
+          mirror --reverse --verbose --only-newer bootstrap/ /bootstrap/;
+          mirror --reverse --verbose --only-newer config/ /config/;
+          mirror --reverse --verbose --only-newer database/ /database/;
+          mirror --reverse --verbose --only-newer resources/ /resources/;
+          mirror --reverse --verbose --only-newer routes/ /routes/;
+          mirror --reverse --verbose --only-newer storage/framework/ /storage/framework/;
+          mirror --reverse --verbose --only-newer public/ /public_html/;
+          put artisan -o /artisan;
+          put composer.json -o /composer.json;
+          put composer.lock -o /composer.lock;
+          quit
+        "
+
+    - name: Deploy vendor (only if composer.lock changed)
+      if: steps.check_vendor.outputs.vendor_changed == 'true'
+      run: |
+        lftp -e "
+          set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p 222';
+          open sftp://libor.tuptudu.cz:${{ secrets.FTP_PASSWORD }}@ftp.tuptudu.cz;
+          mirror --reverse --parallel=5 --verbose --only-newer vendor/ /vendor/;
           quit
         "
