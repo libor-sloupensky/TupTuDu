@@ -38,13 +38,12 @@ jobs:
         mkdir -p deploy/storage/framework/cache/data
         mkdir -p deploy/storage/app/private/invoices
 
-    - name: Deploy via SFTP
-      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-      with:
-        server: ftp.tuptudu.cz
-        port: 222
-        username: libor.tuptudu.cz
-        password: ${{ secrets.FTP_PASSWORD }}
-        local_path: ./deploy/*
-        remote_path: /
-        sftp_only: true
+    - name: Deploy via lftp
+      run: |
+        sudo apt-get install -y lftp
+        lftp -e "
+          set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p 222';
+          open sftp://libor.tuptudu.cz:${{ secrets.FTP_PASSWORD }}@ftp.tuptudu.cz;
+          mirror --reverse --parallel=5 --verbose deploy/ /;
+          quit
+        "
