@@ -7,6 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
     - uses: actions/checkout@v3
@@ -23,34 +24,32 @@ jobs:
     - name: Generate last push timestamp
       run: echo "$(TZ='Europe/Prague' date '+%d.%m.%Y %H:%M:%S')" > ./public/last_push.txt
 
-    - name: Prepare storage directories
+    - name: Prepare deploy structure
       run: |
-        mkdir -p storage/framework/sessions
-        mkdir -p storage/framework/views
-        mkdir -p storage/framework/cache/data
-        mkdir -p storage/app/invoices
+        mkdir -p deploy/public_html
+        # Copy Laravel core to deploy root
+        cp -r app bootstrap config database resources routes storage vendor deploy/
+        cp artisan composer.json composer.lock deploy/
+        # Copy public files to public_html
+        cp -r public/* deploy/public_html/
+        # Create storage directories
+        mkdir -p deploy/storage/framework/sessions
+        mkdir -p deploy/storage/framework/views
+        mkdir -p deploy/storage/framework/cache/data
+        mkdir -p deploy/storage/app/private/invoices
 
-    - name: Deploy Laravel app (without public/)
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+    - name: Deploy to FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
         server: ftp.tuptudu.cz
         username: libor.tuptudu.cz
         password: ${{ secrets.FTP_PASSWORD }}
         server-dir: /
-        local-dir: ./
+        local-dir: ./deploy/
+        timeout: 600000
         exclude: |
           **/.git*
           **/.git*/**
           **/node_modules/**
           **/tests/**
           **/.env
-          **/public/**
-
-    - name: Deploy public/ to public_html/
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
-      with:
-        server: ftp.tuptudu.cz
-        username: libor.tuptudu.cz
-        password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: /public_html/
-        local-dir: ./public/
