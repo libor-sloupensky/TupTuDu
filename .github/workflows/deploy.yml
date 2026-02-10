@@ -41,18 +41,18 @@ jobs:
         lftp -e "
           set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p 222';
           open sftp://libor.tuptudu.cz:${{ secrets.FTP_PASSWORD }}@ftp.tuptudu.cz;
-          mirror --reverse --verbose --only-newer app/ /laravel-office/app/;
-          mirror --reverse --verbose --only-newer bootstrap/ /laravel-office/bootstrap/;
-          mirror --reverse --verbose --only-newer config/ /laravel-office/config/;
-          mirror --reverse --verbose --only-newer database/ /laravel-office/database/;
-          mirror --reverse --verbose --only-newer resources/ /laravel-office/resources/;
-          mirror --reverse --verbose --only-newer routes/ /laravel-office/routes/;
-          mirror --reverse --verbose --only-newer storage/ /laravel-office/storage/;
+          mirror --reverse --verbose --only-newer --no-perms app/ /laravel-office/app/;
+          mirror --reverse --verbose --only-newer --no-perms bootstrap/ /laravel-office/bootstrap/;
+          mirror --reverse --verbose --only-newer --no-perms config/ /laravel-office/config/;
+          mirror --reverse --verbose --only-newer --no-perms database/ /laravel-office/database/;
+          mirror --reverse --verbose --only-newer --no-perms resources/ /laravel-office/resources/;
+          mirror --reverse --verbose --only-newer --no-perms routes/ /laravel-office/routes/;
+          mirror --reverse --verbose --only-newer --no-perms storage/ /laravel-office/storage/;
           put artisan -o /laravel-office/artisan;
           put composer.json -o /laravel-office/composer.json;
           put composer.lock -o /laravel-office/composer.lock;
-          mirror --reverse --verbose --only-newer public/ /_sub/office/;
-          mirror --reverse --verbose --only-newer landing/ /public_html/;
+          mirror --reverse --verbose --only-newer --no-perms public/ /_sub/office/;
+          mirror --reverse --verbose --only-newer --no-perms landing/ /public_html/;
           quit
         "
 
