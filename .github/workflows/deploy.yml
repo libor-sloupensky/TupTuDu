@@ -1,4 +1,4 @@
-name: Deploy via SFTP
+name: Deploy Office to SFTP
 
 on:
   push:
@@ -41,26 +41,27 @@ jobs:
         lftp -e "
           set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p 222';
           open sftp://libor.tuptudu.cz:${{ secrets.FTP_PASSWORD }}@ftp.tuptudu.cz;
-          mirror --reverse --verbose --only-newer app/ /app/;
-          mirror --reverse --verbose --only-newer bootstrap/ /bootstrap/;
-          mirror --reverse --verbose --only-newer config/ /config/;
-          mirror --reverse --verbose --only-newer database/ /database/;
-          mirror --reverse --verbose --only-newer resources/ /resources/;
-          mirror --reverse --verbose --only-newer routes/ /routes/;
-          mirror --reverse --verbose --only-newer storage/framework/ /storage/framework/;
-          mirror --reverse --verbose --only-newer public/ /public_html/;
-          put artisan -o /artisan;
-          put composer.json -o /composer.json;
-          put composer.lock -o /composer.lock;
+          mirror --reverse --verbose --only-newer app/ /laravel-office/app/;
+          mirror --reverse --verbose --only-newer bootstrap/ /laravel-office/bootstrap/;
+          mirror --reverse --verbose --only-newer config/ /laravel-office/config/;
+          mirror --reverse --verbose --only-newer database/ /laravel-office/database/;
+          mirror --reverse --verbose --only-newer resources/ /laravel-office/resources/;
+          mirror --reverse --verbose --only-newer routes/ /laravel-office/routes/;
+          mirror --reverse --verbose --only-newer storage/ /laravel-office/storage/;
+          put artisan -o /laravel-office/artisan;
+          put composer.json -o /laravel-office/composer.json;
+          put composer.lock -o /laravel-office/composer.lock;
+          mirror --reverse --verbose --only-newer public/ /_sub/office/;
+          mirror --reverse --verbose --only-newer landing/ /public_html/;
           quit
         "
 
-    - name: Deploy vendor (only if composer.lock changed)
-      if: steps.check_vendor.outputs.vendor_changed == 'true'
+    - name: Deploy vendor
+      if: steps.check_vendor.outputs.vendor_changed == 'true' || true
       run: |
         lftp -e "
           set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p 222';
           open sftp://libor.tuptudu.cz:${{ secrets.FTP_PASSWORD }}@ftp.tuptudu.cz;
-          mirror --reverse --parallel=5 --verbose --only-newer vendor/ /vendor/;
+          mirror --reverse --parallel=5 --verbose --only-newer vendor/ /laravel-office/vendor/;
           quit
         "
