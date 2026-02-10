@@ -35,6 +35,11 @@ jobs:
           echo "vendor_changed=false" >> $GITHUB_OUTPUT
         fi
 
+    - name: Fix permissions on server
+      run: |
+        sudo apt-get install -y sshpass
+        sshpass -p "${{ secrets.FTP_PASSWORD }}" ssh -o StrictHostKeyChecking=no -p 222 libor.tuptudu.cz@ftp.tuptudu.cz "chmod -R 755 /laravel-office/ /_sub/office/ /public_html/ 2>/dev/null; true"
+
     - name: Deploy app files via lftp
       run: |
         sudo apt-get install -y lftp
