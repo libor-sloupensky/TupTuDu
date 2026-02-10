@@ -1,4 +1,4 @@
-name: Deploy to FTP
+name: Deploy via SFTP
 
 on:
   push:
@@ -38,18 +38,13 @@ jobs:
         mkdir -p deploy/storage/framework/cache/data
         mkdir -p deploy/storage/app/private/invoices
 
-    - name: Deploy to FTP
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+    - name: Deploy via SFTP
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
       with:
         server: ftp.tuptudu.cz
+        port: 22
         username: libor.tuptudu.cz
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: /
-        local-dir: ./deploy/
-        timeout: 600000
-        exclude: |
-          **/.git*
-          **/.git*/**
-          **/node_modules/**
-          **/tests/**
-          **/.env
+        local_path: ./deploy/*
+        remote_path: /
+        sftp_only: true
