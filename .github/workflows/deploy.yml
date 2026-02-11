@@ -41,7 +41,7 @@ jobs:
         APP_NAME=TupTuDu
         APP_ENV=production
         APP_KEY=base64:x9sz+bK9NHPqN/gYkys0Y+3oqy0dkeCk1/oJtfKF/kQ=
-        APP_DEBUG=false
+        APP_DEBUG=true
         APP_URL=https://office.tuptudu.cz
 
         LOG_CHANNEL=single
@@ -54,11 +54,11 @@ jobs:
         DB_USERNAME=tuptudu_office
         DB_PASSWORD=${{ secrets.DB_PASSWORD }}
 
-        SESSION_DRIVER=file
+        SESSION_DRIVER=cookie
         SESSION_LIFETIME=120
         FILESYSTEM_DISK=local
         QUEUE_CONNECTION=sync
-        CACHE_STORE=file
+        CACHE_STORE=array
 
         AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
