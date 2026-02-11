@@ -54,7 +54,7 @@ jobs:
           put composer.lock -o /laravel-office/composer.lock;
           rm -f /public_html/index.html;
           mirror --reverse --delete --verbose public/ /public_html/;
-          mirror --reverse --verbose public/ /_sub/office/;
+          mirror --reverse --delete --verbose public/ /_sub/office/;
           chmod 644 /public_html/*.php;
           chmod 644 /public_html/.htaccess;
           chmod 644 /_sub/office/*.php;
