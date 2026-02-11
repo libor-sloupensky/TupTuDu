@@ -10,11 +10,11 @@ class Doklad extends Model
     protected $table = 'fak_doklady';
 
     protected $fillable = [
-        'firma_ico', 'dodavatel_ico', 'nazev_souboru', 'cesta_souboru',
+        'firma_ico', 'dodavatel_ico', 'nazev_souboru', 'cesta_souboru', 'hash_souboru',
         'dodavatel_nazev', 'cislo_dokladu', 'datum_vystaveni', 'datum_splatnosti',
         'castka_celkem', 'mena', 'castka_dph', 'kategorie',
         'adresni', 'overeno_adresat', 'raw_text', 'raw_ai_odpoved',
-        'stav', 'chybova_zprava',
+        'stav', 'chybova_zprava', 'zdroj',
     ];
 
     protected $casts = [

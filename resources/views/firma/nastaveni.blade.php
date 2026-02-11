@@ -74,5 +74,32 @@
 
         <button type="submit" class="btn-save">Uložit nastavení</button>
     </form>
+
+    @if ($firma && $firma->email_doklady)
+    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee;">
+        <h3 style="margin-bottom: 1rem;">Email pro zasílání dokladů</h3>
+        <p style="margin-bottom: 0.5rem;">Doklady můžete posílat jako přílohy na adresu:</p>
+        <div style="background: #f0f7ff; border: 1px solid #bee3f8; border-radius: 6px; padding: 0.75rem 1rem; font-size: 1.1rem; font-weight: 600; color: #2b6cb0;">
+            {{ $firma->email_doklady }}
+        </div>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #888;">
+            Podporované formáty příloh: PDF, JPG, PNG (max 10 MB).
+            Doklady budou automaticky zpracovány a zobrazí se v přehledu.
+        </p>
+
+        <form method="POST" action="{{ route('firma.ulozit') }}" style="margin-top: 1rem;">
+            @csrf
+            <input type="hidden" name="ico" value="{{ $firma->ico }}">
+            <input type="hidden" name="nazev" value="{{ $firma->nazev }}">
+            <div class="form-group">
+                <label for="email_doklady_heslo">IMAP heslo (pro automatické stahování)</label>
+                <input type="password" id="email_doklady_heslo" name="email_doklady_heslo"
+                       value="{{ old('email_doklady_heslo', $firma->email_doklady_heslo ?? '') }}"
+                       placeholder="Heslo k emailové schránce {{ $firma->email_doklady }}">
+            </div>
+            <button type="submit" class="btn-save" style="background: #3498db;">Uložit heslo</button>
+        </form>
+    </div>
+    @endif
 </div>
 @endsection

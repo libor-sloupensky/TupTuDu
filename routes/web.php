@@ -8,6 +8,7 @@ Route::get('/', [InvoiceController::class, 'create'])->name('invoices.create');
 Route::post('/upload', [InvoiceController::class, 'store'])->name('invoices.store');
 Route::get('/doklady', [InvoiceController::class, 'index'])->name('doklady.index');
 Route::get('/doklady/{doklad}', [InvoiceController::class, 'show'])->name('doklady.show');
+Route::get('/doklady/{doklad}/stahnout', [InvoiceController::class, 'download'])->name('doklady.download');
 
 Route::get('/nastaveni', [FirmaController::class, 'nastaveni'])->name('firma.nastaveni');
 Route::post('/nastaveni', [FirmaController::class, 'ulozit'])->name('firma.ulozit');

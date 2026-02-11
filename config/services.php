@@ -38,6 +38,12 @@ return [
         'key' => env('ANTHROPIC_API_KEY'),
     ],
 
+    'imap' => [
+        'host' => env('IMAP_HOST', 'mail.tuptudu.cz'),
+        'port' => env('IMAP_PORT', 993),
+        'encryption' => env('IMAP_ENCRYPTION', 'ssl'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

@@ -6,8 +6,11 @@
 <style>
     .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .detail-header h2 { margin: 0; }
+    .header-actions { display: flex; gap: 1rem; align-items: center; }
     .back-link { color: #3498db; text-decoration: none; }
     .back-link:hover { text-decoration: underline; }
+    .btn-download { background: #3498db; color: white; text-decoration: none; padding: 0.4rem 1rem; border-radius: 6px; font-size: 0.85rem; }
+    .btn-download:hover { background: #2980b9; }
 
     .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
     .invoice-table th { text-align: left; padding: 0.6rem 1rem; background: #f0f4f8; border-bottom: 2px solid #d0d8e0; font-weight: 600; width: 180px; color: #555; font-size: 0.85rem; }
@@ -20,9 +23,14 @@
     .stav-zpracovava { color: #f39c12; font-weight: 600; }
     .error-box { background: #ffeaea; color: #c0392b; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
 
+    .metadata-section { margin-top: 1.5rem; }
+    .metadata-section h3 { font-size: 1rem; color: #2c3e50; margin-bottom: 0.75rem; border-bottom: 1px solid #e0e0e0; padding-bottom: 0.5rem; }
+    .extracted-text { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 1rem; white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 0.85rem; line-height: 1.6; max-height: 500px; overflow-y: auto; margin-bottom: 1.5rem; }
+    .ai-data-table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+    .ai-data-table th { text-align: left; padding: 0.4rem 0.75rem; background: #f8f9fa; font-weight: 600; width: 160px; color: #666; font-size: 0.8rem; border-bottom: 1px solid #e8ecf0; }
+    .ai-data-table td { padding: 0.4rem 0.75rem; font-size: 0.85rem; border-bottom: 1px solid #e8ecf0; font-family: monospace; }
     .section-toggle { cursor: pointer; color: #3498db; font-size: 0.9rem; margin-bottom: 0.5rem; display: inline-block; }
-    .extracted-text { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 1.5rem; white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; max-height: 500px; overflow-y: auto; margin-bottom: 1.5rem; display: none; }
-    .raw-json { display: none; background: #2c3e50; color: #ecf0f1; padding: 1rem; border-radius: 6px; font-family: monospace; font-size: 0.8rem; max-height: 400px; overflow: auto; white-space: pre-wrap; }
+    .raw-json { background: #2c3e50; color: #ecf0f1; padding: 1rem; border-radius: 6px; font-family: monospace; font-size: 0.8rem; max-height: 400px; overflow: auto; white-space: pre-wrap; display: none; }
 </style>
 @endsection
 
@@ -30,7 +38,10 @@
 <div class="card">
     <div class="detail-header">
         <h2>{{ $doklad->cislo_dokladu ?: $doklad->nazev_souboru }}</h2>
-        <a href="{{ route('doklady.index') }}" class="back-link">Zpět na seznam</a>
+        <div class="header-actions">
+            <a href="{{ route('doklady.download', $doklad) }}" class="btn-download">Stáhnout soubor</a>
+            <a href="{{ route('doklady.index') }}" class="back-link">Zpět na seznam</a>
+        </div>
     </div>
 
     @if ($doklad->stav === 'chyba' && $doklad->chybova_zprava)
@@ -122,18 +133,31 @@
         </tr>
     </table>
 
-    @if ($doklad->raw_text)
-    <span class="section-toggle" onclick="var el = document.getElementById('extractedText'); el.style.display = el.style.display === 'none' ? 'block' : 'none';">
-        Zobrazit/skrýt rozpoznaný text
-    </span>
-    <div class="extracted-text" id="extractedText">{{ $doklad->raw_text }}</div>
+    @if ($doklad->raw_ai_odpoved)
+    <div class="metadata-section">
+        <h3>AI extrahovaná data</h3>
+        @php $aiData = json_decode($doklad->raw_ai_odpoved, true) ?? []; @endphp
+        <table class="ai-data-table">
+            @foreach ($aiData as $key => $value)
+            <tr>
+                <th>{{ $key }}</th>
+                <td>{{ is_null($value) ? '-' : $value }}</td>
+            </tr>
+            @endforeach
+        </table>
+
+        <span class="section-toggle" onclick="var el = document.getElementById('rawJson'); el.style.display = el.style.display === 'none' ? 'block' : 'none';">
+            Zobrazit/skrýt surový JSON
+        </span>
+        <div class="raw-json" id="rawJson">{{ json_encode($aiData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</div>
+    </div>
     @endif
 
-    @if ($doklad->raw_ai_odpoved)
-    <span class="section-toggle" onclick="var el = document.getElementById('rawJson'); el.style.display = el.style.display === 'none' ? 'block' : 'none';">
-        Zobrazit/skrýt AI odpověď
-    </span>
-    <div class="raw-json" id="rawJson">{{ json_encode(json_decode($doklad->raw_ai_odpoved), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</div>
+    @if ($doklad->raw_text)
+    <div class="metadata-section">
+        <h3>Rozpoznaný text (OCR)</h3>
+        <div class="extracted-text">{{ $doklad->raw_text }}</div>
+    </div>
     @endif
 </div>
 @endsection

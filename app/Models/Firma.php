@@ -14,7 +14,7 @@ class Firma extends Model
 
     protected $fillable = [
         'ico', 'nazev', 'dic', 'ulice', 'mesto', 'psc',
-        'email', 'telefon', 'je_ucetni',
+        'email', 'email_doklady', 'email_doklady_heslo', 'telefon', 'je_ucetni',
     ];
 
     protected $casts = [
