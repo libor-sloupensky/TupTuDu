@@ -42,40 +42,45 @@ jobs:
           set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p 222';
           set xfer:clobber on;
           open sftp://multi_833363:${{ secrets.FTP_PASSWORD }}@ftp.tuptudu.cz;
-          mirror --reverse --verbose --no-perms app/ /laravel-office/app/;
-          mirror --reverse --verbose --no-perms bootstrap/ /laravel-office/bootstrap/;
-          mirror --reverse --verbose --no-perms config/ /laravel-office/config/;
-          mirror --reverse --verbose --no-perms database/ /laravel-office/database/;
-          mirror --reverse --verbose --no-perms resources/ /laravel-office/resources/;
-          mirror --reverse --verbose --no-perms routes/ /laravel-office/routes/;
-          mirror --reverse --verbose --no-perms storage/ /laravel-office/storage/;
-          put artisan -o /laravel-office/artisan;
-          put composer.json -o /laravel-office/composer.json;
-          put composer.lock -o /laravel-office/composer.lock;
-          rm -f /public_html/index.html;
-          mirror --reverse --delete --verbose --no-perms public/ /public_html/;
-          mirror --reverse --delete --verbose --no-perms public/ /_sub/office/;
-          echo '--- SFTP root ---';
-          ls /;
-          echo '--- looking for hosting dirs ---';
-          ls /home/ || echo 'no /home/';
-          ls /www/ || echo 'no /www/';
-          ls /srv/ || echo 'no /srv/';
-          echo '--- checking tuptudu paths ---';
-          ls /tuptudu.cz/ || echo 'no /tuptudu.cz/';
-          ls /hosting/ || echo 'no /hosting/';
-          echo '--- pwd ---';
-          pwd;
+          mirror --reverse --verbose --no-perms app/ /tuptudu.cz/laravel-office/app/;
+          mirror --reverse --verbose --no-perms bootstrap/ /tuptudu.cz/laravel-office/bootstrap/;
+          mirror --reverse --verbose --no-perms config/ /tuptudu.cz/laravel-office/config/;
+          mirror --reverse --verbose --no-perms database/ /tuptudu.cz/laravel-office/database/;
+          mirror --reverse --verbose --no-perms resources/ /tuptudu.cz/laravel-office/resources/;
+          mirror --reverse --verbose --no-perms routes/ /tuptudu.cz/laravel-office/routes/;
+          mirror --reverse --verbose --no-perms storage/ /tuptudu.cz/laravel-office/storage/;
+          put artisan -o /tuptudu.cz/laravel-office/artisan;
+          put composer.json -o /tuptudu.cz/laravel-office/composer.json;
+          put composer.lock -o /tuptudu.cz/laravel-office/composer.lock;
+          mirror --reverse --delete --verbose --no-perms public/ /tuptudu.cz/_sub/office/;
+          ls /tuptudu.cz/_sub/office/;
           quit
         "
 
     - name: Deploy vendor
-      if: steps.check_vendor.outputs.vendor_changed == 'true'
+      if: true  # Force deploy vendor to new path /tuptudu.cz/laravel-office/
       run: |
         lftp -e "
           set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p 222';
           set xfer:clobber on;
           open sftp://multi_833363:${{ secrets.FTP_PASSWORD }}@ftp.tuptudu.cz;
-          mirror --reverse --parallel=5 --verbose --no-perms vendor/ /laravel-office/vendor/;
+          mirror --reverse --parallel=5 --verbose --no-perms vendor/ /tuptudu.cz/laravel-office/vendor/;
           quit
         "
+
+    - name: Copy .env from old path if missing
+      run: |
+        sudo apt-get install -y sshpass 2>/dev/null || true
+        sshpass -p "${{ secrets.FTP_PASSWORD }}" ssh -o StrictHostKeyChecking=no -p 222 multi_833363@ftp.tuptudu.cz '
+          if [ ! -f /tuptudu.cz/laravel-office/.env ]; then
+            if [ -f /laravel-office/.env ]; then
+              cp /laravel-office/.env /tuptudu.cz/laravel-office/.env
+              echo "Copied .env from old path"
+            else
+              echo "No .env found - needs manual setup"
+            fi
+          else
+            echo ".env already exists"
+          fi
+        '
+      continue-on-error: true
