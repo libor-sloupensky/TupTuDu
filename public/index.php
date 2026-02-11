@@ -5,10 +5,17 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// Detect base path - production uses /laravel-office/, local uses parent dir
-$basePath = file_exists(__DIR__.'/../../laravel-office/vendor/autoload.php')
-    ? __DIR__.'/../../laravel-office'
-    : __DIR__.'/..';
+// Detect base path:
+// - public_html/ (tuptudu.cz) => ../laravel-office/
+// - _sub/office/ (office.tuptudu.cz) => ../../laravel-office/
+// - local dev => ../
+if (file_exists(__DIR__.'/../laravel-office/vendor/autoload.php')) {
+    $basePath = __DIR__.'/../laravel-office';
+} elseif (file_exists(__DIR__.'/../../laravel-office/vendor/autoload.php')) {
+    $basePath = __DIR__.'/../../laravel-office';
+} else {
+    $basePath = __DIR__.'/..';
+}
 
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = $basePath.'/storage/framework/maintenance.php')) {

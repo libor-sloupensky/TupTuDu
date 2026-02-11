@@ -52,19 +52,8 @@ jobs:
           put artisan -o /laravel-office/artisan;
           put composer.json -o /laravel-office/composer.json;
           put composer.lock -o /laravel-office/composer.lock;
+          mirror --reverse --verbose --no-perms public/ /public_html/;
           mirror --reverse --verbose --no-perms public/ /_sub/office/;
-          mirror --reverse --verbose --no-perms landing/ /public_html/;
-          quit
-        "
-
-    - name: Temporarily disable .htaccess for diagnostics
-      run: |
-        echo "" > /tmp/empty-htaccess
-        lftp -e "
-          set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -p 222';
-          set xfer:clobber on;
-          open sftp://multi_833363:${{ secrets.FTP_PASSWORD }}@ftp.tuptudu.cz;
-          put /tmp/empty-htaccess -o /_sub/office/.htaccess;
           quit
         "
 
