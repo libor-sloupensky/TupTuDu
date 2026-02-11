@@ -53,12 +53,10 @@ jobs:
           put composer.json -o /laravel-office/composer.json;
           put composer.lock -o /laravel-office/composer.lock;
           rm -f /public_html/index.html;
-          mirror --reverse --delete --verbose public/ /public_html/;
-          mirror --reverse --delete --verbose public/ /_sub/office/;
-          chmod 644 /public_html/*.php;
-          chmod 644 /public_html/.htaccess;
-          chmod 644 /_sub/office/*.php;
-          chmod 644 /_sub/office/.htaccess;
+          mirror --reverse --delete --verbose --no-perms public/ /public_html/;
+          mirror --reverse --delete --verbose --no-perms public/ /_sub/office/;
+          ls /_sub/office/;
+          cat /_sub/office/last_push.txt;
           quit
         "
 
