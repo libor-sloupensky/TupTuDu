@@ -6,11 +6,16 @@
 <style>
     .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .detail-header h2 { margin: 0; }
-    .header-actions { display: flex; gap: 1rem; align-items: center; }
+    .header-actions { display: flex; gap: 0.75rem; align-items: center; }
     .back-link { color: #3498db; text-decoration: none; }
     .back-link:hover { text-decoration: underline; }
     .btn-download { background: #3498db; color: white; text-decoration: none; padding: 0.4rem 1rem; border-radius: 6px; font-size: 0.85rem; }
     .btn-download:hover { background: #2980b9; }
+    .btn-delete { background: #e74c3c; color: white; border: none; padding: 0.4rem 1rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+    .btn-delete:hover { background: #c0392b; }
+
+    .duplicate-warning { background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+    .duplicate-warning a { color: #533f03; font-weight: 600; }
 
     .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
     .invoice-table th { text-align: left; padding: 0.6rem 1rem; background: #f0f4f8; border-bottom: 2px solid #d0d8e0; font-weight: 600; width: 180px; color: #555; font-size: 0.85rem; }
@@ -39,10 +44,35 @@
     <div class="detail-header">
         <h2>{{ $doklad->cislo_dokladu ?: $doklad->nazev_souboru }}</h2>
         <div class="header-actions">
-            <a href="{{ route('doklady.download', $doklad) }}" class="btn-download">Stáhnout soubor</a>
+            @if ($doklad->cesta_souboru)
+                <a href="{{ route('doklady.download', $doklad) }}" class="btn-download">Stáhnout soubor</a>
+            @endif
+            <form action="{{ route('doklady.destroy', $doklad) }}" method="POST" style="display: inline;" onsubmit="return confirm('Opravdu smazat tento doklad? Soubor bude odstraněn i z cloudu.')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn-delete">Smazat</button>
+            </form>
             <a href="{{ route('doklady.index') }}" class="back-link">Zpět na seznam</a>
         </div>
     </div>
+
+    @if ($doklad->duplicita_id)
+        <div class="duplicate-warning">
+            Možná duplicita &mdash; podobný doklad již existuje:
+            <a href="{{ route('doklady.show', $doklad->duplicita_id) }}">
+                {{ $doklad->duplicitaOriginal?->cislo_dokladu ?: '#' . $doklad->duplicita_id }}
+            </a>
+        </div>
+    @endif
+
+    @if ($doklad->duplicity->isNotEmpty())
+        <div class="duplicate-warning">
+            Tento doklad má {{ $doklad->duplicity->count() }} {{ $doklad->duplicity->count() === 1 ? 'možnou duplicitu' : 'možné duplicity' }}:
+            @foreach ($doklad->duplicity as $dup)
+                <a href="{{ route('doklady.show', $dup) }}">{{ $dup->cislo_dokladu ?: $dup->nazev_souboru }}</a>{{ !$loop->last ? ', ' : '' }}
+            @endforeach
+        </div>
+    @endif
 
     @if ($doklad->stav === 'chyba' && $doklad->chybova_zprava)
         <div class="error-box">{{ $doklad->chybova_zprava }}</div>
@@ -126,6 +156,10 @@
                     <span style="color: #e74c3c; font-weight: 600;">Jiný adresát</span>
                 @endif
             </td>
+        </tr>
+        <tr>
+            <th>Zdroj</th>
+            <td>{{ $doklad->zdroj === 'email' ? 'Email' : 'Ruční nahrání' }}</td>
         </tr>
         <tr>
             <th>Nahráno</th>

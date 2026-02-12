@@ -146,4 +146,20 @@ class InvoiceController extends Controller
 
         return response()->download($tempZip, $zipName)->deleteFileAfterSend(true);
     }
+
+    public function destroy(Doklad $doklad)
+    {
+        // Smazat soubor z S3
+        if ($doklad->cesta_souboru) {
+            Storage::disk('s3')->delete($doklad->cesta_souboru);
+        }
+
+        // Odpojit duplicity které na tento doklad odkazují
+        Doklad::where('duplicita_id', $doklad->id)->update(['duplicita_id' => null]);
+
+        $nazev = $doklad->cislo_dokladu ?: $doklad->nazev_souboru;
+        $doklad->delete();
+
+        return redirect()->route('doklady.index')->with('flash', "Doklad {$nazev} byl smazán.");
+    }
 }

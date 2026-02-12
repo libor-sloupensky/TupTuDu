@@ -29,6 +29,7 @@
     .month-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     .month-link { display: inline-block; padding: 0.35rem 0.75rem; background: #eaf2f8; border-radius: 6px; color: #2c3e50; text-decoration: none; font-size: 0.85rem; }
     .month-link:hover { background: #d4e6f1; }
+    .badge-dup { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; background: #fff3cd; color: #856404; font-size: 0.7rem; font-weight: 600; margin-left: 0.3rem; vertical-align: middle; }
 </style>
 @endsection
 
@@ -68,7 +69,10 @@
                 @foreach ($doklady as $d)
                 <tr>
                     <td>{{ $d->datum_vystaveni ? $d->datum_vystaveni->format('d.m.Y') : '-' }}</td>
-                    <td><a href="{{ route('doklady.show', $d) }}">{{ $d->cislo_dokladu ?: $d->nazev_souboru }}</a></td>
+                    <td>
+                        <a href="{{ route('doklady.show', $d) }}">{{ $d->cislo_dokladu ?: $d->nazev_souboru }}</a>
+                        @if ($d->duplicita_id)<span class="badge-dup" title="Možná duplicita">DUP</span>@endif
+                    </td>
                     <td>{{ $d->dodavatel_nazev ?: '-' }}</td>
                     <td class="amount">
                         @if ($d->castka_celkem)

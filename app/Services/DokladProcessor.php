@@ -57,13 +57,28 @@ class DokladProcessor
                 return $doklad;
             }
 
-            // 3. Upload na S3 s finální cestou (datum_vystaveni + ID)
+            // 3. Detekce obsahové duplicity (stejné číslo dokladu + dodavatel)
+            $duplicitaId = null;
+            $cisloDokladu = $invoiceData['cislo_faktury'] ?? null;
+            $dodavatelIcoRaw = $invoiceData['ico'] ?? null;
+            if ($cisloDokladu && $dodavatelIcoRaw) {
+                $existujici = Doklad::where('firma_ico', $firma->ico)
+                    ->where('cislo_dokladu', $cisloDokladu)
+                    ->where('dodavatel_ico', $dodavatelIcoRaw)
+                    ->where('id', '!=', $doklad->id)
+                    ->first();
+                if ($existujici) {
+                    $duplicitaId = $existujici->id;
+                }
+            }
+
+            // 4. Upload na S3 s finální cestou (datum_vystaveni + ID)
             $s3Path = $this->buildS3Path($firma->ico, $doklad->id, $originalName, $invoiceData['datum_vystaveni'] ?? null);
             Storage::disk('s3')->put($s3Path, file_get_contents($filePath));
             $doklad->update(['cesta_souboru' => $s3Path]);
 
-            // 4. Auto-create/update dodavatel
-            $dodavatelIco = $invoiceData['ico'] ?? null;
+            // 5. Auto-create/update dodavatel
+            $dodavatelIco = $dodavatelIcoRaw;
             if ($dodavatelIco) {
                 Dodavatel::updateOrCreate(
                     ['ico' => $dodavatelIco],
@@ -74,7 +89,7 @@ class DokladProcessor
                 );
             }
 
-            // 5. Ověření adresáta
+            // 6. Ověření adresáta
             $adresni = !empty($dodavatelIco);
             $overenoAdresat = false;
             if ($adresni) {
@@ -82,11 +97,12 @@ class DokladProcessor
                 $overenoAdresat = $odberatelIco === $firma->ico;
             }
 
-            // 6. Uložit do DB
+            // 7. Uložit do DB
             $doklad->update([
                 'dodavatel_ico' => $dodavatelIco,
                 'dodavatel_nazev' => $invoiceData['dodavatel'] ?? null,
-                'cislo_dokladu' => $invoiceData['cislo_faktury'] ?? null,
+                'cislo_dokladu' => $cisloDokladu,
+                'duplicita_id' => $duplicitaId,
                 'datum_vystaveni' => $invoiceData['datum_vystaveni'] ?? null,
                 'datum_splatnosti' => $invoiceData['datum_splatnosti'] ?? null,
                 'castka_celkem' => $invoiceData['castka_celkem'] ?? null,
