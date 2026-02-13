@@ -183,8 +183,8 @@ class DokladProcessor
             }
 
             return implode("\n", $lines);
-        } catch (\Aws\Textract\Exception\TextractException $e) {
-            Log::warning("Textract failed, falling back to Claude Vision: {$e->getAwsErrorCode()}", [
+        } catch (\Exception $e) {
+            Log::warning("Textract failed, falling back to Claude Vision: {$e->getMessage()}", [
                 'file' => basename($filePath),
             ]);
             return $this->runVisionOcr($filePath);
@@ -237,9 +237,10 @@ class DokladProcessor
             ];
         }
 
-        $response = Http::timeout(60)->withHeaders([
+        $response = Http::timeout(120)->withHeaders([
             'x-api-key' => $apiKey,
             'anthropic-version' => '2023-06-01',
+            'anthropic-beta' => 'pdfs-2024-09-25',
             'content-type' => 'application/json',
         ])->post('https://api.anthropic.com/v1/messages', [
             'model' => 'claude-haiku-4-5-20251001',
