@@ -42,7 +42,13 @@ class DokladProcessor
         ]);
 
         try {
-            // 1. Textract OCR
+            // 0. Okamžitý upload na S3 (temp cesta) - soubor bude dostupný i při selhání OCR
+            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION)) ?: 'pdf';
+            $tempS3Path = "doklady/{$firma->ico}/_tmp/{$doklad->id}.{$ext}";
+            Storage::disk('s3')->put($tempS3Path, file_get_contents($filePath));
+            $doklad->update(['cesta_souboru' => $tempS3Path]);
+
+            // 1. Textract OCR (s Claude Vision fallback)
             $extractedText = $this->runOcr($filePath);
             $doklad->update(['raw_text' => $extractedText]);
 
@@ -72,9 +78,11 @@ class DokladProcessor
                 }
             }
 
-            // 4. Upload na S3 s finální cestou (datum_vystaveni + ID)
+            // 4. Přesunout z temp na finální S3 cestu (datum_vystaveni + ID)
             $s3Path = $this->buildS3Path($firma->ico, $doklad->id, $originalName, $invoiceData['datum_vystaveni'] ?? null);
-            Storage::disk('s3')->put($s3Path, file_get_contents($filePath));
+            if ($s3Path !== $tempS3Path) {
+                Storage::disk('s3')->move($tempS3Path, $s3Path);
+            }
             $doklad->update(['cesta_souboru' => $s3Path]);
 
             // 5. Auto-create/update dodavatel
@@ -141,6 +149,132 @@ class DokladProcessor
     }
 
     /**
+     * Přepracuje doklad, který selhal (stav = chyba).
+     * Stáhne soubor ze S3 (pokud existuje) nebo použije lokální cestu.
+     */
+    public function reprocess(Doklad $doklad): Doklad
+    {
+        $firma = Firma::where('ico', $doklad->firma_ico)->first();
+        if (!$firma) {
+            throw new \RuntimeException("Firma s IČO {$doklad->firma_ico} nenalezena.");
+        }
+
+        // Stáhnout soubor z S3 do temp, nebo použít lokální cestu
+        $tempPath = null;
+        if ($doklad->cesta_souboru && Storage::disk('s3')->exists($doklad->cesta_souboru)) {
+            $tempPath = tempnam(sys_get_temp_dir(), 'doklad_');
+            $ext = pathinfo($doklad->nazev_souboru, PATHINFO_EXTENSION);
+            if ($ext) {
+                $tempPath .= '.' . $ext;
+            }
+            file_put_contents($tempPath, Storage::disk('s3')->get($doklad->cesta_souboru));
+        }
+
+        if (!$tempPath) {
+            throw new \RuntimeException("Soubor pro doklad #{$doklad->id} není dostupný.");
+        }
+
+        try {
+            $doklad->update([
+                'stav' => 'zpracovava_se',
+                'chybova_zprava' => null,
+            ]);
+
+            // 1. OCR (Textract → Claude Vision fallback)
+            $extractedText = $this->runOcr($tempPath);
+            $doklad->update(['raw_text' => $extractedText]);
+
+            // 2. AI extrakce
+            $invoiceData = $this->extractInvoiceData($extractedText, $firma);
+
+            if (!empty($invoiceData['_error'])) {
+                $doklad->update([
+                    'stav' => 'chyba',
+                    'chybova_zprava' => $invoiceData['_error'],
+                ]);
+                return $doklad->fresh();
+            }
+
+            // 3. Detekce obsahové duplicity
+            $duplicitaId = null;
+            $cisloDokladu = $invoiceData['cislo_faktury'] ?? null;
+            $dodavatelIcoRaw = $invoiceData['ico'] ?? null;
+            if ($cisloDokladu && $dodavatelIcoRaw) {
+                $existujici = Doklad::where('firma_ico', $firma->ico)
+                    ->where('cislo_dokladu', $cisloDokladu)
+                    ->where('dodavatel_ico', $dodavatelIcoRaw)
+                    ->where('id', '!=', $doklad->id)
+                    ->first();
+                if ($existujici) {
+                    $duplicitaId = $existujici->id;
+                }
+            }
+
+            // 4. Přesunout soubor z temp na finální S3 cestu
+            $s3Path = $this->buildS3Path($firma->ico, $doklad->id, $doklad->nazev_souboru, $invoiceData['datum_vystaveni'] ?? null);
+            $currentPath = $doklad->cesta_souboru;
+            if ($currentPath && $currentPath !== $s3Path && Storage::disk('s3')->exists($currentPath)) {
+                Storage::disk('s3')->move($currentPath, $s3Path);
+            } elseif (!Storage::disk('s3')->exists($s3Path)) {
+                Storage::disk('s3')->put($s3Path, file_get_contents($tempPath));
+            }
+            $doklad->update(['cesta_souboru' => $s3Path]);
+
+            // 5. Auto-create/update dodavatel
+            $dodavatelIco = $dodavatelIcoRaw;
+            if ($dodavatelIco) {
+                Dodavatel::updateOrCreate(
+                    ['ico' => $dodavatelIco],
+                    [
+                        'nazev' => $invoiceData['dodavatel'] ?? 'Neznámý',
+                        'dic' => $invoiceData['dic'] ?? null,
+                    ]
+                );
+            }
+
+            // 6. Ověření adresáta
+            $adresni = !empty($dodavatelIco);
+            $overenoAdresat = false;
+            if ($adresni) {
+                $odberatelIco = $invoiceData['odberatel_ico'] ?? null;
+                $overenoAdresat = $odberatelIco === $firma->ico;
+            }
+
+            // 7. Uložit
+            $doklad->update([
+                'dodavatel_ico' => $dodavatelIco,
+                'dodavatel_nazev' => $invoiceData['dodavatel'] ?? null,
+                'cislo_dokladu' => $cisloDokladu,
+                'duplicita_id' => $duplicitaId,
+                'datum_vystaveni' => $invoiceData['datum_vystaveni'] ?? null,
+                'datum_splatnosti' => $invoiceData['datum_splatnosti'] ?? null,
+                'castka_celkem' => $invoiceData['castka_celkem'] ?? null,
+                'mena' => $invoiceData['mena'] ?? 'CZK',
+                'castka_dph' => $invoiceData['castka_dph'] ?? null,
+                'kategorie' => $invoiceData['kategorie'] ?? null,
+                'adresni' => $adresni,
+                'overeno_adresat' => $overenoAdresat,
+                'raw_ai_odpoved' => json_encode($invoiceData, JSON_UNESCAPED_UNICODE),
+                'stav' => 'dokonceno',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("DokladProcessor reprocess error: {$e->getMessage()}", [
+                'doklad_id' => $doklad->id,
+            ]);
+            $doklad->update([
+                'stav' => 'chyba',
+                'chybova_zprava' => $e->getMessage(),
+            ]);
+        } finally {
+            if ($tempPath && file_exists($tempPath)) {
+                @unlink($tempPath);
+            }
+        }
+
+        return $doklad->fresh();
+    }
+
+    /**
      * Zkontroluje, zda soubor s daným hashem už existuje pro firmu.
      */
     public function isDuplicate(string $fileHash, string $firmaIco): ?Doklad
@@ -152,28 +286,110 @@ class DokladProcessor
 
     private function runOcr(string $filePath): string
     {
-        $client = new TextractClient([
-            'region' => config('services.aws.region', 'eu-central-1'),
-            'version' => 'latest',
-            'credentials' => [
-                'key' => config('services.aws.key'),
-                'secret' => config('services.aws.secret'),
+        try {
+            $client = new TextractClient([
+                'region' => config('services.aws.region', 'eu-central-1'),
+                'version' => 'latest',
+                'credentials' => [
+                    'key' => config('services.aws.key'),
+                    'secret' => config('services.aws.secret'),
+                ],
+            ]);
+
+            $fileBytes = file_get_contents($filePath);
+            $result = $client->detectDocumentText([
+                'Document' => ['Bytes' => $fileBytes],
+            ]);
+
+            $lines = [];
+            foreach ($result['Blocks'] as $block) {
+                if ($block['BlockType'] === 'LINE') {
+                    $lines[] = $block['Text'];
+                }
+            }
+
+            return implode("\n", $lines);
+        } catch (\Aws\Textract\Exception\TextractException $e) {
+            Log::warning("Textract failed, falling back to Claude Vision: {$e->getAwsErrorCode()}", [
+                'file' => basename($filePath),
+            ]);
+            return $this->runVisionOcr($filePath);
+        }
+    }
+
+    /**
+     * Fallback OCR: pošle soubor přímo do Claude Vision API jako obrázek/PDF.
+     * Použije se, když Textract nedokáže zpracovat soubor (UnsupportedDocumentException apod.).
+     */
+    private function runVisionOcr(string $filePath): string
+    {
+        $apiKey = config('services.anthropic.key');
+        if (empty($apiKey)) {
+            throw new \RuntimeException('Anthropic API klíč není nastaven - nelze použít Vision OCR fallback.');
+        }
+
+        $fileBytes = file_get_contents($filePath);
+        $base64 = base64_encode($fileBytes);
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+        $mediaTypes = [
+            'pdf' => 'application/pdf',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+        ];
+        $mediaType = $mediaTypes[$ext] ?? 'application/pdf';
+
+        // PDF se posílá jako document, obrázky jako image
+        if ($ext === 'pdf') {
+            $contentBlock = [
+                'type' => 'document',
+                'source' => [
+                    'type' => 'base64',
+                    'media_type' => $mediaType,
+                    'data' => $base64,
+                ],
+            ];
+        } else {
+            $contentBlock = [
+                'type' => 'image',
+                'source' => [
+                    'type' => 'base64',
+                    'media_type' => $mediaType,
+                    'data' => $base64,
+                ],
+            ];
+        }
+
+        $response = Http::timeout(60)->withHeaders([
+            'x-api-key' => $apiKey,
+            'anthropic-version' => '2023-06-01',
+            'content-type' => 'application/json',
+        ])->post('https://api.anthropic.com/v1/messages', [
+            'model' => 'claude-haiku-4-5-20251001',
+            'max_tokens' => 4096,
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => [
+                        $contentBlock,
+                        [
+                            'type' => 'text',
+                            'text' => 'Přepiš veškerý text z tohoto dokumentu/obrázku. Zachovej rozložení řádků. Vrať POUZE přepsaný text, žádné komentáře ani formátování.',
+                        ],
+                    ],
+                ],
             ],
         ]);
 
-        $fileBytes = file_get_contents($filePath);
-        $result = $client->detectDocumentText([
-            'Document' => ['Bytes' => $fileBytes],
-        ]);
-
-        $lines = [];
-        foreach ($result['Blocks'] as $block) {
-            if ($block['BlockType'] === 'LINE') {
-                $lines[] = $block['Text'];
-            }
+        if ($response->failed()) {
+            throw new \RuntimeException('Claude Vision OCR selhalo: ' . $response->body());
         }
 
-        return implode("\n", $lines);
+        $body = $response->json();
+        return $body['content'][0]['text'] ?? '';
     }
 
     private function extractInvoiceData(string $text, Firma $firma): array

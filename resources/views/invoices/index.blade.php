@@ -32,6 +32,8 @@
     .badge-dup { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; background: #fff3cd; color: #856404; font-size: 0.7rem; font-weight: 600; margin-left: 0.3rem; vertical-align: middle; }
     .btn-del-sm { background: none; border: none; color: #bdc3c7; cursor: pointer; font-size: 0.85rem; padding: 0.2rem 0.4rem; line-height: 1; }
     .btn-del-sm:hover { color: #e74c3c; }
+    .btn-retry-sm { background: none; border: none; color: #f39c12; cursor: pointer; font-size: 1rem; padding: 0.2rem 0.4rem; line-height: 1; }
+    .btn-retry-sm:hover { color: #e67e22; }
     .btn-preview { color: #95a5a6; text-decoration: none; margin-left: 0.4rem; font-size: 0.85rem; vertical-align: middle; }
     .btn-preview:hover { color: #3498db; text-decoration: none; }
 
@@ -116,7 +118,13 @@
                             <span class="stav-zpracovava">{{ $d->stav }}</span>
                         @endif
                     </td>
-                    <td>
+                    <td style="white-space: nowrap;">
+                        @if ($d->stav === 'chyba')
+                            <form action="{{ route('doklady.reprocess', $d) }}" method="POST" style="display:inline">
+                                @csrf
+                                <button type="submit" class="btn-retry-sm" title="Zpracovat znovu">&#8635;</button>
+                            </form>
+                        @endif
                         <form action="{{ route('doklady.destroy', $d) }}" method="POST" style="display:inline" onsubmit="return confirm('Smazat doklad {{ $d->cislo_dokladu ?: $d->nazev_souboru }}?')">
                             @csrf
                             @method('DELETE')

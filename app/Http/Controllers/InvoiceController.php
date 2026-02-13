@@ -169,6 +169,18 @@ class InvoiceController extends Controller
         return response()->download($tempZip, $zipName)->deleteFileAfterSend(true);
     }
 
+    public function reprocess(Doklad $doklad)
+    {
+        if ($doklad->stav !== 'chyba') {
+            return redirect()->route('doklady.show', $doklad)->with('flash', 'Doklad není ve stavu chyba.');
+        }
+
+        $processor = new DokladProcessor();
+        $processor->reprocess($doklad);
+
+        return redirect()->route('doklady.show', $doklad);
+    }
+
     public function destroy(Doklad $doklad)
     {
         // Smazat soubor z S3
