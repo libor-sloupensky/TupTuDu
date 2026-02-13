@@ -13,9 +13,6 @@
     .btn-download:hover { background: #2980b9; }
     .btn-delete { background: #e74c3c; color: white; border: none; padding: 0.4rem 1rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
     .btn-delete:hover { background: #c0392b; }
-    .btn-reprocess { background: #f39c12; color: white; border: none; padding: 0.35rem 0.9rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
-    .btn-reprocess:hover { background: #e67e22; }
-
     .duplicate-warning { background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
     .duplicate-warning a { color: #533f03; font-weight: 600; }
 
@@ -83,13 +80,7 @@
     @endif
 
     @if ($doklad->stav === 'chyba' && $doklad->chybova_zprava)
-        <div class="error-box">
-            {{ $doklad->chybova_zprava }}
-            <form action="{{ route('doklady.reprocess', $doklad) }}" method="POST" style="display: inline; margin-left: 1rem;">
-                @csrf
-                <button type="submit" class="btn-reprocess">Zpracovat znovu</button>
-            </form>
-        </div>
+        <div class="error-box">{{ $doklad->chybova_zprava }}</div>
     @endif
 
     <table class="invoice-table">
