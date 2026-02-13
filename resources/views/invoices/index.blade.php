@@ -135,44 +135,48 @@
             <div class="empty-state"><p>Žádné doklady neodpovídají hledání.</p></div>
         @else
 
-        {{-- Data dokladů jako JSON pro JS --}}
+        @php
+            $dokladyJson = $doklady->map(function($d) {
+                return [
+                    'id' => $d->id,
+                    'created_at' => $d->created_at->format('d.m.y'),
+                    'created_at_time' => $d->created_at->format('H:i'),
+                    'created_at_iso' => $d->created_at->toISOString(),
+                    'datum_prijeti' => $d->datum_prijeti ? $d->datum_prijeti->format('d.m.y') : null,
+                    'datum_prijeti_raw' => $d->datum_prijeti ? $d->datum_prijeti->format('Y-m-d') : null,
+                    'duzp' => $d->duzp ? $d->duzp->format('d.m.y') : null,
+                    'duzp_raw' => $d->duzp ? $d->duzp->format('Y-m-d') : null,
+                    'datum_vystaveni' => $d->datum_vystaveni ? $d->datum_vystaveni->format('d.m.y') : null,
+                    'datum_vystaveni_raw' => $d->datum_vystaveni ? $d->datum_vystaveni->format('Y-m-d') : null,
+                    'datum_splatnosti' => $d->datum_splatnosti ? $d->datum_splatnosti->format('d.m.y') : null,
+                    'datum_splatnosti_raw' => $d->datum_splatnosti ? $d->datum_splatnosti->format('Y-m-d') : null,
+                    'cislo_dokladu' => $d->cislo_dokladu,
+                    'nazev_souboru' => $d->nazev_souboru,
+                    'dodavatel_nazev' => $d->dodavatel_nazev,
+                    'dodavatel_ico' => $d->dodavatel_ico,
+                    'castka_celkem' => $d->castka_celkem,
+                    'mena' => $d->mena,
+                    'castka_dph' => $d->castka_dph,
+                    'kategorie' => $d->kategorie,
+                    'stav' => $d->stav,
+                    'zdroj' => $d->zdroj,
+                    'cesta_souboru' => $d->cesta_souboru ? true : false,
+                    'duplicita_id' => $d->duplicita_id,
+                    'show_url' => route('doklady.show', $d),
+                    'update_url' => route('doklady.update', $d),
+                    'destroy_url' => route('doklady.destroy', $d),
+                    'preview_url' => $d->cesta_souboru ? route('doklady.preview', $d) : null,
+                    'preview_ext' => strtolower(pathinfo($d->nazev_souboru, PATHINFO_EXTENSION)),
+                    'adresni' => $d->adresni,
+                    'overeno_adresat' => $d->overeno_adresat,
+                    'chybova_zprava' => $d->chybova_zprava,
+                    'raw_ai_odpoved' => $d->raw_ai_odpoved,
+                    'created_at_full' => $d->created_at->format('d.m.Y H:i'),
+                ];
+            })->values();
+        @endphp
         <script>
-            var dokladyData = @json($doklady->map(fn($d) => [
-                'id' => $d->id,
-                'created_at' => $d->created_at->format('d.m.y'),
-                'created_at_time' => $d->created_at->format('H:i'),
-                'created_at_iso' => $d->created_at->toISOString(),
-                'datum_prijeti' => $d->datum_prijeti ? $d->datum_prijeti->format('d.m.y') : null,
-                'datum_prijeti_raw' => $d->datum_prijeti ? $d->datum_prijeti->format('Y-m-d') : null,
-                'duzp' => $d->duzp ? $d->duzp->format('d.m.y') : null,
-                'duzp_raw' => $d->duzp ? $d->duzp->format('Y-m-d') : null,
-                'datum_vystaveni' => $d->datum_vystaveni ? $d->datum_vystaveni->format('d.m.y') : null,
-                'datum_vystaveni_raw' => $d->datum_vystaveni ? $d->datum_vystaveni->format('Y-m-d') : null,
-                'datum_splatnosti' => $d->datum_splatnosti ? $d->datum_splatnosti->format('d.m.y') : null,
-                'datum_splatnosti_raw' => $d->datum_splatnosti ? $d->datum_splatnosti->format('Y-m-d') : null,
-                'cislo_dokladu' => $d->cislo_dokladu,
-                'nazev_souboru' => $d->nazev_souboru,
-                'dodavatel_nazev' => $d->dodavatel_nazev,
-                'dodavatel_ico' => $d->dodavatel_ico,
-                'castka_celkem' => $d->castka_celkem,
-                'mena' => $d->mena,
-                'castka_dph' => $d->castka_dph,
-                'kategorie' => $d->kategorie,
-                'stav' => $d->stav,
-                'zdroj' => $d->zdroj,
-                'cesta_souboru' => $d->cesta_souboru ? true : false,
-                'duplicita_id' => $d->duplicita_id,
-                'show_url' => route('doklady.show', $d),
-                'update_url' => route('doklady.update', $d),
-                'destroy_url' => route('doklady.destroy', $d),
-                'preview_url' => $d->cesta_souboru ? route('doklady.preview', $d) : null,
-                'preview_ext' => strtolower(pathinfo($d->nazev_souboru, PATHINFO_EXTENSION)),
-                'adresni' => $d->adresni,
-                'overeno_adresat' => $d->overeno_adresat,
-                'chybova_zprava' => $d->chybova_zprava,
-                'raw_ai_odpoved' => $d->raw_ai_odpoved,
-                'created_at_full' => $d->created_at->format('d.m.Y H:i'),
-            ])->values());
+            var dokladyData = {!! json_encode($dokladyJson, JSON_UNESCAPED_UNICODE) !!};
             var csrfToken = '{{ csrf_token() }}';
             var sortCol = '{{ $sort }}';
             var sortDir = '{{ $dir }}';
