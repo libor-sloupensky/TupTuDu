@@ -17,6 +17,7 @@ class Doklad extends Model
         'castka_celkem', 'mena', 'castka_dph', 'kategorie',
         'adresni', 'overeno_adresat', 'raw_text', 'raw_ai_odpoved',
         'stav', 'chybova_zprava', 'zdroj', 'duplicita_id',
+        'typ_dokladu', 'kvalita', 'kvalita_poznamka', 'poradi_v_souboru',
     ];
 
     protected $casts = [

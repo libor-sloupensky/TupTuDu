@@ -20,6 +20,7 @@
     .toast-ok { background: #d4edda; color: #155724; }
     .toast-error { background: #f8d7da; color: #721c24; }
     .toast-duplicate { background: #fff3cd; color: #856404; }
+    .toast-warning { background: #fff3cd; color: #856404; }
     .toast-info { background: #d4edda; color: #155724; }
 
     .toolbar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
@@ -52,6 +53,10 @@
     .stav-dokonceno { color: #27ae60; }
     .stav-chyba { color: #e74c3c; font-weight: 600; }
     .stav-zpracovava { color: #f39c12; font-weight: 600; }
+    .stav-nekvalitni { color: #e67e22; font-weight: 600; }
+    .badge-kvalita { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.65rem; font-weight: 600; margin-left: 0.2rem; vertical-align: middle; }
+    .kvalita-nizka { background: #fff3cd; color: #856404; }
+    .kvalita-necitelna { background: #f8d7da; color: #721c24; }
     .amount { text-align: right; font-weight: 600; }
     .empty-state { text-align: center; padding: 2rem; color: #999; }
     .warning-msg { background: #fff3cd; color: #856404; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
@@ -159,6 +164,9 @@
                     'castka_dph' => $d->castka_dph,
                     'kategorie' => $d->kategorie,
                     'stav' => $d->stav,
+                    'typ_dokladu' => $d->typ_dokladu,
+                    'kvalita' => $d->kvalita,
+                    'kvalita_poznamka' => $d->kvalita_poznamka,
                     'zdroj' => $d->zdroj,
                     'cesta_souboru' => $d->cesta_souboru ? true : false,
                     'duplicita_id' => $d->duplicita_id,
@@ -256,6 +264,8 @@ const COLUMNS = [
     { id: 'dph',       label: 'DPH',        tip: 'Částka DPH', sortable: false, editable: 'text', fixed: false, field: 'castka_dph' },
     { id: 'kategorie', label: 'Kategorie',  tip: 'Účetní kategorie nákladu', sortable: false, editable: 'text', fixed: false, field: 'kategorie' },
     { id: 'stav',      label: 'Stav',       tip: 'Stav zpracování', sortable: false, editable: false, fixed: false, field: null },
+    { id: 'typ',       label: 'Typ',        tip: 'Typ dokladu (faktura, účtenka, ...)', sortable: false, editable: false, fixed: false, field: null },
+    { id: 'kvalita',   label: 'Kvalita',    tip: 'Kvalita čitelnosti dokladu', sortable: false, editable: false, fixed: false, field: null },
     { id: 'zdroj',     label: 'Zdroj',      tip: 'Způsob vložení (ruční/email)', sortable: false, editable: false, fixed: false, field: null },
     { id: 'soubor',    label: 'Soubor',     tip: 'Název nahraného souboru', sortable: false, editable: false, fixed: false, field: null },
     { id: 'smazat',    label: '',            tip: null, sortable: false, editable: false, fixed: true,  field: null },
@@ -322,8 +332,16 @@ function cellValue(d, colId) {
         case 'kategorie': return d.kategorie || '-';
         case 'stav':
             if (d.stav === 'dokonceno') return '<span class="stav-dokonceno" title="Dokončeno">&#10003;</span>';
+            if (d.stav === 'nekvalitni') return '<span class="stav-nekvalitni" title="'+(d.kvalita_poznamka||'Nízká kvalita')+'">&#9888;</span>';
             if (d.stav === 'chyba') return '<span class="stav-chyba">Chyba</span>';
             return '<span class="stav-zpracovava">'+d.stav+'</span>';
+        case 'typ':
+            const typLabels = {faktura:'Faktura', uctenka:'Účtenka', pokladni_doklad:'Pokl. dokl.', dobropis:'Dobropis', zalohova_faktura:'Zál. faktura', pokuta:'Pokuta', jine:'Jiné'};
+            return typLabels[d.typ_dokladu] || d.typ_dokladu || '-';
+        case 'kvalita':
+            if (d.kvalita === 'nizka') return '<span class="badge-kvalita kvalita-nizka" title="'+(d.kvalita_poznamka||'')+'">Nízká</span>';
+            if (d.kvalita === 'necitelna') return '<span class="badge-kvalita kvalita-necitelna" title="'+(d.kvalita_poznamka||'')+'">Nečitelná</span>';
+            return '';
         case 'zdroj': return d.zdroj === 'email' ? 'Email' : 'Ruční';
         case 'soubor': return d.nazev_souboru || '-';
         case 'smazat': return '<form action="'+d.destroy_url+'" method="POST" style="display:inline" onsubmit="return confirm(\'Smazat doklad '+(d.cislo_dokladu||d.nazev_souboru)+'?\')"><input type="hidden" name="_token" value="'+csrfToken+'"><input type="hidden" name="_method" value="DELETE"><button type="submit" class="btn-del-sm" title="Smazat">&times;</button></form>';
@@ -409,13 +427,16 @@ function toggleDetail(id, btn) {
     detailTr.className = 'detail-row';
 
     const labels = {
-        nazev_souboru: 'Soubor', stav: 'Stav', dodavatel_nazev: 'Dodavatel', dodavatel_ico: 'IČO dodavatele',
+        nazev_souboru: 'Soubor', stav: 'Stav', typ_dokladu: 'Typ dokladu', kvalita: 'Kvalita',
+        kvalita_poznamka: 'Poznámka ke kvalitě',
+        dodavatel_nazev: 'Dodavatel', dodavatel_ico: 'IČO dodavatele',
         cislo_dokladu: 'Číslo dokladu', datum_vystaveni: 'Datum vystavení', datum_prijeti: 'Datum přijetí',
         duzp: 'DUZP', datum_splatnosti: 'Datum splatnosti', castka_celkem: 'Celková částka', mena: 'Měna',
         castka_dph: 'DPH', kategorie: 'Kategorie', zdroj: 'Zdroj', created_at_full: 'Nahráno',
         chybova_zprava: 'Chyba'
     };
-    const fields = ['nazev_souboru','stav','dodavatel_nazev','dodavatel_ico','cislo_dokladu',
+    const fields = ['nazev_souboru','stav','typ_dokladu','kvalita','kvalita_poznamka',
+        'dodavatel_nazev','dodavatel_ico','cislo_dokladu',
         'datum_vystaveni','datum_prijeti','duzp','datum_splatnosti','castka_celkem','mena',
         'castka_dph','kategorie','zdroj','created_at_full','chybova_zprava'];
 
@@ -425,7 +446,17 @@ function toggleDetail(id, btn) {
         if (val === null || val === undefined || val === '') val = '-';
         if (f === 'stav') {
             if (val === 'dokonceno') val = '<span class="stav-dokonceno">Dokončeno</span>';
+            else if (val === 'nekvalitni') val = '<span class="stav-nekvalitni">Nekvalitní</span>';
             else if (val === 'chyba') val = '<span class="stav-chyba">Chyba</span>';
+        }
+        if (f === 'typ_dokladu') {
+            const typL = {faktura:'Faktura', uctenka:'Účtenka', pokladni_doklad:'Pokladní doklad', dobropis:'Dobropis', zalohova_faktura:'Zálohová faktura', pokuta:'Pokuta', jine:'Jiné'};
+            val = typL[val] || val || '-';
+        }
+        if (f === 'kvalita') {
+            if (val === 'dobra') val = 'Dobrá';
+            else if (val === 'nizka') val = '<span class="stav-nekvalitni">Nízká</span>';
+            else if (val === 'necitelna') val = '<span class="stav-chyba">Nečitelná</span>';
         }
         if (f === 'zdroj') val = val === 'email' ? 'Email' : 'Ruční nahrání';
         if ((f === 'castka_celkem' || f === 'castka_dph') && val !== '-') {

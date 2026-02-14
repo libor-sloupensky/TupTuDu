@@ -121,7 +121,7 @@ class InvoiceController extends Controller
                     continue;
                 }
 
-                $doklad = $processor->process(
+                $doklady = $processor->process(
                     $tempPath,
                     $originalName,
                     $firma,
@@ -129,31 +129,49 @@ class InvoiceController extends Controller
                     'upload'
                 );
 
-                $results[] = [
-                    'name' => $originalName,
-                    'doklad' => $doklad,
-                    'error' => $doklad->stav === 'chyba' ? $doklad->chybova_zprava : null,
-                ];
+                foreach ($doklady as $doklad) {
+                    $warning = null;
+                    if ($doklad->kvalita === 'nizka') {
+                        $warning = $doklad->kvalita_poznamka ?: 'Nízká kvalita dokladu';
+                    } elseif ($doklad->kvalita === 'necitelna') {
+                        $warning = $doklad->kvalita_poznamka ?: 'Doklad je nečitelný';
+                    }
+
+                    $results[] = [
+                        'name' => $doklad->nazev_souboru,
+                        'doklad' => $doklad,
+                        'error' => $doklad->stav === 'chyba' ? $doklad->chybova_zprava : null,
+                        'warning' => $warning,
+                    ];
+                }
             }
 
             if ($request->ajax()) {
                 return response()->json(collect($results)->map(fn($r) => [
                     'name' => $r['name'],
-                    'status' => empty($r['error']) ? 'ok' : (str_starts_with($r['error'] ?? '', 'Duplicita') ? 'duplicate' : 'error'),
-                    'message' => empty($r['error'])
-                        ? ($r['name'] . ' - zpracováno')
-                        : ($r['name'] . ' - ' . $r['error']),
+                    'status' => !empty($r['error'])
+                        ? (str_starts_with($r['error'] ?? '', 'Duplicita') ? 'duplicate' : 'error')
+                        : (!empty($r['warning']) ? 'warning' : 'ok'),
+                    'message' => !empty($r['error'])
+                        ? ($r['name'] . ' - ' . $r['error'])
+                        : ($r['name'] . ' - zpracováno' . (!empty($r['warning']) ? ' | ' . $r['warning'] : '')),
                 ])->values());
             }
 
-            if (count($results) === 1 && !empty($results[0]['doklad']) && $results[0]['doklad']->stav !== 'chyba') {
-                return redirect()->route('doklady.show', $results[0]['doklad']);
+            $allDoklady = collect($results)->filter(fn($r) => !empty($r['doklad']) && $r['doklad']->stav !== 'chyba');
+
+            if ($allDoklady->count() === 1) {
+                return redirect()->route('doklady.show', $allDoklady->first()['doklad']);
             }
 
-            $ok = collect($results)->filter(fn($r) => empty($r['error']))->count();
+            $ok = $allDoklady->count();
             $errors = collect($results)->filter(fn($r) => !empty($r['error']));
+            $warnings = collect($results)->filter(fn($r) => !empty($r['warning']));
 
             $message = "Zpracováno {$ok} z " . count($results) . " dokladů.";
+            if ($warnings->isNotEmpty()) {
+                $message .= ' Upozornění: ' . $warnings->count() . ' dokladů s nízkou kvalitou.';
+            }
             if ($errors->isNotEmpty()) {
                 $message .= ' Chyby: ' . $errors->map(fn($r) => $r['name'] . ' - ' . $r['error'])->implode('; ');
             }

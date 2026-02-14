@@ -83,6 +83,19 @@
         <div class="error-box">{{ $doklad->chybova_zprava }}</div>
     @endif
 
+    @if ($doklad->kvalita === 'nizka' || $doklad->kvalita === 'necitelna')
+        <div class="duplicate-warning" style="{{ $doklad->kvalita === 'necitelna' ? 'background: #f8d7da; border-color: #f5c6cb; color: #721c24;' : '' }}">
+            @if ($doklad->kvalita === 'necitelna')
+                Doklad je nečitelný &mdash; klíčové údaje nebylo možné rozpoznat.
+            @else
+                Upozornění: nízká kvalita dokladu.
+            @endif
+            @if ($doklad->kvalita_poznamka)
+                {{ $doklad->kvalita_poznamka }}
+            @endif
+        </div>
+    @endif
+
     <table class="invoice-table">
         <tr>
             <th>Soubor</th>
@@ -93,11 +106,22 @@
             <td>
                 @if ($doklad->stav === 'dokonceno')
                     <span class="stav-dokonceno">Dokončeno</span>
+                @elseif ($doklad->stav === 'nekvalitni')
+                    <span class="stav-zpracovava">Nekvalitní</span>
                 @elseif ($doklad->stav === 'chyba')
                     <span class="stav-chyba">Chyba</span>
                 @else
                     <span class="stav-zpracovava">{{ ucfirst($doklad->stav) }}</span>
                 @endif
+            </td>
+        </tr>
+        <tr>
+            <th>Typ dokladu</th>
+            <td>
+                @php
+                    $typLabels = ['faktura'=>'Faktura', 'uctenka'=>'Účtenka', 'pokladni_doklad'=>'Pokladní doklad', 'dobropis'=>'Dobropis', 'zalohova_faktura'=>'Zálohová faktura', 'pokuta'=>'Pokuta', 'jine'=>'Jiné'];
+                @endphp
+                {{ $typLabels[$doklad->typ_dokladu] ?? ucfirst($doklad->typ_dokladu ?? '-') }}
             </td>
         </tr>
         <tr>
