@@ -22,6 +22,112 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 $mode = $_GET['mode'] ?? 'info';
 
+// === INTERNAL TEST MODE - interní Laravel request na /upload ===
+if ($mode === 'internal' && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['testfile'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $log = [];
+    $log[] = 'Start: ' . date('H:i:s');
+
+    try {
+        $file = $_FILES['testfile'];
+        $log[] = "Soubor: {$file['name']} ({$file['size']} bytes)";
+
+        // Najdi prvního uživatele a autentizuj ho
+        $user = App\Models\User::first();
+        if (!$user) {
+            echo json_encode(['ok' => false, 'log' => $log, 'error' => 'Žádný uživatel v DB']);
+            exit;
+        }
+        Illuminate\Support\Facades\Auth::login($user);
+        $log[] = "Auth: {$user->cele_jmeno} ({$user->email})";
+
+        // Nastav aktivní firmu
+        $firma = $user->aktivniFirma();
+        if ($firma) {
+            session(['aktivni_firma_ico' => $firma->ico]);
+            $log[] = "Firma: {$firma->nazev} ({$firma->ico})";
+        } else {
+            $log[] = "VAROVÁNÍ: žádná firma pro uživatele!";
+        }
+
+        // Vytvoř UploadedFile objekt
+        $uploadedFile = new Illuminate\Http\UploadedFile(
+            $file['tmp_name'],
+            $file['name'],
+            $file['type'],
+            $file['error'],
+            true
+        );
+        $log[] = "UploadedFile: OK (valid=" . ($uploadedFile->isValid() ? 'yes' : 'no') . ")";
+
+        // Vytvoř request
+        $request = Illuminate\Http\Request::create('/upload', 'POST', [], [], ['documents' => [$uploadedFile]], [
+            'HTTP_ACCEPT' => 'application/json',
+            'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
+        ]);
+        $request->setLaravelSession(app('session.store'));
+        $request->setUserResolver(fn() => $user);
+        $log[] = "Request: created";
+        $log[] = "  Method: " . $request->method();
+        $log[] = "  Ajax: " . ($request->ajax() ? 'YES' : 'NO');
+        $log[] = "  Files: " . ($request->hasFile('documents') ? count($request->file('documents')) : 'NONE');
+
+        // Volej InvoiceController přímo (obejdi middleware)
+        $log[] = "Calling InvoiceController::store()...";
+        $start = microtime(true);
+        $controller = new App\Http\Controllers\InvoiceController();
+        $response = $controller->store($request);
+        $elapsed = round(microtime(true) - $start, 2);
+
+        $log[] = "Response: OK ({$elapsed}s)";
+        $log[] = "  Status: " . $response->getStatusCode();
+        $log[] = "  Content-Type: " . $response->headers->get('Content-Type');
+        $body = $response->getContent();
+        $log[] = "  Body: " . substr($body, 0, 500);
+
+        echo json_encode(['ok' => true, 'log' => $log], JSON_UNESCAPED_UNICODE);
+
+    } catch (\Throwable $e) {
+        $log[] = 'VÝJIMKA: ' . $e->getMessage();
+        $log[] = 'Soubor: ' . $e->getFile() . ':' . $e->getLine();
+        $log[] = 'Trace: ' . substr($e->getTraceAsString(), 0, 800);
+        echo json_encode(['ok' => false, 'log' => $log, 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+}
+
+if ($mode === 'internal') {
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<!DOCTYPE html><html><head><title>Internal Test</title></head><body>';
+    echo '<h2>Internal Test (InvoiceController::store přes auth)</h2>';
+    echo '<p>Simuluje kompletní upload včetně autentizace, ale BEZ HTTP middleware (CSRF, session apod.)</p>';
+    echo '<form method="POST" enctype="multipart/form-data">';
+    echo '<input type="file" name="testfile" accept=".pdf,.jpg,.jpeg,.png" required>';
+    echo '<button type="submit">Test InvoiceController::store()</button>';
+    echo '</form>';
+    echo '<div id="result" style="margin-top:1rem; white-space:pre-wrap; font-family:monospace;"></div>';
+    echo '<script>
+    document.querySelector("form").addEventListener("submit", function(e) {
+        e.preventDefault();
+        var fd = new FormData(this);
+        var result = document.getElementById("result");
+        result.textContent = "Zpracovávám přes InvoiceController...";
+        var start = Date.now();
+        fetch("?mode=internal", {method:"POST", body:fd})
+            .then(r => {
+                result.textContent += "\\nHTTP " + r.status + " (" + ((Date.now()-start)/1000).toFixed(1) + "s)\\n";
+                return r.text();
+            })
+            .then(t => {
+                try { var j = JSON.parse(t); result.textContent = JSON.stringify(j, null, 2); } catch(e) { result.textContent += t; }
+            })
+            .catch(err => { result.textContent += "\\nFetch error: " + err.message; });
+    });
+    </script>';
+    echo '</body></html>';
+    exit;
+}
+
 // === LOG MODE - čtení upload debug logu ===
 if ($mode === 'log') {
     header('Content-Type: text/plain; charset=utf-8');
