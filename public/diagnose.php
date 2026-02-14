@@ -18,11 +18,21 @@ out("post_max_size: " . ini_get('post_max_size') . "\n");
 out("memory_limit: " . ini_get('memory_limit') . "\n");
 out("PHP verze: " . phpversion() . "\n\n");
 
+// Detekce base path (stejně jako index.php)
+if (file_exists(__DIR__.'/../laravel-office/vendor/autoload.php')) {
+    $basePath = __DIR__.'/../laravel-office';
+} elseif (file_exists(__DIR__.'/../../laravel-office/vendor/autoload.php')) {
+    $basePath = __DIR__.'/../../laravel-office';
+} else {
+    $basePath = __DIR__.'/..';
+}
+out("Base path: " . realpath($basePath) . "\n");
+
 // Bootstrap Laravel
 out("Bootstrap Laravel...\n");
 try {
-    require __DIR__ . '/../vendor/autoload.php';
-    $app = require_once __DIR__ . '/../bootstrap/app.php';
+    require $basePath . '/vendor/autoload.php';
+    $app = require_once $basePath . '/bootstrap/app.php';
     $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
     out("Bootstrap: OK\n\n");
 } catch (\Throwable $e) {
