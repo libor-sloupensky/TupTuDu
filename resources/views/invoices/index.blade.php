@@ -761,7 +761,9 @@ function uploadSingleFile(file) {
     formData.append('documents[]', file);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+    const fetchStart = Date.now();
 
     return fetch(uploadUrl, {
         method: 'POST',
@@ -770,22 +772,41 @@ function uploadSingleFile(file) {
         signal: controller.signal,
     }).then(r => {
         clearTimeout(timeoutId);
+        const fetchMs = Date.now() - fetchStart;
         const ct = r.headers.get('content-type') || '';
         if (!ct.includes('application/json')) {
             return r.text().then(body => ({
                 status: 'error',
-                message: file.name + ' - HTTP ' + r.status + ': ' + body.substring(0, 100)
+                message: file.name + ' - HTTP ' + r.status + ' (' + fetchMs + 'ms): ' + body.substring(0, 100)
             }));
         }
-        return r.json().then(results => {
-            if (Array.isArray(results) && results.length > 0) return results[0];
-            return { status: 'error', message: file.name + ' - prazdna odpoved' };
+        return r.json().then(data => {
+            // New format: {results: [...], timing: {...}}
+            const results = data.results || data;
+            const serverTiming = data.timing || {};
+            const firstResult = Array.isArray(results) && results.length > 0 ? results[0] : null;
+            if (!firstResult) return { status: 'error', message: file.name + ' - prazdna odpoved' };
+
+            // Add timing info to message
+            const timingParts = [];
+            if (serverTiming.total_ms) timingParts.push('server=' + Math.round(serverTiming.total_ms/1000) + 's');
+            if (firstResult.timing?.process_ms) timingParts.push('AI=' + Math.round(firstResult.timing.process_ms/1000) + 's');
+            timingParts.push('fetch=' + Math.round(fetchMs/1000) + 's');
+            const timingStr = timingParts.length ? ' [' + timingParts.join(', ') + ']' : '';
+
+            return {
+                status: firstResult.status,
+                message: (firstResult.message || file.name) + timingStr,
+            };
         });
     }).catch(err => {
         clearTimeout(timeoutId);
+        const fetchMs = Date.now() - fetchStart;
         return {
             status: 'error',
-            message: err.name === 'AbortError' ? 'Casovy limit (90s)' : (err.message || 'Chyba site')
+            message: err.name === 'AbortError'
+                ? file.name + ' - Casovy limit (' + Math.round(fetchMs/1000) + 's)'
+                : (err.message || 'Chyba site') + ' (' + Math.round(fetchMs/1000) + 's)'
         };
     });
 }

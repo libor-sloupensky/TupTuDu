@@ -145,16 +145,24 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         try {
+            $storeStart = microtime(true);
+            $timing = ['request_received' => date('H:i:s')];
+
             $request->validate([
                 'documents' => 'required|array|min:1',
                 'documents.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
             ]);
+            $timing['validate_ms'] = round((microtime(true) - $storeStart) * 1000);
 
+            $t = microtime(true);
             $firma = $this->aktivniFirma();
+            $timing['get_firma_ms'] = round((microtime(true) - $t) * 1000);
+
             $processor = new DokladProcessor();
             $results = [];
 
             foreach ($request->file('documents') as $file) {
+                $fileStart = microtime(true);
                 $tempPath = $file->getRealPath();
                 $fileHash = hash_file('sha256', $tempPath);
                 $originalName = $file->getClientOriginalName();
@@ -166,11 +174,14 @@ class InvoiceController extends Controller
                         'name' => $originalName,
                         'status' => 'duplicate',
                         'message' => $originalName . ' - již existuje (' . ($existujici->cislo_dokladu ?: $existujici->nazev_souboru) . ')',
+                        'timing' => ['total_ms' => round((microtime(true) - $fileStart) * 1000), 'step' => 'duplicate_check'],
                     ];
                     continue;
                 }
 
+                $t = microtime(true);
                 $doklady = $processor->process($tempPath, $originalName, $firma, $fileHash, 'upload');
+                $processMs = round((microtime(true) - $t) * 1000);
 
                 // Determine overall status for this file
                 $status = 'ok';
@@ -204,11 +215,20 @@ class InvoiceController extends Controller
                     'name' => $originalName,
                     'status' => $status,
                     'message' => $message,
+                    'timing' => [
+                        'process_ms' => $processMs,
+                        'total_ms' => round((microtime(true) - $fileStart) * 1000),
+                    ],
                 ];
             }
 
+            $timing['total_ms'] = round((microtime(true) - $storeStart) * 1000);
+
             if ($request->ajax()) {
-                return response()->json($results);
+                return response()->json([
+                    'results' => $results,
+                    'timing' => $timing,
+                ]);
             }
 
             $ok = collect($results)->where('status', 'ok')->count();
