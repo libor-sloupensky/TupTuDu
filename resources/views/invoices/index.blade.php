@@ -73,9 +73,9 @@
     .col-help { color: #bdc3c7; font-size: 0.65rem; margin-left: 0.2rem; cursor: help; vertical-align: super; }
 
     .stav-dokonceno { color: #27ae60; }
-    .stav-chyba { color: #e74c3c; font-weight: 600; }
+    .stav-chyba { color: #e74c3c; font-weight: 600; cursor: help; }
     .stav-zpracovava { color: #f39c12; font-weight: 600; }
-    .stav-nekvalitni { color: #e67e22; font-weight: 600; }
+    .stav-nekvalitni { color: #e67e22; font-weight: 600; cursor: help; }
     .badge-kvalita { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.65rem; font-weight: 600; margin-left: 0.2rem; vertical-align: middle; }
     .kvalita-nizka { background: #fff3cd; color: #856404; }
     .kvalita-necitelna { background: #f8d7da; color: #721c24; }
@@ -380,7 +380,7 @@ function cellValue(d, colId) {
         case 'stav':
             if (d.stav === 'dokonceno') return '<span class="stav-dokonceno" title="Dokonceno">&#10003;</span>';
             if (d.stav === 'nekvalitni') return '<span class="stav-nekvalitni" title="'+(d.kvalita_poznamka||'Nizka kvalita')+'">&#9888;</span>';
-            if (d.stav === 'chyba') return '<span class="stav-chyba">Chyba</span>';
+            if (d.stav === 'chyba') return '<span class="stav-chyba" title="'+(d.chybova_zprava||'Chyba zpracování').replace(/"/g,'&quot;')+'">Chyba</span>';
             return '<span class="stav-zpracovava">'+d.stav+'</span>';
         case 'typ':
             const typLabels = {faktura:'Faktura', uctenka:'Uctenka', pokladni_doklad:'Pokl. dokl.', dobropis:'Dobropis', zalohova_faktura:'Zal. faktura', pokuta:'Pokuta', jine:'Jine'};
@@ -745,6 +745,10 @@ function refreshTableData() {
     fetch(window.location.pathname + (window.location.search || ''), {
         headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
     }).then(r => r.json()).then(data => {
+        if (!document.getElementById('tableContainer') && data.length > 0) {
+            window.location.reload();
+            return;
+        }
         dokladyData = data;
         renderTable();
     }).catch(() => {});

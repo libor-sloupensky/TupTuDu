@@ -62,6 +62,7 @@ Route::middleware(['auth', 'verified', 'firma'])->group(function () {
     Route::get('/nastaveni', [FirmaController::class, 'nastaveni'])->name('firma.nastaveni');
     Route::post('/nastaveni', [FirmaController::class, 'ulozit'])->name('firma.ulozit');
     Route::post('/nastaveni/ares', [FirmaController::class, 'obnovitAres'])->name('firma.obnovitAres');
+    Route::post('/nastaveni/pravidla', [FirmaController::class, 'ulozitPravidla'])->name('firma.ulozitPravidla');
 
     // Klienti (pouze ucetni)
     Route::middleware('role:ucetni')->group(function () {

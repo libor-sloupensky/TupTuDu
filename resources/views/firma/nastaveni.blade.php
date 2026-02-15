@@ -104,5 +104,60 @@
         </form>
     </div>
     @endif
+
+    @if ($firma)
+    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee;">
+        <h3 style="margin-bottom: 0.5rem;">Pravidla zpracování dokladů</h3>
+        <p style="font-size: 0.85rem; color: #888; margin-bottom: 1rem;">
+            Vlastní pravidla upřesňující klasifikaci a kategorizaci dokladů.
+            Pravidla jsou při ukládání ověřena AI — povoleny jsou pouze instrukce týkající se zpracování dokladů.
+        </p>
+
+        <form method="POST" action="{{ route('firma.ulozitPravidla') }}">
+            @csrf
+            <div class="form-group">
+                <textarea name="pravidla_zpracovani" id="pravidlaText" rows="10" maxlength="2000"
+                    style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; font-family: inherit; resize: vertical; line-height: 1.5;"
+                >{{ old('pravidla_zpracovani', $firma->pravidla_zpracovani ?? '') }}</textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem;">
+                    <span id="pravidlaCounter" style="font-size: 0.8rem; color: #999;">0 / 2000</span>
+                    <button type="button" onclick="obnovitVychozi()"
+                        style="padding: 0.3rem 0.75rem; border: 1px solid #95a5a6; background: white; color: #555; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">
+                        Obnovit výchozí pravidla
+                    </button>
+                </div>
+            </div>
+
+            @error('pravidla_zpracovani')
+                <div class="error-msg" style="margin-bottom: 0.75rem;">{{ $message }}</div>
+            @enderror
+
+            <button type="submit" class="btn-save" style="background: #8e44ad;">Uložit pravidla</button>
+        </form>
+    </div>
+
+    <script>
+    (function() {
+        const DEFAULT_PRAVIDLA = `- Účtenky za pohonné hmoty (benzín, nafta, CNG, LPG, AdBlue) zařaď do kategorie "pohonné_hmoty"\n- Účtenky ze supermarketů a restaurací zařaď do kategorie "stravování"\n- Faktury za telefon, internet a data zařaď do kategorie "telekomunikace"\n- Faktury za elektřinu, plyn a vodu zařaď do kategorie "energie"\n- Pokud je doklad špatně čitelný ale klíčové údaje (částka, dodavatel) jdou rozpoznat, označ kvalitu jako "nízká" (ne "nečitelná")\n- U účtenek bez IČO odběratele nastav odberatel_ico na null`;
+
+        const textarea = document.getElementById('pravidlaText');
+        const counter = document.getElementById('pravidlaCounter');
+
+        function updateCounter() {
+            counter.textContent = textarea.value.length + ' / 2000';
+        }
+
+        textarea.addEventListener('input', updateCounter);
+        updateCounter();
+
+        window.obnovitVychozi = function() {
+            if (confirm('Přepsat aktuální pravidla výchozími?')) {
+                textarea.value = DEFAULT_PRAVIDLA;
+                updateCounter();
+            }
+        };
+    })();
+    </script>
+    @endif
 </div>
 @endsection
