@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'firma' => \App\Http\Middleware\EnsureFirmaSelected::class,
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'upload',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
