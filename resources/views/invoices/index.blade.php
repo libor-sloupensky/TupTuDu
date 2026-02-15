@@ -33,6 +33,7 @@
     .upload-item.status-warning .upload-item-icon { color: #e67e22; }
     .upload-item.status-error .upload-item-icon { color: #e74c3c; }
     .upload-item.status-duplicate .upload-item-icon { color: #95a5a6; }
+    .upload-item.status-info .upload-item-icon { color: #2980b9; }
     .upload-item.status-warning, .upload-item.status-error { background: #fffaf5; }
     .upload-item.status-warning .upload-item-status { color: #e67e22; }
     .upload-item.status-error .upload-item-status { color: #e74c3c; }
@@ -42,10 +43,6 @@
     .alert-history-toggle:hover { color: #555; }
     .alert-history { display: none; border: 1px solid #e8ecf0; border-radius: 6px; margin-bottom: 1rem; }
     .alert-history.open { display: block; }
-
-    /* Flash messages */
-    .flash-msg { padding: 0.6rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.85rem; }
-    .flash-info { background: #d4edda; color: #155724; }
 
     .toolbar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
     .search-input { flex: 1; padding: 0.4rem 0.75rem; border: 1px solid #d0d8e0; border-radius: 6px; font-size: 0.85rem; outline: none; }
@@ -129,10 +126,6 @@
         <h2>Doklady</h2>
     </div>
 
-    @if (session('flash'))
-        <div class="flash-msg flash-info">{{ session('flash') }}</div>
-    @endif
-
     <div class="alert-history-toggle" id="alertHistoryToggle" onclick="toggleAlertHistory()">
         <span id="alertHistoryArrow">&#9654;</span> Zobrazit skryté hlášky (<span id="alertHistoryCount">0</span>)
     </div>
@@ -153,6 +146,30 @@
             </div>
             <div id="uploadList"></div>
         </div>
+    @endif
+
+    @if (session('flash') && ($doklady->isEmpty() && empty($q)))
+    <script>
+    (function() {
+        const msg = @json(session('flash'));
+        const panel = document.getElementById('uploadPanel');
+        const list = document.getElementById('uploadList');
+        if (!panel || !list) return;
+        const item = document.createElement('div');
+        item.className = 'upload-item status-info';
+        item.innerHTML = '<span class="upload-item-icon">&#8505;</span><span class="upload-item-name">' + msg + '</span>';
+        const btn = document.createElement('button');
+        btn.className = 'upload-item-dismiss';
+        btn.innerHTML = '&times;';
+        btn.onclick = function() { item.style.opacity='0'; setTimeout(() => { item.remove(); if (!list.children.length) panel.classList.remove('active'); }, 300); };
+        item.appendChild(btn);
+        list.appendChild(item);
+        panel.classList.add('active');
+        document.getElementById('uploadPanelTitle').textContent = '';
+        document.getElementById('uploadPanelProgress').textContent = '';
+        setTimeout(() => { item.style.opacity='0'; setTimeout(() => { item.remove(); if (!list.children.length) panel.classList.remove('active'); }, 500); }, 8000);
+    })();
+    </script>
     @endif
 
     @if ($doklady->isEmpty() && empty($q))
@@ -259,11 +276,6 @@ function checkUploadPanelEmpty() {
     const items = panel.querySelectorAll('.upload-item');
     if (items.length === 0) panel.classList.remove('active');
 }
-
-// ===== Flash auto-hide =====
-document.querySelectorAll('.flash-msg').forEach(el => {
-    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 10000);
-});
 
 // ===== Column definitions =====
 const COLUMNS = [
@@ -830,5 +842,30 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePreview
 // ===== Init =====
 buildColPanel();
 renderTable();
+
+// ===== Flash → upload panel =====
+(function() {
+    const flashMsg = @json(session('flash', ''));
+    if (!flashMsg) return;
+    const panel = document.getElementById('uploadPanel');
+    const list = document.getElementById('uploadList');
+    if (!panel || !list) return;
+
+    const item = document.createElement('div');
+    item.className = 'upload-item status-info';
+    item.innerHTML =
+        '<span class="upload-item-icon">&#8505;</span>' +
+        '<span class="upload-item-name">' + flashMsg + '</span>';
+    addDismissBtn(item);
+    list.appendChild(item);
+    panel.classList.add('active');
+    document.getElementById('uploadPanelTitle').textContent = '';
+    document.getElementById('uploadPanelProgress').textContent = '';
+
+    setTimeout(() => {
+        item.style.opacity = '0';
+        setTimeout(() => { item.remove(); checkUploadPanelEmpty(); }, 500);
+    }, 8000);
+})();
 </script>
 @endsection
