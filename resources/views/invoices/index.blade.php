@@ -25,7 +25,7 @@
     .upload-item-icon { width: 20px; text-align: center; flex-shrink: 0; }
     .upload-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .upload-item-size { color: #95a5a6; font-size: 0.75rem; flex-shrink: 0; }
-    .upload-item-status { font-size: 0.8rem; flex-shrink: 0; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .upload-item-status { font-size: 0.8rem; flex-shrink: 1; min-width: 0; }
     .upload-item-dismiss { background: none; border: none; cursor: pointer; color: #bdc3c7; font-size: 1rem; padding: 0 0.3rem; line-height: 1; flex-shrink: 0; }
     .upload-item-dismiss:hover { color: #555; }
     .upload-item .spinner-sm { display: inline-block; width: 14px; height: 14px; border: 2px solid #bdc3c7; border-top-color: #3498db; border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -34,7 +34,8 @@
     .upload-item.status-error .upload-item-icon { color: #e74c3c; }
     .upload-item.status-duplicate .upload-item-icon { color: #95a5a6; }
     .upload-item.status-info .upload-item-icon { color: #2980b9; }
-    .upload-item.status-warning, .upload-item.status-error { background: #fffaf5; }
+    .upload-item.status-warning, .upload-item.status-error { background: #fffaf5; flex-wrap: wrap; }
+    .upload-item.status-warning .upload-item-status, .upload-item.status-error .upload-item-status { flex-basis: 100%; padding-left: 26px; font-size: 0.78rem; margin-top: -0.1rem; }
     .upload-item.status-warning .upload-item-status { color: #e67e22; }
     .upload-item.status-error .upload-item-status { color: #e74c3c; }
 
