@@ -57,9 +57,7 @@ $tLog = function(string $msg) use ($phpStartTime, &$logLines, &$logFile) {
 $tLog("=== PHP RECEIVED REQUEST ===");
 $tLog("Method: {$_SERVER['REQUEST_METHOD']}");
 $tLog("Mode: " . ($_GET['mode'] ?? $_POST['mode'] ?? 'page'));
-$tLog("Files: " . (empty($_FILES) ? 'none' : implode(', ', array_map(function($f) {
-    return $f['name'] . ' (' . round($f['size']/1024, 1) . 'KB)';
-}, $_FILES))));
+$tLog("Files: " . (empty($_FILES) ? 'none' : json_encode(array_keys($_FILES))));
 $tLog("Content-Length: " . ($_SERVER['CONTENT_LENGTH'] ?? '?'));
 
 // === GET: show test page ===
