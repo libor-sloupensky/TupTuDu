@@ -9,22 +9,7 @@ use App\Http\Controllers\FirmaController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\KlientiController;
 use App\Http\Controllers\VazbyController;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-
-// --- Diagnostic upload route (token-protected, bypasses auth, goes through full HTTP kernel) ---
-Route::post('/upload-diag/{token}', function (\Illuminate\Http\Request $request, string $token) {
-    if ($token !== 'tuptudu-diag-2026-xK9m') {
-        abort(403);
-    }
-    // Login as the first available user
-    $user = \App\Models\User::first();
-    Auth::login($user);
-    session(['aktivni_firma_ico' => $user->firmy()->first()?->ico ?? '07994605']);
-
-    // Delegate to the real InvoiceController::store() - same code path as /upload
-    return app(InvoiceController::class)->store($request);
-})->middleware('web');
 
 // --- Guest routes ---
 Route::middleware('guest')->group(function () {

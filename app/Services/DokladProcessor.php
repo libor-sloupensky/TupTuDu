@@ -17,13 +17,21 @@ class DokladProcessor
      *
      * @return Doklad[]
      */
-    private function tLog(string $msg): void
+    private function logFailedFile(string $filename, string $firmaIco, string $error, string $fileBytes): void
     {
-        @file_put_contents(
-            storage_path('logs/upload_timing.log'),
-            date('H:i:s') . "   [Processor] $msg\n",
-            FILE_APPEND
-        );
+        $dir = storage_path('logs/failed_uploads');
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        // Save a copy of the failed file for later analysis
+        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $filename);
+        $timestamp = date('Ymd_His');
+        @file_put_contents("{$dir}/{$timestamp}_{$safeFilename}", $fileBytes);
+
+        // Append to daily error log
+        $entry = date('H:i:s') . " | {$firmaIco} | {$filename} | {$error}\n";
+        @file_put_contents("{$dir}/" . date('Y-m-d') . '_errors.log', $entry, FILE_APPEND);
     }
 
     public function process(
@@ -35,23 +43,20 @@ class DokladProcessor
     ): array {
         $fileBytes = file_get_contents($filePath);
         $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION)) ?: 'pdf';
-        $this->tLog("file read: " . strlen($fileBytes) . " bytes, ext=$ext");
 
         // Upload na S3 temp cestu (soubor bude dostupný i při selhání AI)
         $tempS3Path = "doklady/{$firma->ico}/_tmp/" . time() . "_{$fileHash}.{$ext}";
-        $t = microtime(true);
         Storage::disk('s3')->put($tempS3Path, $fileBytes);
-        $this->tLog("S3 upload: " . round((microtime(true) - $t) * 1000) . "ms");
 
         try {
-            $t = microtime(true);
             $visionResult = $this->analyzeWithVision($fileBytes, $ext, $firma);
-            $this->tLog("Vision API: " . round((microtime(true) - $t) * 1000) . "ms");
         } catch (\Exception $e) {
             Log::error("DokladProcessor Vision error: {$e->getMessage()}", [
                 'firma_ico' => $firma->ico,
                 'file' => $originalName,
             ]);
+
+            $this->logFailedFile($originalName, $firma->ico, $e->getMessage(), $fileBytes);
 
             $doklad = Doklad::create([
                 'firma_ico' => $firma->ico,

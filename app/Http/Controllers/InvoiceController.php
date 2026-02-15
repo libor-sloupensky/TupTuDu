@@ -17,6 +17,56 @@ class InvoiceController extends Controller
         return auth()->user()->aktivniFirma();
     }
 
+    private function friendlyErrorMessage(\Throwable $e): string
+    {
+        $msg = $e->getMessage();
+        if (str_contains($msg, 'Claude Vision API')) {
+            return 'Služba pro rozpoznávání dokladů je dočasně nedostupná. Zkuste to prosím znovu za chvíli.';
+        }
+        if (str_contains($msg, 'timeout') || str_contains($msg, 'timed out')) {
+            return 'Zpracování trvalo příliš dlouho. Zkuste nahrát soubor znovu.';
+        }
+        if (str_contains($msg, 'S3') || str_contains($msg, 'storage')) {
+            return 'Chyba při ukládání souboru. Zkuste to prosím znovu.';
+        }
+        if (str_contains($msg, 'parsovat') || str_contains($msg, 'JSON')) {
+            return 'Doklad se nepodařilo rozpoznat. Zkuste jiný formát nebo kvalitnější sken.';
+        }
+        return 'Nastala neočekávaná chyba. Zkuste to prosím znovu.';
+    }
+
+    private function logFailedUpload(\Illuminate\Http\Request $request, \Throwable $e): void
+    {
+        $logDir = storage_path('logs/failed_uploads');
+        if (!is_dir($logDir)) {
+            @mkdir($logDir, 0755, true);
+        }
+
+        $entry = [
+            'time' => now()->toIso8601String(),
+            'user_id' => auth()->id(),
+            'firma_ico' => session('aktivni_firma_ico'),
+            'error' => $e->getMessage(),
+            'error_file' => $e->getFile() . ':' . $e->getLine(),
+            'files' => [],
+        ];
+
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $file) {
+                $entry['files'][] = [
+                    'name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime' => $file->getMimeType(),
+                ];
+            }
+        }
+
+        $logFile = $logDir . '/' . date('Y-m-d') . '.json';
+        $existing = file_exists($logFile) ? json_decode(file_get_contents($logFile), true) ?: [] : [];
+        $existing[] = $entry;
+        @file_put_contents($logFile, json_encode($existing, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+
     private function autorizujDoklad(Doklad $doklad): void
     {
         $dostupne = auth()->user()->dostupneIco();
@@ -144,28 +194,15 @@ class InvoiceController extends Controller
 
     public function store(Request $request)
     {
-        // Write timing log to file for diagnostics
-        $logFile = storage_path('logs/upload_timing.log');
-        $tLog = function(string $msg) use ($logFile) {
-            @file_put_contents($logFile, date('H:i:s') . " " . round(microtime(true) * 1000) % 100000 . "ms $msg\n", FILE_APPEND);
-        };
-        $tLog("=== STORE REQUEST START ===");
-
         try {
             $storeStart = microtime(true);
-            $timing = ['request_received' => date('H:i:s')];
 
             $request->validate([
                 'documents' => 'required|array|min:1',
                 'documents.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
             ]);
-            $timing['validate_ms'] = round((microtime(true) - $storeStart) * 1000);
-            $tLog("validate done: {$timing['validate_ms']}ms");
 
-            $t = microtime(true);
             $firma = $this->aktivniFirma();
-            $timing['get_firma_ms'] = round((microtime(true) - $t) * 1000);
-            $tLog("get_firma done: {$timing['get_firma_ms']}ms, ico={$firma->ico}");
 
             $processor = new DokladProcessor();
             $results = [];
@@ -179,24 +216,28 @@ class InvoiceController extends Controller
                 // Hash duplicate - exact same file, skip entirely
                 $existujici = $processor->isDuplicate($fileHash, $firma->ico);
                 if ($existujici) {
+                    $dupInfo = $existujici->dodavatel_nazev ?: ($existujici->cislo_dokladu ?: $existujici->nazev_souboru);
                     $results[] = [
                         'name' => $originalName,
                         'status' => 'duplicate',
-                        'message' => $originalName . ' - již existuje (' . ($existujici->cislo_dokladu ?: $existujici->nazev_souboru) . ')',
+                        'message' => "Tento soubor již byl nahrán ({$dupInfo})",
                         'timing' => ['total_ms' => round((microtime(true) - $fileStart) * 1000), 'step' => 'duplicate_check'],
                     ];
                     continue;
                 }
 
-                $tLog("start process: $originalName (" . round(filesize($tempPath)/1024) . "KB)");
                 $t = microtime(true);
                 $doklady = $processor->process($tempPath, $originalName, $firma, $fileHash, 'upload');
                 $processMs = round((microtime(true) - $t) * 1000);
-                $tLog("process done: {$processMs}ms, doklady=" . count($doklady));
 
-                // Determine overall status for this file
+                // Determine overall status and build human-friendly message
                 $status = 'ok';
                 $warnings = [];
+                $typyDokladu = [
+                    'faktura' => 'Faktura', 'uctenka' => 'Účtenka', 'pokladni_doklad' => 'Pokladní doklad',
+                    'dobropis' => 'Dobropis', 'zalohova_faktura' => 'Zálohová faktura',
+                    'pokuta' => 'Pokuta/Výzva', 'jine' => 'Jiný doklad',
+                ];
 
                 foreach ($doklady as $doklad) {
                     if ($doklad->stav === 'chyba') {
@@ -210,16 +251,25 @@ class InvoiceController extends Controller
                         $warnings[] = $doklad->kvalita_poznamka ?: 'Nízká kvalita';
                     } elseif ($doklad->duplicita_id) {
                         if ($status === 'ok') $status = 'warning';
-                        $warnings[] = 'Možná duplicita (doklad č. ' . ($doklad->cislo_dokladu ?: '?') . ')';
+                        $warnings[] = 'Možná duplicita (č. ' . ($doklad->cislo_dokladu ?: '?') . ')';
                     }
                 }
 
-                $message = $originalName . ' - zpracováno';
-                if (count($doklady) > 1) {
-                    $message .= ' (' . count($doklady) . ' dokladů)';
+                // Build human-friendly message from extracted data
+                $prvni = $doklady[0];
+                $typLabel = $typyDokladu[$prvni->typ_dokladu] ?? 'Doklad';
+                $dodavatel = $prvni->dodavatel_nazev ?: 'neznámý dodavatel';
+                $castka = $prvni->castka_celkem ? number_format($prvni->castka_celkem, 2, ',', ' ') . ' ' . ($prvni->mena ?: 'CZK') : '';
+
+                if (count($doklady) === 1) {
+                    $message = "{$typLabel}: {$dodavatel}";
+                    if ($castka) $message .= " — {$castka}";
+                } else {
+                    $message = count($doklady) . ' dokladů z ' . $originalName;
                 }
+
                 if ($warnings) {
-                    $message .= ' | ' . implode(', ', array_unique($warnings));
+                    $message .= ' ⚠ ' . implode(', ', array_unique($warnings));
                 }
 
                 $results[] = [
@@ -233,13 +283,12 @@ class InvoiceController extends Controller
                 ];
             }
 
-            $timing['total_ms'] = round((microtime(true) - $storeStart) * 1000);
-            $tLog("=== STORE DONE: {$timing['total_ms']}ms total ===");
+            $totalMs = round((microtime(true) - $storeStart) * 1000);
 
             if ($request->ajax()) {
                 return response()->json([
                     'results' => $results,
-                    'timing' => $timing,
+                    'total_ms' => $totalMs,
                 ]);
             }
 
@@ -260,13 +309,19 @@ class InvoiceController extends Controller
                 'line' => $e->getLine(),
             ]);
 
+            // Save error details to failed_uploads log
+            $this->logFailedUpload($request, $e);
+
+            $userMessage = $this->friendlyErrorMessage($e);
+
             if ($request->ajax()) {
                 return response()->json([
-                    ['name' => 'Chyba', 'status' => 'error', 'message' => 'Chyba serveru: ' . $e->getMessage()]
+                    'results' => [['name' => 'Chyba', 'status' => 'error', 'message' => $userMessage]],
+                    'timing' => [],
                 ], 500);
             }
 
-            return redirect()->route('doklady.index')->with('flash', 'Chyba při zpracování: ' . $e->getMessage());
+            return redirect()->route('doklady.index')->with('flash', $userMessage);
         }
     }
 

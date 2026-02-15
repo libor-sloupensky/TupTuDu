@@ -177,8 +177,6 @@
             var dokladyData = {!! json_encode($dokladyJson, JSON_UNESCAPED_UNICODE) !!};
             var csrfToken = '{{ csrf_token() }}';
             var uploadUrl = '{{ route("invoices.store") }}';
-            // Also expose diag URL for console testing
-            var uploadUrlDiag = '/upload-diag/tuptudu-diag-2026-xK9m';
             var sortCol = '{{ $sort }}';
             var sortDir = '{{ $dir }}';
             var searchQ = '{{ $q }}';
@@ -785,18 +783,12 @@ function uploadSingleFile(file) {
             }));
         }
         return r.json().then(data => {
-            // New format: {results: [...], timing: {...}}
             const results = data.results || data;
-            const serverTiming = data.timing || {};
             const firstResult = Array.isArray(results) && results.length > 0 ? results[0] : null;
             if (!firstResult) return { status: 'error', message: file.name + ' - prazdna odpoved' };
 
-            // Add timing info to message
-            const timingParts = [];
-            if (serverTiming.total_ms) timingParts.push('server=' + Math.round(serverTiming.total_ms/1000) + 's');
-            if (firstResult.timing?.process_ms) timingParts.push('AI=' + Math.round(firstResult.timing.process_ms/1000) + 's');
-            timingParts.push('fetch=' + Math.round(fetchMs/1000) + 's');
-            const timingStr = timingParts.length ? ' [' + timingParts.join(', ') + ']' : '';
+            const secs = Math.round(fetchMs / 1000);
+            const timingStr = secs > 3 ? ' (' + secs + 's)' : '';
 
             return {
                 status: firstResult.status,
