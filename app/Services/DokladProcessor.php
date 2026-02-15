@@ -17,6 +17,15 @@ class DokladProcessor
      *
      * @return Doklad[]
      */
+    private function tLog(string $msg): void
+    {
+        @file_put_contents(
+            storage_path('logs/upload_timing.log'),
+            date('H:i:s') . "   [Processor] $msg\n",
+            FILE_APPEND
+        );
+    }
+
     public function process(
         string $filePath,
         string $originalName,
@@ -26,13 +35,18 @@ class DokladProcessor
     ): array {
         $fileBytes = file_get_contents($filePath);
         $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION)) ?: 'pdf';
+        $this->tLog("file read: " . strlen($fileBytes) . " bytes, ext=$ext");
 
         // Upload na S3 temp cestu (soubor bude dostupný i při selhání AI)
         $tempS3Path = "doklady/{$firma->ico}/_tmp/" . time() . "_{$fileHash}.{$ext}";
+        $t = microtime(true);
         Storage::disk('s3')->put($tempS3Path, $fileBytes);
+        $this->tLog("S3 upload: " . round((microtime(true) - $t) * 1000) . "ms");
 
         try {
+            $t = microtime(true);
             $visionResult = $this->analyzeWithVision($fileBytes, $ext, $firma);
+            $this->tLog("Vision API: " . round((microtime(true) - $t) * 1000) . "ms");
         } catch (\Exception $e) {
             Log::error("DokladProcessor Vision error: {$e->getMessage()}", [
                 'firma_ico' => $firma->ico,

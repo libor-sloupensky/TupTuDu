@@ -144,6 +144,13 @@ class InvoiceController extends Controller
 
     public function store(Request $request)
     {
+        // Write timing log to file for diagnostics
+        $logFile = storage_path('logs/upload_timing.log');
+        $tLog = function(string $msg) use ($logFile) {
+            @file_put_contents($logFile, date('H:i:s') . " " . round(microtime(true) * 1000) % 100000 . "ms $msg\n", FILE_APPEND);
+        };
+        $tLog("=== STORE REQUEST START ===");
+
         try {
             $storeStart = microtime(true);
             $timing = ['request_received' => date('H:i:s')];
@@ -153,10 +160,12 @@ class InvoiceController extends Controller
                 'documents.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
             ]);
             $timing['validate_ms'] = round((microtime(true) - $storeStart) * 1000);
+            $tLog("validate done: {$timing['validate_ms']}ms");
 
             $t = microtime(true);
             $firma = $this->aktivniFirma();
             $timing['get_firma_ms'] = round((microtime(true) - $t) * 1000);
+            $tLog("get_firma done: {$timing['get_firma_ms']}ms, ico={$firma->ico}");
 
             $processor = new DokladProcessor();
             $results = [];
@@ -179,9 +188,11 @@ class InvoiceController extends Controller
                     continue;
                 }
 
+                $tLog("start process: $originalName (" . round(filesize($tempPath)/1024) . "KB)");
                 $t = microtime(true);
                 $doklady = $processor->process($tempPath, $originalName, $firma, $fileHash, 'upload');
                 $processMs = round((microtime(true) - $t) * 1000);
+                $tLog("process done: {$processMs}ms, doklady=" . count($doklady));
 
                 // Determine overall status for this file
                 $status = 'ok';
@@ -223,6 +234,7 @@ class InvoiceController extends Controller
             }
 
             $timing['total_ms'] = round((microtime(true) - $storeStart) * 1000);
+            $tLog("=== STORE DONE: {$timing['total_ms']}ms total ===");
 
             if ($request->ajax()) {
                 return response()->json([
