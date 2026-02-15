@@ -24,3 +24,10 @@ Thumbs.db
 nul
 /_backup/
 composer.phar
+/temporary/
+deploy-log*.txt
+*deploy-log*
+test_*.php
+test_*.pdf
+check_errors.php
+diag_*.php
