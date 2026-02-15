@@ -52,6 +52,7 @@ class DokladProcessor
         }
 
         $documents = $visionResult['dokumenty'] ?? [];
+        $tokens = $visionResult['_tokens'] ?? ['input' => 0, 'output' => 0];
 
         if (empty($documents)) {
             $doklad = Doklad::create([
@@ -76,7 +77,8 @@ class DokladProcessor
             try {
                 $doklad = $this->createDokladFromVision(
                     $docData, $firma, $originalName, $fileHash,
-                    $zdroj, $tempS3Path, $ext, $poradi, $celkem
+                    $zdroj, $tempS3Path, $ext, $poradi, $celkem,
+                    $index === 0 ? $tokens : null
                 );
                 $doklady[] = $doklad;
             } catch (\Exception $e) {
@@ -124,7 +126,8 @@ class DokladProcessor
         string $tempS3Path,
         string $ext,
         int $poradi,
-        int $celkem
+        int $celkem,
+        ?array $tokens = null
     ): Doklad {
         $kvalita = $docData['kvalita'] ?? 'dobra';
         $typDokladu = $docData['typ_dokladu'] ?? 'faktura';
@@ -154,6 +157,8 @@ class DokladProcessor
             'poradi_v_souboru' => $poradi,
             'raw_text' => $docData['raw_text'] ?? null,
             'raw_ai_odpoved' => json_encode($docData, JSON_UNESCAPED_UNICODE),
+            'ai_input_tokens' => $tokens['input'] ?? null,
+            'ai_output_tokens' => $tokens['output'] ?? null,
         ]);
 
         // S3 finální cesta
@@ -286,15 +291,24 @@ class DokladProcessor
         $body = $response->json();
         $content = $body['content'][0]['text'] ?? '';
 
+        // Extract token usage
+        $usage = $body['usage'] ?? [];
+        $inputTokens = $usage['input_tokens'] ?? 0;
+        $outputTokens = $usage['output_tokens'] ?? 0;
+
         // Parse JSON z odpovědi
         if (preg_match('/\{[\s\S]*\}/s', $content, $matches)) {
             $parsed = json_decode($matches[0], true);
             if (json_last_error() === JSON_ERROR_NONE && isset($parsed['dokumenty'])) {
+                $parsed['_tokens'] = ['input' => $inputTokens, 'output' => $outputTokens];
                 return $parsed;
             }
             // Pokud Claude vrátil jen jeden dokument bez wrapperu
             if (json_last_error() === JSON_ERROR_NONE && !isset($parsed['dokumenty'])) {
-                return ['dokumenty' => [$parsed]];
+                return [
+                    'dokumenty' => [$parsed],
+                    '_tokens' => ['input' => $inputTokens, 'output' => $outputTokens],
+                ];
             }
         }
 

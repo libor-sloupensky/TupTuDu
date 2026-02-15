@@ -120,6 +120,22 @@ jobs:
           quit
         "
 
+    - name: Run DB migrations
+      env:
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      run: |
+        php -r "
+          \$pdo = new PDO('mysql:host=db.dw328.webglobe.com;dbname=tuptudu_office;charset=utf8mb4', 'tuptudu_office', getenv('DB_PASSWORD'));
+          \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+          \$cols = \$pdo->query(\"SHOW COLUMNS FROM fak_doklady LIKE 'ai_input_tokens'\")->fetchAll();
+          if (empty(\$cols)) {
+            \$pdo->exec('ALTER TABLE fak_doklady ADD COLUMN ai_input_tokens INT UNSIGNED NULL AFTER raw_ai_odpoved, ADD COLUMN ai_output_tokens INT UNSIGNED NULL AFTER ai_input_tokens');
+            echo 'Migration: added ai_input_tokens, ai_output_tokens columns';
+          } else {
+            echo 'Migration: columns already exist, skipping';
+          }
+        "
+
     - name: Verify deployment
       run: |
         echo "Checking office.tuptudu.cz..."
