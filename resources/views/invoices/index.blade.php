@@ -9,6 +9,9 @@
 
     .upload-zone { border: 2px dashed #bdc3c7; border-radius: 8px; padding: 1.2rem; text-align: center; cursor: pointer; transition: all 0.3s; margin-bottom: 1.5rem; }
     .upload-zone:hover, .upload-zone.dragover { border-color: #3498db; background: #ebf5fb; }
+    .upload-zone.compact { padding: 0.5rem; margin-bottom: 0.75rem; }
+    .upload-zone.compact p { font-size: 0.8rem; }
+    .upload-zone.compact .formats { display: none; }
     .upload-zone p { color: #7f8c8d; margin: 0; font-size: 0.9rem; }
     .upload-zone .formats { font-size: 0.8rem; color: #95a5a6; margin-top: 0.3rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -588,8 +591,8 @@ if (dropZone) {
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); uploadFiles(e.dataTransfer.files); });
-    fileInput.addEventListener('change', () => { uploadFiles(fileInput.files); fileInput.value = ''; });
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); enqueueFiles(e.dataTransfer.files); });
+    fileInput.addEventListener('change', () => { enqueueFiles(fileInput.files); fileInput.value = ''; });
 }
 
 function formatSize(bytes) {
@@ -598,137 +601,145 @@ function formatSize(bytes) {
     return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
-function uploadFiles(files) {
+// Global upload queue
+const uploadQueue = [];     // {file, item} objects waiting or in progress
+let uploadCompleted = 0;
+let uploadActive = 0;
+const MAX_CONCURRENT = 2;
+let autoHideTimer = null;
+
+function enqueueFiles(files) {
     const allowed = ['application/pdf', 'image/jpeg', 'image/png'];
-    const validFiles = [];
+    let added = 0;
     for (const file of files) {
         if (!allowed.includes(file.type) || file.size > 10*1024*1024) continue;
-        validFiles.push(file);
-    }
-    if (!validFiles.length) return;
 
-    // Show upload panel with file list
-    dropZone.style.display = 'none';
-    uploadPanel.classList.add('active');
-    document.getElementById('uploadPanelTitle').textContent = 'Nahravani souboru...';
-    document.getElementById('uploadPanelProgress').textContent = '0 / ' + validFiles.length;
-
-    // Build file list
-    uploadList.innerHTML = '';
-    const fileItems = [];
-    validFiles.forEach((file, i) => {
         const item = document.createElement('div');
         item.className = 'upload-item status-waiting';
-        item.id = 'upload-item-' + i;
         item.innerHTML =
             '<span class="upload-item-icon"><span class="spinner-sm"></span></span>' +
             '<span class="upload-item-name">' + file.name + '</span>' +
             '<span class="upload-item-size">' + formatSize(file.size) + '</span>' +
             '<span class="upload-item-status">Ceka...</span>';
         uploadList.appendChild(item);
-        fileItems.push(item);
+        uploadQueue.push({ file, item });
+        added++;
+    }
+    if (!added) return;
+
+    // Cancel pending auto-hide (new files added)
+    if (autoHideTimer) { clearTimeout(autoHideTimer); autoHideTimer = null; }
+
+    // Show panel, shrink drop zone but keep it active
+    uploadPanel.classList.add('active');
+    dropZone.classList.add('compact');
+    dropZone.querySelector('p:first-child').textContent = 'Pridat dalsi soubory';
+    updateUploadHeader();
+
+    // Kick workers
+    while (uploadActive < MAX_CONCURRENT) {
+        if (!processNextInQueue()) break;
+    }
+}
+
+function updateUploadHeader() {
+    const total = uploadQueue.length;
+    const pending = total - uploadCompleted - uploadActive;
+    if (pending > 0 || uploadActive > 0) {
+        document.getElementById('uploadPanelTitle').textContent = 'Nahravani souboru...';
+    } else {
+        document.getElementById('uploadPanelTitle').textContent = 'Nahravani dokonceno';
+    }
+    document.getElementById('uploadPanelProgress').textContent = uploadCompleted + ' / ' + total;
+}
+
+function processNextInQueue() {
+    // Find next waiting item
+    const entry = uploadQueue.find(e => e.item.classList.contains('status-waiting'));
+    if (!entry) return false;
+
+    uploadActive++;
+    const { file, item } = entry;
+
+    item.className = 'upload-item status-processing';
+    item.querySelector('.upload-item-status').textContent = 'Zpracovavam...';
+    updateUploadHeader();
+
+    uploadSingleFile(file).then(result => {
+        uploadActive--;
+        uploadCompleted++;
+
+        const icon = item.querySelector('.upload-item-icon');
+        const status = item.querySelector('.upload-item-status');
+
+        if (result.status === 'ok') {
+            item.className = 'upload-item status-ok';
+            icon.innerHTML = '&#10003;';
+            status.textContent = result.message || 'Nahrano';
+        } else if (result.status === 'warning') {
+            item.className = 'upload-item status-warning';
+            icon.innerHTML = '&#9888;';
+            status.textContent = result.message || 'Nahrano s upozornenim';
+            addDismissBtn(item);
+        } else if (result.status === 'duplicate') {
+            item.className = 'upload-item status-duplicate';
+            icon.innerHTML = '&#8212;';
+            status.textContent = result.message || 'Jiz existuje';
+        } else {
+            item.className = 'upload-item status-error';
+            icon.innerHTML = '&#10007;';
+            status.textContent = result.message || 'Chyba';
+            addDismissBtn(item);
+        }
+
+        updateUploadHeader();
+
+        // Try next in queue
+        if (!processNextInQueue()) {
+            // No more waiting items - check if everything is done
+            if (uploadActive === 0) {
+                onAllUploadsComplete();
+            }
+        }
     });
 
-    // Parallel upload with max concurrency
-    const MAX_CONCURRENT = 2;
-    let nextIndex = 0;
-    let completed = 0;
-    let hasAlerts = false;
+    return true;
+}
 
-    function processNext() {
-        if (nextIndex >= validFiles.length) return;
-        const idx = nextIndex++;
-        const file = validFiles[idx];
-        const item = fileItems[idx];
+function addDismissBtn(item) {
+    const btn = document.createElement('button');
+    btn.className = 'upload-item-dismiss';
+    btn.innerHTML = '&times;';
+    btn.onclick = function() { dismissUploadItem(this); };
+    item.appendChild(btn);
+}
 
-        // Mark as processing
-        item.className = 'upload-item status-processing';
-        item.querySelector('.upload-item-status').textContent = 'Zpracovavam...';
+function onAllUploadsComplete() {
+    updateUploadHeader();
+    dropZone.classList.remove('compact');
+    dropZone.querySelector('p:first-child').textContent = 'Pretahnete soubory sem nebo kliknete pro vyber';
 
-        uploadSingleFile(file).then(result => {
-            completed++;
-            document.getElementById('uploadPanelProgress').textContent = completed + ' / ' + validFiles.length;
+    // Fetch fresh doklady data and update table (no page reload)
+    fetch(window.location.pathname + (window.location.search || ''), {
+        headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
+    }).then(r => r.json()).then(data => {
+        dokladyData = data;
+        renderTable();
+    }).catch(() => {});
 
-            // Update item status
-            const icon = item.querySelector('.upload-item-icon');
-            const status = item.querySelector('.upload-item-status');
-
-            if (result.status === 'ok') {
-                item.className = 'upload-item status-ok';
-                icon.innerHTML = '&#10003;';
-                status.textContent = result.message || 'Nahrano';
-            } else if (result.status === 'warning') {
-                item.className = 'upload-item status-warning';
-                icon.innerHTML = '&#9888;';
-                status.textContent = result.message || 'Nahrano s upozornenim';
-                hasAlerts = true;
-                // Add dismiss button
-                const dismissBtn = document.createElement('button');
-                dismissBtn.className = 'upload-item-dismiss';
-                dismissBtn.innerHTML = '&times;';
-                dismissBtn.onclick = function() { dismissUploadItem(this); };
-                item.appendChild(dismissBtn);
-            } else if (result.status === 'duplicate') {
-                item.className = 'upload-item status-duplicate';
-                icon.innerHTML = '&#8212;';
-                status.textContent = result.message || 'Jiz existuje';
-            } else {
-                item.className = 'upload-item status-error';
-                icon.innerHTML = '&#10007;';
-                status.textContent = result.message || 'Chyba';
-                hasAlerts = true;
-                const dismissBtn = document.createElement('button');
-                dismissBtn.className = 'upload-item-dismiss';
-                dismissBtn.innerHTML = '&times;';
-                dismissBtn.onclick = function() { dismissUploadItem(this); };
-                item.appendChild(dismissBtn);
+    // Auto-hide success and duplicate items after 10s
+    autoHideTimer = setTimeout(() => {
+        uploadQueue.forEach(e => {
+            if (e.item.classList.contains('status-ok') || e.item.classList.contains('status-duplicate')) {
+                e.item.style.opacity = '0';
+                setTimeout(() => {
+                    e.item.remove();
+                    checkUploadPanelEmpty();
+                }, 500);
             }
-
-            // Check if all done
-            if (completed === validFiles.length) {
-                onAllComplete();
-            }
-
-            // Start next file
-            processNext();
         });
-
-        // Start another concurrent upload
-        if (nextIndex < validFiles.length && (nextIndex - completed) < MAX_CONCURRENT) {
-            processNext();
-        }
-    }
-
-    function onAllComplete() {
-        document.getElementById('uploadPanelTitle').textContent = 'Nahravani dokonceno';
-        dropZone.style.display = 'block';
-
-        // Fetch fresh doklady data and update table (no page reload)
-        fetch(window.location.pathname + (window.location.search || ''), {
-            headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
-        }).then(r => r.json()).then(data => {
-            dokladyData = data;
-            renderTable();
-        }).catch(() => {});
-
-        // Auto-hide success and duplicate items after 10s
-        setTimeout(() => {
-            fileItems.forEach(item => {
-                if (item.classList.contains('status-ok') || item.classList.contains('status-duplicate')) {
-                    item.style.opacity = '0';
-                    setTimeout(() => {
-                        item.remove();
-                        checkUploadPanelEmpty();
-                    }, 500);
-                }
-            });
-        }, 10000);
-    }
-
-    // Start uploads
-    for (let i = 0; i < Math.min(MAX_CONCURRENT, validFiles.length); i++) {
-        processNext();
-    }
+        autoHideTimer = null;
+    }, 10000);
 }
 
 function uploadSingleFile(file) {
