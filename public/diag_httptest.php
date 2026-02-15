@@ -23,6 +23,24 @@ if (($_GET['token'] ?? $_POST['token'] ?? '') !== $SECRET) {
 
 set_time_limit(300);
 error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Global error handler to catch ALL errors
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    echo "PHP ERROR [$errno]: $errstr in $errfile:$errline\n";
+    return false;
+});
+set_exception_handler(function($e) {
+    echo "UNCAUGHT EXCEPTION: " . $e->getMessage() . "\n";
+    echo "  at " . $e->getFile() . ":" . $e->getLine() . "\n";
+    echo "  " . $e->getTraceAsString() . "\n";
+});
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        echo "\nFATAL ERROR: {$error['message']} in {$error['file']}:{$error['line']}\n";
+    }
+});
 
 // Logging helper - writes to a log file accessible via diag_timing.php
 $logFile = null; // set after basePath detected
