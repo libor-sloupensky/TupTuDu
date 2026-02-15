@@ -134,6 +134,10 @@
     @if (!$firma)
         <div class="warning-msg">Nejdříve vyplňte <a href="{{ route('firma.nastaveni') }}">nastavení firmy</a>.</div>
     @else
+        <script>
+            var csrfToken = '{{ csrf_token() }}';
+            var uploadUrl = '{{ route("invoices.store") }}';
+        </script>
         <div class="upload-zone" id="dropZone">
             <p>Přetáhněte soubory sem nebo klikněte pro výběr</p>
             <p class="formats">PDF, JPG, PNG (max 10 MB)</p>
@@ -192,8 +196,6 @@
 
         <script>
             var dokladyData = {!! json_encode($dokladyJson, JSON_UNESCAPED_UNICODE) !!};
-            var csrfToken = '{{ csrf_token() }}';
-            var uploadUrl = '{{ route("invoices.store") }}';
             var sortCol = '{{ $sort }}';
             var sortDir = '{{ $dir }}';
             var searchQ = '{{ $q }}';
