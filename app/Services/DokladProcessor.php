@@ -178,6 +178,10 @@ class DokladProcessor
                 ->first();
             if ($existujici) {
                 $duplicitaId = $existujici->id;
+                // Bidirectional: mark the existing record as duplicate too
+                if (!$existujici->duplicita_id) {
+                    $existujici->update(['duplicita_id' => $doklad->id]);
+                }
             }
         }
 
@@ -377,7 +381,7 @@ DŮLEŽITÁ PRAVIDLA:
 - Pokud je kvalita "nizka", vyplň kvalita_poznamka s krátkým popisem problému
 - Pokud je kvalita "necitelna", přesto vyplň co lze rozpoznat
 - raw_text: věrný přepis veškerého textu z dokladu, zachovej rozložení řádků
-- Dokumenty mohou být v češtině, slovenštině, angličtině, němčině, portugalštině i dalších jazycích
+- Doklad může být v jakémkoliv jazyce - zpracuj ho bez ohledu na jazyk
 PROMPT;
     }
 

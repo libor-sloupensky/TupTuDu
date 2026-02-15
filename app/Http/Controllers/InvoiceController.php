@@ -25,6 +25,49 @@ class InvoiceController extends Controller
         }
     }
 
+    private function dokladToArray(Doklad $d): array
+    {
+        return [
+            'id' => $d->id,
+            'created_at' => $d->created_at->format('d.m.y'),
+            'created_at_time' => $d->created_at->format('H:i'),
+            'created_at_iso' => $d->created_at->toISOString(),
+            'datum_prijeti' => $d->datum_prijeti ? $d->datum_prijeti->format('d.m.y') : null,
+            'datum_prijeti_raw' => $d->datum_prijeti ? $d->datum_prijeti->format('Y-m-d') : null,
+            'duzp' => $d->duzp ? $d->duzp->format('d.m.y') : null,
+            'duzp_raw' => $d->duzp ? $d->duzp->format('Y-m-d') : null,
+            'datum_vystaveni' => $d->datum_vystaveni ? $d->datum_vystaveni->format('d.m.y') : null,
+            'datum_vystaveni_raw' => $d->datum_vystaveni ? $d->datum_vystaveni->format('Y-m-d') : null,
+            'datum_splatnosti' => $d->datum_splatnosti ? $d->datum_splatnosti->format('d.m.y') : null,
+            'datum_splatnosti_raw' => $d->datum_splatnosti ? $d->datum_splatnosti->format('Y-m-d') : null,
+            'cislo_dokladu' => $d->cislo_dokladu,
+            'nazev_souboru' => $d->nazev_souboru,
+            'dodavatel_nazev' => $d->dodavatel_nazev,
+            'dodavatel_ico' => $d->dodavatel_ico,
+            'castka_celkem' => $d->castka_celkem,
+            'mena' => $d->mena,
+            'castka_dph' => $d->castka_dph,
+            'kategorie' => $d->kategorie,
+            'stav' => $d->stav,
+            'typ_dokladu' => $d->typ_dokladu,
+            'kvalita' => $d->kvalita,
+            'kvalita_poznamka' => $d->kvalita_poznamka,
+            'zdroj' => $d->zdroj,
+            'cesta_souboru' => $d->cesta_souboru ? true : false,
+            'duplicita_id' => $d->duplicita_id,
+            'show_url' => route('doklady.show', $d),
+            'update_url' => route('doklady.update', $d),
+            'destroy_url' => route('doklady.destroy', $d),
+            'preview_url' => $d->cesta_souboru ? route('doklady.preview', $d) : null,
+            'preview_ext' => strtolower(pathinfo($d->nazev_souboru, PATHINFO_EXTENSION)),
+            'adresni' => $d->adresni,
+            'overeno_adresat' => $d->overeno_adresat,
+            'chybova_zprava' => $d->chybova_zprava,
+            'raw_ai_odpoved' => $d->raw_ai_odpoved,
+            'created_at_full' => $d->created_at->format('d.m.Y H:i'),
+        ];
+    }
+
     public function index(Request $request)
     {
         $firma = $this->aktivniFirma();
@@ -47,8 +90,13 @@ class InvoiceController extends Controller
         }
 
         $doklady = $query->orderBy($sort, $dir)->get();
+        $dokladyJson = $doklady->map(fn($d) => $this->dokladToArray($d))->values();
 
-        return view('invoices.index', compact('doklady', 'firma', 'sort', 'dir', 'q'));
+        if ($request->ajax()) {
+            return response()->json($dokladyJson);
+        }
+
+        return view('invoices.index', compact('doklady', 'firma', 'sort', 'dir', 'q', 'dokladyJson'));
     }
 
     public function show(Doklad $doklad)
@@ -94,123 +142,86 @@ class InvoiceController extends Controller
             ->header('Content-Disposition', 'inline; filename="' . $doklad->nazev_souboru . '"');
     }
 
-    private function debugLog(string $msg): void
-    {
-        $logFile = storage_path('logs/upload_debug.log');
-        file_put_contents($logFile, date('H:i:s') . " {$msg}\n", FILE_APPEND);
-    }
-
     public function store(Request $request)
     {
-        $this->debugLog('=== START store() ===');
-        $this->debugLog('Method: ' . $request->method());
-        $this->debugLog('Ajax: ' . ($request->ajax() ? 'YES' : 'NO'));
-        $this->debugLog('Accept: ' . $request->header('Accept'));
-        $this->debugLog('Content-Type: ' . $request->header('Content-Type'));
-        $this->debugLog('Files: ' . ($request->hasFile('documents') ? count($request->file('documents')) : 'NONE'));
-
         try {
-            $this->debugLog('Validating...');
             $request->validate([
                 'documents' => 'required|array|min:1',
                 'documents.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
             ]);
-            $this->debugLog('Validation OK');
 
             $firma = $this->aktivniFirma();
-            $this->debugLog("Firma: {$firma->nazev} (ICO: {$firma->ico})");
-
             $processor = new DokladProcessor();
             $results = [];
 
-            foreach ($request->file('documents') as $i => $file) {
+            foreach ($request->file('documents') as $file) {
                 $tempPath = $file->getRealPath();
                 $fileHash = hash_file('sha256', $tempPath);
                 $originalName = $file->getClientOriginalName();
-                $this->debugLog("File [{$i}]: {$originalName} ({$file->getSize()} bytes, hash: " . substr($fileHash, 0, 12) . ')');
 
+                // Hash duplicate - exact same file, skip entirely
                 $existujici = $processor->isDuplicate($fileHash, $firma->ico);
                 if ($existujici) {
-                    $this->debugLog("File [{$i}]: DUPLICITA #{$existujici->id}");
                     $results[] = [
                         'name' => $originalName,
-                        'error' => 'Duplicita (' . ($existujici->cislo_dokladu ?: $existujici->nazev_souboru) . ')',
+                        'status' => 'duplicate',
+                        'message' => $originalName . ' - již existuje (' . ($existujici->cislo_dokladu ?: $existujici->nazev_souboru) . ')',
                     ];
                     continue;
                 }
 
-                $this->debugLog("File [{$i}]: Calling DokladProcessor::process()...");
-                $start = microtime(true);
-                $doklady = $processor->process(
-                    $tempPath,
-                    $originalName,
-                    $firma,
-                    $fileHash,
-                    'upload'
-                );
-                $elapsed = round(microtime(true) - $start, 2);
-                $this->debugLog("File [{$i}]: DokladProcessor done ({$elapsed}s), " . count($doklady) . ' dokladů');
+                $doklady = $processor->process($tempPath, $originalName, $firma, $fileHash, 'upload');
+
+                // Determine overall status for this file
+                $status = 'ok';
+                $warnings = [];
 
                 foreach ($doklady as $doklad) {
-                    $this->debugLog("  Doklad #{$doklad->id}: stav={$doklad->stav}, typ={$doklad->typ_dokladu}");
-                    $warning = null;
-                    if ($doklad->kvalita === 'nizka') {
-                        $warning = $doklad->kvalita_poznamka ?: 'Nízká kvalita dokladu';
+                    if ($doklad->stav === 'chyba') {
+                        $status = 'error';
+                        $warnings[] = $doklad->chybova_zprava;
                     } elseif ($doklad->kvalita === 'necitelna') {
-                        $warning = $doklad->kvalita_poznamka ?: 'Doklad je nečitelný';
+                        if ($status !== 'error') $status = 'error';
+                        $warnings[] = $doklad->kvalita_poznamka ?: 'Nečitelný doklad';
+                    } elseif ($doklad->kvalita === 'nizka') {
+                        if ($status === 'ok') $status = 'warning';
+                        $warnings[] = $doklad->kvalita_poznamka ?: 'Nízká kvalita';
+                    } elseif ($doklad->duplicita_id) {
+                        if ($status === 'ok') $status = 'warning';
+                        $warnings[] = 'Možná duplicita (doklad č. ' . ($doklad->cislo_dokladu ?: '?') . ')';
                     }
-
-                    $results[] = [
-                        'name' => $doklad->nazev_souboru,
-                        'doklad' => $doklad,
-                        'error' => $doklad->stav === 'chyba' ? $doklad->chybova_zprava : null,
-                        'warning' => $warning,
-                    ];
                 }
-            }
 
-            $this->debugLog('All files processed. Results: ' . count($results));
+                $message = $originalName . ' - zpracováno';
+                if (count($doklady) > 1) {
+                    $message .= ' (' . count($doklady) . ' dokladů)';
+                }
+                if ($warnings) {
+                    $message .= ' | ' . implode(', ', array_unique($warnings));
+                }
+
+                $results[] = [
+                    'name' => $originalName,
+                    'status' => $status,
+                    'message' => $message,
+                ];
+            }
 
             if ($request->ajax()) {
-                $jsonResponse = collect($results)->map(fn($r) => [
-                    'name' => $r['name'],
-                    'status' => !empty($r['error'])
-                        ? (str_starts_with($r['error'] ?? '', 'Duplicita') ? 'duplicate' : 'error')
-                        : (!empty($r['warning']) ? 'warning' : 'ok'),
-                    'message' => !empty($r['error'])
-                        ? ($r['name'] . ' - ' . $r['error'])
-                        : ($r['name'] . ' - zpracováno' . (!empty($r['warning']) ? ' | ' . $r['warning'] : '')),
-                ])->values();
-                $this->debugLog('Returning JSON: ' . json_encode($jsonResponse, JSON_UNESCAPED_UNICODE));
-                return response()->json($jsonResponse);
+                return response()->json($results);
             }
 
-            $this->debugLog('Non-AJAX request, redirecting...');
-            $allDoklady = collect($results)->filter(fn($r) => !empty($r['doklad']) && $r['doklad']->stav !== 'chyba');
-
-            if ($allDoklady->count() === 1) {
-                return redirect()->route('doklady.show', $allDoklady->first()['doklad']);
-            }
-
-            $ok = $allDoklady->count();
-            $errors = collect($results)->filter(fn($r) => !empty($r['error']));
-            $warnings = collect($results)->filter(fn($r) => !empty($r['warning']));
-
-            $message = "Zpracováno {$ok} z " . count($results) . " dokladů.";
-            if ($warnings->isNotEmpty()) {
-                $message .= ' Upozornění: ' . $warnings->count() . ' dokladů s nízkou kvalitou.';
-            }
-            if ($errors->isNotEmpty()) {
-                $message .= ' Chyby: ' . $errors->map(fn($r) => $r['name'] . ' - ' . $r['error'])->implode('; ');
+            $ok = collect($results)->where('status', 'ok')->count();
+            $total = count($results);
+            $message = "Zpracováno {$ok} z {$total} dokladů.";
+            $warnResults = collect($results)->whereIn('status', ['warning', 'error']);
+            if ($warnResults->isNotEmpty()) {
+                $message .= ' ' . $warnResults->pluck('message')->implode('; ');
             }
 
             return redirect()->route('doklady.index')->with('flash', $message);
 
         } catch (\Throwable $e) {
-            $this->debugLog('EXCEPTION: ' . $e->getMessage());
-            $this->debugLog('  File: ' . $e->getFile() . ':' . $e->getLine());
-            $this->debugLog('  Trace: ' . substr($e->getTraceAsString(), 0, 500));
-
             Log::error('InvoiceController::store error', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),

@@ -11,17 +11,38 @@
     .upload-zone:hover, .upload-zone.dragover { border-color: #3498db; background: #ebf5fb; }
     .upload-zone p { color: #7f8c8d; margin: 0; font-size: 0.9rem; }
     .upload-zone .formats { font-size: 0.8rem; color: #95a5a6; margin-top: 0.3rem; }
-    .upload-processing { display: none; padding: 1rem; text-align: center; color: #555; background: #eaf2f8; border-radius: 8px; margin-bottom: 1.5rem; }
-    .upload-processing .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #bdc3c7; border-top-color: #3498db; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 0.5rem; vertical-align: middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .toast-container { margin-bottom: 1rem; }
-    .toast { padding: 0.6rem 1rem; border-radius: 6px; margin-bottom: 0.4rem; font-size: 0.85rem; transition: opacity 0.5s; }
-    .toast-ok { background: #d4edda; color: #155724; }
-    .toast-error { background: #f8d7da; color: #721c24; }
-    .toast-duplicate { background: #fff3cd; color: #856404; }
-    .toast-warning { background: #fff3cd; color: #856404; }
-    .toast-info { background: #d4edda; color: #155724; }
+    /* Upload list */
+    .upload-panel { display: none; border: 1px solid #d0d8e0; border-radius: 8px; margin-bottom: 1.5rem; overflow: hidden; }
+    .upload-panel.active { display: block; }
+    .upload-panel-header { background: #f0f4f8; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; color: #555; display: flex; justify-content: space-between; align-items: center; }
+    .upload-item { display: flex; align-items: center; padding: 0.45rem 1rem; border-bottom: 1px solid #eee; font-size: 0.85rem; gap: 0.6rem; transition: opacity 0.5s; }
+    .upload-item:last-child { border-bottom: none; }
+    .upload-item-icon { width: 20px; text-align: center; flex-shrink: 0; }
+    .upload-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .upload-item-size { color: #95a5a6; font-size: 0.75rem; flex-shrink: 0; }
+    .upload-item-status { font-size: 0.8rem; flex-shrink: 0; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .upload-item-dismiss { background: none; border: none; cursor: pointer; color: #bdc3c7; font-size: 1rem; padding: 0 0.3rem; line-height: 1; flex-shrink: 0; }
+    .upload-item-dismiss:hover { color: #555; }
+    .upload-item .spinner-sm { display: inline-block; width: 14px; height: 14px; border: 2px solid #bdc3c7; border-top-color: #3498db; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .upload-item.status-ok .upload-item-icon { color: #27ae60; }
+    .upload-item.status-warning .upload-item-icon { color: #e67e22; }
+    .upload-item.status-error .upload-item-icon { color: #e74c3c; }
+    .upload-item.status-duplicate .upload-item-icon { color: #95a5a6; }
+    .upload-item.status-warning, .upload-item.status-error { background: #fffaf5; }
+    .upload-item.status-warning .upload-item-status { color: #e67e22; }
+    .upload-item.status-error .upload-item-status { color: #e74c3c; }
+
+    /* Alert history */
+    .alert-history-toggle { font-size: 0.8rem; color: #95a5a6; cursor: pointer; margin-bottom: 0.5rem; display: none; }
+    .alert-history-toggle:hover { color: #555; }
+    .alert-history { display: none; border: 1px solid #e8ecf0; border-radius: 6px; margin-bottom: 1rem; }
+    .alert-history.open { display: block; }
+
+    /* Flash messages */
+    .flash-msg { padding: 0.6rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.85rem; }
+    .flash-info { background: #d4edda; color: #155724; }
 
     .toolbar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
     .search-input { flex: 1; padding: 0.4rem 0.75rem; border: 1px solid #d0d8e0; border-radius: 6px; font-size: 0.85rem; outline: none; }
@@ -86,6 +107,8 @@
     .month-link:hover { background: #d4e6f1; }
     .table-count { font-size: 0.8rem; color: #95a5a6; margin-top: 0.5rem; }
 
+    .recent-upload { color: #27ae60 !important; font-weight: 600; }
+
     .preview-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
     .preview-overlay.active { display: flex; }
     .preview-container { position: relative; width: 90vw; height: 90vh; max-width: 1000px; background: white; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
@@ -103,11 +126,14 @@
         <h2>Doklady</h2>
     </div>
 
-    <div class="toast-container" id="toastContainer">
-        @if (session('flash'))
-            <div class="toast toast-info" data-auto-hide>{{ session('flash') }}</div>
-        @endif
+    @if (session('flash'))
+        <div class="flash-msg flash-info">{{ session('flash') }}</div>
+    @endif
+
+    <div class="alert-history-toggle" id="alertHistoryToggle" onclick="toggleAlertHistory()">
+        <span id="alertHistoryArrow">&#9654;</span> Zobrazit skryté hlášky (<span id="alertHistoryCount">0</span>)
     </div>
+    <div class="alert-history" id="alertHistory"></div>
 
     @if (!$firma)
         <div class="warning-msg">Nejdříve vyplňte <a href="{{ route('firma.nastaveni') }}">nastavení firmy</a>.</div>
@@ -117,8 +143,12 @@
             <p class="formats">PDF, JPG, PNG (max 10 MB)</p>
         </div>
         <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" multiple style="display: none;">
-        <div class="upload-processing" id="uploadProcessing">
-            <span class="spinner"></span> <span id="uploadStatus">Zpracovávám doklady...</span>
+        <div class="upload-panel" id="uploadPanel">
+            <div class="upload-panel-header">
+                <span id="uploadPanelTitle">Nahrávám soubory...</span>
+                <span id="uploadPanelProgress"></span>
+            </div>
+            <div id="uploadList"></div>
         </div>
     @endif
 
@@ -140,52 +170,10 @@
             <div class="empty-state"><p>Žádné doklady neodpovídají hledání.</p></div>
         @else
 
-        @php
-            $dokladyJson = $doklady->map(function($d) {
-                return [
-                    'id' => $d->id,
-                    'created_at' => $d->created_at->format('d.m.y'),
-                    'created_at_time' => $d->created_at->format('H:i'),
-                    'created_at_iso' => $d->created_at->toISOString(),
-                    'datum_prijeti' => $d->datum_prijeti ? $d->datum_prijeti->format('d.m.y') : null,
-                    'datum_prijeti_raw' => $d->datum_prijeti ? $d->datum_prijeti->format('Y-m-d') : null,
-                    'duzp' => $d->duzp ? $d->duzp->format('d.m.y') : null,
-                    'duzp_raw' => $d->duzp ? $d->duzp->format('Y-m-d') : null,
-                    'datum_vystaveni' => $d->datum_vystaveni ? $d->datum_vystaveni->format('d.m.y') : null,
-                    'datum_vystaveni_raw' => $d->datum_vystaveni ? $d->datum_vystaveni->format('Y-m-d') : null,
-                    'datum_splatnosti' => $d->datum_splatnosti ? $d->datum_splatnosti->format('d.m.y') : null,
-                    'datum_splatnosti_raw' => $d->datum_splatnosti ? $d->datum_splatnosti->format('Y-m-d') : null,
-                    'cislo_dokladu' => $d->cislo_dokladu,
-                    'nazev_souboru' => $d->nazev_souboru,
-                    'dodavatel_nazev' => $d->dodavatel_nazev,
-                    'dodavatel_ico' => $d->dodavatel_ico,
-                    'castka_celkem' => $d->castka_celkem,
-                    'mena' => $d->mena,
-                    'castka_dph' => $d->castka_dph,
-                    'kategorie' => $d->kategorie,
-                    'stav' => $d->stav,
-                    'typ_dokladu' => $d->typ_dokladu,
-                    'kvalita' => $d->kvalita,
-                    'kvalita_poznamka' => $d->kvalita_poznamka,
-                    'zdroj' => $d->zdroj,
-                    'cesta_souboru' => $d->cesta_souboru ? true : false,
-                    'duplicita_id' => $d->duplicita_id,
-                    'show_url' => route('doklady.show', $d),
-                    'update_url' => route('doklady.update', $d),
-                    'destroy_url' => route('doklady.destroy', $d),
-                    'preview_url' => $d->cesta_souboru ? route('doklady.preview', $d) : null,
-                    'preview_ext' => strtolower(pathinfo($d->nazev_souboru, PATHINFO_EXTENSION)),
-                    'adresni' => $d->adresni,
-                    'overeno_adresat' => $d->overeno_adresat,
-                    'chybova_zprava' => $d->chybova_zprava,
-                    'raw_ai_odpoved' => $d->raw_ai_odpoved,
-                    'created_at_full' => $d->created_at->format('d.m.Y H:i'),
-                ];
-            })->values();
-        @endphp
         <script>
             var dokladyData = {!! json_encode($dokladyJson, JSON_UNESCAPED_UNICODE) !!};
             var csrfToken = '{{ csrf_token() }}';
+            var uploadUrl = '{{ route("invoices.store") }}';
             var sortCol = '{{ $sort }}';
             var sortDir = '{{ $dir }}';
             var searchQ = '{{ $q }}';
@@ -228,46 +216,74 @@
 
 @section('scripts')
 <script>
-// ===== Toast =====
-function autoHideToasts() {
-    document.querySelectorAll('.toast[data-auto-hide]').forEach(t => {
-        setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 500); }, 12000);
-    });
-}
-autoHideToasts();
+// ===== Alert history =====
+let dismissedAlerts = [];
 
-function addToast(message, type) {
-    const c = document.getElementById('toastContainer');
-    const d = document.createElement('div');
-    d.className = 'toast toast-' + type;
-    d.setAttribute('data-auto-hide', '');
-    d.textContent = message;
-    c.appendChild(d);
-    setTimeout(() => { d.style.opacity = '0'; setTimeout(() => d.remove(), 500); }, 12000);
+function toggleAlertHistory() {
+    const el = document.getElementById('alertHistory');
+    const arrow = document.getElementById('alertHistoryArrow');
+    el.classList.toggle('open');
+    arrow.innerHTML = el.classList.contains('open') ? '&#9660;' : '&#9654;';
 }
+
+function dismissUploadItem(btn) {
+    const item = btn.closest('.upload-item');
+    const msg = item.querySelector('.upload-item-status')?.textContent || '';
+    const name = item.querySelector('.upload-item-name')?.textContent || '';
+    dismissedAlerts.push({ name, msg, cls: item.className });
+    item.style.opacity = '0';
+    setTimeout(() => {
+        item.remove();
+        updateAlertHistory();
+        checkUploadPanelEmpty();
+    }, 300);
+}
+
+function updateAlertHistory() {
+    const toggle = document.getElementById('alertHistoryToggle');
+    const container = document.getElementById('alertHistory');
+    const count = document.getElementById('alertHistoryCount');
+    if (dismissedAlerts.length === 0) { toggle.style.display = 'none'; return; }
+    toggle.style.display = 'block';
+    count.textContent = dismissedAlerts.length;
+    container.innerHTML = dismissedAlerts.map(a =>
+        '<div class="upload-item" style="opacity:0.7"><span class="upload-item-name">' + a.name + '</span><span class="upload-item-status" style="color:#999">' + a.msg + '</span></div>'
+    ).join('');
+}
+
+function checkUploadPanelEmpty() {
+    const panel = document.getElementById('uploadPanel');
+    const items = panel.querySelectorAll('.upload-item');
+    if (items.length === 0) panel.classList.remove('active');
+}
+
+// ===== Flash auto-hide =====
+document.querySelectorAll('.flash-msg').forEach(el => {
+    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 10000);
+});
 
 // ===== Column definitions =====
 const COLUMNS = [
     { id: 'expand',    label: '',           tip: null, sortable: false, editable: false, fixed: true,  field: null },
-    { id: 'nahrano',   label: 'Nahráno',    tip: 'Datum a čas vložení do systému', sortable: 'created_at', editable: false, fixed: false, field: null },
-    { id: 'cas_nahrani', label: 'Čas',      tip: 'Čas nahrání dokladu', sortable: false, editable: false, fixed: false, field: null },
-    { id: 'datum_prijeti', label: 'Přijetí', tip: 'Datum přijetí dokladu do účetnictví', sortable: 'datum_prijeti', editable: 'date', fixed: false, field: 'datum_prijeti' },
-    { id: 'duzp',      label: 'DUZP',       tip: 'Datum uskutečnění zdanitelného plnění', sortable: 'duzp', editable: 'date', fixed: false, field: 'duzp' },
-    { id: 'vystaveni', label: 'Vystavení',  tip: 'Datum vystavení dokladu dodavatelem', sortable: 'datum_vystaveni', editable: 'date', fixed: false, field: 'datum_vystaveni' },
+    { id: 'nahrano',   label: 'Nahrano',    tip: 'Datum a cas vlozeni do systemu', sortable: 'created_at', editable: false, fixed: false, field: null },
+    { id: 'cas_nahrani', label: 'Cas',      tip: 'Cas nahrani dokladu', sortable: false, editable: false, fixed: false, field: null },
+    { id: 'datum_prijeti', label: 'Prijeti', tip: 'Datum prijeti dokladu do ucetnictvi', sortable: 'datum_prijeti', editable: 'date', fixed: false, field: 'datum_prijeti' },
+    { id: 'duzp',      label: 'DUZP',       tip: 'Datum uskutecneni zdanitelneho plneni', sortable: 'duzp', editable: 'date', fixed: false, field: 'duzp' },
+    { id: 'vystaveni', label: 'Vystaveni',  tip: 'Datum vystaveni dokladu dodavatelem', sortable: 'datum_vystaveni', editable: 'date', fixed: false, field: 'datum_vystaveni' },
     { id: 'splatnost', label: 'Splatnost',  tip: 'Datum splatnosti', sortable: 'datum_splatnosti', editable: 'date', fixed: false, field: 'datum_splatnosti' },
-    { id: 'cislo',     label: 'Číslo',      tip: 'Číslo/variabilní symbol dokladu', sortable: false, editable: 'text', fixed: false, field: 'cislo_dokladu' },
+    { id: 'cislo',     label: 'Cislo',      tip: 'Cislo/variabilni symbol dokladu', sortable: false, editable: 'text', fixed: false, field: 'cislo_dokladu' },
     { id: 'nahled',    label: '',            tip: null, sortable: false, editable: false, fixed: true,  field: null },
-    { id: 'dodavatel', label: 'Dodavatel',  tip: 'Název dodavatele/vystavitele', sortable: false, editable: 'text', fixed: false, field: 'dodavatel_nazev' },
-    { id: 'ico',       label: 'IČ',         tip: 'IČO dodavatele', sortable: false, editable: 'text', fixed: false, field: 'dodavatel_ico' },
-    { id: 'castka',    label: 'Částka',      tip: 'Celková částka s DPH', sortable: false, editable: 'text', fixed: false, field: 'castka_celkem' },
-    { id: 'mena',      label: 'Měna',       tip: 'Měna dokladu', sortable: false, editable: 'text', fixed: false, field: 'mena' },
-    { id: 'dph',       label: 'DPH',        tip: 'Částka DPH', sortable: false, editable: 'text', fixed: false, field: 'castka_dph' },
-    { id: 'kategorie', label: 'Kategorie',  tip: 'Účetní kategorie nákladu', sortable: false, editable: 'text', fixed: false, field: 'kategorie' },
-    { id: 'stav',      label: 'Stav',       tip: 'Stav zpracování', sortable: false, editable: false, fixed: false, field: null },
-    { id: 'typ',       label: 'Typ',        tip: 'Typ dokladu (faktura, účtenka, ...)', sortable: false, editable: false, fixed: false, field: null },
-    { id: 'kvalita',   label: 'Kvalita',    tip: 'Kvalita čitelnosti dokladu', sortable: false, editable: false, fixed: false, field: null },
-    { id: 'zdroj',     label: 'Zdroj',      tip: 'Způsob vložení (ruční/email)', sortable: false, editable: false, fixed: false, field: null },
-    { id: 'soubor',    label: 'Soubor',     tip: 'Název nahraného souboru', sortable: false, editable: false, fixed: false, field: null },
+    { id: 'dodavatel', label: 'Dodavatel',  tip: 'Nazev dodavatele/vystavitele', sortable: false, editable: 'text', fixed: false, field: 'dodavatel_nazev' },
+    { id: 'ico',       label: 'IC',         tip: 'ICO dodavatele', sortable: false, editable: 'text', fixed: false, field: 'dodavatel_ico' },
+    { id: 'castka',    label: 'Castka',      tip: 'Celkova castka s DPH', sortable: false, editable: 'text', fixed: false, field: 'castka_celkem' },
+    { id: 'mena',      label: 'Mena',       tip: 'Mena dokladu', sortable: false, editable: 'text', fixed: false, field: 'mena' },
+    { id: 'dph',       label: 'DPH',        tip: 'Castka DPH', sortable: false, editable: 'text', fixed: false, field: 'castka_dph' },
+    { id: 'kategorie', label: 'Kategorie',  tip: 'Ucetni kategorie nakladu', sortable: false, editable: 'text', fixed: false, field: 'kategorie' },
+    { id: 'stav',      label: 'Stav',       tip: 'Stav zpracovani', sortable: false, editable: false, fixed: false, field: null },
+    { id: 'typ',       label: 'Typ',        tip: 'Typ dokladu (faktura, uctenka, ...)', sortable: false, editable: false, fixed: false, field: null },
+    { id: 'kvalita',   label: 'Kvalita',    tip: 'Kvalita citelnosti dokladu', sortable: false, editable: false, fixed: false, field: null },
+    { id: 'zdroj',     label: 'Zdroj',      tip: 'Zpusob vlozeni (rucni/email)', sortable: false, editable: false, fixed: false, field: null },
+    { id: 'soubor',    label: 'Soubor',     tip: 'Nazev nahraneho souboru', sortable: false, editable: false, fixed: false, field: null },
     { id: 'smazat',    label: '',            tip: null, sortable: false, editable: false, fixed: true,  field: null },
 ];
 
@@ -278,11 +294,9 @@ function loadPref(key, def) { try { const v = localStorage.getItem(key); return 
 function savePref(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
 let visibleCols = loadPref('doklady_columns', DEFAULT_VISIBLE);
-// Ensure fixed cols always present
 FIXED_COLS.forEach(c => { if (!visibleCols.includes(c)) visibleCols.push(c); });
 
 let colOrder = loadPref('doklady_column_order', COLUMNS.map(c => c.id));
-// Ensure all columns are in order (add any new ones at end)
 COLUMNS.forEach(c => { if (!colOrder.includes(c.id)) colOrder.push(c.id); });
 
 function getOrderedVisible() {
@@ -294,6 +308,7 @@ function getColDef(id) { return COLUMNS.find(c => c.id === id); }
 // ===== Build column panel =====
 function buildColPanel() {
     const panel = document.getElementById('colPanel');
+    if (!panel) return;
     panel.innerHTML = '';
     COLUMNS.filter(c => !c.fixed && c.label).forEach(c => {
         const lbl = document.createElement('label');
@@ -312,18 +327,32 @@ function buildColPanel() {
     });
 }
 
+// ===== Recent upload check =====
+function isRecentUpload(isoDate) {
+    if (!isoDate) return false;
+    const uploadTime = new Date(isoDate).getTime();
+    const oneHourAgo = Date.now() - 3600000;
+    return uploadTime > oneHourAgo;
+}
+
 // ===== Cell value =====
 function cellValue(d, colId) {
     switch(colId) {
         case 'expand': return '<button class="expand-btn" onclick="toggleDetail('+d.id+',this)">&#9654;</button>';
-        case 'nahrano': return d.created_at || '-';
-        case 'cas_nahrani': return d.created_at_time || '-';
+        case 'nahrano': {
+            const cls = isRecentUpload(d.created_at_iso) ? ' class="recent-upload"' : '';
+            return '<span'+cls+'>' + (d.created_at || '-') + '</span>';
+        }
+        case 'cas_nahrani': {
+            const cls = isRecentUpload(d.created_at_iso) ? ' class="recent-upload"' : '';
+            return '<span'+cls+'>' + (d.created_at_time || '-') + '</span>';
+        }
         case 'datum_prijeti': return d.datum_prijeti || '-';
         case 'duzp': return d.duzp || '-';
         case 'vystaveni': return d.datum_vystaveni || '-';
         case 'splatnost': return d.datum_splatnosti || '-';
-        case 'cislo': return '<a href="'+d.show_url+'">'+(d.cislo_dokladu || d.nazev_souboru)+'</a>' + (d.duplicita_id ? '<span class="badge-dup" title="Možná duplicita">DUP</span>' : '');
-        case 'nahled': return d.preview_url ? '<a href="#" class="btn-preview" title="Náhled" onclick="openPreview(\''+d.preview_url+'\',\''+d.preview_ext+'\');return false;">&#128065;</a>' : '';
+        case 'cislo': return '<a href="'+d.show_url+'">'+(d.cislo_dokladu || d.nazev_souboru)+'</a>' + (d.duplicita_id ? '<span class="badge-dup" title="Mozna duplicita">DUP</span>' : '');
+        case 'nahled': return d.preview_url ? '<a href="#" class="btn-preview" title="Nahled" onclick="openPreview(\''+d.preview_url+'\',\''+d.preview_ext+'\');return false;">&#128065;</a>' : '';
         case 'dodavatel': return d.dodavatel_nazev || '-';
         case 'ico': return d.dodavatel_ico || '-';
         case 'castka': return d.castka_celkem ? Number(d.castka_celkem).toLocaleString('cs-CZ', {minimumFractionDigits:2, maximumFractionDigits:2}) : '-';
@@ -331,18 +360,18 @@ function cellValue(d, colId) {
         case 'dph': return d.castka_dph ? Number(d.castka_dph).toLocaleString('cs-CZ', {minimumFractionDigits:2, maximumFractionDigits:2}) : '-';
         case 'kategorie': return d.kategorie || '-';
         case 'stav':
-            if (d.stav === 'dokonceno') return '<span class="stav-dokonceno" title="Dokončeno">&#10003;</span>';
-            if (d.stav === 'nekvalitni') return '<span class="stav-nekvalitni" title="'+(d.kvalita_poznamka||'Nízká kvalita')+'">&#9888;</span>';
+            if (d.stav === 'dokonceno') return '<span class="stav-dokonceno" title="Dokonceno">&#10003;</span>';
+            if (d.stav === 'nekvalitni') return '<span class="stav-nekvalitni" title="'+(d.kvalita_poznamka||'Nizka kvalita')+'">&#9888;</span>';
             if (d.stav === 'chyba') return '<span class="stav-chyba">Chyba</span>';
             return '<span class="stav-zpracovava">'+d.stav+'</span>';
         case 'typ':
-            const typLabels = {faktura:'Faktura', uctenka:'Účtenka', pokladni_doklad:'Pokl. dokl.', dobropis:'Dobropis', zalohova_faktura:'Zál. faktura', pokuta:'Pokuta', jine:'Jiné'};
+            const typLabels = {faktura:'Faktura', uctenka:'Uctenka', pokladni_doklad:'Pokl. dokl.', dobropis:'Dobropis', zalohova_faktura:'Zal. faktura', pokuta:'Pokuta', jine:'Jine'};
             return typLabels[d.typ_dokladu] || d.typ_dokladu || '-';
         case 'kvalita':
-            if (d.kvalita === 'nizka') return '<span class="badge-kvalita kvalita-nizka" title="'+(d.kvalita_poznamka||'')+'">Nízká</span>';
-            if (d.kvalita === 'necitelna') return '<span class="badge-kvalita kvalita-necitelna" title="'+(d.kvalita_poznamka||'')+'">Nečitelná</span>';
+            if (d.kvalita === 'nizka') return '<span class="badge-kvalita kvalita-nizka" title="'+(d.kvalita_poznamka||'')+'">Nizka</span>';
+            if (d.kvalita === 'necitelna') return '<span class="badge-kvalita kvalita-necitelna" title="'+(d.kvalita_poznamka||'')+'">Necitelna</span>';
             return '';
-        case 'zdroj': return d.zdroj === 'email' ? 'Email' : 'Ruční';
+        case 'zdroj': return d.zdroj === 'email' ? 'Email' : 'Rucni';
         case 'soubor': return d.nazev_souboru || '-';
         case 'smazat': return '<form action="'+d.destroy_url+'" method="POST" style="display:inline" onsubmit="return confirm(\'Smazat doklad '+(d.cislo_dokladu||d.nazev_souboru)+'?\')"><input type="hidden" name="_token" value="'+csrfToken+'"><input type="hidden" name="_method" value="DELETE"><button type="submit" class="btn-del-sm" title="Smazat">&times;</button></form>';
         default: return '-';
@@ -376,7 +405,6 @@ function renderTable() {
     cols.forEach(colId => {
         const c = getColDef(colId);
         const draggable = !c.fixed ? ' draggable="true"' : '';
-        const sortAttr = c.sortable ? ` data-sort="${c.sortable}"` : '';
         let label = c.label;
         if (c.sortable) {
             const newDir = (sortCol === c.sortable && sortDir === 'desc') ? 'asc' : 'desc';
@@ -403,7 +431,7 @@ function renderTable() {
         html += '</tr>';
     });
     html += '</tbody></table>';
-    html += '<div class="table-count">'+dokladyData.length+' '+(dokladyData.length===1?'doklad':(dokladyData.length<5?'doklady':'dokladů'))+'</div>';
+    html += '<div class="table-count">'+dokladyData.length+' '+(dokladyData.length===1?'doklad':(dokladyData.length<5?'doklady':'dokladu'))+'</div>';
 
     container.innerHTML = html;
     initDragDrop();
@@ -428,11 +456,11 @@ function toggleDetail(id, btn) {
 
     const labels = {
         nazev_souboru: 'Soubor', stav: 'Stav', typ_dokladu: 'Typ dokladu', kvalita: 'Kvalita',
-        kvalita_poznamka: 'Poznámka ke kvalitě',
-        dodavatel_nazev: 'Dodavatel', dodavatel_ico: 'IČO dodavatele',
-        cislo_dokladu: 'Číslo dokladu', datum_vystaveni: 'Datum vystavení', datum_prijeti: 'Datum přijetí',
-        duzp: 'DUZP', datum_splatnosti: 'Datum splatnosti', castka_celkem: 'Celková částka', mena: 'Měna',
-        castka_dph: 'DPH', kategorie: 'Kategorie', zdroj: 'Zdroj', created_at_full: 'Nahráno',
+        kvalita_poznamka: 'Poznamka ke kvalite',
+        dodavatel_nazev: 'Dodavatel', dodavatel_ico: 'ICO dodavatele',
+        cislo_dokladu: 'Cislo dokladu', datum_vystaveni: 'Datum vystaveni', datum_prijeti: 'Datum prijeti',
+        duzp: 'DUZP', datum_splatnosti: 'Datum splatnosti', castka_celkem: 'Celkova castka', mena: 'Mena',
+        castka_dph: 'DPH', kategorie: 'Kategorie', zdroj: 'Zdroj', created_at_full: 'Nahrano',
         chybova_zprava: 'Chyba'
     };
     const fields = ['nazev_souboru','stav','typ_dokladu','kvalita','kvalita_poznamka',
@@ -445,20 +473,20 @@ function toggleDetail(id, btn) {
         let val = d[f];
         if (val === null || val === undefined || val === '') val = '-';
         if (f === 'stav') {
-            if (val === 'dokonceno') val = '<span class="stav-dokonceno">Dokončeno</span>';
-            else if (val === 'nekvalitni') val = '<span class="stav-nekvalitni">Nekvalitní</span>';
+            if (val === 'dokonceno') val = '<span class="stav-dokonceno">Dokonceno</span>';
+            else if (val === 'nekvalitni') val = '<span class="stav-nekvalitni">Nekvalitni</span>';
             else if (val === 'chyba') val = '<span class="stav-chyba">Chyba</span>';
         }
         if (f === 'typ_dokladu') {
-            const typL = {faktura:'Faktura', uctenka:'Účtenka', pokladni_doklad:'Pokladní doklad', dobropis:'Dobropis', zalohova_faktura:'Zálohová faktura', pokuta:'Pokuta', jine:'Jiné'};
+            const typL = {faktura:'Faktura', uctenka:'Uctenka', pokladni_doklad:'Pokladni doklad', dobropis:'Dobropis', zalohova_faktura:'Zalohova faktura', pokuta:'Pokuta', jine:'Jine'};
             val = typL[val] || val || '-';
         }
         if (f === 'kvalita') {
-            if (val === 'dobra') val = 'Dobrá';
-            else if (val === 'nizka') val = '<span class="stav-nekvalitni">Nízká</span>';
-            else if (val === 'necitelna') val = '<span class="stav-chyba">Nečitelná</span>';
+            if (val === 'dobra') val = 'Dobra';
+            else if (val === 'nizka') val = '<span class="stav-nekvalitni">Nizka</span>';
+            else if (val === 'necitelna') val = '<span class="stav-chyba">Necitelna</span>';
         }
-        if (f === 'zdroj') val = val === 'email' ? 'Email' : 'Ruční nahrání';
+        if (f === 'zdroj') val = val === 'email' ? 'Email' : 'Rucni nahrani';
         if ((f === 'castka_celkem' || f === 'castka_dph') && val !== '-') {
             val = Number(val).toLocaleString('cs-CZ', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ' + (d.mena || '');
         }
@@ -503,15 +531,11 @@ function startEdit(icon, id, colId) {
             body: JSON.stringify({field: c.field, value: newVal || null})
         }).then(r => r.json()).then(res => {
             if (res.ok) {
-                // Update local data and re-render cell
                 if (c.editable === 'date' && newVal) {
                     const parts = newVal.split('-');
                     d[colId === 'vystaveni' ? 'datum_vystaveni' : colId === 'splatnost' ? 'datum_splatnosti' : colId] = parts[2]+'.'+parts[1]+'.'+parts[0].slice(2);
                     d[(colId === 'vystaveni' ? 'datum_vystaveni' : colId === 'splatnost' ? 'datum_splatnosti' : colId) + '_raw'] = newVal;
                 } else {
-                    // text fields
-                    if (c.field) d[c.field.replace('dodavatel_','dodavatel_')] = newVal;
-                    // Map field back to data key
                     const keyMap = {dodavatel_nazev:'dodavatel_nazev', dodavatel_ico:'dodavatel_ico', cislo_dokladu:'cislo_dokladu', castka_celkem:'castka_celkem', mena:'mena', castka_dph:'castka_dph', kategorie:'kategorie'};
                     if (keyMap[c.field]) d[keyMap[c.field]] = newVal;
                 }
@@ -557,8 +581,8 @@ function initDragDrop() {
 // ===== Upload =====
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
-const uploadProcessing = document.getElementById('uploadProcessing');
-const uploadStatus = document.getElementById('uploadStatus');
+const uploadPanel = document.getElementById('uploadPanel');
+const uploadList = document.getElementById('uploadList');
 
 if (dropZone) {
     dropZone.addEventListener('click', () => fileInput.click());
@@ -566,6 +590,12 @@ if (dropZone) {
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); uploadFiles(e.dataTransfer.files); });
     fileInput.addEventListener('change', () => { uploadFiles(fileInput.files); fileInput.value = ''; });
+}
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
 function uploadFiles(files) {
@@ -577,49 +607,162 @@ function uploadFiles(files) {
     }
     if (!validFiles.length) return;
 
+    // Show upload panel with file list
     dropZone.style.display = 'none';
-    uploadProcessing.style.display = 'block';
-    const noun = validFiles.length === 1 ? 'doklad' : (validFiles.length < 5 ? 'doklady' : 'dokladů');
-    uploadStatus.textContent = 'Zpracovávám ' + validFiles.length + ' ' + noun + '...';
+    uploadPanel.classList.add('active');
+    document.getElementById('uploadPanelTitle').textContent = 'Nahravani souboru...';
+    document.getElementById('uploadPanelProgress').textContent = '0 / ' + validFiles.length;
 
+    // Build file list
+    uploadList.innerHTML = '';
+    const fileItems = [];
+    validFiles.forEach((file, i) => {
+        const item = document.createElement('div');
+        item.className = 'upload-item status-waiting';
+        item.id = 'upload-item-' + i;
+        item.innerHTML =
+            '<span class="upload-item-icon"><span class="spinner-sm"></span></span>' +
+            '<span class="upload-item-name">' + file.name + '</span>' +
+            '<span class="upload-item-size">' + formatSize(file.size) + '</span>' +
+            '<span class="upload-item-status">Ceka...</span>';
+        uploadList.appendChild(item);
+        fileItems.push(item);
+    });
+
+    // Parallel upload with max concurrency
+    const MAX_CONCURRENT = 2;
+    let nextIndex = 0;
+    let completed = 0;
+    let hasAlerts = false;
+
+    function processNext() {
+        if (nextIndex >= validFiles.length) return;
+        const idx = nextIndex++;
+        const file = validFiles[idx];
+        const item = fileItems[idx];
+
+        // Mark as processing
+        item.className = 'upload-item status-processing';
+        item.querySelector('.upload-item-status').textContent = 'Zpracovavam...';
+
+        uploadSingleFile(file).then(result => {
+            completed++;
+            document.getElementById('uploadPanelProgress').textContent = completed + ' / ' + validFiles.length;
+
+            // Update item status
+            const icon = item.querySelector('.upload-item-icon');
+            const status = item.querySelector('.upload-item-status');
+
+            if (result.status === 'ok') {
+                item.className = 'upload-item status-ok';
+                icon.innerHTML = '&#10003;';
+                status.textContent = result.message || 'Nahrano';
+            } else if (result.status === 'warning') {
+                item.className = 'upload-item status-warning';
+                icon.innerHTML = '&#9888;';
+                status.textContent = result.message || 'Nahrano s upozornenim';
+                hasAlerts = true;
+                // Add dismiss button
+                const dismissBtn = document.createElement('button');
+                dismissBtn.className = 'upload-item-dismiss';
+                dismissBtn.innerHTML = '&times;';
+                dismissBtn.onclick = function() { dismissUploadItem(this); };
+                item.appendChild(dismissBtn);
+            } else if (result.status === 'duplicate') {
+                item.className = 'upload-item status-duplicate';
+                icon.innerHTML = '&#8212;';
+                status.textContent = result.message || 'Jiz existuje';
+            } else {
+                item.className = 'upload-item status-error';
+                icon.innerHTML = '&#10007;';
+                status.textContent = result.message || 'Chyba';
+                hasAlerts = true;
+                const dismissBtn = document.createElement('button');
+                dismissBtn.className = 'upload-item-dismiss';
+                dismissBtn.innerHTML = '&times;';
+                dismissBtn.onclick = function() { dismissUploadItem(this); };
+                item.appendChild(dismissBtn);
+            }
+
+            // Check if all done
+            if (completed === validFiles.length) {
+                onAllComplete();
+            }
+
+            // Start next file
+            processNext();
+        });
+
+        // Start another concurrent upload
+        if (nextIndex < validFiles.length && (nextIndex - completed) < MAX_CONCURRENT) {
+            processNext();
+        }
+    }
+
+    function onAllComplete() {
+        document.getElementById('uploadPanelTitle').textContent = 'Nahravani dokonceno';
+        dropZone.style.display = 'block';
+
+        // Fetch fresh doklady data and update table (no page reload)
+        fetch(window.location.pathname + (window.location.search || ''), {
+            headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
+        }).then(r => r.json()).then(data => {
+            dokladyData = data;
+            renderTable();
+        }).catch(() => {});
+
+        // Auto-hide success and duplicate items after 10s
+        setTimeout(() => {
+            fileItems.forEach(item => {
+                if (item.classList.contains('status-ok') || item.classList.contains('status-duplicate')) {
+                    item.style.opacity = '0';
+                    setTimeout(() => {
+                        item.remove();
+                        checkUploadPanelEmpty();
+                    }, 500);
+                }
+            });
+        }, 10000);
+    }
+
+    // Start uploads
+    for (let i = 0; i < Math.min(MAX_CONCURRENT, validFiles.length); i++) {
+        processNext();
+    }
+}
+
+function uploadSingleFile(file) {
     const formData = new FormData();
     formData.append('_token', csrfToken);
-    validFiles.forEach(f => formData.append('documents[]', f));
+    formData.append('documents[]', file);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
 
-    fetch('{{ route("invoices.store") }}', {
-        method: 'POST', body: formData,
+    return fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
         headers: {'X-Requested-With':'XMLHttpRequest','Accept':'application/json'},
         signal: controller.signal,
     }).then(r => {
         clearTimeout(timeoutId);
-        uploadStatus.textContent = 'Zpracovávám odpověď (HTTP ' + r.status + ')...';
-        const contentType = r.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-            return r.text().then(body => {
-                throw new Error('Server vrátil HTTP ' + r.status + ' (' + contentType + '): ' + body.substring(0, 200));
-            });
+        const ct = r.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+            return r.text().then(body => ({
+                status: 'error',
+                message: file.name + ' - HTTP ' + r.status + ': ' + body.substring(0, 100)
+            }));
         }
-        return r.json();
-    }).then(results => {
-        uploadProcessing.style.display = 'none';
-        dropZone.style.display = 'block';
-        if (Array.isArray(results)) {
-            results.forEach(r => addToast(r.message, r.status));
-        } else {
-            addToast('Neočekávaná odpověď ze serveru.', 'error');
-        }
-        setTimeout(() => window.location.href = '{{ route("doklady.index") }}', 1500);
+        return r.json().then(results => {
+            if (Array.isArray(results) && results.length > 0) return results[0];
+            return { status: 'error', message: file.name + ' - prazdna odpoved' };
+        });
     }).catch(err => {
         clearTimeout(timeoutId);
-        dropZone.style.display = 'block';
-        uploadProcessing.style.display = 'none';
-        const msg = err.name === 'AbortError'
-            ? 'Časový limit vypršel (90s). Zkontrolujte diagnose.php?mode=log pro detaily.'
-            : (err.message || 'Chyba při odesílání. Zkuste to znovu.');
-        addToast(msg, 'error');
+        return {
+            status: 'error',
+            message: err.name === 'AbortError' ? 'Casovy limit (120s)' : (err.message || 'Chyba site')
+        };
     });
 }
 
@@ -632,14 +775,14 @@ document.querySelector('.search-input')?.addEventListener('keydown', function(e)
 function openPreview(url, ext) {
     const content = document.getElementById('previewContent');
     const overlay = document.getElementById('previewOverlay');
-    content.innerHTML = ext === 'pdf' ? '<iframe src="'+url+'"></iframe>' : '<img src="'+url+'" alt="Náhled dokladu">';
+    content.innerHTML = ext === 'pdf' ? '<iframe src="'+url+'"></iframe>' : '<img src="'+url+'" alt="Nahled dokladu">';
     overlay.classList.add('active');
 }
 function closePreview() {
     document.getElementById('previewOverlay').classList.remove('active');
     document.getElementById('previewContent').innerHTML = '';
 }
-document.getElementById('previewOverlay').addEventListener('click', function(e) { if (e.target === this) closePreview(); });
+document.getElementById('previewOverlay')?.addEventListener('click', function(e) { if (e.target === this) closePreview(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePreview(); });
 
 // ===== Init =====
