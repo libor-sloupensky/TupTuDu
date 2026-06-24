@@ -20,6 +20,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Vygenerovat config.php z GitHub Secrets
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+        run: |
+          # Bezpečně escapuje hodnotu pro PHP řetězec v jednoduchých uvozovkách
+          # (zpětné lomítko a apostrof) — přes bash expanzi, bez sedu.
+          esc() { local s=$1; s=${s//\\/\\\\}; s=${s//\'/\\\'}; printf '%s' "$s"; }
+
+          cat > config.php << PHPEOF
+          <?php
+          // Generováno automaticky při deployi z GitHub Secrets — needitovat ručně.
+          return [
+              'db_host' => '$(esc "$DB_HOST")',
+              'db_name' => '$(esc "$DB_NAME")',
+              'db_user' => '$(esc "$DB_USER")',
+              'db_pass' => '$(esc "$DB_PASS")',
+          ];
+          PHPEOF
+
+          echo "config.php vygenerován (hodnoty skryté)."
+
       - name: Deploy via lftp (mirror)
         run: |
           sudo apt-get install -y lftp > /dev/null 2>&1
