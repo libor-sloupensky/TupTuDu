@@ -1,0 +1,11 @@
+/.claude
+/.idea
+/.vscode
+/.fleet
+.DS_Store
+Thumbs.db
+.env
+*.log
+/node_modules
+/temporary
+/.tmp

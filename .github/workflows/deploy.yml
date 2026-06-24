@@ -1,0 +1,53 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Jeden deploy najednou. Nové pushy počkají, až předchozí doběhne —
+# zabrání souběžným lftp přenosům, které by si mohly překryvat soubory.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy via FTP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via lftp (mirror)
+        run: |
+          sudo apt-get install -y lftp > /dev/null 2>&1
+
+          LFTP_CMDS=$(mktemp)
+          cat > "$LFTP_CMDS" << 'LFTPEOF'
+          set ftp:passive-mode yes
+          set ftp:ssl-allow no
+          set net:max-retries 3
+          set net:reconnect-interval-base 5
+          set net:timeout 30
+          set net:connection-limit 3
+          mirror --reverse --delete --no-perms --parallel=3 --verbose \
+            --exclude .git/ \
+            --exclude .github/ \
+            --exclude .gitignore \
+            --exclude .claude/ \
+            --exclude CLAUDE.md \
+            --exclude README.md \
+            . .
+          quit
+          LFTPEOF
+          sed -i 's/^          //' "$LFTP_CMDS"
+
+          echo "--- lftp commands ---"
+          cat "$LFTP_CMDS"
+          echo "---"
+
+          lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" < "$LFTP_CMDS"
+          rm -f "$LFTP_CMDS"
+          echo "=== Deploy complete ==="
