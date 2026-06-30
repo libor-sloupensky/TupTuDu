@@ -120,6 +120,9 @@ return [
 
     'master_ico' => env('MASTER_ICO'),
 
+    // Heslo master admina — jen z env (GitHub Secret MASTER_PASSWORD), NIKDY v gitu.
+    'master_password' => env('MASTER_PASSWORD'),
+
     'migrate_token' => env('MIGRATE_TOKEN'),
 
     'cron_token' => env('CRON_TOKEN'),

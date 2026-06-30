@@ -109,6 +109,7 @@ jobs:
           MAIL_FROM_ADDRESS="noreply@tuptudu.com"
           MAIL_FROM_NAME="TupTuDu"
           MASTER_ICO=07994605
+          MASTER_PASSWORD=${{ secrets.MASTER_PASSWORD }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_MODEL=claude-haiku-4-5-20251001
           ANTHROPIC_MODEL_HAIKU=claude-haiku-4-5

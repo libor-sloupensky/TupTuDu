@@ -1,0 +1,95 @@
+/* TupTuDu — sdílené brand tokeny + základní komponenty.
+   Styl podle kalkulia (oranžová na světlém základu), vlastní odstín oranžové.
+   Pravidlo (CLAUDE.md): brand barvy NIKDY natvrdo hex — vždy var(--c-*). */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
+
+:root {
+    /* Brand oranžová — vlastní odstín (kalkulio má #dd5500) */
+    --c-primary: #e8590c;
+    --c-primary-text: #b5430a;        /* hover + odkazy v textu */
+    --c-primary-10: color-mix(in srgb, var(--c-primary) 8%, transparent);
+    --c-primary-20: color-mix(in srgb, var(--c-primary) 16%, transparent);
+
+    /* Neutrály — světlý základ */
+    --c-bg: #f7f5f2;
+    --c-surface: #ffffff;
+    --c-text: #2a2a2a;
+    --c-text-secondary: #666666;
+    --c-border: #e5e1dc;
+
+    --c-ok: #2e7d52;
+    --c-error: #c0392b;
+
+    /* Tvar / stín / font */
+    --s-radius: 8px;
+    --s-radius-lg: 12px;
+    --s-shadow: 0 4px 12px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+    --s-font: 'Nunito', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: var(--s-font);
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+a { color: var(--c-primary-text); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.brand { color: var(--c-primary); }
+
+/* Topbar s odkazem vpravo nahoře */
+.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.5rem; border-bottom: 1px solid var(--c-border);
+    background: var(--c-surface);
+}
+.topbar .brand-title { font-weight: 800; font-size: 1.1rem; }
+
+/* Tlačítka */
+.btn {
+    display: inline-block; cursor: pointer; font-family: var(--s-font); font-weight: 700;
+    padding: .55rem 1rem; border-radius: var(--s-radius); border: 1px solid var(--c-border);
+    background: var(--c-surface); color: var(--c-text); font-size: .95rem;
+}
+.btn:hover { text-decoration: none; border-color: var(--c-primary); }
+.btn-primary { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+.btn-primary:hover { background: var(--c-primary-text); border-color: var(--c-primary-text); }
+.btn-danger { color: var(--c-error); border-color: color-mix(in srgb, var(--c-error) 50%, var(--c-border)); }
+.btn-sm { padding: .35rem .6rem; font-size: .85rem; }
+
+/* Karty */
+.card {
+    background: var(--c-surface); border: 1px solid var(--c-border);
+    border-radius: var(--s-radius-lg); box-shadow: var(--s-shadow); padding: 2rem;
+}
+
+/* Formuláře */
+label { display: block; font-size: .85rem; color: var(--c-text-secondary); margin: 0 0 .35rem; font-weight: 700; }
+input[type=text], input[type=email], input[type=password] {
+    width: 100%; padding: .6rem .75rem; margin-bottom: 1rem; font-family: var(--s-font);
+    background: var(--c-surface); color: var(--c-text);
+    border: 1px solid var(--c-border); border-radius: var(--s-radius); font-size: 1rem; font-weight: 600;
+}
+input:focus { outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 3px var(--c-primary-10); }
+
+/* Tabulky */
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .65rem .5rem; border-bottom: 1px solid var(--c-border); font-size: .95rem; }
+th { color: var(--c-text-secondary); }
+
+/* Štítky / role */
+.tag { font-size: .8rem; padding: .15rem .55rem; border-radius: 999px; border: 1px solid var(--c-border); color: var(--c-text-secondary); }
+.tag.vlastnik { color: var(--c-primary); border-color: var(--c-primary); }
+
+/* Flash / chyby */
+.flash { padding: .6rem .9rem; border-radius: var(--s-radius); margin-bottom: 1rem; font-weight: 700; }
+.flash.ok { background: color-mix(in srgb, var(--c-ok) 12%, transparent); color: var(--c-ok); }
+.flash.chyba { background: color-mix(in srgb, var(--c-error) 12%, transparent); color: var(--c-error); }
+
+.muted { color: var(--c-text-secondary); }
