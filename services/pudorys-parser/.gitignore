@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Testovací vzorky SVG (odvozené z CubiCasa5K, CC BY-NC 4.0).
+# Nedistribuovat v komerčním produktu — pro produkční nasazení
+# je potřeba získat data s komerčně kompatibilní licencí.
+# Zatím jsou v repo pro dev účely; pro produkční nasazení je
+# ideálně přesunout mimo git:
+# samples/*/model.svg
+# samples/*/output.json
+!samples/.gitkeep
+
+# Lokální výstupy
+out/
+*.json
+!tests/fixtures/*.json
+!samples/*/output.json

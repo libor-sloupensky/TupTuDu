@@ -1,0 +1,92 @@
+/**
+ * Chat Widget — sdílené styly pro AI chat (koncept, poptávky, budoucí moduly).
+ * Třídy používají prefix kk- (Kalkulio Koncept — historický, zachováno).
+ */
+
+/* Zprávy */
+.kk-chat-msg {
+    padding: 8px 12px;
+    border-radius: 10px;
+    max-width: 85%;
+    font-size: 13px;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+/* Vizuálně skrytý prefix "Já:" / "AI:" — viditelný JEN při copy do clipboardu.
+   Standardní screen-reader-only trik. */
+.kk-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.kk-chat-user {
+    background: #fff7ed;
+    color: #9a3412;
+    margin-left: auto;
+    border-bottom-right-radius: 2px;
+}
+
+.kk-chat-ai {
+    background: #f3f4f6;
+    color: #1f2937;
+    margin-right: auto;
+    border-bottom-left-radius: 2px;
+}
+
+/* Volby (klikatelná tlačítka) */
+.kk-volby {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.kk-volba {
+    display: block;
+    text-align: left;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #374151;
+}
+
+.kk-volba:hover {
+    border-color: var(--c-primary, #dd5500);
+    background: #fff7ed;
+}
+
+.kk-volba-x {
+    font-weight: 600;
+}
+
+/* Spinner */
+@keyframes kkSpin {
+    to { transform: rotate(360deg); }
+}
+
+.kk-spinner {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.kk-spinner svg {
+    animation: kkSpin 1s linear infinite;
+}

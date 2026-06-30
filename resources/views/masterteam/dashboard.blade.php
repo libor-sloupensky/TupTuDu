@@ -21,11 +21,11 @@
 
         <nav style="margin-top:1.5rem;">
             <ul>
+                <li><a href="/masterteam/koncept">Koncept (editor půdorysů)</a></li>
+                <li><a href="/masterteam/pravidla-objektu">Pravidla objektů</a></li>
                 <li><a href="/masterteam/uzivatele">Správa uživatelů</a></li>
             </ul>
         </nav>
-
-        <p class="muted" style="margin-top:1.5rem;">Modul Koncept přibude v další etapě.</p>
     </main>
 </body>
 </html>
