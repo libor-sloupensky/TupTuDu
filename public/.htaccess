@@ -19,10 +19,9 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Redirect Trailing Slashes If Not A Folder...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} (.+)/$
-    RewriteRule ^ %1 [L,R=301]
+    # (Pravidlo "trailing slash redirect" záměrně vynecháno — za root→public
+    #  přepisem prosakovalo /public/ do redirect URL. Laravel routing si
+    #  s koncovým lomítkem poradí sám.)
 
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
