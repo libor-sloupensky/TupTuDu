@@ -20,5 +20,8 @@ class AppServiceProvider extends ServiceProvider
             'timeout' => 25,
             'connect_timeout' => 5,
         ]);
+
+        // Přihlášený uživatel na guest-only routě (/login) → rovnou do adminu.
+        \Illuminate\Auth\Middleware\RedirectIfAuthenticated::redirectUsing(fn () => '/masterteam');
     }
 }

@@ -14,7 +14,11 @@
 <body>
     <div class="topbar">
         <span class="brand-title"><span class="brand">TupTuDu</span></span>
-        <a class="btn" href="/login">Přihlášení</a>
+        @auth
+            <a class="btn" href="/masterteam">Administrace</a>
+        @else
+            <a class="btn" href="/login">Přihlášení</a>
+        @endauth
     </div>
     <div class="wrap">
         <h1>Projekt v přípravě.</h1>
