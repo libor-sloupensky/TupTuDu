@@ -18,6 +18,39 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        id: changes
+        run: |
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+          MODE=incremental
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            MODE=full
+          elif ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            MODE=full
+          fi
+
+          VENDOR_CHANGED=false
+          ASSETS_CHANGED=false
+          if [ "$MODE" = "full" ]; then
+            VENDOR_CHANGED=true
+            ASSETS_CHANGED=true
+            echo "Režim: FULL deploy"
+          else
+            CHANGED=$(git diff --name-only "$BEFORE" "$SHA")
+            echo "Změněné soubory:"
+            echo "$CHANGED"
+            echo "$CHANGED" | grep -qE '^composer\.(json|lock)$' && VENDOR_CHANGED=true
+            echo "$CHANGED" | grep -qE '^(package\.json|package-lock\.json|vite\.config\.|resources/(css|js)/)' && ASSETS_CHANGED=true
+            echo "$CHANGED" > /tmp/changed.txt
+            echo "Režim: INCREMENTAL deploy"
+          fi
+          echo "mode=$MODE" >> $GITHUB_OUTPUT
+          echo "vendor_changed=$VENDOR_CHANGED" >> $GITHUB_OUTPUT
+          echo "assets_changed=$ASSETS_CHANGED" >> $GITHUB_OUTPUT
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -28,13 +61,13 @@ jobs:
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
       - name: Setup Node.js
-        if: ${{ hashFiles('package.json') != '' }}
+        if: ${{ hashFiles('package.json') != '' && (steps.changes.outputs.assets_changed == 'true') }}
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
       - name: Install npm dependencies and build assets
-        if: ${{ hashFiles('package.json') != '' }}
+        if: ${{ hashFiles('package.json') != '' && (steps.changes.outputs.assets_changed == 'true') }}
         run: |
           npm install
           npm run build
@@ -90,9 +123,10 @@ jobs:
           sed -i 's/^          //' .env
           echo ".env vygenerován (hodnoty skryté)."
 
-      - name: Deploy via lftp (full mirror)
+      - name: Deploy via lftp
         run: |
           sudo apt-get install -y lftp > /dev/null 2>&1
+          MODE="${{ steps.changes.outputs.mode }}"
 
           LFTP_CMDS=$(mktemp)
           cat > "$LFTP_CMDS" << 'LFTPEOF'
@@ -102,6 +136,12 @@ jobs:
           set net:reconnect-interval-base 5
           set net:timeout 30
           set net:connection-limit 3
+          LFTPEOF
+          sed -i 's/^          //' "$LFTP_CMDS"
+
+          if [ "$MODE" = "full" ]; then
+            echo "=== FULL MIRROR ==="
+            cat >> "$LFTP_CMDS" << 'LFTPEOF'
           mirror --reverse --delete --no-perms --parallel=3 --verbose \
             --exclude .git/ \
             --exclude .github/ \
@@ -111,10 +151,52 @@ jobs:
             --exclude README.md \
             --exclude node_modules/ \
             . .
-          quit
           LFTPEOF
-          sed -i 's/^          //' "$LFTP_CMDS"
+            sed -i 's/^          //' "$LFTP_CMDS"
+          else
+            echo "=== INCREMENTAL ==="
+            # .env vždy
+            echo "put -O ./ .env" >> "$LFTP_CMDS"
 
+            # Změněné soubory (mimo vyloučené cesty)
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              case "$f" in
+                .git/*|.github/*|.gitignore|.claude/*|CLAUDE.md|README.md|node_modules/*) continue;;
+              esac
+              if [ -f "$f" ]; then
+                dir=$(dirname "$f")
+                if [ "$dir" != "." ]; then
+                  echo "mkdir -pf $dir" >> "$LFTP_CMDS"
+                  echo "put -O $dir/ $f" >> "$LFTP_CMDS"
+                else
+                  echo "put -O ./ $f" >> "$LFTP_CMDS"
+                fi
+                echo "  upload: $f"
+              else
+                echo "rm -f $f" >> "$LFTP_CMDS"
+                echo "  delete: $f"
+              fi
+            done < /tmp/changed.txt
+
+            # vendor: plně jen při změně composer.json/lock; jinak jen autoload (kvůli novým app třídám)
+            if [ "${{ steps.changes.outputs.vendor_changed }}" = "true" ]; then
+              echo "  vendor: full mirror"
+              echo "mirror --reverse --delete --no-perms --parallel=3 vendor vendor" >> "$LFTP_CMDS"
+            else
+              echo "  vendor: jen autoload"
+              echo "put -O vendor/ vendor/autoload.php" >> "$LFTP_CMDS"
+              echo "mirror --reverse --no-perms vendor/composer vendor/composer" >> "$LFTP_CMDS"
+            fi
+
+            # public/build jen při změně assetů
+            if [ "${{ steps.changes.outputs.assets_changed }}" = "true" ] && [ -d public/build ]; then
+              echo "  public/build: mirror"
+              echo "mirror --reverse --delete --no-perms --parallel=3 public/build public/build" >> "$LFTP_CMDS"
+            fi
+          fi
+
+          echo "quit" >> "$LFTP_CMDS"
           echo "--- lftp commands ---"
           cat "$LFTP_CMDS"
           echo "---"
