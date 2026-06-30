@@ -43,7 +43,14 @@
     <main>
         <h1>Vítej, {{ auth()->user()->celeJmeno() }}</h1>
         <p class="muted">Jsi přihlášen jako master tým (IČO {{ config('app.master_ico') }}).</p>
-        <p class="muted">Další moduly (správa uživatelů, koncept) přibydou v dalších etapách.</p>
+
+        <nav style="margin-top:1.5rem;">
+            <ul>
+                <li><a href="/masterteam/uzivatele">Správa uživatelů</a></li>
+            </ul>
+        </nav>
+
+        <p class="muted" style="margin-top:1.5rem;">Modul Koncept přibude v další etapě.</p>
     </main>
 </body>
 </html>
