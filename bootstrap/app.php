@@ -11,7 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Middleware aliasy (master apod.) doplníme v Etapě 2 s adminem.
+        $middleware->alias([
+            'master' => \App\Http\Middleware\JeMaster::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -207,4 +207,4 @@ jobs:
 
       - name: Post-deploy hook (cache clear + migrace)
         run: |
-          curl -sL --max-time 90 "http://www.tuptudu.com/deploy-hook.php?token=${{ secrets.MIGRATE_TOKEN }}&migrate" 2>&1 || echo "Deploy hook selhal"
+          curl -sL --max-time 90 "http://www.tuptudu.com/deploy-hook.php?token=${{ secrets.MIGRATE_TOKEN }}&migrate&seed=1" 2>&1 || echo "Deploy hook selhal"
