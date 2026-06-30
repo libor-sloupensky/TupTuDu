@@ -23,6 +23,7 @@
             <ul>
                 <li><a href="/masterteam/koncept">Koncept (editor půdorysů)</a></li>
                 <li><a href="/masterteam/pravidla-objektu">Pravidla objektů</a></li>
+                <li><a href="/masterteam/chyby">Chyby (záznam)</a></li>
                 <li><a href="/masterteam/uzivatele">Správa uživatelů</a></li>
             </ul>
         </nav>

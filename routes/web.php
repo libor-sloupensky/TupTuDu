@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ChybaController;
+use App\Http\Controllers\Masterteam\ChybyController;
 use App\Http\Controllers\Masterteam\KonceptController;
 use App\Http\Controllers\Masterteam\PravidlaObjektuController;
 use App\Http\Controllers\Masterteam\UzivateleController;
@@ -9,6 +11,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('vitrina.index');
 });
+
+// Error tracking — příjem JS chyb z frontendu (window.onerror, unhandledrejection).
+Route::post('/api/chyba', [ChybaController::class, 'ulozit'])
+    ->middleware('throttle:60,1')
+    ->name('api.chyba');
 
 // Administrace (Masterteam) — jen pro přihlášené členy master týmu (IČO master subjektu).
 Route::middleware(['auth', 'master'])->prefix('masterteam')->name('masterteam.')->group(function () {
@@ -51,4 +58,10 @@ Route::middleware(['auth', 'master'])->prefix('masterteam')->name('masterteam.')
     Route::delete('pravidla-objektu/{pravidlo:id}', [PravidlaObjektuController::class, 'destroy'])->name('pravidla-objektu.destroy');
     Route::post('pravidla-objektu/generovat', [PravidlaObjektuController::class, 'generovat'])->name('pravidla-objektu.generovat');
     Route::post('pravidla-objektu/obnovit', [PravidlaObjektuController::class, 'obnovitVse'])->name('pravidla-objektu.obnovit');
+
+    // ───────── Chyby (záznam backend + frontend chyb) ─────────
+    Route::get('chyby', [ChybyController::class, 'index'])->name('chyby');
+    Route::get('chyby/{chyba}', [ChybyController::class, 'show'])->name('chyby.show');
+    Route::patch('chyby/{chyba}/opraveno', [ChybyController::class, 'oznacOpraveno'])->name('chyby.opraveno');
+    Route::delete('chyby/{chyba}', [ChybyController::class, 'smazat'])->name('chyby.smazat');
 });
