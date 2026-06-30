@@ -6,45 +6,91 @@ on:
       - main
   workflow_dispatch:
 
-# Jeden deploy najednou. Nové pushy počkají, až předchozí doběhne —
-# zabrání souběžným lftp přenosům, které by si mohly překryvat soubory.
+# Jeden deploy najednou. Nové pushy počkají, až předchozí doběhne.
 concurrency:
   group: production-deploy
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy via FTP
+    name: Build & Deploy via FTP
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Vygenerovat config.php z GitHub Secrets
-        env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASS: ${{ secrets.DB_PASS }}
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Setup Node.js
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install npm dependencies and build assets
+        if: ${{ hashFiles('package.json') != '' }}
         run: |
-          # Bezpečně escapuje hodnotu pro PHP řetězec v jednoduchých uvozovkách
-          # (zpětné lomítko a apostrof) — přes bash expanzi, bez sedu.
-          esc() { local s=$1; s=${s//\\/\\\\}; s=${s//\'/\\\'}; printf '%s' "$s"; }
+          npm install
+          npm run build
 
-          cat > config.php << PHPEOF
-          <?php
-          // Generováno automaticky při deployi z GitHub Secrets — needitovat ručně.
-          return [
-              'db_host' => '$(esc "$DB_HOST")',
-              'db_name' => '$(esc "$DB_NAME")',
-              'db_user' => '$(esc "$DB_USER")',
-              'db_pass' => '$(esc "$DB_PASS")',
-          ];
-          PHPEOF
+      - name: Create .env for production
+        run: |
+          cat > .env << 'ENVEOF'
+          APP_NAME="TupTuDu"
+          APP_ENV=production
+          APP_KEY=${{ secrets.APP_KEY }}
+          APP_DEBUG=false
+          APP_URL=http://www.tuptudu.com
+          APP_LOCALE=cs
+          APP_FALLBACK_LOCALE=en
+          APP_FAKER_LOCALE=cs_CZ
+          APP_MAINTENANCE_DRIVER=file
+          BCRYPT_ROUNDS=12
+          LOG_CHANNEL=stack
+          LOG_STACK=single
+          LOG_LEVEL=error
+          DB_CONNECTION=mariadb
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=3306
+          DB_DATABASE=${{ secrets.DB_NAME }}
+          DB_USERNAME=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASS }}
+          DB_CHARSET=utf8mb4
+          DB_COLLATION=utf8mb4_unicode_ci
+          SESSION_DRIVER=file
+          SESSION_LIFETIME=10080
+          SESSION_ENCRYPT=false
+          SESSION_PATH=/
+          SESSION_DOMAIN=null
+          BROADCAST_CONNECTION=log
+          FILESYSTEM_DISK=local
+          QUEUE_CONNECTION=sync
+          CACHE_STORE=file
+          MAIL_MAILER=log
+          MAIL_FROM_ADDRESS="noreply@tuptudu.com"
+          MAIL_FROM_NAME="TupTuDu"
+          MASTER_ICO=07994605
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL=claude-haiku-4-5-20251001
+          ANTHROPIC_MODEL_HAIKU=claude-haiku-4-5
+          ANTHROPIC_MODEL_SONNET=claude-sonnet-4-6
+          ANTHROPIC_MODEL_OPUS=claude-opus-4-8
+          VOYAGE_API_KEY=${{ secrets.VOYAGE_API_KEY }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REDIRECT_URI=http://www.tuptudu.com/auth/google/callback
+          MIGRATE_TOKEN=${{ secrets.MIGRATE_TOKEN }}
+          ENVEOF
+          sed -i 's/^          //' .env
+          echo ".env vygenerován (hodnoty skryté)."
 
-          echo "config.php vygenerován (hodnoty skryté)."
-
-      - name: Deploy via lftp (mirror)
+      - name: Deploy via lftp (full mirror)
         run: |
           sudo apt-get install -y lftp > /dev/null 2>&1
 
@@ -63,6 +109,9 @@ jobs:
             --exclude .claude/ \
             --exclude CLAUDE.md \
             --exclude README.md \
+            --exclude node_modules/ \
+            --exclude storage/logs/ \
+            --exclude storage/framework/sessions/ \
             . .
           quit
           LFTPEOF
@@ -75,3 +124,7 @@ jobs:
           lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" < "$LFTP_CMDS"
           rm -f "$LFTP_CMDS"
           echo "=== Deploy complete ==="
+
+      - name: Post-deploy hook (cache clear + migrace)
+        run: |
+          curl -sL --max-time 90 "http://www.tuptudu.com/deploy-hook.php?token=${{ secrets.MIGRATE_TOKEN }}&migrate" 2>&1 || echo "Deploy hook selhal"

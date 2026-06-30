@@ -1,0 +1,6 @@
+# Document root hostingu = kořen FTP. Laravel servíruje z public/,
+# proto všechny požadavky přepíšeme do public/ (žádné nastavení v panelu hostingu netřeba).
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
