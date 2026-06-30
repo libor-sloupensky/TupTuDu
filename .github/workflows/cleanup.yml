@@ -1,0 +1,22 @@
+name: Emergency FTP cleanup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: lftp odstranit citlivé soubory z root
+        run: |
+          sudo apt-get install -y lftp > /dev/null 2>&1
+          lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" << 'EOF'
+          set ftp:passive-mode yes
+          set ftp:ssl-allow no
+          set net:max-retries 3
+          set net:timeout 30
+          rm -f .env
+          rm -f storage/logs/laravel.log
+          quit
+          EOF
+          echo "=== cleanup hotov ==="
