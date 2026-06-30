@@ -110,8 +110,6 @@ jobs:
             --exclude CLAUDE.md \
             --exclude README.md \
             --exclude node_modules/ \
-            --exclude storage/logs/ \
-            --exclude storage/framework/sessions/ \
             . .
           quit
           LFTPEOF
