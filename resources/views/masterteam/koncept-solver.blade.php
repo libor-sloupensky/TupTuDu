@@ -72,7 +72,7 @@
         let pt = [], layout = null, dirty = true, PP = [];
         let anchors = [];       // {from, target:{type:'room',id}|{type:'wall',x,y}}
         let voidAnchor = null;  // {x,y} bod na stěně pro výřez
-        let drag = null, curPos = null;
+        let drag = null, curPos = null, clickStart = null, moved = false;
         const mx = m => PAD + m * PX;
         const nm = id => ROOMS[IDX[id]] ? ROOMS[IDX[id]].nazev : id;
 
@@ -87,7 +87,7 @@
             for (let i = 0; i < P.loznice; i++) add('loznice' + i, 'Ložnice' + (P.loznice > 1 ? ' ' + (i + 1) : ''), 14, '#cfe3cf', 2.4, 2.0);
             for (let i = 0; i < P.detske; i++) add('pokoj' + i, 'Pokoj' + (P.detske > 1 ? ' ' + (i + 1) : ''), 11, '#d7e8cf', 2.4, 2.0);
             for (let i = 0; i < P.koupelny; i++) add('koupelna' + i, 'Koupelna' + (P.koupelny > 1 ? ' ' + (i + 1) : ''), 6, '#b9dfe6', 1.6, 2.5);
-            add('wc', 'WC', 2.5, '#b9dfe6', 0.9, 2.5);
+            add('wc', 'WC', 2, '#b9dfe6', 0.9, 2.5);
             if (P.technicka) add('technicka', 'Technická', 5, '#e0dedc', 1.5, 2.5);
             if (P.spiz) add('spiz', 'Spíž', 3, '#efe6d0', 1.2, 3.0);
 
@@ -149,7 +149,7 @@
         }
 
         function renderControls() {
-            const pin = id => (IDX[id] != null) ? '<span class="ks-pctwrap"><input type="number" class="ks-pctin" step="0.5" min="1" data-pct="' + id + '" value="' + ROOMS[IDX[id]].pct.toFixed(1) + '"> %</span>' : '';
+            const pin = id => (IDX[id] != null) ? '<span class="ks-pctwrap"><input type="number" class="ks-pctin" step="1" min="1" data-pct="' + id + '" value="' + Math.round(ROOMS[IDX[id]].pct) + '"> %</span>' : '';
             const rowCheck = (tog, label, roomId) => '<div class="ks-mroom"><label><input type="checkbox" data-toggle="' + tog + '"' + (cfg[tog] ? ' checked' : '') + '> ' + label + '</label>' + (cfg[tog] ? pin(roomId) : '') + '</div>';
             const rowFixed = (roomId, label) => '<div class="ks-mroom"><span>' + label + '</span>' + pin(roomId) + '</div>';
             const rowCount = (cntKey, label, pref) => {
@@ -350,12 +350,12 @@
         }
         const near = (a, x, y, r) => a && Math.hypot(a.x - x, a.y - y) < r;
         cv.addEventListener('mousedown', e => {
-            const p = pos(e); curPos = p;
-            // 1) smazat × / úchop ukotvení
+            const p = pos(e); curPos = p; clickStart = p; moved = false;
+            // 1) úchop cíle ukotvení / × (mazání až na puštění)
             for (let i = 0; i < anchors.length; i++) {
                 const g = anchorGeom(anchors[i]); if (!g) continue;
-                if (near(g.mid, p.x, p.y, 0.28)) { anchors.splice(i, 1); dirty = true; return; }
                 if (near(g.handle, p.x, p.y, 0.4)) { drag = { type: 'anchorEnd', i, src: g.fc }; return; }
+                if (near(g.mid, p.x, p.y, 0.22)) { drag = { type: 'del', i }; return; }
             }
             // 2) ukotvení výřezu
             if (VOID >= 0 && voidAnchor && near(voidAnchor, p.x, p.y, 0.4)) { const v = layout[VOID]; drag = { type: 'voidAnchor', src: { x: cxr(v), y: cyr(v) } }; return; }
@@ -367,11 +367,13 @@
         });
         cv.addEventListener('mousemove', e => {
             if (!drag) return; const p = pos(e); curPos = p;
+            if (clickStart && Math.hypot(p.x - clickStart.x, p.y - clickStart.y) > 0.25) moved = true;
             if (drag.type === 'room') { pt[drag.k].x = Math.max(0.1, Math.min(W - 0.1, p.x)); pt[drag.k].y = Math.max(0.1, Math.min(H - 0.1, p.y)); dirty = true; }
         });
         window.addEventListener('mouseup', () => {
             if (!drag) return; const p = curPos;
-            if (drag.type === 'anchorEnd') { const t = dropTarget(p.x, p.y); if (!(t.type === 'room' && t.id === anchors[drag.i].from)) { anchors[drag.i].target = t; dirty = true; } }
+            if (drag.type === 'del') { const g = anchorGeom(anchors[drag.i]); if (!moved && g && near(g.mid, p.x, p.y, 0.35)) { anchors.splice(drag.i, 1); dirty = true; } }
+            else if (drag.type === 'anchorEnd') { const t = dropTarget(p.x, p.y); if (!(t.type === 'room' && t.id === anchors[drag.i].from)) { anchors[drag.i].target = t; dirty = true; } }
             else if (drag.type === 'newAnchor') { const t = dropTarget(p.x, p.y); if (!(t.type === 'room' && t.id === drag.from)) { anchors.push({ from: drag.from, target: t }); dirty = true; } }
             else if (drag.type === 'voidAnchor') { voidAnchor = snapBoundary(p.x, p.y); dirty = true; }
             drag = null;
