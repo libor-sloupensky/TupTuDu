@@ -225,18 +225,20 @@
             g[j * COLS + i] = A;
             return after - before;
         }
-        // Greedy: dokud je místnost nad rozpočtem, přepínej hraniční buňky (celkové rohy klesají)
+        // Greedy: dokud je nějaká místnost nad rozpočtem rohů, přepisuj JAKOUKOLI hraniční
+        // buňku (i zaplnění zářezu = přepis souseda dovnitř), pokud to sníží CELKOVÝ počet rohů.
         function omezRohy(src) {
             const g = src.slice();
             const cnt = new Array(ROOMS.length).fill(0);
             for (let x = 0; x < g.length; x++) cnt[g[x]]++;
             const budget = ROOMS.map((_, k) => 4 + Math.floor(cnt[k] * CELLA / 6));
-            for (let iter = 0; iter < 40; iter++) {
+            for (let iter = 0; iter < 30; iter++) {
                 const cor = rohyVsech(g);
+                if (!cor.some((c, k) => c > budget[k])) break;   // vše v rozpočtu → hotovo
                 let zmena = false;
                 for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
                     const A = g[j * COLS + i];
-                    if (cor[A] <= budget[A] || cnt[A] <= 6) continue;
+                    if (cnt[A] <= 6) continue;                    // nedovol vymazat místnost
                     const nb = [];
                     if (i > 0) nb.push(g[j * COLS + i - 1]); if (i + 1 < COLS) nb.push(g[j * COLS + i + 1]);
                     if (j > 0) nb.push(g[(j - 1) * COLS + i]); if (j + 1 < ROWS) nb.push(g[(j + 1) * COLS + i]);
@@ -244,9 +246,10 @@
                     for (const B of nb) { if (B === A) continue; const d = flipDelta(g, i, j, A, B); if (d < bD) { bD = d; bB = B; } }
                     if (bB >= 0) { g[j * COLS + i] = bB; cnt[A]--; cnt[bB]++; zmena = true; }
                 }
-                if (!zmena) break;
+                if (!zmena) break;   // lokální minimum rohů (dál to jednotlivými buňkami nejde)
             }
-            return { g, budget };
+            const area = cnt.map(c => c * CELLA);   // plocha z reálně vykreslených buněk
+            return { g, budget, area };
         }
 
         // ── Vykreslení ───────────────────────────────────────────────
@@ -292,7 +295,7 @@
                 ctx.font = '600 12px sans-serif';
                 ctx.fillText(r.nazev, mx(site[k].cx), mx(site[k].cy) - 5);
                 ctx.font = '11px sans-serif';
-                ctx.fillText(Math.round(site[k].area) + ' m² · ' + rohy[k] + '/' + vysl.budget[k] + ' rohů', mx(site[k].cx), mx(site[k].cy) + 9);
+                ctx.fillText(Math.round(vysl.area[k]) + ' m² · ' + rohy[k] + '/' + vysl.budget[k] + ' rohů', mx(site[k].cx), mx(site[k].cy) + 9);
             });
 
             // stav sousedností + výpis chybějících
