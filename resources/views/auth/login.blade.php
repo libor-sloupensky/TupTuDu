@@ -42,6 +42,11 @@
 
                 <button type="submit" class="btn btn-primary">Přihlásit se</button>
             </form>
+
+            @if (config('services.google.client_id'))
+                <div style="margin:1rem 0 .25rem; text-align:center; color:var(--c-text-secondary); font-size:.85rem;">nebo</div>
+                <a href="/auth/google" class="btn" style="display:block; text-align:center;">Přihlásit přes Google</a>
+            @endif
         </main>
     </div>
 </body>

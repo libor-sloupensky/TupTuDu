@@ -11,9 +11,9 @@
 
     RewriteEngine On
 
-    # Vynucení HTTPS — zapneme, až bude na tuptudu.com certifikát (zatím web běží na http).
-    # RewriteCond %{HTTPS} off
-    # RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
+    # Vynucení HTTPS (certifikát Let's Encrypt aktivní).
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

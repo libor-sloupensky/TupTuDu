@@ -79,7 +79,7 @@ jobs:
           APP_ENV=production
           APP_KEY=${{ secrets.APP_KEY }}
           APP_DEBUG=false
-          APP_URL=http://www.tuptudu.com
+          APP_URL=https://www.tuptudu.com
           APP_LOCALE=cs
           APP_FALLBACK_LOCALE=en
           APP_FAKER_LOCALE=cs_CZ
@@ -101,6 +101,7 @@ jobs:
           SESSION_ENCRYPT=false
           SESSION_PATH=/
           SESSION_DOMAIN=null
+          SESSION_SECURE_COOKIE=true
           BROADCAST_CONNECTION=log
           FILESYSTEM_DISK=local
           QUEUE_CONNECTION=sync
@@ -118,7 +119,7 @@ jobs:
           VOYAGE_API_KEY=${{ secrets.VOYAGE_API_KEY }}
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_REDIRECT_URI=http://www.tuptudu.com/auth/google/callback
+          GOOGLE_REDIRECT_URI=https://www.tuptudu.com/auth/google/callback
           MIGRATE_TOKEN=${{ secrets.MIGRATE_TOKEN }}
           ENVEOF
           sed -i 's/^          //' .env
@@ -208,4 +209,4 @@ jobs:
 
       - name: Post-deploy hook (cache clear + migrace)
         run: |
-          curl -sL --max-time 90 "http://www.tuptudu.com/deploy-hook.php?token=${{ secrets.MIGRATE_TOKEN }}&migrate&seed=1" 2>&1 || echo "Deploy hook selhal"
+          curl -sL --max-time 90 "https://www.tuptudu.com/deploy-hook.php?token=${{ secrets.MIGRATE_TOKEN }}&migrate&seed=1" 2>&1 || echo "Deploy hook selhal"

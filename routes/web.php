@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\ChybaController;
 use App\Http\Controllers\Masterteam\ChybyController;
 use App\Http\Controllers\Masterteam\KonceptController;
@@ -16,6 +17,10 @@ Route::get('/', function () {
 Route::post('/api/chyba', [ChybaController::class, 'ulozit'])
     ->middleware('throttle:60,1')
     ->name('api.chyba');
+
+// Google OAuth přihlášení (Socialite) — jen pro existující uživatele master týmu.
+Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
+Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
 
 // Administrace (Masterteam) — jen pro přihlášené členy master týmu (IČO master subjektu).
 Route::middleware(['auth', 'master'])->prefix('masterteam')->name('masterteam.')->group(function () {
