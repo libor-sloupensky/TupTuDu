@@ -14,7 +14,9 @@
         .ks-mroom { display: flex; justify-content: space-between; align-items: center; margin: .3rem 0; gap: .5rem; }
         .ks-mroom > label { display: flex; align-items: center; gap: .35rem; }
         .ks-sub { display: flex; justify-content: space-between; align-items: center; margin: .18rem 0 .18rem 1.1rem; gap: .5rem; color: var(--c-text-secondary); font-size: .85rem; }
-        .ks-pctin, .ks-cnt { width: 3.4rem; padding: .15rem .3rem; text-align: right; }
+        .ks-pctin { width: 3.2rem; padding: .15rem .3rem; text-align: right; }
+        .ks-cnt { width: 3.2rem; padding: .15rem .3rem; text-align: center; }
+        .ks-pctwrap { white-space: nowrap; color: var(--c-text-secondary); }
         .ks-controls hr { border: none; border-top: 1px solid var(--c-border); margin: .8rem 0; }
         .ks-canvas-wrap { flex: 1; min-width: 360px; }
         .ks-bar { display: flex; gap: 1rem; align-items: center; margin: 0 0 .8rem; flex-wrap: wrap; }
@@ -139,11 +141,11 @@
         }
 
         function renderControls() {
-            const pin = id => (IDX[id] != null) ? '<input type="number" class="ks-pctin" step="0.5" min="1" data-pct="' + id + '" value="' + ROOMS[IDX[id]].pct.toFixed(1) + '">' : '';
+            const pin = id => (IDX[id] != null) ? '<span class="ks-pctwrap"><input type="number" class="ks-pctin" step="0.5" min="1" data-pct="' + id + '" value="' + ROOMS[IDX[id]].pct.toFixed(1) + '"> %</span>' : '';
             const rowCheck = (tog, label, roomId) => '<div class="ks-mroom"><label><input type="checkbox" data-toggle="' + tog + '"' + (cfg[tog] ? ' checked' : '') + '> ' + label + '</label>' + (cfg[tog] ? pin(roomId) : '') + '</div>';
             const rowFixed = (roomId, label) => '<div class="ks-mroom"><span>' + label + '</span>' + pin(roomId) + '</div>';
             const rowCount = (cntKey, label, pref) => {
-                let h = '<div class="ks-mroom"><label>' + label + '</label><input type="number" class="ks-cnt" data-count="' + cntKey + '" min="0" max="5" value="' + cfg[cntKey] + '"></div>';
+                let h = '<div class="ks-mroom" style="justify-content:flex-start;gap:.5rem"><label>' + label + '</label><input type="number" class="ks-cnt" data-count="' + cntKey + '" min="0" max="5" value="' + cfg[cntKey] + '"></div>';
                 for (let i = 0; i < cfg[cntKey]; i++) { const id = pref + i; if (IDX[id] != null) h += '<div class="ks-sub"><span>• ' + ROOMS[IDX[id]].nazev + '</span>' + pin(id) + '</div>'; }
                 return h;
             };
