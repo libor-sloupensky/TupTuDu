@@ -10,8 +10,8 @@
     </style>
 
     <div class="ks-wrap">
-        <h1>Koncept solver — dualizace (v6)</h1>
-        <p class="muted">Hledáme <strong>rozvržení z grafu sousedností</strong>: solver zkouší tisíce dělení (slicing stromů) řízených polohami balonků a vybere takové, které splní všechny povinné kontakty a trefí plochy. Místnosti jsou <strong>obdélníky</strong> (chodba vnitřní, ne přes celou šířku), sousednosti <strong>zaručené</strong>. <strong>Táhni balonek</strong> a solver přeskládá zbytek.</p>
+        <h1>Koncept solver — L-dům (v7)</h1>
+        <p class="muted">Pozemek má <strong>výřez v rohu</strong> (šrafovaně = mimo dům) → obrys domu je nepravoúhlý (L). Solver z grafu sousedností najde rozvržení, které vyplní L, splní povinné kontakty a trefí plochy. <strong>Táhni místnost</strong> (i výřez) a solver přeskládá zbytek. Pozn.: místnosti zůstávají obdélníkové — na L-pozemku je to řešitelné a optimální; skutečné L-místnosti vznikají až kolem pevné překážky (schodiště), to je další krok.</p>
 
         <div class="ks-bar">
             <button id="ks-reset" class="btn btn-primary">Přeskládat</button>
@@ -20,7 +20,7 @@
         </div>
 
         <canvas id="ks-canvas"></canvas>
-        <div class="ks-legend">Pozemek 12 × 8 m. <strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. U místnosti je plocha a <strong>kratší strana</strong> (m); <span style="color:#b02020">⚠ červeně</span> = pod min. šířkou pro daný typ (WC 0,9 · koupelna 1,6 · chodba/zádveří 1,1 · obytné 2,4 m). Solver mezi platnými dispozicemi vybírá ty bez tenkých „placek" a „nudlí". Tolerance plochy ~±10 %.</div>
+        <div class="ks-legend">Pozemek 12 × 8 m, z toho ~10 m² výřez (mimo dům). <strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. U místnosti je plocha a <strong>kratší strana</strong> (m); <span style="color:#b02020">⚠ červeně</span> = pod min. šířkou (WC 0,9 · koupelna 1,6 · chodba/zádveří 1,1 · obytné 2,4 m). Tolerance plochy ~±10 %.</div>
     </div>
 
     <script>
@@ -28,18 +28,23 @@
         // ── Program (napevno – dům 3+kk) ─────────────────────────────
         const W = 12, H = 8;
         // min = min. kratší strana (m), asp = max. poměr delší:kratší strana
+        // _void = výřez (mimo dům) → obrys domu je nepravoúhlý (L)
         const ROOMS = [
             { id: 'zadveri',  nazev: 'Zádveří',        area: 5,  barva: '#c9d7e8', base: [6, 1],    min: 1.1, asp: 3.0 },
             { id: 'chodba',   nazev: 'Chodba',         area: 8,  barva: '#e6e0d2', base: [6, 4],    min: 1.1, asp: 99 },
-            { id: 'obyvak',   nazev: 'Obývák+kuchyň',  area: 32, barva: '#f2d7a8', base: [1.5, 4],  min: 3.0, asp: 1.8 },
+            { id: 'obyvak',   nazev: 'Obývák+kuchyň',  area: 30, barva: '#f2d7a8', base: [1.5, 4],  min: 3.0, asp: 1.8 },
             { id: 'loznice1', nazev: 'Ložnice rodičů', area: 14, barva: '#cfe3cf', base: [10.5, 4], min: 2.4, asp: 2.0 },
-            { id: 'loznice2', nazev: 'Ložnice',        area: 12, barva: '#cfe3cf', base: [5, 6.8],  min: 2.4, asp: 2.0 },
-            { id: 'loznice3', nazev: 'Dětský pokoj',   area: 11, barva: '#cfe3cf', base: [8, 6.8],  min: 2.4, asp: 2.0 },
+            { id: 'loznice2', nazev: 'Ložnice',        area: 11, barva: '#cfe3cf', base: [5, 6.8],  min: 2.4, asp: 2.0 },
+            { id: 'loznice3', nazev: 'Dětský pokoj',   area: 10, barva: '#cfe3cf', base: [8, 6.8],  min: 2.4, asp: 2.0 },
             { id: 'koupelna', nazev: 'Koupelna',       area: 6,  barva: '#b9dfe6', base: [7, 1],    min: 1.6, asp: 2.5 },
             { id: 'wc',       nazev: 'WC',             area: 2,  barva: '#b9dfe6', base: [9, 1],    min: 0.9, asp: 2.5 },
+            { id: '_void',    nazev: 'mimo dům',       area: 10, barva: null,      base: [10.5, 1.5], min: 0.5, asp: 99, mimo: true },
         ];
         const IDX = {}; ROOMS.forEach((r, i) => IDX[r.id] = i);
+        const VOID = IDX['_void'];
         const nm = id => ROOMS[IDX[id]].nazev;
+        // výřez musí být v rohu pozemku (2 strany na obvodu) → čisté L
+        const rohova = v => ((eq(v.x, 0) || eq(v.x + v.w, W)) ? 1 : 0) + ((eq(v.y, 0) || eq(v.y + v.h, H)) ? 1 : 0) >= 2;
         const HARD = [['zadveri', 'chodba'], ['chodba', 'obyvak'], ['chodba', 'koupelna'], ['chodba', 'wc']];
         const ORADJ = [
             { room: 'loznice1', z: ['obyvak', 'chodba'] },
@@ -96,11 +101,13 @@
             ORADJ.forEach(o => { if (o.z.some(z => m(o.room, z))) adj++; });
             let dimPen = 0, areaErr = 0;
             out.forEach((r, k) => {
+                if (ROOMS[k].mimo) return;   // výřez řešíme zvlášť
                 const sh = Math.min(r.w, r.h), lo = Math.max(r.w, r.h);
                 if (sh < ROOMS[k].min) dimPen += (ROOMS[k].min - sh) ** 2 * 10;       // tenká místnost
                 const a = lo / sh; if (a > ROOMS[k].asp) dimPen += (a - ROOMS[k].asp) ** 2; // „nudle"
                 areaErr += Math.abs(r.w * r.h - ROOMS[k].area);
             });
+            if (!rohova(out[VOID])) dimPen += 20;   // výřez musí být v rohu (čisté L)
             return { adj, val: adj * 1e6 - dimPen * 1e3 - areaErr };
         }
         function solve(N) {
@@ -123,14 +130,32 @@
             if (!layout) return;
             const ma = (a, b) => touch(layout[IDX[a]], layout[IDX[b]]);
             ctx.clearRect(0, 0, cv.width, cv.height);
+            // místnosti (bez výřezu)
             ctx.lineWidth = 2; ctx.strokeStyle = '#4a453c';
             layout.forEach((r, k) => {
+                if (ROOMS[k].mimo) return;
                 ctx.fillStyle = ROOMS[k].barva;
                 ctx.fillRect(mx(r.x), mx(r.y), r.w * PX, r.h * PX);
                 ctx.strokeRect(mx(r.x), mx(r.y), r.w * PX, r.h * PX);
             });
+            // obvod domu (box) + výřez „mimo dům" (šrafovaně) → obrys L
             ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 3;
             ctx.strokeRect(mx(0), mx(0), W * PX, H * PX);
+            const v = layout[VOID];
+            ctx.save();
+            ctx.beginPath(); ctx.rect(mx(v.x), mx(v.y), v.w * PX, v.h * PX); ctx.clip();
+            ctx.fillStyle = '#ececec'; ctx.fillRect(mx(v.x), mx(v.y), v.w * PX, v.h * PX);
+            ctx.strokeStyle = '#cfcfcf'; ctx.lineWidth = 1; ctx.beginPath();
+            for (let d = 0; d < (v.w + v.h) * PX; d += 12) { ctx.moveTo(mx(v.x) + d, mx(v.y)); ctx.lineTo(mx(v.x), mx(v.y) + d); }
+            ctx.stroke();
+            ctx.restore();
+            // silná zeď na vnitřních hranách výřezu (kde sousedí s domem)
+            ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 3; ctx.beginPath();
+            if (!eq(v.x, 0)) { ctx.moveTo(mx(v.x), mx(v.y)); ctx.lineTo(mx(v.x), mx(v.y + v.h)); }
+            if (!eq(v.x + v.w, W)) { ctx.moveTo(mx(v.x + v.w), mx(v.y)); ctx.lineTo(mx(v.x + v.w), mx(v.y + v.h)); }
+            if (!eq(v.y, 0)) { ctx.moveTo(mx(v.x), mx(v.y)); ctx.lineTo(mx(v.x + v.w), mx(v.y)); }
+            if (!eq(v.y + v.h, H)) { ctx.moveTo(mx(v.x), mx(v.y + v.h)); ctx.lineTo(mx(v.x + v.w), mx(v.y + v.h)); }
+            ctx.stroke();
 
             if (grafEl.checked) {
                 const cara = (aId, bId, ok) => {
@@ -146,6 +171,11 @@
 
             ctx.textAlign = 'center';
             layout.forEach((r, k) => {
+                if (ROOMS[k].mimo) {
+                    ctx.fillStyle = '#9a9a9a'; ctx.font = 'italic 11px sans-serif';
+                    ctx.fillText('mimo dům', mx(cx(r)), mx(cy(r)) + 4);
+                    return;
+                }
                 const sh = Math.min(r.w, r.h), tenke = sh < ROOMS[k].min - 0.01;
                 ctx.fillStyle = tenke ? '#b02020' : '#2a2a2a';
                 ctx.font = '600 12px sans-serif';
