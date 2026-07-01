@@ -185,15 +185,35 @@
 
         // ── Sloty (místnost = 1..cap kostek) + řešič ─────────────────
         let SLOTS = [];
-        function buildSlots() {
+        // které místnosti mají porušené ukotvení + kam se natáhnout (cíl)
+        function brokenInfo(lf) {
+            const info = [];
+            anchors.forEach(an => {
+                if (anchorOk(an, lf)) return;
+                const fk = IDX[an.from]; if (fk == null || ROOMS[fk].cap <= 1 || ROOMS[fk].mimo) return;
+                let tp = null;
+                if (an.target.type === 'room') { const tb = boxesIn(lf, IDX[an.target.id]); if (tb.length) { let big = tb[0]; tb.forEach(r => { if (r.w * r.h > big.w * big.h) big = r; }); tp = { x: big.x + big.w / 2, y: big.y + big.h / 2 }; } }
+                else tp = { x: an.target.x, y: an.target.y };
+                if (tp) info.push({ room: fk, tp });
+            });
+            return info;
+        }
+        function buildSlots(problem) {
             const slots = ROOMS.map((r, i) => ({ room: i, area: r.area, p: [pt[i].x, pt[i].y] }));
-            const nExtra = Math.random() < 0.6 ? 0 : (Math.random() < 0.75 ? 1 : 2);   // preference: většinou žádná kostka navíc
-            for (let e = 0; e < nExtra; e++) {
-                const cnt = {}; slots.forEach(s => cnt[s.room] = (cnt[s.room] || 0) + 1);
-                const cand = slots.filter(s => !ROOMS[s.room].mimo && ROOMS[s.room].cap > cnt[s.room] && s.area > 6);
-                if (!cand.length) break;
-                const s = cand[(Math.random() * cand.length) | 0]; s.area /= 2;
-                slots.push({ room: s.room, area: s.area, p: [s.p[0] + (Math.random() - 0.5) * 3, s.p[1] + (Math.random() - 0.5) * 3] });
+            if (problem && problem.length && Math.random() < 0.6) {
+                // cílené: rozděl problémovou místnost a natáhni 2. kostku k nesplněnému cíli
+                const pr = problem[(Math.random() * problem.length) | 0], s = slots[pr.room];
+                s.area /= 2;
+                slots.push({ room: pr.room, area: s.area, p: [s.p[0] + (pr.tp.x - s.p[0]) * 0.45 + (Math.random() - 0.5) * 1.5, s.p[1] + (pr.tp.y - s.p[1]) * 0.45 + (Math.random() - 0.5) * 1.5] });
+            } else {
+                const nExtra = Math.random() < 0.6 ? 0 : (Math.random() < 0.75 ? 1 : 2);   // preference: většinou žádná kostka navíc
+                for (let e = 0; e < nExtra; e++) {
+                    const cnt = {}; slots.forEach(s => cnt[s.room] = (cnt[s.room] || 0) + 1);
+                    const cand = slots.filter(s => !ROOMS[s.room].mimo && ROOMS[s.room].cap > cnt[s.room] && s.area > 6);
+                    if (!cand.length) break;
+                    const s = cand[(Math.random() * cand.length) | 0]; s.area /= 2;
+                    slots.push({ room: s.room, area: s.area, p: [s.p[0] + (Math.random() - 0.5) * 3, s.p[1] + (Math.random() - 0.5) * 3] });
+                }
             }
             return slots;
         }
@@ -253,13 +273,13 @@
             return { sat, val: sat * 1e6 - boxPen * 1500 - dimPen * 1e3 - voidPen * 800 - areaErr };   // boxPen = preference obdélníků
         }
         function solve(N) {
-            let best = null, bv = -Infinity;
+            let best = null, bv = -Infinity, problem = [];
             for (let t = 0; t < N; t++) {
-                SLOTS = buildSlots();
+                SLOTS = buildSlots(problem);
                 PP = SLOTS.map(s => ({ x: s.p[0] + (Math.random() - 0.5) * 3.5, y: s.p[1] + (Math.random() - 0.5) * 3.5 }));
                 const out = []; dim(genTree(SLOTS.map((_, k) => k)), 0, 0, W, H, out);
                 const ev = evalLeaves(out);
-                if (ev && ev.val > bv) { bv = ev.val; best = out; }
+                if (ev && ev.val > bv) { bv = ev.val; best = out; problem = brokenInfo(out); }   // zaměř hledání na porušená ukotvení
             }
             if (best) layout = best;
         }
