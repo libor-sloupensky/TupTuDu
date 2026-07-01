@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\ChybaController;
 use App\Http\Controllers\Masterteam\ChybyController;
 use App\Http\Controllers\Masterteam\KonceptController;
+use App\Http\Controllers\Masterteam\KonceptTestovaniController;
 use App\Http\Controllers\Masterteam\PravidlaObjektuController;
 use App\Http\Controllers\Masterteam\UzivateleController;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +54,11 @@ Route::middleware(['auth', 'master'])->prefix('masterteam')->name('masterteam.')
     Route::post('koncept/{koncept:id}/ai-uprav', [KonceptController::class, 'aiUprav'])->name('koncept.aiUprav');
     Route::get('koncept/{koncept:id}/export', [KonceptController::class, 'exportJson'])->name('koncept.export');
     Route::patch('koncept/{koncept:id}/katastr', [KonceptController::class, 'ulozitKatastr'])->name('koncept.katastr.ulozit');
+
+    // ───────── Koncept testování (porovnání modelů, ASCII) ─────────
+    Route::get('koncept-testovani', [KonceptTestovaniController::class, 'index'])->name('koncept-testovani');
+    Route::post('koncept-testovani/prompt', [KonceptTestovaniController::class, 'ulozitPrompt'])->name('koncept-testovani.prompt');
+    Route::post('koncept-testovani/generovat', [KonceptTestovaniController::class, 'generovat'])->name('koncept-testovani.generovat');
 
     // ───────── Pravidla objektů ─────────
     Route::get('pravidla-objektu', [PravidlaObjektuController::class, 'index'])->name('pravidla-objektu.index');

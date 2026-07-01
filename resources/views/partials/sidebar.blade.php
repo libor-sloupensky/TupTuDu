@@ -7,7 +7,8 @@
         <div class="tt-section">
             <div class="tt-section-label">Masterteam</div>
             <a href="/masterteam" class="{{ request()->is('masterteam') ? 'active' : '' }}">Přehled</a>
-            <a href="/masterteam/koncept" class="{{ request()->is('masterteam/koncept*') ? 'active' : '' }}">Koncept (editor)</a>
+            <a href="/masterteam/koncept" class="{{ request()->is('masterteam/koncept') ? 'active' : '' }}">Koncept (editor)</a>
+            <a href="/masterteam/koncept-testovani" class="{{ request()->is('masterteam/koncept-testovani*') ? 'active' : '' }}">Koncept testování</a>
             <a href="/masterteam/pravidla-objektu" class="{{ request()->is('masterteam/pravidla-objektu*') ? 'active' : '' }}">Pravidla objektů</a>
             <a href="/masterteam/chyby" class="{{ request()->is('masterteam/chyby*') ? 'active' : '' }}">Chyby</a>
             <a href="/masterteam/uzivatele" class="{{ request()->is('masterteam/uzivatele*') ? 'active' : '' }}">Uživatelé</a>

@@ -71,8 +71,10 @@ class ClaudeApi
         'claude-sonnet-4-6'             => ['input' => 3.00, 'output' => 15.00],
         // Opus — claude-opus-4-20250514 deprecated, používáme 4-8
         'claude-opus-4-20250514'        => ['input' => 15.00, 'output' => 75.00], // legacy log
-        'claude-opus-4-7'               => ['input' => 15.00, 'output' => 75.00],
-        'claude-opus-4-8'               => ['input' => 15.00, 'output' => 75.00],
+        'claude-opus-4-7'               => ['input' => 5.00,  'output' => 25.00],
+        'claude-opus-4-8'               => ['input' => 5.00,  'output' => 25.00],
+        // Fable 5 — nejsilnější model
+        'claude-fable-5'                => ['input' => 10.00, 'output' => 50.00],
     ];
 
     private string $apiKey;
