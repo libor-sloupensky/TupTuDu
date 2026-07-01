@@ -10,7 +10,7 @@
     </style>
 
     <div class="ks-wrap">
-        <h1>Koncept solver — dláždění (v3)</h1>
+        <h1>Koncept solver — dláždění (v4)</h1>
         <p class="muted">Místnosti jako „balonky" tlačící na sebe: vyplní pozemek, sdílí rovné stěny (nulová mezera). Povinné sousednosti se drží zpětnou vazbou, ložnice se přichytí na <strong>obývák NEBO chodbu</strong>, zádveří ke stěně. <strong>Chyť místnost tažením</strong> a přesuň — zbytek se přeskládá.</p>
 
         <div class="ks-bar">
@@ -20,7 +20,7 @@
         </div>
 
         <canvas id="ks-canvas"></canvas>
-        <div class="ks-legend">Pozemek 12 × 8 m · rastr 0,25 m. Vážený Voronoi: váha místnosti roste, dokud netrefí plochu. <strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. Stěny se vyhlazují (většinové hlasování rastru) — hrubé narovnání na obdélníky je až další krok.</div>
+        <div class="ks-legend">Pozemek 12 × 8 m · rastr 0,25 m. Vážený Voronoi: váha místnosti roste, dokud netrefí plochu. <strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. <strong>Rozpočet rohů</strong> místnosti = 4 + plocha/6 (obdélník = 4); solver přebytečné rohy ořezává.</div>
     </div>
 
     <script>
@@ -85,7 +85,7 @@
         reset();
 
         const kkey = (a, b) => a < b ? a + '-' + b : b + '-' + a;
-        const ma = (aId, bId) => sous.has(kkey(IDX[aId], IDX[bId]));   // dotýkají se místnosti?
+        const ma = (set, aId, bId) => set.has(kkey(IDX[aId], IDX[bId]));   // dotýkají se místnosti?
 
         // Detekce sousedností z rastru
         function detekuj(g) {
@@ -164,9 +164,9 @@
                 tx[a] += (site[b].x - site[a].x) * f; ty[a] += (site[b].y - site[a].y) * f;
                 tx[b] += (site[a].x - site[b].x) * f; ty[b] += (site[a].y - site[b].y) * f;
             };
-            HARD.forEach(([a, b]) => pull(a, b, ma(a, b) ? 0.04 : 0.30));
+            HARD.forEach(([a, b]) => pull(a, b, ma(sous, a, b) ? 0.04 : 0.30));
             ORADJ.forEach(o => {
-                if (o.z.some(opt => ma(o.room, opt))) return;   // už se něčeho drží → nech být
+                if (o.z.some(opt => ma(sous, o.room, opt))) return;   // už se něčeho drží → nech být
                 const r = IDX[o.room];
                 let best = null, bd = Infinity;
                 o.z.forEach(opt => { const k = IDX[opt]; const d = (site[k].x - site[r].x) ** 2 + (site[k].y - site[r].y) ** 2; if (d < bd) { bd = d; best = k; } });
@@ -185,12 +185,78 @@
             }
         }
 
+        // ── Omezení rohů ─────────────────────────────────────────────
+        // Rozpočet rohů místnosti = 4 + floor(plocha_m² / 6). Obdélník = 4 rohy.
+        const cell = (g, ci, cj) => (ci < 0 || cj < 0 || ci >= COLS || cj >= ROWS) ? -1 : g[cj * COLS + ci];
+
+        // Příspěvek místnosti R k počtu rohů ve 4 mřížkových vrcholech buňky (i,j)
+        function rohyBunky(g, i, j, R) {
+            let s = 0;
+            const V = [[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]];
+            for (const [a, b] of V) {
+                const t = cell(g, a - 1, b - 1) === R, tr = cell(g, a, b - 1) === R,
+                      bl = cell(g, a - 1, b) === R, br = cell(g, a, b) === R;
+                const k = (t ? 1 : 0) + (tr ? 1 : 0) + (bl ? 1 : 0) + (br ? 1 : 0);
+                if (k === 1 || k === 3) s += 1;
+                else if (k === 2 && ((t && br) || (tr && bl))) s += 2; // diagonální „skřípnutí"
+            }
+            return s;
+        }
+        // Počet rohů všech místností
+        function rohyVsech(g) {
+            const c = new Array(ROOMS.length).fill(0);
+            for (let b = 0; b <= ROWS; b++) for (let a = 0; a <= COLS; a++) {
+                const q = [cell(g, a - 1, b - 1), cell(g, a, b - 1), cell(g, a - 1, b), cell(g, a, b)];
+                const labs = new Set(q); labs.delete(-1);
+                labs.forEach(R => {
+                    const t = q[0] === R, tr = q[1] === R, bl = q[2] === R, br = q[3] === R;
+                    const k = (t ? 1 : 0) + (tr ? 1 : 0) + (bl ? 1 : 0) + (br ? 1 : 0);
+                    if (k === 1 || k === 3) c[R] += 1;
+                    else if (k === 2 && ((t && br) || (tr && bl))) c[R] += 2;
+                });
+            }
+            return c;
+        }
+        // Změna celkového počtu rohů, když buňka (i,j) přejde z A na B
+        function flipDelta(g, i, j, A, B) {
+            const before = rohyBunky(g, i, j, A) + rohyBunky(g, i, j, B);
+            g[j * COLS + i] = B;
+            const after = rohyBunky(g, i, j, A) + rohyBunky(g, i, j, B);
+            g[j * COLS + i] = A;
+            return after - before;
+        }
+        // Greedy: dokud je místnost nad rozpočtem, přepínej hraniční buňky (celkové rohy klesají)
+        function omezRohy(src) {
+            const g = src.slice();
+            const cnt = new Array(ROOMS.length).fill(0);
+            for (let x = 0; x < g.length; x++) cnt[g[x]]++;
+            const budget = ROOMS.map((_, k) => 4 + Math.floor(cnt[k] * CELLA / 6));
+            for (let iter = 0; iter < 40; iter++) {
+                const cor = rohyVsech(g);
+                let zmena = false;
+                for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
+                    const A = g[j * COLS + i];
+                    if (cor[A] <= budget[A] || cnt[A] <= 6) continue;
+                    const nb = [];
+                    if (i > 0) nb.push(g[j * COLS + i - 1]); if (i + 1 < COLS) nb.push(g[j * COLS + i + 1]);
+                    if (j > 0) nb.push(g[(j - 1) * COLS + i]); if (j + 1 < ROWS) nb.push(g[(j + 1) * COLS + i]);
+                    let bB = -1, bD = 0;
+                    for (const B of nb) { if (B === A) continue; const d = flipDelta(g, i, j, A, B); if (d < bD) { bD = d; bB = B; } }
+                    if (bB >= 0) { g[j * COLS + i] = bB; cnt[A]--; cnt[bB]++; zmena = true; }
+                }
+                if (!zmena) break;
+            }
+            return { g, budget };
+        }
+
         // ── Vykreslení ───────────────────────────────────────────────
         const grafEl = document.getElementById('ks-graf');
         function kresli() {
-            disp = vyhlad(assign);
+            const vysl = omezRohy(vyhlad(assign));
+            disp = vysl.g;
+            const rohy = rohyVsech(disp), sousD = detekuj(disp);
             ctx.clearRect(0, 0, cv.width, cv.height);
-            // výplně (z vyhlazeného rastru)
+            // výplně (z vyhlazeného rastru s omezenými rohy)
             for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
                 ctx.fillStyle = ROOMS[disp[j * COLS + i]].barva;
                 ctx.fillRect(mx(i * CELL), mx(j * CELL), CELL * PX + 1, CELL * PX + 1);
@@ -215,19 +281,24 @@
                     ctx.moveTo(mx(site[IDX[aId]].cx), mx(site[IDX[aId]].cy));
                     ctx.lineTo(mx(site[IDX[bId]].cx), mx(site[IDX[bId]].cy)); ctx.stroke();
                 };
-                HARD.forEach(([a, b]) => cara(a, b, ma(a, b)));
-                ORADJ.forEach(o => { const t = o.z.find(opt => ma(o.room, opt)) || o.z[0]; cara(o.room, t, o.z.some(opt => ma(o.room, opt))); });
+                HARD.forEach(([a, b]) => cara(a, b, ma(sousD, a, b)));
+                ORADJ.forEach(o => { const t = o.z.find(opt => ma(sousD, o.room, opt)) || o.z[0]; cara(o.room, t, o.z.some(opt => ma(sousD, o.room, opt))); });
                 ctx.setLineDash([]);
             }
 
-            // popisky
-            ctx.fillStyle = '#2a2a2a'; ctx.font = '600 12px sans-serif'; ctx.textAlign = 'center';
-            ROOMS.forEach((r, k) => { ctx.fillText(r.nazev, mx(site[k].cx), mx(site[k].cy) - 4); ctx.fillText(Math.round(site[k].area) + ' m²', mx(site[k].cx), mx(site[k].cy) + 10); });
+            // popisky (název · plocha · počet rohů / rozpočet)
+            ctx.fillStyle = '#2a2a2a'; ctx.textAlign = 'center';
+            ROOMS.forEach((r, k) => {
+                ctx.font = '600 12px sans-serif';
+                ctx.fillText(r.nazev, mx(site[k].cx), mx(site[k].cy) - 5);
+                ctx.font = '11px sans-serif';
+                ctx.fillText(Math.round(site[k].area) + ' m² · ' + rohy[k] + '/' + vysl.budget[k] + ' rohů', mx(site[k].cx), mx(site[k].cy) + 9);
+            });
 
             // stav sousedností + výpis chybějících
             const broken = [];
-            HARD.forEach(([a, b]) => { if (!ma(a, b)) broken.push(nm(a) + '–' + nm(b)); });
-            ORADJ.forEach(o => { if (!o.z.some(opt => ma(o.room, opt))) broken.push(nm(o.room) + '–(' + o.z.map(nm).join('/') + ')'); });
+            HARD.forEach(([a, b]) => { if (!ma(sousD, a, b)) broken.push(nm(a) + '–' + nm(b)); });
+            ORADJ.forEach(o => { if (!o.z.some(opt => ma(sousD, o.room, opt))) broken.push(nm(o.room) + '–(' + o.z.map(nm).join('/') + ')'); });
             const cel = HARD.length + ORADJ.length, ok = cel - broken.length;
             const el = document.getElementById('ks-stav');
             el.textContent = 'sousednosti: ' + ok + '/' + cel + (broken.length ? ' · chybí: ' + broken.join(', ') : ' ✓');
