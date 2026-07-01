@@ -280,7 +280,7 @@
                 ctx.font = '600 12px sans-serif';
                 ctx.fillText(ROOMS[k].nazev, mx(cx(r)), mx(cy(r)) - 5);
                 ctx.font = '11px sans-serif';
-                ctx.fillText(Math.round(r.w * r.h) + ' m² · ' + sh.toFixed(1) + ' m' + (tenke ? ' ⚠' : ''), mx(cx(r)), mx(cy(r)) + 9);
+                ctx.fillText((r.w * r.h).toFixed(1) + ' m² · ' + sh.toFixed(1) + ' m' + (tenke ? ' ⚠' : ''), mx(cx(r)), mx(cy(r)) + 9);
             });
 
             const broken = [];
