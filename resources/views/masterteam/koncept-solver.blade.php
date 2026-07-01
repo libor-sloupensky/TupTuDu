@@ -114,22 +114,29 @@
         function normalizeAreas() { const real = ROOMS.filter(x => !x.mimo), s = real.reduce((a, x) => a + x.pct, 0) || 1; real.forEach(x => x.area = x.pct / s * USABLE); }
         function sumPct() { return Math.round(ROOMS.filter(x => !x.mimo).reduce((a, x) => a + x.pct, 0)); }
 
-        // výchozí ukotvení (uživatel je pak edituje)
-        function seedAnchors() {
-            anchors = [];
+        // výchozí cíl ukotvení pro danou místnost (použije se JEN pro nově přidané)
+        function defaultTargetFor(id) {
             const hub = cfg.chodba ? 'chodba' : 'obyvak';
-            const A = (from, to) => { if (IDX[from] != null && IDX[to] != null && from !== to) anchors.push({ from, target: { type: 'room', id: to } }); };
-            if (cfg.chodba) A('chodba', 'obyvak');
-            if (cfg.zadveri) A('zadveri', hub);
-            A('wc', hub);
-            for (let i = 0; i < cfg.koupelny; i++) A('koupelna' + i, hub);
-            if (cfg.technicka) A('technicka', hub);
-            if (cfg.spiz) A('spiz', cfg.kuchyn ? 'kuchyn' : 'obyvak');
-            if (cfg.kuchyn) A('kuchyn', 'obyvak');
-            for (let i = 0; i < cfg.loznice; i++) A('loznice' + i, hub);
-            for (let i = 0; i < cfg.detske; i++) A('pokoj' + i, hub);
+            if (id === 'obyvak') return null;
+            if (id === 'chodba' || id === 'kuchyn') return 'obyvak';
+            if (id === 'spiz') return cfg.kuchyn ? 'kuchyn' : 'obyvak';
+            if (id === 'zadveri' || id === 'wc' || id === 'technicka' || id.startsWith('koupelna') || id.startsWith('loznice') || id.startsWith('pokoj')) return hub;
+            return null;
         }
-        function seedVoidAnchor() { voidAnchor = VOID < 0 ? null : (cfg.shape === 'U' ? { x: W * 0.5, y: 0 } : { x: W, y: 0 }); }
+        // zachovej existující ukotvení; přidej výchozí jen pro NOVÉ místnosti; smaž visící
+        function reconcileAnchors(prevIds) {
+            anchors = anchors.filter(a => IDX[a.from] != null && (a.target.type === 'wall' || IDX[a.target.id] != null));
+            ROOMS.forEach(x => {
+                if (x.mimo || prevIds.has(x.id)) return;      // jen nové místnosti
+                const t = defaultTargetFor(x.id);
+                if (t && IDX[t] != null && t !== x.id) anchors.push({ from: x.id, target: { type: 'room', id: t } });
+            });
+        }
+        function reconcileVoidAnchor() {
+            if (VOID < 0) { voidAnchor = null; return; }
+            if (!voidAnchor) voidAnchor = (cfg.shape === 'U') ? { x: W * 0.5, y: 0 } : { x: W, y: 0 };
+            else voidAnchor = snapBoundary(voidAnchor.x, voidAnchor.y);
+        }
 
         function renderControls() {
             const pin = id => (IDX[id] != null) ? '<input type="number" class="ks-pctin" step="0.5" min="1" data-pct="' + id + '" value="' + ROOMS[IDX[id]].pct.toFixed(1) + '">' : '';
@@ -156,7 +163,7 @@
         }
 
         function reset() { pt = ROOMS.map(x => ({ x: Math.max(0.2, Math.min(W - 0.2, x.base[0] + (Math.random() - 0.5) * 2)), y: Math.max(0.2, Math.min(H - 0.2, x.base[1] + (Math.random() - 0.5) * 2)) })); drag = null; dirty = true; }
-        function structuralRebuild() { buildProgram(cfg); seedAnchors(); seedVoidAnchor(); renderControls(); reset(); }
+        function structuralRebuild() { const prev = new Set(ROOMS.map(x => x.id)); buildProgram(cfg); reconcileAnchors(prev); reconcileVoidAnchor(); renderControls(); reset(); }
         function geomRebuild() { buildProgram(cfg); if (voidAnchor) voidAnchor = snapBoundary(voidAnchor.x, voidAnchor.y); renderControls(); reset(); }
 
         // ── Slicing + řešič ──────────────────────────────────────────
