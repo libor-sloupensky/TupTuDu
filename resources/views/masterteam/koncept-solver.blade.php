@@ -40,6 +40,7 @@
                 </div>
                 <div class="ks-row"><label>Velikost domu</label><strong id="ks-size-val">110 m²</strong></div>
                 <input type="range" id="ks-size" min="60" max="220" step="5" value="110" style="width:100%">
+                <div class="ks-row"><label>Rozměr</label><span class="ks-pctwrap"><input id="ks-dimw" type="number" step="0.1" min="3" class="ks-cnt"> × <input id="ks-dimh" type="number" step="0.1" min="3" class="ks-cnt"> m</span></div>
                 <hr>
                 <h3>Místnosti <span style="font-weight:400;color:var(--c-text-secondary);font-size:.75rem">(% domu)</span></h3>
                 <div id="ks-rooms"></div>
@@ -63,7 +64,7 @@
         const PAD = 18, MAXW = 640, MAXH = 460;
         const eq = (p, q) => Math.abs(p - q) < 1e-6;
 
-        const cfg = { shape: 'obdelnik', size: 110, zadveri: true, chodba: true, kuchyn: false, technicka: false, spiz: false, loznice: 2, detske: 1, koupelny: 1 };
+        const cfg = { shape: 'obdelnik', size: 110, customDim: false, dimW: 0, dimH: 0, zadveri: true, chodba: true, kuchyn: false, technicka: false, spiz: false, loznice: 2, detske: 1, koupelny: 1 };
         const pctStore = {};
 
         let ROOMS = [], IDX = {};
@@ -90,14 +91,21 @@
             if (P.technicka) add('technicka', 'Technická', 5, '#e0dedc', 1.5, 2.5);
             if (P.spiz) add('spiz', 'Spíž', 3, '#efe6d0', 1.2, 3.0);
 
-            USABLE = P.size;
+            const maVyrez = (P.shape === 'L' || P.shape === 'U');
+            // rozměry: buď z návrhu (m² + tvar), nebo přesně zadané uživatelem
+            if (P.customDim && P.dimW >= 3 && P.dimH >= 3) {
+                W = P.dimW; H = P.dimH;
+                USABLE = maVyrez ? (W * H) / 1.18 : W * H;   // odečti výřez (18 % využitelné)
+                P.size = Math.round(USABLE);
+            } else {
+                USABLE = P.size;
+                const bA = maVyrez ? USABLE * 1.18 : USABLE;
+                if (P.shape === 'ctverec') { W = H = Math.sqrt(bA); } else { W = Math.sqrt(bA * 1.5); H = bA / W; }
+                P.dimW = W; P.dimH = H;
+            }
             const sp = r.reduce((s, x) => s + x.pct, 0) || 1;
             r.forEach(x => x.area = x.pct / sp * USABLE);
-
-            const maVyrez = (P.shape === 'L' || P.shape === 'U');
-            let bA = USABLE;
-            if (maVyrez) { const vA = USABLE * 0.18; bA = USABLE + vA; r.push({ id: '_void', nazev: 'mimo dům', pct: 0, area: vA, barva: null, min: 0.5, asp: 99, mimo: true }); }
-            if (P.shape === 'ctverec') { W = H = Math.sqrt(bA); } else { W = Math.sqrt(bA * 1.5); H = bA / W; }
+            if (maVyrez) r.push({ id: '_void', nazev: 'mimo dům', pct: 0, area: USABLE * 0.18, barva: null, min: 0.5, asp: 99, mimo: true });
 
             ROOMS = r; IDX = {}; ROOMS.forEach((x, i) => IDX[x.id] = i);
             VOID = IDX['_void'] != null ? IDX['_void'] : -1;
@@ -165,8 +173,14 @@
         }
 
         function reset() { pt = ROOMS.map(x => ({ x: Math.max(0.2, Math.min(W - 0.2, x.base[0] + (Math.random() - 0.5) * 2)), y: Math.max(0.2, Math.min(H - 0.2, x.base[1] + (Math.random() - 0.5) * 2)) })); drag = null; dirty = true; }
-        function structuralRebuild() { const prev = new Set(ROOMS.map(x => x.id)); buildProgram(cfg); reconcileAnchors(prev); reconcileVoidAnchor(); renderControls(); reset(); }
-        function geomRebuild() { buildProgram(cfg); if (voidAnchor) voidAnchor = snapBoundary(voidAnchor.x, voidAnchor.y); renderControls(); reset(); }
+        function syncSizeUI() {
+            const s = document.getElementById('ks-size'); if (s) s.value = Math.max(60, Math.min(220, Math.round(cfg.size)));
+            const sv = document.getElementById('ks-size-val'); if (sv) sv.textContent = Math.round(cfg.size) + ' m²';
+            const dw = document.getElementById('ks-dimw'), dh = document.getElementById('ks-dimh');
+            if (dw) dw.value = W.toFixed(1); if (dh) dh.value = H.toFixed(1);
+        }
+        function structuralRebuild() { const prev = new Set(ROOMS.map(x => x.id)); buildProgram(cfg); reconcileAnchors(prev); reconcileVoidAnchor(); renderControls(); syncSizeUI(); reset(); }
+        function geomRebuild() { buildProgram(cfg); if (voidAnchor) voidAnchor = snapBoundary(voidAnchor.x, voidAnchor.y); renderControls(); syncSizeUI(); reset(); }
 
         // ── Slicing + řešič ──────────────────────────────────────────
         function genTree(list) {
@@ -365,7 +379,9 @@
 
         // ovládání
         document.getElementById('ks-shapes').addEventListener('click', e => { const b = e.target.closest('.ks-shape'); if (!b) return; document.querySelectorAll('.ks-shape').forEach(x => x.classList.remove('active')); b.classList.add('active'); cfg.shape = b.dataset.shape; structuralRebuild(); });
-        document.getElementById('ks-size').addEventListener('input', e => { cfg.size = +e.target.value; document.getElementById('ks-size-val').textContent = e.target.value + ' m²'; geomRebuild(); });
+        document.getElementById('ks-size').addEventListener('input', e => { cfg.customDim = false; cfg.size = +e.target.value; geomRebuild(); });
+        document.getElementById('ks-dimw').addEventListener('change', e => { cfg.customDim = true; cfg.dimW = Math.max(3, +e.target.value || 3); geomRebuild(); });
+        document.getElementById('ks-dimh').addEventListener('change', e => { cfg.customDim = true; cfg.dimH = Math.max(3, +e.target.value || 3); geomRebuild(); });
         const roomsBox = document.getElementById('ks-rooms');
         roomsBox.addEventListener('change', e => {
             const t = e.target;
