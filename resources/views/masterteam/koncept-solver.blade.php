@@ -10,8 +10,8 @@
     </style>
 
     <div class="ks-wrap">
-        <h1>Koncept solver — obdélníky (v5)</h1>
-        <p class="muted">Balonky (body) řídí <strong>topologii</strong> — kdo je nad/pod chodbou a v jakém pořadí. Kreslí se ale <strong>skutečné obdélníky</strong>: chodba je vodorovná páteř přes celou šířku, pokoje v pásech nad/pod ní. Každý pokoj je obdélník (4 rohy) a dotýká se chodby → povinné sousednosti drží konstrukcí. <strong>Chyť pokoj tažením</strong> a přesuň nad/pod chodbu.</p>
+        <h1>Koncept solver — dualizace (v6)</h1>
+        <p class="muted">Hledáme <strong>rozvržení z grafu sousedností</strong>: solver zkouší tisíce dělení (slicing stromů) řízených polohami balonků a vybere takové, které splní všechny povinné kontakty a trefí plochy. Místnosti jsou <strong>obdélníky</strong> (chodba vnitřní, ne přes celou šířku), sousednosti <strong>zaručené</strong>. <strong>Táhni balonek</strong> a solver přeskládá zbytek.</p>
 
         <div class="ks-bar">
             <button id="ks-reset" class="btn btn-primary">Přeskládat</button>
@@ -20,35 +20,32 @@
         </div>
 
         <canvas id="ks-canvas"></canvas>
-        <div class="ks-legend">Pozemek 12 × 8 m. <strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. Rozpočet rohů = 4 + plocha/6; obdélník = 4 (vždy splněno). Chodba absorbuje případnou vůli v ploše (může být širší). Vodorovná páteř je záměrné zjednodušení v1 — svislá / do L přijdou později.</div>
+        <div class="ks-legend">Pozemek 12 × 8 m. <strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. Rozpočet rohů = 4 + plocha/6; obdélník = 4 (strop, ne cíl). Tolerance plochy ~±10 %. Slicing strom je 1. stupeň dualizace — realizuje graf pro tento program; obecné odvození z libovolného grafu je další krok.</div>
     </div>
 
     <script>
     (function () {
         // ── Program (napevno – dům 3+kk) ─────────────────────────────
-        const FOOT = { w: 12, h: 8 }, W = FOOT.w, H = FOOT.h;
+        const W = 12, H = 8;
         const ROOMS = [
-            { id: 'zadveri',  nazev: 'Zádveří',        area: 5,  barva: '#c9d7e8' },
-            { id: 'chodba',   nazev: 'Chodba',         area: 8,  barva: '#e6e0d2' },
-            { id: 'obyvak',   nazev: 'Obývák+kuchyň',  area: 32, barva: '#f2d7a8' },
-            { id: 'loznice1', nazev: 'Ložnice rodičů', area: 14, barva: '#cfe3cf' },
-            { id: 'loznice2', nazev: 'Ložnice',        area: 12, barva: '#cfe3cf' },
-            { id: 'loznice3', nazev: 'Dětský pokoj',   area: 11, barva: '#cfe3cf' },
-            { id: 'koupelna', nazev: 'Koupelna',       area: 6,  barva: '#b9dfe6' },
-            { id: 'wc',       nazev: 'WC',             area: 2,  barva: '#b9dfe6' },
+            { id: 'zadveri',  nazev: 'Zádveří',        area: 5,  barva: '#c9d7e8', base: [6, 1] },
+            { id: 'chodba',   nazev: 'Chodba',         area: 8,  barva: '#e6e0d2', base: [6, 4] },
+            { id: 'obyvak',   nazev: 'Obývák+kuchyň',  area: 32, barva: '#f2d7a8', base: [1.5, 4] },
+            { id: 'loznice1', nazev: 'Ložnice rodičů', area: 14, barva: '#cfe3cf', base: [10.5, 4] },
+            { id: 'loznice2', nazev: 'Ložnice',        area: 12, barva: '#cfe3cf', base: [5, 6.8] },
+            { id: 'loznice3', nazev: 'Dětský pokoj',   area: 11, barva: '#cfe3cf', base: [8, 6.8] },
+            { id: 'koupelna', nazev: 'Koupelna',       area: 6,  barva: '#b9dfe6', base: [7, 1] },
+            { id: 'wc',       nazev: 'WC',             area: 2,  barva: '#b9dfe6', base: [9, 1] },
         ];
         const IDX = {}; ROOMS.forEach((r, i) => IDX[r.id] = i);
         const nm = id => ROOMS[IDX[id]].nazev;
-        const CORRIDOR = 'chodba';
-        const CI = IDX[CORRIDOR];
-
-        // Povinné sousednosti (drží konstrukcí páteře, ale kontrolujeme a kreslíme je)
         const HARD = [['zadveri', 'chodba'], ['chodba', 'obyvak'], ['chodba', 'koupelna'], ['chodba', 'wc']];
         const ORADJ = [
             { room: 'loznice1', z: ['obyvak', 'chodba'] },
             { room: 'loznice2', z: ['obyvak', 'chodba'] },
             { room: 'loznice3', z: ['obyvak', 'chodba'] },
         ];
+        const MAXS = HARD.length + ORADJ.length;
 
         // ── Plátno ───────────────────────────────────────────────────
         const PX = 56, PAD = 18;
@@ -57,65 +54,31 @@
         const ctx = cv.getContext('2d');
         const mx = m => PAD + m * PX;
 
-        // ── Body (balonky) – řídí uspořádání ─────────────────────────
-        const BASE = {
-            chodba: [6, 4], obyvak: [3, 5.5], zadveri: [1.5, 1.5], koupelna: [8.5, 1.5],
-            wc: [10.5, 1.5], loznice1: [5, 1.5], loznice2: [6, 6.5], loznice3: [9.5, 6.5],
-        };
+        // ── Body (balonky) – hint pro dělení ─────────────────────────
         let pt = ROOMS.map(() => ({ x: 0, y: 0 }));
-        let dragged = -1;
+        let layout = null, curScore = 0, dirty = true, dragged = -1;
         function reset() {
-            pt = ROOMS.map(r => { const b = BASE[r.id] || [6, 4]; return { x: b[0] + (Math.random() - 0.5) * 1.6, y: b[1] + (Math.random() - 0.5) * 1.6 }; });
-            dragged = -1;
-        }
-        reset();
-
-        // ── Lehká fyzika bodů (jen aby se to hezky usadilo) ──────────
-        function krok() {
-            const fx = pt.map(() => 0), fy = pt.map(() => 0);
-            // odpuzování všech dvojic
-            for (let i = 0; i < pt.length; i++) for (let j = i + 1; j < pt.length; j++) {
-                let dx = pt[i].x - pt[j].x, dy = pt[i].y - pt[j].y; let d = Math.hypot(dx, dy) || 0.01;
-                if (d < 3) { const f = (3 - d) / d * 0.02; fx[i] += dx * f; fy[i] += dy * f; fx[j] -= dx * f; fy[j] -= dy * f; }
-            }
-            // pružiny povinných sousedností (přitahují na vzdálenost ~2,5)
-            const spring = (a, b, k) => { let dx = pt[b].x - pt[a].x, dy = pt[b].y - pt[a].y; let d = Math.hypot(dx, dy) || 0.01; const f = (d - 2.5) / d * k; fx[a] += dx * f; fy[a] += dy * f; fx[b] -= dx * f; fy[b] -= dy * f; };
-            HARD.forEach(([a, b]) => spring(IDX[a], IDX[b], 0.03));
-            ORADJ.forEach(o => { let best = null, bd = Infinity; o.z.forEach(opt => { const k = IDX[opt]; const dd = (pt[k].x - pt[IDX[o.room]].x) ** 2 + (pt[k].y - pt[IDX[o.room]].y) ** 2; if (dd < bd) { bd = dd; best = k; } }); if (best != null) spring(IDX[o.room], best, 0.03); });
-            // chodba do svislého středu; zádveří k levému kraji
-            fy[CI] += (H / 2 - pt[CI].y) * 0.06;
-            if (IDX.zadveri != null) fx[IDX.zadveri] += (1.5 - pt[IDX.zadveri].x) * 0.04;
-            // integrace
-            for (let k = 0; k < pt.length; k++) {
-                if (k === dragged) continue;
-                pt[k].x = Math.max(0.1, Math.min(W - 0.1, pt[k].x + fx[k]));
-                pt[k].y = Math.max(0.1, Math.min(H - 0.1, pt[k].y + fy[k]));
-            }
+            pt = ROOMS.map(r => ({ x: r.base[0] + (Math.random() - 0.5) * 2, y: r.base[1] + (Math.random() - 0.5) * 2 }));
+            dragged = -1; dirty = true;
         }
 
-        // ── Rozvržení: chodba = vodorovná páteř, pokoje v pásech ─────
-        let rects = [];
-        function layout() {
-            const cy = pt[CI].y;
-            const others = ROOMS.map((_, k) => k).filter(k => k !== CI);
-            const area = k => ROOMS[k].area;
-            const top = others.filter(k => pt[k].y < cy).sort((a, b) => pt[a].x - pt[b].x);
-            const bot = others.filter(k => pt[k].y >= cy).sort((a, b) => pt[a].x - pt[b].x);
-            const Atop = top.reduce((s, k) => s + area(k), 0), Abot = bot.reduce((s, k) => s + area(k), 0);
-            let Htop = Atop / W, Hbot = Abot / W, hc = H - Htop - Hbot;
-            if (hc < 0.6) { const sc = (H - 0.6) / (Htop + Hbot || 1); Htop *= sc; Hbot *= sc; hc = 0.6; } // chodba min 0,6 m
-
-            rects = new Array(ROOMS.length);
-            let x = 0;
-            top.forEach((k, i) => { let w = area(k) / (Htop || 1); rects[k] = { k, x, y: 0, w, h: Htop }; x += w; });
-            if (top.length) rects[top[top.length - 1]].w = W - rects[top[top.length - 1]].x; // dorovnat na šířku
-            rects[CI] = { k: CI, x: 0, y: Htop, w: W, h: hc };
-            x = 0;
-            bot.forEach((k, i) => { let w = area(k) / (Hbot || 1); rects[k] = { k, x, y: Htop + hc, w, h: Hbot }; x += w; });
-            if (bot.length) rects[bot[bot.length - 1]].w = W - rects[bot[bot.length - 1]].x;
+        // ── Slicing strom řízený polohami balonků ────────────────────
+        function genTree(list) {
+            if (list.length === 1) return { leaf: list[0] };
+            const xs = list.map(k => pt[k].x), ys = list.map(k => pt[k].y);
+            const spx = Math.max(...xs) - Math.min(...xs), spy = Math.max(...ys) - Math.min(...ys);
+            const axis = (spx * (0.7 + Math.random() * 0.6) >= spy * (0.7 + Math.random() * 0.6)) ? 0 : 1;
+            const sorted = [...list].sort((a, b) => (axis === 0 ? pt[a].x - pt[b].x : pt[a].y - pt[b].y));
+            const cut = 1 + Math.floor(Math.random() * (sorted.length - 1));
+            return { axis, a: genTree(sorted.slice(0, cut)), b: genTree(sorted.slice(cut)) };
         }
-
-        // dotyk dvou obdélníků (sdílená hrana s kladným překryvem)
+        function areaOf(node) { return node.leaf != null ? ROOMS[node.leaf].area : areaOf(node.a) + areaOf(node.b); }
+        function dim(node, x, y, w, h, out) {
+            if (node.leaf != null) { out[node.leaf] = { x, y, w, h }; return; }
+            const f = areaOf(node.a) / (areaOf(node.a) + areaOf(node.b));
+            if (node.axis === 0) { dim(node.a, x, y, w * f, h, out); dim(node.b, x + w * f, y, w * (1 - f), h, out); }
+            else { dim(node.a, x, y, w, h * f, out); dim(node.b, x, y + h * f, w, h * (1 - f), out); }
+        }
         const eq = (p, q) => Math.abs(p - q) < 1e-6;
         function touch(A, B) {
             if (!A || !B) return false;
@@ -125,71 +88,86 @@
             if ((eq(A.y + A.h, B.y) || eq(B.y + B.h, A.y)) && xov > 0.05) return true;
             return false;
         }
-        const ma = (a, b) => touch(rects[IDX[a]], rects[IDX[b]]);
+        function skore(out) {
+            let s = 0; const m = (a, b) => touch(out[IDX[a]], out[IDX[b]]);
+            HARD.forEach(([a, b]) => { if (m(a, b)) s++; });
+            ORADJ.forEach(o => { if (o.z.some(z => m(o.room, z))) s++; });
+            // jemný bonus: menší odchylka ploch (tie-break)
+            let err = 0; out.forEach((r, k) => err += Math.abs(r.w * r.h - ROOMS[k].area));
+            return s - err / 1000;
+        }
+        function solve() {
+            let best = null, bs = -Infinity, bInt = 0;
+            const all = ROOMS.map((_, k) => k);
+            for (let t = 0; t < 4000; t++) {
+                const out = []; dim(genTree(all), 0, 0, W, H, out);
+                const s = skore(out);
+                if (s > bs) { bs = s; best = out; bInt = Math.floor(s + 1e-6); }
+                if (bInt >= MAXS && t > 200) break;   // našli plné řešení, chvíli hledej hezčí plochy
+            }
+            layout = best; curScore = bInt;
+        }
+        reset();
 
         // ── Vykreslení ───────────────────────────────────────────────
         const grafEl = document.getElementById('ks-graf');
-        const cxr = r => r.x + r.w / 2, cyr = r => r.y + r.h / 2;
+        const cx = r => r.x + r.w / 2, cy = r => r.y + r.h / 2;
         function kresli() {
-            layout();
+            if (dirty) { solve(); dirty = false; }
+            if (!layout) return;
+            const ma = (a, b) => touch(layout[IDX[a]], layout[IDX[b]]);
             ctx.clearRect(0, 0, cv.width, cv.height);
-            // výplně + stěny
             ctx.lineWidth = 2; ctx.strokeStyle = '#4a453c';
-            rects.forEach(r => {
-                ctx.fillStyle = ROOMS[r.k].barva;
+            layout.forEach((r, k) => {
+                ctx.fillStyle = ROOMS[k].barva;
                 ctx.fillRect(mx(r.x), mx(r.y), r.w * PX, r.h * PX);
                 ctx.strokeRect(mx(r.x), mx(r.y), r.w * PX, r.h * PX);
             });
-            // obvod
             ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 3;
             ctx.strokeRect(mx(0), mx(0), W * PX, H * PX);
 
-            // graf povinných kontaktů
             if (grafEl.checked) {
                 const cara = (aId, bId, ok) => {
                     ctx.strokeStyle = ok ? 'rgba(30,140,60,.85)' : 'rgba(200,40,40,.9)';
                     ctx.lineWidth = ok ? 2 : 3; ctx.setLineDash(ok ? [] : [5, 4]); ctx.beginPath();
-                    ctx.moveTo(mx(cxr(rects[IDX[aId]])), mx(cyr(rects[IDX[aId]])));
-                    ctx.lineTo(mx(cxr(rects[IDX[bId]])), mx(cyr(rects[IDX[bId]]))); ctx.stroke();
+                    ctx.moveTo(mx(cx(layout[IDX[aId]])), mx(cy(layout[IDX[aId]])));
+                    ctx.lineTo(mx(cx(layout[IDX[bId]])), mx(cy(layout[IDX[bId]]))); ctx.stroke();
                 };
                 HARD.forEach(([a, b]) => cara(a, b, ma(a, b)));
-                ORADJ.forEach(o => { const t = o.z.find(opt => ma(o.room, opt)) || o.z[0]; cara(o.room, t, o.z.some(opt => ma(o.room, opt))); });
+                ORADJ.forEach(o => { const t = o.z.find(z => ma(o.room, z)) || o.z[0]; cara(o.room, t, o.z.some(z => ma(o.room, z))); });
                 ctx.setLineDash([]);
             }
 
-            // popisky (název · plocha · rohy/rozpočet – vždy 4 rohy)
             ctx.fillStyle = '#2a2a2a'; ctx.textAlign = 'center';
-            rects.forEach(r => {
-                const budget = 4 + Math.floor(ROOMS[r.k].area / 6);
+            layout.forEach((r, k) => {
+                const budget = 4 + Math.floor(ROOMS[k].area / 6);
                 ctx.font = '600 12px sans-serif';
-                ctx.fillText(ROOMS[r.k].nazev, mx(cxr(r)), mx(cyr(r)) - 5);
+                ctx.fillText(ROOMS[k].nazev, mx(cx(r)), mx(cy(r)) - 5);
                 ctx.font = '11px sans-serif';
-                ctx.fillText(Math.round(r.w * r.h) + ' m² · 4/' + budget + ' rohů', mx(cxr(r)), mx(cyr(r)) + 9);
+                ctx.fillText(Math.round(r.w * r.h) + ' m² · 4/' + budget + ' rohů', mx(cx(r)), mx(cy(r)) + 9);
             });
 
-            // stav sousedností
             const broken = [];
             HARD.forEach(([a, b]) => { if (!ma(a, b)) broken.push(nm(a) + '–' + nm(b)); });
-            ORADJ.forEach(o => { if (!o.z.some(opt => ma(o.room, opt))) broken.push(nm(o.room) + '–(' + o.z.map(nm).join('/') + ')'); });
-            const cel = HARD.length + ORADJ.length, ok = cel - broken.length;
+            ORADJ.forEach(o => { if (!o.z.some(z => ma(o.room, z))) broken.push(nm(o.room) + '–(' + o.z.map(nm).join('/') + ')'); });
             const el = document.getElementById('ks-stav');
-            el.textContent = 'sousednosti: ' + ok + '/' + cel + (broken.length ? ' · chybí: ' + broken.join(', ') : ' ✓');
+            el.textContent = 'sousednosti: ' + (MAXS - broken.length) + '/' + MAXS + (broken.length ? ' · chybí: ' + broken.join(', ') : ' ✓');
             el.className = 'ks-stav ' + (broken.length ? 'bad' : 'ok');
         }
 
-        function smycka() { krok(); kresli(); requestAnimationFrame(smycka); }
+        function smycka() { kresli(); requestAnimationFrame(smycka); }
         smycka();
 
-        // ── Interakce (tažení pokoje = posun jeho bodu → přeskládá pásy) ──
-        function bodNaPozici(e) {
+        // ── Interakce (tažení balonku = posun hintu → přeskládá) ─────
+        function pos(e) {
             const rect = cv.getBoundingClientRect();
             const mmx = (e.clientX - rect.left - PAD) / PX, mmy = (e.clientY - rect.top - PAD) / PX;
-            if (mmx < 0 || mmy < 0 || mmx > W || mmy > H) return { k: -1 };
-            const hit = rects.find(r => mmx >= r.x && mmx <= r.x + r.w && mmy >= r.y && mmy <= r.y + r.h);
-            return { k: hit ? hit.k : -1, mmx, mmy };
+            if (!layout || mmx < 0 || mmy < 0 || mmx > W || mmy > H) return { k: -1 };
+            const hit = layout.findIndex(r => mmx >= r.x && mmx <= r.x + r.w && mmy >= r.y && mmy <= r.y + r.h);
+            return { k: hit, mmx, mmy };
         }
-        cv.addEventListener('mousedown', e => { dragged = bodNaPozici(e).k; });
-        cv.addEventListener('mousemove', e => { if (dragged < 0) return; const p = bodNaPozici(e); if (p.k >= 0 || p.mmx != null) { pt[dragged].x = Math.max(0.1, Math.min(W - 0.1, p.mmx)); pt[dragged].y = Math.max(0.1, Math.min(H - 0.1, p.mmy)); } });
+        cv.addEventListener('mousedown', e => { dragged = pos(e).k; });
+        cv.addEventListener('mousemove', e => { if (dragged < 0) return; const p = pos(e); if (p.mmx != null) { pt[dragged].x = Math.max(0.1, Math.min(W - 0.1, p.mmx)); pt[dragged].y = Math.max(0.1, Math.min(H - 0.1, p.mmy)); dirty = true; } });
         window.addEventListener('mouseup', () => { dragged = -1; });
         document.getElementById('ks-reset').addEventListener('click', reset);
     })();
