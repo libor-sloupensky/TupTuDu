@@ -6,8 +6,7 @@
         .kt-prompt:focus { outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 3px var(--c-primary-10); }
         .kt-bar { display: flex; align-items: center; gap: 1rem; margin: .5rem 0 1.5rem; }
         .kt-save { font-size: .82rem; color: var(--c-text-secondary); }
-        .kt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-        @media (min-width: 1200px) { .kt-grid { grid-template-columns: repeat(4, 1fr); } }
+        .kt-grid { display: flex; flex-direction: column; gap: 1rem; }
         .kt-col { border: 1px solid var(--c-border); border-radius: 10px; background: var(--c-surface); overflow: hidden; display: flex; flex-direction: column; }
         .kt-col h3 { margin: 0; padding: .6rem .8rem; font-size: .95rem; border-bottom: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: baseline; }
         .kt-col h3 .ms { font-size: .75rem; color: var(--c-text-secondary); font-weight: 600; }
