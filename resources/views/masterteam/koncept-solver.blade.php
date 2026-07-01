@@ -18,15 +18,14 @@
         .ks-controls hr { border: none; border-top: 1px solid var(--c-border); margin: .8rem 0; }
         .ks-canvas-wrap { flex: 1; min-width: 360px; }
         .ks-bar { display: flex; gap: 1rem; align-items: center; margin: 0 0 .8rem; flex-wrap: wrap; }
-        #ks-canvas { border: 1px solid var(--c-border); border-radius: 10px; background: var(--c-surface); cursor: grab; max-width: 100%; }
-        #ks-canvas:active { cursor: grabbing; }
+        #ks-canvas { border: 1px solid var(--c-border); border-radius: 10px; background: var(--c-surface); cursor: default; max-width: 100%; }
         .ks-legend { font-size: .82rem; color: var(--c-text-secondary); margin-top: .5rem; }
         .ks-stav { font-weight: 700; font-size: .9rem; }
         .ks-stav.ok { color: var(--c-ok); } .ks-stav.bad { color: var(--c-error); }
     </style>
 
     <div class="ks-wrap">
-        <h1>Koncept solver (v11)</h1>
+        <h1>Koncept solver (v12) — editovatelná ukotvení</h1>
 
         <div class="ks-layout">
             <div class="ks-controls">
@@ -37,23 +36,20 @@
                     <div class="ks-shape" data-shape="L">L<small>L-dům</small></div>
                     <div class="ks-shape" data-shape="U">U<small>U-dům</small></div>
                 </div>
-
                 <div class="ks-row"><label>Velikost domu</label><strong id="ks-size-val">110 m²</strong></div>
                 <input type="range" id="ks-size" min="60" max="220" step="5" value="110" style="width:100%">
-
                 <hr>
                 <h3>Místnosti <span style="font-weight:400;color:var(--c-text-secondary);font-size:.75rem">(% domu)</span></h3>
                 <div id="ks-rooms"></div>
-
                 <hr>
                 <button id="ks-reset" class="btn btn-primary" style="width:100%">Přeskládat</button>
-                <label style="display:flex;gap:.35rem;align-items:center;margin-top:.6rem;font-size:.82rem;"><input type="checkbox" id="ks-graf" checked> zvýraznit povinné kontakty</label>
+                <label style="display:flex;gap:.35rem;align-items:center;margin-top:.6rem;font-size:.82rem;"><input type="checkbox" id="ks-graf" checked> zobrazit ukotvení</label>
             </div>
 
             <div class="ks-canvas-wrap">
                 <div class="ks-bar"><span id="ks-stav" class="ks-stav"></span></div>
                 <canvas id="ks-canvas"></canvas>
-                <div class="ks-legend"><strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. U místnosti plocha + <strong>kratší strana</strong>; <span style="color:#b02020">⚠</span> = pod min. šířkou (WC 0,9 · koupelna 1,6 · chodba/zádveří 1,1 · obytné 2,4 m). Šrafovaně = mimo dům (výřez u L/U). Bez chodby se místnosti napojí na obývák. <strong>WC, spíž a technická se vykrojí z rohu hostitele</strong> (chodba/kuchyň) → hostitel se zalomí do L (členitá chodba, záhyb pro vestavěné skříně).</div>
+                <div class="ks-legend"><strong>Ukotvení</strong> (čára): úchop u konce = <em>přetáhni cíl</em> na jinou místnost nebo na stěnu (roh); <strong>×</strong> uprostřed = smazat; <strong>volný bod ve středu místnosti</strong> = přetáhni pro nové ukotvení. Zelená = drží, červená = nesplněno. Tělo místnosti táhni pro přeskládání.</div>
             </div>
         </div>
     </div>
@@ -65,92 +61,76 @@
         const PAD = 18, MAXW = 640, MAXH = 460;
         const eq = (p, q) => Math.abs(p - q) < 1e-6;
 
-        // konfigurace (jediný zdroj pravdy)
         const cfg = { shape: 'obdelnik', size: 110, zadveri: true, chodba: true, kuchyn: false, technicka: false, spiz: false, loznice: 2, detske: 1, koupelny: 1 };
-        const pctStore = {};   // uživatelské úpravy % (id → %)
+        const pctStore = {};
 
-        let ROOMS = [], IDX = {}, HARD = [], ORADJ = [], MAXS = 0;
-        let macroIdx = [], HARDsolve = [], embedList = [];   // vestavěné malé místnosti (vykrojené z hostitele)
+        let ROOMS = [], IDX = {};
         let W = 12, H = 8, PX = 50, VOID = -1, USABLE = 110;
-        let pt = [], layout = null, dirty = true, dragged = -1, PP = [];
+        let pt = [], layout = null, dirty = true, PP = [];
+        let anchors = [];       // {from, target:{type:'room',id}|{type:'wall',x,y}}
+        let voidAnchor = null;  // {x,y} bod na stěně pro výřez
+        let drag = null, curPos = null;
         const mx = m => PAD + m * PX;
-        const nm = id => ROOMS[IDX[id]].nazev;
+        const nm = id => ROOMS[IDX[id]] ? ROOMS[IDX[id]].nazev : id;
 
+        // ── Program ──────────────────────────────────────────────────
         function buildProgram(P) {
             const r = [];
-            const add = (id, nazev, dp, barva, min, asp, zona) => r.push({ id, nazev, dp, barva, min, asp, zona, pct: pctStore[id] != null ? pctStore[id] : dp });
-            if (P.zadveri) add('zadveri', 'Zádveří', 4, '#c9d7e8', 1.1, 3.0, 'vstup');
-            if (P.chodba) add('chodba', 'Chodba', 9, '#e6e0d2', 1.1, 99, 'jadro');
-            if (P.kuchyn) { add('obyvak', 'Obývák', 22, '#f2d7a8', 3.0, 1.8, 'den'); add('kuchyn', 'Kuchyň', 9, '#f2c98a', 2.0, 2.0, 'den'); }
-            else add('obyvak', 'Obývák+kuchyň', 28, '#f2d7a8', 3.0, 1.8, 'den');
-            for (let i = 0; i < P.loznice; i++) add('loznice' + i, 'Ložnice' + (P.loznice > 1 ? ' ' + (i + 1) : ''), 14, '#cfe3cf', 2.4, 2.0, 'noc');
-            for (let i = 0; i < P.detske; i++) add('pokoj' + i, 'Pokoj' + (P.detske > 1 ? ' ' + (i + 1) : ''), 11, '#d7e8cf', 2.4, 2.0, 'noc');
-            for (let i = 0; i < P.koupelny; i++) add('koupelna' + i, 'Koupelna' + (P.koupelny > 1 ? ' ' + (i + 1) : ''), 6, '#b9dfe6', 1.6, 2.5, 'mokra');
-            add('wc', 'WC', 2.5, '#b9dfe6', 0.9, 2.5, 'mokra');
-            if (P.technicka) add('technicka', 'Technická', 5, '#e0dedc', 1.5, 2.5, 'mokra');
-            if (P.spiz) add('spiz', 'Spíž', 3, '#efe6d0', 1.2, 3.0, 'den');
+            const add = (id, nazev, dp, barva, min, asp) => r.push({ id, nazev, dp, barva, min, asp, pct: pctStore[id] != null ? pctStore[id] : dp });
+            if (P.zadveri) add('zadveri', 'Zádveří', 4, '#c9d7e8', 1.1, 3.0);
+            if (P.chodba) add('chodba', 'Chodba', 9, '#e6e0d2', 1.1, 99);
+            if (P.kuchyn) { add('obyvak', 'Obývák', 22, '#f2d7a8', 3.0, 1.8); add('kuchyn', 'Kuchyň', 9, '#f2c98a', 2.0, 2.0); }
+            else add('obyvak', 'Obývák+kuchyň', 28, '#f2d7a8', 3.0, 1.8);
+            for (let i = 0; i < P.loznice; i++) add('loznice' + i, 'Ložnice' + (P.loznice > 1 ? ' ' + (i + 1) : ''), 14, '#cfe3cf', 2.4, 2.0);
+            for (let i = 0; i < P.detske; i++) add('pokoj' + i, 'Pokoj' + (P.detske > 1 ? ' ' + (i + 1) : ''), 11, '#d7e8cf', 2.4, 2.0);
+            for (let i = 0; i < P.koupelny; i++) add('koupelna' + i, 'Koupelna' + (P.koupelny > 1 ? ' ' + (i + 1) : ''), 6, '#b9dfe6', 1.6, 2.5);
+            add('wc', 'WC', 2.5, '#b9dfe6', 0.9, 2.5);
+            if (P.technicka) add('technicka', 'Technická', 5, '#e0dedc', 1.5, 2.5);
+            if (P.spiz) add('spiz', 'Spíž', 3, '#efe6d0', 1.2, 3.0);
 
             USABLE = P.size;
-            const sumPct = r.reduce((s, x) => s + x.pct, 0) || 1;
-            r.forEach(x => x.area = x.pct / sumPct * USABLE);
+            const sp = r.reduce((s, x) => s + x.pct, 0) || 1;
+            r.forEach(x => x.area = x.pct / sp * USABLE);
 
             const maVyrez = (P.shape === 'L' || P.shape === 'U');
-            let boundingArea = USABLE;
-            if (maVyrez) { const voidA = USABLE * 0.18; boundingArea = USABLE + voidA; r.push({ id: '_void', nazev: 'mimo dům', pct: 0, area: voidA, barva: null, min: 0.5, asp: 99, mimo: true, zona: 'roh' }); }
-
-            if (P.shape === 'ctverec') { W = H = Math.sqrt(boundingArea); }
-            else { W = Math.sqrt(boundingArea * 1.5); H = boundingArea / W; }
+            let bA = USABLE;
+            if (maVyrez) { const vA = USABLE * 0.18; bA = USABLE + vA; r.push({ id: '_void', nazev: 'mimo dům', pct: 0, area: vA, barva: null, min: 0.5, asp: 99, mimo: true }); }
+            if (P.shape === 'ctverec') { W = H = Math.sqrt(bA); } else { W = Math.sqrt(bA * 1.5); H = bA / W; }
 
             ROOMS = r; IDX = {}; ROOMS.forEach((x, i) => IDX[x.id] = i);
             VOID = IDX['_void'] != null ? IDX['_void'] : -1;
 
-            // adjacence: hub = chodba, bez chodby = obývák
-            const hub = P.chodba ? 'chodba' : 'obyvak';
-            HARD = [];
-            if (P.chodba) HARD.push(['chodba', 'obyvak']);
-            HARD.push([hub, 'wc']);
-            if (P.zadveri) HARD.push(['zadveri', hub]);
-            if (P.kuchyn) HARD.push(['obyvak', 'kuchyn']);
-            for (let i = 0; i < P.koupelny; i++) HARD.push([hub, 'koupelna' + i]);
-            if (P.technicka) HARD.push([hub, 'technicka']);
-            if (P.spiz) HARD.push([P.kuchyn ? 'kuchyn' : 'obyvak', 'spiz']);
-            const opt = P.chodba ? ['obyvak', 'chodba'] : ['obyvak'];
-            ORADJ = [];
-            for (let i = 0; i < P.loznice; i++) ORADJ.push({ room: 'loznice' + i, z: opt });
-            for (let i = 0; i < P.detske; i++) ORADJ.push({ room: 'pokoj' + i, z: opt });
-            MAXS = HARD.length + ORADJ.length;
-
-            // vestavěné malé místnosti → vykrojení z rohu hostitele (vznikne L)
-            const hostOf = id => id === 'spiz' ? (P.kuchyn ? 'kuchyn' : 'obyvak') : hub;   // wc, technická → hub
-            ROOMS.forEach(x => { x.embed = false; x.host = null; x.sliceArea = x.area; });
-            embedList = [];
-            ['wc', 'spiz', 'technicka'].forEach(id => {
-                if (IDX[id] == null) return;
-                const h = hostOf(id);
-                if (h && IDX[h] != null && h !== id) { ROOMS[IDX[id]].embed = true; ROOMS[IDX[id]].host = h; embedList.push(id); }
-            });
-            embedList.forEach(id => { const e = ROOMS[IDX[id]]; ROOMS[IDX[e.host]].sliceArea += e.area; });
-            macroIdx = ROOMS.map((_, i) => i).filter(i => !ROOMS[i].embed);          // vč. void
-            HARDsolve = HARD.filter(([a, b]) => !ROOMS[IDX[a]].embed && !ROOMS[IDX[b]].embed);  // vestavěné jsou zaručené konstrukcí
-
-            // zónové základní polohy
-            const zc = { jadro: [W * 0.5, H * 0.5], den: [W * 0.25, H * 0.6], vstup: [W * 0.5, H * 0.12], mokra: [W * 0.82, H * 0.2], noc: [W * 0.7, H * 0.8], roh: [W * 0.85, H * 0.12] };
-            const zi = {};
+            const zc = { obyvak: [W * 0.25, H * 0.55], chodba: [W * 0.5, H * 0.5], zadveri: [W * 0.5, H * 0.12], kuchyn: [W * 0.32, H * 0.85] };
+            let ni = 0;
             ROOMS.forEach(x => {
-                const c = zc[x.zona] || [W / 2, H / 2], k = (zi[x.zona] = (zi[x.zona] || 0) + 1);
-                x.base = [Math.max(0.5, Math.min(W - 0.5, c[0] + ((k % 3) - 1) * 1.6)), Math.max(0.5, Math.min(H - 0.5, c[1] + Math.floor(k / 3) * 1.6))];
+                if (zc[x.id]) x.base = zc[x.id].slice();
+                else if (x.mimo) x.base = [W * 0.85, H * 0.12];
+                else { const cols = 3; x.base = [W * (0.55 + (ni % cols) * 0.18), H * (0.25 + Math.floor(ni / cols) * 0.28)]; ni++; }
+                x.base[0] = Math.max(0.5, Math.min(W - 0.5, x.base[0])); x.base[1] = Math.max(0.5, Math.min(H - 0.5, x.base[1]));
             });
-
             PX = Math.min(MAXW / W, MAXH / H);
             cv.width = W * PX + 2 * PAD; cv.height = H * PX + 2 * PAD;
         }
-        function normalizeAreas() {
-            const real = ROOMS.filter(x => !x.mimo), s = real.reduce((a, x) => a + x.pct, 0) || 1;
-            real.forEach(x => x.area = x.pct / s * USABLE);
-        }
+        function normalizeAreas() { const real = ROOMS.filter(x => !x.mimo), s = real.reduce((a, x) => a + x.pct, 0) || 1; real.forEach(x => x.area = x.pct / s * USABLE); }
         function sumPct() { return Math.round(ROOMS.filter(x => !x.mimo).reduce((a, x) => a + x.pct, 0)); }
 
-        // ── Panel místností (checkboxy/počty + % inline) ─────────────
+        // výchozí ukotvení (uživatel je pak edituje)
+        function seedAnchors() {
+            anchors = [];
+            const hub = cfg.chodba ? 'chodba' : 'obyvak';
+            const A = (from, to) => { if (IDX[from] != null && IDX[to] != null && from !== to) anchors.push({ from, target: { type: 'room', id: to } }); };
+            if (cfg.chodba) A('chodba', 'obyvak');
+            if (cfg.zadveri) A('zadveri', hub);
+            A('wc', hub);
+            for (let i = 0; i < cfg.koupelny; i++) A('koupelna' + i, hub);
+            if (cfg.technicka) A('technicka', hub);
+            if (cfg.spiz) A('spiz', cfg.kuchyn ? 'kuchyn' : 'obyvak');
+            if (cfg.kuchyn) A('kuchyn', 'obyvak');
+            for (let i = 0; i < cfg.loznice; i++) A('loznice' + i, hub);
+            for (let i = 0; i < cfg.detske; i++) A('pokoj' + i, hub);
+        }
+        function seedVoidAnchor() { voidAnchor = VOID < 0 ? null : (cfg.shape === 'U' ? { x: W * 0.5, y: 0 } : { x: W, y: 0 }); }
+
         function renderControls() {
             const pin = id => (IDX[id] != null) ? '<input type="number" class="ks-pctin" step="0.5" min="1" data-pct="' + id + '" value="' + ROOMS[IDX[id]].pct.toFixed(1) + '">' : '';
             const rowCheck = (tog, label, roomId) => '<div class="ks-mroom"><label><input type="checkbox" data-toggle="' + tog + '"' + (cfg[tog] ? ' checked' : '') + '> ' + label + '</label>' + (cfg[tog] ? pin(roomId) : '') + '</div>';
@@ -175,13 +155,11 @@
             document.getElementById('ks-rooms').innerHTML = h;
         }
 
-        function reset() {
-            pt = ROOMS.map(x => ({ x: Math.max(0.2, Math.min(W - 0.2, x.base[0] + (Math.random() - 0.5) * 2)), y: Math.max(0.2, Math.min(H - 0.2, x.base[1] + (Math.random() - 0.5) * 2)) }));
-            dragged = -1; dirty = true;
-        }
-        function rebuildAll() { buildProgram(cfg); renderControls(); reset(); }
+        function reset() { pt = ROOMS.map(x => ({ x: Math.max(0.2, Math.min(W - 0.2, x.base[0] + (Math.random() - 0.5) * 2)), y: Math.max(0.2, Math.min(H - 0.2, x.base[1] + (Math.random() - 0.5) * 2)) })); drag = null; dirty = true; }
+        function structuralRebuild() { buildProgram(cfg); seedAnchors(); seedVoidAnchor(); renderControls(); reset(); }
+        function geomRebuild() { buildProgram(cfg); if (voidAnchor) voidAnchor = snapBoundary(voidAnchor.x, voidAnchor.y); renderControls(); reset(); }
 
-        // ── Slicing strom + řešič ────────────────────────────────────
+        // ── Slicing + řešič ──────────────────────────────────────────
         function genTree(list) {
             if (list.length === 1) return { leaf: list[0] };
             const xs = list.map(k => PP[k].x), ys = list.map(k => PP[k].y);
@@ -191,7 +169,7 @@
             const cut = 1 + Math.floor(Math.random() * (sorted.length - 1));
             return { axis, a: genTree(sorted.slice(0, cut)), b: genTree(sorted.slice(cut)) };
         }
-        function areaOf(node) { return node.leaf != null ? ROOMS[node.leaf].sliceArea : areaOf(node.a) + areaOf(node.b); }
+        function areaOf(node) { return node.leaf != null ? ROOMS[node.leaf].area : areaOf(node.a) + areaOf(node.b); }
         function dim(node, x, y, w, h, out) {
             if (node.leaf != null) { out[node.leaf] = { x, y, w, h }; return; }
             const f = areaOf(node.a) / (areaOf(node.a) + areaOf(node.b));
@@ -206,100 +184,81 @@
             if ((eq(A.y + A.h, B.y) || eq(B.y + B.h, A.y)) && xov > 0.05) return true;
             return false;
         }
+        function inRect(r, x, y) { return r && x >= r.x - 1e-6 && x <= r.x + r.w + 1e-6 && y >= r.y - 1e-6 && y <= r.y + r.h + 1e-6; }
+        function anchorOk(an, out) {
+            const f = out[IDX[an.from]]; if (!f) return false;
+            if (an.target.type === 'room') { const t = out[IDX[an.target.id]]; return t && touch(f, t); }
+            return inRect(f, an.target.x, an.target.y);   // stěnový bod uvnitř/na místnosti
+        }
         function voidOk(v) {
             if (VOID < 0 || !v) return true;
-            if (cfg.shape === 'L') return (((eq(v.x, 0) || eq(v.x + v.w, W)) ? 1 : 0) + ((eq(v.y, 0) || eq(v.y + v.h, H)) ? 1 : 0)) >= 2;
-            if (cfg.shape === 'U') return (eq(v.y, 0) || eq(v.y + v.h, H)) && v.x > 0.15 && v.x + v.w < W - 0.15;
+            if (voidAnchor) { const cs = [[v.x, v.y], [v.x + v.w, v.y], [v.x, v.y + v.h], [v.x + v.w, v.y + v.h]]; return cs.some(c => Math.hypot(c[0] - voidAnchor.x, c[1] - voidAnchor.y) < 0.4); }
             return true;
         }
         function skore(out) {
-            let adj = 0; const m = (a, b) => touch(out[IDX[a]], out[IDX[b]]);
-            HARDsolve.forEach(([a, b]) => { if (m(a, b)) adj++; });
-            ORADJ.forEach(o => { if (o.z.some(z => m(o.room, z))) adj++; });
+            let sat = 0;
+            anchors.forEach(an => { if (anchorOk(an, out)) sat++; });
             let dimPen = 0, areaErr = 0;
             out.forEach((rr, k) => {
                 if (!rr || ROOMS[k].mimo) return;
                 const sh = Math.min(rr.w, rr.h), lo = Math.max(rr.w, rr.h);
                 if (sh < ROOMS[k].min) dimPen += (ROOMS[k].min - sh) ** 2 * 10;
                 const a = lo / sh; if (a > ROOMS[k].asp) dimPen += (a - ROOMS[k].asp) ** 2;
-                areaErr += Math.abs(rr.w * rr.h - ROOMS[k].sliceArea);
+                areaErr += Math.abs(rr.w * rr.h - ROOMS[k].area);
             });
-            if (VOID >= 0 && !voidOk(out[VOID])) dimPen += 20;
-            return { adj, val: adj * 1e6 - dimPen * 1e3 - areaErr };
-        }
-        // vykrojení malé místnosti z rohu hostitele (zachová plochu, vybere vnitřní roh, bez překryvu)
-        const overlap = (a, b) => a.x < b.x + b.w - 1e-6 && b.x < a.x + a.w - 1e-6 && a.y < b.y + b.h - 1e-6 && b.y < a.y + a.h - 1e-6;
-        function carve(host, e, used) {
-            const A = e.area;
-            let ew = Math.min(Math.max(e.min, host.w * 0.5), host.w * 0.85);
-            let eh = A / ew;
-            if (eh > host.h * 0.85) { eh = host.h * 0.7; ew = A / eh; }
-            ew = Math.min(ew, host.w * 0.9); eh = A / ew;
-            const cs = [[host.x, host.y], [host.x + host.w - ew, host.y], [host.x, host.y + host.h - eh], [host.x + host.w - ew, host.y + host.h - eh]];
-            let best = null, bd = -1;
-            for (const c of cs) {
-                const rect = { x: c[0], y: c[1], w: ew, h: eh };
-                if (used.some(u => overlap(u, rect))) continue;
-                const cxx = rect.x + ew / 2, cyy = rect.y + eh / 2, d = Math.min(cxx, W - cxx, cyy, H - cyy);
-                if (d > bd) { bd = d; best = rect; }
-            }
-            return best || { x: host.x, y: host.y, w: ew, h: eh };
-        }
-        function carveEmbeds() {
-            const byHost = {};
-            embedList.forEach(id => {
-                const e = ROOMS[IDX[id]], host = layout[IDX[e.host]]; if (!host) return;
-                const used = byHost[e.host] || (byHost[e.host] = []);
-                const rect = carve(host, e, used); used.push(rect);
-                layout[IDX[id]] = rect;
-            });
+            let voidPen = 0;
+            if (VOID >= 0) { const v = out[VOID]; if (!voidOk(v)) voidPen = 15; if (voidAnchor && v) { const cs = [[v.x, v.y], [v.x + v.w, v.y], [v.x, v.y + v.h], [v.x + v.w, v.y + v.h]]; voidPen += Math.min(...cs.map(c => Math.hypot(c[0] - voidAnchor.x, c[1] - voidAnchor.y))); } }
+            return { sat, val: sat * 1e6 - dimPen * 1e3 - voidPen * 800 - areaErr };
         }
         function solve(N) {
             let best = null, bv = -Infinity;
+            const all = ROOMS.map((_, k) => k);
             for (let t = 0; t < N; t++) {
                 PP = pt.map(p => ({ x: p.x + (Math.random() - 0.5) * 3.5, y: p.y + (Math.random() - 0.5) * 3.5 }));
-                const out = []; dim(genTree(macroIdx), 0, 0, W, H, out);
+                const out = []; dim(genTree(all), 0, 0, W, H, out);
                 const sc = skore(out);
                 if (sc.val > bv) { bv = sc.val; best = out; }
             }
             layout = best;
-            if (layout) carveEmbeds();
+        }
+
+        // ── Geometrie ukotvení (v metrech) ───────────────────────────
+        const cxr = r => r.x + r.w / 2, cyr = r => r.y + r.h / 2;
+        function anchorGeom(an) {
+            const f = layout[IDX[an.from]]; if (!f) return null;
+            const fc = { x: cxr(f), y: cyr(f) };
+            let tc;
+            if (an.target.type === 'room') { const t = layout[IDX[an.target.id]]; if (!t) return null; tc = { x: cxr(t), y: cyr(t) }; }
+            else tc = { x: an.target.x, y: an.target.y };
+            return { fc, tc, handle: { x: fc.x + (tc.x - fc.x) * 0.74, y: fc.y + (tc.y - fc.y) * 0.74 }, mid: { x: (fc.x + tc.x) / 2, y: (fc.y + tc.y) / 2 } };
+        }
+        function roomAt(x, y) { if (!layout) return -1; return layout.findIndex((r, k) => r && !ROOMS[k].mimo && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h); }
+        function snapBoundary(x, y) {
+            x = Math.max(0, Math.min(W, x)); y = Math.max(0, Math.min(H, y));
+            const d = [y, H - y, x, W - x], m = Math.min(...d);
+            if (m === d[0]) y = 0; else if (m === d[1]) y = H; else if (m === d[2]) x = 0; else x = W;
+            return { x, y };
+        }
+        function dropTarget(x, y) {
+            const nearB = Math.min(x, W - x, y, H - y) < 0.55;
+            const k = roomAt(x, y);
+            if (k >= 0 && !nearB) return { type: 'room', id: ROOMS[k].id };
+            return Object.assign({ type: 'wall' }, snapBoundary(x, y));
         }
 
         // ── Vykreslení ───────────────────────────────────────────────
         const grafEl = document.getElementById('ks-graf');
-        const cx = r => r.x + r.w / 2, cy = r => r.y + r.h / 2;
         function kresli() {
-            if (dirty) { solve(dragged >= 0 ? 4500 : Math.min(60000, 12000 + ROOMS.length * 3500)); dirty = false; }
+            if (dirty) { solve(drag && drag.type === 'room' ? 4500 : Math.min(60000, 12000 + ROOMS.length * 3500)); dirty = false; }
             if (!layout) return;
-            const ma = (a, b) => {
-                const ra = ROOMS[IDX[a]], rb = ROOMS[IDX[b]];
-                if (ra && ra.embed && ra.host === b) return true;   // vestavěné ↔ hostitel = zaručeno
-                if (rb && rb.embed && rb.host === a) return true;
-                return touch(layout[IDX[a]], layout[IDX[b]]);
-            };
             ctx.clearRect(0, 0, cv.width, cv.height);
             ctx.lineWidth = 2; ctx.strokeStyle = '#4a453c';
-            // pořadí: hostitelé (plný obdélník) → vestavěné přes roh → z hostitele vznikne L
-            layout.forEach((r, k) => {
-                if (!r || ROOMS[k].mimo || ROOMS[k].embed) return;
-                ctx.fillStyle = ROOMS[k].barva;
-                ctx.fillRect(mx(r.x), mx(r.y), r.w * PX, r.h * PX);
-                ctx.strokeRect(mx(r.x), mx(r.y), r.w * PX, r.h * PX);
-            });
-            embedList.forEach(id => {
-                const k = IDX[id], r = layout[k]; if (!r) return;
-                ctx.fillStyle = ROOMS[k].barva;
-                ctx.fillRect(mx(r.x), mx(r.y), r.w * PX, r.h * PX);
-                ctx.strokeRect(mx(r.x), mx(r.y), r.w * PX, r.h * PX);
-            });
-            ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 3;
-            ctx.strokeRect(mx(0), mx(0), W * PX, H * PX);
+            layout.forEach((r, k) => { if (!r || ROOMS[k].mimo) return; ctx.fillStyle = ROOMS[k].barva; ctx.fillRect(mx(r.x), mx(r.y), r.w * PX, r.h * PX); ctx.strokeRect(mx(r.x), mx(r.y), r.w * PX, r.h * PX); });
+            ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 3; ctx.strokeRect(mx(0), mx(0), W * PX, H * PX);
 
-            if (VOID >= 0) {
+            if (VOID >= 0 && layout[VOID]) {
                 const v = layout[VOID];
-                ctx.save();
-                ctx.beginPath(); ctx.rect(mx(v.x), mx(v.y), v.w * PX, v.h * PX); ctx.clip();
+                ctx.save(); ctx.beginPath(); ctx.rect(mx(v.x), mx(v.y), v.w * PX, v.h * PX); ctx.clip();
                 ctx.fillStyle = '#ececec'; ctx.fillRect(mx(v.x), mx(v.y), v.w * PX, v.h * PX);
                 ctx.strokeStyle = '#cfcfcf'; ctx.lineWidth = 1; ctx.beginPath();
                 for (let d = 0; d < (v.w + v.h) * PX; d += 12) { ctx.moveTo(mx(v.x) + d, mx(v.y)); ctx.lineTo(mx(v.x), mx(v.y) + d); }
@@ -312,82 +271,106 @@
                 ctx.stroke();
             }
 
-            if (grafEl.checked) {
-                const cara = (aId, bId, ok) => {
-                    if (IDX[aId] == null || IDX[bId] == null) return;
-                    ctx.strokeStyle = ok ? 'rgba(30,140,60,.85)' : 'rgba(200,40,40,.9)';
-                    ctx.lineWidth = ok ? 2 : 3; ctx.setLineDash(ok ? [] : [5, 4]); ctx.beginPath();
-                    ctx.moveTo(mx(cx(layout[IDX[aId]])), mx(cy(layout[IDX[aId]])));
-                    ctx.lineTo(mx(cx(layout[IDX[bId]])), mx(cy(layout[IDX[bId]]))); ctx.stroke();
-                };
-                HARD.forEach(([a, b]) => cara(a, b, ma(a, b)));
-                ORADJ.forEach(o => { const t = o.z.find(z => ma(o.room, z)) || o.z[0]; cara(o.room, t, o.z.some(z => ma(o.room, z))); });
-                ctx.setLineDash([]);
-            }
-
+            // popisky
             ctx.textAlign = 'center';
             layout.forEach((r, k) => {
                 if (!r) return;
-                if (ROOMS[k].mimo) { ctx.fillStyle = '#9a9a9a'; ctx.font = 'italic 11px sans-serif'; ctx.fillText('mimo dům', mx(cx(r)), mx(cy(r)) + 4); return; }
-                // vestavěné hostiteli patřící k této místnosti → popisek dej mimo ně
-                const es = embedList.filter(id => ROOMS[IDX[id]].host === ROOMS[k].id).map(id => layout[IDX[id]]).filter(Boolean);
-                let lx = cx(r), ly = cy(r);
-                if (es.length) { for (const [fx, fy] of [[.28, .28], [.72, .28], [.28, .72], [.72, .72], [.5, .5]]) { const qx = r.x + r.w * fx, qy = r.y + r.h * fy; if (!es.some(e => qx > e.x && qx < e.x + e.w && qy > e.y && qy < e.y + e.h)) { lx = qx; ly = qy; break; } } }
-                let dispA = r.w * r.h; es.forEach(e => dispA -= e.w * e.h);   // hostitel: plocha L (bez vykrojených)
-                const sh = Math.min(r.w, r.h), tenke = !ROOMS[k].embed && sh < ROOMS[k].min - 0.01;
+                if (ROOMS[k].mimo) { ctx.fillStyle = '#9a9a9a'; ctx.font = 'italic 11px sans-serif'; ctx.fillText('mimo dům', mx(cxr(r)), mx(cyr(r)) + 4); return; }
+                const sh = Math.min(r.w, r.h), tenke = sh < ROOMS[k].min - 0.01;
                 ctx.fillStyle = tenke ? '#b02020' : '#2a2a2a';
-                ctx.font = (r.w * r.h < 4 ? '600 10px' : '600 12px') + ' sans-serif';
-                ctx.fillText(ROOMS[k].nazev, mx(lx), mx(ly) - 5);
-                ctx.font = (r.w * r.h < 4 ? '9px' : '11px') + ' sans-serif';
-                ctx.fillText(dispA.toFixed(1) + ' m²' + (tenke ? ' ⚠' : ''), mx(lx), mx(ly) + (r.w * r.h < 4 ? 6 : 9));
+                ctx.font = '600 12px sans-serif'; ctx.fillText(ROOMS[k].nazev, mx(cxr(r)), mx(cyr(r)) - 5);
+                ctx.font = '11px sans-serif'; ctx.fillText((r.w * r.h).toFixed(1) + ' m² · ' + sh.toFixed(1) + ' m' + (tenke ? ' ⚠' : ''), mx(cxr(r)), mx(cyr(r)) + 9);
             });
 
-            const broken = [];
-            HARD.forEach(([a, b]) => { if (!ma(a, b)) broken.push(nm(a) + '–' + nm(b)); });
-            ORADJ.forEach(o => { if (!o.z.some(z => ma(o.room, z))) broken.push(nm(o.room) + '–(' + o.z.map(nm).join('/') + ')'); });
+            // ukotvení
+            if (grafEl.checked) {
+                anchors.forEach(an => {
+                    const g = anchorGeom(an); if (!g) return;
+                    const ok = anchorOk(an, layout);
+                    ctx.strokeStyle = ok ? 'rgba(30,140,60,.9)' : 'rgba(200,40,40,.95)';
+                    ctx.lineWidth = ok ? 2 : 3; ctx.setLineDash(ok ? [] : [5, 4]);
+                    ctx.beginPath(); ctx.moveTo(mx(g.fc.x), mx(g.fc.y)); ctx.lineTo(mx(g.tc.x), mx(g.tc.y)); ctx.stroke(); ctx.setLineDash([]);
+                    // úchop cíle
+                    ctx.fillStyle = ok ? '#1e8c3c' : '#c82828'; ctx.beginPath(); ctx.arc(mx(g.handle.x), mx(g.handle.y), 5, 0, 7); ctx.fill();
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+                    // × smazat
+                    ctx.strokeStyle = '#888'; ctx.lineWidth = 1.6; const s = 3.2;
+                    ctx.beginPath(); ctx.moveTo(mx(g.mid.x) - s, mx(g.mid.y) - s); ctx.lineTo(mx(g.mid.x) + s, mx(g.mid.y) + s); ctx.moveTo(mx(g.mid.x) + s, mx(g.mid.y) - s); ctx.lineTo(mx(g.mid.x) - s, mx(g.mid.y) + s); ctx.stroke();
+                });
+                // volné body ve středu místností
+                layout.forEach((r, k) => { if (!r || ROOMS[k].mimo) return; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#888'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(mx(cxr(r)), mx(cyr(r)), 4, 0, 7); ctx.fill(); ctx.stroke(); });
+                // ukotvení výřezu
+                if (VOID >= 0 && voidAnchor && layout[VOID]) {
+                    const v = layout[VOID];
+                    ctx.strokeStyle = 'rgba(120,120,120,.9)'; ctx.setLineDash([4, 3]); ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(mx(cxr(v)), mx(cyr(v))); ctx.lineTo(mx(voidAnchor.x), mx(voidAnchor.y)); ctx.stroke(); ctx.setLineDash([]);
+                    ctx.fillStyle = '#666'; ctx.beginPath(); ctx.arc(mx(voidAnchor.x), mx(voidAnchor.y), 5, 0, 7); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+                }
+                // guma při tažení
+                if (drag && (drag.type === 'anchorEnd' || drag.type === 'newAnchor' || drag.type === 'voidAnchor') && curPos) {
+                    ctx.strokeStyle = 'rgba(217,119,6,.9)'; ctx.setLineDash([6, 4]); ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(mx(drag.src.x), mx(drag.src.y)); ctx.lineTo(mx(curPos.x), mx(curPos.y)); ctx.stroke(); ctx.setLineDash([]);
+                }
+            }
+
+            const bad = anchors.filter(an => !anchorOk(an, layout)).length;
             const el = document.getElementById('ks-stav');
-            el.textContent = 'sousednosti: ' + (MAXS - broken.length) + '/' + MAXS + (broken.length ? ' · chybí: ' + broken.join(', ') : ' ✓');
-            el.className = 'ks-stav ' + (broken.length ? 'bad' : 'ok');
+            el.textContent = 'ukotvení: ' + (anchors.length - bad) + '/' + anchors.length + (bad ? ' · nesplněno: ' + bad : ' ✓');
+            el.className = 'ks-stav ' + (bad ? 'bad' : 'ok');
         }
         function smycka() { kresli(); requestAnimationFrame(smycka); }
 
         // ── Interakce ────────────────────────────────────────────────
         function pos(e) {
-            const rect = cv.getBoundingClientRect();
-            const sx = cv.width / rect.width;
-            const mmx = ((e.clientX - rect.left) * sx - PAD) / PX, mmy = ((e.clientY - rect.top) * sx - PAD) / PX;
-            if (!layout || mmx < 0 || mmy < 0 || mmx > W || mmy > H) return { k: -1 };
-            const hit = layout.findIndex(r => mmx >= r.x && mmx <= r.x + r.w && mmy >= r.y && mmy <= r.y + r.h);
-            return { k: hit, mmx, mmy };
+            const rect = cv.getBoundingClientRect(), sx = cv.width / rect.width;
+            return { x: ((e.clientX - rect.left) * sx - PAD) / PX, y: ((e.clientY - rect.top) * sx - PAD) / PX };
         }
-        cv.addEventListener('mousedown', e => { dragged = pos(e).k; });
-        cv.addEventListener('mousemove', e => { if (dragged < 0) return; const p = pos(e); if (p.mmx != null) { pt[dragged].x = Math.max(0.1, Math.min(W - 0.1, p.mmx)); pt[dragged].y = Math.max(0.1, Math.min(H - 0.1, p.mmy)); dirty = true; } });
-        window.addEventListener('mouseup', () => { if (dragged >= 0) { dragged = -1; dirty = true; } });
-
-        // tvar + velikost
-        document.getElementById('ks-shapes').addEventListener('click', e => {
-            const b = e.target.closest('.ks-shape'); if (!b) return;
-            document.querySelectorAll('.ks-shape').forEach(x => x.classList.remove('active'));
-            b.classList.add('active'); cfg.shape = b.dataset.shape; rebuildAll();
+        const near = (a, x, y, r) => a && Math.hypot(a.x - x, a.y - y) < r;
+        cv.addEventListener('mousedown', e => {
+            const p = pos(e); curPos = p;
+            // 1) smazat × / úchop ukotvení
+            for (let i = 0; i < anchors.length; i++) {
+                const g = anchorGeom(anchors[i]); if (!g) continue;
+                if (near(g.mid, p.x, p.y, 0.28)) { anchors.splice(i, 1); dirty = true; return; }
+                if (near(g.handle, p.x, p.y, 0.4)) { drag = { type: 'anchorEnd', i, src: g.fc }; return; }
+            }
+            // 2) ukotvení výřezu
+            if (VOID >= 0 && voidAnchor && near(voidAnchor, p.x, p.y, 0.4)) { const v = layout[VOID]; drag = { type: 'voidAnchor', src: { x: cxr(v), y: cyr(v) } }; return; }
+            // 3) volný bod (střed místnosti) → nové ukotvení
+            const k = roomAt(p.x, p.y);
+            if (k >= 0 && near({ x: cxr(layout[k]), y: cyr(layout[k]) }, p.x, p.y, 0.4)) { drag = { type: 'newAnchor', from: ROOMS[k].id, src: { x: cxr(layout[k]), y: cyr(layout[k]) } }; return; }
+            // 4) tělo místnosti → přeskládat
+            if (k >= 0) { drag = { type: 'room', k }; }
         });
-        document.getElementById('ks-size').addEventListener('input', e => { cfg.size = +e.target.value; document.getElementById('ks-size-val').textContent = e.target.value + ' m²'; rebuildAll(); });
+        cv.addEventListener('mousemove', e => {
+            if (!drag) return; const p = pos(e); curPos = p;
+            if (drag.type === 'room') { pt[drag.k].x = Math.max(0.1, Math.min(W - 0.1, p.x)); pt[drag.k].y = Math.max(0.1, Math.min(H - 0.1, p.y)); dirty = true; }
+        });
+        window.addEventListener('mouseup', () => {
+            if (!drag) return; const p = curPos;
+            if (drag.type === 'anchorEnd') { const t = dropTarget(p.x, p.y); if (!(t.type === 'room' && t.id === anchors[drag.i].from)) { anchors[drag.i].target = t; dirty = true; } }
+            else if (drag.type === 'newAnchor') { const t = dropTarget(p.x, p.y); if (!(t.type === 'room' && t.id === drag.from)) { anchors.push({ from: drag.from, target: t }); dirty = true; } }
+            else if (drag.type === 'voidAnchor') { voidAnchor = snapBoundary(p.x, p.y); dirty = true; }
+            drag = null;
+        });
 
-        // panel místností (delegované)
+        // ovládání
+        document.getElementById('ks-shapes').addEventListener('click', e => { const b = e.target.closest('.ks-shape'); if (!b) return; document.querySelectorAll('.ks-shape').forEach(x => x.classList.remove('active')); b.classList.add('active'); cfg.shape = b.dataset.shape; structuralRebuild(); });
+        document.getElementById('ks-size').addEventListener('input', e => { cfg.size = +e.target.value; document.getElementById('ks-size-val').textContent = e.target.value + ' m²'; geomRebuild(); });
         const roomsBox = document.getElementById('ks-rooms');
         roomsBox.addEventListener('change', e => {
             const t = e.target;
-            if (t.dataset.toggle) { cfg[t.dataset.toggle] = t.checked; rebuildAll(); }
-            else if (t.dataset.count) { const key = t.dataset.count, mn = key === 'koupelny' ? 1 : 0; cfg[key] = Math.max(mn, Math.min(5, +t.value || 0)); rebuildAll(); }
+            if (t.dataset.toggle) { cfg[t.dataset.toggle] = t.checked; structuralRebuild(); }
+            else if (t.dataset.count) { const key = t.dataset.count, mn = key === 'koupelny' ? 1 : 0; cfg[key] = Math.max(mn, Math.min(5, +t.value || 0)); structuralRebuild(); }
         });
         roomsBox.addEventListener('input', e => {
             const t = e.target; if (!t.dataset.pct) return;
-            const id = t.dataset.pct, v = Math.max(0.5, +t.value || 0.5);
-            pctStore[id] = v; if (IDX[id] != null) ROOMS[IDX[id]].pct = v;
+            const id = t.dataset.pct, v = Math.max(0.5, +t.value || 0.5); pctStore[id] = v; if (IDX[id] != null) ROOMS[IDX[id]].pct = v;
             normalizeAreas(); const el = document.getElementById('ks-pctsum'); if (el) el.textContent = sumPct() + ' %'; dirty = true;
         });
         document.getElementById('ks-reset').addEventListener('click', reset);
 
-        rebuildAll();
+        structuralRebuild();
         smycka();
     })();
     </script>
