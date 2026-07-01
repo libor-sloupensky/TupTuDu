@@ -15,7 +15,7 @@ class KonceptTestovaniController extends Controller
         'claude-haiku-4-5'  => 'Haiku 4.5',
         'claude-sonnet-4-6' => 'Sonnet 4.6',
         'claude-opus-4-8'   => 'Opus 4.8',
-        'claude-fable-5'    => 'Fable 5',
+        // 'claude-fable-5' => 'Fable 5',  // nedostupné pro tento API klíč (404 – Anthropic gated access)
     ];
 
     private const VYCHOZI_PROMPT = 'Navrhni rodinný dům 12×8 m se třemi ložnicemi, obývacím pokojem s kuchyní, koupelnou a samostatným WC. Vstup ze severu.';
