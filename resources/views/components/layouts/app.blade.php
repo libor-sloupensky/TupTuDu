@@ -13,8 +13,13 @@
     <link rel="stylesheet" href="/css/app.css">
     <style>[x-cloak]{ display: none !important; }</style>
 </head>
-<body class="min-h-screen bg-gray-50 {{ $fullWidth ? '' : 'max-w-6xl mx-auto px-4 py-8' }}">
-    {{ $slot }}
+<body style="background: var(--c-bg);">
+    <div class="tt-layout">
+        @include('partials.sidebar')
+        <main class="tt-main" style="{{ $fullWidth ? 'padding:.5rem;' : 'padding:2rem 1.5rem; max-width:72rem; margin:0 auto;' }}">
+            {{ $slot }}
+        </main>
+    </div>
 
     {{-- Odchytávač JS chyb → /api/chyba (zobrazí se v /masterteam/chyby jako typ 'client'). --}}
     <script>
