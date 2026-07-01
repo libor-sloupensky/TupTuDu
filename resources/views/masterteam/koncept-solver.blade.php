@@ -2,7 +2,7 @@
     <style>
         .ks-wrap { padding: 1.5rem 2rem; max-width: 1100px; margin: 0 auto; }
         .ks-layout { display: flex; gap: 1.25rem; align-items: flex-start; flex-wrap: wrap; }
-        .ks-controls { width: 240px; flex: 0 0 240px; font-size: .9rem; }
+        .ks-controls { width: 250px; flex: 0 0 250px; font-size: .9rem; }
         .ks-controls h3 { margin: .6rem 0 .5rem; font-size: .95rem; }
         .ks-controls h3:first-child { margin-top: 0; }
         .ks-shapes { display: flex; gap: .4rem; margin-bottom: .8rem; }
@@ -10,8 +10,11 @@
         .ks-shape small { display: block; font-size: .62rem; font-weight: 500; opacity: .8; }
         .ks-shape.active { background: var(--c-primary, #d97706); color: #fff; border-color: transparent; }
         .ks-row { display: flex; justify-content: space-between; align-items: center; margin: .4rem 0; gap: .5rem; }
-        .ks-row input[type=number] { width: 3.4rem; padding: .2rem .3rem; }
         .ks-row input[type=range] { flex: 1; }
+        .ks-mroom { display: flex; justify-content: space-between; align-items: center; margin: .3rem 0; gap: .5rem; }
+        .ks-mroom > label { display: flex; align-items: center; gap: .35rem; }
+        .ks-sub { display: flex; justify-content: space-between; align-items: center; margin: .18rem 0 .18rem 1.1rem; gap: .5rem; color: var(--c-text-secondary); font-size: .85rem; }
+        .ks-pctin, .ks-cnt { width: 3.4rem; padding: .15rem .3rem; text-align: right; }
         .ks-controls hr { border: none; border-top: 1px solid var(--c-border); margin: .8rem 0; }
         .ks-canvas-wrap { flex: 1; min-width: 360px; }
         .ks-bar { display: flex; gap: 1rem; align-items: center; margin: 0 0 .8rem; flex-wrap: wrap; }
@@ -23,7 +26,7 @@
     </style>
 
     <div class="ks-wrap">
-        <h1>Koncept solver (v8)</h1>
+        <h1>Koncept solver (v10)</h1>
 
         <div class="ks-layout">
             <div class="ks-controls">
@@ -39,19 +42,8 @@
                 <input type="range" id="ks-size" min="60" max="220" step="5" value="110" style="width:100%">
 
                 <hr>
-                <h3>Místnosti</h3>
-                <div class="ks-row"><label title="Dle ČSN 73 4301 má mít hlavní vstup do rodinného domu zádveří."><input type="checkbox" id="ks-zadveri" checked> Zádveří</label></div>
-                <div class="ks-row"><label><input type="checkbox" id="ks-kuchyn"> Kuchyň zvlášť</label></div>
-                <div class="ks-row"><label><input type="checkbox" id="ks-technicka"> Technická místnost</label></div>
-                <div class="ks-row"><label><input type="checkbox" id="ks-spiz"> Spíž</label></div>
-                <div class="ks-row"><label>Ložnice</label><input type="number" id="ks-loznice" min="0" max="5" value="2"></div>
-                <div class="ks-row"><label>Pokoje</label><input type="number" id="ks-detske" min="0" max="5" value="1"></div>
-                <div class="ks-row"><label>Koupelny</label><input type="number" id="ks-koupelny" min="1" max="3" value="1"></div>
-
-                <hr>
-                <h3>Velikosti (% domu)</h3>
+                <h3>Místnosti <span style="font-weight:400;color:var(--c-text-secondary);font-size:.75rem">(% domu)</span></h3>
                 <div id="ks-rooms"></div>
-                <div class="ks-row" style="border-top:1px solid var(--c-border);padding-top:.35rem;margin-top:.35rem;"><label>Součet</label><strong id="ks-pctsum">—</strong></div>
 
                 <hr>
                 <button id="ks-reset" class="btn btn-primary" style="width:100%">Přeskládat</button>
@@ -61,7 +53,7 @@
             <div class="ks-canvas-wrap">
                 <div class="ks-bar"><span id="ks-stav" class="ks-stav"></span></div>
                 <canvas id="ks-canvas"></canvas>
-                <div class="ks-legend"><strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. U místnosti plocha + <strong>kratší strana</strong>; <span style="color:#b02020">⚠</span> = pod min. šířkou (WC 0,9 · koupelna 1,6 · chodba/zádveří 1,1 · obytné 2,4 m). Šrafovaně = mimo dům (výřez u L/U). Solver hledá dispozici z grafu sousedností; místnosti jsou obdélníky.</div>
+                <div class="ks-legend"><strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. U místnosti plocha + <strong>kratší strana</strong>; <span style="color:#b02020">⚠</span> = pod min. šířkou (WC 0,9 · koupelna 1,6 · chodba/zádveří 1,1 · obytné 2,4 m). Šrafovaně = mimo dům (výřez u L/U). Bez chodby se místnosti napojí na obývák.</div>
             </div>
         </div>
     </div>
@@ -73,42 +65,22 @@
         const PAD = 18, MAXW = 640, MAXH = 460;
         const eq = (p, q) => Math.abs(p - q) < 1e-6;
 
-        // stav (přebudováván z ovládání)
+        // konfigurace (jediný zdroj pravdy)
+        const cfg = { shape: 'obdelnik', size: 110, zadveri: true, chodba: true, kuchyn: false, technicka: false, spiz: false, loznice: 2, detske: 1, koupelny: 1 };
+        const pctStore = {};   // uživatelské úpravy % (id → %)
+
         let ROOMS = [], IDX = {}, HARD = [], ORADJ = [], MAXS = 0;
-        let W = 12, H = 8, PX = 50, VOID = -1, curShape = 'obdelnik';
-        let pt = [], layout = null, dirty = true, dragged = -1;
-        let USABLE = 110;                 // využitelná plocha domu (m²) = velikost
-        const pctStore = {};              // uživatelské úpravy % (id → %)
+        let W = 12, H = 8, PX = 50, VOID = -1, USABLE = 110;
+        let pt = [], layout = null, dirty = true, dragged = -1, PP = [];
         const mx = m => PAD + m * PX;
         const nm = id => ROOMS[IDX[id]].nazev;
 
-        // ── Sestavení programu z parametrů ───────────────────────────
-        function readParams() {
-            return {
-                shape: document.querySelector('.ks-shape.active').dataset.shape,
-                size: +document.getElementById('ks-size').value,
-                zadveri: document.getElementById('ks-zadveri').checked,
-                kuchynZvlast: document.getElementById('ks-kuchyn').checked,
-                technicka: document.getElementById('ks-technicka').checked,
-                spiz: document.getElementById('ks-spiz').checked,
-                loznice: +document.getElementById('ks-loznice').value,
-                detske: +document.getElementById('ks-detske').value,
-                koupelny: +document.getElementById('ks-koupelny').value,
-            };
-        }
-        // normalizace: plochy z uživatelských % (váhy) na využitelnou plochu domu
-        function normalizeAreas() {
-            const real = ROOMS.filter(x => !x.mimo), s = real.reduce((a, x) => a + x.pct, 0) || 1;
-            real.forEach(x => x.area = x.pct / s * USABLE);
-        }
         function buildProgram(P) {
-            curShape = P.shape;
             const r = [];
-            // dp = výchozí % domu; skutečné % = uživatelská úprava z pctStore, jinak dp
             const add = (id, nazev, dp, barva, min, asp, zona) => r.push({ id, nazev, dp, barva, min, asp, zona, pct: pctStore[id] != null ? pctStore[id] : dp });
             if (P.zadveri) add('zadveri', 'Zádveří', 4, '#c9d7e8', 1.1, 3.0, 'vstup');
-            add('chodba', 'Chodba', 9, '#e6e0d2', 1.1, 99, 'jadro');
-            if (P.kuchynZvlast) { add('obyvak', 'Obývák', 22, '#f2d7a8', 3.0, 1.8, 'den'); add('kuchyn', 'Kuchyň', 9, '#f2c98a', 2.0, 2.0, 'den'); }
+            if (P.chodba) add('chodba', 'Chodba', 9, '#e6e0d2', 1.1, 99, 'jadro');
+            if (P.kuchyn) { add('obyvak', 'Obývák', 22, '#f2d7a8', 3.0, 1.8, 'den'); add('kuchyn', 'Kuchyň', 9, '#f2c98a', 2.0, 2.0, 'den'); }
             else add('obyvak', 'Obývák+kuchyň', 28, '#f2d7a8', 3.0, 1.8, 'den');
             for (let i = 0; i < P.loznice; i++) add('loznice' + i, 'Ložnice' + (P.loznice > 1 ? ' ' + (i + 1) : ''), 14, '#cfe3cf', 2.4, 2.0, 'noc');
             for (let i = 0; i < P.detske; i++) add('pokoj' + i, 'Pokoj' + (P.detske > 1 ? ' ' + (i + 1) : ''), 11, '#d7e8cf', 2.4, 2.0, 'noc');
@@ -121,7 +93,6 @@
             const sumPct = r.reduce((s, x) => s + x.pct, 0) || 1;
             r.forEach(x => x.area = x.pct / sumPct * USABLE);
 
-            // výřez (mimo dům) pro L/U → nepravoúhlý obrys
             const maVyrez = (P.shape === 'L' || P.shape === 'U');
             let boundingArea = USABLE;
             if (maVyrez) { const voidA = USABLE * 0.18; boundingArea = USABLE + voidA; r.push({ id: '_void', nazev: 'mimo dům', pct: 0, area: voidA, barva: null, min: 0.5, asp: 99, mimo: true, zona: 'roh' }); }
@@ -132,19 +103,23 @@
             ROOMS = r; IDX = {}; ROOMS.forEach((x, i) => IDX[x.id] = i);
             VOID = IDX['_void'] != null ? IDX['_void'] : -1;
 
-            // adjacence (odvozené z aktuální skladby)
-            HARD = [['chodba', 'obyvak'], ['chodba', 'wc']];
-            if (P.zadveri) HARD.push(['zadveri', 'chodba']);
-            if (P.kuchynZvlast) HARD.push(['obyvak', 'kuchyn']);
-            for (let i = 0; i < P.koupelny; i++) HARD.push(['chodba', 'koupelna' + i]);
-            if (P.technicka) HARD.push(['chodba', 'technicka']);
-            if (P.spiz) HARD.push([P.kuchynZvlast ? 'kuchyn' : 'obyvak', 'spiz']);
+            // adjacence: hub = chodba, bez chodby = obývák
+            const hub = P.chodba ? 'chodba' : 'obyvak';
+            HARD = [];
+            if (P.chodba) HARD.push(['chodba', 'obyvak']);
+            HARD.push([hub, 'wc']);
+            if (P.zadveri) HARD.push(['zadveri', hub]);
+            if (P.kuchyn) HARD.push(['obyvak', 'kuchyn']);
+            for (let i = 0; i < P.koupelny; i++) HARD.push([hub, 'koupelna' + i]);
+            if (P.technicka) HARD.push([hub, 'technicka']);
+            if (P.spiz) HARD.push([P.kuchyn ? 'kuchyn' : 'obyvak', 'spiz']);
+            const opt = P.chodba ? ['obyvak', 'chodba'] : ['obyvak'];
             ORADJ = [];
-            for (let i = 0; i < P.loznice; i++) ORADJ.push({ room: 'loznice' + i, z: ['obyvak', 'chodba'] });
-            for (let i = 0; i < P.detske; i++) ORADJ.push({ room: 'pokoj' + i, z: ['obyvak', 'chodba'] });
+            for (let i = 0; i < P.loznice; i++) ORADJ.push({ room: 'loznice' + i, z: opt });
+            for (let i = 0; i < P.detske; i++) ORADJ.push({ room: 'pokoj' + i, z: opt });
             MAXS = HARD.length + ORADJ.length;
 
-            // zónové základní polohy (hint pro dělení): denní vlevo, noční vpravo, mokrá cluster
+            // zónové základní polohy
             const zc = { jadro: [W * 0.5, H * 0.5], den: [W * 0.25, H * 0.6], vstup: [W * 0.5, H * 0.12], mokra: [W * 0.82, H * 0.2], noc: [W * 0.7, H * 0.8], roh: [W * 0.85, H * 0.12] };
             const zi = {};
             ROOMS.forEach(x => {
@@ -155,31 +130,44 @@
             PX = Math.min(MAXW / W, MAXH / H);
             cv.width = W * PX + 2 * PAD; cv.height = H * PX + 2 * PAD;
         }
-
-        // vykreslení seznamu místností s editovatelnými % v panelu
-        function renderRoomList() {
-            const box = document.getElementById('ks-rooms'); box.innerHTML = '';
-            ROOMS.forEach(x => {
-                if (x.mimo) return;
-                const row = document.createElement('div'); row.className = 'ks-row';
-                row.innerHTML = '<label>' + x.nazev + '</label><input type="number" step="0.5" min="1" data-id="' + x.id + '" value="' + x.pct.toFixed(1) + '" style="width:3.6rem">';
-                box.appendChild(row);
-            });
-            updatePctSum();
+        function normalizeAreas() {
+            const real = ROOMS.filter(x => !x.mimo), s = real.reduce((a, x) => a + x.pct, 0) || 1;
+            real.forEach(x => x.area = x.pct / s * USABLE);
         }
-        function updatePctSum() {
-            const s = ROOMS.filter(x => !x.mimo).reduce((a, x) => a + x.pct, 0);
-            document.getElementById('ks-pctsum').textContent = Math.round(s) + ' %';
+        function sumPct() { return Math.round(ROOMS.filter(x => !x.mimo).reduce((a, x) => a + x.pct, 0)); }
+
+        // ── Panel místností (checkboxy/počty + % inline) ─────────────
+        function renderControls() {
+            const pin = id => (IDX[id] != null) ? '<input type="number" class="ks-pctin" step="0.5" min="1" data-pct="' + id + '" value="' + ROOMS[IDX[id]].pct.toFixed(1) + '">' : '';
+            const rowCheck = (tog, label, roomId) => '<div class="ks-mroom"><label><input type="checkbox" data-toggle="' + tog + '"' + (cfg[tog] ? ' checked' : '') + '> ' + label + '</label>' + (cfg[tog] ? pin(roomId) : '') + '</div>';
+            const rowFixed = (roomId, label) => '<div class="ks-mroom"><span>' + label + '</span>' + pin(roomId) + '</div>';
+            const rowCount = (cntKey, label, pref) => {
+                let h = '<div class="ks-mroom"><label>' + label + '</label><input type="number" class="ks-cnt" data-count="' + cntKey + '" min="0" max="5" value="' + cfg[cntKey] + '"></div>';
+                for (let i = 0; i < cfg[cntKey]; i++) { const id = pref + i; if (IDX[id] != null) h += '<div class="ks-sub"><span>• ' + ROOMS[IDX[id]].nazev + '</span>' + pin(id) + '</div>'; }
+                return h;
+            };
+            let h = '';
+            h += rowCheck('zadveri', 'Zádveří', 'zadveri');
+            h += rowCheck('chodba', 'Chodba', 'chodba');
+            h += rowFixed('obyvak', cfg.kuchyn ? 'Obývák' : 'Obývák+kuchyň');
+            h += rowCheck('kuchyn', 'Kuchyň zvlášť', 'kuchyn');
+            h += rowCount('loznice', 'Ložnice', 'loznice');
+            h += rowCount('detske', 'Pokoje', 'pokoj');
+            h += rowCount('koupelny', 'Koupelny', 'koupelna');
+            h += rowFixed('wc', 'WC');
+            h += rowCheck('technicka', 'Technická místnost', 'technicka');
+            h += rowCheck('spiz', 'Spíž', 'spiz');
+            h += '<div class="ks-mroom" style="border-top:1px solid var(--c-border);padding-top:.35rem;margin-top:.4rem;"><span>Součet</span><strong id="ks-pctsum">' + sumPct() + ' %</strong></div>';
+            document.getElementById('ks-rooms').innerHTML = h;
         }
 
         function reset() {
             pt = ROOMS.map(x => ({ x: Math.max(0.2, Math.min(W - 0.2, x.base[0] + (Math.random() - 0.5) * 2)), y: Math.max(0.2, Math.min(H - 0.2, x.base[1] + (Math.random() - 0.5) * 2)) }));
             dragged = -1; dirty = true;
         }
-        function rebuild() { buildProgram(readParams()); renderRoomList(); reset(); }
+        function rebuildAll() { buildProgram(cfg); renderControls(); reset(); }
 
-        // ── Slicing strom (PP = polohy pro daný pokus, s jitterem) ────
-        let PP = [];
+        // ── Slicing strom + řešič ────────────────────────────────────
         function genTree(list) {
             if (list.length === 1) return { leaf: list[0] };
             const xs = list.map(k => PP[k].x), ys = list.map(k => PP[k].y);
@@ -206,8 +194,8 @@
         }
         function voidOk(v) {
             if (VOID < 0 || !v) return true;
-            if (curShape === 'L') return (((eq(v.x, 0) || eq(v.x + v.w, W)) ? 1 : 0) + ((eq(v.y, 0) || eq(v.y + v.h, H)) ? 1 : 0)) >= 2;
-            if (curShape === 'U') return (eq(v.y, 0) || eq(v.y + v.h, H)) && v.x > 0.15 && v.x + v.w < W - 0.15;
+            if (cfg.shape === 'L') return (((eq(v.x, 0) || eq(v.x + v.w, W)) ? 1 : 0) + ((eq(v.y, 0) || eq(v.y + v.h, H)) ? 1 : 0)) >= 2;
+            if (cfg.shape === 'U') return (eq(v.y, 0) || eq(v.y + v.h, H)) && v.x > 0.15 && v.x + v.w < W - 0.15;
             return true;
         }
         function skore(out) {
@@ -229,7 +217,7 @@
             let best = null, bv = -Infinity;
             const all = ROOMS.map((_, k) => k);
             for (let t = 0; t < N; t++) {
-                PP = pt.map(p => ({ x: p.x + (Math.random() - 0.5) * 3.5, y: p.y + (Math.random() - 0.5) * 3.5 }));  // jitter → víc variant
+                PP = pt.map(p => ({ x: p.x + (Math.random() - 0.5) * 3.5, y: p.y + (Math.random() - 0.5) * 3.5 }));
                 const out = []; dim(genTree(all), 0, 0, W, H, out);
                 const sc = skore(out);
                 if (sc.val > bv) { bv = sc.val; best = out; }
@@ -241,7 +229,7 @@
         const grafEl = document.getElementById('ks-graf');
         const cx = r => r.x + r.w / 2, cy = r => r.y + r.h / 2;
         function kresli() {
-            if (dirty) { solve(dragged >= 0 ? 4000 : 24000); dirty = false; }
+            if (dirty) { solve(dragged >= 0 ? 4500 : Math.min(60000, 12000 + ROOMS.length * 3500)); dirty = false; }
             if (!layout) return;
             const ma = (a, b) => touch(layout[IDX[a]], layout[IDX[b]]);
             ctx.clearRect(0, 0, cv.width, cv.height);
@@ -255,7 +243,6 @@
             ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 3;
             ctx.strokeRect(mx(0), mx(0), W * PX, H * PX);
 
-            // výřez „mimo dům"
             if (VOID >= 0) {
                 const v = layout[VOID];
                 ctx.save();
@@ -274,6 +261,7 @@
 
             if (grafEl.checked) {
                 const cara = (aId, bId, ok) => {
+                    if (IDX[aId] == null || IDX[bId] == null) return;
                     ctx.strokeStyle = ok ? 'rgba(30,140,60,.85)' : 'rgba(200,40,40,.9)';
                     ctx.lineWidth = ok ? 2 : 3; ctx.setLineDash(ok ? [] : [5, 4]); ctx.beginPath();
                     ctx.moveTo(mx(cx(layout[IDX[aId]])), mx(cy(layout[IDX[aId]])));
@@ -317,24 +305,30 @@
         cv.addEventListener('mousemove', e => { if (dragged < 0) return; const p = pos(e); if (p.mmx != null) { pt[dragged].x = Math.max(0.1, Math.min(W - 0.1, p.mmx)); pt[dragged].y = Math.max(0.1, Math.min(H - 0.1, p.mmy)); dirty = true; } });
         window.addEventListener('mouseup', () => { if (dragged >= 0) { dragged = -1; dirty = true; } });
 
-        // ovládání
+        // tvar + velikost
         document.getElementById('ks-shapes').addEventListener('click', e => {
             const b = e.target.closest('.ks-shape'); if (!b) return;
             document.querySelectorAll('.ks-shape').forEach(x => x.classList.remove('active'));
-            b.classList.add('active'); rebuild();
+            b.classList.add('active'); cfg.shape = b.dataset.shape; rebuildAll();
         });
-        document.getElementById('ks-size').addEventListener('input', e => { document.getElementById('ks-size-val').textContent = e.target.value + ' m²'; rebuild(); });
-        ['ks-zadveri', 'ks-kuchyn', 'ks-technicka', 'ks-spiz', 'ks-loznice', 'ks-detske', 'ks-koupelny'].forEach(id => document.getElementById(id).addEventListener('change', rebuild));
-        // úprava % místnosti → přepočítat plochy (bez přestavby seznamu)
-        document.getElementById('ks-rooms').addEventListener('input', e => {
-            const inp = e.target.closest('input[data-id]'); if (!inp) return;
-            const id = inp.dataset.id, v = Math.max(0.5, +inp.value || 0.5);
-            pctStore[id] = v; const k = IDX[id]; if (k != null) ROOMS[k].pct = v;
-            normalizeAreas(); updatePctSum(); dirty = true;
+        document.getElementById('ks-size').addEventListener('input', e => { cfg.size = +e.target.value; document.getElementById('ks-size-val').textContent = e.target.value + ' m²'; rebuildAll(); });
+
+        // panel místností (delegované)
+        const roomsBox = document.getElementById('ks-rooms');
+        roomsBox.addEventListener('change', e => {
+            const t = e.target;
+            if (t.dataset.toggle) { cfg[t.dataset.toggle] = t.checked; rebuildAll(); }
+            else if (t.dataset.count) { const key = t.dataset.count, mn = key === 'koupelny' ? 1 : 0; cfg[key] = Math.max(mn, Math.min(5, +t.value || 0)); rebuildAll(); }
+        });
+        roomsBox.addEventListener('input', e => {
+            const t = e.target; if (!t.dataset.pct) return;
+            const id = t.dataset.pct, v = Math.max(0.5, +t.value || 0.5);
+            pctStore[id] = v; if (IDX[id] != null) ROOMS[IDX[id]].pct = v;
+            normalizeAreas(); const el = document.getElementById('ks-pctsum'); if (el) el.textContent = sumPct() + ' %'; dirty = true;
         });
         document.getElementById('ks-reset').addEventListener('click', reset);
 
-        rebuild();
+        rebuildAll();
         smycka();
     })();
     </script>
