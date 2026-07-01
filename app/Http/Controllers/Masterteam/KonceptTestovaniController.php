@@ -287,17 +287,19 @@ PROMPT;
             $this->kresliMistnost($x, $y, $w, $h, $rooms[0]['nazev'], $rooms[0]['plocha'], $grid);
             return;
         }
+        $n = count($rooms);
         $total = array_sum(array_column($rooms, 'plocha'));
-        // rozděl na dvě skupiny ~půl plochy
-        $a = []; $sumA = 0; $i = 0;
-        while ($i < count($rooms) - 1 && $sumA + $rooms[$i]['plocha'] < $total / 2) {
-            $a[] = $rooms[$i]; $sumA += $rooms[$i]['plocha']; $i++;
+        // Najdi dělicí index k (1..n-1) tak, aby plochy obou skupin byly co nejvyrovnanější.
+        $prefix = 0; $best = PHP_INT_MAX; $k = 1;
+        for ($idx = 0; $idx < $n - 1; $idx++) {
+            $prefix += $rooms[$idx]['plocha'];
+            $diff = abs($prefix - ($total - $prefix));
+            if ($diff < $best) { $best = $diff; $k = $idx + 1; }
         }
-        $a[] = $rooms[$i]; $sumA += $rooms[$i]['plocha']; $i++;
-        $b = array_slice($rooms, $i);
-        if (empty($b)) { $this->kresliMistnost($x, $y, $w, $h, $rooms[0]['nazev'], $rooms[0]['plocha'], $grid); return; }
-
-        $podil = $sumA / $total;
+        $a = array_slice($rooms, 0, $k);
+        $b = array_slice($rooms, $k);
+        $sumA = array_sum(array_column($a, 'plocha'));
+        $podil = $total > 0 ? $sumA / $total : 0.5;
         if ($w >= $h) { // svislý řez
             $cw = max(1, min($w - 1, (int) round($w * $podil)));
             $this->slice($a, $x, $y, $cw, $h, $grid);
