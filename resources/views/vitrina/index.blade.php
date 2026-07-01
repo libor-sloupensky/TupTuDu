@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>TupTuDu — projekt v přípravě</title>
-    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/app.css?v={{ filemtime(public_path('css/app.css')) }}">
     <style>
         .wrap { display: flex; align-items: center; justify-content: center; min-height: 72vh; padding: 1.5rem; text-align: center; }
         h1 { font-size: 1.75rem; }

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>Přihlášení — TupTuDu</title>
-    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/app.css?v={{ filemtime(public_path('css/app.css')) }}">
     <style>
         .wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1.5rem; }
         .card { max-width: 24rem; width: 100%; }

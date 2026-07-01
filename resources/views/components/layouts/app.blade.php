@@ -10,7 +10,7 @@
 
     {{-- Tailwind utility třídy za běhu (bez build kroku) + Alpine. Brand styl viz /css/app.css. --}}
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/app.css?v={{ filemtime(public_path('css/app.css')) }}">
     <style>[x-cloak]{ display: none !important; }</style>
 </head>
 <body style="background: var(--c-bg);">
