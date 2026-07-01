@@ -20,22 +20,23 @@
         </div>
 
         <canvas id="ks-canvas"></canvas>
-        <div class="ks-legend">Pozemek 12 × 8 m. <strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. Rozpočet rohů = 4 + plocha/6; obdélník = 4 (strop, ne cíl). Tolerance plochy ~±10 %. Slicing strom je 1. stupeň dualizace — realizuje graf pro tento program; obecné odvození z libovolného grafu je další krok.</div>
+        <div class="ks-legend">Pozemek 12 × 8 m. <strong>Zelená čára</strong> = povinný kontakt drží, <strong>červená</strong> = chybí. U místnosti je plocha a <strong>kratší strana</strong> (m); <span style="color:#b02020">⚠ červeně</span> = pod min. šířkou pro daný typ (WC 0,9 · koupelna 1,6 · chodba/zádveří 1,1 · obytné 2,4 m). Solver mezi platnými dispozicemi vybírá ty bez tenkých „placek" a „nudlí". Tolerance plochy ~±10 %.</div>
     </div>
 
     <script>
     (function () {
         // ── Program (napevno – dům 3+kk) ─────────────────────────────
         const W = 12, H = 8;
+        // min = min. kratší strana (m), asp = max. poměr delší:kratší strana
         const ROOMS = [
-            { id: 'zadveri',  nazev: 'Zádveří',        area: 5,  barva: '#c9d7e8', base: [6, 1] },
-            { id: 'chodba',   nazev: 'Chodba',         area: 8,  barva: '#e6e0d2', base: [6, 4] },
-            { id: 'obyvak',   nazev: 'Obývák+kuchyň',  area: 32, barva: '#f2d7a8', base: [1.5, 4] },
-            { id: 'loznice1', nazev: 'Ložnice rodičů', area: 14, barva: '#cfe3cf', base: [10.5, 4] },
-            { id: 'loznice2', nazev: 'Ložnice',        area: 12, barva: '#cfe3cf', base: [5, 6.8] },
-            { id: 'loznice3', nazev: 'Dětský pokoj',   area: 11, barva: '#cfe3cf', base: [8, 6.8] },
-            { id: 'koupelna', nazev: 'Koupelna',       area: 6,  barva: '#b9dfe6', base: [7, 1] },
-            { id: 'wc',       nazev: 'WC',             area: 2,  barva: '#b9dfe6', base: [9, 1] },
+            { id: 'zadveri',  nazev: 'Zádveří',        area: 5,  barva: '#c9d7e8', base: [6, 1],    min: 1.1, asp: 3.0 },
+            { id: 'chodba',   nazev: 'Chodba',         area: 8,  barva: '#e6e0d2', base: [6, 4],    min: 1.1, asp: 99 },
+            { id: 'obyvak',   nazev: 'Obývák+kuchyň',  area: 32, barva: '#f2d7a8', base: [1.5, 4],  min: 3.0, asp: 1.8 },
+            { id: 'loznice1', nazev: 'Ložnice rodičů', area: 14, barva: '#cfe3cf', base: [10.5, 4], min: 2.4, asp: 2.0 },
+            { id: 'loznice2', nazev: 'Ložnice',        area: 12, barva: '#cfe3cf', base: [5, 6.8],  min: 2.4, asp: 2.0 },
+            { id: 'loznice3', nazev: 'Dětský pokoj',   area: 11, barva: '#cfe3cf', base: [8, 6.8],  min: 2.4, asp: 2.0 },
+            { id: 'koupelna', nazev: 'Koupelna',       area: 6,  barva: '#b9dfe6', base: [7, 1],    min: 1.6, asp: 2.5 },
+            { id: 'wc',       nazev: 'WC',             area: 2,  barva: '#b9dfe6', base: [9, 1],    min: 0.9, asp: 2.5 },
         ];
         const IDX = {}; ROOMS.forEach((r, i) => IDX[r.id] = i);
         const nm = id => ROOMS[IDX[id]].nazev;
@@ -88,24 +89,29 @@
             if ((eq(A.y + A.h, B.y) || eq(B.y + B.h, A.y)) && xov > 0.05) return true;
             return false;
         }
+        // skóre: sousednosti (hlavní) − penalizace rozměrů − odchylka ploch (tie-break)
         function skore(out) {
-            let s = 0; const m = (a, b) => touch(out[IDX[a]], out[IDX[b]]);
-            HARD.forEach(([a, b]) => { if (m(a, b)) s++; });
-            ORADJ.forEach(o => { if (o.z.some(z => m(o.room, z))) s++; });
-            // jemný bonus: menší odchylka ploch (tie-break)
-            let err = 0; out.forEach((r, k) => err += Math.abs(r.w * r.h - ROOMS[k].area));
-            return s - err / 1000;
+            let adj = 0; const m = (a, b) => touch(out[IDX[a]], out[IDX[b]]);
+            HARD.forEach(([a, b]) => { if (m(a, b)) adj++; });
+            ORADJ.forEach(o => { if (o.z.some(z => m(o.room, z))) adj++; });
+            let dimPen = 0, areaErr = 0;
+            out.forEach((r, k) => {
+                const sh = Math.min(r.w, r.h), lo = Math.max(r.w, r.h);
+                if (sh < ROOMS[k].min) dimPen += (ROOMS[k].min - sh) ** 2 * 10;       // tenká místnost
+                const a = lo / sh; if (a > ROOMS[k].asp) dimPen += (a - ROOMS[k].asp) ** 2; // „nudle"
+                areaErr += Math.abs(r.w * r.h - ROOMS[k].area);
+            });
+            return { adj, val: adj * 1e6 - dimPen * 1e3 - areaErr };
         }
-        function solve() {
-            let best = null, bs = -Infinity, bInt = 0;
+        function solve(N) {
+            let best = null, bv = -Infinity, bAdj = 0;
             const all = ROOMS.map((_, k) => k);
-            for (let t = 0; t < 4000; t++) {
+            for (let t = 0; t < N; t++) {
                 const out = []; dim(genTree(all), 0, 0, W, H, out);
-                const s = skore(out);
-                if (s > bs) { bs = s; best = out; bInt = Math.floor(s + 1e-6); }
-                if (bInt >= MAXS && t > 200) break;   // našli plné řešení, chvíli hledej hezčí plochy
+                const sc = skore(out);
+                if (sc.val > bv) { bv = sc.val; best = out; bAdj = sc.adj; }
             }
-            layout = best; curScore = bInt;
+            layout = best; curScore = bAdj;
         }
         reset();
 
@@ -113,7 +119,7 @@
         const grafEl = document.getElementById('ks-graf');
         const cx = r => r.x + r.w / 2, cy = r => r.y + r.h / 2;
         function kresli() {
-            if (dirty) { solve(); dirty = false; }
+            if (dirty) { solve(dragged >= 0 ? 5000 : 30000); dirty = false; }  // tažení = rychle, usazení = důkladně
             if (!layout) return;
             const ma = (a, b) => touch(layout[IDX[a]], layout[IDX[b]]);
             ctx.clearRect(0, 0, cv.width, cv.height);
@@ -138,13 +144,14 @@
                 ctx.setLineDash([]);
             }
 
-            ctx.fillStyle = '#2a2a2a'; ctx.textAlign = 'center';
+            ctx.textAlign = 'center';
             layout.forEach((r, k) => {
-                const budget = 4 + Math.floor(ROOMS[k].area / 6);
+                const sh = Math.min(r.w, r.h), tenke = sh < ROOMS[k].min - 0.01;
+                ctx.fillStyle = tenke ? '#b02020' : '#2a2a2a';
                 ctx.font = '600 12px sans-serif';
                 ctx.fillText(ROOMS[k].nazev, mx(cx(r)), mx(cy(r)) - 5);
                 ctx.font = '11px sans-serif';
-                ctx.fillText(Math.round(r.w * r.h) + ' m² · 4/' + budget + ' rohů', mx(cx(r)), mx(cy(r)) + 9);
+                ctx.fillText(Math.round(r.w * r.h) + ' m² · ' + sh.toFixed(1) + ' m' + (tenke ? ' ⚠' : ''), mx(cx(r)), mx(cy(r)) + 9);
             });
 
             const broken = [];
@@ -168,7 +175,7 @@
         }
         cv.addEventListener('mousedown', e => { dragged = pos(e).k; });
         cv.addEventListener('mousemove', e => { if (dragged < 0) return; const p = pos(e); if (p.mmx != null) { pt[dragged].x = Math.max(0.1, Math.min(W - 0.1, p.mmx)); pt[dragged].y = Math.max(0.1, Math.min(H - 0.1, p.mmy)); dirty = true; } });
-        window.addEventListener('mouseup', () => { dragged = -1; });
+        window.addEventListener('mouseup', () => { if (dragged >= 0) { dragged = -1; dirty = true; } }); // po puštění důkladný výpočet
         document.getElementById('ks-reset').addEventListener('click', reset);
     })();
     </script>
