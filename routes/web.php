@@ -60,6 +60,9 @@ Route::middleware(['auth', 'master'])->prefix('masterteam')->name('masterteam.')
     Route::post('koncept-testovani/prompt', [KonceptTestovaniController::class, 'ulozitPrompt'])->name('koncept-testovani.prompt');
     Route::post('koncept-testovani/generovat', [KonceptTestovaniController::class, 'generovat'])->name('koncept-testovani.generovat');
 
+    // ───────── Koncept solver (balonky / bublinový diagram) ─────────
+    Route::get('koncept-solver', fn () => view('masterteam.koncept-solver'))->name('koncept-solver');
+
     // ───────── Pravidla objektů ─────────
     Route::get('pravidla-objektu', [PravidlaObjektuController::class, 'index'])->name('pravidla-objektu.index');
     Route::get('pravidla-objektu/nova', [PravidlaObjektuController::class, 'create'])->name('pravidla-objektu.create');
