@@ -52,7 +52,7 @@
             <div class="ks-canvas-wrap">
                 <div class="ks-bar"><span id="ks-stav" class="ks-stav"></span></div>
                 <canvas id="ks-canvas"></canvas>
-                <div class="ks-legend"><strong>Ukotvení</strong> (čára): úchop u konce = <em>přetáhni cíl</em> na jinou místnost nebo na stěnu (roh); <strong>×</strong> uprostřed = smazat; <strong>volný bod ve středu místnosti</strong> = přetáhni pro nové ukotvení. Zelená = drží, červená = nesplněno. Tělo místnosti táhni pro přeskládání. <strong>Tvrdá pravidla</strong> (generují se jen dispozice, co je splní): obytné/vstup na obvodové stěně; min. šířka místnosti (hlavní část; rameno L smí být užší). Červená čárkovaná uvnitř = spoj kostek jedné místnosti (L).</div>
+                <div class="ks-legend"><strong>Ukotvení</strong> (čára): úchop u konce = <em>přetáhni cíl</em> na jinou místnost nebo na stěnu (roh); <strong>×</strong> uprostřed = smazat; <strong>volný bod ve středu místnosti</strong> = přetáhni pro nové ukotvení. Zelená = drží, červená = nesplněno. Tělo místnosti táhni pro přeskládání. <strong>Tvrdá pravidla</strong> (generují se jen dispozice, co je splní): obytné/vstup na obvodové stěně; min. šířka místnosti (hlavní část; rameno L smí být užší). Červená čárkovaná uvnitř = spoj kostek jedné místnosti (L). <strong>Napojení platí, jen když se vejdou dveře</strong> (obytné/vstup 80 cm, WC/koupelna/technická 70 cm) — zobrazeno jako mezera ve zdi s křídlem.</div>
             </div>
         </div>
     </div>
@@ -244,15 +244,40 @@
             return false;
         }
         function inRect(r, x, y) { return r && x >= r.x - 1e-6 && x <= r.x + r.w + 1e-6 && y >= r.y - 1e-6 && y <= r.y + r.h + 1e-6; }
+        // min. šířka dveří: obytné + hlavní vstup 0,8 m; WC/koupelna/technická/spíž 0,7 m; chodba 0,7 (ustoupí připojené místnosti)
+        function doorMin(id) { return (id.startsWith('koupelna') || id === 'wc' || id === 'technicka' || id === 'spiz' || id === 'chodba') ? 0.7 : 0.8; }
+        // délka sdílené stěny dvou kostek (0, pokud se jen dotýkají v rohu)
+        function sharedLen(A, B) {
+            if (eq(A.x + A.w, B.x) || eq(B.x + B.w, A.x)) { const o = Math.min(A.y + A.h, B.y + B.h) - Math.max(A.y, B.y); return o > 0 ? o : 0; }
+            if (eq(A.y + A.h, B.y) || eq(B.y + B.h, A.y)) { const o = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x); return o > 0 ? o : 0; }
+            return 0;
+        }
         const boxesIn = (lf, k) => lf.filter(l => l.room === k);
         const boxesK = k => layout ? boxesIn(layout, k) : [];
         function roomCenter(k) { const b = boxesK(k); if (!b.length) return null; let big = b[0]; b.forEach(r => { if (r.w * r.h > big.w * big.h) big = r; }); return { x: big.x + big.w / 2, y: big.y + big.h / 2 }; }
         function roomArea(k) { return boxesK(k).reduce((s, r) => s + r.w * r.h, 0); }
-        function connected(bx) { if (bx.length <= 1) return true; const seen = new Set([0]), st = [0]; while (st.length) { const j = st.pop(); for (let k = 0; k < bx.length; k++) if (!seen.has(k) && touch(bx[j], bx[k])) { seen.add(k); st.push(k); } } return seen.size === bx.length; }
+        // kostky jedné místnosti musí být spojené průchodem ≥ 0,8 m (žádné „pinche")
+        function connected(bx) { if (bx.length <= 1) return true; const seen = new Set([0]), st = [0]; while (st.length) { const j = st.pop(); for (let k = 0; k < bx.length; k++) if (!seen.has(k) && sharedLen(bx[j], bx[k]) >= 0.8 - 1e-6) { seen.add(k); st.push(k); } } return seen.size === bx.length; }
         function anchorOk(an, lf) {
             const fb = boxesIn(lf, IDX[an.from]); if (!fb.length) return false;
-            if (an.target.type === 'room') { const tb = boxesIn(lf, IDX[an.target.id]); return tb.length > 0 && fb.some(a => tb.some(b => touch(a, b))); }
+            if (an.target.type === 'room') { const tb = boxesIn(lf, IDX[an.target.id]); if (!tb.length) return false; const req = Math.max(doorMin(an.from), doorMin(an.target.id)); return fb.some(a => tb.some(b => sharedLen(a, b) >= req - 1e-6)); }
             return fb.some(r => inRect(r, an.target.x, an.target.y));
+        }
+        // dveře pro splněná napojení (pro pozdější napojení na koncept)
+        function computeDoors() {
+            const doors = [];
+            if (!layout) return doors;
+            anchors.forEach(an => {
+                if (an.target.type !== 'room' || !anchorOk(an, layout)) return;
+                const fb = boxesIn(layout, IDX[an.from]), tb = boxesIn(layout, IDX[an.target.id]);
+                let best = null, bl = 0;
+                fb.forEach(a => tb.forEach(b => { const l = sharedLen(a, b); if (l > bl) { bl = l; best = [a, b]; } }));
+                if (!best) return;
+                const [A, B] = best, w = Math.min(Math.max(doorMin(an.from), doorMin(an.target.id)), bl - 0.05);
+                if (eq(A.x + A.w, B.x) || eq(B.x + B.w, A.x)) { const x = eq(A.x + A.w, B.x) ? A.x + A.w : B.x + B.w, yc = (Math.max(A.y, B.y) + Math.min(A.y + A.h, B.y + B.h)) / 2; doors.push({ a: an.from, b: an.target.id, vertical: true, x, y: yc, w }); }
+                else { const y = eq(A.y + A.h, B.y) ? A.y + A.h : B.y + B.h, xc = (Math.max(A.x, B.x) + Math.min(A.x + A.w, B.x + B.w)) / 2; doors.push({ a: an.from, b: an.target.id, vertical: false, x: xc, y, w }); }
+            });
+            return doors;
         }
         function voidOk(v) {
             if (VOID < 0 || !v) return true;
@@ -354,6 +379,17 @@
             ctx.setLineDash([]);
             // obvod domu
             ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 3; ctx.strokeRect(mx(0), mx(0), W * PX, H * PX);
+
+            // dveře splněných napojení (mezera ve zdi + naznačené křídlo)
+            computeDoors().forEach(d => {
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.beginPath();
+                if (d.vertical) { ctx.moveTo(mx(d.x), mx(d.y - d.w / 2)); ctx.lineTo(mx(d.x), mx(d.y + d.w / 2)); }
+                else { ctx.moveTo(mx(d.x - d.w / 2), mx(d.y)); ctx.lineTo(mx(d.x + d.w / 2), mx(d.y)); }
+                ctx.stroke();
+                ctx.strokeStyle = 'rgba(70,70,70,.45)'; ctx.lineWidth = 1;
+                if (d.vertical) { const j = mx(d.y - d.w / 2); ctx.beginPath(); ctx.arc(mx(d.x), j, d.w * PX, 0, Math.PI / 2); ctx.moveTo(mx(d.x), j); ctx.lineTo(mx(d.x), j + d.w * PX); ctx.stroke(); }
+                else { const j = mx(d.x - d.w / 2); ctx.beginPath(); ctx.arc(j, mx(d.y), d.w * PX, -Math.PI / 2, 0); ctx.moveTo(j, mx(d.y)); ctx.lineTo(j + d.w * PX, mx(d.y)); ctx.stroke(); }
+            });
 
             // popisky (jeden na místnost)
             ctx.textAlign = 'center';
