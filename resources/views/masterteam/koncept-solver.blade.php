@@ -525,6 +525,16 @@
             }
             g2.strokeStyle = '#2a2a2a'; g2.lineWidth = 2; g2.strokeRect(0, 0, W * px, H * px);
             { const ds = computeDoors(boxes); const ent = entranceDoor(boxes); if (ent) ds.push(ent); paintDoors(g2, ds, m, px); }
+            if (grafEl.checked) {   // ukotvení (zelená drží / červená chybí)
+                const cen = k => { const bs = boxesIn(boxes, k); if (!bs.length) return null; let big = bs[0]; bs.forEach(r => { if (r.w * r.h > big.w * big.h) big = r; }); return { x: big.x + big.w / 2, y: big.y + big.h / 2 }; };
+                anchors.forEach(an => {
+                    const a = cen(IDX[an.from]), b = an.target.type === 'room' ? cen(IDX[an.target.id]) : { x: an.target.x, y: an.target.y };
+                    if (!a || !b) return; const ok = anchorOk(an, boxes);
+                    g2.strokeStyle = ok ? 'rgba(30,140,60,.85)' : 'rgba(200,40,40,.9)'; g2.lineWidth = ok ? 1.2 : 1.6; g2.setLineDash(ok ? [] : [4, 3]);
+                    g2.beginPath(); g2.moveTo(m(a.x), m(a.y)); g2.lineTo(m(b.x), m(b.y)); g2.stroke();
+                });
+                g2.setLineDash([]);
+            }
             g2.fillStyle = '#2a2a2a'; g2.font = '9px sans-serif'; g2.textAlign = 'center';
             boxes.forEach(b => { if (ROOMS[b.room].mimo) return; g2.fillText(ROOMS[b.room].nazev, m(b.x + b.w / 2), m(b.y + b.h / 2) + 3); });
         }
@@ -707,6 +717,7 @@
         });
         document.getElementById('ks-reset').addEventListener('click', refresh);
         document.querySelectorAll('input[name=ks-motor]').forEach(el => el.addEventListener('change', e => { cfg.motor = e.target.value; updateMotorView(); }));
+        grafEl.addEventListener('change', () => { if (cfg.motor === 'konstruktivni') generateGallery(); });   // překreslit mřížku s/bez ukotvení
 
         // ── Kompas (otočný sever, grafika převzatá z konceptu) ───────
         const cc = document.getElementById('ks-compass'), csvg = document.getElementById('ks-compass-svg');
