@@ -31,6 +31,10 @@
 
         <div class="ks-layout">
             <div class="ks-controls">
+                <div class="ks-row" style="justify-content:flex-start;gap:.9rem;margin-bottom:.5rem;font-size:.85rem">
+                    <label><input type="radio" name="ks-motor" value="losovaci" checked> Losovací</label>
+                    <label><input type="radio" name="ks-motor" value="konstruktivni"> Konstruktivní</label>
+                </div>
                 <h3>Tvar domu</h3>
                 <div class="ks-shapes" id="ks-shapes">
                     <div class="ks-shape" data-shape="ctverec">▢<small>čtverec</small></div>
@@ -68,6 +72,7 @@
             <div class="ks-canvas-wrap">
                 <div class="ks-bar"><button id="ks-reset" class="btn btn-primary btn-sm">Přeskládat</button><span id="ks-stav" class="ks-stav"></span></div>
                 <canvas id="ks-canvas"></canvas>
+                <div id="ks-gallery" style="display:none;grid-template-columns:1fr 1fr;gap:.6rem"></div>
                 <div class="ks-legend"><strong>Ukotvení</strong> (čára): úchop u konce = <em>přetáhni cíl</em> na jinou místnost nebo na stěnu (roh); <strong>×</strong> uprostřed = smazat; <strong>volný bod ve středu místnosti</strong> = přetáhni pro nové ukotvení. Zelená = drží, červená = nesplněno. Tělo místnosti táhni pro přeskládání. <strong>Tvrdá pravidla</strong> (generují se jen dispozice, co je splní): obytné/vstup na obvodové stěně; min. šířka místnosti (hlavní část; rameno L smí být užší). Červená čárkovaná uvnitř = spoj kostek jedné místnosti (L). <strong>Napojení platí, jen když se vejdou dveře</strong> (obytné/vstup 80 cm, WC/koupelna/technická 70 cm) — zobrazeno jako mezera ve zdi s křídlem.</div>
             </div>
         </div>
@@ -80,7 +85,7 @@
         const PAD = 18, MAXW = 640, MAXH = 460;
         const eq = (p, q) => Math.abs(p - q) < 1e-6;
 
-        const cfg = { shape: 'obdelnik', size: 110, customDim: false, dimW: 0, dimH: 0, north: 0, zadveri: true, chodba: true, kuchyn: false, technicka: false, spiz: false, loznice: 2, detske: 1, koupelny: 1 };
+        const cfg = { motor: 'losovaci', shape: 'obdelnik', size: 110, customDim: false, dimW: 0, dimH: 0, north: 0, zadveri: true, chodba: true, kuchyn: false, technicka: false, spiz: false, loznice: 2, detske: 1, koupelny: 1 };
         // směrový vektor světové strany na plátně (respektuje natočení kompasu)
         function dirVec(card) { const bearing = (({ N: 0, E: 90, S: 180, W: 270 }[card] || 0) + cfg.north) * Math.PI / 180; return { x: Math.sin(bearing), y: -Math.cos(bearing) }; }
         const pctStore = {};
@@ -230,8 +235,8 @@
             const dw = document.getElementById('ks-dimw'), dh = document.getElementById('ks-dimh');
             if (dw) dw.value = W.toFixed(1); if (dh) dh.value = H.toFixed(1);
         }
-        function structuralRebuild() { const prev = new Set(ROOMS.map(x => x.id)); buildProgram(cfg); reconcileAnchors(prev); reconcileVoidAnchor(); renderControls(); syncSizeUI(); reset(); }
-        function geomRebuild() { buildProgram(cfg); if (voidAnchor) voidAnchor = snapBoundary(voidAnchor.x, voidAnchor.y); renderControls(); syncSizeUI(); reset(); }
+        function structuralRebuild() { const prev = new Set(ROOMS.map(x => x.id)); buildProgram(cfg); reconcileAnchors(prev); reconcileVoidAnchor(); renderControls(); syncSizeUI(); refresh(); }
+        function geomRebuild() { buildProgram(cfg); if (voidAnchor) voidAnchor = snapBoundary(voidAnchor.x, voidAnchor.y); renderControls(); syncSizeUI(); refresh(); }
 
         // ── Sloty (místnost = 1..cap kostek) + řešič ─────────────────
         let SLOTS = [];
@@ -405,6 +410,77 @@
             if (chosen) layout = chosen;
         }
 
+        // ── Konstruktivní motor: hub-páteř + přiřazení; napojení KONSTRUKCÍ ──
+        function constructSpine(hubK, left, right, top, bot) {
+            const wL = left != null ? ROOMS[left].area / H : 0, wR = right != null ? ROOMS[right].area / H : 0;
+            const Wm = W - wL - wR; if (Wm < 1.2) return null;
+            const boxes = [];
+            if (left != null) boxes.push({ x: 0, y: 0, w: wL, h: H, room: left });
+            if (right != null) boxes.push({ x: W - wR, y: 0, w: wR, h: H, room: right });
+            const At = top.reduce((s, k) => s + ROOMS[k].area, 0), Ab = bot.reduce((s, k) => s + ROOMS[k].area, 0);
+            const topH = top.length ? At / Wm : 0, botH = bot.length ? Ab / Wm : 0, corH = H - topH - botH;
+            if (corH < 0.9) return null;
+            boxes.push({ x: wL, y: topH, w: Wm, h: corH, room: hubK });
+            let x = wL; for (let i = 0; i < top.length; i++) { const w = (i === top.length - 1) ? W - wR - x : ROOMS[top[i]].area / topH; boxes.push({ x, y: 0, w, h: topH, room: top[i] }); x += w; }
+            x = wL; for (let i = 0; i < bot.length; i++) { const w = (i === bot.length - 1) ? W - wR - x : ROOMS[bot[i]].area / botH; boxes.push({ x, y: topH + corH, w, h: botH, room: bot[i] }); x += w; }
+            return boxes;
+        }
+        function konstruktivni() {
+            const hubK = IDX['chodba'] != null ? IDX['chodba'] : IDX['obyvak'];
+            if (hubK == null) return [];
+            const ids = ROOMS.map((_, k) => k).filter(k => k !== hubK);
+            const big = k => !ROOMS[k].mimo && ROOMS[k].area / H >= ROOMS[k].min;
+            const cands = [];
+            for (let t = 0; t < 4000; t++) {
+                const sh = [...ids].sort(() => Math.random() - 0.5);
+                const left = big(sh[0]) ? sh[0] : null;
+                const r1 = sh.filter(k => k !== left);
+                const right = (Math.random() < 0.5 && r1.length && big(r1[0])) ? r1[0] : null;
+                const rest = r1.filter(k => k !== right);
+                const top = [], bot = [];
+                rest.forEach(k => { (Math.random() < 0.5 ? top : bot).push(k); });
+                const boxes = constructSpine(hubK, left, right, top, bot);
+                if (!boxes) continue;
+                const ev = evalLeaves(boxes); if (!ev) continue;
+                cands.push({ boxes, val: ev.val });
+            }
+            cands.sort((a, b) => b.val - a.val);
+            const out = [], seen = new Set();
+            for (const c of cands) { const sig = c.boxes.map(b => b.room + ':' + Math.round(b.x) + ',' + Math.round(b.y)).sort().join('|'); if (seen.has(sig)) continue; seen.add(sig); out.push(c.boxes); if (out.length >= 6) break; }
+            return out;
+        }
+        function drawMini(cvm, boxes) {
+            const g2 = cvm.getContext('2d'), px = cvm.width / W, m = v => v * px;
+            g2.clearRect(0, 0, cvm.width, cvm.height);
+            boxes.forEach(b => { if (ROOMS[b.room].mimo) return; g2.fillStyle = ROOMS[b.room].barva; g2.fillRect(m(b.x), m(b.y), b.w * px, b.h * px); });
+            const vb = boxes.find(b => ROOMS[b.room].mimo); if (vb) { g2.fillStyle = '#ececec'; g2.fillRect(m(vb.x), m(vb.y), vb.w * px, vb.h * px); }
+            g2.strokeStyle = '#4a453c'; g2.lineWidth = 1;
+            for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+                const A = boxes[i], B = boxes[j]; if (A.room === B.room) continue;
+                if (eq(A.x + A.w, B.x) || eq(B.x + B.w, A.x)) { const xx = eq(A.x + A.w, B.x) ? A.x + A.w : B.x + B.w, y0 = Math.max(A.y, B.y), y1 = Math.min(A.y + A.h, B.y + B.h); if (y1 - y0 > 0.05) { g2.beginPath(); g2.moveTo(m(xx), m(y0)); g2.lineTo(m(xx), m(y1)); g2.stroke(); } }
+                if (eq(A.y + A.h, B.y) || eq(B.y + B.h, A.y)) { const yy = eq(A.y + A.h, B.y) ? A.y + A.h : B.y + B.h, x0 = Math.max(A.x, B.x), x1 = Math.min(A.x + A.w, B.x + B.w); if (x1 - x0 > 0.05) { g2.beginPath(); g2.moveTo(m(x0), m(yy)); g2.lineTo(m(x1), m(yy)); g2.stroke(); } }
+            }
+            g2.strokeStyle = '#2a2a2a'; g2.lineWidth = 2; g2.strokeRect(0, 0, W * px, H * px);
+            g2.fillStyle = '#2a2a2a'; g2.font = '9px sans-serif'; g2.textAlign = 'center';
+            boxes.forEach(b => { if (ROOMS[b.room].mimo) return; g2.fillText(ROOMS[b.room].nazev, m(b.x + b.w / 2), m(b.y + b.h / 2) + 3); });
+        }
+        function generateGallery() {
+            const box = document.getElementById('ks-gallery'); box.innerHTML = '';
+            const layouts = konstruktivni();
+            if (!layouts.length) { box.innerHTML = '<div style="grid-column:1/3;color:var(--c-text-secondary);padding:1rem">Nepodařilo se sestavit — zkus jiné parametry.</div>'; return; }
+            layouts.forEach(boxes => {
+                const wrap = document.createElement('div'); wrap.style.cssText = 'border:1px solid var(--c-border);border-radius:8px;padding:4px;background:var(--c-surface)';
+                const cvm = document.createElement('canvas'), mw = 300; cvm.width = mw; cvm.height = Math.max(60, Math.round(mw * H / W)); cvm.style.width = '100%';
+                wrap.appendChild(cvm); box.appendChild(wrap); drawMini(cvm, boxes);
+            });
+        }
+        function updateMotorView() {
+            const gal = document.getElementById('ks-gallery'), stav = document.getElementById('ks-stav'), btn = document.getElementById('ks-reset'), cvv = document.getElementById('ks-canvas');
+            if (cfg.motor === 'konstruktivni') { buildProgram(cfg); gal.style.display = 'grid'; cvv.style.display = 'none'; stav.style.display = 'none'; btn.textContent = 'Přegenerovat'; generateGallery(); }
+            else { gal.style.display = 'none'; cvv.style.display = 'block'; stav.style.display = ''; btn.textContent = 'Přeskládat'; dirty = true; }
+        }
+        function refresh() { if (cfg.motor === 'konstruktivni') generateGallery(); else reset(); }
+
         // ── Geometrie ukotvení (v metrech) ───────────────────────────
         const cxr = r => r.x + r.w / 2, cyr = r => r.y + r.h / 2;
         function anchorGeom(an) {
@@ -431,6 +507,7 @@
         // ── Vykreslení ───────────────────────────────────────────────
         const grafEl = document.getElementById('ks-graf');
         function kresli() {
+            if (cfg.motor === 'konstruktivni') return;   // v režimu mřížky losovací motor nepočítá
             if (dirty) { solve(drag && drag.type === 'room' ? 5000 : Math.min(70000, 14000 + ROOMS.length * 4000)); dirty = false; }
             if (!layout || !layout.length) return;
             ctx.clearRect(0, 0, cv.width, cv.height);
@@ -584,7 +661,8 @@
             const id = t.dataset.pct, v = Math.max(0.5, +t.value || 0.5); pctStore[id] = v; if (IDX[id] != null) ROOMS[IDX[id]].pct = v;
             normalizeAreas(); const el = document.getElementById('ks-pctsum'); if (el) el.textContent = sumPct() + ' %'; dirty = true;
         });
-        document.getElementById('ks-reset').addEventListener('click', reset);
+        document.getElementById('ks-reset').addEventListener('click', refresh);
+        document.querySelectorAll('input[name=ks-motor]').forEach(el => el.addEventListener('change', e => { cfg.motor = e.target.value; updateMotorView(); }));
 
         // ── Kompas (otočný sever, grafika převzatá z konceptu) ───────
         const cc = document.getElementById('ks-compass'), csvg = document.getElementById('ks-compass-svg');
