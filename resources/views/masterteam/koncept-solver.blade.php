@@ -38,6 +38,7 @@
                     <div class="ks-shape" data-shape="L">L<small>L-dům</small></div>
                     <div class="ks-shape" data-shape="U">U<small>U-dům</small></div>
                 </div>
+                <div class="ks-row" style="justify-content:flex-start;gap:.6rem"><label>Sever</label><canvas id="ks-compass" width="88" height="88" style="cursor:grab;touch-action:none"></canvas><span style="font-size:.72rem;color:var(--c-text-secondary)">otoč pro změnu<br>světových stran</span></div>
                 <div class="ks-row"><label>Velikost domu</label><strong id="ks-size-val">110 m²</strong></div>
                 <input type="range" id="ks-size" min="60" max="220" step="5" value="110" style="width:100%">
                 <div class="ks-row"><label>Rozměr</label><span class="ks-pctwrap"><input id="ks-dimw" type="number" step="0.1" min="3" class="ks-cnt"> × <input id="ks-dimh" type="number" step="0.1" min="3" class="ks-cnt"> m</span></div>
@@ -64,7 +65,9 @@
         const PAD = 18, MAXW = 640, MAXH = 460;
         const eq = (p, q) => Math.abs(p - q) < 1e-6;
 
-        const cfg = { shape: 'obdelnik', size: 110, customDim: false, dimW: 0, dimH: 0, zadveri: true, chodba: true, kuchyn: false, technicka: false, spiz: false, loznice: 2, detske: 1, koupelny: 1 };
+        const cfg = { shape: 'obdelnik', size: 110, customDim: false, dimW: 0, dimH: 0, north: 0, zadveri: true, chodba: true, kuchyn: false, technicka: false, spiz: false, loznice: 2, detske: 1, koupelny: 1 };
+        // směrový vektor světové strany na plátně (respektuje natočení kompasu)
+        function dirVec(card) { const bearing = (({ N: 0, E: 90, S: 180, W: 270 }[card] || 0) + cfg.north) * Math.PI / 180; return { x: Math.sin(bearing), y: -Math.cos(bearing) }; }
         const pctStore = {};
 
         let ROOMS = [], IDX = {};
@@ -112,6 +115,16 @@
             ROOMS.forEach(x => x.cap = x.mimo ? 1 : (x.id === 'chodba' ? 3 : 2));   // max. počet kostek místnosti
             // musí na obvodovou stěnu: obytné (okna) + vstup (zádveří, nebo chodba není-li zádveří)
             ROOMS.forEach(x => x.perim = !x.mimo && (x.id === 'obyvak' || x.id === 'zadveri' || x.id.startsWith('loznice') || x.id.startsWith('pokoj') || (x.id === 'chodba' && !cfg.zadveri)));
+            // orientační tendence (měkké): kladná = táhne ke straně, záporná = vyhýbá se
+            ROOMS.forEach(x => {
+                x.orient = null;
+                if (x.id === 'obyvak') x.orient = { plus: 'S' };
+                else if (x.id === 'kuchyn') x.orient = { plus: 'E', minus: 'S' };
+                else if (x.id.startsWith('loznice')) x.orient = { plus: 'E', minus: 'W' };
+                else if (x.id.startsWith('pokoj')) x.orient = { plus: 'E' };
+                else if (x.id === 'spiz') x.orient = { plus: 'N', minus: 'S' };
+                else if (x.id === 'technicka') x.orient = { plus: 'N' };
+            });
 
             const zc = { obyvak: [W * 0.25, H * 0.55], chodba: [W * 0.5, H * 0.5], zadveri: [W * 0.5, H * 0.12], kuchyn: [W * 0.32, H * 0.85] };
             let ni = 0;
@@ -306,7 +319,7 @@
             const g = {}; lf.forEach(l => { (g[l.room] = g[l.room] || []).push(l); });
             for (let i = 0; i < ROOMS.length; i++) { const b = g[i]; if (!b) return null; if (b.length > ROOMS[i].cap) return null; if (!connected(b)) return null; }
             let sat = 0; anchors.forEach(an => { if (anchorOk(an, lf)) sat++; });
-            let dimPen = 0, areaErr = 0, boxPen = 0, hard = true;   // hard = splňuje lokální pravidla (obvod + min. šířka)
+            let dimPen = 0, areaErr = 0, boxPen = 0, orient = 0, hard = true;   // hard = splňuje lokální pravidla (obvod + min. šířka)
             const ARM = 0.9;
             for (let i = 0; i < ROOMS.length; i++) {
                 if (ROOMS[i].mimo) continue;
@@ -323,10 +336,16 @@
                     const onB = b.some(r => eq(r.x, 0) || eq(r.x + r.w, W) || eq(r.y, 0) || eq(r.y + r.h, H));
                     if (!onB) { dimPen += 30; hard = false; }
                 }
+                if (ROOMS[i].orient) {   // orientační tendence (měkké)
+                    let ax = 0, ay = 0, AA = 0; b.forEach(r => { const a = r.w * r.h; ax += (r.x + r.w / 2) * a; ay += (r.y + r.h / 2) * a; AA += a; });
+                    const rx = ax / AA - W / 2, ry = ay / AA - H / 2, o = ROOMS[i].orient;
+                    if (o.plus) { const d = dirVec(o.plus); orient += rx * d.x + ry * d.y; }
+                    if (o.minus) { const d = dirVec(o.minus); orient -= Math.max(0, rx * d.x + ry * d.y); }
+                }
             }
             let voidPen = 0;
             if (VOID >= 0) { const v = g[VOID][0]; if (!voidOk(v)) voidPen = 15; if (voidAnchor && v) { const cs = [[v.x, v.y], [v.x + v.w, v.y], [v.x, v.y + v.h], [v.x + v.w, v.y + v.h]]; voidPen += Math.min(...cs.map(c => Math.hypot(c[0] - voidAnchor.x, c[1] - voidAnchor.y))); } }
-            return { sat, hard, val: sat * 1e6 - boxPen * 1500 - dimPen * 1e3 - voidPen * 800 - areaErr };   // boxPen = preference obdélníků
+            return { sat, hard, val: sat * 1e6 - boxPen * 1500 - dimPen * 1e3 - voidPen * 800 - areaErr + orient * 3 };   // orient = měkký tah světových stran
         }
         function solve(N) {
             let bestHard = null, bhv = -Infinity, bestAny = null, bav = -Infinity, problem = [];
@@ -524,7 +543,31 @@
         });
         document.getElementById('ks-reset').addEventListener('click', reset);
 
+        // ── Kompas (otočný sever) ────────────────────────────────────
+        const cc = document.getElementById('ks-compass'), cctx = cc.getContext('2d');
+        function drawCompass() {
+            const s = cc.width, r = s / 2 - 12, cx = s / 2, cy = s / 2;
+            cctx.clearRect(0, 0, s, s);
+            cctx.strokeStyle = '#c9c9c9'; cctx.lineWidth = 1.5; cctx.beginPath(); cctx.arc(cx, cy, r, 0, 7); cctx.stroke();
+            cctx.textAlign = 'center'; cctx.textBaseline = 'middle';
+            [['S', 'N'], ['V', 'E'], ['J', 'S'], ['Z', 'W']].forEach((d, i) => {
+                const bearing = (i * 90 + cfg.north) * Math.PI / 180, vx = Math.sin(bearing), vy = -Math.cos(bearing);
+                cctx.fillStyle = d[0] === 'S' ? '#b23b2e' : '#777'; cctx.font = 'bold 11px sans-serif';
+                cctx.fillText(d[0], cx + vx * (r + 5), cy + vy * (r + 5));
+            });
+            const nb = cfg.north * Math.PI / 180, nx = Math.sin(nb), ny = -Math.cos(nb);
+            cctx.strokeStyle = '#b23b2e'; cctx.lineWidth = 2.5; cctx.beginPath(); cctx.moveTo(cx, cy); cctx.lineTo(cx + nx * (r - 3), cy + ny * (r - 3)); cctx.stroke();
+            cctx.strokeStyle = '#999'; cctx.lineWidth = 2; cctx.beginPath(); cctx.moveTo(cx, cy); cctx.lineTo(cx - nx * (r - 3), cy - ny * (r - 3)); cctx.stroke();
+            cctx.fillStyle = '#b23b2e'; cctx.beginPath(); cctx.arc(cx, cy, 2.5, 0, 7); cctx.fill();
+        }
+        let compassDrag = false;
+        function rotateCompass(e) { const rect = cc.getBoundingClientRect(), dx = e.clientX - (rect.left + cc.width / 2), dy = e.clientY - (rect.top + cc.height / 2); let ang = Math.atan2(dx, -dy) * 180 / Math.PI; if (ang < 0) ang += 360; cfg.north = Math.round(ang); dirty = true; }
+        cc.addEventListener('mousedown', e => { compassDrag = true; rotateCompass(e); });
+        window.addEventListener('mousemove', e => { if (compassDrag) rotateCompass(e); });
+        window.addEventListener('mouseup', () => { compassDrag = false; });
+
         structuralRebuild();
+        (function loop() { drawCompass(); requestAnimationFrame(loop); })();
         smycka();
     })();
     </script>
