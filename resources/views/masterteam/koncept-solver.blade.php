@@ -52,7 +52,7 @@
             <div class="ks-canvas-wrap">
                 <div class="ks-bar"><span id="ks-stav" class="ks-stav"></span></div>
                 <canvas id="ks-canvas"></canvas>
-                <div class="ks-legend"><strong>Ukotvení</strong> (čára): úchop u konce = <em>přetáhni cíl</em> na jinou místnost nebo na stěnu (roh); <strong>×</strong> uprostřed = smazat; <strong>volný bod ve středu místnosti</strong> = přetáhni pro nové ukotvení. Zelená = drží, červená = nesplněno. Tělo místnosti táhni pro přeskládání.</div>
+                <div class="ks-legend"><strong>Ukotvení</strong> (čára): úchop u konce = <em>přetáhni cíl</em> na jinou místnost nebo na stěnu (roh); <strong>×</strong> uprostřed = smazat; <strong>volný bod ve středu místnosti</strong> = přetáhni pro nové ukotvení. Zelená = drží, červená = nesplněno. Tělo místnosti táhni pro přeskládání. <strong>Tvrdá pravidla</strong> (generují se jen dispozice, co je splní): obytné/vstup na obvodové stěně; min. šířka místnosti (hlavní část; rameno L smí být užší). Červená čárkovaná uvnitř = spoj kostek jedné místnosti (L).</div>
             </div>
         </div>
     </div>
@@ -110,6 +110,8 @@
             ROOMS = r; IDX = {}; ROOMS.forEach((x, i) => IDX[x.id] = i);
             VOID = IDX['_void'] != null ? IDX['_void'] : -1;
             ROOMS.forEach(x => x.cap = x.mimo ? 1 : (x.id === 'chodba' ? 3 : 2));   // max. počet kostek místnosti
+            // musí na obvodovou stěnu: obytné (okna) + vstup (zádveří, nebo chodba není-li zádveří)
+            ROOMS.forEach(x => x.perim = !x.mimo && (x.id === 'obyvak' || x.id === 'zadveri' || x.id.startsWith('loznice') || x.id.startsWith('pokoj') || (x.id === 'chodba' && !cfg.zadveri)));
 
             const zc = { obyvak: [W * 0.25, H * 0.55], chodba: [W * 0.5, H * 0.5], zadveri: [W * 0.5, H * 0.12], kuchyn: [W * 0.32, H * 0.85] };
             let ni = 0;
@@ -261,27 +263,41 @@
             const g = {}; lf.forEach(l => { (g[l.room] = g[l.room] || []).push(l); });
             for (let i = 0; i < ROOMS.length; i++) { const b = g[i]; if (!b) return null; if (b.length > ROOMS[i].cap) return null; if (!connected(b)) return null; }
             let sat = 0; anchors.forEach(an => { if (anchorOk(an, lf)) sat++; });
-            let dimPen = 0, areaErr = 0, boxPen = 0;
+            let dimPen = 0, areaErr = 0, boxPen = 0, hard = true;   // hard = splňuje lokální pravidla (obvod + min. šířka)
+            const ARM = 0.9;
             for (let i = 0; i < ROOMS.length; i++) {
                 if (ROOMS[i].mimo) continue;
                 const b = g[i]; boxPen += b.length - 1;
                 areaErr += Math.abs(b.reduce((s, r) => s + r.w * r.h, 0) - ROOMS[i].area);
-                b.forEach(r => { const sh = Math.min(r.w, r.h), lo = Math.max(r.w, r.h); if (sh < ROOMS[i].min) dimPen += (ROOMS[i].min - sh) ** 2 * 10; const a = lo / sh; if (a > ROOMS[i].asp) dimPen += (a - ROOMS[i].asp) ** 2; });
+                let big = b[0]; b.forEach(r => { if (r.w * r.h > big.w * big.h) big = r; });
+                b.forEach(r => {
+                    const sh = Math.min(r.w, r.h), lo = Math.max(r.w, r.h);
+                    const need = (r === big) ? ROOMS[i].min : Math.min(ROOMS[i].min, ARM);   // hlavní kostka dle typu, rameno (spojka) mírněji
+                    if (sh < need) { dimPen += (need - sh) ** 2 * 10; hard = false; }
+                    const a = lo / sh; if (a > ROOMS[i].asp) dimPen += (a - ROOMS[i].asp) ** 2;
+                });
+                if (ROOMS[i].perim) {   // obytné/vstup na obvodové stěně
+                    const onB = b.some(r => eq(r.x, 0) || eq(r.x + r.w, W) || eq(r.y, 0) || eq(r.y + r.h, H));
+                    if (!onB) { dimPen += 30; hard = false; }
+                }
             }
             let voidPen = 0;
             if (VOID >= 0) { const v = g[VOID][0]; if (!voidOk(v)) voidPen = 15; if (voidAnchor && v) { const cs = [[v.x, v.y], [v.x + v.w, v.y], [v.x, v.y + v.h], [v.x + v.w, v.y + v.h]]; voidPen += Math.min(...cs.map(c => Math.hypot(c[0] - voidAnchor.x, c[1] - voidAnchor.y))); } }
-            return { sat, val: sat * 1e6 - boxPen * 1500 - dimPen * 1e3 - voidPen * 800 - areaErr };   // boxPen = preference obdélníků
+            return { sat, hard, val: sat * 1e6 - boxPen * 1500 - dimPen * 1e3 - voidPen * 800 - areaErr };   // boxPen = preference obdélníků
         }
         function solve(N) {
-            let best = null, bv = -Infinity, problem = [];
+            let bestHard = null, bhv = -Infinity, bestAny = null, bav = -Infinity, problem = [];
             for (let t = 0; t < N; t++) {
                 SLOTS = buildSlots(problem);
                 PP = SLOTS.map(s => ({ x: s.p[0] + (Math.random() - 0.5) * 3.5, y: s.p[1] + (Math.random() - 0.5) * 3.5 }));
                 const out = []; dim(genTree(SLOTS.map((_, k) => k)), 0, 0, W, H, out);
                 const ev = evalLeaves(out);
-                if (ev && ev.val > bv) { bv = ev.val; best = out; problem = brokenInfo(out); }   // zaměř hledání na porušená ukotvení
+                if (!ev) continue;
+                if (ev.val > bav) { bav = ev.val; bestAny = out; problem = brokenInfo(out); }   // fallback (nic lokálně platného)
+                if (ev.hard && ev.val > bhv) { bhv = ev.val; bestHard = out; }                  // preferuj lokálně platné (obvod + min. šířka)
             }
-            if (best) layout = best;
+            const chosen = bestHard || bestAny;
+            if (chosen) layout = chosen;
         }
 
         // ── Geometrie ukotvení (v metrech) ───────────────────────────
