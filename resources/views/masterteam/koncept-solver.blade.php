@@ -128,16 +128,29 @@
                 else if (x.id === 'technicka') x.orient = { good: ['N'] };
             });
 
-            const zc = { obyvak: [W * 0.25, H * 0.55], chodba: [W * 0.5, H * 0.5], zadveri: [W * 0.5, H * 0.12], kuchyn: [W * 0.32, H * 0.85] };
-            let ni = 0;
-            ROOMS.forEach(x => {
-                if (zc[x.id]) x.base = zc[x.id].slice();
-                else if (x.mimo) x.base = [W * 0.85, H * 0.12];
-                else { const cols = 3; x.base = [W * (0.55 + (ni % cols) * 0.18), H * (0.25 + Math.floor(ni / cols) * 0.28)]; ni++; }
-                x.base[0] = Math.max(0.5, Math.min(W - 0.5, x.base[0])); x.base[1] = Math.max(0.5, Math.min(H - 0.5, x.base[1]));
-            });
+            seedBases();
             PX = Math.min(MAXW / W, MAXH / H);
             cv.width = W * PX + 2 * PAD; cv.height = H * PX + 2 * PAD;
+        }
+        // základní polohy odvozené od KOMPASU: obývák k jihu, ložnice na východ, servis na sever…
+        function seedBases() {
+            const cx = W / 2, cy = H / 2, groups = {};
+            ROOMS.forEach(x => {
+                if (x.mimo) { x.base = [W * 0.85, H * 0.12]; return; }
+                const dir = (x.orient && x.orient.good && x.orient.good[0]) || (x.id === 'zadveri' ? 'ENT' : 'C');
+                (groups[dir] = groups[dir] || []).push(x);
+            });
+            Object.keys(groups).forEach(dir => {
+                const arr = groups[dir], n = arr.length;
+                const d = dir === 'C' ? { x: 0, y: 0 } : (dir === 'ENT' ? dirVec('N') : dirVec(dir));
+                const px = -d.y, py = d.x;   // perpendikulár pro rozprostření místností téže strany
+                arr.forEach((x, i) => {
+                    const off = (i - (n - 1) / 2) * 1.8;
+                    x.base = [cx + d.x * W * 0.30 + px * off, cy + d.y * H * 0.30 + py * off];
+                    x.base[0] = Math.max(0.6, Math.min(W - 0.6, x.base[0]));
+                    x.base[1] = Math.max(0.6, Math.min(H - 0.6, x.base[1]));
+                });
+            });
         }
         function normalizeAreas() { const real = ROOMS.filter(x => !x.mimo), s = real.reduce((a, x) => a + x.pct, 0) || 1; real.forEach(x => x.area = x.pct / s * USABLE); }
         function sumPct() { return Math.round(ROOMS.filter(x => !x.mimo).reduce((a, x) => a + x.pct, 0)); }
@@ -563,10 +576,10 @@
             cctx.fillStyle = '#b23b2e'; cctx.beginPath(); cctx.arc(cx, cy, 2.5, 0, 7); cctx.fill();
         }
         let compassDrag = false;
-        function rotateCompass(e) { const rect = cc.getBoundingClientRect(), dx = e.clientX - (rect.left + cc.width / 2), dy = e.clientY - (rect.top + cc.height / 2); let ang = Math.atan2(dx, -dy) * 180 / Math.PI; if (ang < 0) ang += 360; cfg.north = Math.round(ang); dirty = true; }
-        cc.addEventListener('mousedown', e => { compassDrag = true; rotateCompass(e); });
-        window.addEventListener('mousemove', e => { if (compassDrag) rotateCompass(e); });
-        window.addEventListener('mouseup', () => { compassDrag = false; });
+        function setNorth(e) { const rect = cc.getBoundingClientRect(), dx = e.clientX - (rect.left + cc.width / 2), dy = e.clientY - (rect.top + cc.height / 2); let ang = Math.atan2(dx, -dy) * 180 / Math.PI; if (ang < 0) ang += 360; cfg.north = Math.round(ang); }
+        cc.addEventListener('mousedown', e => { compassDrag = true; setNorth(e); });
+        window.addEventListener('mousemove', e => { if (compassDrag) setNorth(e); });
+        window.addEventListener('mouseup', () => { if (compassDrag) { compassDrag = false; seedBases(); reset(); } });   // po otočení přeskládat podle nového severu
 
         structuralRebuild();
         (function loop() { drawCompass(); requestAnimationFrame(loop); })();
