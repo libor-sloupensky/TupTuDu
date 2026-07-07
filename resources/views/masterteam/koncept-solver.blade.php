@@ -425,21 +425,58 @@
             x = wL; for (let i = 0; i < bot.length; i++) { const w = (i === bot.length - 1) ? W - wR - x : ROOMS[bot[i]].area / botH; boxes.push({ x, y: topH + corH, w, h: botH, room: bot[i] }); x += w; }
             return boxes;
         }
+        // Template „obtékání": svislá chodba, mokré jádro vkrojené do obýváku → obývák L, chodba vnitřní
+        function constructWrap() {
+            const hubK = IDX['chodba'], obK = IDX['obyvak'];
+            if (hubK == null || obK == null || VOID >= 0) return null;   // zatím jen obdélníkový dům
+            const coreK = ROOMS.map((_, k) => k).filter(k => k === IDX['wc'] || ROOMS[k].id.startsWith('koupelna'));
+            if (!coreK.length) return null;
+            const Awet = coreK.reduce((s, k) => s + ROOMS[k].area, 0);
+            const wc = ROOMS[hubK].area / H;
+            const wN = 1.6 + Math.random() * 1.0, hWet = Awet / wN;
+            const wLeft = (ROOMS[obK].area + Awet) / H;
+            const rw = W - wLeft - wc;
+            if (hWet > H - 0.9 || wLeft - wN < 1.5 || rw < 2.0 || wc < 0.8) return null;
+            const boxes = [];
+            boxes.push({ x: 0, y: 0, w: wLeft - wN, h: H, room: obK });                 // obývák – hlavní část
+            boxes.push({ x: wLeft - wN, y: hWet, w: wN, h: H - hWet, room: obK });        // obývák – rameno → L
+            let cy = 0; coreK.forEach(k => { const h = ROOMS[k].area / wN; boxes.push({ x: wLeft - wN, y: cy, w: wN, h, room: k }); cy += h; });
+            boxes.push({ x: wLeft, y: 0, w: wc, h: H, room: hubK });                       // svislá chodba (vnitřní)
+            // pravý blok: ostatní místnosti do řádků (1–2 vedle sebe)
+            const right = ROOMS.map((_, k) => k).filter(k => k !== obK && k !== hubK && !coreK.includes(k) && !ROOMS[k].mimo);
+            const sh = right.sort(() => Math.random() - 0.5);
+            const rows = []; let i = 0;
+            while (i < sh.length) { const pair = (Math.random() < 0.45 && i + 1 < sh.length); rows.push(pair ? [sh[i], sh[i + 1]] : [sh[i]]); i += pair ? 2 : 1; }
+            const Atot = right.reduce((s, k) => s + ROOMS[k].area, 0);
+            let y = 0;
+            rows.forEach((row, ri) => {
+                const rowA = row.reduce((s, k) => s + ROOMS[k].area, 0);
+                let rh = (ri === rows.length - 1) ? H - y : rowA / rw;
+                let x = wLeft + wc;
+                row.forEach((k, ci) => { const w = (ci === row.length - 1) ? W - x : ROOMS[k].area / rh; boxes.push({ x, y, w, h: rh, room: k }); x += w; });
+                y += rh;
+            });
+            return boxes;
+        }
         function konstruktivni() {
             const hubK = IDX['chodba'] != null ? IDX['chodba'] : IDX['obyvak'];
             if (hubK == null) return [];
             const ids = ROOMS.map((_, k) => k).filter(k => k !== hubK);
             const big = k => !ROOMS[k].mimo && ROOMS[k].area / H >= ROOMS[k].min;
             const cands = [];
-            for (let t = 0; t < 4000; t++) {
-                const sh = [...ids].sort(() => Math.random() - 0.5);
-                const left = big(sh[0]) ? sh[0] : null;
-                const r1 = sh.filter(k => k !== left);
-                const right = (Math.random() < 0.5 && r1.length && big(r1[0])) ? r1[0] : null;
-                const rest = r1.filter(k => k !== right);
-                const top = [], bot = [];
-                rest.forEach(k => { (Math.random() < 0.5 ? top : bot).push(k); });
-                const boxes = constructSpine(hubK, left, right, top, bot);
+            for (let t = 0; t < 5000; t++) {
+                let boxes;
+                if (Math.random() < 0.4) { boxes = constructWrap(); }   // template obtékání (L)
+                else {
+                    const sh = [...ids].sort(() => Math.random() - 0.5);
+                    const left = big(sh[0]) ? sh[0] : null;
+                    const r1 = sh.filter(k => k !== left);
+                    const right = (Math.random() < 0.5 && r1.length && big(r1[0])) ? r1[0] : null;
+                    const rest = r1.filter(k => k !== right);
+                    const top = [], bot = [];
+                    rest.forEach(k => { (Math.random() < 0.5 ? top : bot).push(k); });
+                    boxes = constructSpine(hubK, left, right, top, bot);
+                }
                 if (!boxes) continue;
                 const ev = evalLeaves(boxes); if (!ev) continue;
                 cands.push({ boxes, val: ev.val });
