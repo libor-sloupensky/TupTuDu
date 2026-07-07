@@ -57,17 +57,16 @@
                 </div>
                 <div class="ks-row"><label>Velikost domu</label><strong id="ks-size-val">110 m²</strong></div>
                 <input type="range" id="ks-size" min="60" max="220" step="5" value="110" style="width:100%">
-                <div class="ks-row"><label>Rozměr</label><span class="ks-pctwrap"><input id="ks-dimw" type="number" step="0.1" min="3" class="ks-cnt"> × <input id="ks-dimh" type="number" step="0.1" min="3" class="ks-cnt"> m</span></div>
+                <div class="ks-row"><label>Rozměr</label><span class="ks-pctwrap"><input id="ks-dimw" type="number" step="0.1" min="3" class="ks-cnt" style="width:4.6rem"> × <input id="ks-dimh" type="number" step="0.1" min="3" class="ks-cnt" style="width:4.6rem"> m</span></div>
                 <hr>
                 <h3>Místnosti <span style="font-weight:400;color:var(--c-text-secondary);font-size:.75rem">(% domu)</span></h3>
                 <div id="ks-rooms"></div>
                 <hr>
-                <button id="ks-reset" class="btn btn-primary" style="width:100%">Přeskládat</button>
-                <label style="display:flex;gap:.35rem;align-items:center;margin-top:.6rem;font-size:.82rem;"><input type="checkbox" id="ks-graf" checked> zobrazit ukotvení</label>
+                <label style="display:flex;gap:.35rem;align-items:center;font-size:.82rem;"><input type="checkbox" id="ks-graf" checked> zobrazit ukotvení</label>
             </div>
 
             <div class="ks-canvas-wrap">
-                <div class="ks-bar"><span id="ks-stav" class="ks-stav"></span></div>
+                <div class="ks-bar"><button id="ks-reset" class="btn btn-primary btn-sm">Přeskládat</button><span id="ks-stav" class="ks-stav"></span></div>
                 <canvas id="ks-canvas"></canvas>
                 <div class="ks-legend"><strong>Ukotvení</strong> (čára): úchop u konce = <em>přetáhni cíl</em> na jinou místnost nebo na stěnu (roh); <strong>×</strong> uprostřed = smazat; <strong>volný bod ve středu místnosti</strong> = přetáhni pro nové ukotvení. Zelená = drží, červená = nesplněno. Tělo místnosti táhni pro přeskládání. <strong>Tvrdá pravidla</strong> (generují se jen dispozice, co je splní): obytné/vstup na obvodové stěně; min. šířka místnosti (hlavní část; rameno L smí být užší). Červená čárkovaná uvnitř = spoj kostek jedné místnosti (L). <strong>Napojení platí, jen když se vejdou dveře</strong> (obytné/vstup 80 cm, WC/koupelna/technická 70 cm) — zobrazeno jako mezera ve zdi s křídlem.</div>
             </div>
