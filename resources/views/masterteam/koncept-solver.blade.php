@@ -411,51 +411,47 @@
         }
 
         // ── Konstruktivní motor: hub-páteř + přiřazení; napojení KONSTRUKCÍ ──
-        function constructSpine(hubK, left, right, top, bot) {
-            const wL = left != null ? ROOMS[left].area / H : 0, wR = right != null ? ROOMS[right].area / H : 0;
-            const Wm = W - wL - wR; if (Wm < 1.2) return null;
+        // páteř v2: [obývák | pásy/chodba/pásy | PRAVÝ STACK] → chodba VNITŘNÍ (stack ji uzavře)
+        function constructSpine(hubK, left, stack, top, bot) {
+            const wL = left != null ? ROOMS[left].area / H : 0;
+            const As = stack.reduce((s, k) => s + ROOMS[k].area, 0), wS = stack.length ? As / H : 0;
+            const Wm = W - wL - wS; if (Wm < 1.5 || (stack.length && wS < 1.2)) return null;
             const boxes = [];
             if (left != null) boxes.push({ x: 0, y: 0, w: wL, h: H, room: left });
-            if (right != null) boxes.push({ x: W - wR, y: 0, w: wR, h: H, room: right });
+            let sy = 0; stack.forEach((k, i) => { const h = (i === stack.length - 1) ? H - sy : ROOMS[k].area / wS; boxes.push({ x: W - wS, y: sy, w: wS, h, room: k }); sy += h; });
             const At = top.reduce((s, k) => s + ROOMS[k].area, 0), Ab = bot.reduce((s, k) => s + ROOMS[k].area, 0);
             const topH = top.length ? At / Wm : 0, botH = bot.length ? Ab / Wm : 0, corH = H - topH - botH;
             if (corH < 0.9) return null;
             boxes.push({ x: wL, y: topH, w: Wm, h: corH, room: hubK });
-            let x = wL; for (let i = 0; i < top.length; i++) { const w = (i === top.length - 1) ? W - wR - x : ROOMS[top[i]].area / topH; boxes.push({ x, y: 0, w, h: topH, room: top[i] }); x += w; }
-            x = wL; for (let i = 0; i < bot.length; i++) { const w = (i === bot.length - 1) ? W - wR - x : ROOMS[bot[i]].area / botH; boxes.push({ x, y: topH + corH, w, h: botH, room: bot[i] }); x += w; }
+            let x = wL; for (let i = 0; i < top.length; i++) { const w = (i === top.length - 1) ? W - wS - x : ROOMS[top[i]].area / topH; boxes.push({ x, y: 0, w, h: topH, room: top[i] }); x += w; }
+            x = wL; for (let i = 0; i < bot.length; i++) { const w = (i === bot.length - 1) ? W - wS - x : ROOMS[bot[i]].area / botH; boxes.push({ x, y: topH + corH, w, h: botH, room: bot[i] }); x += w; }
             return boxes;
         }
-        // Template „obtékání": svislá chodba, mokré jádro vkrojené do obýváku → obývák L, chodba vnitřní
+        // Template „obtékání" v2: svislá chodba UZAVŘENÁ (zádveří = horní víko, spodní místnost = dolní víko),
+        // mokré jádro vkrojené do obýváku → obývák L, chodba VNITŘNÍ
         function constructWrap() {
-            const hubK = IDX['chodba'], obK = IDX['obyvak'];
+            const hubK = IDX['chodba'], obK = IDX['obyvak'], zK = IDX['zadveri'];
             if (hubK == null || obK == null || VOID >= 0) return null;   // zatím jen obdélníkový dům
             const coreK = ROOMS.map((_, k) => k).filter(k => k === IDX['wc'] || ROOMS[k].id.startsWith('koupelna'));
             if (!coreK.length) return null;
+            const rightK = ROOMS.map((_, k) => k).filter(k => k !== obK && k !== hubK && k !== zK && !coreK.includes(k) && !ROOMS[k].mimo);
+            if (rightK.length < 1) return null;
             const Awet = coreK.reduce((s, k) => s + ROOMS[k].area, 0);
-            const wc = ROOMS[hubK].area / H;
-            const wN = 1.6 + Math.random() * 1.0, hWet = Awet / wN;
-            const wLeft = (ROOMS[obK].area + Awet) / H;
-            const rw = W - wLeft - wc;
-            if (hWet > H - 0.9 || wLeft - wN < 1.5 || rw < 2.0 || wc < 0.8) return null;
+            const wc = ROOMS[hubK].area / H, wLeft = (ROOMS[obK].area + Awet) / H, wRest = W - wLeft, rw = wRest - wc;
+            const shuf = [...rightK].sort(() => Math.random() - 0.5);
+            const botK = shuf.pop(), stackK = shuf;
+            const hZ = zK != null ? ROOMS[zK].area / wRest : 0, hB = ROOMS[botK].area / wRest;
+            const corTop = hZ, corBot = H - hB, corHt = corBot - corTop;
+            const wN = 1.7 + Math.random() * 0.6, hWet = Awet / wN, wc0 = ROOMS[coreK[0]].area / wN;
+            if (rw < 1.8 || wc < 0.8 || corHt < 1.0 || wLeft - wN < 1.6 || hWet > corBot - 0.6 || hB < 0.9 || (hZ && hZ < 0.6) || wc0 <= hZ + 0.5) return null;
             const boxes = [];
-            boxes.push({ x: 0, y: 0, w: wLeft - wN, h: H, room: obK });                 // obývák – hlavní část
-            boxes.push({ x: wLeft - wN, y: hWet, w: wN, h: H - hWet, room: obK });        // obývák – rameno → L
+            boxes.push({ x: 0, y: 0, w: wLeft - wN, h: H, room: obK });                    // obývák hlavní
+            boxes.push({ x: wLeft - wN, y: hWet, w: wN, h: H - hWet, room: obK });           // obývák rameno → L
             let cy = 0; coreK.forEach(k => { const h = ROOMS[k].area / wN; boxes.push({ x: wLeft - wN, y: cy, w: wN, h, room: k }); cy += h; });
-            boxes.push({ x: wLeft, y: 0, w: wc, h: H, room: hubK });                       // svislá chodba (vnitřní)
-            // pravý blok: ostatní místnosti do řádků (1–2 vedle sebe)
-            const right = ROOMS.map((_, k) => k).filter(k => k !== obK && k !== hubK && !coreK.includes(k) && !ROOMS[k].mimo);
-            const sh = right.sort(() => Math.random() - 0.5);
-            const rows = []; let i = 0;
-            while (i < sh.length) { const pair = (Math.random() < 0.45 && i + 1 < sh.length); rows.push(pair ? [sh[i], sh[i + 1]] : [sh[i]]); i += pair ? 2 : 1; }
-            const Atot = right.reduce((s, k) => s + ROOMS[k].area, 0);
-            let y = 0;
-            rows.forEach((row, ri) => {
-                const rowA = row.reduce((s, k) => s + ROOMS[k].area, 0);
-                let rh = (ri === rows.length - 1) ? H - y : rowA / rw;
-                let x = wLeft + wc;
-                row.forEach((k, ci) => { const w = (ci === row.length - 1) ? W - x : ROOMS[k].area / rh; boxes.push({ x, y, w, h: rh, room: k }); x += w; });
-                y += rh;
-            });
+            if (zK != null) boxes.push({ x: wLeft, y: 0, w: wRest, h: hZ, room: zK });        // zádveří = horní víko
+            boxes.push({ x: wLeft, y: corBot, w: wRest, h: hB, room: botK });                 // dolní víko
+            boxes.push({ x: wLeft, y: corTop, w: wc, h: corHt, room: hubK });                 // chodba – vnitřní
+            let y = corTop; stackK.forEach((k, i) => { const h = (i === stackK.length - 1) ? corBot - y : ROOMS[k].area / rw; boxes.push({ x: wLeft + wc, y, w: rw, h, room: k }); y += h; });
             return boxes;
         }
         function konstruktivni() {
@@ -470,12 +466,13 @@
                 else {
                     const sh = [...ids].sort(() => Math.random() - 0.5);
                     const left = big(sh[0]) ? sh[0] : null;
-                    const r1 = sh.filter(k => k !== left);
-                    const right = (Math.random() < 0.5 && r1.length && big(r1[0])) ? r1[0] : null;
-                    const rest = r1.filter(k => k !== right);
+                    const rest0 = sh.filter(k => k !== left);
+                    const nStack = Math.min(rest0.length, 1 + (Math.random() < 0.4 ? 1 : 0));   // pravý stack uzavře chodbu
+                    const stack = rest0.slice(0, nStack);
+                    const rest = rest0.slice(nStack);
                     const top = [], bot = [];
                     rest.forEach(k => { (Math.random() < 0.5 ? top : bot).push(k); });
-                    boxes = constructSpine(hubK, left, right, top, bot); tpl = 'spine';
+                    boxes = constructSpine(hubK, left, stack, top, bot); tpl = 'spine';
                 }
                 if (!boxes) continue;
                 const ev = evalLeaves(boxes); if (!ev) continue;
