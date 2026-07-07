@@ -38,7 +38,23 @@
                     <div class="ks-shape" data-shape="L">L<small>L-dům</small></div>
                     <div class="ks-shape" data-shape="U">U<small>U-dům</small></div>
                 </div>
-                <div class="ks-row" style="justify-content:flex-start;gap:.6rem"><label>Sever</label><canvas id="ks-compass" width="88" height="88" style="cursor:grab;touch-action:none"></canvas><span style="font-size:.72rem;color:var(--c-text-secondary)">otoč pro změnu<br>světových stran</span></div>
+                <div class="ks-row" style="justify-content:flex-start;gap:.6rem">
+                    <label>Sever</label>
+                    <div id="ks-compass" style="cursor:grab;user-select:none;width:52px;height:52px" title="Tažením otočit · dvojklik = reset">
+                        <svg id="ks-compass-svg" width="52" height="52" viewBox="0 0 52 52" style="transform-origin:center">
+                            <text x="26" y="10" font-size="9" fill="#e53e3e" font-weight="700" text-anchor="middle">S</text>
+                            <text x="26" y="49" font-size="9" fill="#718096" text-anchor="middle">J</text>
+                            <text x="48" y="29.5" font-size="9" fill="#718096" text-anchor="middle">V</text>
+                            <text x="4" y="29.5" font-size="9" fill="#718096" text-anchor="middle">Z</text>
+                            <polygon points="26,12 23,23 26,21 29,23" fill="#e53e3e"/>
+                            <polygon points="26,40 23,29 26,31 29,29" fill="#a0aec0"/>
+                            <polygon points="40,26 29,23 31,26 29,29" fill="#a0aec0"/>
+                            <polygon points="12,26 23,23 21,26 23,29" fill="#a0aec0"/>
+                            <circle cx="26" cy="26" r="2" fill="#2d3748"/>
+                        </svg>
+                    </div>
+                    <span style="font-size:.72rem;color:var(--c-text-secondary)">otoč pro změnu<br>světových stran</span>
+                </div>
                 <div class="ks-row"><label>Velikost domu</label><strong id="ks-size-val">110 m²</strong></div>
                 <input type="range" id="ks-size" min="60" max="220" step="5" value="110" style="width:100%">
                 <div class="ks-row"><label>Rozměr</label><span class="ks-pctwrap"><input id="ks-dimw" type="number" step="0.1" min="3" class="ks-cnt"> × <input id="ks-dimh" type="number" step="0.1" min="3" class="ks-cnt"> m</span></div>
@@ -120,12 +136,17 @@
                 x.orient = null;
                 if (x.id === 'obyvak') x.orient = { good: ['S'], bad: ['N'] };
                 else if (x.id === 'kuchyn') x.orient = { good: ['E', 'N'], bad: ['S', 'W'] };
-                else if (x.id.startsWith('loznice')) x.orient = { good: ['E', 'N'], bad: ['W'] };
+                else if (x.id.startsWith('loznice')) x.orient = { good: ['E', 'N'], bad: ['W', 'S'] };   // ne jih (přehřátí)
                 else if (x.id.startsWith('pokoj')) x.orient = { good: ['E', 'S'], bad: ['W'] };
                 else if (x.id.startsWith('koupelna')) x.orient = { good: ['N', 'E'] };
                 else if (x.id === 'wc') x.orient = { good: ['N'] };
                 else if (x.id === 'spiz') x.orient = { good: ['N'], bad: ['S', 'W'] };
                 else if (x.id === 'technicka') x.orient = { good: ['N'] };
+            });
+            // měkké: koupelna/WC raději na obvodové stěně (okno); malé servisní nemají zabírat roh
+            ROOMS.forEach(x => {
+                x.perimSoft = (x.id.startsWith('koupelna') || x.id === 'wc');
+                x.noCorner = (x.id === 'wc' || x.id === 'spiz' || x.id === 'technicka');
             });
 
             seedBases();
@@ -357,6 +378,13 @@
                     if (o.good) orient += Math.max(...o.good.map(c => { const d = dirVec(c); return rx * d.x + ry * d.y; }));
                     if (o.bad) o.bad.forEach(c => { const d = dirVec(c); orient -= Math.max(0, rx * d.x + ry * d.y); });
                 }
+                if (ROOMS[i].perimSoft || ROOMS[i].noCorner) {   // obvod (soft, okno) / roh (soft, malé servisní)
+                    let sides = 0; const S = new Set();
+                    b.forEach(r => { if (eq(r.x, 0)) S.add('w'); if (eq(r.x + r.w, W)) S.add('e'); if (eq(r.y, 0)) S.add('n'); if (eq(r.y + r.h, H)) S.add('s'); });
+                    sides = S.size;
+                    if (ROOMS[i].perimSoft && sides >= 1) orient += 2;      // má okno
+                    if (ROOMS[i].noCorner && sides >= 2) orient -= 4;       // nezabírej roh
+                }
             }
             let voidPen = 0;
             if (VOID >= 0) { const v = g[VOID][0]; if (!voidOk(v)) voidPen = 15; if (voidAnchor && v) { const cs = [[v.x, v.y], [v.x + v.w, v.y], [v.x, v.y + v.h], [v.x + v.w, v.y + v.h]]; voidPen += Math.min(...cs.map(c => Math.hypot(c[0] - voidAnchor.x, c[1] - voidAnchor.y))); } }
@@ -558,31 +586,18 @@
         });
         document.getElementById('ks-reset').addEventListener('click', reset);
 
-        // ── Kompas (otočný sever) ────────────────────────────────────
-        const cc = document.getElementById('ks-compass'), cctx = cc.getContext('2d');
-        function drawCompass() {
-            const s = cc.width, r = s / 2 - 12, cx = s / 2, cy = s / 2;
-            cctx.clearRect(0, 0, s, s);
-            cctx.strokeStyle = '#c9c9c9'; cctx.lineWidth = 1.5; cctx.beginPath(); cctx.arc(cx, cy, r, 0, 7); cctx.stroke();
-            cctx.textAlign = 'center'; cctx.textBaseline = 'middle';
-            [['S', 'N'], ['V', 'E'], ['J', 'S'], ['Z', 'W']].forEach((d, i) => {
-                const bearing = (i * 90 + cfg.north) * Math.PI / 180, vx = Math.sin(bearing), vy = -Math.cos(bearing);
-                cctx.fillStyle = d[0] === 'S' ? '#b23b2e' : '#777'; cctx.font = 'bold 11px sans-serif';
-                cctx.fillText(d[0], cx + vx * (r + 5), cy + vy * (r + 5));
-            });
-            const nb = cfg.north * Math.PI / 180, nx = Math.sin(nb), ny = -Math.cos(nb);
-            cctx.strokeStyle = '#b23b2e'; cctx.lineWidth = 2.5; cctx.beginPath(); cctx.moveTo(cx, cy); cctx.lineTo(cx + nx * (r - 3), cy + ny * (r - 3)); cctx.stroke();
-            cctx.strokeStyle = '#999'; cctx.lineWidth = 2; cctx.beginPath(); cctx.moveTo(cx, cy); cctx.lineTo(cx - nx * (r - 3), cy - ny * (r - 3)); cctx.stroke();
-            cctx.fillStyle = '#b23b2e'; cctx.beginPath(); cctx.arc(cx, cy, 2.5, 0, 7); cctx.fill();
-        }
+        // ── Kompas (otočný sever, grafika převzatá z konceptu) ───────
+        const cc = document.getElementById('ks-compass'), csvg = document.getElementById('ks-compass-svg');
+        function drawCompass() { csvg.style.transform = 'rotate(' + cfg.north + 'deg)'; }
         let compassDrag = false;
-        function setNorth(e) { const rect = cc.getBoundingClientRect(), dx = e.clientX - (rect.left + cc.width / 2), dy = e.clientY - (rect.top + cc.height / 2); let ang = Math.atan2(dx, -dy) * 180 / Math.PI; if (ang < 0) ang += 360; cfg.north = Math.round(ang); }
-        cc.addEventListener('mousedown', e => { compassDrag = true; setNorth(e); });
+        function setNorth(e) { const rect = cc.getBoundingClientRect(), dx = e.clientX - (rect.left + rect.width / 2), dy = e.clientY - (rect.top + rect.height / 2); let ang = Math.atan2(dx, -dy) * 180 / Math.PI; if (ang < 0) ang += 360; cfg.north = Math.round(ang); drawCompass(); }
+        cc.addEventListener('mousedown', e => { e.preventDefault(); compassDrag = true; setNorth(e); });
         window.addEventListener('mousemove', e => { if (compassDrag) setNorth(e); });
         window.addEventListener('mouseup', () => { if (compassDrag) { compassDrag = false; seedBases(); reset(); } });   // po otočení přeskládat podle nového severu
+        cc.addEventListener('dblclick', () => { cfg.north = 0; drawCompass(); seedBases(); reset(); });
 
         structuralRebuild();
-        (function loop() { drawCompass(); requestAnimationFrame(loop); })();
+        drawCompass();
         smycka();
     })();
     </script>
