@@ -465,8 +465,8 @@
             const big = k => !ROOMS[k].mimo && ROOMS[k].area / H >= ROOMS[k].min;
             const cands = [];
             for (let t = 0; t < 5000; t++) {
-                let boxes;
-                if (Math.random() < 0.4) { boxes = constructWrap(); }   // template obtékání (L)
+                let boxes, tpl;
+                if (Math.random() < 0.5) { boxes = constructWrap(); tpl = 'wrap'; }   // template obtékání (L)
                 else {
                     const sh = [...ids].sort(() => Math.random() - 0.5);
                     const left = big(sh[0]) ? sh[0] : null;
@@ -475,16 +475,18 @@
                     const rest = r1.filter(k => k !== right);
                     const top = [], bot = [];
                     rest.forEach(k => { (Math.random() < 0.5 ? top : bot).push(k); });
-                    boxes = constructSpine(hubK, left, right, top, bot);
+                    boxes = constructSpine(hubK, left, right, top, bot); tpl = 'spine';
                 }
                 if (!boxes) continue;
                 const ev = evalLeaves(boxes); if (!ev) continue;
-                cands.push({ boxes, val: ev.val });
+                cands.push({ boxes, val: ev.val, tpl });
             }
             cands.sort((a, b) => b.val - a.val);
             const out = [], seen = new Set();
-            for (const c of cands) { const sig = c.boxes.map(b => b.room + ':' + Math.round(b.x) + ',' + Math.round(b.y)).sort().join('|'); if (seen.has(sig)) continue; seen.add(sig); out.push(c.boxes); if (out.length >= 6) break; }
-            return out;
+            const sigOf = c => c.boxes.map(b => b.room + ':' + Math.round(b.x) + ',' + Math.round(b.y)).sort().join('|');
+            const take = (tpl, max) => { let n = 0; for (const c of cands) { if (tpl && c.tpl !== tpl) continue; const s = sigOf(c); if (seen.has(s)) continue; seen.add(s); out.push(c.boxes); if (++n >= max) break; } };
+            take('wrap', 3); take('spine', 3); take(null, 6);   // namíchat oba templaty + doplnit do 6
+            return out.slice(0, 6);
         }
         function drawMini(cvm, boxes) {
             const g2 = cvm.getContext('2d'), px = cvm.width / W, m = v => v * px;
@@ -708,11 +710,14 @@
         function setNorth(e) { const rect = cc.getBoundingClientRect(), dx = e.clientX - (rect.left + rect.width / 2), dy = e.clientY - (rect.top + rect.height / 2); let ang = Math.atan2(dx, -dy) * 180 / Math.PI; if (ang < 0) ang += 360; cfg.north = Math.round(ang); drawCompass(); }
         cc.addEventListener('mousedown', e => { e.preventDefault(); compassDrag = true; setNorth(e); });
         window.addEventListener('mousemove', e => { if (compassDrag) setNorth(e); });
-        window.addEventListener('mouseup', () => { if (compassDrag) { compassDrag = false; seedBases(); reset(); } });   // po otočení přeskládat podle nového severu
+        window.addEventListener('mouseup', () => { if (compassDrag) { compassDrag = false; seedBases(); refresh(); } });   // po otočení přeskládat / přegenerovat mřížku
         cc.addEventListener('dblclick', () => { cfg.north = 0; drawCompass(); seedBases(); reset(); });
 
         structuralRebuild();
         drawCompass();
+        const checked = document.querySelector('input[name=ks-motor]:checked');
+        cfg.motor = checked ? checked.value : 'losovaci';   // sjednotit s reálným stavem přepínače (přežije refresh)
+        updateMotorView();
         smycka();
     })();
     </script>
