@@ -377,12 +377,13 @@
                     if (o.good) orient += Math.max(...o.good.map(c => { const d = dirVec(c); return rx * d.x + ry * d.y; }));
                     if (o.bad) o.bad.forEach(c => { const d = dirVec(c); orient -= Math.max(0, rx * d.x + ry * d.y); });
                 }
-                if (ROOMS[i].perimSoft || ROOMS[i].noCorner) {   // obvod (soft, okno) / roh (soft, malé servisní)
-                    let sides = 0; const S = new Set();
+                {   // obvodové / rohové tendence (soft)
+                    const S = new Set();
                     b.forEach(r => { if (eq(r.x, 0)) S.add('w'); if (eq(r.x + r.w, W)) S.add('e'); if (eq(r.y, 0)) S.add('n'); if (eq(r.y + r.h, H)) S.add('s'); });
-                    sides = S.size;
-                    if (ROOMS[i].perimSoft && sides >= 1) orient += 2;      // má okno
-                    if (ROOMS[i].noCorner && sides >= 2) orient -= 4;       // nezabírej roh
+                    const sides = S.size;
+                    if (ROOMS[i].perimSoft && sides >= 1) orient += 2;      // koupelna/WC: okno
+                    if (ROOMS[i].noCorner && sides >= 2) orient -= 4;       // malé servisní: nezabírej roh
+                    if (ROOMS[i].id === 'chodba') orient -= Math.max(0, sides - (cfg.zadveri ? 0 : 1)) * 5;   // chodba vnitřní (kromě vchodu)
                 }
             }
             let voidPen = 0;
