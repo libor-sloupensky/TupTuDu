@@ -279,6 +279,24 @@
             });
             return doors;
         }
+        // vchodové dveře: na obvodové stěně zádveří (nebo chodby, není-li zádveří)
+        function entranceDoor() {
+            if (!layout) return null;
+            const id = IDX['zadveri'] != null ? 'zadveri' : (IDX['chodba'] != null ? 'chodba' : null);
+            if (!id) return null;
+            let best = null, bl = 0;
+            boxesK(IDX[id]).forEach(r => {
+                const edges = [];
+                if (eq(r.y, 0)) edges.push({ vertical: false, y: 0, s0: r.x, s1: r.x + r.w });
+                if (eq(r.y + r.h, H)) edges.push({ vertical: false, y: H, s0: r.x, s1: r.x + r.w });
+                if (eq(r.x, 0)) edges.push({ vertical: true, x: 0, s0: r.y, s1: r.y + r.h });
+                if (eq(r.x + r.w, W)) edges.push({ vertical: true, x: W, s0: r.y, s1: r.y + r.h });
+                edges.forEach(e => { const len = e.s1 - e.s0; if (len > bl) { bl = len; best = e; } });
+            });
+            if (!best || bl < 0.9) return null;
+            const w = Math.min(0.9, bl - 0.1), c = (best.s0 + best.s1) / 2;
+            return best.vertical ? { vertical: true, x: best.x, y: c, w, entrance: true } : { vertical: false, x: c, y: best.y, w, entrance: true };
+        }
         function voidOk(v) {
             if (VOID < 0 || !v) return true;
             if (voidAnchor) { const cs = [[v.x, v.y], [v.x + v.w, v.y], [v.x, v.y + v.h], [v.x + v.w, v.y + v.h]]; return cs.some(c => Math.hypot(c[0] - voidAnchor.x, c[1] - voidAnchor.y) < 0.4); }
@@ -380,15 +398,27 @@
             // obvod domu
             ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 3; ctx.strokeRect(mx(0), mx(0), W * PX, H * PX);
 
-            // dveře splněných napojení (mezera ve zdi + naznačené křídlo)
-            computeDoors().forEach(d => {
-                ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.beginPath();
+            // dveře: mezera ve zdi + viditelné křídlo + oblouk otevírání
+            const doory = computeDoors(); const ent = entranceDoor(); if (ent) doory.push(ent);
+            doory.forEach(d => {
+                // mezera ve zdi (bílé přerušení)
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = d.entrance ? 5 : 4; ctx.beginPath();
                 if (d.vertical) { ctx.moveTo(mx(d.x), mx(d.y - d.w / 2)); ctx.lineTo(mx(d.x), mx(d.y + d.w / 2)); }
                 else { ctx.moveTo(mx(d.x - d.w / 2), mx(d.y)); ctx.lineTo(mx(d.x + d.w / 2), mx(d.y)); }
                 ctx.stroke();
-                ctx.strokeStyle = 'rgba(70,70,70,.45)'; ctx.lineWidth = 1;
-                if (d.vertical) { const j = mx(d.y - d.w / 2); ctx.beginPath(); ctx.arc(mx(d.x), j, d.w * PX, 0, Math.PI / 2); ctx.moveTo(mx(d.x), j); ctx.lineTo(mx(d.x), j + d.w * PX); ctx.stroke(); }
-                else { const j = mx(d.x - d.w / 2); ctx.beginPath(); ctx.arc(j, mx(d.y), d.w * PX, -Math.PI / 2, 0); ctx.moveTo(j, mx(d.y)); ctx.lineTo(j + d.w * PX, mx(d.y)); ctx.stroke(); }
+                const wp = d.w * PX;
+                // křídlo (výrazně) + oblouk
+                if (d.vertical) {
+                    const jx = mx(d.x), jy = mx(d.y - d.w / 2);
+                    ctx.strokeStyle = d.entrance ? '#b23b2e' : '#5a5a5a'; ctx.lineWidth = d.entrance ? 2.2 : 1.6;
+                    ctx.beginPath(); ctx.moveTo(jx, jy); ctx.lineTo(jx + wp, jy); ctx.stroke();
+                    ctx.strokeStyle = 'rgba(90,90,90,.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(jx, jy, wp, 0, Math.PI / 2); ctx.stroke();
+                } else {
+                    const jx = mx(d.x - d.w / 2), jy = mx(d.y);
+                    ctx.strokeStyle = d.entrance ? '#b23b2e' : '#5a5a5a'; ctx.lineWidth = d.entrance ? 2.2 : 1.6;
+                    ctx.beginPath(); ctx.moveTo(jx, jy); ctx.lineTo(jx, jy - wp); ctx.stroke();
+                    ctx.strokeStyle = 'rgba(90,90,90,.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(jx, jy, wp, -Math.PI / 2, 0); ctx.stroke();
+                }
             });
 
             // popisky (jeden na místnost)
