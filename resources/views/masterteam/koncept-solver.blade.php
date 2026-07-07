@@ -115,15 +115,17 @@
             ROOMS.forEach(x => x.cap = x.mimo ? 1 : (x.id === 'chodba' ? 3 : 2));   // max. počet kostek místnosti
             // musí na obvodovou stěnu: obytné (okna) + vstup (zádveří, nebo chodba není-li zádveří)
             ROOMS.forEach(x => x.perim = !x.mimo && (x.id === 'obyvak' || x.id === 'zadveri' || x.id.startsWith('loznice') || x.id.startsWith('pokoj') || (x.id === 'chodba' && !cfg.zadveri)));
-            // orientační tendence (měkké): kladná = táhne ke straně, záporná = vyhýbá se
+            // orientační tendence (měkké): good = táhne k některé z těch stran, bad = vyhýbá se
             ROOMS.forEach(x => {
                 x.orient = null;
-                if (x.id === 'obyvak') x.orient = { plus: 'S' };
-                else if (x.id === 'kuchyn') x.orient = { plus: 'E', minus: 'S' };
-                else if (x.id.startsWith('loznice')) x.orient = { plus: 'E', minus: 'W' };
-                else if (x.id.startsWith('pokoj')) x.orient = { plus: 'E' };
-                else if (x.id === 'spiz') x.orient = { plus: 'N', minus: 'S' };
-                else if (x.id === 'technicka') x.orient = { plus: 'N' };
+                if (x.id === 'obyvak') x.orient = { good: ['S'], bad: ['N'] };
+                else if (x.id === 'kuchyn') x.orient = { good: ['E', 'N'], bad: ['S', 'W'] };
+                else if (x.id.startsWith('loznice')) x.orient = { good: ['E', 'N'], bad: ['W'] };
+                else if (x.id.startsWith('pokoj')) x.orient = { good: ['E', 'S'], bad: ['W'] };
+                else if (x.id.startsWith('koupelna')) x.orient = { good: ['N', 'E'] };
+                else if (x.id === 'wc') x.orient = { good: ['N'] };
+                else if (x.id === 'spiz') x.orient = { good: ['N'], bad: ['S', 'W'] };
+                else if (x.id === 'technicka') x.orient = { good: ['N'] };
             });
 
             const zc = { obyvak: [W * 0.25, H * 0.55], chodba: [W * 0.5, H * 0.5], zadveri: [W * 0.5, H * 0.12], kuchyn: [W * 0.32, H * 0.85] };
@@ -339,8 +341,8 @@
                 if (ROOMS[i].orient) {   // orientační tendence (měkké)
                     let ax = 0, ay = 0, AA = 0; b.forEach(r => { const a = r.w * r.h; ax += (r.x + r.w / 2) * a; ay += (r.y + r.h / 2) * a; AA += a; });
                     const rx = ax / AA - W / 2, ry = ay / AA - H / 2, o = ROOMS[i].orient;
-                    if (o.plus) { const d = dirVec(o.plus); orient += rx * d.x + ry * d.y; }
-                    if (o.minus) { const d = dirVec(o.minus); orient -= Math.max(0, rx * d.x + ry * d.y); }
+                    if (o.good) orient += Math.max(...o.good.map(c => { const d = dirVec(c); return rx * d.x + ry * d.y; }));
+                    if (o.bad) o.bad.forEach(c => { const d = dirVec(c); orient -= Math.max(0, rx * d.x + ry * d.y); });
                 }
             }
             let voidPen = 0;
