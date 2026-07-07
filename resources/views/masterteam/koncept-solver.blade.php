@@ -324,15 +324,18 @@
                 for (let d = 0; d < (vb.w + vb.h) * PX; d += 12) { ctx.moveTo(mx(vb.x) + d, mx(vb.y)); ctx.lineTo(mx(vb.x), mx(vb.y) + d); }
                 ctx.stroke(); ctx.restore();
             }
-            // zdi = hrany mezi kostkami RŮZNÝCH místností (vnitřní hrany jedné místnosti se nekreslí → sjednocení)
-            ctx.strokeStyle = '#4a453c'; ctx.lineWidth = 2;
+            // hrany mezi kostkami: různé místnosti = zeď; stejná místnost = čárkovaný spoj (diagnostika)
             for (let i = 0; i < layout.length; i++) for (let j = i + 1; j < layout.length; j++) {
-                const A = layout[i], B = layout[j]; if (A.room === B.room) continue;
-                ctx.beginPath();
-                if (eq(A.x + A.w, B.x) || eq(B.x + B.w, A.x)) { const x = eq(A.x + A.w, B.x) ? A.x + A.w : B.x + B.w, y0 = Math.max(A.y, B.y), y1 = Math.min(A.y + A.h, B.y + B.h); if (y1 - y0 > 0.05) { ctx.moveTo(mx(x), mx(y0)); ctx.lineTo(mx(x), mx(y1)); } }
-                if (eq(A.y + A.h, B.y) || eq(B.y + B.h, A.y)) { const y = eq(A.y + A.h, B.y) ? A.y + A.h : B.y + B.h, x0 = Math.max(A.x, B.x), x1 = Math.min(A.x + A.w, B.x + B.w); if (x1 - x0 > 0.05) { ctx.moveTo(mx(x0), mx(y)); ctx.lineTo(mx(x1), mx(y)); } }
-                ctx.stroke();
+                const A = layout[i], B = layout[j];
+                let seg = null;
+                if (eq(A.x + A.w, B.x) || eq(B.x + B.w, A.x)) { const x = eq(A.x + A.w, B.x) ? A.x + A.w : B.x + B.w, y0 = Math.max(A.y, B.y), y1 = Math.min(A.y + A.h, B.y + B.h); if (y1 - y0 > 0.05) seg = [x, y0, x, y1]; }
+                else if (eq(A.y + A.h, B.y) || eq(B.y + B.h, A.y)) { const y = eq(A.y + A.h, B.y) ? A.y + A.h : B.y + B.h, x0 = Math.max(A.x, B.x), x1 = Math.min(A.x + A.w, B.x + B.w); if (x1 - x0 > 0.05) seg = [x0, y, x1, y]; }
+                if (!seg) continue;
+                if (A.room === B.room) { if (ROOMS[A.room].mimo) continue; ctx.strokeStyle = 'rgba(200,60,60,.6)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]); }
+                else { ctx.strokeStyle = '#4a453c'; ctx.lineWidth = 2; ctx.setLineDash([]); }
+                ctx.beginPath(); ctx.moveTo(mx(seg[0]), mx(seg[1])); ctx.lineTo(mx(seg[2]), mx(seg[3])); ctx.stroke();
             }
+            ctx.setLineDash([]);
             // obvod domu
             ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 3; ctx.strokeRect(mx(0), mx(0), W * PX, H * PX);
 
