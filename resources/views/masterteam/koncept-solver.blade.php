@@ -85,7 +85,7 @@
         const PAD = 18, MAXW = 640, MAXH = 460;
         const eq = (p, q) => Math.abs(p - q) < 1e-6;
 
-        const cfg = { motor: 'losovaci', shape: 'obdelnik', size: 110, customDim: false, dimW: 0, dimH: 0, north: 0, zadveri: true, chodba: true, kuchyn: false, technicka: false, spiz: false, loznice: 2, detske: 1, koupelny: 1 };
+        const cfg = { motor: 'losovaci', shape: 'obdelnik', size: 110, customDim: false, dimW: 0, dimH: 0, north: 0, zadveri: true, chodba: true, kuchyn: false, technicka: false, spiz: false, satna: false, pracovna: false, pradelna: false, loznice: 2, detske: 1, koupelny: 1 };
         // směrový vektor světové strany na plátně (respektuje natočení kompasu)
         function dirVec(card) { const bearing = (({ N: 0, E: 90, S: 180, W: 270 }[card] || 0) + cfg.north) * Math.PI / 180; return { x: Math.sin(bearing), y: -Math.cos(bearing) }; }
         const pctStore = {};
@@ -113,6 +113,9 @@
             add('wc', 'WC', 2, '#b9dfe6', 0.9, 2.5);
             if (P.technicka) add('technicka', 'Technická', 5, '#e0dedc', 1.5, 2.5);
             if (P.spiz) add('spiz', 'Spíž', 3, '#efe6d0', 1.2, 3.0);
+            if (P.pracovna) add('pracovna', 'Pracovna', 8, '#e0d7ea', 2.0, 2.0);   // naučeno z BP: denní zóna, může být host
+            if (P.satna) add('satna', 'Šatna', 5, '#efe0d0', 1.2, 3.0);            // naučeno z BP: u ložnice / vstupu
+            if (P.pradelna) add('pradelna', 'Prádelna', 5, '#dce8e0', 1.4, 2.5);    // naučeno z BP: technická zóna
 
             const maVyrez = (P.shape === 'L' || P.shape === 'U');
             // rozměry: buď z návrhu (m² + tvar), nebo přesně zadané uživatelem
@@ -134,23 +137,25 @@
             VOID = IDX['_void'] != null ? IDX['_void'] : -1;
             ROOMS.forEach(x => x.cap = x.mimo ? 1 : (x.id === 'chodba' ? 3 : 2));   // max. počet kostek místnosti
             // musí na obvodovou stěnu: obytné (okna) + vstup (zádveří, nebo chodba není-li zádveří)
-            ROOMS.forEach(x => x.perim = !x.mimo && (x.id === 'obyvak' || x.id === 'zadveri' || x.id.startsWith('loznice') || x.id.startsWith('pokoj') || (x.id === 'chodba' && !cfg.zadveri)));
-            // orientační tendence (měkké): good = táhne k některé z těch stran, bad = vyhýbá se
+            ROOMS.forEach(x => x.perim = !x.mimo && (x.id === 'obyvak' || x.id === 'zadveri' || x.id === 'pracovna' || x.id.startsWith('loznice') || x.id.startsWith('pokoj') || (x.id === 'chodba' && !cfg.zadveri)));
+            // orientační tendence (měkké, NAUČENO z BP): obytné → J/JV/V do zahrady; servis/chodby → S/Z
             ROOMS.forEach(x => {
                 x.orient = null;
-                if (x.id === 'obyvak') x.orient = { good: ['S'], bad: ['N'] };
+                if (x.id === 'obyvak') x.orient = { good: ['S', 'W'], bad: ['N'] };            // J/JZ – večerní světlo
                 else if (x.id === 'kuchyn') x.orient = { good: ['E', 'N'], bad: ['S', 'W'] };
-                else if (x.id.startsWith('loznice')) x.orient = { good: ['E', 'N'], bad: ['W', 'S'] };   // ne jih (přehřátí)
+                else if (x.id.startsWith('loznice')) x.orient = { good: ['E', 'S'], bad: ['W'] };  // do zahrady (V/J), ne západ
                 else if (x.id.startsWith('pokoj')) x.orient = { good: ['E', 'S'], bad: ['W'] };
                 else if (x.id.startsWith('koupelna')) x.orient = { good: ['N', 'E'] };
                 else if (x.id === 'wc') x.orient = { good: ['N'] };
                 else if (x.id === 'spiz') x.orient = { good: ['N'], bad: ['S', 'W'] };
                 else if (x.id === 'technicka') x.orient = { good: ['N'] };
+                else if (x.id === 'pradelna') x.orient = { good: ['N'] };
+                else if (x.id === 'pracovna') x.orient = { good: ['E', 'S'] };
             });
             // měkké: koupelna/WC raději na obvodové stěně (okno); malé servisní nemají zabírat roh
             ROOMS.forEach(x => {
                 x.perimSoft = (x.id.startsWith('koupelna') || x.id === 'wc');
-                x.noCorner = (x.id === 'wc' || x.id === 'spiz' || x.id === 'technicka');
+                x.noCorner = (x.id === 'wc' || x.id === 'spiz' || x.id === 'technicka' || x.id === 'pradelna' || x.id === 'satna');
             });
 
             seedBases();
@@ -186,6 +191,9 @@
             if (id === 'obyvak') return null;
             if (id === 'chodba' || id === 'kuchyn') return 'obyvak';
             if (id === 'spiz') return cfg.kuchyn ? 'kuchyn' : 'obyvak';
+            if (id === 'pracovna') return 'obyvak';                                          // denní zóna u obýváku
+            if (id === 'satna') return IDX['loznice0'] != null ? 'loznice0' : hub;           // u ložnice (master), jinak chodba
+            if (id === 'pradelna') return IDX['technicka'] != null ? 'technicka' : hub;      // u technické, jinak chodba
             if (id === 'zadveri' || id === 'wc' || id === 'technicka' || id.startsWith('koupelna') || id.startsWith('loznice') || id.startsWith('pokoj')) return hub;
             return null;
         }
@@ -223,6 +231,9 @@
             h += rowCount('koupelny', 'Koupelny', 'koupelna');
             h += rowFixed('wc', 'WC');
             h += rowCheck('technicka', 'Technická místnost', 'technicka');
+            h += rowCheck('pracovna', 'Pracovna', 'pracovna');
+            h += rowCheck('satna', 'Šatna', 'satna');
+            h += rowCheck('pradelna', 'Prádelna', 'pradelna');
             h += rowCheck('spiz', 'Spíž', 'spiz');
             h += '<div class="ks-mroom" style="border-top:1px solid var(--c-border);padding-top:.35rem;margin-top:.4rem;"><span>Součet</span><strong id="ks-pctsum">' + sumPct() + ' %</strong></div>';
             document.getElementById('ks-rooms').innerHTML = h;
