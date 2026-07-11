@@ -1,0 +1,39 @@
+{
+  "_zdroj": "Vytěženo z 26 architektonických bakalářských prací (FA, F1-BP-2026) – textové zdůvodnění dispozic. 2 práce byly čistě rastrové (bez textu). Toto jsou NAUČENÁ rozhodovací pravidla, ne z hlavy.",
+  "_datum": "2026-07-10",
+  "organizacni_principy": [
+    {"princip": " zoning na 4 zóny", "detail": "Vstupní (zádveří, šatna, WC) · Denní/společná (obývák+kk, jídelna, spíž, pracovna) · Noční/soukromá (ložnice, pokoje, koupelny, šatny) · Technická/provozní (technická, prádelna, garáž, sklad)", "vyskyt": "téměř všechny práce", "citace": "'racionálně rozděleno na zónu denní a noční'; explicitní stavební program: Vstupní/Denní/Noční/Technická část"},
+    {"princip": "veřejná vs soukromá", "detail": "Jasné dělení na společnou (obývák+kuchyň+jídelna, návaznost na zahradu) a soukromou (ložnice, pokoje, hygiena) část", "vyskyt": "velmi časté", "citace": "'Dispozice pracuje s jasným rozdělením na společnou a soukromou část'"},
+    {"princip": "uzavřít do ulice, otevřít do zahrady", "detail": "Fasáda k ulici (často S/Z) uzavřená kvůli soukromí; do zahrady (často J/V) velkoformátové prosklení a otevření", "vyskyt": "dominantní", "citace": "'do ulice se uzavírá, do zahrady otevírá velkoformátovým prosklením'"},
+    {"princip": "obývák = obývák + kuchyň + jídelna, otevřený", "detail": "Hlavní denní prostor je jeden otevřený celek (obytná kuchyň), centrum každodenního života, propojený s terasou/zahradou", "vyskyt": "téměř univerzální"},
+    {"princip": "master suite", "detail": "Ložnice rodičů má vlastní šatnu a často vlastní koupelnu; každý dětský pokoj může mít vlastní šatnu", "vyskyt": "časté", "citace": "'ložnice rodičů s vlastní šatnou a koupelnou. Každý z pokojů má vlastní šatnu'"},
+    {"princip": "L-tvar má účel", "detail": "Zalomení do L slouží jako akustická/vizuální bariéra, odcloní soukromou zahradu od okolí", "vyskyt": "opakovaně", "citace": "'tvar zalomený do L funguje jako akustická a vizuální bariéra, odcloní zahradu'"},
+    {"princip": "vícepodlažní: den dole, noc nahoře", "detail": "Rodinné domy jsou obvykle vícepodlažní; 1.NP = denní/společná zóna, 2.NP = noční/klidová zóna. (Náš nástroj je zatím jednopodlažní – zóny se promítají do půdorysu vedle sebe.)", "vyskyt": "standard"},
+    {"princip": "program dle počtu osob", "detail": "Počet a typ pokojů se odvíjí od rodiny (čtyřčlenná → 2 dětské pokoje + ložnice rodičů); věk dětí ovlivňuje pokoje", "vyskyt": "vždy"},
+    {"princip": "technická = centrální uzel", "detail": "Technická místnost soustřeďuje veškeré technologie (tepelné čerpadlo, VZT s rekuperací, FV, zásobník TV); často spojena s prádelnou", "vyskyt": "téměř všechny"}
+  ],
+  "mistnosti": {
+    "obyvak_kk":  {"plocha_typ_m2": 45, "rozsah_m2": [26, 89], "zona": "denní", "orientace_good": ["J", "JZ"], "orientace_bad": ["S"], "napojeni": ["chodba", "terasa"], "pozn": "obývák+kuchyň+jídelna jako otevřený celek; večerní JZ světlo ceněno"},
+    "loznice":    {"plocha_typ_m2": 15, "rozsah_m2": [12.6, 20], "zona": "noční", "orientace_good": ["V", "J"], "orientace_bad": ["Z"], "napojeni": ["chodba", "obyvak"], "pozn": "master: + vlastní šatna + koupelna"},
+    "pokoj":      {"plocha_typ_m2": 14, "rozsah_m2": [9, 19], "zona": "noční", "orientace_good": ["V", "J"], "orientace_bad": ["Z"], "napojeni": ["chodba", "obyvak"], "pozn": "dětské pokoje orientovat do zahrady"},
+    "koupelna":   {"plocha_typ_m2": 6,  "rozsah_m2": [3.2, 10], "zona": "noční", "orientace_good": ["S", "V"], "napojeni": ["chodba", "loznice"]},
+    "wc":         {"plocha_typ_m2": 2,  "rozsah_m2": [1.3, 2.75], "zona": "servisní", "orientace_good": ["S"], "napojeni": ["chodba"]},
+    "zadveri":    {"plocha_typ_m2": 7,  "rozsah_m2": [5.8, 22.7], "zona": "vstupní", "napojeni": ["chodba"], "pozn": "vstup; pokoje/kuchyně nesmí ústit přímo ze zádveří (ČSN)"},
+    "chodba":     {"plocha_typ_m2": 9,  "rozsah_m2": [2.5, 12], "zona": "komunikace", "orientace_good": ["S", "Z"], "pozn": "chodby na sever/západ; nezabírat prosluněnou fasádu"},
+    "spiz":       {"plocha_typ_m2": 4,  "rozsah_m2": [1.8, 8.7], "zona": "denní", "orientace_good": ["S"], "orientace_bad": ["J", "Z"], "napojeni": ["kuchyn", "obyvak"], "pozn": "chladná, u kuchyně"},
+    "technicka":  {"plocha_typ_m2": 8,  "rozsah_m2": [4, 13.7], "zona": "technická", "orientace_good": ["S"], "napojeni": ["chodba"]},
+    "pradelna":   {"plocha_typ_m2": 6,  "rozsah_m2": [4, 6.5], "zona": "technická", "orientace_good": ["S"], "napojeni": ["technicka", "koupelna"], "pozn": "NOVÁ – často spojena s technickou; chybí v našem nástroji"},
+    "satna":      {"plocha_typ_m2": 6,  "rozsah_m2": [3.3, 11], "zona": "noční/vstupní", "napojeni": ["loznice", "zadveri"], "pozn": "NOVÁ – velmi častá; u ložnice (master) nebo u vstupu; chybí v našem nástroji"},
+    "pracovna":   {"plocha_typ_m2": 10, "rozsah_m2": [5.7, 15.4], "zona": "denní", "orientace_good": ["V", "J"], "napojeni": ["obyvak", "chodba"], "pozn": "NOVÁ – častá; může sloužit jako pokoj pro hosty; chybí v našem nástroji"},
+    "terasa":     {"plocha_typ_m2": 20, "rozsah_m2": [14, 44], "zona": "venkovní", "orientace_good": ["J", "Z"], "napojeni": ["obyvak"], "pozn": "venkovní; navazuje na obývák; zatím neřešíme jako místnost"},
+    "garaz":      {"plocha_typ_m2": 25, "rozsah_m2": [15, 53], "zona": "technická", "napojeni": ["zadveri", "vstup"], "pozn": "1 auto ~18-25, 2 auta ~35-53; často v 1.PP nebo oddělená hmota"}
+  },
+  "orientace_potvrzeno": "Silná shoda s naší tabulkou: obytné → J/JV/V (proslunění, výhledy, otevření do zahrady); obývák → J/JZ (večerní světlo); chodby a servis → S/Z (uzavřená fasáda). Ložnice: J/V do zahrady, ne Z (přehřátí).",
+  "co_aplikovat_do_nastroje": [
+    "Přidat chybějící místnosti: ŠATNA (u ložnice/vstupu), PRACOVNA (denní, může být host), PRÁDELNA (technická).",
+    "Zpřesnit orientace dle evidence (obývák J/JZ, ložnice V/J −Z, spíž S −J/Z).",
+    "Zóny: denní (obývák/kuchyň/spíž/pracovna) vlevo-dolů (J), noční (ložnice/pokoje/koupelny/šatny) vpravo (V), servis (technická/prádelna) sever.",
+    "Zpřesnit výchozí plochy dle mediánů z tabulek.",
+    "Budoucí: master suite (ložnice+šatna+koupelna jako blok), terasa u obýváku, vícepodlažní (den/noc), garáž."
+  ]
+}

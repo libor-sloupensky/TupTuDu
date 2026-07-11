@@ -34,6 +34,7 @@
                 <div class="ks-row" style="justify-content:flex-start;gap:.9rem;margin-bottom:.5rem;font-size:.85rem">
                     <label><input type="radio" name="ks-motor" value="losovaci" checked> Losovací</label>
                     <label><input type="radio" name="ks-motor" value="konstruktivni"> Konstruktivní</label>
+                    <label><input type="radio" name="ks-motor" value="vzor"> Podle vzoru</label>
                 </div>
                 <h3>Tvar domu</h3>
                 <div class="ks-shapes" id="ks-shapes">
@@ -502,6 +503,87 @@
             take('wrap', 3); take('spine', 3); take(null, 6);   // namíchat oba templaty + doplnit do 6
             return out.slice(0, 6);
         }
+
+        // ── Motor „Podle vzoru": REÁLNÝ půdorys (vision-čtení BP) adaptovaný na rozměr + kompas ──
+        // knihovna: services/pudorys-parser/vzory_pudorysu.json (buňky = čisté dláždění 0..1, sever nahoře)
+        const VZORY = [
+            { id: 'krupicka', zdroj: 'BP Krupička (tabulka + kompas)', vstup: 'J', bunky: [
+                { id: 'obyvak_kk', nazev: 'Obývák + kk', zona: 'denni', barva: '#f2d7a8', bbox: [0.00, 0.00, 0.60, 0.50] },
+                { id: 'garaz', nazev: 'Garáž', zona: 'technicka', barva: '#d9d6cc', bbox: [0.60, 0.00, 1.00, 1.00] },
+                { id: 'schodiste', nazev: 'Schodiště', zona: 'komunikace', barva: '#e6e0d2', bbox: [0.00, 0.50, 0.30, 1.00] },
+                { id: 'denni_prace', nazev: 'Denní práce + spíž', zona: 'denni', barva: '#efe6d0', bbox: [0.30, 0.50, 0.60, 0.75] },
+                { id: 'wc', nazev: 'WC', zona: 'servisni', barva: '#b9dfe6', bbox: [0.30, 0.75, 0.44, 1.00] },
+                { id: 'zadveri', nazev: 'Zádveří', zona: 'vstupni', barva: '#c9d7e8', bbox: [0.44, 0.75, 0.60, 1.00] }
+            ] },
+            { id: 'berka', zdroj: 'BP Berka (výkres 1.NP)', vstup: 'V', bunky: [
+                { id: 'obyvak_kk', nazev: 'Obývák + kuchyň', zona: 'denni', barva: '#f2d7a8', bbox: [0.00, 0.00, 0.42, 1.00] },
+                { id: 'domaci_prace', nazev: 'Domácí práce + spíž', zona: 'denni', barva: '#efe6d0', bbox: [0.42, 0.00, 0.70, 0.28] },
+                { id: 'chodba', nazev: 'Chodba', zona: 'komunikace', barva: '#e6e0d2', bbox: [0.42, 0.28, 0.70, 0.58] },
+                { id: 'koupelna', nazev: 'WC + koupelna', zona: 'servisni', barva: '#b9dfe6', bbox: [0.42, 0.58, 0.70, 1.00] },
+                { id: 'technicka', nazev: 'Technická', zona: 'technicka', barva: '#e0dedc', bbox: [0.70, 0.00, 1.00, 0.30] },
+                { id: 'zadveri', nazev: 'Zádveří + šatna', zona: 'vstupni', barva: '#c9d7e8', bbox: [0.70, 0.30, 1.00, 0.58] },
+                { id: 'garaz', nazev: 'Garáž', zona: 'technicka', barva: '#d9d6cc', bbox: [0.70, 0.58, 1.00, 1.00] }
+            ] },
+            { id: 'hartova', zdroj: 'BP Hartová (malý dům)', vstup: 'V', bunky: [
+                { id: 'obyvak_kk', nazev: 'Obývák + kk', zona: 'denni', barva: '#f2d7a8', bbox: [0.00, 0.00, 0.72, 1.00] },
+                { id: 'chodba', nazev: 'Chodba', zona: 'komunikace', barva: '#e6e0d2', bbox: [0.72, 0.00, 1.00, 0.55] },
+                { id: 'wc', nazev: 'WC', zona: 'servisni', barva: '#b9dfe6', bbox: [0.72, 0.55, 1.00, 1.00] }
+            ] }
+        ];
+        function vzorMirror(bb, t) { let x0 = bb[0], y0 = bb[1], x1 = bb[2], y1 = bb[3]; if (t & 1) { const a = 1 - x1, b = 1 - x0; x0 = a; x1 = b; } if (t & 2) { const a = 1 - y1, b = 1 - y0; y0 = a; y1 = b; } return [x0, y0, x1, y1]; }
+        // vyber zrcadlení tak, aby denní zóna mířila k jihu a servis/komunikace k severu (dle kompasu)
+        function vzorScore(v, t) {
+            let s = 0;
+            v.bunky.forEach(c => {
+                const b = vzorMirror(c.bbox, t), rx = (b[0] + b[2]) / 2 - 0.5, ry = (b[1] + b[3]) / 2 - 0.5;
+                if (c.zona === 'denni') { const dS = dirVec('S'), dN = dirVec('N'); s += rx * dS.x + ry * dS.y; s -= Math.max(0, rx * dN.x + ry * dN.y); }
+                else if (c.zona === 'komunikace' || c.zona === 'servisni' || c.zona === 'technicka') { const dN = dirVec('N'); s += (rx * dN.x + ry * dN.y) * 0.6; }
+            });
+            return s;
+        }
+        function vzorBestMirror(v) { let bt = 0, bv = -Infinity; for (let t = 0; t < 4; t++) { const sc = vzorScore(v, t); if (sc > bv) { bv = sc; bt = t; } } return bt; }
+        function drawVzorMini(cvm, v) {
+            const g = cvm.getContext('2d'), px = cvm.width / W, m = x => x * px, t = vzorBestMirror(v);
+            g.clearRect(0, 0, cvm.width, cvm.height);
+            const boxes = v.bunky.map(c => { const b = vzorMirror(c.bbox, t); return { c, x0: b[0] * W, y0: b[1] * H, x1: b[2] * W, y1: b[3] * H }; });
+            boxes.forEach(o => { g.fillStyle = o.c.barva; g.fillRect(m(o.x0), m(o.y0), (o.x1 - o.x0) * px, (o.y1 - o.y0) * px); });
+            g.strokeStyle = '#4a453c'; g.lineWidth = 1;   // vnitřní zdi mezi buňkami
+            for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+                const A = boxes[i], B = boxes[j];
+                if (eq(A.x1, B.x0) || eq(B.x1, A.x0)) { const xx = eq(A.x1, B.x0) ? A.x1 : B.x1, y0 = Math.max(A.y0, B.y0), y1 = Math.min(A.y1, B.y1); if (y1 - y0 > 0.05) { g.beginPath(); g.moveTo(m(xx), m(y0)); g.lineTo(m(xx), m(y1)); g.stroke(); } }
+                if (eq(A.y1, B.y0) || eq(B.y1, A.y0)) { const yy = eq(A.y1, B.y0) ? A.y1 : B.y1, x0 = Math.max(A.x0, B.x0), x1 = Math.min(A.x1, B.x1); if (x1 - x0 > 0.05) { g.beginPath(); g.moveTo(m(x0), m(yy)); g.lineTo(m(x1), m(yy)); g.stroke(); } }
+            }
+            g.strokeStyle = '#2a2a2a'; g.lineWidth = 2; g.strokeRect(0, 0, W * px, H * px);
+            let ent = null;   // vchod: nejdelší obvodová hrana zádveří (nebo chodby)
+            boxes.forEach(o => {
+                if (o.c.id !== 'zadveri' && o.c.id !== 'chodba') return;
+                const edges = [];
+                if (eq(o.y0, 0)) edges.push(['h', o.x0, o.x1, 0]); if (eq(o.y1, H)) edges.push(['h', o.x0, o.x1, H]);
+                if (eq(o.x0, 0)) edges.push(['v', o.y0, o.y1, 0]); if (eq(o.x1, W)) edges.push(['v', o.y0, o.y1, W]);
+                edges.forEach(e => { const ln = e[2] - e[1]; if (!ent || (o.c.id === 'zadveri' && ent.id !== 'zadveri') || (o.c.id === ent.id && ln > ent.ln)) ent = { ln, e, id: o.c.id }; });
+            });
+            if (ent && ent.ln > 0.9) {
+                const w = Math.min(0.9, ent.ln - 0.1), mid = (ent.e[1] + ent.e[2]) / 2, e = ent.e;
+                g.strokeStyle = '#fff'; g.lineWidth = 5; g.beginPath();
+                if (e[0] === 'h') { g.moveTo(m(mid - w / 2), m(e[3])); g.lineTo(m(mid + w / 2), m(e[3])); } else { g.moveTo(m(e[3]), m(mid - w / 2)); g.lineTo(m(e[3]), m(mid + w / 2)); }
+                g.stroke();
+                g.strokeStyle = '#b23b2e'; g.lineWidth = 2; g.beginPath();   // křídlo dovnitř
+                if (e[0] === 'h') { const sy = eq(e[3], 0) ? 1 : -1; g.moveTo(m(mid - w / 2), m(e[3])); g.lineTo(m(mid - w / 2), m(e[3]) + sy * w * px); }
+                else { const sx = eq(e[3], 0) ? 1 : -1; g.moveTo(m(e[3]), m(mid - w / 2)); g.lineTo(m(e[3]) + sx * w * px, m(mid - w / 2)); }
+                g.stroke();
+            }
+            g.fillStyle = '#2a2a2a'; g.font = '600 10px sans-serif'; g.textAlign = 'center';
+            boxes.forEach(o => { g.fillText(o.c.nazev, m((o.x0 + o.x1) / 2), m((o.y0 + o.y1) / 2) + 3); });
+            g.fillStyle = '#8a8a8a'; g.font = '9px sans-serif'; g.textAlign = 'left'; g.fillText(v.zdroj, 4, cvm.height - 5);
+        }
+        function generateVzory() {
+            const box = document.getElementById('ks-gallery'); box.innerHTML = '';
+            VZORY.forEach(v => {
+                const wrap = document.createElement('div'); wrap.style.cssText = 'border:1px solid var(--c-border);border-radius:8px;padding:4px;background:var(--c-surface)';
+                const cvm = document.createElement('canvas'), mw = 300; cvm.width = mw; cvm.height = Math.max(60, Math.round(mw * H / W)); cvm.style.width = '100%';
+                wrap.appendChild(cvm); box.appendChild(wrap); drawVzorMini(cvm, v);
+            });
+        }
         // kreslení dveří (sdílené pro hlavní plán i miniatury); vchod se otevírá dovnitř
         function paintDoors(ctx, doors, m, px) {
             doors.forEach(d => {
@@ -561,10 +643,14 @@
         }
         function updateMotorView() {
             const gal = document.getElementById('ks-gallery'), stav = document.getElementById('ks-stav'), btn = document.getElementById('ks-reset'), cvv = document.getElementById('ks-canvas');
-            if (cfg.motor === 'konstruktivni') { buildProgram(cfg); gal.style.display = 'grid'; cvv.style.display = 'none'; stav.style.display = 'none'; btn.textContent = 'Přegenerovat'; generateGallery(); }
+            if (cfg.motor === 'konstruktivni' || cfg.motor === 'vzor') {
+                buildProgram(cfg); gal.style.display = 'grid'; cvv.style.display = 'none'; stav.style.display = 'none';
+                btn.textContent = cfg.motor === 'vzor' ? 'Znovu vykreslit' : 'Přegenerovat';
+                if (cfg.motor === 'vzor') generateVzory(); else generateGallery();
+            }
             else { gal.style.display = 'none'; cvv.style.display = 'block'; stav.style.display = ''; btn.textContent = 'Přeskládat'; dirty = true; }
         }
-        function refresh() { if (cfg.motor === 'konstruktivni') generateGallery(); else reset(); }
+        function refresh() { if (cfg.motor === 'konstruktivni') generateGallery(); else if (cfg.motor === 'vzor') generateVzory(); else reset(); }
 
         // ── Geometrie ukotvení (v metrech) ───────────────────────────
         const cxr = r => r.x + r.w / 2, cyr = r => r.y + r.h / 2;
@@ -592,7 +678,7 @@
         // ── Vykreslení ───────────────────────────────────────────────
         const grafEl = document.getElementById('ks-graf');
         function kresli() {
-            if (cfg.motor === 'konstruktivni') return;   // v režimu mřížky losovací motor nepočítá
+            if (cfg.motor !== 'losovaci') return;   // v režimu galerie (konstruktivní / podle vzoru) losovací motor nepočítá
             if (dirty) { solve(drag && drag.type === 'room' ? 5000 : Math.min(70000, 14000 + ROOMS.length * 4000)); dirty = false; }
             if (!layout || !layout.length) return;
             ctx.clearRect(0, 0, cv.width, cv.height);

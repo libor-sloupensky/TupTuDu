@@ -1,0 +1,46 @@
+{
+  "_popis": "Knihovna REÁLNÝCH půdorysů přečtená z výkresů (vision). Každý vzor je zjednodušený na ČISTÉ DLÁŽDĚNÍ (buňky dělí obdélník 0..1 beze spár) zachovávající topologii, zóny a proporce skutečného domu. Slouží jako předloha pro motor 'Podle vzoru' (adaptace na rozměr + kompas).",
+  "_frame": "x 0=vlevo .. 1=vpravo; y 0=nahoře .. 1=dole. Vzor je nakreslen se SEVEREM NAHORU. 'vstup'/'zahrada' = světová strana. Motor zrcadlí podle kompasu uživatele.",
+  "_datum": "2026-07-11",
+  "_barvy": "shodné s nástrojem (obyvak #f2d7a8, chodba #e6e0d2, zadveri #c9d7e8, koupelna/wc #b9dfe6, technicka #e0dedc, spiz/denni #efe6d0, garaz #d9d6cc)",
+  "vzory": [
+    {
+      "id": "krupicka",
+      "zdroj": "F1-BP-2026-Krupička (tabulka ploch + kompas)",
+      "vstup": "J", "zahrada": "Z", "sever_deg": 20,
+      "plocha_1np_m2": 97.5,
+      "bunky": [
+        {"id": "obyvak_kk", "nazev": "Obývák + kk", "zona": "denni", "barva": "#f2d7a8", "bbox": [0.00, 0.00, 0.60, 0.50]},
+        {"id": "garaz", "nazev": "Garáž", "zona": "technicka", "barva": "#d9d6cc", "bbox": [0.60, 0.00, 1.00, 1.00]},
+        {"id": "schodiste", "nazev": "Schodiště", "zona": "komunikace", "barva": "#e6e0d2", "bbox": [0.00, 0.50, 0.30, 1.00]},
+        {"id": "denni_prace", "nazev": "Denní práce + spíž", "zona": "denni", "barva": "#efe6d0", "bbox": [0.30, 0.50, 0.60, 0.75]},
+        {"id": "wc", "nazev": "WC", "zona": "servisni", "barva": "#b9dfe6", "bbox": [0.30, 0.75, 0.44, 1.00]},
+        {"id": "zadveri", "nazev": "Zádveří", "zona": "vstupni", "barva": "#c9d7e8", "bbox": [0.44, 0.75, 0.60, 1.00]}
+      ]
+    },
+    {
+      "id": "berka",
+      "zdroj": "F1-BP-2026-Berka (výkres 1.NP)",
+      "vstup": "V", "zahrada": "Z", "sever_deg": 0,
+      "bunky": [
+        {"id": "obyvak_kk", "nazev": "Obývák + kuchyň", "zona": "denni", "barva": "#f2d7a8", "bbox": [0.00, 0.00, 0.42, 1.00]},
+        {"id": "domaci_prace", "nazev": "Domácí práce + spíž", "zona": "denni", "barva": "#efe6d0", "bbox": [0.42, 0.00, 0.70, 0.28]},
+        {"id": "chodba", "nazev": "Chodba", "zona": "komunikace", "barva": "#e6e0d2", "bbox": [0.42, 0.28, 0.70, 0.58]},
+        {"id": "koupelna", "nazev": "WC + koupelna", "zona": "servisni", "barva": "#b9dfe6", "bbox": [0.42, 0.58, 0.70, 1.00]},
+        {"id": "technicka", "nazev": "Technická", "zona": "technicka", "barva": "#e0dedc", "bbox": [0.70, 0.00, 1.00, 0.30]},
+        {"id": "zadveri", "nazev": "Zádveří + šatna", "zona": "vstupni", "barva": "#c9d7e8", "bbox": [0.70, 0.30, 1.00, 0.58]},
+        {"id": "garaz", "nazev": "Garáž", "zona": "technicka", "barva": "#d9d6cc", "bbox": [0.70, 0.58, 1.00, 1.00]}
+      ]
+    },
+    {
+      "id": "hartova",
+      "zdroj": "F1-BP-2026-Hartová (malý dům 1NP)",
+      "vstup": "V", "zahrada": "Z", "sever_deg": 0,
+      "bunky": [
+        {"id": "obyvak_kk", "nazev": "Obývák + kk", "zona": "denni", "barva": "#f2d7a8", "bbox": [0.00, 0.00, 0.72, 1.00]},
+        {"id": "chodba", "nazev": "Chodba", "zona": "komunikace", "barva": "#e6e0d2", "bbox": [0.72, 0.00, 1.00, 0.55]},
+        {"id": "wc", "nazev": "WC", "zona": "servisni", "barva": "#b9dfe6", "bbox": [0.72, 0.55, 1.00, 1.00]}
+      ]
+    }
+  ]
+}
