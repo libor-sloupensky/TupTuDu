@@ -9,10 +9,18 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: function () {
+            // Modul Doklady má vlastní soubor rout, ať se nemíchá s jádrem
+            Illuminate\Support\Facades\Route::middleware('web')
+                ->group(__DIR__.'/../routes/office.php');
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'master' => \App\Http\Middleware\JeMaster::class,
+            // Modul Doklady
+            'office.firma' => \App\Http\Middleware\Office\EnsureFirmaSelected::class,
+            'office.role' => \App\Http\Middleware\Office\CheckRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

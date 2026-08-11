@@ -1,0 +1,1367 @@
+<?php
+
+namespace App\Services\Office;
+
+use App\Models\Office\Dodavatel;
+use App\Models\Office\Doklad;
+use App\Models\Office\Firma;
+use Aws\Textract\TextractClient;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use setasign\Fpdi\Fpdi;
+
+class DokladProcessor
+{
+    /** Indikátor, zda byla na některé stránce detekována více než 1 doklad. */
+    public bool $hadMultiDocPage = false;
+
+
+    /**
+     * Zpracuje soubor dokladu - rozdělí PDF na stránky, Claude Vision AI + upload na S3 + uložení do DB.
+     * Vrací pole Doklad objektů (může být víc dokladů z jednoho souboru).
+     *
+     * @return Doklad[]
+     */
+    private function logFailedFile(string $filename, string $firmaIco, string $error, string $fileBytes): void
+    {
+        $dir = storage_path('logs/failed_uploads');
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        // Save a copy of the failed file for later analysis
+        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $filename);
+        $timestamp = date('Ymd_His');
+        @file_put_contents("{$dir}/{$timestamp}_{$safeFilename}", $fileBytes);
+
+        // Append to daily error log
+        $entry = date('H:i:s') . " | {$firmaIco} | {$filename} | {$error}\n";
+        @file_put_contents("{$dir}/" . date('Y-m-d') . '_errors.log', $entry, FILE_APPEND);
+    }
+
+    public function process(
+        string $filePath,
+        string $originalName,
+        Firma $firma,
+        string $fileHash,
+        string $zdroj = 'upload'
+    ): array {
+        $fileBytes = file_get_contents($filePath);
+        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION)) ?: 'pdf';
+        $isPdf = $ext === 'pdf' || str_starts_with($fileBytes, '%PDF');
+
+        // Rozděl multi-page PDF na jednotlivé stránky
+        if ($isPdf) {
+            $pages = $this->splitPdfPages($fileBytes);
+        } else {
+            $pages = null; // obrázky se nerozdělují
+        }
+
+        // Multi-page PDF: zpracuj každou stránku zvlášť
+        if ($pages !== null && count($pages) > 1) {
+            return $this->processMultiPagePdf($pages, $originalName, $firma, $fileHash, $zdroj, $fileBytes);
+        }
+
+        // Jednoduchý soubor (1 stránka PDF nebo obrázek)
+        return $this->processSingleFile($fileBytes, $ext, $originalName, $firma, $fileHash, $zdroj);
+    }
+
+    /**
+     * Zpracuje multi-page PDF - každá stránka se posílá do AI zvlášť pro kvalitu,
+     * ale výsledkem je vždy JEDEN záznam v DB (celý soubor = 1 doklad).
+     *
+     * @return Doklad[]
+     */
+    private function processMultiPagePdf(
+        array $pages,
+        string $originalName,
+        Firma $firma,
+        string $fileHash,
+        string $zdroj,
+        string $originalFileBytes
+    ): array {
+        $firstDocData = null;
+        $firstTextractBlocks = null;
+        $allTextractOcr = [];
+        $totalDocsDetected = 0;
+        $lastError = null;
+
+        foreach ($pages as $pageNum => $pageBytes) {
+            // Upload stránky na S3 jako temp (pro Textract)
+            $pageTempPath = "doklady/{$firma->ico}/_tmp/" . time() . "_{$fileHash}_p{$pageNum}.pdf";
+            Storage::disk('s3')->put($pageTempPath, $pageBytes);
+
+            // Textract PRVNÍ — přesný OCR text + bounding boxy per stránku
+            $textractBlocks = $this->callTextract($pageBytes);
+            $textractOcr = $this->extractTextractText($textractBlocks);
+
+            $visionResult = null;
+            $lastPageError = null;
+            $maxAttempts = ($textractOcr && mb_strlen($textractOcr) > 30) ? 2 : 1;
+
+            for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+                try {
+                    $visionResult = $this->analyzeWithVision($pageBytes, 'pdf', $firma, $textractOcr);
+                } catch (\Exception $e) {
+                    $lastPageError = $e;
+                    $lastError = $e;
+                    Log::warning("DokladProcessor Vision page {$pageNum} attempt {$attempt}/{$maxAttempts}: {$e->getMessage()}", [
+                        'firma_ico' => $firma->ico,
+                        'file' => $originalName,
+                        'page' => $pageNum,
+                    ]);
+                    if ($attempt < $maxAttempts) {
+                        usleep(500_000);
+                    }
+                    continue;
+                }
+
+                $documents = $visionResult['dokumenty'] ?? [];
+                if (!empty($documents)) {
+                    break;
+                }
+
+                if ($attempt < $maxAttempts) {
+                    Log::warning("DokladProcessor: page {$pageNum} empty dokumenty, retry {$attempt}/{$maxAttempts}", [
+                        'firma_ico' => $firma->ico,
+                        'file' => $originalName,
+                    ]);
+                    usleep(500_000);
+                }
+            }
+
+            // Smazat temp stránku (není potřeba dál)
+            try { Storage::disk('s3')->delete($pageTempPath); } catch (\Exception $e) {}
+
+            if ($visionResult === null && $lastPageError) {
+                Log::error("DokladProcessor Vision error page {$pageNum}: {$lastPageError->getMessage()}", [
+                    'firma_ico' => $firma->ico,
+                    'file' => $originalName,
+                    'page' => $pageNum,
+                ]);
+                continue;
+            }
+
+            $documents = $visionResult['dokumenty'] ?? [];
+            $totalDocsDetected += count($documents);
+
+            // Sbíráme OCR text ze všech stránek pro fulltext vyhledávání
+            if ($textractOcr) {
+                $allTextractOcr[] = $textractOcr;
+            }
+
+            // Uchováme data z první nalezené stránky s dokladem
+            if ($firstDocData === null && !empty($documents)) {
+                $firstDocData = $documents[0];
+                $firstTextractBlocks = $textractBlocks;
+            }
+        }
+
+        // Upload celého původního souboru na S3 jako temp
+        $tempPath = "doklady/{$firma->ico}/_tmp/" . time() . "_{$fileHash}.pdf";
+        Storage::disk('s3')->put($tempPath, $originalFileBytes);
+
+        if ($firstDocData === null) {
+            // Žádný doklad nenalezen na žádné stránce
+            $errMsg = $lastError
+                ? 'Chyba AI zpracování: ' . $lastError->getMessage()
+                : 'AI nerozpoznalo žádný doklad v souboru (' . count($pages) . ' stránek).';
+            if ($lastError) {
+                $this->logFailedFile($originalName, $firma->ico, $lastError->getMessage(), $originalFileBytes);
+            }
+            $doklad = Doklad::create([
+                'firma_ico' => $firma->ico,
+                'nazev_souboru' => $originalName,
+                'cesta_souboru' => $tempPath,
+                'hash_souboru' => $fileHash,
+                'stav' => 'chyba',
+                'chybova_zprava' => $errMsg,
+                'zdroj' => $zdroj,
+            ]);
+            return [$doklad];
+        }
+
+        // Pokud bylo detekováno více dokladů, přidáme varování ale vytvoříme jen 1 záznam
+        if ($totalDocsDetected > 1) {
+            $this->hadMultiDocPage = true;
+            $multiNote = "V souboru bylo detekováno {$totalDocsDetected} dokladů – nahráno jako jeden záznam";
+            $existing = $firstDocData['kvalita_poznamka'] ?? null;
+            $firstDocData['kvalita_poznamka'] = $existing ? $existing . '. ' . $multiNote : $multiNote;
+        }
+
+        try {
+            $combinedOcr = implode("\n--- stránka ---\n", $allTextractOcr) ?: null;
+            $doklad = $this->createDokladFromPage(
+                $firstDocData, $firma, $originalName, $fileHash,
+                $zdroj, $tempPath, $originalFileBytes, 1,
+                false, $firstTextractBlocks, $combinedOcr
+            );
+        } catch (\Exception $e) {
+            Log::error("DokladProcessor create error: {$e->getMessage()}", [
+                'firma_ico' => $firma->ico,
+                'file' => $originalName,
+            ]);
+            $doklad = Doklad::create([
+                'firma_ico' => $firma->ico,
+                'nazev_souboru' => $originalName,
+                'cesta_souboru' => $tempPath,
+                'hash_souboru' => $fileHash,
+                'stav' => 'chyba',
+                'chybova_zprava' => $e->getMessage(),
+                'zdroj' => $zdroj,
+            ]);
+        }
+
+        return [$doklad];
+    }
+
+    /**
+     * Zpracuje jednoduchý soubor (1 stránka PDF nebo obrázek).
+     *
+     * @return Doklad[]
+     */
+    private function processSingleFile(
+        string $fileBytes,
+        string $ext,
+        string $originalName,
+        Firma $firma,
+        string $fileHash,
+        string $zdroj
+    ): array {
+        $tempS3Path = "doklady/{$firma->ico}/_tmp/" . time() . "_{$fileHash}.{$ext}";
+        Storage::disk('s3')->put($tempS3Path, $fileBytes);
+
+        // Textract PRVNÍ — přesný OCR text + bounding boxy
+        $textractBlocks = $this->callTextract($fileBytes);
+        $textractOcr = $this->extractTextractText($textractBlocks);
+
+        $visionResult = null;
+        $lastError = null;
+        $maxAttempts = ($textractOcr && mb_strlen($textractOcr) > 30) ? 2 : 1;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $visionResult = $this->analyzeWithVision($fileBytes, $ext, $firma, $textractOcr);
+            } catch (\Exception $e) {
+                $lastError = $e;
+                Log::warning("DokladProcessor Vision attempt {$attempt}/{$maxAttempts} failed: {$e->getMessage()}", [
+                    'firma_ico' => $firma->ico,
+                    'file' => $originalName,
+                ]);
+                if ($attempt < $maxAttempts) {
+                    usleep(500_000); // 0.5s pauza před retry
+                }
+                continue;
+            }
+
+            $documents = $visionResult['dokumenty'] ?? [];
+
+            if (!empty($documents)) {
+                break; // Úspěch — máme dokumenty
+            }
+
+            // AI vrátila prázdné dokumenty — retry pokud je OCR text (= na stránce něco je)
+            if ($attempt < $maxAttempts) {
+                Log::warning("DokladProcessor: AI vrátila prázdné dokumenty, retry {$attempt}/{$maxAttempts}", [
+                    'firma_ico' => $firma->ico,
+                    'file' => $originalName,
+                    'ocr_length' => mb_strlen($textractOcr ?? ''),
+                ]);
+                usleep(500_000);
+            }
+        }
+
+        // Po všech pokusech — výjimka z posledního pokusu
+        if ($visionResult === null && $lastError) {
+            Log::error("DokladProcessor Vision error after {$maxAttempts} attempts: {$lastError->getMessage()}", [
+                'firma_ico' => $firma->ico,
+                'file' => $originalName,
+            ]);
+
+            $this->logFailedFile($originalName, $firma->ico, $lastError->getMessage(), $fileBytes);
+
+            $doklad = Doklad::create([
+                'firma_ico' => $firma->ico,
+                'nazev_souboru' => $originalName,
+                'cesta_souboru' => $tempS3Path,
+                'hash_souboru' => $fileHash,
+                'stav' => 'chyba',
+                'chybova_zprava' => 'Chyba AI zpracování: ' . $lastError->getMessage(),
+                'zdroj' => $zdroj,
+            ]);
+            return [$doklad];
+        }
+
+        $documents = $visionResult['dokumenty'] ?? [];
+
+        if (empty($documents)) {
+            $ocrInfo = $textractOcr ? ' (OCR text: ' . mb_strlen($textractOcr) . ' znaků)' : '';
+            $doklad = Doklad::create([
+                'firma_ico' => $firma->ico,
+                'nazev_souboru' => $originalName,
+                'cesta_souboru' => $tempS3Path,
+                'hash_souboru' => $fileHash,
+                'stav' => 'chyba',
+                'chybova_zprava' => 'AI nerozpoznalo žádný doklad v souboru.' . $ocrInfo,
+                'raw_ai_odpoved' => json_encode($visionResult, JSON_UNESCAPED_UNICODE),
+                'zdroj' => $zdroj,
+            ]);
+            return [$doklad];
+        }
+
+        // Vždy vytvoříme jen 1 záznam – pokud AI detekuje více dokladů, použijeme první
+        // a přidáme varování
+        $celkem = count($documents);
+        $docData = $documents[0];
+
+        if ($celkem > 1) {
+            $this->hadMultiDocPage = true;
+            $multiNote = "V souboru bylo detekováno {$celkem} dokladů – nahráno jako jeden záznam";
+            $existing = $docData['kvalita_poznamka'] ?? null;
+            $docData['kvalita_poznamka'] = $existing ? $existing . '. ' . $multiNote : $multiNote;
+        }
+
+        try {
+            $doklad = $this->createDokladFromPage(
+                $docData, $firma, $originalName, $fileHash,
+                $zdroj, $tempS3Path, $fileBytes, 1,
+                false, $textractBlocks, $textractOcr
+            );
+        } catch (\Exception $e) {
+            Log::error("DokladProcessor create error: {$e->getMessage()}", [
+                'firma_ico' => $firma->ico,
+                'file' => $originalName,
+            ]);
+            $doklad = Doklad::create([
+                'firma_ico' => $firma->ico,
+                'nazev_souboru' => $originalName,
+                'cesta_souboru' => $tempS3Path,
+                'hash_souboru' => $fileHash,
+                'stav' => 'chyba',
+                'chybova_zprava' => $e->getMessage(),
+                'zdroj' => $zdroj,
+            ]);
+        }
+
+        return [$doklad];
+    }
+
+    /**
+     * Vytvoří Doklad záznam z dat extrahovaných Claude Vision.
+     * Každý doklad dostane vlastní soubor na S3 (kopii stránky/souboru).
+     */
+    private function createDokladFromPage(
+        array $docData,
+        Firma $firma,
+        string $nazev,
+        string $fileHash,
+        string $zdroj,
+        string $tempS3Path,
+        string $pageBytes,
+        int $poradi,
+        bool $multiDocPage = false,
+        ?array $textractBlocks = null,
+        ?string $textractOcr = null
+    ): Doklad {
+        $kvalita = $docData['kvalita'] ?? 'dobra';
+        $typDokladu = $docData['typ_dokladu'] ?? 'faktura';
+        $kvalitaPoznamka = $docData['kvalita_poznamka'] ?? null;
+
+        // Stav podle kvality
+        $stav = match ($kvalita) {
+            'necitelna' => 'nekvalitni',
+            'nizka' => 'nekvalitni',
+            default => 'dokonceno',
+        };
+
+        // Multi-doc na jedné stránce → vždy nekvalitní (červená)
+        if ($multiDocPage) {
+            $stav = 'nekvalitni';
+            $multiDocMsg = 'Více dokladů na jedné stránce – data nemusí být spolehlivá';
+            $kvalitaPoznamka = $kvalitaPoznamka ? $kvalitaPoznamka . '. ' . $multiDocMsg : $multiDocMsg;
+        }
+
+        $ext = strtolower(pathinfo($nazev, PATHINFO_EXTENSION)) ?: 'pdf';
+        $datum = $docData['datum_vystaveni'] ?? null;
+
+        $doklad = Doklad::create([
+            'firma_ico' => $firma->ico,
+            'nazev_souboru' => $nazev,
+            'cesta_souboru' => $tempS3Path,
+            'hash_souboru' => $fileHash,
+            'stav' => 'zpracovava_se',
+            'zdroj' => $zdroj,
+            'typ_dokladu' => $typDokladu,
+            'kvalita' => $kvalita,
+            'kvalita_poznamka' => $kvalitaPoznamka,
+            'poradi_v_souboru' => $poradi,
+            'raw_text' => $textractOcr ?: ($docData['raw_text'] ?? null),
+            'raw_ai_odpoved' => json_encode($docData, JSON_UNESCAPED_UNICODE),
+        ]);
+
+        // S3 finální cesta
+        $s3Path = $this->buildS3Path($firma->ico, $doklad->id, $nazev, $datum);
+        Storage::disk('s3')->put($s3Path, $pageBytes);
+
+        // Detekce obsahové duplicity (stejné číslo dokladu + dodavatel)
+        $duplicitaId = null;
+        $cisloDokladu = $docData['cislo_dokladu'] ?? null;
+        $dodavatelIco = $docData['dodavatel_ico'] ?? null;
+
+        if ($cisloDokladu && $dodavatelIco) {
+            $existujici = Doklad::where('firma_ico', $firma->ico)
+                ->where('cislo_dokladu', $cisloDokladu)
+                ->where('dodavatel_ico', $dodavatelIco)
+                ->where('id', '!=', $doklad->id)
+                ->first();
+            if ($existujici) {
+                $duplicitaId = $existujici->id;
+                if (!$existujici->duplicita_id) {
+                    $existujici->update(['duplicita_id' => $doklad->id]);
+                }
+            }
+        }
+
+        // Auto-create/update dodavatel
+        if ($dodavatelIco) {
+            Dodavatel::updateOrCreate(
+                ['ico' => $dodavatelIco],
+                [
+                    'nazev' => $docData['dodavatel_nazev'] ?? 'Neznámý',
+                    'dic' => $docData['dodavatel_dic'] ?? null,
+                ]
+            );
+        }
+
+        // Ověření adresáta
+        $odberatelIco = $docData['odberatel_ico'] ?? null;
+        $odberatelNazev = $docData['odberatel_nazev'] ?? null;
+
+        $adresni = !empty($odberatelIco) || !empty($odberatelNazev);
+        $overenoAdresat = false;
+        if ($adresni) {
+            // Porovnání IČO (normalizované — bez mezer a vedoucích nul)
+            $normalizeIco = fn($v) => ltrim(preg_replace('/\s+/', '', $v ?? ''), '0');
+            if (!empty($odberatelIco) && $normalizeIco($odberatelIco) === $normalizeIco($firma->ico)) {
+                $overenoAdresat = true;
+            }
+            // Fallback: porovnání názvu (i když IČO je vyplněné ale nesedí)
+            if (!$overenoAdresat && !empty($odberatelNazev) && !empty($firma->nazev)) {
+                $overenoAdresat = $this->matchFirmName($odberatelNazev, $firma->nazev);
+            }
+        }
+
+        // Přesné souřadnice z Textract (nahrazují nepřesné z Vision API)
+        if ($textractBlocks) {
+            $souradnice = $this->matchFieldsToTextract($docData, $textractBlocks);
+            if (!empty($souradnice)) {
+                $docData['souradnice'] = $souradnice;
+            } else {
+                unset($docData['souradnice']);
+            }
+        } else {
+            unset($docData['souradnice']);
+        }
+
+        $doklad->update([
+            'dodavatel_ico' => $dodavatelIco,
+            'dodavatel_nazev' => $docData['dodavatel_nazev'] ?? null,
+            'odberatel_ico' => $odberatelIco,
+            'odberatel_nazev' => $odberatelNazev,
+            'cislo_dokladu' => $cisloDokladu,
+            'variabilni_symbol' => $docData['variabilni_symbol'] ?? null,
+            'cislo_uctu' => $docData['cislo_uctu'] ?? null,
+            'iban' => $docData['iban'] ?? null,
+            'zpusob_platby' => $docData['zpusob_platby'] ?? null,
+            'reverse_charge' => (bool) ($docData['reverse_charge'] ?? false),
+            'duplicita_id' => $duplicitaId,
+            'datum_vystaveni' => $docData['datum_vystaveni'] ?? null,
+            'datum_prijeti' => now()->toDateString(),
+            'duzp' => $docData['duzp'] ?? $docData['datum_vystaveni'] ?? null,
+            'datum_splatnosti' => $docData['datum_splatnosti'] ?? null,
+            'castka_celkem' => $docData['castka_celkem'] ?? null,
+            'castka_zaklad' => $docData['castka_zaklad'] ?? null,
+            'mena' => $docData['mena'] ?? 'CZK',
+            'castka_dph' => $docData['castka_dph'] ?? null,
+            'kategorie' => $docData['kategorie'] ?? null,
+            'adresni' => $adresni,
+            'overeno_adresat' => $overenoAdresat,
+            'cesta_souboru' => $s3Path,
+            'stav' => $stav,
+            'raw_ai_odpoved' => json_encode($docData, JSON_UNESCAPED_UNICODE),
+        ]);
+
+        // Uložení řádkových položek
+        $polozky = $docData['polozky'] ?? [];
+        if (!empty($polozky) && is_array($polozky)) {
+            $doklad->polozky()->delete(); // Smaž staré při opakovaném zpracování
+            foreach ($polozky as $i => $pol) {
+                $doklad->polozky()->create([
+                    'poradi' => $i + 1,
+                    'text' => $pol['text'] ?? 'Položka ' . ($i + 1),
+                    'mnozstvi' => $pol['mnozstvi'] ?? null,
+                    'jednotka' => $pol['jednotka'] ?? null,
+                    'cena_za_jednotku' => $pol['cena_za_jednotku'] ?? null,
+                    'zaklad_dane' => $pol['zaklad_dane'] ?? null,
+                    'sazba_dph' => $pol['sazba_dph'] ?? null,
+                    'castka_dph' => $pol['castka_dph'] ?? null,
+                    'castka_celkem' => $pol['castka_celkem'] ?? null,
+                ]);
+            }
+        }
+
+        // Aktualizace DIČ dodavatele v sys_dodavatele
+        if ($dodavatelIco && !empty($docData['dodavatel_dic'])) {
+            \App\Models\Office\Dodavatel::where('ico', $dodavatelIco)
+                ->whereNull('dic')
+                ->update(['dic' => $docData['dodavatel_dic']]);
+        }
+
+        return $doklad->fresh();
+    }
+
+    private function matchFirmName(string $documentName, string $firmName): bool
+    {
+        $normalize = function (string $s): string {
+            $s = mb_strtolower($s);
+            $s = preg_replace('/\b(s\.?\s*r\.?\s*o\.?|a\.?\s*s\.?|v\.?\s*o\.?\s*s\.?|k\.?\s*s\.?|spol\.\s*s\s*r\.?\s*o\.?|z\.?\s*s\.?)\b/u', '', $s);
+            $s = preg_replace('/[^\p{L}\p{N}\s]/u', '', $s);
+            $s = preg_replace('/\s+/', ' ', trim($s));
+            return $s;
+        };
+
+        $a = $normalize($documentName);
+        $b = $normalize($firmName);
+
+        if ($a === '' || $b === '') {
+            return false;
+        }
+        if ($a === $b) {
+            return true;
+        }
+        if (str_contains($a, $b) || str_contains($b, $a)) {
+            return true;
+        }
+
+        $lenA = mb_strlen($a);
+        $lenB = mb_strlen($b);
+        if (abs($lenA - $lenB) <= 3) {
+            $dist = levenshtein($a, $b);
+            $maxLen = max($lenA, $lenB);
+            if ($dist <= max(2, (int) ($maxLen * 0.15))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ====================================================================
+    // TEXTRACT — přesné bounding boxy pro pole dokladu
+    // ====================================================================
+
+    /**
+     * Zavolá AWS Textract DetectDocumentText a vrátí pole bloků.
+     * Vrací null pokud Textract selže (highlight se prostě nezobrazí).
+     */
+    private function callTextract(string $fileBytes): ?array
+    {
+        try {
+            $client = new TextractClient([
+                'version' => 'latest',
+                'region' => config('services.aws.region', 'eu-west-1'),
+                'credentials' => [
+                    'key' => config('services.aws.key'),
+                    'secret' => config('services.aws.secret'),
+                ],
+            ]);
+
+            $result = $client->detectDocumentText([
+                'Document' => ['Bytes' => $fileBytes],
+            ]);
+
+            return $result['Blocks'] ?? null;
+        } catch (\Exception $e) {
+            Log::warning("Textract call failed: {$e->getMessage()}");
+            return null;
+        }
+    }
+
+    /**
+     * Extrahuje čistý OCR text z Textract bloků (LINE bloky, řádek po řádku).
+     */
+    private function extractTextractText(?array $blocks): ?string
+    {
+        if (!$blocks) return null;
+
+        $lines = [];
+        foreach ($blocks as $b) {
+            if (($b['BlockType'] ?? '') === 'LINE' && !empty($b['Text'])) {
+                $lines[] = $b['Text'];
+            }
+        }
+
+        return !empty($lines) ? implode("\n", $lines) : null;
+    }
+
+    /**
+     * Spáruje extrahovaná pole z Vision API s přesnými Textract bounding boxy.
+     * Vrací pole souřadnic [field => [left, top, right, bottom]].
+     */
+    private function matchFieldsToTextract(array $docData, array $blocks): array
+    {
+        $fields = [
+            'dodavatel_nazev', 'dodavatel_ico', 'dodavatel_dic',
+            'odberatel_nazev', 'odberatel_ico',
+            'cislo_dokladu', 'variabilni_symbol', 'cislo_uctu', 'iban',
+            'castka_celkem', 'castka_zaklad', 'castka_dph', 'mena',
+            'datum_vystaveni', 'datum_splatnosti', 'duzp',
+            'zpusob_platby',
+        ];
+
+        // Kontextové popisky — pomáhají najít pole podle popisku na dokladu
+        $fieldLabels = [
+            'datum_vystaveni' => ['vystavení', 'vystaveno', 'vystaveni', 'date of issue'],
+            'duzp' => ['duzp', 'dúzp', 'zdanitelného plnění', 'datum plnění', 'plnění', 'uskutečnění'],
+            'datum_splatnosti' => ['splatnost', 'splatnosti', 'due date'],
+            'zpusob_platby' => ['úhrad', 'platby', 'platba', 'payment'],
+            'castka_zaklad' => ['základ', 'zaklad', 'bez dph', 'bez daně', 'base'],
+        ];
+
+        $souradnice = [];
+        foreach ($fields as $field) {
+            $value = $docData[$field] ?? null;
+            if ($value === null || $value === '') continue;
+
+            $patterns = $this->valueToSearchPatterns((string) $value, $field);
+
+            // Pro datumová pole: nejprve zkus najít datum na řádku s kontextovým popiskem
+            if (isset($fieldLabels[$field])) {
+                $bbox = $this->findInTextractBlocksWithContext($patterns, $blocks, $fieldLabels[$field]);
+                if ($bbox) {
+                    $souradnice[$field] = $bbox;
+                    continue;
+                }
+            }
+
+            $bbox = $this->findInTextractBlocks($patterns, $blocks);
+            if ($bbox) {
+                $souradnice[$field] = $bbox;
+            }
+        }
+
+        return $souradnice;
+    }
+
+    /**
+     * Najde LINE blok obsahující kontextový popisek (např. "vystavení", "duzp").
+     * Pokud je na tom řádku i hodnota → vrátí přesný bbox hodnoty.
+     * Pokud hodnota není na řádku → vrátí bbox celého řádku s popiskem.
+     * Pokud popisek vůbec neexistuje → null (fallback na generické hledání).
+     */
+    private function findInTextractBlocksWithContext(array $patterns, array $blocks, array $contextLabels): ?array
+    {
+        $lines = [];
+        $blockIndex = [];
+        foreach ($blocks as $b) {
+            $type = $b['BlockType'] ?? '';
+            if ($type === 'LINE') $lines[] = $b;
+            $blockIndex[$b['Id'] ?? ''] = $b;
+        }
+
+        // Najdi LINE obsahující kontextový popisek
+        foreach ($lines as $l) {
+            $lineText = mb_strtolower(trim($l['Text'] ?? ''));
+
+            $labelLeft = null;
+            foreach ($contextLabels as $label) {
+                if (str_contains($lineText, mb_strtolower($label))) {
+                    $labelLeft = $this->findLabelPosition($label, $l, $blockIndex);
+                    break;
+                }
+            }
+            if ($labelLeft === null) continue;
+
+            // Popisek nalezen — zkus najít hodnotu na stejném řádku
+            foreach ($patterns as $needle) {
+                $needleLower = mb_strtolower(trim($needle));
+                $needleCompact = preg_replace('/[\s.]+/', '', $needleLower);
+                if ($needleLower === '') continue;
+
+                $lineCompact = preg_replace('/[\s.]+/', '', $lineText);
+                if (str_contains($lineText, $needleLower) || str_contains($lineCompact, $needleCompact)) {
+                    $bbox = $this->findClosestValueAfterLabel($needleLower, $needleCompact, $l, $blockIndex, $labelLeft);
+                    if ($bbox) return $bbox;
+                }
+            }
+
+            // Hodnota není na řádku — použij bbox celého řádku s popiskem
+            return $this->textractBbox($l);
+        }
+
+        return null;
+    }
+
+    /**
+     * Najde Left pozici WORD bloku obsahujícího popisek na daném řádku.
+     */
+    private function findLabelPosition(string $label, array $line, array $blockIndex): ?float
+    {
+        $labelLower = mb_strtolower($label);
+        $lineWords = $this->getLineWords($line, $blockIndex);
+
+        foreach ($lineWords as $w) {
+            $text = mb_strtolower(trim($w['Text'] ?? ''));
+            if (str_contains($text, $labelLower)) {
+                return $w['Geometry']['BoundingBox']['Left'] ?? 0;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Na řádku najde všechny WORD bloky matchující hodnotu a vrátí ten nejbližší napravo od popisku.
+     */
+    private function findClosestValueAfterLabel(string $needleLower, string $needleCompact, array $line, array $blockIndex, float $labelLeft): ?array
+    {
+        $lineWords = $this->getLineWords($line, $blockIndex);
+        $candidates = [];
+
+        // Projdi slova a najdi všechny matchující bloky
+        $count = count($lineWords);
+        for ($i = 0; $i < $count; $i++) {
+            $w = $lineWords[$i];
+            $text = mb_strtolower(trim($w['Text'] ?? ''));
+            $textCompact = preg_replace('/[\s.]+/', '', $text);
+            $wordLeft = $w['Geometry']['BoundingBox']['Left'] ?? 0;
+
+            // Přesná shoda jednoho slova
+            if ($text === $needleLower || ($textCompact === $needleCompact && mb_strlen($needleCompact) >= 3)) {
+                $candidates[] = ['bbox' => $this->textractBbox($w), 'left' => $wordLeft];
+                continue;
+            }
+
+            // Sliding window přes více slov
+            $concat = $text;
+            $concatCompact = $textCompact;
+            $firstWord = $w;
+            $lastWord = $w;
+            for ($j = $i + 1; $j < $count; $j++) {
+                $concat .= ' ' . mb_strtolower(trim($lineWords[$j]['Text'] ?? ''));
+                $concatCompact .= preg_replace('/[\s.]+/', '', mb_strtolower(trim($lineWords[$j]['Text'] ?? '')));
+                $lastWord = $lineWords[$j];
+
+                if ($concat === $needleLower || $concatCompact === $needleCompact) {
+                    $bbox = $this->mergeWordBboxes($firstWord, $lastWord);
+                    $candidates[] = ['bbox' => $bbox, 'left' => $wordLeft];
+                    break;
+                }
+
+                // Pokud concat už přerostl, přestaň
+                if (mb_strlen($concatCompact) > mb_strlen($needleCompact) + 2) break;
+            }
+        }
+
+        if (empty($candidates)) return null;
+
+        // Vyber kandidáta nejbližšího napravo od popisku
+        $best = null;
+        $bestDist = PHP_FLOAT_MAX;
+        foreach ($candidates as $c) {
+            $dist = $c['left'] - $labelLeft;
+            if ($dist > 0 && $dist < $bestDist) {
+                $best = $c;
+                $bestDist = $dist;
+            }
+        }
+
+        // Pokud žádný není napravo, vezmi nejbližší obecně
+        if (!$best) {
+            foreach ($candidates as $c) {
+                $dist = abs($c['left'] - $labelLeft);
+                if ($dist < $bestDist) {
+                    $best = $c;
+                    $bestDist = $dist;
+                }
+            }
+        }
+
+        return $best ? $best['bbox'] : null;
+    }
+
+    /**
+     * Spojí bounding boxy dvou WORD bloků do jednoho.
+     */
+    private function mergeWordBboxes(array $first, array $last): array
+    {
+        $fb = $first['Geometry']['BoundingBox'] ?? [];
+        $lb = $last['Geometry']['BoundingBox'] ?? [];
+        $left = $fb['Left'] ?? 0;
+        $top = min($fb['Top'] ?? 0, $lb['Top'] ?? 0);
+        $right = ($lb['Left'] ?? 0) + ($lb['Width'] ?? 0);
+        $bottom = max(($fb['Top'] ?? 0) + ($fb['Height'] ?? 0), ($lb['Top'] ?? 0) + ($lb['Height'] ?? 0));
+        return [$left, $top, $right, $bottom];
+    }
+
+    /**
+     * Převede hodnotu pole na pole textových vzorů pro hledání v Textract blocích.
+     * Čísla se formátují do českého tvaru (1 198,00), data jako DD.MM.YYYY atd.
+     */
+    private function valueToSearchPatterns(string $value, string $field): array
+    {
+        $patterns = [trim($value)];
+
+        // Číselné částky — generuj české formátové varianty
+        if (in_array($field, ['castka_celkem', 'castka_dph']) && is_numeric($value)) {
+            $num = (float) $value;
+            $patterns[] = number_format($num, 2, ',', ' ');   // 1 198,00
+            $patterns[] = number_format($num, 2, ',', '');     // 1198,00
+            $patterns[] = number_format($num, 2, '.', ' ');    // 1 198.00
+            $patterns[] = number_format($num, 2, '.', '');     // 1198.00
+            $patterns[] = number_format($num, 0, ',', ' ');    // 1 198
+            $patterns[] = number_format($num, 0, ',', '');     // 1198
+            // S pomlčkou místo mezery (tiskárny)
+            $patterns[] = number_format($num, 2, ',', "\u{00A0}"); // 1 198,00 (nbsp)
+        }
+
+        // Data — AI vrací YYYY-MM-DD, na dokladu bývá DD.MM.YYYY
+        if (in_array($field, ['datum_vystaveni', 'datum_splatnosti', 'duzp']) && preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m)) {
+            $patterns[] = "{$m[3]}.{$m[2]}.{$m[1]}";          // 06.08.2025
+            $patterns[] = "{$m[3]}. {$m[2]}. {$m[1]}";        // 06. 08. 2025
+            $patterns[] = ltrim($m[3], '0') . '.' . ltrim($m[2], '0') . '.' . $m[1]; // 6.8.2025
+            $patterns[] = "{$m[3]}/{$m[2]}/{$m[1]}";          // 06/08/2025
+        }
+
+        return array_unique($patterns);
+    }
+
+    /**
+     * Hledá textové vzory v Textract blocích. Vrací [left, top, right, bottom] nebo null.
+     * Priorita: WORD přesně → WORD kompaktně → sliding window slov v LINE → LINE fallback.
+     */
+    private function findInTextractBlocks(array $patterns, array $blocks): ?array
+    {
+        $words = [];
+        $lines = [];
+        foreach ($blocks as $b) {
+            $type = $b['BlockType'] ?? '';
+            if ($type === 'WORD') $words[] = $b;
+            elseif ($type === 'LINE') $lines[] = $b;
+        }
+
+        // Indexuj bloky podle ID (pro findWordsInLine)
+        $blockIndex = [];
+        foreach ($blocks as $b) {
+            $blockIndex[$b['Id'] ?? ''] = $b;
+        }
+
+        foreach ($patterns as $needle) {
+            $needleLower = mb_strtolower(trim($needle));
+            $needleCompact = preg_replace('/[\s.]+/', '', $needleLower);
+            if ($needleLower === '') continue;
+
+            // 1) Přesná shoda ve WORD blocích
+            foreach ($words as $w) {
+                $text = mb_strtolower(trim($w['Text'] ?? ''));
+                if ($text === $needleLower) {
+                    return $this->textractBbox($w);
+                }
+            }
+
+            // 2) Kompaktní shoda ve WORD (bez mezer a teček)
+            foreach ($words as $w) {
+                $text = preg_replace('/[\s.]+/', '', mb_strtolower(trim($w['Text'] ?? '')));
+                if ($text === $needleCompact && mb_strlen($needleCompact) >= 3) {
+                    return $this->textractBbox($w);
+                }
+            }
+
+            // 3) Needle v LINE → najdi přesná slova (sliding window)
+            foreach ($lines as $l) {
+                $lineText = mb_strtolower(trim($l['Text'] ?? ''));
+                $lineCompact = preg_replace('/[\s.]+/', '', $lineText);
+                if (!str_contains($lineText, $needleLower) && !str_contains($lineCompact, $needleCompact)) {
+                    continue;
+                }
+                // Pokus o přesný word match přes sliding window
+                $wordBbox = $this->findWordsInLine($needleLower, $l, $blockIndex);
+                if ($wordBbox) return $wordBbox;
+
+                // Kompaktní sliding window (ignoruje mezery/tečky)
+                $wordBbox = $this->findWordsInLineCompact($needleCompact, $l, $blockIndex);
+                if ($wordBbox) return $wordBbox;
+            }
+
+            // 4) LINE přesná shoda (celý řádek = hledaný text)
+            foreach ($lines as $l) {
+                $text = mb_strtolower(trim($l['Text'] ?? ''));
+                if ($text === $needleLower) {
+                    return $this->textractBbox($l);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Získá seřazená slova z Textract LINE bloku.
+     */
+    private function getLineWords(array $line, array $blockIndex): array
+    {
+        $childIds = [];
+        foreach ($line['Relationships'] ?? [] as $rel) {
+            if ($rel['Type'] === 'CHILD') {
+                $childIds = $rel['Ids'] ?? [];
+                break;
+            }
+        }
+
+        $lineWords = [];
+        foreach ($childIds as $id) {
+            $w = $blockIndex[$id] ?? null;
+            if ($w && ($w['BlockType'] ?? '') === 'WORD') {
+                $lineWords[] = $w;
+            }
+        }
+        usort($lineWords, fn($a, $b) =>
+            ($a['Geometry']['BoundingBox']['Left'] ?? 0) <=> ($b['Geometry']['BoundingBox']['Left'] ?? 0)
+        );
+
+        return $lineWords;
+    }
+
+    /**
+     * Sliding window přes slova v LINE — hledá přesnou shodu (s mezerami).
+     */
+    private function findWordsInLine(string $needle, array $line, array $blockIndex): ?array
+    {
+        $lineWords = $this->getLineWords($line, $blockIndex);
+        $n = count($lineWords);
+
+        for ($start = 0; $start < $n; $start++) {
+            $combined = '';
+            $minLeft = PHP_FLOAT_MAX;
+            $minTop = PHP_FLOAT_MAX;
+            $maxRight = 0;
+            $maxBottom = 0;
+
+            for ($end = $start; $end < $n; $end++) {
+                $wText = $lineWords[$end]['Text'] ?? '';
+                $combined = $combined === '' ? $wText : $combined . ' ' . $wText;
+                $bb = $lineWords[$end]['Geometry']['BoundingBox'] ?? [];
+                $l = $bb['Left'] ?? 0;
+                $t = $bb['Top'] ?? 0;
+                $r = $l + ($bb['Width'] ?? 0);
+                $bm = $t + ($bb['Height'] ?? 0);
+                $minLeft = min($minLeft, $l);
+                $minTop = min($minTop, $t);
+                $maxRight = max($maxRight, $r);
+                $maxBottom = max($maxBottom, $bm);
+
+                if (mb_strtolower($combined) === $needle) {
+                    return [round($minLeft, 4), round($minTop, 4), round($maxRight, 4), round($maxBottom, 4)];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Sliding window přes slova v LINE — kompaktní shoda (ignoruje mezery a tečky).
+     */
+    private function findWordsInLineCompact(string $needleCompact, array $line, array $blockIndex): ?array
+    {
+        $lineWords = $this->getLineWords($line, $blockIndex);
+        $n = count($lineWords);
+
+        for ($start = 0; $start < $n; $start++) {
+            $combined = '';
+            $minLeft = PHP_FLOAT_MAX;
+            $minTop = PHP_FLOAT_MAX;
+            $maxRight = 0;
+            $maxBottom = 0;
+
+            for ($end = $start; $end < $n; $end++) {
+                $wText = $lineWords[$end]['Text'] ?? '';
+                $combined .= $wText;
+                $bb = $lineWords[$end]['Geometry']['BoundingBox'] ?? [];
+                $l = $bb['Left'] ?? 0;
+                $t = $bb['Top'] ?? 0;
+                $r = $l + ($bb['Width'] ?? 0);
+                $bm = $t + ($bb['Height'] ?? 0);
+                $minLeft = min($minLeft, $l);
+                $minTop = min($minTop, $t);
+                $maxRight = max($maxRight, $r);
+                $maxBottom = max($maxBottom, $bm);
+
+                $compactCombined = preg_replace('/[\s.]+/', '', mb_strtolower($combined));
+                if ($compactCombined === $needleCompact) {
+                    return [round($minLeft, 4), round($minTop, 4), round($maxRight, 4), round($maxBottom, 4)];
+                }
+                // Přesáhli jsme délku → pokračuj s dalším startem
+                if (mb_strlen($compactCombined) > mb_strlen($needleCompact)) break;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Převede Textract BoundingBox na [left, top, right, bottom].
+     */
+    private function textractBbox(array $block): array
+    {
+        $bb = $block['Geometry']['BoundingBox'] ?? [];
+        return [
+            round($bb['Left'] ?? 0, 4),
+            round($bb['Top'] ?? 0, 4),
+            round(($bb['Left'] ?? 0) + ($bb['Width'] ?? 0), 4),
+            round(($bb['Top'] ?? 0) + ($bb['Height'] ?? 0), 4),
+        ];
+    }
+
+    /**
+     * Rozdělí multi-page PDF na jednotlivé stránky pomocí FPDI.
+     * Vrací pole [pageNum => pageBytes] nebo null pokud není PDF / má 1 stránku.
+     *
+     * @return array<int, string>|null
+     */
+    private function splitPdfPages(string $pdfBytes): ?array
+    {
+        $tmpFile = tempnam(sys_get_temp_dir(), 'pdf_');
+        file_put_contents($tmpFile, $pdfBytes);
+
+        try {
+            $fpdi = new Fpdi();
+            $pageCount = $fpdi->setSourceFile($tmpFile);
+
+            if ($pageCount <= 1) {
+                return null; // Jednoduchý PDF - není třeba dělit
+            }
+
+            $pages = [];
+            for ($i = 1; $i <= $pageCount; $i++) {
+                $singlePage = new Fpdi();
+                $singlePage->setSourceFile($tmpFile);
+                $tplId = $singlePage->importPage($i);
+                $size = $singlePage->getTemplateSize($tplId);
+                $singlePage->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $singlePage->useTemplate($tplId);
+                $pages[$i] = $singlePage->Output('S');
+            }
+
+            return $pages;
+        } catch (\Exception $e) {
+            Log::warning("PDF split failed, processing as single file: {$e->getMessage()}");
+            return null; // Fallback - zpracuj celý PDF najednou
+        } finally {
+            @unlink($tmpFile);
+        }
+    }
+
+    /**
+     * Pošle dokument do Claude Vision API - jedno volání, kompletní analýza.
+     * OCR + extrakce dat + klasifikace typu + hodnocení kvality.
+     */
+    private function analyzeWithVision(string $fileBytes, string $ext, Firma $firma, ?string $textractOcr = null): array
+    {
+        $apiKey = config('services.anthropic.key');
+        if (empty($apiKey)) {
+            throw new \RuntimeException('Anthropic API klíč není nastaven.');
+        }
+
+        $base64 = base64_encode($fileBytes);
+
+        // Detekce PDF podle obsahu (magic bytes) - temp soubory nemají příponu
+        $isPdf = $ext === 'pdf' || str_starts_with($fileBytes, '%PDF');
+
+        $mediaTypes = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+        ];
+        $mediaType = $isPdf ? 'application/pdf' : ($mediaTypes[$ext] ?? 'image/jpeg');
+
+        $contentBlock = $isPdf
+            ? ['type' => 'document', 'source' => ['type' => 'base64', 'media_type' => $mediaType, 'data' => $base64]]
+            : ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => $mediaType, 'data' => $base64]];
+
+        $systemPrompt = $this->buildSystemPrompt($firma);
+
+        // Sestavení user message — obraz + volitelně přesný OCR text z Textract
+        $userText = 'Analyzuj tento sken. DŮLEŽITÉ: Stránka může obsahovat VÍCE fyzicky samostatných dokladů (účtenek/paragonů nalepených na papíře, různé doklady vedle sebe nebo pod sebou). Pokud vidíš více hlaviček firem, více celkových částek nebo jiné příznaky více dokladů, MUSÍŠ každý vrátit jako SAMOSTATNÝ objekt v poli "dokumenty". Vrať POUZE validní JSON.';
+
+        if ($textractOcr) {
+            $userText .= "\n\nPŘESNÝ OCR PŘEPIS (z AWS Textract, řádek po řádku):\n---\n{$textractOcr}\n---\nTento OCR přepis je znaková přesností NADŘAZENÝ tvému vlastnímu čtení z obrázku. VŽDY preferuj text z tohoto přepisu pro VŠECHNY hodnoty — názvy firem, IČO, DIČ, čísla dokladů, částky, data, adresy. Obrázek používej pouze pro pochopení struktury dokumentu (co je dodavatel, co odběratel, jaký typ dokladu atd.).";
+        }
+
+        $response = Http::timeout(90)->withHeaders([
+            'x-api-key' => $apiKey,
+            'anthropic-version' => '2023-06-01',
+            'content-type' => 'application/json',
+        ])->post('https://api.anthropic.com/v1/messages', [
+            'model' => 'claude-haiku-4-5-20251001',
+            'max_tokens' => 16384,
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => [
+                        $contentBlock,
+                        [
+                            'type' => 'text',
+                            'text' => $userText,
+                        ],
+                    ],
+                ],
+            ],
+            'system' => $systemPrompt,
+        ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('Claude Vision API chyba (HTTP ' . $response->status() . '): ' . substr($response->body(), 0, 500));
+        }
+
+        $body = $response->json();
+        $content = $body['content'][0]['text'] ?? '';
+        $stopReason = $body['stop_reason'] ?? 'end_turn';
+
+        // Pokud odpověď oříznutá (max_tokens), zkusit opravit neúplný JSON
+        if ($stopReason === 'max_tokens') {
+            Log::warning('AI odpověď oříznutá (max_tokens), pokus o opravu JSON', [
+                'content_length' => strlen($content),
+            ]);
+            $content = $this->repairTruncatedJson($content);
+        }
+
+        // Parse JSON z odpovědi
+        if (preg_match('/\{[\s\S]*\}/s', $content, $matches)) {
+            $parsed = json_decode($matches[0], true);
+            if (json_last_error() === JSON_ERROR_NONE && isset($parsed['dokumenty'])) {
+                return $parsed;
+            }
+            // Pokud Claude vrátil jen jeden dokument bez wrapperu
+            if (json_last_error() === JSON_ERROR_NONE && !isset($parsed['dokumenty'])) {
+                return ['dokumenty' => [$parsed]];
+            }
+        }
+
+        throw new \RuntimeException('Nepodařilo se parsovat AI odpověď: ' . substr($content, 0, 300));
+    }
+
+    /**
+     * Sestaví systémový prompt pro Claude Vision - kompletní instrukce pro analýzu dokladů.
+     */
+    private function buildSystemPrompt(Firma $firma): string
+    {
+        $firmaInfo = "IČO odběratele (naše firma): {$firma->ico}";
+        if ($firma->dic) {
+            $firmaInfo .= ", DIČ: {$firma->dic}";
+        }
+        if ($firma->nazev) {
+            $firmaInfo .= ", Název: {$firma->nazev}";
+        }
+
+        $prompt = <<<PROMPT
+Jsi expert na zpracování účetních dokladů. Analyzuj přiložený dokument a extrahuj strukturovaná data.
+
+KONTEXT: {$firmaInfo}
+
+POSTUP:
+1. NEJDŘÍVE zjisti kolik SAMOSTATNÝCH dokladů je na stránce/obrázku. Pozorně se podívej - naskenovaná stránka A4 často obsahuje 2-4 menší doklady (účtenky, paragony) nalepené nebo položené vedle sebe či nad sebou. Každý fyzicky oddělený doklad = samostatný záznam.
+2. Pro KAŽDÝ doklad extrahuj data SAMOSTATNĚ do vlastního objektu v poli "dokumenty"
+3. Zhodnoť kvalitu čitelnosti
+4. Klasifikuj typ dokladu
+
+TYPY DOKLADŮ:
+- faktura: faktura, proforma faktura
+- uctenka: pokladní účtenka, paragon, prodejka, zjednodušený daňový doklad
+- pokladni_doklad: pokladní příjmový/výdajový doklad
+- dobropis: dobropis, kreditní nota
+- zalohova_faktura: zálohová faktura
+- pokuta: pokuta, výzva k úhradě, penále, přestupek
+- jine: výpis, oznámení, dopis, jiný dokument
+
+KVALITA (buď tolerantní — běžné nedokonalosti skenu jsou OK):
+- dobra: klíčové údaje (částka, dodavatel, číslo dokladu) jsou čitelné. Mírné rozmazání, šikmý úhel, nízké rozlišení, šum nebo stíny NEJSOU důvodem ke snížení kvality pokud údaje jdou přečíst.
+- nizka: některé klíčové údaje jsou těžko čitelné nebo chybí, ale alespoň část dat jde extrahovat. Použij pouze pokud skutečně nemůžeš přečíst důležitá pole.
+- necitelna: dokument je zcela nečitelný — nelze přečíst ani částku, ani dodavatele, ani číslo dokladu.
+
+KATEGORIE NÁKLADŮ:
+{$this->buildKategoriePrompt($firma)}
+
+FORMÁT ODPOVĚDI - vrať POUZE validní JSON:
+{
+  "dokumenty": [
+    {
+      "typ_dokladu": "faktura",
+      "kvalita": "dobra",
+      "kvalita_poznamka": null,
+      "raw_text": "přepis klíčového textu z dokladu",
+      "dodavatel_nazev": "název dodavatele/vystavitele",
+      "dodavatel_ico": "12345678",
+      "dodavatel_dic": "CZ12345678",
+      "odberatel_ico": "IČO odběratele",
+      "odberatel_nazev": "název odběratele/příjemce",
+      "cislo_dokladu": "číslo faktury/dokladu",
+      "variabilni_symbol": "variabilní symbol pro platbu",
+      "cislo_uctu": "číslo bankovního účtu dodavatele",
+      "iban": "IBAN dodavatele",
+      "zpusob_platby": "prevod",
+      "reverse_charge": false,
+      "datum_vystaveni": "YYYY-MM-DD",
+      "duzp": "YYYY-MM-DD",
+      "datum_splatnosti": "YYYY-MM-DD",
+      "castka_celkem": 0.00,
+      "castka_zaklad": 0.00,
+      "mena": "CZK",
+      "castka_dph": 0.00,
+      "kategorie": "služby",
+      "polozky": [
+        {
+          "text": "popis položky/služby",
+          "mnozstvi": 1.0,
+          "jednotka": "ks",
+          "cena_za_jednotku": 100.00,
+          "zaklad_dane": 100.00,
+          "sazba_dph": 21.00,
+          "castka_dph": 21.00,
+          "castka_celkem": 121.00
+        }
+      ]
+    }
+  ]
+}
+
+DŮLEŽITÁ PRAVIDLA:
+- KRITICKÉ - ROZLIŠENÍ VÍCE DOKLADŮ NA STRÁNCE: Na jednom skenu/stránce mohou být VÍCE FYZICKY SAMOSTATNÝCH dokladů (účtenky nalepené na papír, několik paragonů vedle sebe). Příznaky více dokladů:
+  * Více odlišných hlaviček/log firem na jedné stránce
+  * Více celkových částek „Celkem" / „K úhradě" / „Total" na stránce
+  * Různé formáty dokladů na jednom skenu (termální tisk + faktura)
+  * Účtenky nalepené na papíře vedle sebe nebo pod sebou
+  * Různá data vystavení od různých dodavatelů
+  Pokud vidíš tyto příznaky, MUSÍŠ každý doklad vrátit jako SAMOSTATNÝ objekt v poli "dokumenty". Nestačí je sloučit do jednoho záznamu!
+  POZOR: Jeden doklad správně zabírá celou stránku nebo její většinu. Pokud je na stránce jen JEDEN doklad, vrať pole s JEDNÍM objektem.
+- ODBĚRATEL (příjemce/kupující): Hledej sekci odběratele na dokladu. Na českých dokladech bývá označen jako: Odběratel, Příjemce, Kupující, Zákazník, Fakturační údaje, Fakturovat na, Klient, Objednatel. Na fakturách je typicky v pravém sloupci (dodavatel vlevo, odběratel vpravo). Pokud najdeš sekci odběratele, vyplň odberatel_ico a/nebo odberatel_nazev. Pokud žádná sekce odběratele NENÍ (účtenka, paragon, pokladní doklad), ponech OBĚ pole jako null.
+- odberatel_nazev: název firmy/osoby odběratele PŘESNĚ jak je uveden na dokladu
+- odberatel_ico: pouze číslice. Pokud odběratel existuje ale IČO není uvedeno, ponech null a vyplň alespoň odberatel_nazev.
+- U neadresních dokladů (účtenky, paragony bez odběratele) budou odberatel_ico i odberatel_nazev null
+- Pokud je doklad v cizí měně, uveď správnou měnu (EUR, USD, GBP, PLN atd.)
+- Pokud údaj nelze z dokumentu zjistit, použij null - nikdy nevymýšlej data
+- variabilni_symbol: variabilní symbol pro identifikaci platby. Často se shoduje s číslem dokladu, ale ne vždy. Hledej pole "VS", "Var. symbol", "Variabilní symbol". Pouze číslice.
+- cislo_uctu: číslo bankovního účtu dodavatele ve formátu "předčíslí-číslo/kód banky" nebo "číslo/kód banky". Např. "4960332369/0800".
+- iban: mezinárodní číslo účtu. Hledej pole "IBAN". Např. "CZ6508000000004960332369".
+- zpusob_platby: způsob úhrady — "prevod" (bankovní převod), "hotovost", "dobirka" (dobírka), "karta" (platební karta). Pokud není uvedeno, ponech null.
+- reverse_charge: true pokud jde o přenesenou daňovou povinnost (reverse charge). Na dokladu bývá uvedeno "Daň odvede zákazník", "Reverse charge", "Přenesená daňová povinnost" nebo §92. Také se použije při nákupech ze zahraničí (intra-EU dodání). Výchozí false.
+- castka_celkem = celková částka K ÚHRADĚ (včetně DPH, po zaokrouhlení)
+- castka_zaklad = celkový základ daně (bez DPH). Součet základů všech položek.
+- castka_dph = celková částka DPH (ne základ daně, ne celkem s DPH)
+- Datumy vždy ve formátu YYYY-MM-DD
+- datum_vystaveni = datum, kdy byl doklad VYSTAVEN (uvedeno jako "Datum vystavení", "Vystaveno dne", "Date of issue").
+- duzp = datum uskutečnění zdanitelného plnění (uvedeno jako "DUZP", "DÚZP", "Datum zdanitelného plnění", "Datum plnění", "Uskutečnění plnění").
+- Pokud na dokladu najdeš OBĚ data (datum vystavení i DUZP) a jsou RŮZNÁ, vyplň každé zvlášť. Pokud na dokladu je uvedeno jen jedno datum (typicky "Datum vystavení" nebo "Vystaveno"), vyplň ho do OBOU polí (datum_vystaveni i duzp) stejně.
+- IČO dodavatele: pouze číslice (bez CZ prefixu, 8 číslic pro české IČO)
+- DIČ dodavatele: včetně prefixu země (CZ, SK, PT atd.)
+- Pokud je kvalita "nizka", vyplň kvalita_poznamka s krátkým popisem problému
+- Pokud je kvalita "necitelna", přesto vyplň co lze rozpoznat
+- raw_text: přepis klíčového textu z dokladu (max 500 znaků na doklad). U účtenek stačí hlavička, položky a součet.
+- polozky: pole řádkových položek z dokladu. Pro KAŽDOU položku uveď: text (název/popis), mnozstvi, jednotka (ks/hod/kg/m...), cena_za_jednotku (bez DPH), zaklad_dane (základ bez DPH), sazba_dph (21.00/12.00/0.00), castka_dph, castka_celkem (vč. DPH). Pokud některý údaj chybí, ponech null. Pokud doklad nemá rozepsané položky (např. jednoduchá účtenka), vytvoř jednu souhrnnou položku.
+- Doklad může být v jakémkoliv jazyce - zpracuj ho bez ohledu na jazyk
+PROMPT;
+
+        return $prompt;
+    }
+
+    /**
+     * Sestaví seznam kategorií pro AI prompt z databáze.
+     */
+    private function buildKategoriePrompt(Firma $firma): string
+    {
+        $kategorie = $firma->kategorie()->orderBy('poradi')->get();
+
+        if ($kategorie->isEmpty()) {
+            return 'ostatní';
+        }
+
+        return $kategorie->map(function ($kat) {
+            $nazev = $kat->nazev;
+            return $kat->popis ? "{$nazev}: {$kat->popis}" : $nazev;
+        })->implode("\n");
+    }
+
+    /**
+     * Pokusí se opravit oříznutý JSON z AI odpovědi.
+     * Uzavře otevřené stringy, pole a objekty, aby JSON šel parsovat.
+     */
+    private function repairTruncatedJson(string $content): string
+    {
+        // Najdi začátek JSON objektu
+        $start = strpos($content, '{');
+        if ($start === false) {
+            return $content;
+        }
+
+        $json = substr($content, $start);
+
+        // Odstraň neúplný poslední objekt v poli dokumenty
+        // Hledáme poslední kompletní objekt (uzavřený })
+        if (preg_match_all('/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/s', $json, $objects)) {
+            // Zkusíme najít pole dokumenty a uzavřít ho
+            $lastComplete = strrpos($json, '}');
+            if ($lastComplete !== false) {
+                $trimmed = substr($json, 0, $lastComplete + 1);
+                // Spočítej otevřené závorky
+                $openBraces = substr_count($trimmed, '{') - substr_count($trimmed, '}');
+                $openBrackets = substr_count($trimmed, '[') - substr_count($trimmed, ']');
+
+                // Uzavři otevřené závorky
+                $trimmed .= str_repeat(']', max(0, $openBrackets));
+                $trimmed .= str_repeat('}', max(0, $openBraces));
+
+                $test = json_decode($trimmed, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    return $trimmed;
+                }
+            }
+        }
+
+        // Fallback: jednoduchý přístup - uzavři vše
+        $lastCloseBrace = strrpos($json, '}');
+        if ($lastCloseBrace !== false) {
+            $json = substr($json, 0, $lastCloseBrace + 1);
+            $openBraces = substr_count($json, '{') - substr_count($json, '}');
+            $openBrackets = substr_count($json, '[') - substr_count($json, ']');
+            $json .= str_repeat(']', max(0, $openBrackets));
+            $json .= str_repeat('}', max(0, $openBraces));
+        }
+
+        return substr($content, 0, $start) . $json;
+    }
+
+    /**
+     * Sestaví S3 cestu: doklady/{ICO}/{YYYY-MM}/{YYYY-MM-DD}_{ID}.{ext}
+     */
+    private function buildS3Path(string $ico, int $dokladId, string $originalName, ?string $datumVystaveni): string
+    {
+        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION)) ?: 'pdf';
+        $datum = $datumVystaveni ?: date('Y-m-d');
+        $mesic = substr($datum, 0, 7);
+
+        return "doklady/{$ico}/{$mesic}/{$datum}_{$dokladId}.{$ext}";
+    }
+
+    /**
+     * Zkontroluje, zda soubor s daným hashem už existuje pro firmu.
+     */
+    public function isDuplicate(string $fileHash, string $firmaIco): ?Doklad
+    {
+        return Doklad::where('firma_ico', $firmaIco)
+            ->where('hash_souboru', $fileHash)
+            ->first();
+    }
+}

@@ -10,6 +10,8 @@ use Illuminate\Notifications\Notifiable;
 class Uzivatel extends Authenticatable
 {
     use HasFactory, Notifiable;
+    // Přístup k firmám modulu Doklady — officeFirmy(), officeAktivniFirma() atd.
+    use \App\Models\Office\MaPristupKFirmam;
 
     protected $table = 'uzivatele';
 
@@ -79,6 +81,21 @@ class Uzivatel extends Authenticatable
     public function celeJmeno(): string
     {
         return trim($this->jmeno . ' ' . $this->prijmeni);
+    }
+
+    /**
+     * Zamaskovaný e-mail pro zobrazení cizímu uživateli — např. "ja***r@seznam.cz".
+     * Používá se tam, kde chceme naznačit, kdo účet spravuje, ale neprozradit adresu.
+     */
+    public static function maskEmail(string $email): string
+    {
+        [$local, $domain] = explode('@', $email, 2);
+
+        if (strlen($local) <= 2) {
+            return $local[0] . '***@' . $domain;
+        }
+
+        return substr($local, 0, 2) . '***' . substr($local, -1) . '@' . $domain;
     }
 
     public function aktivniSubjekt(): ?Subjekt

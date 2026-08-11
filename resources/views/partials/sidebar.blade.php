@@ -33,6 +33,20 @@
             <a href="/masterteam/uzivatele" class="{{ request()->is('masterteam/uzivatele*') ? 'active' : '' }}">Uživatelé</a>
         </div>
 
+        {{-- Modul Doklady — vlastní sekce, zobrazí se jen když má uživatel firmu --}}
+        @if (auth()->user()->officeFirmy()->exists())
+            <div class="tt-section">
+                <div class="tt-section-label">Doklady</div>
+                <a href="{{ route('office.doklady.index') }}" class="{{ request()->is('doklady') || request()->is('doklady/[0-9]*') ? 'active' : '' }}">Přehled dokladů</a>
+                @if (auth()->user()->officeMaRoli('ucetni'))
+                    <a href="{{ route('office.klienti.index') }}" class="{{ request()->is('doklady/klienti*') ? 'active' : '' }}">Klienti</a>
+                @endif
+                @if (! auth()->user()->officeProhlizimKlienta())
+                    <a href="{{ route('office.firma.nastaveni') }}" class="{{ request()->is('doklady/nastaveni*') ? 'active' : '' }}">Nastavení firmy</a>
+                @endif
+            </div>
+        @endif
+
         <form method="POST" action="/logout" class="tt-logout">
             @csrf
             <button type="submit" class="btn btn-sm">Odhlásit ({{ auth()->user()->celeJmeno() }})</button>
