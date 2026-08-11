@@ -7,10 +7,28 @@
         <div class="tt-section">
             <div class="tt-section-label">Masterteam</div>
             <a href="/masterteam" class="{{ request()->is('masterteam') ? 'active' : '' }}">Přehled</a>
-            <a href="/masterteam/koncept" class="{{ request()->is('masterteam/koncept') ? 'active' : '' }}">Koncept (editor)</a>
-            <a href="/masterteam/koncept-testovani" class="{{ request()->is('masterteam/koncept-testovani*') ? 'active' : '' }}">Koncept testování</a>
-            <a href="/masterteam/koncept-solver" class="{{ request()->is('masterteam/koncept-solver*') ? 'active' : '' }}">Koncept solver (balonky)</a>
-            <a href="/masterteam/pravidla-objektu" class="{{ request()->is('masterteam/pravidla-objektu*') ? 'active' : '' }}">Pravidla objektů</a>
+
+            {{-- Koncepty — sbalovací podsekce (mechanika převzatá z kalkulia).
+                 Stav si pamatuje localStorage, takže rozbalení přežije překlik. --}}
+            @php
+                $konceptyAktivni = request()->is('masterteam/koncept*')
+                    || request()->is('masterteam/pravidla-objektu*');
+            @endphp
+            <div class="tt-subsection">
+                <button type="button" class="tt-subsection-toggle" onclick="ttToggleSection('koncepty')">
+                    <span>Koncepty</span>
+                    <svg id="tt-arrow-koncepty" class="tt-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="tt-body-koncepty" class="tt-subsection-body" data-vychozi-otevreno="{{ $konceptyAktivni ? '1' : '0' }}">
+                    <a href="/masterteam/koncept" class="{{ request()->is('masterteam/koncept') ? 'active' : '' }}">Koncept (editor)</a>
+                    <a href="/masterteam/koncept-testovani" class="{{ request()->is('masterteam/koncept-testovani*') ? 'active' : '' }}">Koncept testování</a>
+                    <a href="/masterteam/koncept-solver" class="{{ request()->is('masterteam/koncept-solver*') ? 'active' : '' }}">Koncept solver (balonky)</a>
+                    <a href="/masterteam/pravidla-objektu" class="{{ request()->is('masterteam/pravidla-objektu*') ? 'active' : '' }}">Pravidla objektů</a>
+                </div>
+            </div>
+
             <a href="/masterteam/chyby" class="{{ request()->is('masterteam/chyby*') ? 'active' : '' }}">Chyby</a>
             <a href="/masterteam/uzivatele" class="{{ request()->is('masterteam/uzivatele*') ? 'active' : '' }}">Uživatelé</a>
         </div>
@@ -21,4 +39,36 @@
         </form>
     </div>
 </aside>
+
+<script>
+// Sbalování sekcí sidebaru — stav v localStorage, ať přežije překlik mezi stránkami.
+function ttToggleSection(nazev) {
+    var body = document.getElementById('tt-body-' + nazev);
+    var arrow = document.getElementById('tt-arrow-' + nazev);
+    if (!body) return;
+
+    var sbaleno = body.classList.toggle('collapsed');
+    if (arrow) arrow.classList.toggle('collapsed', sbaleno);
+
+    var stav = JSON.parse(localStorage.getItem('tt_sidebar_sekce') || '{}');
+    stav[nazev] = !sbaleno;
+    localStorage.setItem('tt_sidebar_sekce', JSON.stringify(stav));
+}
+
+// Obnovení stavu po načtení stránky. Sekce, ve které uživatel právě je,
+// se rozbalí vždy — jinak by nebylo vidět, kde se nachází.
+(function () {
+    var stav = JSON.parse(localStorage.getItem('tt_sidebar_sekce') || '{}');
+
+    document.querySelectorAll('.tt-subsection-body').forEach(function (body) {
+        var nazev = body.id.replace('tt-body-', '');
+        var arrow = document.getElementById('tt-arrow-' + nazev);
+        var jsemUvnitr = body.dataset.vychoziOtevreno === '1';
+        var otevrit = jsemUvnitr || stav[nazev] !== false;
+
+        body.classList.toggle('collapsed', !otevrit);
+        if (arrow) arrow.classList.toggle('collapsed', !otevrit);
+    });
+})();
+</script>
 @endauth

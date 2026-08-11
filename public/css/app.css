@@ -104,6 +104,24 @@ th { color: var(--c-text-secondary); }
 .tt-section a { display: block; padding: .45rem .6rem; border-radius: 6px; color: var(--c-text); font-weight: 600; font-size: .95rem; }
 .tt-section a:hover { color: var(--c-primary); background: var(--c-primary-10); text-decoration: none; }
 .tt-section a.active { color: var(--c-primary); background: var(--c-primary-20); }
+/* Sbalovací podsekce menu (mechanika dle kalkulia) */
+.tt-subsection { margin: .15rem 0; }
+.tt-subsection-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    background: none; border: 0; cursor: pointer;
+    padding: .45rem .6rem; border-radius: 6px;
+    font-family: inherit; font-size: .7rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .05em;
+    color: var(--c-text-secondary);
+}
+.tt-subsection-toggle:hover { color: var(--c-primary); }
+.tt-arrow { width: .7rem; height: .7rem; flex-shrink: 0; transition: transform .2s; }
+.tt-arrow.collapsed { transform: rotate(-90deg); }
+/* max-height místo display:none kvůli plynulému rozbalení */
+.tt-subsection-body { overflow: hidden; max-height: 30rem; transition: max-height .2s; }
+.tt-subsection-body.collapsed { max-height: 0; }
+.tt-subsection-body a { padding-left: 1.4rem; font-size: .9rem; }
+
 .tt-logout { margin-top: auto; }
 .tt-logout button { width: 100%; }
 .tt-main { flex: 1; min-width: 0; }
