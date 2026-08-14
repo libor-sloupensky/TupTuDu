@@ -110,6 +110,8 @@
     </main>
 </div>
 
+@include('partials.error-tracker')
+
 <script>
 // Zavřít rozbalený přepínač firmy kliknutím mimo něj
 document.addEventListener('click', function (e) {

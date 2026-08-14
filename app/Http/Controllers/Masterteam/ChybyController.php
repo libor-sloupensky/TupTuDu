@@ -12,7 +12,7 @@ class ChybyController extends Controller
     public function index(Request $request)
     {
         $filtr = $request->input('stav', 'aktivni'); // aktivni / opravene / vse
-        $typ = $request->input('typ', 'vse'); // server / client / vse
+        $typ = $request->input('typ', 'vse'); // server / client / cron / vse
 
         $q = Chyba::query()->with('uzivatel:id,jmeno,prijmeni,email');
 
@@ -20,6 +20,7 @@ class ChybyController extends Controller
         if ($filtr === 'opravene') $q->where('opraveno', true);
         if ($typ === 'server') $q->where('typ', 'server');
         if ($typ === 'client') $q->where('typ', 'client');
+        if ($typ === 'cron') $q->where('typ', 'cron');
 
         $chyby = $q->orderByDesc('naposledy_v')->paginate(50);
 
@@ -28,6 +29,7 @@ class ChybyController extends Controller
             'opravene' => Chyba::where('opraveno', true)->count(),
             'server' => Chyba::where('opraveno', false)->where('typ', 'server')->count(),
             'client' => Chyba::where('opraveno', false)->where('typ', 'client')->count(),
+            'cron' => Chyba::where('opraveno', false)->where('typ', 'cron')->count(),
         ];
 
         return view('masterteam.chyby.index', compact('chyby', 'pocty', 'filtr', 'typ'));

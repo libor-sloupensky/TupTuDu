@@ -23,7 +23,7 @@
                 @endforeach
             </div>
             <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1 text-sm">
-                @foreach(['vse' => 'Všechny typy', 'server' => 'Server', 'client' => 'Klient (JS)'] as $val => $label)
+                @foreach(['vse' => 'Všechny typy', 'server' => 'Server', 'client' => 'Klient (JS)', 'cron' => 'Cron'] as $val => $label)
                     <a href="?stav={{ $filtr }}&typ={{ $val }}"
                        class="rounded-md px-3 py-1.5 transition {{ $typ === $val ? 'bg-gray-200 text-gray-900' : 'text-gray-700 hover:bg-gray-50' }}">
                         {{ $label }}
@@ -53,8 +53,8 @@
                         @foreach($chyby as $c)
                             <tr class="hover:bg-gray-50 {{ $c->opraveno ? 'opacity-60' : '' }}">
                                 <td class="px-3 py-2">
-                                    <span class="text-xs px-2 py-0.5 rounded {{ $c->typ === 'server' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700' }}">
-                                        {{ $c->typ === 'server' ? '🖥 Server' : '💻 Klient' }}
+                                    <span class="text-xs px-2 py-0.5 rounded {{ ['server' => 'bg-red-50 text-red-700', 'cron' => 'bg-indigo-50 text-indigo-700'][$c->typ] ?? 'bg-amber-50 text-amber-700' }}">
+                                        {{ ['server' => '🖥 Server', 'cron' => '⏱ Cron'][$c->typ] ?? '💻 Klient' }}
                                     </span>
                                 </td>
                                 <td class="px-3 py-2">

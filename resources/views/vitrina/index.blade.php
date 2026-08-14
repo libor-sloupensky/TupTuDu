@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>TupTuDu — projekt v přípravě</title>
     <link rel="stylesheet" href="/css/app.css?v={{ filemtime(public_path('css/app.css')) }}">
     <style>
@@ -23,5 +24,6 @@
     <div class="wrap">
         <h1>Projekt v přípravě.</h1>
     </div>
+@include('partials.error-tracker')
 </body>
 </html>

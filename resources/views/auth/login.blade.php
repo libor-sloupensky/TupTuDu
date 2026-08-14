@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Přihlášení — TupTuDu</title>
     <link rel="stylesheet" href="/css/app.css?v={{ filemtime(public_path('css/app.css')) }}">
     <style>
@@ -57,5 +58,6 @@
             @endif
         </main>
     </div>
+@include('partials.error-tracker')
 </body>
 </html>

@@ -104,5 +104,6 @@
     });
 })();
 </script>
+@include('partials.error-tracker')
 </body>
 </html>

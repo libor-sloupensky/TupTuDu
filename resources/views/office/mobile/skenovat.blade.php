@@ -280,5 +280,6 @@ async function nahratNaPozadi(blob, fileName) {
 }
 </script>
 
+@include('partials.error-tracker')
 </body>
 </html>

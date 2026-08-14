@@ -53,5 +53,6 @@
 
     <a href="{{ route('office.doklady.index') }}" class="zpet">Zpět do systému</a>
 </div>
+@include('partials.error-tracker')
 </body>
 </html>
