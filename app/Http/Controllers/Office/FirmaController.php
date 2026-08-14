@@ -221,7 +221,7 @@ class FirmaController extends Controller
 
         // Nastav email pro doklady
         if (!$firma->email_doklady) {
-            $firma->update(['email_doklady' => $ico . '@doklady.tuptudu.cz']);
+            $firma->update(['email_doklady' => $ico . '@' . config('services.doklady.email_domena')]);
         }
 
         // Připoj uživatele jako superadmin
@@ -437,10 +437,10 @@ class FirmaController extends Controller
 
         // Ensure email_doklady is set
         if ($request->aktivni && !$firma->email_doklady) {
-            $firma->update(['email_doklady' => $firma->ico . '@tuptudu.cz']);
+            $firma->update(['email_doklady' => $firma->ico . '@' . config('services.doklady.email_domena')]);
         }
 
-        return response()->json(['ok' => true, 'email' => $firma->ico . '@tuptudu.cz']);
+        return response()->json(['ok' => true, 'email' => $firma->ico . '@' . config('services.doklady.email_domena')]);
     }
 
     public function ulozitVlastniEmail(Request $request)

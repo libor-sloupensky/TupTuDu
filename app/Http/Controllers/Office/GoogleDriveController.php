@@ -59,7 +59,7 @@ class GoogleDriveController extends Controller
             $rootFolderId = $driveService->ensureFolderWithClient(
                 new \Google\Service\Drive($client),
                 'root',
-                'office.tuptudu.cz'
+                'tuptudu.com'
             );
 
             $firma->update([

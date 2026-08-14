@@ -1,0 +1,21 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "name": "tuptudu-doklady-app",
+    "description": "Capacitor obal mobilní aplikace pro skenování dokladů. Frontend webu se nesestavuje (Tailwind běží z CDN) — tenhle package.json slouží jen k buildu APK.",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "echo \"Frontend se nesestavuje (Tailwind z CDN) - nic k buildu.\"",
+        "android:sync": "cap sync android && node scripts/android-deeplink.mjs",
+        "android:open": "cap open android"
+    },
+    "dependencies": {
+        "@capacitor-mlkit/document-scanner": "^8.1.0",
+        "@capacitor/android": "^8.3.0",
+        "@capacitor/app": "^8.1.0",
+        "@capacitor/browser": "^8.0.3",
+        "@capacitor/cli": "^8.3.0",
+        "@capacitor/core": "^8.3.0",
+        "@capacitor/filesystem": "^8.1.2"
+    }
+}

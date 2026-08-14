@@ -22,7 +22,34 @@ Route::name('office.')->group(function () {
     Route::get('/api/ares/{ico}', [AresController::class, 'lookup'])
         ->middleware('throttle:30,1')->name('ares.lookup');
 
+    // --- Cron endpointy ---
+    // Hosting umí volat jen URL, ne artisan. Token je stejný jako u ostatních
+    // cronů projektu (CRON_TOKEN). Neplatný token → 404, ať se endpoint neprozradí.
+    Route::get('/cron/doklady/{ukol}/{token}', function (string $ukol, string $token) {
+        if (! hash_equals((string) config('services.cron_token'), $token)) {
+            abort(404);
+        }
+
+        $prikazy = [
+            'email' => 'doklady:process-email',   // vyzvedne doklady z e-mailové schránky
+            'drive' => 'doklady:sync-drive',      // nahraje doklady na Google Drive firem
+        ];
+
+        if (! isset($prikazy[$ukol])) {
+            abort(404);
+        }
+
+        Illuminate\Support\Facades\Artisan::call($prikazy[$ukol]);
+
+        return response(Illuminate\Support\Facades\Artisan::output(), 200)
+            ->header('Content-Type', 'text/plain; charset=utf-8');
+    })->middleware('throttle:12,1')->name('cron');
+
     // --- Mobilní aplikace (skenování dokladů) ---
+    // Bridge pro Google login v appce — one-time token z deep linku založí
+    // session ve WebView (Google blokuje OAuth v embedded WebView).
+    Route::get('/mobile/auth-bridge/{token}', [\App\Http\Controllers\Auth\GoogleController::class, 'mobileAuthBridge'])
+        ->middleware('throttle:10,1')->name('mobile.authBridge');
     Route::get('/mobile/prihlaseni', [MobileController::class, 'prihlaseni'])->name('mobile.prihlaseni');
     Route::post('/mobile/prihlaseni', [MobileController::class, 'login'])->name('mobile.login');
     Route::middleware(['auth', 'office.firma'])->group(function () {

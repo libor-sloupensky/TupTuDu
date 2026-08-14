@@ -21,3 +21,7 @@ Thumbs.db
 /database/*.sqlite
 /temporary
 /.tmp
+
+# Capacitor — generovaný Android projekt (build APK probíhá lokálně)
+/android
+/ios

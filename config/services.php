@@ -45,6 +45,24 @@ return [
         'denik_archiv_bucket' => env('AWS_DENIK_ARCHIV_BUCKET'),
     ],
 
+    // Modul Doklady — doména, na kterou firmy posílají doklady.
+    // Firma dostane adresu {ICO}@{domena}; všechny se sbíhají do systémové
+    // schránky níž a příkaz doklady:process-email je rozřadí podle příjemce.
+    'doklady' => [
+        'email_domena' => env('DOKLADY_EMAIL_DOMENA', 'doklady.tuptudu.com'),
+    ],
+
+    // Systémová schránka pro příjem dokladů e-mailem (modul Doklady).
+    // Doklady chodí na adresy tvaru {ico}@tuptudu.com, sbíhají se do téhle
+    // jedné schránky a příkaz doklady:process-email je rozřadí podle příjemce.
+    'imap_system' => [
+        'host' => env('IMAP_SYSTEM_HOST', 'mail.cesky-hosting.cz'),
+        'port' => env('IMAP_SYSTEM_PORT', 993),
+        'encryption' => env('IMAP_SYSTEM_ENCRYPTION', 'ssl'),
+        'username' => env('IMAP_SYSTEM_USERNAME'),
+        'password' => env('IMAP_SYSTEM_PASSWORD'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

@@ -223,7 +223,7 @@ async function startScan() {
             return;
         }
 
-        // PDF nečteme přes fetch(file://) — WebView běží na https://office.tuptudu.cz
+        // PDF nečteme přes fetch(file://) — WebView běží na https://www.tuptudu.com
         // a lokální soubor by mu origin policy nedovolila. Filesystem plugin ho
         // podá přes nativní bridge jako base64.
         const soubor = await Filesystem.readFile({ path: result.pdf.uri });

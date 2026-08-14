@@ -1,0 +1,20 @@
+{
+    "appId": "cz.tuptudu.office",
+    "appName": "TupTuDu Doklady",
+    "webDir": "public",
+    "server": {
+        "url": "https://www.tuptudu.com/mobile/prihlaseni",
+        "cleartext": false,
+        "allowNavigation": [
+            "www.tuptudu.com",
+            "tuptudu.com",
+            "accounts.google.com",
+            "*.google.com",
+            "*.googleusercontent.com"
+        ]
+    },
+    "android": {
+        "allowMixedContent": false,
+        "backgroundColor": "#ffffff"
+    }
+}

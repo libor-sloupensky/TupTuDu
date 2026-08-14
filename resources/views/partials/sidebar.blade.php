@@ -33,8 +33,17 @@
             <a href="/masterteam/uzivatele" class="{{ request()->is('masterteam/uzivatele*') ? 'active' : '' }}">Uživatelé</a>
         </div>
 
-        {{-- Modul Doklady — vlastní sekce, zobrazí se jen když má uživatel firmu --}}
-        @if (auth()->user()->officeFirmy()->exists())
+        {{-- Modul Doklady — vlastní sekce, zobrazí se jen když má uživatel firmu.
+             Test na existenci tabulky drží web nad vodou v okamžiku mezi nahráním
+             souborů a proběhnutím migrace (a na instalaci, kde modul ještě není). --}}
+        @php
+            $maDoklady = \Illuminate\Support\Facades\Cache::remember(
+                'office-tabulky-existuji',
+                300,
+                fn () => \Illuminate\Support\Facades\Schema::hasTable('office_user_firma')
+            ) && auth()->user()->officeFirmy()->exists();
+        @endphp
+        @if ($maDoklady)
             <div class="tt-section">
                 <div class="tt-section-label">Doklady</div>
                 <a href="{{ route('office.doklady.index') }}" class="{{ request()->is('doklady') || request()->is('doklady/[0-9]*') ? 'active' : '' }}">Přehled dokladů</a>

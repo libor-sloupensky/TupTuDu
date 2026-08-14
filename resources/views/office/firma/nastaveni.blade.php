@@ -345,7 +345,7 @@
                 <span style="font-weight: 600;">Systémový email</span>
             </div>
             <div style="background: #f0f7ff; border: 1px solid #bee3f8; border-radius: 6px; padding: 0.6rem 1rem; font-size: 1rem; font-weight: 600; color: #2b6cb0;">
-                {{ $firma->ico }}@tuptudu.cz
+                {{ $firma->ico }}@{{ config('services.doklady.email_domena') }}
             </div>
             <p style="font-size: 0.8rem; color: #888; margin-top: 0.4rem;">
                 Doklady odeslané na tuto adresu budou automaticky zpracovány a přiřazeny k vaší firmě.
@@ -425,7 +425,7 @@
                 <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
                     <div style="font-weight: 600; color: #155724; margin-bottom: 0.3rem;">✅ Google Drive je připojen</div>
                     <div style="font-size: 0.85rem; color: #155724;">
-                        Kořenová složka: <strong>office.tuptudu.cz/</strong>
+                        Kořenová složka: <strong>tuptudu.com/</strong>
                     </div>
                 </div>
 
@@ -466,7 +466,7 @@
                             placeholder="{nahrano:YYYY}/{duzp:YY-MM-DD}_{dodavatel:15}_{id}">
 
                         <div style="font-size: 0.82rem; color: #666; margin-top: 0.4rem;">
-                            Náhled: <strong>office.tuptudu.cz/{{ $firma->ico }}/<span id="gdrivePreview"></span></strong>
+                            Náhled: <strong>tuptudu.com/{{ $firma->ico }}/<span id="gdrivePreview"></span></strong>
                         </div>
 
                         <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem;">

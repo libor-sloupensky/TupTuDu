@@ -106,9 +106,29 @@ jobs:
           FILESYSTEM_DISK=local
           QUEUE_CONNECTION=sync
           CACHE_STORE=file
-          MAIL_MAILER=log
-          MAIL_FROM_ADDRESS="noreply@tuptudu.com"
+          MAIL_MAILER=smtp
+          MAIL_HOST=smtp.cesky-hosting.cz
+          MAIL_PORT=465
+          MAIL_USERNAME=office@tuptudu.com
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+          MAIL_ENCRYPTION=ssl
+          MAIL_FROM_ADDRESS="office@tuptudu.com"
           MAIL_FROM_NAME="TupTuDu"
+          # Příjem dokladů e-mailem (modul Doklady) — IMAP schránka.
+          # Firmy posílají doklady na {ICO}@doklady.tuptudu.com, všechny adresy
+          # se sbíhají do jedné schránky (catch-all) a cron je rozřadí.
+          DOKLADY_EMAIL_DOMENA=doklady.tuptudu.com
+          IMAP_SYSTEM_HOST=mail.cesky-hosting.cz
+          IMAP_SYSTEM_PORT=993
+          IMAP_SYSTEM_ENCRYPTION=ssl
+          IMAP_SYSTEM_USERNAME=doklady@tuptudu.com
+          IMAP_SYSTEM_PASSWORD=${{ secrets.IMAP_SYSTEM_PASSWORD }}
+          # S3 úložiště dokladů (modul Doklady)
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION=eu-west-1
+          AWS_BUCKET=${{ secrets.AWS_BUCKET }}
+          AWS_USE_PATH_STYLE_ENDPOINT=false
           MASTER_ICO=07994605
           MASTER_PASSWORD=${{ secrets.MASTER_PASSWORD }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
