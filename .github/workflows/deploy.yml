@@ -109,20 +109,21 @@ jobs:
           FILESYSTEM_DISK=local
           QUEUE_CONNECTION=sync
           CACHE_STORE=file
-          # Jediná mailová schránka projektu: doklady@tuptudu.com.
-          # Slouží pro odchozí (SMTP) i příchozí (IMAP) poštu — heslo je stejné,
-          # proto jeden secret MAIL_PASSWORD_DOKLADY.
+          # Systémová pošta (info@) — ověřovací maily, pozvánky, notifikace
           MAIL_MAILER=smtp
           MAIL_HOST=smtp.cesky-hosting.cz
           MAIL_PORT=465
-          MAIL_USERNAME=doklady@tuptudu.com
-          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD_DOKLADY }}
+          MAIL_USERNAME=info@tuptudu.com
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD_INFO }}
           MAIL_ENCRYPTION=ssl
-          MAIL_FROM_ADDRESS="doklady@tuptudu.com"
+          MAIL_FROM_ADDRESS="info@tuptudu.com"
           MAIL_FROM_NAME="TupTuDu"
-          # Firmy posílají doklady na {ICO}@doklady.tuptudu.com, všechny adresy
-          # se sbíhají do téže schránky (catch-all) a cron je rozřadí.
+          # Doklady (doklady@) — příjem dokladů i odpovědi odesílatelům.
+          # Firmy posílají na {ICO}@doklady.tuptudu.com; schránka je nastavená
+          # jako koš, takže pochytá všechny adresy, a cron je rozřadí.
           DOKLADY_EMAIL_DOMENA=doklady.tuptudu.com
+          MAIL_DOKLADY_USERNAME=doklady@tuptudu.com
+          MAIL_DOKLADY_PASSWORD=${{ secrets.MAIL_PASSWORD_DOKLADY }}
           IMAP_SYSTEM_HOST=mail.cesky-hosting.cz
           IMAP_SYSTEM_PORT=993
           IMAP_SYSTEM_ENCRYPTION=ssl
