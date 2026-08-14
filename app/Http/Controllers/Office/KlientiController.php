@@ -22,7 +22,7 @@ class KlientiController extends Controller
             ->orderByRaw("FIELD(stav, 'schvaleno', 'ceka_na_firmu', 'zamitnuto')")
             ->get();
 
-        return view('klienti.index', compact('firma', 'vazby'));
+        return view('office.klienti.index', compact('firma', 'vazby'));
     }
 
     public function store(Request $request)
@@ -92,7 +92,7 @@ class KlientiController extends Controller
             'stav' => 'ceka_na_firmu',
         ]);
 
-        return redirect()->route('klienti.index')->with('flash', "Klient {$klientFirma->nazev} přidán. Čeká na schválení.");
+        return redirect()->route('office.klienti.index')->with('flash', "Klient {$klientFirma->nazev} přidán. Čeká na schválení.");
     }
 
     /**
@@ -319,6 +319,6 @@ class KlientiController extends Controller
             ->where('klient_ico', $klientIco)
             ->delete();
 
-        return redirect()->route('klienti.index')->with('flash', 'Klient byl odebrán.');
+        return redirect()->route('office.klienti.index')->with('flash', 'Klient byl odebrán.');
     }
 }

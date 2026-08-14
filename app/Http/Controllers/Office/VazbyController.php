@@ -20,7 +20,7 @@ class VazbyController extends Controller
 
         $vazba->update(['stav' => 'schvaleno']);
 
-        return redirect()->route('firma.nastaveni')->with('flash', "Účetní firma {$vazba->ucetniFirma->nazev} byla schválena.");
+        return redirect()->route('office.firma.nastaveni')->with('flash', "Účetní firma {$vazba->ucetniFirma->nazev} byla schválena.");
     }
 
     public function reject(int $id)
@@ -34,7 +34,7 @@ class VazbyController extends Controller
 
         $vazba->update(['stav' => 'zamitnuto']);
 
-        return redirect()->route('firma.nastaveni')->with('flash', 'Žádost byla zamítnuta.');
+        return redirect()->route('office.firma.nastaveni')->with('flash', 'Žádost byla zamítnuta.');
     }
 
     public function disconnect(int $id)
@@ -49,7 +49,7 @@ class VazbyController extends Controller
         $nazev = $vazba->ucetniFirma->nazev ?? 'Účetní firma';
         $vazba->delete();
 
-        return redirect()->route('firma.nastaveni')->with('flash', "Napojení na {$nazev} bylo zrušeno.");
+        return redirect()->route('office.firma.nastaveni')->with('flash', "Napojení na {$nazev} bylo zrušeno.");
     }
 
     public function updateOpravneni(Request $request, int $id)

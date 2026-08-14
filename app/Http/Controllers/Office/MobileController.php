@@ -16,9 +16,9 @@ class MobileController extends Controller
     public function prihlaseni()
     {
         if (Auth::check()) {
-            return redirect()->route('mobile.skenovat');
+            return redirect()->route('office.mobile.skenovat');
         }
-        return view('mobile.prihlaseni');
+        return view('office.mobile.prihlaseni');
     }
 
     public function login(Request $request)
@@ -43,7 +43,7 @@ class MobileController extends Controller
             session(['office_firma_ico' => $prvniFirma->ico]);
         }
 
-        return redirect()->route('mobile.skenovat');
+        return redirect()->route('office.mobile.skenovat');
     }
 
     public function skenovat()
@@ -51,7 +51,7 @@ class MobileController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        return view('mobile.skenovat', [
+        return view('office.mobile.skenovat', [
             'firma' => $user->officeAktivniFirma(),
             'user' => $user,
             'firmy' => $this->dostupneFirmy($user),
@@ -74,7 +74,7 @@ class MobileController extends Controller
 
         session(['office_firma_ico' => $ico]);
 
-        return redirect()->route('mobile.skenovat');
+        return redirect()->route('office.mobile.skenovat');
     }
 
     public function logout(Request $request)
@@ -82,7 +82,7 @@ class MobileController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('mobile.prihlaseni');
+        return redirect()->route('office.mobile.prihlaseni');
     }
 
     /**

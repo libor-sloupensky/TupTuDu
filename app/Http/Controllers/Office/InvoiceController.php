@@ -141,14 +141,14 @@ class InvoiceController extends Controller
             'nahral' => $d->nahral,
             'cesta_souboru' => $d->cesta_souboru ? true : false,
             'duplicita_id' => $d->duplicita_id,
-            'show_url' => route('doklady.show', $d),
-            'update_url' => route('doklady.update', $d),
-            'destroy_url' => route('doklady.destroy', $d),
-            'preview_url' => $d->cesta_souboru ? route('doklady.preview', $d) : null,
+            'show_url' => route('office.doklady.show', $d),
+            'update_url' => route('office.doklady.update', $d),
+            'destroy_url' => route('office.doklady.destroy', $d),
+            'preview_url' => $d->cesta_souboru ? route('office.doklady.preview', $d) : null,
             'preview_ext' => $d->cesta_souboru ? strtolower(pathinfo($d->cesta_souboru, PATHINFO_EXTENSION)) : null,
-            'preview_original_url' => $d->cesta_originalu ? route('doklady.previewOriginal', $d) : null,
+            'preview_original_url' => $d->cesta_originalu ? route('office.doklady.previewOriginal', $d) : null,
             'preview_original_ext' => $d->cesta_originalu ? strtolower(pathinfo($d->cesta_originalu, PATHINFO_EXTENSION)) : null,
-            'download_url' => $d->cesta_souboru ? route('doklady.download', $d) : null,
+            'download_url' => $d->cesta_souboru ? route('office.doklady.download', $d) : null,
             'adresni' => $d->adresni,
             'overeno_adresat' => $d->overeno_adresat,
             'odberatel_ico' => $d->odberatel_ico,
@@ -216,13 +216,13 @@ class InvoiceController extends Controller
             $permMazat = $vazba ? $vazba->perm_mazat : false;
         }
 
-        return view('invoices.index', compact('doklady', 'firma', 'sort', 'dir', 'q', 'dokladyJson', 'kategorieList', 'prohlizimKlienta', 'permVkladat', 'permUpravovat', 'permMazat'));
+        return view('office.invoices.index', compact('doklady', 'firma', 'sort', 'dir', 'q', 'dokladyJson', 'kategorieList', 'prohlizimKlienta', 'permVkladat', 'permUpravovat', 'permMazat'));
     }
 
     public function show(Doklad $doklad)
     {
         $this->autorizujDoklad($doklad);
-        return view('invoices.show', compact('doklad'));
+        return view('office.invoices.show', compact('doklad'));
     }
 
     public function download(Doklad $doklad)
@@ -404,7 +404,7 @@ class InvoiceController extends Controller
                 $message .= ' ' . $warnResults->pluck('message')->implode('; ');
             }
 
-            return redirect()->route('doklady.index')->with('flash', $message);
+            return redirect()->route('office.doklady.index')->with('flash', $message);
 
         } catch (\Throwable $e) {
             Log::error('InvoiceController::store error', [
@@ -425,7 +425,7 @@ class InvoiceController extends Controller
                 ], 500);
             }
 
-            return redirect()->route('doklady.index')->with('flash', $userMessage);
+            return redirect()->route('office.doklady.index')->with('flash', $userMessage);
         }
     }
 
@@ -834,6 +834,6 @@ PROMPT;
             return response()->json(['ok' => true, 'nazev' => $nazev]);
         }
 
-        return redirect()->route('doklady.index')->with('flash', "Doklad {$nazev} byl smazán.");
+        return redirect()->route('office.doklady.index')->with('flash', "Doklad {$nazev} byl smazán.");
     }
 }

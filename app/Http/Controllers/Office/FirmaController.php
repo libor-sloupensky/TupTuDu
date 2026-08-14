@@ -25,7 +25,7 @@ class FirmaController extends Controller
 
         // Účetní prohlížející klienta nemá přístup k nastavení klienta
         if ($user->officeProhlizimKlienta()) {
-            return redirect()->route('doklady.index')->with('flash', 'K nastavení klientské firmy nemáte přístup.');
+            return redirect()->route('office.doklady.index')->with('flash', 'K nastavení klientské firmy nemáte přístup.');
         }
 
         $firma = $user->officeAktivniFirma();
@@ -78,7 +78,7 @@ class FirmaController extends Controller
         $uzivatele = $firma ? $firma->users()->withPivot('role', 'interni_role')->get() : collect();
         $pozvani = $firma ? Pozvani::where('firma_ico', $firma->ico)->whereNull('accepted_at')->where('expires_at', '>', now())->get() : collect();
 
-        return view('firma.nastaveni', compact('firma', 'vazby', 'jeUcetni', 'toggleDisabledReason', 'klientVazby', 'cekajiciVazby', 'expandUcetni', 'kategorie', 'jeSuperadmin', 'uzivatele', 'pozvani'));
+        return view('office.firma.nastaveni', compact('firma', 'vazby', 'jeUcetni', 'toggleDisabledReason', 'klientVazby', 'cekajiciVazby', 'expandUcetni', 'kategorie', 'jeSuperadmin', 'uzivatele', 'pozvani'));
     }
 
     public function ulozit(Request $request)
@@ -103,12 +103,12 @@ class FirmaController extends Controller
 
         $firma->update($data);
 
-        return redirect()->route('firma.nastaveni')->with('success', 'Nastavení uloženo.');
+        return redirect()->route('office.firma.nastaveni')->with('success', 'Nastavení uloženo.');
     }
 
     public function zadnaFirma()
     {
-        return view('firma.zadna');
+        return view('office.firma.zadna');
     }
 
     /**
@@ -230,7 +230,7 @@ class FirmaController extends Controller
         // Nastav jako aktivní firmu
         session(['office_firma_ico' => $ico]);
 
-        return redirect()->route('doklady.index')->with('flash', "Firma {$firma->nazev} byla vytvořena a přiřazena.");
+        return redirect()->route('office.doklady.index')->with('flash', "Firma {$firma->nazev} byla vytvořena a přiřazena.");
     }
 
     public function zadostOPristup(Request $request)
@@ -288,7 +288,7 @@ class FirmaController extends Controller
 
         // Při přepnutí na klienta vždy na doklady (nemá přístup k nastavení)
         if ($jeKlient) {
-            return redirect()->route('doklady.index')->with('flash', 'Přepnuto na klientskou firmu.');
+            return redirect()->route('office.doklady.index')->with('flash', 'Přepnuto na klientskou firmu.');
         }
 
         return redirect()->back()->with('flash', 'Firma přepnuta.');
@@ -316,7 +316,7 @@ class FirmaController extends Controller
             'psc' => $ares['psc'] ?? $firma->psc,
         ]);
 
-        return redirect()->route('firma.nastaveni')->with('success', 'Data obnovena z ARES.');
+        return redirect()->route('office.firma.nastaveni')->with('success', 'Data obnovena z ARES.');
     }
 
     public function toggleUcetni(Request $request)

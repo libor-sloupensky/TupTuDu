@@ -15,6 +15,9 @@ jobs:
   deploy:
     name: Build & Deploy via FTP
     runs-on: ubuntu-latest
+    # Bez limitu by zaseklý lftp přenos držel frontu až 6 hodin (výchozí limit
+    # GitHubu) a blokoval všechny další deploye.
+    timeout-minutes: 45
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

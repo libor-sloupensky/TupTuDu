@@ -489,7 +489,7 @@
                     </ul>
                 </div>
 
-                <form method="POST" action="{{ route('google.disconnect') }}" style="margin-top: 0.5rem;">
+                <form method="POST" action="{{ route('office.google.disconnect') }}" style="margin-top: 0.5rem;">
                     @csrf
                     <button type="submit" class="btn-sm btn-sm-outline" onclick="return confirm('Opravdu chcete odpojit Google Drive?')">Odpojit Google Drive</button>
                 </form>
@@ -500,7 +500,7 @@
                 <p style="font-size: 0.8rem; color: #888; margin-bottom: 1rem;">
                     Aplikace bude mít přístup pouze k souborům, které sama vytvoří. Vaše ostatní soubory na Disku zůstanou nedotčené.
                 </p>
-                <a href="{{ route('google.redirect') }}" style="display: inline-block; background: #4285f4; color: white; padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                <a href="{{ route('office.google.redirect') }}" style="display: inline-block; background: #4285f4; color: white; padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
                     Připojit Google Drive
                 </a>
             @endif

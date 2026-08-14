@@ -26,7 +26,7 @@ class GoogleDriveController extends Controller
     public function callback(Request $request)
     {
         if (!$request->has('code')) {
-            return redirect()->route('firma.nastaveni')
+            return redirect()->route('office.firma.nastaveni')
                 ->with('flash_error', 'Google autorizace byla zrušena.');
         }
 
@@ -37,19 +37,19 @@ class GoogleDriveController extends Controller
 
             if (isset($token['error'])) {
                 Log::error('Google OAuth error', $token);
-                return redirect()->route('firma.nastaveni')
+                return redirect()->route('office.firma.nastaveni')
                     ->with('flash_error', 'Chyba při propojení s Google: ' . ($token['error_description'] ?? $token['error']));
             }
 
             $refreshToken = $token['refresh_token'] ?? null;
             if (!$refreshToken) {
-                return redirect()->route('firma.nastaveni')
+                return redirect()->route('office.firma.nastaveni')
                     ->with('flash_error', 'Google nevrátil refresh token. Zkuste to znovu.');
             }
 
             $firma = Firma::find(session('office_firma_ico'));
             if (!$firma) {
-                return redirect()->route('firma.nastaveni')
+                return redirect()->route('office.firma.nastaveni')
                     ->with('flash_error', 'Aktivní firma nebyla nalezena.');
             }
 
@@ -68,12 +68,12 @@ class GoogleDriveController extends Controller
                 'google_folder_id' => $rootFolderId,
             ]);
 
-            return redirect()->route('firma.nastaveni')
+            return redirect()->route('office.firma.nastaveni')
                 ->with('flash', 'Google Drive byl úspěšně propojen.');
 
         } catch (\Throwable $e) {
             Log::error('Google OAuth callback failed', ['error' => $e->getMessage()]);
-            return redirect()->route('firma.nastaveni')
+            return redirect()->route('office.firma.nastaveni')
                 ->with('flash_error', 'Chyba při propojení s Google Drive: ' . $e->getMessage());
         }
     }
@@ -82,7 +82,7 @@ class GoogleDriveController extends Controller
     {
         $firma = Firma::find(session('office_firma_ico'));
         if (!$firma) {
-            return redirect()->route('firma.nastaveni');
+            return redirect()->route('office.firma.nastaveni');
         }
 
         // Revoke token
@@ -101,7 +101,7 @@ class GoogleDriveController extends Controller
             'google_folder_id' => null,
         ]);
 
-        return redirect()->route('firma.nastaveni')
+        return redirect()->route('office.firma.nastaveni')
             ->with('flash', 'Google Drive byl odpojen.');
     }
 
