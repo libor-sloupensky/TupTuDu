@@ -109,23 +109,25 @@ jobs:
           FILESYSTEM_DISK=local
           QUEUE_CONNECTION=sync
           CACHE_STORE=file
+          # Jediná mailová schránka projektu: doklady@tuptudu.com.
+          # Slouží pro odchozí (SMTP) i příchozí (IMAP) poštu — heslo je stejné,
+          # proto jeden secret MAIL_PASSWORD_DOKLADY.
           MAIL_MAILER=smtp
           MAIL_HOST=smtp.cesky-hosting.cz
           MAIL_PORT=465
-          MAIL_USERNAME=office@tuptudu.com
-          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+          MAIL_USERNAME=doklady@tuptudu.com
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD_DOKLADY }}
           MAIL_ENCRYPTION=ssl
-          MAIL_FROM_ADDRESS="office@tuptudu.com"
+          MAIL_FROM_ADDRESS="doklady@tuptudu.com"
           MAIL_FROM_NAME="TupTuDu"
-          # Příjem dokladů e-mailem (modul Doklady) — IMAP schránka.
           # Firmy posílají doklady na {ICO}@doklady.tuptudu.com, všechny adresy
-          # se sbíhají do jedné schránky (catch-all) a cron je rozřadí.
+          # se sbíhají do téže schránky (catch-all) a cron je rozřadí.
           DOKLADY_EMAIL_DOMENA=doklady.tuptudu.com
           IMAP_SYSTEM_HOST=mail.cesky-hosting.cz
           IMAP_SYSTEM_PORT=993
           IMAP_SYSTEM_ENCRYPTION=ssl
           IMAP_SYSTEM_USERNAME=doklady@tuptudu.com
-          IMAP_SYSTEM_PASSWORD=${{ secrets.IMAP_SYSTEM_PASSWORD }}
+          IMAP_SYSTEM_PASSWORD=${{ secrets.MAIL_PASSWORD_DOKLADY }}
           # S3 úložiště dokladů (modul Doklady)
           AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}

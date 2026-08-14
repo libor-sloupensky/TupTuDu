@@ -49,6 +49,20 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        // Odpovědi odesílatelům dokladů (modul Doklady). Stejný účet jako
+        // výchozí mailer — odlišuje se jen odesílatel, kterým je {ICO}@doména,
+        // aby příjemce viděl, ke které firmě se doklad vztahoval.
+        'doklady' => [
+            'transport' => 'smtp',
+            'scheme' => env('MAIL_SCHEME'),
+            'host' => env('MAIL_HOST', 'smtp.cesky-hosting.cz'),
+            'port' => env('MAIL_PORT', 465),
+            'username' => env('MAIL_USERNAME'),
+            'password' => env('MAIL_PASSWORD'),
+            'timeout' => null,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],
