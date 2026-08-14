@@ -22,6 +22,18 @@ Route::name('office.')->group(function () {
     Route::get('/api/ares/{ico}', [AresController::class, 'lookup'])
         ->middleware('throttle:30,1')->name('ares.lookup');
 
+    // Stažení APK mobilní aplikace (sideload, appka není v Google Play).
+    // Pozor: NE /app — pod public/app/ leží samotné APK a Apache by routu
+    // přebil přesměrováním na výpis adresáře.
+    Route::get('/aplikace', function () {
+        $apk = public_path('app/tuptudu-doklady.apk');
+
+        return view('office.aplikace', [
+            'velikost' => file_exists($apk) ? round(filesize($apk) / 1024 / 1024, 1) . ' MB' : '—',
+            'verze' => file_exists($apk) ? date('j. n. Y', filemtime($apk)) : '—',
+        ]);
+    })->name('aplikace');
+
     // --- Cron endpointy ---
     // Hosting umí volat jen URL, ne artisan. Token je stejný jako u ostatních
     // cronů projektu (CRON_TOKEN). Neplatný token → 404, ať se endpoint neprozradí.
