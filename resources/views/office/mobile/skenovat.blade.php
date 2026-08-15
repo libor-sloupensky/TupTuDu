@@ -98,7 +98,7 @@
 
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-const uploadUrl = '{{ route("invoices.store") }}';
+const uploadUrl = '{{ route("office.invoices.store") }}';
 
 function isNative() {
     return window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
@@ -258,7 +258,7 @@ async function nahratNaPozadi(blob, fileName) {
         });
 
         if (upResp.status === 401 || upResp.status === 419) {
-            window.location.href = '{{ route("mobile.prihlaseni") }}';
+            window.location.href = '{{ route("office.mobile.prihlaseni") }}';
             return;
         }
 

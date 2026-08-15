@@ -646,7 +646,7 @@
     if (toggle && !toggle.disabled) {
         toggle.addEventListener('change', function() {
             var jeUcetni = this.checked;
-            fetch('{{ route("firma.toggleUcetni") }}', {
+            fetch('{{ route("office.firma.toggleUcetni") }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
                 body: JSON.stringify({ je_ucetni: jeUcetni ? 1 : 0 })
@@ -663,7 +663,7 @@
     // Toggle účetní OFF (stav A → vypnutí)
     window.toggleUcetniOff = function() {
         if (!confirm('Opravdu chcete přestat být účetní firma?')) return;
-        fetch('{{ route("firma.toggleUcetni") }}', {
+        fetch('{{ route("office.firma.toggleUcetni") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
             body: JSON.stringify({ je_ucetni: 0 })
@@ -699,7 +699,7 @@
             lookupResult.textContent = 'Hledám v ARES...';
 
             lookupTimer = setTimeout(function() {
-                fetch('{{ route("klienti.lookup") }}', {
+                fetch('{{ route("office.klienti.lookup") }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
                     body: JSON.stringify({ ico: ico })
@@ -772,7 +772,7 @@
         status.textContent = 'Odesílám...'; status.style.color = '#666';
         var body = { ico: currentIco, email: email };
         if (superadminId) body.superadmin_id = superadminId;
-        fetch('{{ route("klienti.poslZadost") }}', {
+        fetch('{{ route("office.klienti.poslZadost") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
             body: JSON.stringify(body)
@@ -826,7 +826,7 @@
 
         if (kategorie.length === 0) return;
 
-        fetch('{{ route("firma.ulozitKategorie") }}', {
+        fetch('{{ route("office.firma.ulozitKategorie") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1043,7 +1043,7 @@
         const role = document.getElementById('newUserRole').value;
         if (!jmeno || !email) { showUsrStatus('Vyplňte jméno a email', '#e74c3c'); return; }
 
-        fetch('{{ route("firma.pridatUzivatele") }}', {
+        fetch('{{ route("office.firma.pridatUzivatele") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1107,7 +1107,7 @@
     const toggleSys = document.getElementById('toggleSystemEmail');
     if (toggleSys) {
         toggleSys.addEventListener('change', function() {
-            fetch('{{ route("firma.toggleSystemEmail") }}', {
+            fetch('{{ route("office.firma.toggleSystemEmail") }}', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json'},
                 body: JSON.stringify({ aktivni: this.checked ? 1 : 0 })
@@ -1162,7 +1162,7 @@
 
         showVlastniStatus('Testuji připojení...', '#666');
 
-        fetch('{{ route("firma.testEmailVlastni") }}', {
+        fetch('{{ route("office.firma.testEmailVlastni") }}', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json'},
             body: JSON.stringify({
@@ -1190,7 +1190,7 @@
         const d = getVlastniData();
         const aktivni = document.getElementById('toggleVlastniEmail').checked;
 
-        fetch('{{ route("firma.ulozitVlastniEmail") }}', {
+        fetch('{{ route("office.firma.ulozitVlastniEmail") }}', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json'},
             body: JSON.stringify({
@@ -1272,7 +1272,7 @@
         status.style.color = '#888';
         status.textContent = 'Ukládám...';
 
-        fetch('{{ route("firma.ulozitDriveSablona") }}', {
+        fetch('{{ route("office.firma.ulozitDriveSablona") }}', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken},
             body: JSON.stringify({sablona: input.value.trim()})

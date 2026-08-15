@@ -72,6 +72,11 @@ Route::name('office.')->group(function () {
         Route::post('/mobile/odhlaseni', [MobileController::class, 'logout'])->name('mobile.logout');
     });
 
+    // Žádost o přístup k obsazené firmě — odesílá ji i nepřihlášený uživatel
+    // z obrazovky „firma už má správce", proto mimo auth. Throttle proti spamu.
+    Route::post('/doklady/zadost-o-pristup', [FirmaController::class, 'zadostOPristup'])
+        ->middleware('throttle:3,60')->name('firma.zadostOPristup');
+
     // --- Volba firmy (ještě bez middleware office.firma — uživatel žádnou mít nemusí) ---
     Route::middleware('auth')->group(function () {
         Route::get('/doklady/firma/zadna', [FirmaController::class, 'zadnaFirma'])->name('firma.zadna');

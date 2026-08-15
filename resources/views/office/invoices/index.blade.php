@@ -198,8 +198,8 @@
     @else
         <script>
             var csrfToken = '{{ csrf_token() }}';
-            var uploadUrl = '{{ route("invoices.store") }}';
-            var aiSearchUrl = '{{ route("doklady.aiSearch") }}';
+            var uploadUrl = '{{ route("office.invoices.store") }}';
+            var aiSearchUrl = '{{ route("office.doklady.aiSearch") }}';
             var permVkladat = {{ $permVkladat ? 'true' : 'false' }};
             var permUpravovat = {{ $permUpravovat ? 'true' : 'false' }};
             var permMazat = {{ $permMazat ? 'true' : 'false' }};
@@ -1257,7 +1257,7 @@ function downloadSelected() {
     if (selectedIds.size === 0) return;
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = '{{ route("doklady.downloadSelected") }}';
+    form.action = '{{ route("office.doklady.downloadSelected") }}';
     const csrf = document.createElement('input');
     csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = csrfToken;
     form.appendChild(csrf);

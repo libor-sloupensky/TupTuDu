@@ -37,9 +37,9 @@
 <script>
 (function() {
     var csrfToken = '{{ csrf_token() }}';
-    var lookupUrl = '{{ route("firma.lookupPristup") }}';
-    var zadostUrl = '{{ route("firma.zadostOPristup") }}';
-    var vytvorUrl = '{{ route("firma.vytvorFirmu") }}';
+    var lookupUrl = '{{ route("office.firma.lookupPristup") }}';
+    var zadostUrl = '{{ route("office.firma.zadostOPristup") }}';
+    var vytvorUrl = '{{ route("office.firma.vytvorFirmu") }}';
     var userName = @json(auth()->user()->celeJmeno());
     var userEmail = @json(auth()->user()->email);
     var input = document.getElementById('ico_input');

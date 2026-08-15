@@ -93,8 +93,8 @@
 <script>
 (function() {
     var csrfToken = '{{ csrf_token() }}';
-    var lookupUrl = '{{ route("klienti.lookup") }}';
-    var zadostUrl = '{{ route("klienti.poslZadost") }}';
+    var lookupUrl = '{{ route("office.klienti.lookup") }}';
+    var zadostUrl = '{{ route("office.klienti.poslZadost") }}';
     var input = document.getElementById('klient_ico');
     var resultDiv = document.getElementById('lookupResult');
     var lookupTimer = null;
