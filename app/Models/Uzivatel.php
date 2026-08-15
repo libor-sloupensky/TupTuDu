@@ -55,6 +55,27 @@ class Uzivatel extends Authenticatable
         return 'heslo';
     }
 
+    /**
+     * Ověření e-mailu drží sloupec `email_overen_v`, ne standardní
+     * `email_verified_at`. Bez těchhle dvou metod by Laravel četl neexistující
+     * sloupec, hasVerifiedEmail() by vracelo vždy false a navázaná logika
+     * (např. přijetí čekajících pozvánek do firmy) by tiše nedělala nic.
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        return ! is_null($this->email_overen_v);
+    }
+
+    public function markEmailAsVerified(): bool
+    {
+        return $this->forceFill(['email_overen_v' => now()])->save();
+    }
+
+    public function getEmailForVerification(): string
+    {
+        return $this->email;
+    }
+
     /** Je členem master týmu? (subjekt s IČO = config('app.master_ico')) */
     public function jeMaster(): bool
     {
