@@ -15,12 +15,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 trait MaPristupKFirmam
 {
-    /** Firmy, ke kterým má uživatel přímý přístup. */
+    /**
+     * Firmy, ke kterým má uživatel přímý přístup.
+     *
+     * Názvy timestampů musí být explicitní: Uzivatel má sloupce přejmenované
+     * na vytvoreno/upraveno a Laravel by je podle rodiče hledal i v propojovací
+     * tabulce, kde jsou standardní created_at/updated_at.
+     */
     public function officeFirmy(): BelongsToMany
     {
         return $this->belongsToMany(Firma::class, 'office_user_firma', 'user_id', 'firma_ico')
             ->withPivot('role', 'interni_role')
-            ->withTimestamps();
+            ->withTimestamps('created_at', 'updated_at');
     }
 
     /**
