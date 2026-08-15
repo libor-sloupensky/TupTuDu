@@ -862,7 +862,7 @@
 
         if (id) {
             // Delete from server
-            fetch('{{ url("/nastaveni/kategorie") }}/' + id, {
+            fetch('{{ url("/doklady/nastaveni/kategorie") }}/' + id, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
@@ -930,7 +930,7 @@
                     row.remove();
                     ensureEmptyRow();
                     if (id) {
-                        fetch('{{ url("/nastaveni/kategorie") }}/' + id, {
+                        fetch('{{ url("/doklady/nastaveni/kategorie") }}/' + id, {
                             method: 'DELETE',
                             headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
                         }).catch(() => {});
@@ -967,7 +967,7 @@
         const role = row.querySelector('[data-field="interni_role"]').value;
         if (!jmeno) return;
 
-        fetch('{{ url("/nastaveni/uzivatele") }}/' + userId, {
+        fetch('{{ url("/doklady/nastaveni/uzivatele") }}/' + userId, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -995,7 +995,7 @@
 
     window.cancelInvite = function(id, name) {
         if (!confirm('Zrušit pozvánku pro ' + name + '?')) return;
-        fetch('{{ url("/nastaveni/pozvanky") }}/' + id, {
+        fetch('{{ url("/doklady/nastaveni/pozvanky") }}/' + id, {
             method: 'DELETE',
             headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
         })
@@ -1013,7 +1013,7 @@
 
     window.removeUser = function(userId, name) {
         if (!confirm('Odebrat uživatele ' + name + '?')) return;
-        fetch('{{ url("/nastaveni/uzivatele") }}/' + userId, {
+        fetch('{{ url("/doklady/nastaveni/uzivatele") }}/' + userId, {
             method: 'DELETE',
             headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
         })
@@ -1075,7 +1075,7 @@
         };
         var status = document.getElementById('permStatus' + vazbaId);
 
-        fetch('/vazby/' + vazbaId + '/opravneni', {
+        fetch('/doklady/vazby/' + vazbaId + '/opravneni', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
             body: JSON.stringify(perms)
