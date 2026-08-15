@@ -37,7 +37,7 @@ Route::name('office.')->group(function () {
     // --- Cron endpointy ---
     // Hosting umí volat jen URL, ne artisan. Token je stejný jako u ostatních
     // cronů projektu (CRON_TOKEN). Neplatný token → 404, ať se endpoint neprozradí.
-    Route::get('/cron/doklady/{ukol}/{token}', function (string $ukol, string $token) {
+    Route::get('/cron/doklady/{ukol}/{token}', function (Illuminate\Http\Request $request, string $ukol, string $token) {
         if (! hash_equals((string) config('services.cron_token'), $token)) {
             abort(404);
         }
@@ -47,13 +47,25 @@ Route::name('office.')->group(function () {
             'drive' => 'doklady:sync-drive',      // nahraje doklady na Google Drive firem
             'import' => 'doklady:import-z-office', // jednorázový přenos dat z projektu office
             'chyby' => 'chyby:posledni --stack',   // ladění produkce, kde APP_DEBUG=false
+            'role' => 'doklady:role',              // změna role uživatele ve firmě
         ];
 
         if (! isset($prikazy[$ukol])) {
             abort(404);
         }
 
-        Illuminate\Support\Facades\Artisan::call($prikazy[$ukol]);
+        // Parametry bereme z query jen u příkazů, které je opravdu čekají —
+        // aby přes tenhle endpoint nešlo poslat cokoli.
+        $parametry = [];
+        if ($ukol === 'role') {
+            $parametry = [
+                'email' => (string) $request->query('email'),
+                'ico' => (string) $request->query('ico'),
+                '--interni' => (string) $request->query('interni', 'superadmin'),
+            ];
+        }
+
+        Illuminate\Support\Facades\Artisan::call($prikazy[$ukol], $parametry);
 
         return response(Illuminate\Support\Facades\Artisan::output(), 200)
             ->header('Content-Type', 'text/plain; charset=utf-8');
