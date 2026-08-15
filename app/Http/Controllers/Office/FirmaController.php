@@ -75,7 +75,7 @@ class FirmaController extends Controller
         $kategorie = $firma ? $firma->kategorie()->orderBy('poradi')->get() : collect();
 
         $jeSuperadmin = $firma && $user->officeJeSuperadmin($firma->ico);
-        $uzivatele = $firma ? $firma->users()->withPivot('role', 'interni_role')->get() : collect();
+        $uzivatele = $firma ? $firma->uzivatele()->withPivot('role', 'interni_role')->get() : collect();
         $pozvani = $firma ? Pozvani::where('firma_ico', $firma->ico)->whereNull('accepted_at')->where('expires_at', '>', now())->get() : collect();
 
         return view('office.firma.nastaveni', compact('firma', 'vazby', 'jeUcetni', 'toggleDisabledReason', 'klientVazby', 'cekajiciVazby', 'expandUcetni', 'kategorie', 'jeSuperadmin', 'uzivatele', 'pozvani'));
@@ -142,7 +142,7 @@ class FirmaController extends Controller
 
         // Check zda firma existuje v systému (= má alespoň jednoho uživatele)
         $firma = Firma::find($ico);
-        if (!$firma || !$firma->users()->exists()) {
+        if (!$firma || !$firma->uzivatele()->exists()) {
             return response()->json([
                 'ok' => true,
                 'nazev' => $nazev,
@@ -152,7 +152,7 @@ class FirmaController extends Controller
         }
 
         // Najdi superadminy
-        $superadmins = $firma->users()
+        $superadmins = $firma->uzivatele()
             ->wherePivot('interni_role', 'superadmin')
             ->get()
             ->map(fn ($u) => [
@@ -185,7 +185,7 @@ class FirmaController extends Controller
         $firma = Firma::find($ico);
 
         // Pokud firma existuje a má uživatele → nelze převzít
-        if ($firma && $firma->users()->exists()) {
+        if ($firma && $firma->uzivatele()->exists()) {
             return back()->withErrors(['ico' => 'Tato firma již má správce. Požádejte o přiřazení.']);
         }
 
@@ -225,7 +225,7 @@ class FirmaController extends Controller
         }
 
         // Připoj uživatele jako superadmin
-        $firma->users()->attach($user->id, ['interni_role' => 'superadmin']);
+        $firma->uzivatele()->attach($user->id, ['interni_role' => 'superadmin']);
 
         // Nastav jako aktivní firmu
         session(['office_firma_ico' => $ico]);
@@ -248,12 +248,12 @@ class FirmaController extends Controller
         }
 
         if ($request->superadmin_id) {
-            $superadmin = $firma->users()->withPivot('interni_role')
+            $superadmin = $firma->uzivatele()->withPivot('interni_role')
                 ->wherePivot('interni_role', 'superadmin')
                 ->where('sys_users.id', $request->superadmin_id)
                 ->first();
         } else {
-            $superadmin = $firma->users()->withPivot('interni_role')
+            $superadmin = $firma->uzivatele()->withPivot('interni_role')
                 ->wherePivot('interni_role', 'superadmin')->first();
         }
 
@@ -684,7 +684,7 @@ class FirmaController extends Controller
             return response()->json(['ok' => false, 'error' => 'Nemůžete odebrat sami sebe.']);
         }
 
-        $firma->users()->detach($userId);
+        $firma->uzivatele()->detach($userId);
 
         return response()->json(['ok' => true]);
     }

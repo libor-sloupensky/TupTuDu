@@ -143,9 +143,9 @@ class KlientiController extends Controller
 
         // Check zda firma existuje v systému (= má alespoň jednoho uživatele)
         $klientFirma = Firma::find($ico);
-        if ($klientFirma && $klientFirma->users()->exists()) {
+        if ($klientFirma && $klientFirma->uzivatele()->exists()) {
             // Firma je registrována a má uživatele - najdi superadminy
-            $superadmins = $klientFirma->users()
+            $superadmins = $klientFirma->uzivatele()
                 ->wherePivot('interni_role', 'superadmin')
                 ->get()
                 ->map(fn ($u) => [
@@ -217,7 +217,7 @@ class KlientiController extends Controller
 
         // Zjisti stav firmy
         $klientFirma = Firma::find($ico);
-        $vSystemu = $klientFirma && $klientFirma->users()->exists();
+        $vSystemu = $klientFirma && $klientFirma->uzivatele()->exists();
 
         // Pokud neexistuje, vytvoř ji z ARES
         if (!$klientFirma) {
@@ -267,12 +267,12 @@ class KlientiController extends Controller
         $prijemce = null;
         if ($vSystemu) {
             if ($request->superadmin_id) {
-                $superadmin = $klientFirma->users()
+                $superadmin = $klientFirma->uzivatele()
                     ->wherePivot('interni_role', 'superadmin')
                     ->where('sys_users.id', $request->superadmin_id)
                     ->first();
             } else {
-                $superadmin = $klientFirma->users()
+                $superadmin = $klientFirma->uzivatele()
                     ->wherePivot('interni_role', 'superadmin')
                     ->first();
             }

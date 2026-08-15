@@ -173,7 +173,7 @@ class InvoiceController extends Controller
 
     public function index(Request $request)
     {
-        $firma = $this->officeAktivniFirma();
+        $firma = $this->aktivniFirma();
 
         $allowedSort = ['created_at', 'datum_vystaveni', 'datum_prijeti', 'duzp', 'datum_splatnosti'];
         $sort = in_array($request->query('sort'), $allowedSort) ? $request->query('sort') : 'created_at';
@@ -295,7 +295,7 @@ class InvoiceController extends Controller
                 'documents.*' => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
             ]);
 
-            $firma = $this->officeAktivniFirma();
+            $firma = $this->aktivniFirma();
 
             $processor = new DokladProcessor();
             $results = [];
@@ -481,7 +481,7 @@ class InvoiceController extends Controller
             'ids.*' => 'integer',
         ]);
 
-        $firma = $this->officeAktivniFirma();
+        $firma = $this->aktivniFirma();
 
         $doklady = Doklad::whereIn('id', $request->ids)
             ->where('firma_ico', $firma->ico)
@@ -530,7 +530,7 @@ class InvoiceController extends Controller
             abort(400, 'Neplatný formát měsíce. Použijte YYYY-MM.');
         }
 
-        $firma = $this->officeAktivniFirma();
+        $firma = $this->aktivniFirma();
 
         $doklady = Doklad::where('firma_ico', $firma->ico)
             ->where('cesta_souboru', 'like', "doklady/{$firma->ico}/{$mesic}/%")
@@ -565,7 +565,7 @@ class InvoiceController extends Controller
     {
         $request->validate(['q' => 'required|string|max:500']);
         $q = trim($request->input('q'));
-        $firma = $this->officeAktivniFirma();
+        $firma = $this->aktivniFirma();
 
         try {
             $parsed = $this->parseSearchWithAI($q);
@@ -613,7 +613,7 @@ class InvoiceController extends Controller
             throw new \RuntimeException('Anthropic API key not configured');
         }
 
-        $firma = $this->officeAktivniFirma();
+        $firma = $this->aktivniFirma();
         $kategorieNames = $firma->kategorie()->orderBy('poradi')->pluck('nazev')->implode(', ');
         if (empty($kategorieNames)) {
             $kategorieNames = 'Ostatní';
