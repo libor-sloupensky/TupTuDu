@@ -74,7 +74,7 @@ class FirmaController extends Controller
 
         $kategorie = $firma ? $firma->kategorie()->orderBy('poradi')->get() : collect();
 
-        $jeSuperadmin = $firma && $user->jeSuperadmin($firma->ico);
+        $jeSuperadmin = $firma && $user->officeJeSuperadmin($firma->ico);
         $uzivatele = $firma ? $firma->users()->withPivot('role', 'interni_role')->get() : collect();
         $pozvani = $firma ? Pozvani::where('firma_ico', $firma->ico)->whereNull('accepted_at')->where('expires_at', '>', now())->get() : collect();
 
@@ -550,7 +550,7 @@ class FirmaController extends Controller
         $firma = auth()->user()->officeAktivniFirma();
         $user = auth()->user();
 
-        if (!$firma || !$user->jeSuperadmin($firma->ico)) {
+        if (!$firma || !$user->officeJeSuperadmin($firma->ico)) {
             return response()->json(['ok' => false, 'error' => 'Nemáte oprávnění.'], 403);
         }
 
@@ -615,7 +615,7 @@ class FirmaController extends Controller
         $firma = auth()->user()->officeAktivniFirma();
         $user = auth()->user();
 
-        if (!$firma || !$user->jeSuperadmin($firma->ico)) {
+        if (!$firma || !$user->officeJeSuperadmin($firma->ico)) {
             return response()->json(['ok' => false, 'error' => 'Nemáte oprávnění.'], 403);
         }
 
@@ -653,7 +653,7 @@ class FirmaController extends Controller
         $firma = auth()->user()->officeAktivniFirma();
         $user = auth()->user();
 
-        if (!$firma || !$user->jeSuperadmin($firma->ico)) {
+        if (!$firma || !$user->officeJeSuperadmin($firma->ico)) {
             return response()->json(['ok' => false, 'error' => 'Nemáte oprávnění.'], 403);
         }
 
@@ -676,7 +676,7 @@ class FirmaController extends Controller
         $firma = auth()->user()->officeAktivniFirma();
         $user = auth()->user();
 
-        if (!$firma || !$user->jeSuperadmin($firma->ico)) {
+        if (!$firma || !$user->officeJeSuperadmin($firma->ico)) {
             return response()->json(['ok' => false, 'error' => 'Nemáte oprávnění.'], 403);
         }
 

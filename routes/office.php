@@ -46,6 +46,7 @@ Route::name('office.')->group(function () {
             'email' => 'doklady:process-email',   // vyzvedne doklady z e-mailové schránky
             'drive' => 'doklady:sync-drive',      // nahraje doklady na Google Drive firem
             'import' => 'doklady:import-z-office', // jednorázový přenos dat z projektu office
+            'chyby' => 'chyby:posledni --stack',   // ladění produkce, kde APP_DEBUG=false
         ];
 
         if (! isset($prikazy[$ukol])) {
