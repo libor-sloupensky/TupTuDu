@@ -75,7 +75,16 @@ class PdfPodkladService
             $vyska = (float) $m[2];
         }
 
-        return ['stran' => $stran, 'sirka_pt' => $sirka, 'vyska_pt' => $vyska];
+        // Otočení stránky. pdfinfo hlásí rozměr PŘED otočením, ale pdftocairo
+        // otočení při vykreslení použije — PNG i SVG tedy vyjdou s prohozenými
+        // stranami. Bez téhle výměny se podklad v editoru vykreslí v opačném
+        // poměru stran a kresba na něm nelícuje (týká se 4 z 10 výkresů).
+        $otoceni = preg_match('/^Page rot:\s+(-?\d+)/m', $vystup, $m) ? ((int) $m[1] % 360 + 360) % 360 : 0;
+        if ($otoceni === 90 || $otoceni === 270) {
+            [$sirka, $vyska] = [$vyska, $sirka];
+        }
+
+        return ['stran' => $stran, 'sirka_pt' => $sirka, 'vyska_pt' => $vyska, 'otoceni' => $otoceni];
     }
 
     /**

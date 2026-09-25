@@ -216,10 +216,20 @@ class KonceptV3PodkladController extends Controller
         }
 
         $absCesta = Storage::path($orig);
-        $this->pdf->png($absCesta, $otisk, $strana, $dpi);
+        $png = $this->pdf->png($absCesta, $otisk, $strana, $dpi);
         $this->pdf->svg($absCesta, $otisk, $strana);
         $text = $this->pdf->text($absCesta, $strana);
         $info = $this->pdf->info($absCesta);
+
+        // Rozměr strany se bere ze SKUTEČNĚ vykresleného obrázku, ne z pdfinfo.
+        // pdfinfo hlásí rozměr před otočením stránky a u některých výkresů
+        // i jinou velikost, než jakou poppler nakonec vykreslí — kresba pak
+        // na podkladu nelícuje a podklad má špatný poměr stran.
+        $rozmerPng = @getimagesize(Storage::path($png));
+        if ($rozmerPng && $rozmerPng[0] > 0) {
+            $info['sirka_pt'] = $rozmerPng[0] * 72 / $dpi;
+            $info['vyska_pt'] = $rozmerPng[1] * 72 / $dpi;
+        }
 
         return response()->json([
             'ok' => true,
