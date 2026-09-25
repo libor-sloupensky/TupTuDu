@@ -1017,7 +1017,13 @@
 
                     <div class="flex items-center justify-between">
                         <div class="text-xs" :class="impMeritkoPlatne() ? 'text-gray-500' : 'text-orange-700'">
-                            <template x-if="impKrok === 'meritko' && impRozmerM()">
+                            <template x-if="impKrok === 'meritko' && impRozmerM() && impMeritko()">
+                                <span>Zadaný rozměr odpovídá měřítku <strong x-text="'1:' + impMeritko().jmenovatel"></strong>.
+                                    <span x-show="!impMeritko().standard" class="text-orange-700">Není to běžné měřítko — překontrolujte zadanou vzdálenost.</span>
+                                </span>
+                            </template>
+                            {{-- Sken/printscreen: rozměr papíru neznáme, měřítko spočítat nejde --}}
+                            <template x-if="impKrok === 'meritko' && impRozmerM() && !impMeritko()">
                                 <span>Celý výkres by byl <strong x-text="impRozmerM().sirka.toFixed(1)"></strong> ×
                                       <strong x-text="impRozmerM().vyska.toFixed(1)"></strong> m ve skutečnosti.</span>
                             </template>

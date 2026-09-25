@@ -1,8 +1,8 @@
 {
-  "Klemov": {
+  "Klemov reference": {
     "top1": {
       "styl": "stěny jako vyplněné plochy",
-      "sten": 15,
+      "sten": 13,
       "stenNasel": 14,
       "stenNavic": 0,
       "chybaTl": 0.02095971647880563,
@@ -17,10 +17,10 @@
     "refSten": 15,
     "refOtvoru": 14
   },
-  "Kováčová": {
+  "Kováčová reference": {
     "top1": {
       "styl": "stěny jako vyplněné plochy",
-      "sten": 33,
+      "sten": 31,
       "stenNasel": 33,
       "stenNavic": 1,
       "chybaTl": 0.05201378894209843,
@@ -34,5 +34,23 @@
     },
     "refSten": 34,
     "refOtvoru": 31
+  },
+  "Křemelná reference": {
+    "top1": {
+      "styl": "pero 1.08 rgb(0%, 0%, 0%)",
+      "sten": 18,
+      "stenNasel": 12,
+      "stenNavic": 7,
+      "chybaTl": 0.007068128801552033,
+      "otvoru": 19,
+      "otvoruNasel": 16,
+      "otvoruNavic": 3,
+      "dveri": 4,
+      "dveriCelkem": 5,
+      "oken": 12,
+      "okenCelkem": 15
+    },
+    "refSten": 12,
+    "refOtvoru": 20
   }
 }

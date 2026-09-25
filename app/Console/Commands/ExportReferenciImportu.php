@@ -31,8 +31,10 @@ class ExportReferenciImportu extends Command
             $meta = $this->pole($koncept->metadata);
             $podklad = $meta['podklad'] ?? null;
 
-            // reference = koncept s podkladem a aspoň nějakou kresbou
-            if (!$podklad || !($podklad['otisk'] ?? null) || empty($data['steny'])) {
+            // Reference se poznají podle názvu končícího na "reference" — rozpracované
+            // koncepty by jinak měřicí tabulku zaplevelily vlastními výsledky.
+            $jeReference = (bool) preg_match('~reference\s*$~iu', (string) $koncept->nazev);
+            if (!$jeReference || !$podklad || !($podklad['otisk'] ?? null) || empty($data['steny'])) {
                 continue;
             }
 

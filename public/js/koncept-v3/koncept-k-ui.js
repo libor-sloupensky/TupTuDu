@@ -819,6 +819,10 @@ function konceptKEditor(initialData) {
                 this.$watch('nastroj', (val, old) => {
                     if (old === 'metr') this.metrEscape();
                     if (old === 'stena') { this.kreslimStenu = false; this.stenaStart = null; this.renderer.clearTemp(); }
+                    // Kreslicí nástroj → zrušit výběr, ať nad plátnem nezůstane viset
+                    // panel s vlastnostmi objektu, který se právě needituje.
+                    // Výběr a posun (ruka) selekci nechávají — tam dává smysl.
+                    if (val !== 'vyber' && val !== 'posun') this.renderer.clearSelection();
                 });
 
                 // Přebudovat 3D terrain při změně výškového profilu
@@ -2460,7 +2464,11 @@ function konceptKEditor(initialData) {
                 this.engine.pushUndo();
                 const otvor = this.engine.addOpening(wall.id, zacatek, this.otvorSirka, this.otvorTyp, { presnaSirka: true });
                 if (otvor) {
-                    this.renderer.render();
+                    // Hotový otvor rovnou vybrat a přepnout na výběr — na ploše se tím
+                    // ukážou jeho parametry k doladění. Na další otvor se nástroj
+                    // zapíná znovu (jedno kliknutí = jeden otvor).
+                    this.nastroj = 'vyber';
+                    this.renderer.setSelection([], [], [otvor.id !== undefined ? otvor.id : otvor]);
                     this.autoSave('Nový otvor');
                 }
                 return;

@@ -1,0 +1,386 @@
+{
+    "koncept": 76,
+    "nazev": "Křemelná reference",
+    "steny": [
+        {
+            "id": "W3",
+            "od": [
+                1.307941926941662,
+                -6.66752956122434
+            ],
+            "do": [
+                -0.8875,
+                -6.6625
+            ],
+            "tloustka": 0.44,
+            "typ": "obvodova"
+        },
+        {
+            "id": "W4",
+            "od": [
+                -11.229984126821893,
+                -6.66752956122434
+            ],
+            "do": [
+                -11.229984126821892,
+                6.369109104726462
+            ],
+            "tloustka": 0.44,
+            "typ": "obvodova"
+        },
+        {
+            "id": "W5",
+            "od": [
+                -4.952525785226689,
+                -6.664476826438853
+            ],
+            "do": [
+                -4.958871082073928,
+                6.369109104726461
+            ],
+            "tloustka": 0.3,
+            "typ": "nosna",
+            "od_constraint": {
+                "host": "S50",
+                "t": 0.39304153000192393
+            },
+            "do_constraint": {
+                "host": "S60",
+                "t": 0.500171481141057
+            }
+        },
+        {
+            "id": "W6",
+            "od": [
+                -11.229984126821892,
+                -0.012488291759794379
+            ],
+            "do": [
+                -5.080597371851319,
+                -0.00950621261754887
+            ],
+            "tloustka": 0.3,
+            "typ": "nosna",
+            "od_constraint": {
+                "host": "W4",
+                "t": 0.5104875144577135
+            },
+            "do_constraint": {
+                "host": "W5",
+                "t": 0.5137842092064835
+            }
+        },
+        {
+            "id": "W8",
+            "od": [
+                -4.954331553783192,
+                1.3598213741357639
+            ],
+            "do": [
+                1.3079419269416594,
+                1.3600000000000008
+            ],
+            "tloustka": 0.175,
+            "typ": "pricka",
+            "od_constraint": {
+                "host": "S49",
+                "t": 0.2165776891595606
+            },
+            "do_constraint": {
+                "host": "S54",
+                "t": 0.38423317797472534
+            }
+        },
+        {
+            "id": "W10",
+            "od": [
+                -3.290891813871159,
+                -1.253555579665698
+            ],
+            "do": [
+                -0.8448463666878683,
+                -1.272234533668106
+            ],
+            "tloustka": 0.175,
+            "typ": "pricka",
+            "od_constraint": {
+                "host": "S52",
+                "t": 0.743736351061798
+            }
+        },
+        {
+            "id": "W11",
+            "od": [
+                -0.8514652931414277,
+                -2.1086877948880476
+            ],
+            "do": [
+                1.3079419269416603,
+                -2.1087500000000006
+            ],
+            "tloustka": 0.175,
+            "typ": "pricka",
+            "od_constraint": {
+                "host": "S53",
+                "t": 0.155178491012086
+            },
+            "do_constraint": {
+                "host": "S54",
+                "t": 0.6503102005019901
+            }
+        },
+        {
+            "id": "S50",
+            "od": [
+                -0.8875,
+                -6.6625
+            ],
+            "do": [
+                -11.229984126821893,
+                -6.66752956122434
+            ],
+            "tloustka": 0.44,
+            "typ": "obvodova"
+        },
+        {
+            "id": "S52",
+            "od": [
+                -3.2737503884789207,
+                1.3598693112410336
+            ],
+            "do": [
+                -3.2967981060844496,
+                -2.1540437671982082
+            ],
+            "tloustka": 0.175,
+            "typ": "pricka",
+            "od_constraint": {
+                "host": "W8",
+                "t": 0.2683659808976828
+            }
+        },
+        {
+            "id": "S53",
+            "od": [
+                -0.8448463666878683,
+                -1.272234533668106
+            ],
+            "do": [
+                -0.8875,
+                -6.6625
+            ],
+            "tloustka": 0.14,
+            "typ": "pricka"
+        },
+        {
+            "id": "S54",
+            "od": [
+                1.307941926941658,
+                6.36910910472646
+            ],
+            "do": [
+                1.307941926941662,
+                -6.66752956122434
+            ],
+            "tloustka": 0.44,
+            "typ": "obvodova"
+        },
+        {
+            "id": "S60",
+            "od": [
+                -11.229984126821892,
+                6.369109104726462
+            ],
+            "do": [
+                1.307941926941658,
+                6.36910910472646
+            ],
+            "tloustka": 0.44,
+            "typ": "obvodova"
+        }
+    ],
+    "otvory": [
+        {
+            "id": "O46",
+            "stena": "W5",
+            "pozice": 5.147107426937373,
+            "sirka": 0.9,
+            "typ": "dvere",
+            "smer": "pravy",
+            "strana": "out"
+        },
+        {
+            "id": "O61",
+            "stena": "S60",
+            "pozice": 1.0804654666435045,
+            "sirka": 1,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O62",
+            "stena": "S60",
+            "pozice": 2.28462081432699,
+            "sirka": 1.7,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O63",
+            "stena": "S60",
+            "pozice": 4.176678275806102,
+            "sirka": 1,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O64",
+            "stena": "S60",
+            "pozice": 7.35955154419506,
+            "sirka": 1,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O65",
+            "stena": "S60",
+            "pozice": 8.547834616686892,
+            "sirka": 1.7,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O66",
+            "stena": "S60",
+            "pozice": 10.453084046595913,
+            "sirka": 1,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O67",
+            "stena": "S54",
+            "pozice": 6.125591630146697,
+            "sirka": 0.75,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O68",
+            "stena": "S54",
+            "pozice": 9.108527115460737,
+            "sirka": 0.75,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O69",
+            "stena": "W3",
+            "pozice": 1.0954476880717121,
+            "sirka": 1,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O70",
+            "stena": "S50",
+            "pozice": 0.08965407532637615,
+            "sirka": 1.7,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O71",
+            "stena": "S50",
+            "pozice": 1.9464432356693302,
+            "sirka": 1.05,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O72",
+            "stena": "S50",
+            "pozice": 8.246618617090862,
+            "sirka": 1.05,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O73",
+            "stena": "S50",
+            "pozice": 6.359384280085763,
+            "sirka": 1.7,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O74",
+            "stena": "S50",
+            "pozice": 5.138781494393815,
+            "sirka": 1.05,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O76",
+            "stena": "W4",
+            "pozice": 5.275584919275548,
+            "sirka": 0.75,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "D77",
+            "stena": "S52",
+            "pozice": 1.3525965506395867,
+            "sirka": 0.9,
+            "typ": "dvere",
+            "smer": "pravy",
+            "strana": "out"
+        },
+        {
+            "id": "D78",
+            "stena": "W5",
+            "pozice": 6.95384374569134,
+            "sirka": 0.9,
+            "typ": "dvere",
+            "smer": "levy",
+            "strana": "out"
+        },
+        {
+            "id": "D79",
+            "stena": "W8",
+            "pozice": 0.4599837123151796,
+            "sirka": 0.9,
+            "typ": "dvere",
+            "smer": "levy",
+            "strana": "out"
+        },
+        {
+            "id": "D80",
+            "stena": "S53",
+            "pozice": 1.0706224988686641,
+            "sirka": 0.9,
+            "typ": "dvere",
+            "smer": "levy",
+            "strana": "out"
+        }
+    ],
+    "podklad": {
+        "url": "http:\/\/tuptudu.localhost:8002\/masterteam\/koncept-v3\/podklad\/8ee804b68df95a75380645161a90013d5b38f8ff\/obrazek\/1\/150",
+        "vektor": "http:\/\/tuptudu.localhost:8002\/masterteam\/koncept-v3\/podklad\/8ee804b68df95a75380645161a90013d5b38f8ff\/vektor\/1",
+        "otisk": "8ee804b68df95a75380645161a90013d5b38f8ff",
+        "strana": 1,
+        "nazev": "D.1.1.b-02.pdf",
+        "metryNaPx": 0.00845174570032359,
+        "zmerenoMm": 1700,
+        "vyrez": null,
+        "sirkaM": 32.45470348924258,
+        "vyskaM": 22.96339306777919,
+        "stredX": 0,
+        "stredY": 0,
+        "uhel": 0,
+        "pruhlednost": 0.5,
+        "zobrazeni": "nad"
+    }
+}

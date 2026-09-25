@@ -402,6 +402,36 @@ window.KonceptImport = {
         return { sirka: sirkaPx * mpp, vyska: vyskaPx * mpp };
     },
 
+    /**
+     * Jakému měřítku odpovídá zadaný rozměr.
+     *
+     * Počítá se z papíru: u PDF známe rozměr stránky v bodech i DPI vykreslení,
+     * takže 1 px obrázku = 25,4/dpi mm na papíře. Měřítko je pak poměr skutečné
+     * vzdálenosti k té papírové. U rastru (sken, printscreen) fyzický rozměr
+     * papíru neznáme → vrací null a zobrazí se rozměr výkresu.
+     *
+     * @returns {null|{jmenovatel:number, standard:boolean}} standard = sedí na
+     *          běžné měřítko (do 3 %), jmenovatel je pak rovnou to běžné.
+     */
+    impMeritko() {
+        const d = this.impStranaData;
+        const px = this.impKalibVzdalenostPx();
+        const mm = parseFloat(this.impKalibMm);
+        if (!d || d.typ !== 'pdf' || !d.dpi || !px || !(mm > 0)) return null;
+
+        const papirMm = px * 25.4 / d.dpi;
+        if (!(papirMm > 0)) return null;
+        const jmenovatel = mm / papirMm;
+        if (!isFinite(jmenovatel) || jmenovatel <= 0) return null;
+
+        // Běžná stavařská měřítka; tisk A3 → A4 je zmenší o √2, proto i mezihodnoty
+        const bezna = [10, 20, 25, 50, 75, 100, 141, 200, 250, 500, 1000];
+        const nejblizsi = bezna.reduce((a, b) => Math.abs(b - jmenovatel) < Math.abs(a - jmenovatel) ? b : a);
+        const sedi = Math.abs(nejblizsi - jmenovatel) / jmenovatel <= 0.03;
+
+        return { jmenovatel: sedi ? nejblizsi : Math.round(jmenovatel), standard: sedi };
+    },
+
     impMeritkoPlatne() {
         const r = this.impRozmerM();
         return !!r && r.sirka > 1 && r.sirka < 500;
@@ -480,6 +510,25 @@ window.KonceptImport = {
             const delkaM = Math.hypot(b.x - a.x, b.y - a.y) / this.engine.PX_PER_M;
             if (delkaM < o.sirka) { this.engine.removeOpening(o.id); zahozeno++; continue; }
             o.pozice = Math.max(0, Math.min(delkaM - o.sirka, o.pozice));
+        }
+
+        // Na jednom místě zdi jen jeden otvor. Kontroluje se až TEĎ, protože
+        // posun otvorů dovnitř zkrácené stěny je může natlačit na sebe —
+        // analýza je přitom vracela oddělené.
+        const podleSten = new Map();
+        for (const o of [...this.engine.openings.values()]) {
+            if (!podleSten.has(o.wallId)) podleSten.set(o.wallId, []);
+            podleSten.get(o.wallId).push(o);
+        }
+        for (const naStene of podleSten.values()) {
+            naStene.sort((x, y) => y.sirka - x.sirka);      // širší má přednost
+            const ponechane = [];
+            for (const o of naStene) {
+                const koliduje = ponechane.some(v =>
+                    Math.min(v.pozice + v.sirka, o.pozice + o.sirka) - Math.max(v.pozice, o.pozice) > 0.02);
+                if (koliduje) { this.engine.removeOpening(o.id); zahozeno++; }
+                else ponechane.push(o);
+            }
         }
         return zahozeno;
     },
