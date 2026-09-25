@@ -443,6 +443,108 @@ class StavebniEngine {
     }
 
     /**
+     * Vodicí úsečka napojení „I" — čelo hostitelské stěny v jejím konci.
+     *
+     * Dvě souosé stěny různé tloušťky se v praxi obvykle nelícují osou, ale
+     * jednou stranou. Tenčí stěna proto nesdílí uzel, ale klouže po čele
+     * tlustší — jako dítě u T, jen vodicí čára je kolmá na konci hostitele.
+     * Úsečka je zkrácená o polovinu tloušťky napojené stěny, takže její krajní
+     * body jsou PŘESNĚ lícování s jednou a druhou stranou hostitele.
+     *
+     * @param {string} hostId  hostitelská (tlustší) stěna
+     * @param {'A'|'B'} konec  u kterého konce hostitele se napojuje
+     * @param {number} tloustkaDitete  tloušťka napojené stěny (m)
+     */
+    celoHostitele(hostId, konec, tloustkaDitete = 0) {
+        const host = this.walls.get(hostId);
+        if (!host) return null;
+        const ha = this.nodes.get(host.nodeA);
+        const hb = this.nodes.get(host.nodeB);
+        if (!ha || !hb) return null;
+        const stred = konec === 'A' ? ha : hb;
+        const dx = hb.x - ha.x, dy = hb.y - ha.y;
+        const L = Math.hypot(dx, dy);
+        if (!L) return null;
+        const kolmiceX = -dy / L, kolmiceY = dx / L;
+        const dosah = Math.max(0, ((host.tloustka || 0) - (tloustkaDitete || 0)) / 2) * this.PX_PER_M;
+        return {
+            stred: { x: stred.x, y: stred.y },
+            kolmice: { x: kolmiceX, y: kolmiceY },
+            dosah,
+            a: { x: stred.x - kolmiceX * dosah, y: stred.y - kolmiceY * dosah },
+            b: { x: stred.x + kolmiceX * dosah, y: stred.y + kolmiceY * dosah },
+        };
+    }
+
+    /**
+     * Převede napojení „I" ve sdíleném uzlu na klouzavé po čele.
+     *
+     * Dvě souosé stěny RŮZNÉ tloušťky ve společném uzlu jsou nutně vycentrované
+     * na jednu osu — tenčí pak nelícuje ani jednou stranou, což v praxi skoro
+     * nenastává. Tenčí stěna proto dostane vlastní uzel (na stejném místě) a
+     * vazbu na čelo tlustší, takže jde posunout až na líc.
+     *
+     * Poloha se nemění — jen se odemkne posun. Vrací true, když převod proběhl.
+     */
+    oddelCeloNapojeni(nodeId, toleranceDeg = 5) {
+        const node = this.nodes.get(nodeId);
+        if (!node) return false;
+        const walls = this.getNodeWalls(nodeId);
+        if (walls.length < 2) return false;
+
+        const smer = (w) => {
+            const druhyId = w.nodeA === nodeId ? w.nodeB : w.nodeA;
+            const d = this.nodes.get(druhyId);
+            if (!d) return null;
+            return Math.atan2(d.y - node.y, d.x - node.x) * 180 / Math.PI;
+        };
+        const vazbaNaUzlu = (w) => (w.nodeA === nodeId ? w.odConstraint : w.doConstraint);
+
+        // Najít souosou dvojici s RŮZNOU tloušťkou. Uzel může mít i další stěny
+        // (typicky příčku kolmo) — ty na spoji zůstanou, řeší se jen ta dvojice.
+        let host = null, dite = null;
+        for (let i = 0; i < walls.length && !host; i++) {
+            for (let j = i + 1; j < walls.length; j++) {
+                const w1 = walls[i], w2 = walls[j];
+                if (vazbaNaUzlu(w1) || vazbaNaUzlu(w2)) continue;     // už navázané
+                const t1 = w1.tloustka || 0, t2 = w2.tloustka || 0;
+                if (Math.abs(t1 - t2) < 0.001) continue;              // stejná tloušťka → obyčejné pokračování
+                const s1 = smer(w1), s2 = smer(w2);
+                if (s1 === null || s2 === null) continue;
+                // Souosé pokračování = směry ze společného uzlu míří proti sobě (180°)
+                const rozdil = Math.abs(((s1 - s2 + 540) % 360) - 180);
+                if (Math.abs(rozdil - 180) > toleranceDeg) continue;  // je to roh, ne pokračování
+                host = t1 > t2 ? w1 : w2;                             // tlustší drží uzel
+                dite = t1 > t2 ? w2 : w1;
+                break;
+            }
+        }
+        if (!host || !dite) return false;
+        const konec = host.nodeA === nodeId ? 'A' : 'B';
+
+        // Tenčí stěna dostane vlastní uzel na stejném místě
+        const novy = { id: this._id('N'), x: node.x, y: node.y };
+        this.nodes.set(novy.id, novy);
+        if (dite.nodeA === nodeId) {
+            dite.nodeA = novy.id;
+            dite.odConstraint = { host: host.id, konec };
+        } else {
+            dite.nodeB = novy.id;
+            dite.doConstraint = { host: host.id, konec };
+        }
+        return true;
+    }
+
+    /** Projde všechna napojení „I" a odemkne ta, kde se mění tloušťka. */
+    oddelVsechnaCelaNapojeni() {
+        let pocet = 0;
+        for (const id of [...this.nodes.keys()]) {
+            if (this.oddelCeloNapojeni(id)) pocet++;
+        }
+        return pocet;
+    }
+
+    /**
      * Najít všechny stěny (T-children) co mají constraint na danou stěnu.
      * Používá se při pohybu hostitele — propaguje pohyb na děti.
      */
@@ -475,14 +577,15 @@ class StavebniEngine {
         const L2 = hdx * hdx + hdy * hdy;
         if (L2 === 0) return;
         for (const w of this.walls.values()) {
-            if (w.odConstraint && w.odConstraint.host === hostWallId) {
+            // Napojení na čelo (I) nemá t — drží se konce hostitele, nepřepočítává se
+            if (w.odConstraint && w.odConstraint.host === hostWallId && !w.odConstraint.konec) {
                 const node = this.nodes.get(w.nodeA);
                 if (node) {
                     const t = ((node.x - ha.x) * hdx + (node.y - ha.y) * hdy) / L2;
                     w.odConstraint.t = Math.max(0.02, Math.min(0.98, t));
                 }
             }
-            if (w.doConstraint && w.doConstraint.host === hostWallId) {
+            if (w.doConstraint && w.doConstraint.host === hostWallId && !w.doConstraint.konec) {
                 const node = this.nodes.get(w.nodeB);
                 if (node) {
                     const t = ((node.x - ha.x) * hdx + (node.y - ha.y) * hdy) / L2;
@@ -519,9 +622,12 @@ class StavebniEngine {
             const attachedNode = this.nodes.get(attachedNodeId);
             if (!attachedNode) continue;
             let deltaX, deltaY;
+            const jeCelo = !!(ch.end === 'a' ? ch.wall.odConstraint?.konec : ch.wall.doConstraint?.konec);
             if (haveDelta) {
                 deltaX = dx;
                 deltaY = dy;
+            } else if (jeCelo) {
+                continue;   // bez delty neumíme čelo dopočítat; zůstane, kde je
             } else {
                 const newX = ha.x + ch.t * hdx;
                 const newY = ha.y + ch.t * hdy;
@@ -703,6 +809,21 @@ class StavebniEngine {
             if (!allSameHost) return { type: 'frozen' };
             const host = this.walls.get(firstHost);
             if (!host) return null;
+
+            // Napojení „I" — klouže po čele hostitele, ne po jeho ose
+            const prvni = constraints[0].constraint;
+            if (prvni.konec) {
+                const celo = this.celoHostitele(firstHost, prvni.konec, constraints[0].wall.tloustka);
+                if (!celo) return null;
+                return {
+                    type: 'slide',
+                    cela: true,
+                    host: firstHost,
+                    konec: prvni.konec,
+                    line: { a: celo.a, b: celo.b },
+                };
+            }
+
             const ha = this.nodes.get(host.nodeA);
             const hb = this.nodes.get(host.nodeB);
             if (!ha || !hb) return null;
@@ -851,7 +972,11 @@ class StavebniEngine {
 
         // Přepočítat T-children constraints
         for (const w of this.walls.values()) {
-            if (w.odConstraint && w.odConstraint.host === wallId) {
+            // Napojení na čelo: konec A zůstává původní stěně, konec B jde na novou
+            for (const c of [w.odConstraint, w.doConstraint]) {
+                if (c && c.host === wallId && c.konec === 'B') c.host = newId;
+            }
+            if (w.odConstraint && w.odConstraint.host === wallId && !w.odConstraint.konec) {
                 const origT = w.odConstraint.t;
                 if (origT < tSplit) {
                     w.odConstraint.t = origT / tSplit;
@@ -860,7 +985,7 @@ class StavebniEngine {
                     w.odConstraint.t = (origT - tSplit) / (1 - tSplit);
                 }
             }
-            if (w.doConstraint && w.doConstraint.host === wallId) {
+            if (w.doConstraint && w.doConstraint.host === wallId && !w.doConstraint.konec) {
                 const origT = w.doConstraint.t;
                 if (origT < tSplit) {
                     w.doConstraint.t = origT / tSplit;
@@ -1546,6 +1671,11 @@ class StavebniEngine {
             const vnum = parseInt(String(rv.id).replace(/\D/g, ''));
             if (vnum >= this.nextId) this.nextId = vnum + 1;
         }
+
+        // Napojení „I" se změnou tloušťky odemknout na klouzavé po čele.
+        // Poloha se nemění, jen jde nově srovnat na líc. Platí i pro stěny
+        // z importu a z AI — ty vznikají automaticky a mají stejný problém.
+        this.oddelVsechnaCelaNapojeni();
     }
 
     /**

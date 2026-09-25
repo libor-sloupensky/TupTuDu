@@ -1774,6 +1774,70 @@
     }
 
     /**
+     * Otvory odvozené z oblouku dveřního křídla.
+     *
+     * Oblouk je nejčistší stopa, jakou dveře ve výkresu nechávají: střed
+     * kružnice je pant, poloměr je světlá šířka a jeden konec oblouku leží
+     * na zdi (zavřené křídlo). Funguje i tam, kde zdivo není vyplněné a
+     * hledání mezer proto nemá o co se opřít.
+     */
+    function otvoryZOblouku(osy, usecky, mnb, nast = {}) {
+        const oblouky = najdiObloukyDveri(usecky, mnb, nast);
+        if (!oblouky.length || !osy.length) return [];
+        const dosahKeStene = (nast.dosahPantuM ?? 0.45) / mnb;
+
+        const otvory = [];
+        for (const k of oblouky) {
+            // zeď, ve které pant sedí
+            let nej = null, nejD = Infinity;
+            for (const s of osy) {
+                const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+                const L2 = dx * dx + dy * dy;
+                if (!L2) continue;
+                let t = ((k.cx - s.x1) * dx + (k.cy - s.y1) * dy) / L2;
+                t = Math.max(0, Math.min(1, t));
+                const d = Math.hypot(s.x1 + dx * t - k.cx, s.y1 + dy * t - k.cy);
+                const dovoleno = (s.tloustka / mnb) / 2 + dosahKeStene;
+                if (d < dovoleno && d < nejD) { nejD = d; nej = { s, L: Math.sqrt(L2) }; }
+            }
+            if (!nej) continue;
+
+            // Křídlo se zavírá do zdi — otvor vede od pantu SMĚREM PODÉL zdi,
+            // na tu stranu, kde oblouk končí. Střed otvoru je v polovině.
+            const s = nej.s;
+            const ux = (s.x2 - s.x1) / nej.L, uy = (s.y2 - s.y1) / nej.L;
+            const podel = (x, y) => (x - s.x1) * ux + (y - s.y1) * uy;
+            const bok = (x, y) => Math.abs((x - s.x1) * -uy + (y - s.y1) * ux);
+
+            // Skutečný konec oblouku ležící na zdi = zavřené křídlo.
+            // Dřív se odhadoval čtyřmi body na osách, což u šikmo vedeného
+            // oblouku ukázalo jinam a vyrábělo otvory na špatných místech.
+            const konce = [k.konceA, k.konceB].filter(Boolean);
+            if (konce.length < 2) continue;
+            let naZdi = null, nejBok = Infinity;
+            for (const b of konce) {
+                const vzd = bok(b.x, b.y);
+                if (vzd < nejBok) { nejBok = vzd; naZdi = b; }
+            }
+            if (!naZdi || nejBok * mnb > (s.tloustka / 2 + 0.15)) continue;
+
+            const tPantu = podel(k.cx, k.cy);
+            const tKonce = podel(naZdi.x, naZdi.y);
+            const stredT = (tPantu + tKonce) / 2;
+
+            otvory.push({
+                x: s.x1 + ux * stredT,
+                y: s.y1 + uy * stredT,
+                sirka: Math.abs(tKonce - tPantu) * mnb,
+                tloustka: s.tloustka,
+                typ: 'dvere',
+                oblouk: true,
+            });
+        }
+        return otvory;
+    }
+
+    /**
      * Doplní otvorům typ. Dveře pozná čtvrtkruh (dráha křídla) poblíž otvoru —
      * je to jediné vodítko ve výkrese a dá i stranu, na kterou se otevírají.
      * Bez oblouku se bere podle šířky: úzké jsou dveře, široké okno.
@@ -1839,7 +1903,8 @@
             if (rozsah > 180) rozsah = 360 - rozsah;
             if (rozsah < 40) continue;                        // kratší než část čtvrtkruhu
 
-            oblouky.push({ cx: kruh.cx, cy: kruh.cy, r: kruh.r, sirkaM: rM, rozsah });
+            oblouky.push({ cx: kruh.cx, cy: kruh.cy, r: kruh.r, sirkaM: rM, rozsah,
+                konceA: { x: k.x1, y: k.y1 }, konceB: { x: k.x2, y: k.y2 } });
         }
         return oblouky;
     }
@@ -1946,7 +2011,9 @@
                 styl: popis, osy, syrovych: syrove.length, usecek: skupina.length,
                 // materiálem zdi je tu syrová sada kandidátů, ne vyplněné plochy
                 otvory: urciTypyOtvoru(
-                    sloucOtvory(sbernaOtvoru.concat(otvoryZeSten(osy, syrove, usecky, mnb, nast)), mnb, nast),
+                    sloucOtvory(sbernaOtvoru
+                        .concat(otvoryZeSten(osy, syrove, usecky, mnb, nast))
+                        .concat(otvoryZOblouku(osy, usecky, mnb, nast)), mnb, nast),
                     usecky, mnb, nast),
                 ...hodnoceni,
             });
@@ -1968,7 +2035,9 @@
                     osy, syrovych: zVyplni.length, usecek: usecky.length,
                     // dva zdroje: mezery překlenuté při čištění + průchody podél hotových stěn
                     otvory: urciTypyOtvoru(
-                        sloucOtvory(sbernaOtvoru.concat(otvoryZeSten(osy, zVyplni, usecky, mnb, nast)), mnb, nast),
+                        sloucOtvory(sbernaOtvoru
+                            .concat(otvoryZeSten(osy, zVyplni, usecky, mnb, nast))
+                            .concat(otvoryZOblouku(osy, usecky, mnb, nast)), mnb, nast),
                         usecky, mnb, nast),
                     ...hodnoceni,
                     // tenhle zdroj je průkazný, ne odhad — ať se nabídne první
@@ -2178,7 +2247,7 @@
         vycistiOsy, narovnej, odstranHrebeny,
         vPolygonu, orezObrysem, obvodoveSteny,
         shlukyTlousteks, vyberPodleRozdeleni, postavRastr, plochyVRastru,
-        stenyZVyplni, urciTypyOtvoru, otvoryZeSten, sloucOtvory, najdiObloukyDveri, odstranPrekryvy, spojPresOtvory, sloucVrstvy, srovnejTloustky, prekryvaSadu, odstranPohlcene, prichytLice, podobneVarianty, sloucKolinearni, spojRohy, nejvetsiSit,
+        stenyZVyplni, urciTypyOtvoru, otvoryZeSten, otvoryZOblouku, sloucOtvory, najdiObloukyDveri, odstranPrekryvy, spojPresOtvory, sloucVrstvy, srovnejTloustky, prekryvaSadu, odstranPohlcene, prichytLice, podobneVarianty, sloucKolinearni, spojRohy, nejvetsiSit,
     };
 
     if (typeof module !== 'undefined' && module.exports) module.exports = api;

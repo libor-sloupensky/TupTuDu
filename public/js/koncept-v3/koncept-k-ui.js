@@ -1167,6 +1167,34 @@ function konceptKEditor(initialData) {
                     if (c && c.type === 'frozen') {
                         return; // ignoruj drag
                     }
+                    // Napojení „I" — uzel jezdí po čele hostitele mezi lícováním
+                    // s jednou a druhou stranou. Magnet cvaká na líc / osu / líc.
+                    if (c && c.type === 'slide' && c.cela) {
+                        const bod = this._posunPoCele(c, pos);
+                        const uzel = this.engine.nodes.get(this.draggingNodeId);
+                        if (uzel && bod) {
+                            // Bez snapToGrid — mřížka by lícování rozhodila
+                            const dx = bod.x - uzel.x, dy = bod.y - uzel.y;
+                            uzel.x = bod.x;
+                            uzel.y = bod.y;
+                            // Volný druhý konec vzít s sebou, ať se stěna posune celá
+                            // a nenaklonila se. Navázaný nebo sdílený konec zůstává.
+                            const moje = this.engine.getNodeWalls(this.draggingNodeId)[0];
+                            if (moje) {
+                                const druhyId = moje.nodeA === this.draggingNodeId ? moje.nodeB : moje.nodeA;
+                                const druhy = this.engine.nodes.get(druhyId);
+                                const vazbaDruhy = moje.nodeA === druhyId ? moje.odConstraint : moje.doConstraint;
+                                if (druhy && !vazbaDruhy && this.engine.getNodeWalls(druhyId).length === 1) {
+                                    druhy.x += dx;
+                                    druhy.y += dy;
+                                }
+                            }
+                        }
+                        this._snapPreview = null;
+                        this.renderer.render();
+                        return;
+                    }
+
                     if (c && c.type === 'slide') {
                         // RULE #1 slide + #2 perp preservation + #3 edge/middle + #4 right-angle
                         const hax = this._dragHostAxis(c.host);
@@ -2120,9 +2148,10 @@ function konceptKEditor(initialData) {
                 // ihned vybrat stěny uzlu, aby se hned při uchopení zobrazily úhly
                 // (ne až po překročení 3 px threshold).
                 if (hit.type === 'node') {
-                    this._pendingDrag = { type: 'node', id: hit.id, startPos: { x: pos.x, y: pos.y } };
-                    const _nw = this.engine.getNodeWalls(hit.id);
-                    this.renderer.setSelection(_nw.map(w => w.id), [hit.id]);
+                    const uzelId = this._uzelProTazeni(hit.id);
+                    this._pendingDrag = { type: 'node', id: uzelId, startPos: { x: pos.x, y: pos.y } };
+                    const _nw = this.engine.getNodeWalls(uzelId);
+                    this.renderer.setSelection(_nw.map(w => w.id), [uzelId]);
                     return;
                 }
 
@@ -2287,6 +2316,33 @@ function konceptKEditor(initialData) {
                             }
                         }
                     }
+                    // 0) Napojení „I" na konec souosé stěny jiné tloušťky —
+                    //    má přednost před sloučením uzlů, protože sloučení by
+                    //    tenčí stěnu natvrdo posadilo na osu tlustší.
+                    if (this._napojNaCelo(this.draggingNodeId)) {
+                        this.isDraggingNode = false;
+                        this.draggingNodeId = null;
+                        this._snapPreview = null;
+                        this._rightAngleNodeId = null;
+                        this._attachMode = null;
+                        this._attachSlideInfo = null;
+                        if (this._attachOverlayGroup) { this._attachOverlayGroup.destroy(); this._attachOverlayGroup = null; }
+                        if (this.nastroj === 'stena' && this.kreslimStenu) {
+                            const konecUzel = this.engine.nodes.get(node.id);
+                            this.stenaStart = konecUzel ? { x: konecUzel.x, y: konecUzel.y } : this.stenaStart;
+                            this._stenaUsekId = null;
+                            this._stenaPreskocKlik = true;
+                            this.renderer.clearSelection();
+                        }
+                        this.renderer.render();
+                        this.autoSave('Napojení na čelo stěny');
+                        return;
+                    }
+
+                    // Po puštění stěny odemknout případná nová napojení „I"
+                    // (sloučený uzel dvou souosých stěn různé tloušťky).
+                    this._odemkniCelaPoUprave = true;
+
                     // 1) Merge s blízkým nodem (přednost před T-snap)
                     let merged = false;
                     for (const other of this.engine.nodes.values()) {
@@ -2351,6 +2407,11 @@ function konceptKEditor(initialData) {
                     this._stenaUsekId = null;
                     this._stenaPreskocKlik = true;   // klik, který úsek dokončil, už bod nepřidává
                     this.renderer.clearSelection();
+                }
+
+                if (this._odemkniCelaPoUprave) {
+                    this._odemkniCelaPoUprave = false;
+                    this.engine.oddelVsechnaCelaNapojeni();
                 }
 
                 this.renderer.render();
@@ -2651,6 +2712,117 @@ function konceptKEditor(initialData) {
         vychoziTloustka(typ) {
             const def = window.TYPY_STEN?.[typ]?.['tloušťka'];
             return def?.default ?? this.tloustkaSteny;
+        },
+
+        /**
+         * Po odemknutí napojení „I" leží uzel tenčí stěny přesně na uzlu tlustší.
+         * Kliknutí by chytlo ten pevný (nejde s ním hnout), takže dáme přednost
+         * uzlu, který je posuvný po čele — jinak by se posun nedal vůbec uchopit.
+         */
+        _uzelProTazeni(nodeId) {
+            const n = this.engine.nodes.get(nodeId);
+            if (!n) return nodeId;
+            const soucasny = this.engine.getNodeMovementConstraint(nodeId);
+            if (soucasny && soucasny.type === 'slide') return nodeId;
+            for (const jiny of this.engine.nodes.values()) {
+                if (jiny.id === nodeId) continue;
+                if (Math.hypot(jiny.x - n.x, jiny.y - n.y) > 1) continue;
+                const c = this.engine.getNodeMovementConstraint(jiny.id);
+                if (c && c.type === 'slide' && c.cela) return jiny.id;
+            }
+            return nodeId;
+        },
+
+        /** Do kolika stupňů se dvě stěny berou jako souosé (napojení „I"). */
+        CELO_TOLERANCE_DEG: 5,
+
+        /**
+         * Zkusí napojit puštěný konec stěny na KONEC jiné, souosé stěny jiné
+         * tloušťky (napojení „I"). Místo sloučení uzlů vznikne klouzavá vazba
+         * po čele tlustší stěny — tenčí pak jde srovnat na líc, ne jen na osu.
+         *
+         * Výchozí poloha se vybere podle toho, kam uživatel konec pustil:
+         * přichytí se na nejbližší z poloh líc / osa / líc. Tím automatické
+         * napojení odpovídá tomu, jak stěny leží ve skutečnosti.
+         *
+         * @returns {boolean} true = napojeno (volající už uzly neslučuje)
+         */
+        _napojNaCelo(nodeId) {
+            const uzel = this.engine.nodes.get(nodeId);
+            if (!uzel) return false;
+            const mojeSteny = this.engine.getNodeWalls(nodeId);
+            if (mojeSteny.length !== 1) return false;      // jen volný konec
+            const moje = mojeSteny[0];
+            const jeKonecA = moje.nodeA === nodeId;
+            if (jeKonecA ? moje.odConstraint : moje.doConstraint) return false;  // už je navázaná
+
+            const druhyMujId = jeKonecA ? moje.nodeB : moje.nodeA;
+            const druhyMuj = this.engine.nodes.get(druhyMujId);
+            if (!druhyMuj) return false;
+            const mujSmer = Math.atan2(uzel.y - druhyMuj.y, uzel.x - druhyMuj.x) * 180 / Math.PI;
+
+            let nej = null;
+            for (const host of this.engine.walls.values()) {
+                if (host.id === moje.id) continue;
+                if (Math.abs((host.tloustka || 0) - (moje.tloustka || 0)) < 0.001) continue;  // stejná tloušťka → stačí roh
+                if ((host.tloustka || 0) <= (moje.tloustka || 0)) continue;                   // hostitel musí být tlustší
+                for (const konec of ['A', 'B']) {
+                    const konecUzel = this.engine.nodes.get(konec === 'A' ? host.nodeA : host.nodeB);
+                    if (!konecUzel || konecUzel.id === nodeId) continue;
+                    const vzdalenost = Math.hypot(uzel.x - konecUzel.x, uzel.y - konecUzel.y);
+                    if (vzdalenost > this.engine.MAGNET_DIST * 1.5) continue;
+
+                    // Souosost: hostitel míří od svého konce opačným směrem než moje stěna
+                    const protiUzel = this.engine.nodes.get(konec === 'A' ? host.nodeB : host.nodeA);
+                    if (!protiUzel) continue;
+                    const hostSmer = Math.atan2(protiUzel.y - konecUzel.y, protiUzel.x - konecUzel.x) * 180 / Math.PI;
+                    // Souosé pokračování = směry míří proti sobě (180°)
+                    const rozdil = Math.abs(((mujSmer - hostSmer + 540) % 360) - 180);
+                    if (Math.abs(rozdil - 180) > this.CELO_TOLERANCE_DEG) continue;
+
+                    if (!nej || vzdalenost < nej.vzdalenost) nej = { host, konec, vzdalenost };
+                }
+            }
+            if (!nej) return false;
+
+            const celo = this.engine.celoHostitele(nej.host.id, nej.konec, moje.tloustka);
+            if (!celo) return false;
+
+            // Poloha podle puštění: líc / osa / líc, podle toho, co je nejblíž
+            const odchylka = (uzel.x - celo.stred.x) * celo.kolmice.x + (uzel.y - celo.stred.y) * celo.kolmice.y;
+            const volby = [-celo.dosah, 0, celo.dosah];
+            const vybrana = volby.reduce((a, b) => Math.abs(b - odchylka) < Math.abs(a - odchylka) ? b : a);
+            uzel.x = celo.stred.x + celo.kolmice.x * vybrana;
+            uzel.y = celo.stred.y + celo.kolmice.y * vybrana;
+
+            const vazba = { host: nej.host.id, konec: nej.konec };
+            if (jeKonecA) moje.odConstraint = vazba; else moje.doConstraint = vazba;
+            return true;
+        },
+
+        /**
+         * Poloha uzlu na čele hostitele (napojení „I").
+         *
+         * Promítne kurzor na vodicí úsečku čela, ořízne na její konce (dál než
+         * líc to nejde) a přichytí na tři polohy: líc / osa / líc.
+         */
+        _posunPoCele(c, pos) {
+            const a = c.line.a, b = c.line.b;
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const L2 = dx * dx + dy * dy;
+            const stred = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+            if (L2 === 0) return stred;   // stejné tloušťky → není kam uhnout
+
+            let t = ((pos.x - a.x) * dx + (pos.y - a.y) * dy) / L2;
+            t = Math.max(0, Math.min(1, t));
+
+            // Magnet na líc (0 a 1) a osu (0,5) — v pixelech obrazovky
+            const scale = this.stage ? this.stage.scaleX() : 1;
+            const tolT = (10 / scale) / Math.sqrt(L2);
+            for (const cil of [0, 0.5, 1]) {
+                if (Math.abs(t - cil) < tolT) { t = cil; break; }
+            }
+            return { x: a.x + t * dx, y: a.y + t * dy };
         },
 
         /** Úhly, na které se stěna při tažení uzlu přichytává (vůči ose i sousední stěně). */
