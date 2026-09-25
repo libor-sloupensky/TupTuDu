@@ -58,6 +58,7 @@
         const telo = konecDefs > 0 ? svgText.slice(konecDefs) : svgText;
 
         const usecky = [];
+        const krivky = [];          // Bézierovy křivky zvlášť — viz zpracování 'C'
         let citacObrysu = 0;
         const zasobnik = [{ m: [1, 0, 0, 1, 0, 0], sw: 0, fill: 'none', stroke: 'none' }];
         const re = /<g\b([^>]*)>|<\/g>|<path\b([^>]*?)\/>/g;
@@ -139,14 +140,36 @@
                     for (const v of c) naBod(cx, absolutne ? v : cy + v, true);
                 } else if (K === 'Z') {
                     if (mame) naBod(zx, zy, true);
+                } else if (K === 'C' && c.length >= 6) {
+                    // Kubická křivka. NEZPLOŠŤUJE se do úseček — jen oblouků
+                    // dveří je na výkrese přes 25 000 a vstup by se nafoukl
+                    // dvacetinásobně. Ukládá se stranou, s řídicími body,
+                    // takže se z ní dá poznat oblouk (dveřní křídlo).
+                    for (let i = 0; i + 5 < c.length; i += 6) {
+                        const b = [];
+                        for (let k = 0; k < 6; k += 2) {
+                            b.push(absolutne ? c[i + k] : cx + c[i + k],
+                                   absolutne ? c[i + k + 1] : cy + c[i + k + 1]);
+                        }
+                        const [r1x, r1y] = aplikujMatici(stav.m, b[0], b[1]);
+                        const [r2x, r2y] = aplikujMatici(stav.m, b[2], b[3]);
+                        const [kx, ky] = aplikujMatici(stav.m, b[4], b[5]);
+                        const [zx0, zy0] = aplikujMatici(stav.m, cx, cy);
+                        krivky.push({
+                            x1: zx0, y1: zy0, r1x, r1y, r2x, r2y, x2: kx, y2: ky, ...spolecne,
+                        });
+                        pX = kx; pY = ky; cx = b[4]; cy = b[5]; mame = true;
+                    }
                 } else if (c.length >= 2) {
-                    // křivky: zatím jen přesun na koncový bod (oblouky dveří řeší F4)
+                    // ostatní typy křivek (v poppleru se nevyskytují) — jen přesun
                     naBod(absolutne ? c[c.length - 2] : cx + c[c.length - 2],
                         absolutne ? c[c.length - 1] : cy + c[c.length - 1], false);
                 }
             }
         }
 
+        // křivky se vezou s úsečkami, ať se nemusí měnit všichni volající
+        usecky.krivky = krivky;
         return usecky;
     }
 
@@ -1705,81 +1728,63 @@
         const obloukyDveri = najdiObloukyDveri(usecky, mnb, nast);
 
         return otvory.map(o => {
-            // oblouk, jehož střed (pant) leží u okraje otvoru
-            const oblouk = obloukyDveri.find(k =>
-                Math.hypot(k.cx - o.x, k.cy - o.y) * mnb < o.sirka * 1.2 + 0.3);
+            // Oblouk patří k otvoru, jen když sedí OBOJÍ: pant leží u jeho okraje
+            // a poloměr oblouku odpovídá šířce otvoru (křídlo je tak široké jako
+            // otvor). Samotná blízkost nestačí — široké okno si jinak přivlastní
+            // oblouk dveří o dva metry vedle.
+            const oblouk = obloukyDveri.find(k => {
+                const kPantu = Math.hypot(k.cx - o.x, k.cy - o.y) * mnb;
+                if (kPantu > o.sirka * 0.75 + 0.15) return false;
+                return Math.abs(k.sirkaM - o.sirka) <= Math.max(0.25, o.sirka * 0.3);
+            });
             const typ = oblouk ? 'dvere' : (o.sirka <= (nast.mezDveriM ?? 1.1) ? 'dvere' : 'okno');
             return { x: o.x, y: o.y, sirka: o.sirka, tloustka: o.tloustka, typ, oblouk: !!oblouk };
         });
     }
 
     /**
-     * Čtvrtkruhy dráhy dveřního křídla — jediné vodítko pro dveře i pro směr
+     * Čtvrtkruhy dráhy dveřního křídla — jediné vodítko pro dveře a pro směr
      * otvírání (střed kružnice = pant).
      *
-     * Poppler oblouk rozseká na samostatné úsečky a nenechá je v jedné dráze
-     * (`obrys` nese jen výplně), takže se skládají po koncích. Hledání souseda
-     * jde přes mřížku, jinak by to na 13 000 úsečkách trvalo věčnost.
+     * Oblouk je v PDF Bézierova křivka, ne řada úseček. Dřívější tři pokusy
+     * skládat ho z úseček byly slepá ulička: křivky jsme si v parseru sami
+     * zahazovali, takže se hledal signál, který v datech nebyl.
      */
     function najdiObloukyDveri(usecky, mnb, nast = {}) {
         const minR = nast.minPolomerDveri ?? 0.5;
         const maxR = nast.maxPolomerDveri ?? 1.4;
-        const spoj = (nast.tolSpojeniM ?? 0.01) / mnb;       // konce se smí minout o 1 cm
-        const bunka = Math.max(spoj, 1e-6);
+        const krivky = usecky.krivky || [];
+        if (!krivky.length) return [];
 
-        const tahy = usecky.filter(u => !u.vyplnene
-            && Math.hypot(u.x2 - u.x1, u.y2 - u.y1) * mnb < 0.25);   // oblouk = krátké segmenty
-
-        // mřížka počátků, ať se soused najde bez procházení všeho
-        const klic = (x, y) => Math.floor(x / bunka) + ':' + Math.floor(y / bunka);
-        const mrizka = new Map();
-        tahy.forEach((u, i) => {
-            const k = klic(u.x1, u.y1);
-            if (!mrizka.has(k)) mrizka.set(k, []);
-            mrizka.get(k).push(i);
-        });
-        const sousedi = (x, y) => {
-            const out = [];
-            const cx = Math.floor(x / bunka), cy = Math.floor(y / bunka);
-            for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
-                const p = mrizka.get((cx + dx) + ':' + (cy + dy));
-                if (p) out.push(...p);
-            }
-            return out;
-        };
-
-        const pouzite = new Set();
         const oblouky = [];
-        for (let i = 0; i < tahy.length; i++) {
-            if (pouzite.has(i)) continue;
-            pouzite.add(i);
-            const retez = [tahy[i]];
-            let konec = { x: tahy[i].x2, y: tahy[i].y2 };
-            for (let krok = 0; krok < 200; krok++) {
-                const j = sousedi(konec.x, konec.y).find(k => !pouzite.has(k)
-                    && Math.hypot(tahy[k].x1 - konec.x, tahy[k].y1 - konec.y) < spoj);
-                if (j === undefined) break;
-                pouzite.add(j);
-                retez.push(tahy[j]);
-                konec = { x: tahy[j].x2, y: tahy[j].y2 };
+        for (const k of krivky) {
+            // tětiva zhruba odpovídá šířce dveří — hrubé síto před proložením
+            const tetiva = Math.hypot(k.x2 - k.x1, k.y2 - k.y1) * mnb;
+            if (tetiva < minR * 0.5 || tetiva > maxR * 2) continue;
+
+            // body na křivce (de Casteljau v uzavřeném tvaru)
+            const body = [];
+            for (let i = 0; i <= 8; i++) {
+                const t = i / 8, u = 1 - t;
+                const w0 = u * u * u, w1 = 3 * u * u * t, w2 = 3 * u * t * t, w3 = t * t * t;
+                body.push({
+                    x: w0 * k.x1 + w1 * k.r1x + w2 * k.r2x + w3 * k.x2,
+                    y: w0 * k.y1 + w1 * k.r1y + w2 * k.r2y + w3 * k.y2,
+                });
             }
-            if (retez.length < 5) continue;
 
-            const body = retez.map(u => ({ x: u.x1, y: u.y1 }));
-            body.push({ x: retez[retez.length - 1].x2, y: retez[retez.length - 1].y2 });
-
-            const k = prolozKruznici(body);
-            if (!k) continue;
-            const rM = k.r * mnb;
+            const kruh = prolozKruznici(body);
+            if (!kruh) continue;
+            const rM = kruh.r * mnb;
             if (rM < minR || rM > maxR) continue;
-            if (k.odchylka * mnb > 0.03) continue;           // musí opravdu ležet na kružnici
+            if (kruh.odchylka * mnb > 0.02) continue;        // musí ležet na kružnici
 
-            const uhly = body.map(b => Math.atan2(b.y - k.cy, b.x - k.cx));
+            const uhly = body.map(b => Math.atan2(b.y - kruh.cy, b.x - kruh.cx));
             let rozsah = (Math.max(...uhly) - Math.min(...uhly)) * 180 / Math.PI;
             if (rozsah > 180) rozsah = 360 - rozsah;
-            if (rozsah < 45 || rozsah > 135) continue;       // čtvrtkruh (s rezervou)
+            if (rozsah < 40) continue;                        // kratší než část čtvrtkruhu
 
-            oblouky.push({ cx: k.cx, cy: k.cy, r: k.r, sirkaM: rM });
+            oblouky.push({ cx: kruh.cx, cy: kruh.cy, r: kruh.r, sirkaM: rM, rozsah });
         }
         return oblouky;
     }
@@ -1815,12 +1820,23 @@
     function navrhniVarianty(svgText, nast = {}) {
         let usecky = extrahujUsecky(svgText);
 
+        /**
+         * Křivky se vezou jako vlastnost pole úseček, takže je každé `filter()`
+         * utrhne. Tahle pomůcka je přenese (a stejně ořízne) do nového pole —
+         * bez ní se oblouky dveří ztratily hned na výřezu a obrysu.
+         */
+        const sKrivkami = (nove, puvodni, uvnitr) => {
+            const k = puvodni.krivky || [];
+            nove.krivky = uvnitr ? k.filter(c => uvnitr((c.x1 + c.x2) / 2, (c.y1 + c.y2) / 2)) : k;
+            return nove;
+        };
+
         // Výřez (v bodech PDF) — vyhodí legendy, tabulky a razítko, takže
         // rozpoznávání pracuje jen nad samotným půdorysem.
         if (nast.vyrez) {
             const v = nast.vyrez;
             const uvnitr = (x, y) => x >= v.x && y >= v.y && x <= v.x + v.sirka && y <= v.y + v.vyska;
-            usecky = usecky.filter(u => uvnitr(u.x1, u.y1) && uvnitr(u.x2, u.y2));
+            usecky = sKrivkami(usecky.filter(u => uvnitr(u.x1, u.y1) && uvnitr(u.x2, u.y2)), usecky, uvnitr);
         }
 
         const mnb = nast.metryNaBod || 0.03528;
@@ -1831,7 +1847,10 @@
         let obvod = [];
         if (nast.obrys && nast.obrys.length >= 3) {
             obvod = obvodoveSteny(nast.obrys, usecky, nast);
-            usecky = orezObrysem(usecky, nast.obrys, (nast.tolerancObrysuM ?? 0.1) / mnb);
+            const tolObrysu = (nast.tolerancObrysuM ?? 0.1) / mnb;
+            usecky = sKrivkami(
+                orezObrysem(usecky, nast.obrys, tolObrysu), usecky,
+                (x, y) => vPolygonu(x, y, nast.obrys));
         }
 
         const skupiny = seskupPodleStylu(usecky);
