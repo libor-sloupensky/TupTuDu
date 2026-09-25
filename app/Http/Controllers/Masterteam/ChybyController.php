@@ -12,7 +12,7 @@ class ChybyController extends Controller
     public function index(Request $request)
     {
         $filtr = $request->input('stav', 'aktivni'); // aktivni / opravene / vse
-        $typ = $request->input('typ', 'vse'); // server / client / cron / vse
+        $typ = $request->input('typ', 'vse'); // server / client / cron / pomaly / vse
 
         $q = Chyba::query()->with('uzivatel:id,jmeno,prijmeni,email');
 
@@ -21,15 +21,19 @@ class ChybyController extends Controller
         if ($typ === 'server') $q->where('typ', 'server');
         if ($typ === 'client') $q->where('typ', 'client');
         if ($typ === 'cron') $q->where('typ', 'cron');
+        if ($typ === 'pomaly') $q->where('typ', 'pomaly_request');
+        // Pomalé stránky jsou varování s vlastní záložkou — nemíchat je mezi chyby
+        if ($typ === 'vse') $q->where('typ', '!=', 'pomaly_request');
 
         $chyby = $q->orderByDesc('naposledy_v')->paginate(50);
 
         $pocty = [
-            'aktivni' => Chyba::where('opraveno', false)->count(),
+            'aktivni' => Chyba::where('opraveno', false)->where('typ', '!=', 'pomaly_request')->count(),
             'opravene' => Chyba::where('opraveno', true)->count(),
             'server' => Chyba::where('opraveno', false)->where('typ', 'server')->count(),
             'client' => Chyba::where('opraveno', false)->where('typ', 'client')->count(),
             'cron' => Chyba::where('opraveno', false)->where('typ', 'cron')->count(),
+            'pomaly' => Chyba::where('opraveno', false)->where('typ', 'pomaly_request')->count(),
         ];
 
         return view('masterteam.chyby.index', compact('chyby', 'pocty', 'filtr', 'typ'));

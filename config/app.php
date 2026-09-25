@@ -127,6 +127,10 @@ return [
 
     'cron_token' => env('CRON_TOKEN'),
 
+    // Práh (ms), nad kterým se GET request zaloguje jako pomalý do `chyby`.
+    // Viz App\Http\Middleware\MeriPomaleRequesty.
+    'pomaly_request_ms' => (int) env('POMALY_REQUEST_MS', 3000),
+
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),

@@ -239,12 +239,14 @@ async function startScan() {
         const msg = (err && err.message) ? err.message : String(err);
         if (!msg || !msg.toLowerCase().includes('cancel')) {
             addResult({ status: 'error', name: 'Chyba skeneru', message: msg });
+            window.zalogujChybu?.(err, 'Mobil: skenování dokladu');
         }
     }
 }
 
 async function nahratNaPozadi(blob, fileName) {
     const polozka = pridatPolozku(fileName);
+    let stavHttp = null;
 
     try {
         const formData = new FormData();
@@ -257,6 +259,7 @@ async function nahratNaPozadi(blob, fileName) {
             body: formData,
         });
 
+        stavHttp = upResp.status;
         if (upResp.status === 401 || upResp.status === 419) {
             window.location.href = '{{ route("office.mobile.prihlaseni") }}';
             return;
@@ -276,6 +279,7 @@ async function nahratNaPozadi(blob, fileName) {
     } catch (err) {
         const msg = (err && err.message) ? err.message : String(err);
         polozka.dokoncit({ status: 'error', message: 'Nahrání selhalo: ' + msg });
+        window.zalogujChybu?.(err, 'Mobil: nahrání skenu', { soubor: fileName, velikostKB: Math.round(blob.size / 1024), status: stavHttp });
     }
 }
 </script>

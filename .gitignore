@@ -25,3 +25,6 @@ Thumbs.db
 # Capacitor — generovaný Android projekt (build APK probíhá lokálně)
 /android
 /ios
+
+# Výstupy testů importu (snímky obrazovky, náhledy) — nejsou zdrojový kód
+services/import-test/vystup/

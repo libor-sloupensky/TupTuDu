@@ -10,6 +10,17 @@
 
     {{-- Tailwind utility třídy za běhu (bez build kroku) + Alpine. Brand styl viz /css/app.css. --}}
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Brand barva pro třídy bg-primary / text-primary / border-primary (i s průhledností
+        // bg-primary/20) — bez toho je Tailwind nezná a např. aktivní záložka je bílá na bílé.
+        // Hodnoty jen z CSS proměnných v /css/app.css, žádný hex.
+        const ttBarva = (promenna) => `color-mix(in srgb, var(${promenna}) calc(<alpha-value> * 100%), transparent)`;
+        tailwind.config = {
+            theme: { extend: { colors: {
+                primary: { DEFAULT: ttBarva('--c-primary'), dark: ttBarva('--c-primary-text') },
+            } } },
+        };
+    </script>
     <link rel="stylesheet" href="/css/app.css?v={{ filemtime(public_path('css/app.css')) }}">
     <style>[x-cloak]{ display: none !important; }</style>
 </head>

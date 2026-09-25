@@ -5,6 +5,8 @@ use App\Http\Controllers\ChybaController;
 use App\Http\Controllers\Masterteam\ChybyController;
 use App\Http\Controllers\Masterteam\KonceptController;
 use App\Http\Controllers\Masterteam\KonceptTestovaniController;
+use App\Http\Controllers\Masterteam\KonceptV3Controller;
+use App\Http\Controllers\Masterteam\KonceptV3PodkladController;
 use App\Http\Controllers\Masterteam\PravidlaObjektuController;
 use App\Http\Controllers\Masterteam\UzivateleController;
 use Illuminate\Support\Facades\Route;
@@ -54,6 +56,35 @@ Route::middleware(['auth', 'master'])->prefix('masterteam')->name('masterteam.')
     Route::post('koncept/{koncept:id}/ai-uprav', [KonceptController::class, 'aiUprav'])->name('koncept.aiUprav');
     Route::get('koncept/{koncept:id}/export', [KonceptController::class, 'exportJson'])->name('koncept.export');
     Route::patch('koncept/{koncept:id}/katastr', [KonceptController::class, 'ulozitKatastr'])->name('koncept.katastr.ulozit');
+
+    // ───────── Koncept V3 (nová verze editoru — samostatná kopie, vlastní tabulka koncepty_v3) ─────────
+    Route::get('koncept-v3', [KonceptV3Controller::class, 'indexK'])->name('koncept-v3');
+    Route::post('koncept-v3/vytvorit', [KonceptV3Controller::class, 'vytvorit'])->name('koncept-v3.vytvorit');
+    Route::post('koncept-v3/import-pudorys', [KonceptV3Controller::class, 'importZPudorysu'])->name('koncept-v3.import-pudorys');
+    Route::post('koncept-v3/ai-vytvor', [KonceptV3Controller::class, 'aiVytvor'])->name('koncept-v3.aiVytvor');
+    Route::post('koncept-v3/import', [KonceptV3Controller::class, 'importDxf'])->name('koncept-v3.import');
+    // Katastr — statické routy PŘED parametrickými (jinak {koncept:id} matchne "katastr")
+    Route::post('koncept-v3/katastr/parcela', [KonceptV3Controller::class, 'nactiParcelu'])->name('koncept-v3.katastr.parcela');
+    Route::post('koncept-v3/katastr/stavby', [KonceptV3Controller::class, 'nactiStavby'])->name('koncept-v3.katastr.stavby');
+    Route::post('koncept-v3/katastr/vyskovy-profil', [KonceptV3Controller::class, 'nactiVyskovy'])->name('koncept-v3.katastr.vyskovy');
+    Route::post('koncept-v3/katastr/sousednost', [KonceptV3Controller::class, 'overSousednost'])->name('koncept-v3.katastr.sousednost');
+    Route::post('koncept-v3/katastr/okolni', [KonceptV3Controller::class, 'nactiOkolniParcely'])->name('koncept-v3.katastr.okolni');
+    Route::post('koncept-v3/vysvetleni', [KonceptV3Controller::class, 'vysvetleniPojmu'])->name('koncept-v3.vysvetleni');
+    // Parametrické routy — {koncept:id} na konci (model KonceptV3 přes type-hint v controlleru)
+    Route::patch('koncept-v3/{koncept:id}/ulozit', [KonceptV3Controller::class, 'ulozit'])->name('koncept-v3.ulozit');
+    Route::delete('koncept-v3/{koncept:id}', [KonceptV3Controller::class, 'smazat'])->name('koncept-v3.smazat');
+    Route::post('koncept-v3/{koncept:id}/ai-uprav', [KonceptV3Controller::class, 'aiUprav'])->name('koncept-v3.aiUprav');
+    Route::get('koncept-v3/{koncept:id}/export', [KonceptV3Controller::class, 'exportJson'])->name('koncept-v3.export');
+    Route::patch('koncept-v3/{koncept:id}/katastr', [KonceptV3Controller::class, 'ulozitKatastr'])->name('koncept-v3.katastr.ulozit');
+
+    // Podklad pro import půdorysu (PDF/obrázek → obrázek + vektory pro analýzu v prohlížeči)
+    Route::get('koncept-v3/podklad/seznam', [KonceptV3PodkladController::class, 'seznam'])->name('koncept-v3.podklad.seznam');
+    Route::post('koncept-v3/podklad/nahrat', [KonceptV3PodkladController::class, 'nahrat'])->name('koncept-v3.podklad.nahrat');
+    Route::post('koncept-v3/podklad/{otisk}/strana', [KonceptV3PodkladController::class, 'strana'])->name('koncept-v3.podklad.strana');
+    Route::post('koncept-v3/podklad/{otisk}/nastaveni', [KonceptV3PodkladController::class, 'nastaveni'])->name('koncept-v3.podklad.nastaveni');
+    Route::get('koncept-v3/podklad/{otisk}/nahled/{strana}', [KonceptV3PodkladController::class, 'nahled'])->name('koncept-v3.podklad.nahled');
+    Route::get('koncept-v3/podklad/{otisk}/obrazek/{strana}/{dpi}', [KonceptV3PodkladController::class, 'obrazek'])->name('koncept-v3.podklad.obrazek');
+    Route::get('koncept-v3/podklad/{otisk}/vektor/{strana}', [KonceptV3PodkladController::class, 'vektor'])->name('koncept-v3.podklad.vektor');
 
     // ───────── Koncept testování (porovnání modelů, ASCII) ─────────
     Route::get('koncept-testovani', [KonceptTestovaniController::class, 'index'])->name('koncept-testovani');

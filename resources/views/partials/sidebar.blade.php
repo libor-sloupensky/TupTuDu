@@ -22,7 +22,8 @@
                     </svg>
                 </button>
                 <div id="tt-body-koncepty" class="tt-subsection-body" data-vychozi-otevreno="{{ $konceptyAktivni ? '1' : '0' }}">
-                    <a href="/masterteam/koncept" class="{{ request()->is('masterteam/koncept') ? 'active' : '' }}">Koncept (editor)</a>
+                    <a href="/masterteam/koncept" class="{{ request()->is('masterteam/koncept') ? 'active' : '' }}">Koncept V2</a>
+                    <a href="/masterteam/koncept-v3" class="{{ request()->is('masterteam/koncept-v3') ? 'active' : '' }}">Koncept V3</a>
                     <a href="/masterteam/koncept-testovani" class="{{ request()->is('masterteam/koncept-testovani*') ? 'active' : '' }}">Koncept testování</a>
                     <a href="/masterteam/koncept-solver" class="{{ request()->is('masterteam/koncept-solver*') ? 'active' : '' }}">Koncept solver (balonky)</a>
                     <a href="/masterteam/pravidla-objektu" class="{{ request()->is('masterteam/pravidla-objektu*') ? 'active' : '' }}">Pravidla objektů</a>

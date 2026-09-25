@@ -1,4 +1,4 @@
-<x-layouts.app :title="'Chyba #' . $chyba->id . ' — Kalkulio'">
+<x-layouts.app :title="'Chyba #' . $chyba->id . ' — TupTuDu'">
     <div class="mx-auto" style="max-width: 60rem;">
         <div class="mb-4">
             <a href="{{ route('masterteam.chyby') }}" class="text-sm text-gray-500 hover:text-primary">← Zpět na seznam</a>
@@ -8,9 +8,8 @@
             <div class="mb-4 flex items-start justify-between gap-3">
                 <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2 mb-2">
-                        <span class="text-xs px-2 py-0.5 rounded {{ $chyba->typ === 'server' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700' }}">
-                            {{ $chyba->typ === 'server' ? '🖥 Server' : '💻 Klient' }}
-                        </span>
+                        @php [$stitek, $stitekTridy] = \App\Models\Chyba::STITKY[$chyba->typ] ?? [$chyba->typ, 'bg-gray-100 text-gray-700']; @endphp
+                        <span class="text-xs px-2 py-0.5 rounded {{ $stitekTridy }}">{{ $stitek }}</span>
                         <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">{{ ucfirst($chyba->uroven) }}</span>
                         @if($chyba->opraveno)
                             <span class="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">✓ Opraveno</span>
@@ -51,6 +50,26 @@
                 <div><strong class="text-gray-800">IP:</strong> <span class="font-mono text-xs">{{ $chyba->ip ?: '—' }}</span></div>
                 <div><strong class="text-gray-800">User Agent:</strong> <span class="text-xs break-all">{{ \Illuminate\Support\Str::limit($chyba->user_agent, 60) }}</span></div>
             </div>
+
+            @if(filled($chyba->kontext))
+                @php
+                    // Klient posílá kontext jako JSON text (už odfiltrovaný od citlivých
+                    // klíčů), server jako pole — obojí zobrazit čitelně odsazené.
+                    $kontext = $chyba->kontext;
+                    if (is_string($kontext)) {
+                        $dekodovano = json_decode($kontext, true);
+                        $kontext = json_last_error() === JSON_ERROR_NONE ? $dekodovano : $kontext;
+                    }
+                    $kontextText = is_string($kontext)
+                        ? $kontext
+                        : json_encode($kontext, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                @endphp
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <strong class="text-sm text-gray-800">Kontext</strong>
+                    <span class="text-xs text-gray-500">(co uživatel dělal / parametry akce)</span>
+                    <pre class="mt-2 text-xs text-gray-700 bg-gray-50 p-3 rounded overflow-x-auto whitespace-pre-wrap break-words">{{ $kontextText }}</pre>
+                </div>
+            @endif
 
             @if($chyba->opraveno)
                 <div class="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">

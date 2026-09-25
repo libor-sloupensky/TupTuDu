@@ -51,6 +51,11 @@ class AppServiceProvider extends ServiceProvider
             try {
                 $vyjimka = $udalost->context['exception'] ?? null;
 
+                // Neošetřenou výjimku už vyřídil exception handler — nezapisovat podruhé.
+                if ($vyjimka instanceof \Throwable && Chyba::jeVyrizena($vyjimka)) {
+                    return;
+                }
+
                 Chyba::zachyt([
                     'typ' => app()->runningInConsole() ? 'cron' : 'server',
                     'uroven' => $udalost->level,

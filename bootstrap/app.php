@@ -22,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'office.firma' => \App\Http\Middleware\Office\EnsureFirmaSelected::class,
             'office.role' => \App\Http\Middleware\Office\CheckRole::class,
         ]);
+        // Diagnostika do tabulky `chyby` — chyby, které nevyhodí exception:
+        // pomalé načítání stránek a HTML odpověď bez layoutu. Jen logují, neblokují.
+        $middleware->web(append: [
+            \App\Http\Middleware\MeriPomaleRequesty::class,
+            \App\Http\Middleware\KontrolaHtmlLayoutu::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Auto-zachytávání serverových chyb do tabulky `chyby` (in-house tracking
@@ -32,9 +38,22 @@ return Application::configure(basePath: dirname(__DIR__))
             if (in_array($status, [404, 419, 422, 401, 403], true)) {
                 return;
             }
+            // Strukturální timeout cronu (FPM max_execution_time, nelze v kódu
+            // zvýšit) — velký AI batch občas visí přes limit. Není to bug, jen šum.
+            // Skip JEN když request pochází z cronu (TupTuDu: routa /cron/doklady/…);
+            // u normální stránky se timeout dál loguje (byl by to perf bug).
+            $script = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['SCRIPT_FILENAME'] ?? '';
+            $jeCron = str_contains($script, 'cron') || (bool) request()?->is('cron/*');
+            // Log listener (AppServiceProvider) tuhle výjimku za chvíli dostane
+            // znovu přes Log::error — označit, ať ji nezapíše podruhé ani neobejde filtr.
+            \App\Models\Chyba::oznacVyrizenou($e);
+            if (str_contains($e->getMessage(), 'Maximum execution time') && $jeCron) {
+                return;
+            }
             try {
                 \App\Models\Chyba::zachyt([
-                    'typ' => 'server',
+                    // Konzole = artisan příkazy (cron) — stejné rozlišení jako Log listener
+                    'typ' => app()->runningInConsole() ? 'cron' : 'server',
                     'uroven' => 'error',
                     'zprava' => mb_substr($e->getMessage() ?: get_class($e), 0, 500),
                     'soubor' => basename($e->getFile()) . ':' . $e->getLine(),

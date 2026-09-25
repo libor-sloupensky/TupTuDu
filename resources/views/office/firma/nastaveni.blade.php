@@ -654,9 +654,9 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.ok) { window.location.reload(); }
-                else { alert(data.error || 'Chyba.'); toggle.checked = !jeUcetni; }
+                else { toggle.checked = !jeUcetni; chybaUzivateli(data.error || 'Neznámá chyba', 'Změna režimu účetní firmy', { jeUcetni: jeUcetni, odpoved: data }); }
             })
-            .catch(function() { alert('Chyba připojení.'); toggle.checked = !jeUcetni; });
+            .catch(function(err) { toggle.checked = !jeUcetni; chybaUzivateli(err, 'Změna režimu účetní firmy', { jeUcetni: jeUcetni }); });
         });
     }
 
@@ -671,9 +671,9 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.ok) { window.location.reload(); }
-            else { alert(data.error || 'Chyba.'); }
+            else { chybaUzivateli(data.error || 'Neznámá chyba', 'Vypnutí režimu účetní firmy', { odpoved: data }); }
         })
-        .catch(function() { alert('Chyba připojení.'); });
+        .catch(function(err) { chybaUzivateli(err, 'Vypnutí režimu účetní firmy'); });
     };
 
     // ===== Klienti — IČO lookup =====
@@ -752,9 +752,10 @@
                         lookupResult.innerHTML = html;
                     }
                 })
-                .catch(function() {
+                .catch(function(err) {
                     lookupResult.className = 'lookup-result error';
                     lookupResult.textContent = 'Chyba při komunikaci se serverem.';
+                    window.zalogujChybu?.(err, 'Nastavení: vyhledání klienta v ARES', { ico: ico });
                 });
             }, 400);
         });
@@ -782,7 +783,10 @@
             if (data.ok) { status.textContent = data.message; status.style.color = '#27ae60'; setTimeout(function() { window.location.reload(); }, 2000); }
             else { status.textContent = data.error || 'Chyba'; status.style.color = '#e74c3c'; }
         })
-        .catch(function() { status.textContent = 'Chyba připojení.'; status.style.color = '#e74c3c'; });
+        .catch(function(err) {
+            status.textContent = 'Chyba připojení.'; status.style.color = '#e74c3c';
+            window.zalogujChybu?.(err, 'Nastavení: žádost o přístup', { ico: currentIco, superadminId: superadminId });
+        });
     };
 
     function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -849,9 +853,13 @@
                 ensureEmptyRow();
             } else {
                 showSaveStatus('Chyba ukládání', '#e74c3c');
+                window.zalogujChybu?.(data.error || 'Uložení kategorií vrátilo ok=false', 'Nastavení: uložení kategorií', { pocet: kategorie.length, odpoved: data });
             }
         })
-        .catch(() => showSaveStatus('Chyba připojení', '#e74c3c'));
+        .catch(err => {
+            showSaveStatus('Chyba připojení', '#e74c3c');
+            window.zalogujChybu?.(err, 'Nastavení: uložení kategorií', { pocet: kategorie.length });
+        });
     }
 
     window.removeKat = function(btn) {
@@ -873,7 +881,7 @@
             .then(data => {
                 if (data.ok) showSaveStatus('Odstraněno', '#27ae60');
             })
-            .catch(() => {});
+            .catch(err => window.zalogujChybu?.(err, 'Nastavení: smazání kategorie', { id: id }));
         }
     };
 
@@ -933,7 +941,7 @@
                         fetch('{{ url("/doklady/nastaveni/kategorie") }}/' + id, {
                             method: 'DELETE',
                             headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
-                        }).catch(() => {});
+                        }).catch(err => window.zalogujChybu?.(err, 'Nastavení: smazání kategorie', { id: id }));
                     }
                     scheduleSave();
                 }
@@ -981,7 +989,10 @@
             if (data.ok) showUsrStatus('Uloženo', '#27ae60');
             else showUsrStatus(data.error || 'Chyba', '#e74c3c');
         })
-        .catch(() => showUsrStatus('Chyba připojení', '#e74c3c'));
+        .catch(err => {
+            showUsrStatus('Chyba připojení', '#e74c3c');
+            window.zalogujChybu?.(err, 'Nastavení: uložení uživatele', { userId: userId, role: role });
+        });
     }
 
     // Attach listeners to existing user rows
@@ -1008,7 +1019,10 @@
                 showUsrStatus(data.error || 'Chyba', '#e74c3c');
             }
         })
-        .catch(() => showUsrStatus('Chyba připojení', '#e74c3c'));
+        .catch(err => {
+            showUsrStatus('Chyba připojení', '#e74c3c');
+            window.zalogujChybu?.(err, 'Nastavení: zrušení pozvánky', { id: id });
+        });
     };
 
     window.removeUser = function(userId, name) {
@@ -1026,7 +1040,10 @@
                 showUsrStatus(data.error || 'Chyba', '#e74c3c');
             }
         })
-        .catch(() => showUsrStatus('Chyba připojení', '#e74c3c'));
+        .catch(err => {
+            showUsrStatus('Chyba připojení', '#e74c3c');
+            window.zalogujChybu?.(err, 'Nastavení: odebrání uživatele', { userId: userId });
+        });
     };
 
     // Enter v inputech nového uživatele → addUser() místo odeslání formuláře
@@ -1062,7 +1079,10 @@
                 showUsrStatus(data.error || 'Chyba', '#e74c3c');
             }
         })
-        .catch(() => showUsrStatus('Chyba připojení', '#e74c3c'));
+        .catch(err => {
+            showUsrStatus('Chyba připojení', '#e74c3c');
+            window.zalogujChybu?.(err, 'Nastavení: přidání uživatele', { jmeno: jmeno, email: email, role: role });
+        });
     };
     // ===== Oprávnění účetní vazby =====
     window.savePerm = function(checkbox) {
@@ -1092,9 +1112,11 @@
                 status.style.color = '#e74c3c';
                 status.classList.add('visible');
                 setTimeout(function() { status.classList.remove('visible'); }, 3000);
+                window.zalogujChybu?.(data.error || 'Uložení oprávnění vrátilo ok=false', 'Nastavení: oprávnění účetní vazby', { vazbaId: vazbaId, perms: perms, odpoved: data });
             }
         })
-        .catch(function() {
+        .catch(function(err) {
+            window.zalogujChybu?.(err, 'Nastavení: oprávnění účetní vazby', { vazbaId: vazbaId, perms: perms });
             status.textContent = 'Chyba';
             status.style.color = '#e74c3c';
             status.classList.add('visible');
@@ -1114,9 +1136,9 @@
             })
             .then(r => r.json())
             .then(data => {
-                if (!data.ok) { alert(data.error || 'Chyba'); toggleSys.checked = !toggleSys.checked; }
+                if (!data.ok) { toggleSys.checked = !toggleSys.checked; chybaUzivateli(data.error || 'Neznámá chyba', 'Přepnutí systémového e-mailu', { odpoved: data }); }
             })
-            .catch(() => { alert('Chyba připojení.'); toggleSys.checked = !toggleSys.checked; });
+            .catch(err => { toggleSys.checked = !toggleSys.checked; chybaUzivateli(err, 'Přepnutí systémového e-mailu'); });
         });
     }
 
@@ -1183,7 +1205,10 @@
                 document.getElementById('vlastniAdvanced').style.display = 'block';
             }
         })
-        .catch(() => showVlastniStatus('Chyba připojení.', '#e74c3c'));
+        .catch(err => {
+            showVlastniStatus('Chyba připojení.', '#e74c3c');
+            window.zalogujChybu?.(err, 'Nastavení: test vlastního e-mailu', { email: d.email, host: d.host, port: d.port, sifrovani: d.sifrovani });
+        });
     };
 
     window.ulozitVlastniEmail = function() {
@@ -1208,7 +1233,10 @@
             if (data.ok) showVlastniStatus('Nastavení uloženo.', '#27ae60');
             else showVlastniStatus(data.error || 'Chyba při ukládání.', '#e74c3c');
         })
-        .catch(() => showVlastniStatus('Chyba připojení.', '#e74c3c'));
+        .catch(err => {
+            showVlastniStatus('Chyba připojení.', '#e74c3c');
+            window.zalogujChybu?.(err, 'Nastavení: uložení vlastního e-mailu', { aktivni: aktivni, email: d.email, host: d.host, port: d.port, sifrovani: d.sifrovani });
+        });
     };
     // ===== Google Drive šablona preview =====
     var gdriveDefaultTemplate = '{nahrano:YYYY}/{duzp:YY-MM-DD}_{dodavatel:15}_{id}';
@@ -1292,10 +1320,11 @@
             }
             setTimeout(function() { status.style.display = 'none'; }, 3000);
         })
-        .catch(function() {
+        .catch(function(err) {
             status.style.color = '#e74c3c';
             status.textContent = 'Chyba připojení.';
             setTimeout(function() { status.style.display = 'none'; }, 3000);
+            window.zalogujChybu?.(err, 'Nastavení: šablona Google Drive', { sablona: input.value.trim() });
         });
     };
 

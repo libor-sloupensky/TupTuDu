@@ -40,6 +40,10 @@ class PosledniChyby extends Command
             $this->line("  soubor:    {$c->soubor}");
             $this->line("  uri:       {$c->metoda} {$c->uri}");
             $this->line("  výskytů:   {$c->pocet_vyskytu}, naposledy {$c->naposledy_v}");
+            if (filled($c->kontext)) {
+                $kontext = is_string($c->kontext) ? $c->kontext : json_encode($c->kontext, JSON_UNESCAPED_UNICODE);
+                $this->line('  kontext:   ' . mb_substr($kontext, 0, 1000));
+            }
 
             if ($this->option('stack') && $c->stack_trace) {
                 $this->line('  stack:');

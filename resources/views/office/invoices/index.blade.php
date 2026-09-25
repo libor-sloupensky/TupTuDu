@@ -959,7 +959,10 @@ function startDetailEdit(td, id, field, editType, evt) {
             } else if (res.error) {
                 addNotification({ status: 'error', icon: '&#10007;', name: res.error });
             }
-        }).catch(() => {});
+        }).catch(err => {
+            addNotification({ status: 'error', icon: '&#10007;', name: 'Změnu se nepodařilo uložit' });
+            window.zalogujChybu?.(err, 'Doklady: inline editace', { dokladId: d.id, field: field, value: newVal });
+        });
     }
 
     function cancel() { input.remove(); valSpan.style.display = ''; }
@@ -1127,6 +1130,7 @@ function processNextInQueue() {
             }
         } catch(e) {
             console.error('[UPLOAD] UI update error:', e);
+            window.zalogujChybu?.(e, 'Doklady: upload — překreslení UI', { soubor: file.name, status: result && result.status });
         }
 
         if (!processNextInQueue()) {
@@ -1136,6 +1140,7 @@ function processNextInQueue() {
         uploadActive--;
         uploadCompleted++;
         console.error('[UPLOAD] Unexpected error:', err);
+        window.zalogujChybu?.(err, 'Doklady: upload — neočekávaná chyba', { soubor: file.name });
         item.className = 'notif-item status-error';
         item.querySelector('.notif-item-icon').innerHTML = '&#10007;';
         const detail = item.querySelector('.notif-item-detail');
@@ -1155,7 +1160,7 @@ function refreshTableData() {
     }).then(r => r.json()).then(data => {
         dokladyData = data;
         renderTable();
-    }).catch(() => {});
+    }).catch(err => window.zalogujChybu?.(err, 'Doklady: obnova tabulky'));
 }
 
 function onAllUploadsComplete() {
@@ -1186,10 +1191,16 @@ function uploadSingleFile(file) {
         const fetchMs = Date.now() - fetchStart;
         const ct = r.headers.get('content-type') || '';
         if (!ct.includes('application/json')) {
-            return r.text().then(body => ({
-                status: 'error',
-                message: file.name + ' - HTTP ' + r.status + ': ' + body.substring(0, 100)
-            }));
+            return r.text().then(body => {
+                window.zalogujChybu?.('Upload dokladu: odpověď není JSON (HTTP ' + r.status + ')', 'Doklady: upload', {
+                    soubor: file.name, velikostKB: Math.round(file.size / 1024), status: r.status,
+                    contentType: ct, odpoved: body.substring(0, 500),
+                });
+                return {
+                    status: 'error',
+                    message: file.name + ' - HTTP ' + r.status + ': ' + body.substring(0, 100)
+                };
+            });
         }
         return r.json().then(data => {
             const results = data.results || data;
@@ -1205,6 +1216,7 @@ function uploadSingleFile(file) {
         clearTimeout(timeoutId);
         const fetchMs = Date.now() - fetchStart;
         console.log('[UPLOAD] ERROR', file.name, err.name, err.message, 'elapsed='+(Date.now()-fetchStart)+'ms');
+        window.zalogujChybu?.(err, 'Doklady: upload', { soubor: file.name, velikostKB: Math.round(file.size / 1024), trvaniMs: fetchMs });
         return {
             status: 'error',
             message: err.name === 'AbortError'
@@ -1287,8 +1299,9 @@ function deleteDoklad(id, nazev, url) {
         } else {
             addNotification({ status: 'error', icon: '&#10007;', name: 'Chyba při mazání ' + escHtml(nazev) });
         }
-    }).catch(() => {
+    }).catch(err => {
         addNotification({ status: 'error', icon: '&#10007;', name: 'Chyba při mazání ' + escHtml(nazev) });
+        window.zalogujChybu?.(err, 'Doklady: smazání dokladu', { dokladId: id });
     });
 }
 
@@ -1331,6 +1344,8 @@ function doAiSearch() {
         btn.disabled = false;
         btn.innerHTML = '&#128269;';
         console.error('AI search error:', err);
+        addNotification({ status: 'error', icon: '&#10007;', name: 'AI hledání selhalo' });
+        window.zalogujChybu?.(err, 'Doklady: AI hledání', { dotaz: q });
     });
 }
 
@@ -1459,6 +1474,7 @@ async function renderPdfToCanvas(url, canvas) {
         await page.render({ canvasContext: ctx, viewport }).promise;
         canvas.classList.remove('pdf-rendering');
     } catch(e) {
+        window.zalogujChybu?.(e, 'Doklady: náhled PDF', { url: url });
         // Fallback: replace canvas with a simple message
         canvas.parentElement.innerHTML = '<div style="padding:2rem;text-align:center;color:#999;font-size:0.8rem;">Náhled PDF nelze zobrazit.<br>Klikněte pro otevření.</div>';
     }

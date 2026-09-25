@@ -13,6 +13,14 @@ class Chyba extends Model
     const CREATED_AT = 'vytvoreno';
     const UPDATED_AT = 'upraveno';
 
+    /** Štítky typů pro přehled /masterteam/chyby: typ => [popisek, CSS třídy]. */
+    const STITKY = [
+        'server' => ['🖥 Server', 'bg-red-50 text-red-700'],
+        'client' => ['💻 Klient', 'bg-amber-50 text-amber-700'],
+        'cron' => ['⏱ Cron', 'bg-indigo-50 text-indigo-700'],
+        'pomaly_request' => ['🐢 Pomalé', 'bg-sky-50 text-sky-700'],
+    ];
+
     protected $fillable = [
         'typ', 'uroven', 'hash', 'zprava', 'soubor', 'stack_trace',
         'uri', 'metoda', 'uzivatel_id', 'user_agent', 'ip', 'kontext',
@@ -29,6 +37,25 @@ class Chyba extends Model
             'zacatek_v' => 'datetime',
             'naposledy_v' => 'datetime',
         ];
+    }
+
+    /**
+     * Výjimky, které už vyřídil exception handler (bootstrap/app.php) — zapsal je,
+     * nebo je záměrně přeskočil jako šum. Laravel je vzápětí ještě zaloguje přes
+     * Log::error → listener v AppServiceProvider by je jinak zapsal podruhé
+     * (dvojí počet výskytů, v konzoli duplicitní řádek 'cron', obejitý filtr šumu).
+     */
+    private static ?\WeakMap $vyrizeneVyjimky = null;
+
+    public static function oznacVyrizenou(\Throwable $e): void
+    {
+        self::$vyrizeneVyjimky ??= new \WeakMap();
+        self::$vyrizeneVyjimky[$e] = true;
+    }
+
+    public static function jeVyrizena(\Throwable $e): bool
+    {
+        return isset(self::$vyrizeneVyjimky[$e]);
     }
 
     public function uzivatel(): BelongsTo

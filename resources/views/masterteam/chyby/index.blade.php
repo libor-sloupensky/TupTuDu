@@ -1,4 +1,4 @@
-<x-layouts.app title="Chyby — Kalkulio">
+<x-layouts.app title="Chyby — TupTuDu">
     <div>
         <div class="mb-4">
             <h1 class="text-2xl font-bold text-gray-800">Chyby</h1>
@@ -23,10 +23,13 @@
                 @endforeach
             </div>
             <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1 text-sm">
-                @foreach(['vse' => 'Všechny typy', 'server' => 'Server', 'client' => 'Klient (JS)', 'cron' => 'Cron'] as $val => $label)
+                @foreach(['vse' => 'Všechny typy', 'server' => 'Server', 'client' => 'Klient (JS)', 'cron' => 'Cron', 'pomaly' => 'Pomalé stránky'] as $val => $label)
                     <a href="?stav={{ $filtr }}&typ={{ $val }}"
                        class="rounded-md px-3 py-1.5 transition {{ $typ === $val ? 'bg-gray-200 text-gray-900' : 'text-gray-700 hover:bg-gray-50' }}">
                         {{ $label }}
+                        @if($val !== 'vse' && ($pocty[$val] ?? 0) > 0)
+                            <span class="ml-1 text-xs">({{ $pocty[$val] }})</span>
+                        @endif
                     </a>
                 @endforeach
             </div>
@@ -53,9 +56,8 @@
                         @foreach($chyby as $c)
                             <tr class="hover:bg-gray-50 {{ $c->opraveno ? 'opacity-60' : '' }}">
                                 <td class="px-3 py-2">
-                                    <span class="text-xs px-2 py-0.5 rounded {{ ['server' => 'bg-red-50 text-red-700', 'cron' => 'bg-indigo-50 text-indigo-700'][$c->typ] ?? 'bg-amber-50 text-amber-700' }}">
-                                        {{ ['server' => '🖥 Server', 'cron' => '⏱ Cron'][$c->typ] ?? '💻 Klient' }}
-                                    </span>
+                                    @php [$stitek, $stitekTridy] = \App\Models\Chyba::STITKY[$c->typ] ?? [$c->typ, 'bg-gray-100 text-gray-700']; @endphp
+                                    <span class="text-xs px-2 py-0.5 rounded whitespace-nowrap {{ $stitekTridy }}">{{ $stitek }}</span>
                                 </td>
                                 <td class="px-3 py-2">
                                     <a href="{{ route('masterteam.chyby.show', $c) }}"

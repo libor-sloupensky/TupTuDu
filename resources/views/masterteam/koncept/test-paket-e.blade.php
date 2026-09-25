@@ -1,4 +1,4 @@
-<x-layouts.app title="Test Paket E — Kalkulio Masterteam">
+<x-layouts.app title="Test Paket E — TupTuDu">
 
 @php
     $realneJson = isset($realnePredvolby) ? json_encode($realnePredvolby, JSON_UNESCAPED_UNICODE) : '{}';

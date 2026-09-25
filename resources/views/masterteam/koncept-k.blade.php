@@ -1,4 +1,4 @@
-<x-layouts.app title="Koncept — Kalkulio" :fullWidth="true">
+<x-layouts.app title="Koncept V2 — TupTuDu" :fullWidth="true">
 
 {{-- Konva.js + Three.js + StavebníEngine + Renderer — všechno self-hosted,
      aby fungovalo i v zemích, kde jsou unpkg/cdnjs/jsdelivr blokované

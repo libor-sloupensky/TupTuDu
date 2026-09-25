@@ -2923,7 +2923,12 @@ function konceptKEditor(initialData) {
                     body: JSON.stringify({ ku_kod: this.katastrVybraneKu.k, cislo: this.katastrCislo.trim(), typ: this.katastrTyp }),
                 });
                 const d = await resp.json();
-                if (d.error) { this.katastrChyba = d.error; this.katastrNacitani = false; return; }
+                if (d.error || !d.parcela) {
+                    // Chyba serveru (500) vrací jen {message} — bez parcely nepokračovat
+                    this.katastrChyba = d.error || d.message || 'Parcelu se nepodařilo načíst.';
+                    this.katastrNacitani = false;
+                    return;
+                }
 
                 const parcela = d.parcela;
                 parcela.druh_pozemku_cz = this._katastrDruhCz[parcela.druh_pozemku] || parcela.druh_pozemku || '—';

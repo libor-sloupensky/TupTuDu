@@ -123,9 +123,10 @@
                     resultDiv.innerHTML = html;
                 }
             })
-            .catch(function() {
+            .catch(function(err) {
                 resultDiv.className = 'lookup-result error';
                 resultDiv.textContent = 'Chyba při komunikaci se serverem.';
+                window.zalogujChybu?.(err, 'Založení firmy: vyhledání firmy v ARES', { ico: ico });
             });
         }, 400);
     });
@@ -163,9 +164,10 @@
                 status.style.color = '#e74c3c';
             }
         })
-        .catch(function() {
+        .catch(function(err) {
             status.textContent = 'Chyba připojení.';
             status.style.color = '#e74c3c';
+            window.zalogujChybu?.(err, 'Založení firmy: žádost o přístup', { ico: currentIco, superadminId: superadminId });
         });
     };
 
