@@ -2106,9 +2106,24 @@
     function otvoryNaSteny(osy, otvory, mnb, nast = {}) {
         if (!osy.length || !otvory || !otvory.length) return [];
         const maxOdsazeni = (nast.tolOtvoruKeStene ?? 0.35) / mnb;
+        const minSirkaOtvoru = nast.minSirkaOtvoruM ?? 0.5;   // užší otvor se nestaví
+        const minSirkaDveri = nast.minSirkaDveriM ?? 0.6;     // ČSN 74 6401
         const vysledek = [];
 
+        // Uzly, kde se potkávají stěny. Otvor přes takové místo je nesmysl —
+        // v T-spoji dvou zdí díra být nemůže.
+        const uzly = [];
+        for (const s of osy) {
+            for (const [x, y] of [[s.x1, s.y1], [s.x2, s.y2]]) {
+                const stejny = uzly.find(u => Math.hypot(u.x - x, u.y - y) * mnb < 0.05);
+                if (stejny) stejny.pocet++;
+                else uzly.push({ x, y, pocet: 1 });
+            }
+        }
+        const spoje = uzly.filter(u => u.pocet >= 2);
+
         for (const o of otvory) {
+            if (o.sirka < minSirkaOtvoru) continue;
             let nej = null, nejD = maxOdsazeni;
             for (let i = 0; i < osy.length; i++) {
                 const s = osy[i];
@@ -2127,14 +2142,33 @@
             const stredM = nej.t * delkaM;
             const pozice = Math.max(0, Math.min(delkaM - o.sirka, stredM - o.sirka / 2));
 
-            vysledek.push({
-                stena: 'W' + (nej.i + 1),
-                pozice,
-                sirka: o.sirka,
-                typ: o.typ || 'dvere',
+            // dveře pod normovou šířku neexistují — ber to jako okno
+            let typ = o.typ || 'dvere';
+            if (typ !== 'okno' && o.sirka < minSirkaDveri) typ = 'okno';
+
+            // vede otvorem spoj se sousední stěnou?
+            const s = nej.s;
+            const ux = (s.x2 - s.x1) / nej.L, uy = (s.y2 - s.y1) / nej.L;
+            const vSpoji = spoje.some(u => {
+                const podel = ((u.x - s.x1) * ux + (u.y - s.y1) * uy) * mnb;
+                const bok = Math.abs((u.x - s.x1) * -uy + (u.y - s.y1) * ux) * mnb;
+                return bok < s.tloustka && podel > pozice + 0.02 && podel < pozice + o.sirka - 0.02;
             });
+            if (vSpoji) continue;
+
+            vysledek.push({ stena: 'W' + (nej.i + 1), pozice, sirka: o.sirka, typ });
         }
-        return vysledek;
+
+        // Na jednom místě zdi může být jen jeden otvor. Když se dva překrývají,
+        // zůstane širší — užší bývá kus téhož otvoru nalezený podruhé.
+        vysledek.sort((a, b) => b.sirka - a.sirka);
+        const bezPrekryvu = [];
+        for (const o of vysledek) {
+            const koliduje = bezPrekryvu.some(v => v.stena === o.stena
+                && Math.min(v.pozice + v.sirka, o.pozice + o.sirka) - Math.max(v.pozice, o.pozice) > 0.02);
+            if (!koliduje) bezPrekryvu.push(o);
+        }
+        return bezPrekryvu;
     }
 
     const api = {

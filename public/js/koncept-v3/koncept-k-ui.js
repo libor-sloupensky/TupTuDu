@@ -742,6 +742,16 @@ function konceptKEditor(initialData) {
                 // Uložit aktuální koncept pro auto-redirect
                 if (this.projektId) localStorage.setItem('kv3_lastProjekt', this.projektId);
 
+                // Právě vytvořený koncept (?nove=1) — rovnou nabídnout přejmenování,
+                // aby vytvoření a pojmenování byl jeden krok. Parametr z URL uklidit,
+                // ať se při obnovení stránky input neotevírá znovu.
+                if (new URLSearchParams(location.search).get('nove') === '1') {
+                    const url = new URL(location.href);
+                    url.searchParams.delete('nove');
+                    history.replaceState({}, '', url);
+                    this.zahajPreimenovaniKonceptu();
+                }
+
                 // Eventy
                 this.stage.on('wheel', (e) => this.onWheel(e));
                 this.stage.on('mousemove', (e) => this.onMouseMove(e));
@@ -4171,13 +4181,9 @@ function konceptKEditor(initialData) {
         // PROJEKTY
         // ═══════════════════════════════════════════════════════
         prepniProjekt() {
+            // Volba „Vytvořit nový koncept" ho rovnou založí a otevře přejmenování
             if (!this.projektId) {
-                this.projektNazev = '';
-                this.projektData = {};
-                this.chat = [];
-                this.historie = [];
-                this.faze = 'rozhovor';
-                if (this.engine) { this.engine.fromJSON({}); this.renderer.render(); }
+                this.novyProjekt();
                 return;
             }
             window.location.href = initialData.routes.indexK + '?id=' + this.projektId;
@@ -4241,8 +4247,23 @@ function konceptKEditor(initialData) {
                     body: JSON.stringify({ nazev: 'Nový koncept' }),
                 });
                 const d = await resp.json();
-                if (d.id) window.location.href = initialData.routes.indexK + '?id=' + d.id;
-            } catch (e) { console.error('Chyba:', e); window.zalogujChybu?.(e, 'koncept novy projekt'); }
+                // ?nove=1 → po načtení se rovnou otevře input s názvem (viz init)
+                if (d.id) {
+                    window.location.href = initialData.routes.indexK + '?id=' + d.id + '&nove=1';
+                    return;
+                }
+                this._zrusVytvoreni('Vytvoření konceptu nevrátilo ID', { status: resp.status, odpoved: d });
+            } catch (e) {
+                console.error('Chyba:', e);
+                this._zrusVytvoreni(e);
+            }
+        },
+
+        /** Vytvoření selhalo — vrátit select na původní koncept, ať neukazuje „Vytvořit nový". */
+        _zrusVytvoreni(chyba, detaily) {
+            this.projektId = initialData.projektId || '';
+            window.zalogujChybu?.(chyba, 'Koncept V3: vytvoření konceptu', detaily);
+            alert('Nový koncept se nepodařilo vytvořit. Zkuste to prosím znovu.');
         },
 
         nactiHistorii(index) {

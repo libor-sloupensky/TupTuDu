@@ -308,17 +308,32 @@
                             <div class="flex flex-col gap-1 w-full">
                                 <div class="flex items-center gap-2">
                                     <span class="text-gray-600 font-medium whitespace-nowrap" x-text="inspector.typLabel"></span>
-                                    {{-- Šířka číslem v cm, ne výběrem z řady: skutečné otvory
-                                         (hlavně okna) mají spoustu atypických rozměrů. --}}
+                                    {{-- Okna mají spoustu atypických rozměrů (230, 175…), proto
+                                         číslo. Dveře se vyrábějí v normové řadě, tam stačí výběr. --}}
                                     <div class="flex items-center gap-1 ml-auto">
                                         <span class="text-gray-500">š:</span>
-                                        <input type="number" min="10" max="600" step="1"
-                                               class="w-16 border border-gray-300 rounded px-1 py-0.5 text-xs"
-                                               :value="inspector.sirka !== null ? Math.round(inspector.sirka * 100) : ''"
-                                               :disabled="inspector.typ === null"
-                                               @change="setOpeningSirka(parseFloat($event.target.value) / 100)"
-                                               @keydown.enter.prevent="$event.target.blur()">
-                                        <span class="text-gray-500">cm</span>
+                                        <template x-if="inspector.typ === 'okno'">
+                                            <span class="flex items-center gap-1">
+                                                <input type="number" min="10" max="600" step="1"
+                                                       class="w-16 border border-gray-300 rounded px-1 py-0.5 text-xs"
+                                                       :value="inspector.sirka !== null ? Math.round(inspector.sirka * 100) : ''"
+                                                       @change="setOpeningSirka(parseFloat($event.target.value) / 100)"
+                                                       @keydown.enter.prevent="$event.target.blur()">
+                                                <span class="text-gray-500">cm</span>
+                                            </span>
+                                        </template>
+                                        <template x-if="inspector.typ !== 'okno'">
+                                            <select class="border border-gray-300 rounded px-1 py-0.5 text-xs"
+                                                    @change="setOpeningSirka(parseFloat($event.target.value))"
+                                                    :disabled="inspector.typ === null">
+                                                <option value="" disabled :selected="inspector.sirka === null">—</option>
+                                                <template x-for="s in inspector.sirky" :key="s">
+                                                    <option :value="s"
+                                                            :selected="inspector.sirka !== null && Math.abs(s - inspector.sirka) < 0.001"
+                                                            x-text="(s * 100).toFixed(0) + ' cm'"></option>
+                                                </template>
+                                            </select>
+                                        </template>
                                     </div>
                                 </div>
                                 <template x-if="inspector.hasDoor">
@@ -426,7 +441,7 @@
             <template x-if="!_prejmenovaniKonceptu">
                 <div class="flex items-center gap-1 flex-1 min-w-0 group">
                     <select x-model="projektId" @change="prepniProjekt()" class="kk-btn flex-1 truncate text-sm">
-                        <option value="">— Nový koncept —</option>
+                        <option value="">— Vytvořit nový koncept —</option>
                         @foreach($koncepty as $k)
                             <option value="{{ $k->id }}">{{ $k->nazev }}</option>
                         @endforeach
@@ -455,7 +470,7 @@
                     <button @click="potvrdPreimenovaniKonceptu()" class="text-xs text-primary">✓</button>
                 </div>
             </template>
-            <button @click="novyProjekt()" class="kk-btn" title="Nový">+</button>
+            <button @click="novyProjekt()" class="kk-btn" title="Vytvořit nový koncept">+</button>
         </div>
 
         {{-- Parcela (Katastr) --}}
