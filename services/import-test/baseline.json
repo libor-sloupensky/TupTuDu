@@ -1,0 +1,38 @@
+{
+  "Klemov": {
+    "top1": {
+      "styl": "stěny jako vyplněné plochy",
+      "sten": 15,
+      "stenNasel": 14,
+      "stenNavic": 0,
+      "chybaTl": 0.02095971647880563,
+      "otvoru": 9,
+      "otvoruNasel": 9,
+      "otvoruNavic": 0,
+      "dveri": 4,
+      "dveriCelkem": 7,
+      "oken": 5,
+      "okenCelkem": 7
+    },
+    "refSten": 15,
+    "refOtvoru": 14
+  },
+  "Kováčová": {
+    "top1": {
+      "styl": "stěny jako vyplněné plochy",
+      "sten": 33,
+      "stenNasel": 33,
+      "stenNavic": 1,
+      "chybaTl": 0.05201378894209843,
+      "otvoru": 12,
+      "otvoruNasel": 11,
+      "otvoruNavic": 1,
+      "dveri": 10,
+      "dveriCelkem": 15,
+      "oken": 1,
+      "okenCelkem": 16
+    },
+    "refSten": 34,
+    "refOtvoru": 31
+  }
+}

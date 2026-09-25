@@ -28,3 +28,6 @@ Thumbs.db
 
 # Výstupy testů importu (snímky obrazovky, náhledy) — nejsou zdrojový kód
 services/import-test/vystup/
+
+# Cache SVG pro měření importu — dá se kdykoli vyrobit znovu z PDF
+services/import-test/.cache/
