@@ -796,7 +796,8 @@ class StavebniEngine {
     }
 
     // ─── WALLS ─────────────────────────────────────────
-    addWall(x1, y1, x2, y2, tloustka = 0.3) {
+    /** @param {?string} explicitTyp  vynutí typ stěny (obvodová/nosná/příčka…); jinak se určí z tloušťky */
+    addWall(x1, y1, x2, y2, tloustka = 0.3, explicitTyp = null) {
         const nodeA = this.addNode(x1, y1);
         const nodeB = this.addNode(x2, y2);
         if (nodeA.id === nodeB.id) return null; // nulová délka
@@ -805,7 +806,7 @@ class StavebniEngine {
         if (delka < this.SNAP_STEP) return null;
 
         const id = this._id('S');
-        const typ = urcTypSteny(tloustka);
+        const typ = urcTypSteny(tloustka, explicitTyp);
         const wall = { id, nodeA: nodeA.id, nodeB: nodeB.id, tloustka, typ };
         this.walls.set(id, wall);
         return wall;

@@ -205,18 +205,40 @@
                 </button>
             </div>
 
+            {{-- Volby stěny — jen když je nástroj zapnutý (stejně jako u otvoru) --}}
+            <div x-show="nastroj === 'stena'" x-cloak class="flex items-center gap-1 ml-1 text-xs">
+                <select x-model="stenaTyp" @change="tloustkaSteny = vychoziTloustka(stenaTyp); ulozitNastaveni()"
+                        class="border border-gray-200 rounded px-1 py-0.5 text-xs text-gray-600 bg-white">
+                    <option value="obvodova">Obvodová</option>
+                    <option value="nosna">Nosná</option>
+                    <option value="pricka">Příčka</option>
+                    <option value="zidka">Zídka</option>
+                    <option value="plot">Plot</option>
+                </select>
+                {{-- Tloušťka v cm (v enginu zůstávají metry) --}}
+                <input type="number" min="5" max="60" step="1"
+                       :value="Math.round(tloustkaSteny * 100)"
+                       @change="tloustkaSteny = Math.min(0.6, Math.max(0.05, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
+                       @keydown.enter.prevent="$event.target.blur()"
+                       class="w-14 border border-gray-200 rounded px-1 py-0.5 text-xs text-gray-600">
+                <span class="text-gray-400">cm</span>
+            </div>
+
             {{-- Volby otvoru — jen když je nástroj zapnutý --}}
             <div x-show="nastroj === 'otvor'" x-cloak class="flex items-center gap-1 ml-1 text-xs">
                 <select x-model="otvorTyp" @change="otvorSirka = { dvere: 0.9, okno: 1.2, pruchod: 0.9 }[otvorTyp] || otvorSirka; ulozitNastaveni()"
                         class="border border-gray-200 rounded px-1 py-0.5 text-xs text-gray-600 bg-white">
+                    {{-- Průchod tu není schválně — je mezi typy dveří v panelu vlastností --}}
                     <option value="dvere">Dveře</option>
                     <option value="okno">Okno</option>
-                    <option value="pruchod">Průchod</option>
                 </select>
-                <input type="number" x-model.number="otvorSirka" @change="ulozitNastaveni()"
-                       min="0.4" max="3" step="0.1"
+                {{-- Šířka v cm (v enginu zůstávají metry) --}}
+                <input type="number" min="40" max="300" step="5"
+                       :value="Math.round(otvorSirka * 100)"
+                       @change="otvorSirka = Math.min(3, Math.max(0.4, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
+                       @keydown.enter.prevent="$event.target.blur()"
                        class="w-14 border border-gray-200 rounded px-1 py-0.5 text-xs text-gray-600">
-                <span class="text-gray-400">m</span>
+                <span class="text-gray-400">cm</span>
                 <span x-show="otvorZprava" x-cloak class="text-orange-700" x-text="otvorZprava"></span>
             </div>
             {{-- Nápověda toggle --}}
@@ -373,16 +395,15 @@
                                 </select>
                                 <div class="flex items-center gap-1 ml-auto">
                                     <span class="text-gray-500">tl:</span>
-                                    <select class="border border-gray-300 rounded px-1 py-0.5 text-xs"
-                                            @change="setWallTloustka(parseFloat($event.target.value))"
-                                            :disabled="inspector.typ === null">
-                                        <option value="" disabled :selected="inspector.tloustka === null">—</option>
-                                        <template x-for="t in inspector.tloustky" :key="t">
-                                            <option :value="t"
-                                                    :selected="inspector.tloustka !== null && Math.abs(t - inspector.tloustka) < 0.001"
-                                                    x-text="(t * 100).toFixed(t >= 0.1 ? 0 : 1) + ' cm'"></option>
-                                        </template>
-                                    </select>
+                                    {{-- Volně psaná tloušťka v cm (jako šířka okna) — stěny bývají
+                                         i atypické, přichytávání na normovou řadu tu překáželo. --}}
+                                    <input type="number" min="2" max="100" step="1"
+                                           class="w-16 border border-gray-300 rounded px-1 py-0.5 text-xs"
+                                           :value="inspector.tloustka !== null ? Math.round(inspector.tloustka * 100) : ''"
+                                           :disabled="inspector.typ === null"
+                                           @change="setWallTloustka(parseFloat($event.target.value) / 100, true)"
+                                           @keydown.enter.prevent="$event.target.blur()">
+                                    <span class="text-gray-500">cm</span>
                                 </div>
                             </div>
                         </template>
@@ -442,9 +463,9 @@
                 <div class="flex items-center gap-1 flex-1 min-w-0 group">
                     <select x-model="projektId" @change="prepniProjekt()" class="kk-btn flex-1 truncate text-sm">
                         <option value="">— Vytvořit nový koncept —</option>
-                        @foreach($koncepty as $k)
-                            <option value="{{ $k->id }}">{{ $k->nazev }}</option>
-                        @endforeach
+                        <template x-for="k in koncepty" :key="k.id">
+                            <option :value="k.id" x-text="k.nazev"></option>
+                        </template>
                     </select>
                     {{-- Přejmenování double-click --}}
                     <button x-show="projektId" @click="zahajPreimenovaniKonceptu()"
@@ -1120,6 +1141,10 @@ if (!{{ $aktivni?->id ?? 'null' }}) {
 <script src="/js/koncept-v3/import-pudorysu.js?v={{ filemtime(public_path('js/koncept-v3/import-pudorysu.js')) }}"></script>
 <script>
 var _kkInitData = {
+    // Seznam konceptů do nabídky. Musí jít z dat (ne ze statického HTML) —
+    // po přejmenování Alpine nabídku překreslí ze šablony a ručně opravený
+    // text v DOM by se ztratil (ukázal by se starý název).
+    koncepty: @json($koncepty->map(fn ($k) => ['id' => $k->id, 'nazev' => $k->nazev])->values()),
     projektId: {{ $aktivni?->id ?? 'null' }},
     projektNazev: @json($aktivni?->nazev ?? ''),
     projektData: @json($aktivni?->data ?? []),
@@ -1204,7 +1229,9 @@ var _kkInitData = {
             var selWalls = ctx.renderer.selectedWalls;
             var anyNodeSel = selNodes && selNodes.size > 0;
             var anyWallSel = selWalls && selWalls.size > 0;
-            if (!anyNodeSel && !anyWallSel) { dofLayer.listening(false); dofLayer.batchDraw(); return; }
+            // Rozkreslený úsek stěny má úhelník i bez označené stěny
+            var kresliSe = !!(ctx.kreslimStenu && ctx._stenaUsekId && ctx.engine.walls.get(ctx._stenaUsekId));
+            if (!anyNodeSel && !anyWallSel && !kresliSe) { dofLayer.listening(false); dofLayer.batchDraw(); return; }
             var scale = (ctx.stage && ctx.stage.scaleX()) || 1;
 
             // ─── Indikátory na vybraných uzlech (frozen, slide, detach buttons) ───
@@ -1269,7 +1296,9 @@ var _kkInitData = {
             });
 
             // ─── Úhly napojení u vybraných zdí (bez duplicit) ───
-            if (anyWallSel) {
+            // Blok běží vždy — pomocné funkce (vykresliUhel) používá i rozkreslená
+            // stěna níž; vlastní projití označených zdí je podmíněné.
+            {
                 var drawnPairs = new Set();
                 // Směr stěny "ven z uzlu". Pro T-junction (uzel není endpoint) = axis stěny.
                 // Používáme to místo "směr k druhému endpointu", aby úhel byl invariantní
@@ -1318,6 +1347,20 @@ var _kkInitData = {
                     var dirA = wallDirFromNode(nodeId, wallA);
                     var dirB = wallDirFromNode(nodeId, wallB);
                     if (!dirA || !dirB) return;
+                    vykresliUhel(cx, cy, dirA, dirB,
+                        (wallA.tloustka || 0.1) * ctx.engine.PX_PER_M / 2,
+                        (wallB.tloustka || 0.1) * ctx.engine.PX_PER_M / 2);
+                };
+                /**
+                 * Vykreslí obloučkem úhel mezi dvěma směry vycházejícími z bodu.
+                 * JEDINÉ místo, kde se úhelník kreslí — používá ho jak označená
+                 * stěna, tak rozkreslená stěna při kreslení (viz kresliRozkreslenou).
+                 *
+                 * @param cx,cy   vrchol úhlu (px plátna)
+                 * @param dirA,dirB  směrové vektory obou ramen
+                 * @param halfA,halfB  poloviční tloušťky ramen v px (oblouk začne až za lícem)
+                 */
+                var vykresliUhel = function (cx, cy, dirA, dirB, halfA, halfB) {
                     var ax = dirA.x, ay = dirA.y;
                     var bx = dirB.x, by = dirB.y;
                     var aL = Math.hypot(ax, ay), bL = Math.hypot(bx, by);
@@ -1333,8 +1376,6 @@ var _kkInitData = {
                     // Bez toho by při odzoomování byly arcy obrovské vůči stěnám a překrývaly se
                     // (screen-constant 32 px = velké vůči malé budově). 30 cm world = přirozená škála.
                     var r = 0.30 * ctx.engine.PX_PER_M;
-                    var halfA = (wallA.tloustka || 0.1) * ctx.engine.PX_PER_M / 2;
-                    var halfB = (wallB.tloustka || 0.1) * ctx.engine.PX_PER_M / 2;
                     var maxShiftDeg = absDiff * 0.4;
                     var shiftA = Math.min(maxShiftDeg, Math.asin(Math.min(1, halfA / r)) * 180 / Math.PI);
                     var shiftB = Math.min(maxShiftDeg, Math.asin(Math.min(1, halfB / r)) * 180 / Math.PI);
@@ -1350,7 +1391,11 @@ var _kkInitData = {
                     var midAng = (rotation + sweep / 2) * Math.PI / 180;
                     var tx = cx + Math.cos(midAng) * r * 1.55;
                     var ty = cy + Math.sin(midAng) * r * 1.55;
-                    var txt = Math.round(absDiff) + '°';
+                    // Desetinu ukázat jen u „nekulatého" úhlu — jinak by zaokrouhlení
+                    // tvářilo 90,5° jako 90° a nešlo by poznat, že roh není pravý.
+                    var txt = (Math.abs(absDiff - Math.round(absDiff)) < 0.05
+                        ? Math.round(absDiff)
+                        : absDiff.toFixed(1)) + '°';
                     // Text ve stejné škále jako arc (world-constant) — proporčně k rádiusu
                     var fontPx = r * 0.45;
                     dofLayer.add(new Konva.Text({
@@ -1371,7 +1416,7 @@ var _kkInitData = {
                     drawnPairs.add(key);
                     drawAngleArc(nodeId, wA, wB);
                 };
-                selWalls.forEach(function (wId) {
+                if (anyWallSel) selWalls.forEach(function (wId) {
                     var w = ctx.engine.walls.get(wId);
                     if (!w) return;
                     [w.nodeA, w.nodeB].forEach(function (nId) {
@@ -1391,6 +1436,18 @@ var _kkInitData = {
                         if (hostB) addPair(w.nodeB, w, hostB);
                     }
                 });
+
+                // ─── Úhly rozkresleného úseku stěny ───
+                // Rozkreslený úsek je normální stěna, takže se použije úplně
+                // stejná cesta jako u označených zdí (addPair → drawAngleArc).
+                if (kresliSe) {
+                    var rozkreslena = ctx.engine.walls.get(ctx._stenaUsekId);
+                    [rozkreslena.nodeA, rozkreslena.nodeB].forEach(function (nId) {
+                        ctx.engine.getNodeWalls(nId).forEach(function (soused) {
+                            if (soused.id !== rozkreslena.id) addPair(nId, rozkreslena, soused);
+                        });
+                    });
+                }
             }
 
             dofLayer.listening(anyNodeSel);

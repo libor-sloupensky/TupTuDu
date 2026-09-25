@@ -9,6 +9,7 @@ function konceptKEditor(initialData) {
         // ─── Projekt ────────────────────────────────────────────
         projektId: initialData.projektId,
         projektNazev: initialData.projektNazev,
+        koncepty: initialData.koncepty || [],   // seznam do nabídky (reaktivní)
         projektData: initialData.projektData,
         verze: initialData.verze,
         faze: initialData.faze,
@@ -19,7 +20,8 @@ function konceptKEditor(initialData) {
         // ─── UI stav (obnoveno z kk_state) ──────────────────────
         nastroj: _s.nastroj || 'vyber',
         // nástroj Otvor — typ a šířka se drží mezi kliky i mezi sezeními
-        otvorTyp: _s.otvorTyp || 'dvere',
+        // Lišta nabízí jen dveře a okno; „průchod" z dřívějška spadne na dveře
+        otvorTyp: ['dvere', 'okno'].includes(_s.otvorTyp) ? _s.otvorTyp : 'dvere',
         otvorSirka: _s.otvorSirka || 0.9,
         otvorZprava: '',            // krátká hláška u nástroje Otvor
         _otvorCasovac: null,
@@ -69,7 +71,9 @@ function konceptKEditor(initialData) {
         rezim3d: _s.rezim3d || false,
         // Three.js objekty jsou MIMO Alpine (proxy konflikt s modelViewMatrix)
         // Uloženy v window._kk3d
-        tloustkaSteny: 0.3,
+        // Výchozí parametry kreslené stěny (lišta u nástroje „Kreslit stěnu")
+        stenaTyp: _s.stenaTyp || 'obvodova',
+        tloustkaSteny: _s.tloustkaSteny || 0.3,
         panelOpen: JSON.parse(localStorage.getItem('kv3_panelOpen') || '{"objekty":false,"parcela":false,"historie":false,"chat":true}'),
 
         // ─── Engine + Renderer ──────────────────────────────────
@@ -81,6 +85,9 @@ function konceptKEditor(initialData) {
         // ─── Kreslení ───────────────────────────────────────────
         kreslimStenu: false,
         stenaStart: null,
+        stenaUseky: [],   // úseky nakreslené v rozdělaném tahu — pro Esc (zpět po bodech)
+        _stenaUsekId: null,       // rozkreslený úsek (táhne se s kurzorem)
+        _stenaPreskocKlik: false, // klik, kterým se úsek dokončil
 
         // ─── Dragging ───────────────────────────────────────────
         isPanning: false,
@@ -375,15 +382,23 @@ function konceptKEditor(initialData) {
         },
 
         /** Aplikuje tloušťku na všechny vybrané stěny (se snap na standard). */
-        setWallTloustka(novaTloustka) {
+        /**
+         * @param {boolean} presna  true = vzít zadanou hodnotu beze změny.
+         *        Z ručně psaného pole, kde by přichytávání na normovou řadu
+         *        přepisovalo, co uživatel napsal (stejně jako u šířky okna).
+         */
+        setWallTloustka(novaTloustka, presna = false) {
             if (!this.renderer || !this.engine) return;
+            if (!(novaTloustka > 0)) return;
             const ids = [...this.renderer.selectedWalls];
             if (ids.length === 0) return;
             this.engine.pushUndo();
             for (const id of ids) {
                 const w = this.engine.walls.get(id);
                 if (!w) continue;
-                w.tloustka = snapWallTloustka(novaTloustka, w.typ);
+                w.tloustka = presna
+                    ? Math.min(1, Math.max(0.02, novaTloustka))
+                    : snapWallTloustka(novaTloustka, w.typ);
             }
             this.renderer.render();
             this.autoSave('Tloušťka stěny');
@@ -818,7 +833,7 @@ function konceptKEditor(initialData) {
                 // Cleanup při přepnutí nástroje
                 this.$watch('nastroj', (val, old) => {
                     if (old === 'metr') this.metrEscape();
-                    if (old === 'stena') { this.kreslimStenu = false; this.stenaStart = null; this.renderer.clearTemp(); }
+                    if (old === 'stena') { this.zrusRozkreslenyUsek(); this.kreslimStenu = false; this.stenaStart = null; this.stenaUseky = []; this._stenaPreskocKlik = false; this.renderer.clearTemp(); }
                     // Kreslicí nástroj → zrušit výběr, ať nad plátnem nezůstane viset
                     // panel s vlastnostmi objektu, který se právě needituje.
                     // Výběr a posun (ruka) selekci nechávají — tam dává smysl.
@@ -1392,10 +1407,19 @@ function konceptKEditor(initialData) {
                     }
                 }
 
+                // Magnet na běžné úhly (90°, 45°, 30°…). Bez něj vznikají stěny
+                // typu 90,5°, které vypadají jako pravý úhel, ale nejsou.
+                // Neaplikuje se, když zabral constraint snap — ten má vlastní úhly.
+                let magnetUhluZabral = false;
+                if (this._rightAngleNodeId !== this.draggingNodeId) {
+                    const snapnuty = this._magnetUhlu(this.draggingNodeId, target);
+                    if (snapnuty) { target = snapnuty; magnetUhluZabral = true; }
+                }
+
                 // Pokud magnetický úhel snap aktivní, obejít grid snap — jinak by
                 // snapToGrid posunul uzel z přesné pozice a zobrazený úhel by ukázal
                 // 44° místo 45° atd.
-                if (this._rightAngleNodeId === this.draggingNodeId) {
+                if (this._rightAngleNodeId === this.draggingNodeId || magnetUhluZabral) {
                     const _n = this.engine.nodes.get(this.draggingNodeId);
                     if (_n) { _n.x = target.x; _n.y = target.y; }
                 } else {
@@ -2024,13 +2048,15 @@ function konceptKEditor(initialData) {
             }
 
             // Kreslení stěny — preview
-            if (this.kreslimStenu && this.stenaStart) {
+            // Kreslení stěny: jakmile se kurzor vzdálí od výchozího bodu, vznikne
+            // SKUTEČNÁ stěna a její konec se odteď táhne jako každý jiný uzel
+            // (větev isDraggingNode výš). Kreslení tím dostane stejné magnety,
+            // pravé úhly, T-napojení i úhelník jako hotové stěny — jedna logika.
+            if (this.kreslimStenu && this.stenaStart && !this.isDraggingNode && !this._stenaUsekId) {
                 const snapped = this.engine.snapPoint(pos.x, pos.y);
-                this.renderer.drawTempWall(
-                    this.stenaStart.x, this.stenaStart.y,
-                    snapped.x, snapped.y,
-                    this.tloustkaSteny
-                );
+                if (Math.hypot(snapped.x - this.stenaStart.x, snapped.y - this.stenaStart.y) > this.engine.SNAP_STEP) {
+                    this.zacniUsekSteny(snapped);
+                }
             }
 
             // Rubber-band selection (screen space — vždy rovný obdélník)
@@ -2302,6 +2328,16 @@ function konceptKEditor(initialData) {
                         }
                     }
                 }
+                // Kreslení stěny: puštěný konec úseku je začátkem toho dalšího,
+                // ať tah plynule pokračuje (případný merge uzlů je už vyřešený výš).
+                let dalsiStart = null;
+                if (this.nastroj === 'stena' && this.kreslimStenu) {
+                    const koncovy = this.engine.nodes.get(this.draggingNodeId);
+                    dalsiStart = koncovy
+                        ? { x: koncovy.x, y: koncovy.y }
+                        : this.engine.snapPoint(pos.x, pos.y);
+                }
+
                 this.isDraggingNode = false;
                 this.draggingNodeId = null;
                 this._snapPreview = null;
@@ -2309,8 +2345,16 @@ function konceptKEditor(initialData) {
                 this._attachMode = null;
                 this._attachSlideInfo = null;
                 if (this._attachOverlayGroup) { this._attachOverlayGroup.destroy(); this._attachOverlayGroup = null; }
+
+                if (dalsiStart) {
+                    this.stenaStart = dalsiStart;
+                    this._stenaUsekId = null;
+                    this._stenaPreskocKlik = true;   // klik, který úsek dokončil, už bod nepřidává
+                    this.renderer.clearSelection();
+                }
+
                 this.renderer.render();
-                this.autoSave('Posun bodu');
+                this.autoSave(dalsiStart ? 'Nová stěna' : 'Posun bodu');
                 return;
             }
 
@@ -2404,30 +2448,27 @@ function konceptKEditor(initialData) {
         },
 
         onClick(e) {
+            // Jen levé tlačítko. Pravé slouží k posunu plátna — Konva i po něm
+            // pošle click a bez téhle pojistky by se při kreslení přichytil bod.
+            // (Dotyk/tap button nemá → undefined projde.)
+            if (e.evt && e.evt.button != null && e.evt.button !== 0) return;
+
             const pos = this.getPointerPos();
             const hit = this.renderer.hitTest(e.target);
 
-            // Stěna nástroj
+            // Stěna nástroj — klik jen zakládá tah. Vlastní úsek vzniká při pohybu
+            // (zacniUsekSteny) a dokončí se puštěním myši, stejně jako tažení uzlu.
             if (this.nastroj === 'stena') {
-                const snapped = this.engine.snapPoint(pos.x, pos.y);
-
+                // Klik, kterým uživatel dokončil úsek, už nový bod nezakládá
+                if (this._stenaPreskocKlik) {
+                    this._stenaPreskocKlik = false;
+                    return;
+                }
                 if (!this.kreslimStenu) {
+                    // Navázání po Esc — seznam úseků se nemaže, ať jimi jde dál
+                    // ubírat zpět (vynuluje se až při přepnutí nástroje).
                     this.kreslimStenu = true;
-                    this.stenaStart = snapped;
-                } else {
-                    const start = this.stenaStart;
-                    const delka = Math.hypot(snapped.x - start.x, snapped.y - start.y);
-
-                    if (delka > this.engine.SNAP_STEP) {
-                        this.engine.pushUndo();
-                        this.engine.addWall(start.x, start.y, snapped.x, snapped.y, this.tloustkaSteny);
-                        this.renderer.render();
-                        this.autoSave("Nová stěna");
-                    }
-
-                    // Pokračovat od posledního bodu
-                    this.stenaStart = snapped;
-                    this.renderer.clearTemp();
+                    this.stenaStart = this.engine.snapPoint(pos.x, pos.y);
                 }
                 return;
             }
@@ -2606,6 +2647,155 @@ function konceptKEditor(initialData) {
             this.renderer.renderKoty(); this.renderer.resizeVysky();
         },
 
+        /** Výchozí tloušťka zvoleného typu stěny (z definic v enginu). */
+        vychoziTloustka(typ) {
+            const def = window.TYPY_STEN?.[typ]?.['tloušťka'];
+            return def?.default ?? this.tloustkaSteny;
+        },
+
+        /** Úhly, na které se stěna při tažení uzlu přichytává (vůči ose i sousední stěně). */
+        MAGNET_UHLY: [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330],
+        /** Do kolika stupňů od těchto úhlů magnet přichytí (míň = volnější kreslení). */
+        MAGNET_TOLERANCE_DEG: 3,
+
+        /**
+         * Magnet na běžné úhly při tažení uzlu.
+         *
+         * Pro každou stěnu v uzlu zkusí natočit ji na „rozumný" úhel — vůči
+         * vodorovné ose a zároveň vůči sousedním stěnám v jejím druhém konci
+         * (pravý úhel na šikmou stěnu). Vybere přichycení s nejmenší odchylkou.
+         *
+         * Tolerance je ÚHLOVÁ (MAGNET_TOLERANCE_DEG), ne v pixelech. Přesně proti
+         * rohům typu 90,5°: ty jsou od pravého úhlu půl stupně, ale u dlouhé stěny
+         * je to na obrazovce kus — pixelová tolerance by je propustila. Kdo chce
+         * šikmou stěnu, odchýlí se víc než o toleranci a magnet nezasáhne.
+         *
+         * @returns {?{x:number,y:number}} přichycená pozice, nebo null (žádný úhel nablízku)
+         */
+        _magnetUhlu(nodeId, target) {
+            const steny = this.engine.getNodeWalls(nodeId);
+            if (!steny.length) return null;
+            let nej = null;
+
+            for (const stena of steny) {
+                const druhyId = stena.nodeA === nodeId ? stena.nodeB : stena.nodeA;
+                const opora = this.engine.nodes.get(druhyId);
+                if (!opora) continue;
+                const dx = target.x - opora.x, dy = target.y - opora.y;
+                const delka = Math.hypot(dx, dy);
+                if (delka < 1) continue;
+                const uhel = Math.atan2(dy, dx) * 180 / Math.PI;
+
+                // Reference: vodorovná osa + směry sousedních stěn ve druhém konci
+                const reference = [0];
+                for (const soused of this.engine.getNodeWalls(druhyId)) {
+                    if (soused.id === stena.id) continue;
+                    const a = this.engine.nodes.get(soused.nodeA);
+                    const b = this.engine.nodes.get(soused.nodeB);
+                    if (!a || !b) continue;
+                    const sdx = soused.nodeA === druhyId ? b.x - a.x : a.x - b.x;
+                    const sdy = soused.nodeA === druhyId ? b.y - a.y : a.y - b.y;
+                    if (Math.hypot(sdx, sdy) < 1) continue;
+                    reference.push(Math.atan2(sdy, sdx) * 180 / Math.PI);
+                }
+
+                for (const ref of reference) {
+                    for (const u of this.MAGNET_UHLY) {
+                        const cil = ref + u;
+                        const odchylka = Math.abs(((uhel - cil + 540) % 360) - 180);
+                        if (odchylka > this.MAGNET_TOLERANCE_DEG) continue;
+                        if (!nej || odchylka < nej.odchylka) {
+                            const rad = cil * Math.PI / 180;
+                            nej = {
+                                odchylka,
+                                bod: { x: opora.x + Math.cos(rad) * delka, y: opora.y + Math.sin(rad) * delka },
+                            };
+                        }
+                    }
+                }
+            }
+            return nej ? nej.bod : null;
+        },
+
+        /**
+         * Začne nový úsek stěny: založí skutečnou stěnu z posledního bodu ke
+         * kurzoru a předá její konec standardnímu tažení uzlu. Od téhle chvíle
+         * se kreslení chová jako manipulace s hotovou stěnou (magnety, pravé
+         * úhly, T-napojení, náhled přichycení) — nic se nezdvojuje.
+         */
+        zacniUsekSteny(konec) {
+            this.engine.pushUndo();
+            const stena = this.engine.addWall(
+                this.stenaStart.x, this.stenaStart.y, konec.x, konec.y,
+                this.tloustkaSteny, this.stenaTyp
+            );
+            if (!stena) return;
+
+            this.stenaUseky.push({ id: stena.id, start: { ...this.stenaStart } });
+            this._stenaUsekId = stena.id;
+
+            // Hned při vzniku srovnat úhel — konec se zakládá na mřížce, což u
+            // krátkého úseku znamená naklonění o pár stupňů. Bez toho by první
+            // úsek zůstal šikmý a všechny pravé úhly by se měřily od něj.
+            const srovnany = this._magnetUhlu(stena.nodeB, konec);
+            if (srovnany) {
+                const uzel = this.engine.nodes.get(stena.nodeB);
+                if (uzel) { uzel.x = srovnany.x; uzel.y = srovnany.y; }
+            }
+
+            // Tažení konce úseku. Vybírá se jen uzel (ne stěna) — panel s
+            // vlastnostmi tím při kreslení nevyskakuje, úhelník se kreslí
+            // podle rozkresleného úseku.
+            this.isDraggingNode = true;
+            this.draggingNodeId = stena.nodeB;
+            this._dragInitialPerp = null;
+            this.renderer.setSelection([], [stena.nodeB]);
+            this.renderer.render();
+        },
+
+        /** Zahodí rozkreslený (dosud neukotvený) úsek stěny. */
+        zrusRozkreslenyUsek() {
+            if (!this._stenaUsekId) return;
+            const id = this._stenaUsekId;
+            this._stenaUsekId = null;
+            this.isDraggingNode = false;
+            this.draggingNodeId = null;
+            this._snapPreview = null;
+            if (this.stenaUseky.length && this.stenaUseky[this.stenaUseky.length - 1].id === id) {
+                this.stenaUseky.pop();
+            }
+            this.engine.removeWall(id);
+            this.renderer.clearSelection();
+            this.renderer.render();
+        },
+
+        /**
+         * Esc u nástroje stěny — po krocích zpět:
+         *   1×  rozkreslená (neukotvená) stěna zmizí a kreslení skončí,
+         *       nakreslené úseky zůstanou. Klik do plátna kreslení zase spustí.
+         *   2×  a dál: ubere vždy poslední nakreslený úsek.
+         */
+        stenaEsc() {
+            // 1) Ukončit kreslení — zahodí se jen rozkreslený (neukotvený) úsek,
+            //    hotové úseky zůstanou
+            if (this.kreslimStenu) {
+                this.zrusRozkreslenyUsek();
+                this.kreslimStenu = false;
+                this.stenaStart = null;
+                this.renderer.clearTemp();
+                this.renderer.render();
+                return;
+            }
+
+            // 2) Ubrat poslední nakreslený úsek (jde vrátit i přes Zpět)
+            const posledni = this.stenaUseky.pop();
+            if (!posledni) return;
+            this.engine.pushUndo();
+            this.engine.removeWall(posledni.id);
+            this.renderer.render();
+            this.autoSave('Zpět po bodech');
+        },
+
         // ═══════════════════════════════════════════════════════
         // KEYBOARD
         // ═══════════════════════════════════════════════════════
@@ -2616,10 +2806,9 @@ function konceptKEditor(initialData) {
             if (isInput) return;
 
             if (e.key === 'Escape') {
-                if (this.kreslimStenu) {
-                    this.kreslimStenu = false;
-                    this.stenaStart = null;
-                    this.renderer.clearTemp();
+                // Nástroj stěny: 1. Esc ukončí rozkreslenou stěnu, další ubírají body
+                if (this.nastroj === 'stena' && (this.kreslimStenu || this.stenaUseky.length)) {
+                    this.stenaEsc();
                 }
                 if (this._metrMeri) {
                     this.metrEscape();
@@ -3819,6 +4008,8 @@ function konceptKEditor(initialData) {
                 nastroj: this.nastroj,
                 otvorTyp: this.otvorTyp,
                 otvorSirka: this.otvorSirka,
+                stenaTyp: this.stenaTyp,
+                tloustkaSteny: this.tloustkaSteny,
                 mapaPodklad: this.katastrMapaPodklad,
                 aiModel: this.aiModel,
                 showObjekty: this.showObjekty,
@@ -4220,12 +4411,9 @@ function konceptKEditor(initialData) {
             const novyNazev = this._novyNazevKonceptu.trim();
             if (!novyNazev || novyNazev === this.projektNazev) return;
             this.projektNazev = novyNazev;
-            // Aktualizovat text v selectu — přímo v DOM
-            this.$nextTick(() => {
-                document.querySelectorAll('select option').forEach(opt => {
-                    if (opt.value === String(this.projektId)) opt.textContent = novyNazev;
-                });
-            });
+            // Přejmenovat i v seznamu pro nabídku (ta se z něj vykresluje)
+            const polozka = this.koncepty.find(k => String(k.id) === String(this.projektId));
+            if (polozka) polozka.nazev = novyNazev;
             try {
                 await fetch(initialData.routes.ulozit.replace(':id', this.projektId), {
                     method: 'PATCH',

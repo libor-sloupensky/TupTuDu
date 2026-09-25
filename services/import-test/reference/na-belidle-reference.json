@@ -1,0 +1,379 @@
+{
+    "koncept": 79,
+    "nazev": "Na bělidle reference",
+    "steny": [
+        {
+            "id": "S3",
+            "od": [
+                -8.913750000000002,
+                5.115000000000001
+            ],
+            "do": [
+                -4.946250000000001,
+                5.115
+            ],
+            "tloustka": 0.4,
+            "typ": "nosna"
+        },
+        {
+            "id": "S5",
+            "od": [
+                -4.946250000000001,
+                5.115
+            ],
+            "do": [
+                -4.9475,
+                4.475
+            ],
+            "tloustka": 0.4,
+            "typ": "nosna"
+        },
+        {
+            "id": "S9",
+            "od": [
+                -4.9475,
+                4.475
+            ],
+            "do": [
+                -0.3625,
+                4.48625
+            ],
+            "tloustka": 0.4,
+            "typ": "nosna"
+        },
+        {
+            "id": "S11",
+            "od": [
+                -0.3625,
+                4.48625
+            ],
+            "do": [
+                -0.36875,
+                -6.383750000000001
+            ],
+            "tloustka": 0.2,
+            "typ": "nosna"
+        },
+        {
+            "id": "S17",
+            "od": [
+                -0.36875,
+                -6.383750000000001
+            ],
+            "do": [
+                -8.82362395929152,
+                -6.396183662384719
+            ],
+            "tloustka": 0.4,
+            "typ": "nosna"
+        },
+        {
+            "id": "S25",
+            "od": [
+                -8.85,
+                2.6
+            ],
+            "do": [
+                -8.82362395929152,
+                -6.396183662384719
+            ],
+            "tloustka": 0.55,
+            "typ": "nosna",
+            "od_constraint": {
+                "host": "S19",
+                "t": 0.7815123172882804
+            }
+        },
+        {
+            "id": "S27",
+            "od": [
+                -8.85,
+                2.6
+            ],
+            "do": [
+                -8.913750000000002,
+                5.115000000000001
+            ],
+            "tloustka": 0.4,
+            "typ": "nosna"
+        },
+        {
+            "id": "S33",
+            "od": [
+                -4.04125,
+                -6.40625
+            ],
+            "do": [
+                -4.01875,
+                2.6212500000000003
+            ],
+            "tloustka": 0.14,
+            "typ": "pricka"
+        },
+        {
+            "id": "S39",
+            "od": [
+                -4.01875,
+                2.6212500000000003
+            ],
+            "do": [
+                -8.85,
+                2.6
+            ],
+            "tloustka": 0.45,
+            "typ": "pricka"
+        },
+        {
+            "id": "S45",
+            "od": [
+                -8.837674420119018,
+                -1.6373355911980905
+            ],
+            "do": [
+                -4.04084981917935,
+                -1.6232407701981735
+            ],
+            "tloustka": 0.3,
+            "typ": "nosna",
+            "od_constraint": {
+                "host": "S25",
+                "t": 0.4710127248180801
+            },
+            "do_constraint": {
+                "host": "S33",
+                "t": 0.5373047965865434
+            }
+        },
+        {
+            "id": "S48",
+            "od": [
+                -0.375,
+                -2.61875
+            ],
+            "do": [
+                -4.0425,
+                -2.61875
+            ],
+            "tloustka": 0.3,
+            "typ": "pricka"
+        },
+        {
+            "id": "S51",
+            "od": [
+                -0.375,
+                -0.8200000000000001
+            ],
+            "do": [
+                -2.1725000000000003,
+                -0.8225
+            ],
+            "tloustka": 0.14,
+            "typ": "pricka"
+        },
+        {
+            "id": "S53",
+            "od": [
+                -2.1725000000000003,
+                -0.8225
+            ],
+            "do": [
+                -2.16875,
+                2.72
+            ],
+            "tloustka": 0.1,
+            "typ": "pricka"
+        },
+        {
+            "id": "S55",
+            "od": [
+                -4.01875,
+                2.6212500000000003
+            ],
+            "do": [
+                -0.3635694762908087,
+                2.6262168350254664
+            ],
+            "tloustka": 0.3,
+            "typ": "pricka",
+            "do_constraint": {
+                "host": "S11",
+                "t": 0.17111620652939588
+            }
+        },
+        {
+            "id": "S58",
+            "od": [
+                -0.36375,
+                1.705
+            ],
+            "do": [
+                -4.0425,
+                1.7175
+            ],
+            "tloustka": 0.1,
+            "typ": "pricka"
+        },
+        {
+            "id": "S61",
+            "od": [
+                -1.4475000000000002,
+                4.496250000000001
+            ],
+            "do": [
+                -1.43625,
+                2.61625
+            ],
+            "tloustka": 0.14,
+            "typ": "pricka"
+        }
+    ],
+    "otvory": [
+        {
+            "id": "D62",
+            "stena": "S33",
+            "pozice": 5.625365450382697,
+            "sirka": 0.8,
+            "typ": "dvere",
+            "smer": "levy",
+            "strana": "out"
+        },
+        {
+            "id": "D63",
+            "stena": "S53",
+            "pozice": 0.3209640134133321,
+            "sirka": 0.6,
+            "typ": "dvere",
+            "smer": "pravy",
+            "strana": "out"
+        },
+        {
+            "id": "D64",
+            "stena": "S58",
+            "pozice": 2.257234938330632,
+            "sirka": 0.9,
+            "typ": "dvere",
+            "smer": "pravy",
+            "strana": "out"
+        },
+        {
+            "id": "D65",
+            "stena": "S53",
+            "pozice": 2.6677540489228773,
+            "sirka": 0.6,
+            "typ": "dvere",
+            "smer": "levy",
+            "strana": "out"
+        },
+        {
+            "id": "D66",
+            "stena": "S61",
+            "pozice": 0.29973296948119754,
+            "sirka": 0.7,
+            "typ": "dvere",
+            "smer": "levy",
+            "strana": "in"
+        },
+        {
+            "id": "D67",
+            "stena": "S55",
+            "pozice": 0.40246954832148385,
+            "sirka": 1.4,
+            "typ": "dvere",
+            "smer": "otvor",
+            "strana": "in"
+        },
+        {
+            "id": "D68",
+            "stena": "S48",
+            "pozice": 1.9269916200404456,
+            "sirka": 0.9,
+            "typ": "dvere",
+            "smer": "pravy",
+            "strana": "in"
+        },
+        {
+            "id": "D69",
+            "stena": "S33",
+            "pozice": 1.2770936269740505,
+            "sirka": 0.9,
+            "typ": "dvere",
+            "smer": "levy",
+            "strana": "out"
+        },
+        {
+            "id": "O70",
+            "stena": "S17",
+            "pozice": 4.774142175605127,
+            "sirka": 2.1,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "D72",
+            "stena": "S45",
+            "pozice": 2.4689020125119354,
+            "sirka": 0.9,
+            "typ": "dvere",
+            "smer": "pravy",
+            "strana": "out"
+        },
+        {
+            "id": "O73",
+            "stena": "S25",
+            "pozice": 1.15799738169857,
+            "sirka": 1.9,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "D74",
+            "stena": "S3",
+            "pozice": 2.557336620652671,
+            "sirka": 0.9,
+            "typ": "dvere",
+            "smer": "levy",
+            "strana": "in"
+        },
+        {
+            "id": "O75",
+            "stena": "S9",
+            "pozice": 1.4541783664810968,
+            "sirka": 1.8,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O76",
+            "stena": "S9",
+            "pozice": 3.7924075088974143,
+            "sirka": 0.55,
+            "typ": "okno",
+            "strana": "in"
+        },
+        {
+            "id": "O78",
+            "stena": "S17",
+            "pozice": 1.185606552903698,
+            "sirka": 1.9,
+            "typ": "okno",
+            "strana": "in"
+        }
+    ],
+    "podklad": {
+        "url": "http:\/\/tuptudu.localhost:8002\/masterteam\/koncept-v3\/podklad\/f8a16d9585e0c7df8c64a18504df80646d978a3f\/obrazek\/1\/150",
+        "vektor": "http:\/\/tuptudu.localhost:8002\/masterteam\/koncept-v3\/podklad\/f8a16d9585e0c7df8c64a18504df80646d978a3f\/vektor\/1",
+        "otisk": "f8a16d9585e0c7df8c64a18504df80646d978a3f",
+        "strana": 1,
+        "nazev": "Repcicka_1NP_novy.pdf",
+        "metryNaPx": 0.008434532203281891,
+        "zmerenoMm": 2400,
+        "vyrez": null,
+        "sirkaM": 20.934508928545654,
+        "vyskaM": 14.80260401675972,
+        "stredX": 0,
+        "stredY": 0,
+        "uhel": 0,
+        "pruhlednost": 0.5,
+        "zobrazeni": "nad"
+    }
+}

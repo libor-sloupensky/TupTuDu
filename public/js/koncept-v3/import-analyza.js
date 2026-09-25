@@ -141,10 +141,11 @@
                 } else if (K === 'Z') {
                     if (mame) naBod(zx, zy, true);
                 } else if (K === 'C' && c.length >= 6) {
-                    // Kubická křivka. NEZPLOŠŤUJE se do úseček — jen oblouků
-                    // dveří je na výkrese přes 25 000 a vstup by se nafoukl
-                    // dvacetinásobně. Ukládá se stranou, s řídicími body,
-                    // takže se z ní dá poznat oblouk (dveřní křídlo).
+                    // Kubická křivka. NEZPLOŠŤUJE se do úseček — jen na Klemově
+                    // jich je 25 800 (drtivá většina jsou obrysy písmen, dveřních
+                    // oblouků je devět) a zploštěním by vstup narostl z 13 tisíc
+                    // úseček na čtvrt milionu. Ukládá se stranou i s řídicími body,
+                    // takže se z ní dá poznat oblouk dveřního křídla.
                     for (let i = 0; i + 5 < c.length; i += 6) {
                         const b = [];
                         for (let k = 0; k < 6; k += 2) {
