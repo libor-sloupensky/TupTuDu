@@ -639,7 +639,13 @@ window.KonceptImport = {
         );
 
         // Podklad (ať je podle čeho opravovat) vložit vždy — i když ho uživatel přeskočil.
-        if (!this.podklad) this.impVloz(false);
+        // Podklad musí odpovídat PRÁVĚ importovanému výkresu. Dřív se vkládal
+        // jen tehdy, když žádný nebyl — takže po importu druhého výkresu zůstal
+        // pod kresbou ten první a stěny "nelícovaly" (každá strana má jiný rozměr).
+        const jinyPodklad = !this.podklad
+            || this.podklad.otisk !== this.impOtisk
+            || Number(this.podklad.strana) !== Number(this.impStrana);
+        if (jinyPodklad) this.impVloz(false);
 
         this.engine.fromJSON({ steny, otvory });
         this.impSrovnejOtvory();

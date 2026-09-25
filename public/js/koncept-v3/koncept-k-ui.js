@@ -3729,11 +3729,28 @@ function konceptKEditor(initialData) {
                 this.projektId = d.id;
                 this.projektNazev = nazev;
                 localStorage.setItem('kv3_lastProjekt', String(d.id));
+                this.doplnKonceptDoSeznamu(d.id, nazev);
             } catch (e) {
                 chybaUzivateli(e, 'Koncept V3: založení konceptu pro uložení práce');
             } finally {
                 this._zakladamKoncept = false;
             }
+        },
+
+        /**
+         * Doplní nově založený koncept do výběru.
+         *
+         * Seznam konceptů vykresluje server (@foreach), takže koncept vzniklý
+         * za běhu by se v něm objevil až po znovunačtení stránky.
+         */
+        doplnKonceptDoSeznamu(id, nazev) {
+            const select = document.querySelector('select[x-model="projektId"]');
+            if (!select || select.querySelector('option[value="' + id + '"]')) return;
+            const volba = document.createElement('option');
+            volba.value = String(id);
+            volba.textContent = nazev;
+            select.appendChild(volba);
+            select.value = String(id);
         },
 
         async ulozit() {
