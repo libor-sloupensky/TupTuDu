@@ -1332,12 +1332,59 @@
             const odchylka = Math.abs((stena.x1 - p.x1) * nx + (stena.y1 - p.y1) * ny) * mnb;
             if (odchylka > (p.tloustka + stena.tloustka) / 2 * podil) continue;
 
+            // Překryv se poměřuje s TESTOVANOU stěnou, ne s tou ze sady.
+            // Dřív to byl podíl délky obvodové zdi, takže půlmetrový kus ležící
+            // ve 13metrové obvodové stěně vyšel jako "5 %" a prošel.
             const t = (px, py) => ((px - p.x1) * dx + (py - p.y1) * dy) / (L * L);
             const t1 = Math.min(t(stena.x1, stena.y1), t(stena.x2, stena.y2));
             const t2 = Math.max(t(stena.x1, stena.y1), t(stena.x2, stena.y2));
-            if (Math.min(t2, 1) - Math.max(t1, 0) > 0.2) return true;
+            const spolecneM = (Math.min(t2, 1) - Math.max(t1, 0)) * L * mnb;
+            if (spolecneM <= 0) continue;
+
+            const delkaTestovane = Math.hypot(stena.x2 - stena.x1, stena.y2 - stena.y1) * mnb;
+            if (spolecneM >= delkaTestovane * (nast.podilPrekryvu ?? 0.6)) return true;
         }
         return false;
+    }
+
+    /**
+     * Zahodí stěny, které celé leží uvnitř jiné stěny.
+     *
+     * Typicky ostění otvoru v obvodové zdi: krátký kus KOLMO na zeď, celý
+     * schovaný v její tloušťce. `prekryvaSadu` je nevidí, protože porovnává
+     * jen rovnoběžné stěny — tady na úhlu nezáleží, stěna uvnitř jiné stěny
+     * je nadbytečná vždycky.
+     */
+    function odstranPohlcene(osy, mnb, nast = {}) {
+        const podil = nast.podilPohlceni ?? 0.9;
+        const kroku = 6;
+
+        return osy.filter((o, i) => {
+            const dx = o.x2 - o.x1, dy = o.y2 - o.y1;
+            const delkaM = Math.hypot(dx, dy) * mnb;
+            if (delkaM > (nast.maxPohlcenaM ?? 0.8)) return true;   // dlouhou zeď nikdo nepohltí
+
+            for (let j = 0; j < osy.length; j++) {
+                if (j === i) continue;
+                const p = osy[j];
+                if (p.tloustka < o.tloustka * 0.9) continue;        // pohlcuje jen tlustší
+                const pdx = p.x2 - p.x1, pdy = p.y2 - p.y1;
+                const pL2 = pdx * pdx + pdy * pdy;
+                if (!pL2) continue;
+
+                let uvnitr = 0;
+                for (let k = 0; k <= kroku; k++) {
+                    const t = k / kroku;
+                    const x = o.x1 + dx * t, y = o.y1 + dy * t;
+                    let u = ((x - p.x1) * pdx + (y - p.y1) * pdy) / pL2;
+                    if (u < 0 || u > 1) continue;
+                    const vzd = Math.hypot(p.x1 + pdx * u - x, p.y1 + pdy * u - y) * mnb;
+                    if (vzd <= p.tloustka / 2) uvnitr++;
+                }
+                if (uvnitr / (kroku + 1) >= podil) return false;
+            }
+            return true;
+        });
     }
 
     /**
@@ -1542,7 +1589,14 @@
 
         v = sloucKolinearni(v, mnb, nast.mezeraM ?? 0.15);
         // po protažení rohů mohly vzniknout nové překryvy
-        return odstranPrekryvy(v, mnb, nast);
+        v = odstranPrekryvy(v, mnb, nast);
+        // krátké kusy schované uvnitř jiné stěny (ostění otvorů) jsou navíc
+        v = odstranPohlcene(v, mnb, nast);
+
+        // Zeď musí být aspoň tak dlouhá, jak je tlustá. Kus 22 cm dlouhý a
+        // 75 cm tlustý není stěna, ale úlomek kresby (ostění, roh, kóta).
+        return v.filter(o => Math.hypot(o.x2 - o.x1, o.y2 - o.y1) * mnb
+            >= o.tloustka * (nast.minPomerDelkaTloustka ?? 1));
     }
 
     /**
@@ -1871,7 +1925,10 @@
                 if (syrove.length < 4) return;
             }
 
-            let osy = nast.bezCisteni ? syrove : vycistiOsy(syrove, nast, obvod);
+            // otvory se sbírají i tady — dřív je uměla jen varianta z výplní,
+            // takže u výkresů bez vyplněného zdiva (AutoCAD) nebyl žádný
+            const sbernaOtvoru = [];
+            let osy = nast.bezCisteni ? syrove : vycistiOsy(syrove, { ...nast, sbernaOtvoru }, obvod);
             if (!osy.length && !obvod.length) return;
 
             // Obvod z obkresleného tvaru je jistota — přidá se ke každé variantě.
@@ -1884,7 +1941,14 @@
 
             const hodnoceni = ohodnotOsy(osy, mnb);
             if (!hodnoceni.skore) return;
-            varianty.push({ styl: popis, osy, syrovych: syrove.length, usecek: skupina.length, ...hodnoceni });
+            varianty.push({
+                styl: popis, osy, syrovych: syrove.length, usecek: skupina.length,
+                // materiálem zdi je tu syrová sada kandidátů, ne vyplněné plochy
+                otvory: urciTypyOtvoru(
+                    sloucOtvory(sbernaOtvoru.concat(otvoryZeSten(osy, syrove, usecky, mnb, nast)), mnb, nast),
+                    usecky, mnb, nast),
+                ...hodnoceni,
+            });
         };
 
         // NEJSPOLEHLIVĚJŠÍ ZDROJ: stěna nakreslená jako vyplněná plocha.
@@ -2079,7 +2143,7 @@
         vycistiOsy, narovnej, odstranHrebeny,
         vPolygonu, orezObrysem, obvodoveSteny,
         shlukyTlousteks, vyberPodleRozdeleni, postavRastr, plochyVRastru,
-        stenyZVyplni, urciTypyOtvoru, otvoryZeSten, sloucOtvory, najdiObloukyDveri, odstranPrekryvy, spojPresOtvory, sloucVrstvy, srovnejTloustky, prekryvaSadu, prichytLice, podobneVarianty, sloucKolinearni, spojRohy, nejvetsiSit,
+        stenyZVyplni, urciTypyOtvoru, otvoryZeSten, sloucOtvory, najdiObloukyDveri, odstranPrekryvy, spojPresOtvory, sloucVrstvy, srovnejTloustky, prekryvaSadu, odstranPohlcene, prichytLice, podobneVarianty, sloucKolinearni, spojRohy, nejvetsiSit,
     };
 
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
