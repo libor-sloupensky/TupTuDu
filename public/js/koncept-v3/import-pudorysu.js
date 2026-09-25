@@ -459,6 +459,31 @@ window.KonceptImport = {
         };
     },
 
+    /**
+     * Srovná vložené otvory podle stěn, jak je nakonec vytvořil engine.
+     *
+     * `fromJSON` si stěny v T-napojeních rozdělí, takže zeď pod otvorem může
+     * být kratší, než s jakou se poloha počítala. Otvor, který se do ní
+     * nevejde, se posune dovnitř; když je zeď kratší než otvor, zahodí se —
+     * vymyšlený objekt v editoru vadí víc než chybějící.
+     */
+    impSrovnejOtvory() {
+        if (!this.engine) return;
+        let zahozeno = 0;
+        for (const o of [...this.engine.openings.values()]) {
+            const w = this.engine.walls.get(o.wallId);
+            if (!w) { this.engine.removeOpening(o.id); zahozeno++; continue; }
+            const a = this.engine.nodes.get(w.nodeA);
+            const b = this.engine.nodes.get(w.nodeB);
+            if (!a || !b) { this.engine.removeOpening(o.id); zahozeno++; continue; }
+
+            const delkaM = Math.hypot(b.x - a.x, b.y - a.y) / this.engine.PX_PER_M;
+            if (delkaM < o.sirka) { this.engine.removeOpening(o.id); zahozeno++; continue; }
+            o.pozice = Math.max(0, Math.min(delkaM - o.sirka, o.pozice));
+        }
+        return zahozeno;
+    },
+
     /** Spustí rozpoznávání stěn nad vektory výkresu. */
     async impRozpoznat() {
         const d = this.impStranaData;
@@ -608,14 +633,20 @@ window.KonceptImport = {
         const steny = window.ImportAnalyza.osyNaSteny(
             varianta.osy, this.impMetryNaBod(), [sirkaBodu / 2, vyskaBodu / 2],
         );
+        // otvory se vážou na stěny přes id, které osyNaSteny přidělilo
+        const otvory = window.ImportAnalyza.otvoryNaSteny(
+            varianta.osy, varianta.otvory || [], this.impMetryNaBod(),
+        );
 
         // Podklad (ať je podle čeho opravovat) vložit vždy — i když ho uživatel přeskočil.
         if (!this.podklad) this.impVloz(false);
 
-        this.engine.fromJSON({ steny });
+        this.engine.fromJSON({ steny, otvory });
+        this.impSrovnejOtvory();
         this.renderer.render();
         this.fitView?.();                       // ukázat rovnou celý výsledek
-        this._posledniAkce = 'Import stěn z výkresu';
+        this._posledniAkce = 'Import stěn z výkresu'
+            + (otvory.length ? ' (' + otvory.length + ' otvorů)' : '');
         this.ulozit?.();
         this.obnovSeznamObjektu?.();
         this.impZavri();

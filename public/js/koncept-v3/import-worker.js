@@ -26,6 +26,11 @@ self.onmessage = (zprava) => {
                 skore: v.skore,
                 napojenost: v.napojenost,
                 plocha: v.plocha,
+                // otvory se musí přenést výslovně — odpověď se skládá ručně
+                otvory: (v.otvory || []).map(o => ({
+                    x: o.x, y: o.y, sirka: o.sirka, tloustka: o.tloustka,
+                    typ: o.typ, oblouk: !!o.oblouk,
+                })),
             })),
         });
     } catch (e) {

@@ -2018,7 +2018,9 @@
             sx = stred[0]; sy = stred[1];
         }
 
-        return osy.map(o => ({
+        return osy.map((o, i) => ({
+            // id musí být stálé, aby se na stěnu daly navázat otvory (viz otvoryNaSteny)
+            id: 'W' + (i + 1),
             od: [(o.x1 - sx) * mnb, -(o.y1 - sy) * mnb],
             do: [(o.x2 - sx) * mnb, -(o.y2 - sy) * mnb],
             tloustka: o.tloustka,
@@ -2027,9 +2029,53 @@
         }));
     }
 
+    /**
+     * Přiřadí rozpoznané otvory ke stěnám a spočítá polohu podél nich.
+     *
+     * Analýza vrací jen střed otvoru v bodech PDF; editor potřebuje id stěny
+     * a vzdálenost LEVÉHO okraje otvoru od začátku té stěny (tak to má engine).
+     * Číslování stěn musí odpovídat `osyNaSteny` nad toutéž sadou os.
+     *
+     * Otvor, který nesedí na žádnou stěnu nebo se do ní nevejde, se zahodí —
+     * vymyšlený objekt v editoru vadí víc než chybějící.
+     */
+    function otvoryNaSteny(osy, otvory, mnb, nast = {}) {
+        if (!osy.length || !otvory || !otvory.length) return [];
+        const maxOdsazeni = (nast.tolOtvoruKeStene ?? 0.35) / mnb;
+        const vysledek = [];
+
+        for (const o of otvory) {
+            let nej = null, nejD = maxOdsazeni;
+            for (let i = 0; i < osy.length; i++) {
+                const s = osy[i];
+                const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+                const L2 = dx * dx + dy * dy;
+                if (!L2) continue;
+                const t = ((o.x - s.x1) * dx + (o.y - s.y1) * dy) / L2;
+                if (t < 0 || t > 1) continue;                  // mimo úsek stěny
+                const d = Math.hypot(s.x1 + dx * t - o.x, s.y1 + dy * t - o.y);
+                if (d < nejD) { nejD = d; nej = { i, s, t, L: Math.sqrt(L2) }; }
+            }
+            if (!nej) continue;
+
+            const delkaM = nej.L * mnb;
+            if (delkaM < o.sirka) continue;                     // otvor by přečníval
+            const stredM = nej.t * delkaM;
+            const pozice = Math.max(0, Math.min(delkaM - o.sirka, stredM - o.sirka / 2));
+
+            vysledek.push({
+                stena: 'W' + (nej.i + 1),
+                pozice,
+                sirka: o.sirka,
+                typ: o.typ || 'dvere',
+            });
+        }
+        return vysledek;
+    }
+
     const api = {
         extrahujUsecky, klicStylu, seskupPodleStylu,
-        osySten, ohodnotOsy, navrhniVarianty, osyNaSteny,
+        osySten, ohodnotOsy, navrhniVarianty, osyNaSteny, otvoryNaSteny,
         vycistiOsy, narovnej, odstranHrebeny,
         vPolygonu, orezObrysem, obvodoveSteny,
         shlukyTlousteks, vyberPodleRozdeleni, postavRastr, plochyVRastru,

@@ -1130,7 +1130,12 @@ var _kkInitData = {
         podkladNahled: '{{ route("masterteam.koncept-v3.podklad.nahled", [":otisk", ":strana"]) }}',
     },
     // verze analyzátoru — worker si ji přidá do adresy, aby nebral starou verzi z cache
-    verzeImportu: '{{ filemtime(public_path("js/koncept-v3/import-analyza.js")) }}',
+    {{-- verze pro cache: nejnovější ze VŠECH souborů importu, ne jen analyzátoru —
+         jinak se změna ve workeru neprojeví a prohlížeč podává starou kopii --}}
+    verzeImportu: '{{ max(
+        filemtime(public_path("js/koncept-v3/import-analyza.js")),
+        filemtime(public_path("js/koncept-v3/import-worker.js")),
+    ) }}',
     mapyczApiKey: '{{ config("services.mapycz.api_key", "") }}',
     // Constraint editor (T-junction slide, detach, snap, junction type barvy).
     // Plně zpětně kompatibilní — koncepty bez constraint metadata (ručně
