@@ -200,6 +200,8 @@ function zmerReferenci(soubor) {
 
         return {
             styl: v.styl,
+            skore: v.skore, napojenost: v.napojenost, typicke: v.typicke,
+            pravouhle: v.pravouhle, delkaOs: v.delka, plocha: v.plocha,
             sten: nalSteny.length,
             stenNasel: trefene.length,
             stenNavic: navicSteny,
@@ -214,6 +216,26 @@ function zmerReferenci(soubor) {
     // top-1 = co dostane uživatel; nejlepší = strop dnešního rozpoznávání
     const skore = (z) => z.stenNasel / Math.max(1, refSteny.length) - z.stenNavic * 0.01;
     const nejlepsi = zmerene.reduce((a, b) => (skore(b) > skore(a) ? b : a));
+
+    // --detail=<část názvu>: rozpis všech variant i s tím, podle čeho se vybírá.
+    // Bez něj není poznat, jestli selhalo rozpoznání, nebo jen výběr varianty.
+    const detail = (process.argv.find(a => a.startsWith('--detail')) || '').split('=')[1];
+    if (detail !== undefined && (detail === '' || ref.nazev.toLowerCase().includes(detail.toLowerCase()))) {
+        console.log('\n' + ref.nazev + ' — všechny varianty:');
+        for (const z of zmerene) {
+            console.log('   ' + z.styl.slice(0, 32).padEnd(34)
+                + ' stěn ' + String(z.sten).padStart(3)
+                + ' · nalezeno ' + (z.stenNasel + '/' + refSteny.length).padStart(6)
+                + ' · navíc ' + String(z.stenNavic).padStart(3)
+                + ' · otvory ' + (z.otvoruNasel + '/' + refOtvory.length).padStart(6)
+                + ' | skóre ' + z.skore.toFixed(3)
+                + ' (napoj ' + z.napojenost.toFixed(2)
+                + ', typ ' + z.typicke.toFixed(2)
+                + ', pravoúhl ' + z.pravouhle.toFixed(2)
+                + ', délka ' + z.delkaOs.toFixed(0) + ' m'
+                + ', plocha ' + z.plocha.toFixed(0) + ' m²)');
+        }
+    }
 
     return {
         nazev: ref.nazev,

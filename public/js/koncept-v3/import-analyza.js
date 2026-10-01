@@ -1660,10 +1660,19 @@
         const pomerStran = Math.max(sirka, vyska) / Math.max(0.01, Math.min(sirka, vyska));
         const obalka = (plocha > 25 && plocha < 2000 && pomerStran < 6) ? 1 : 0.3;
 
+        // Drobení: v půdorysu měří stěna průměrně 3–6 m. Varianta, která
+        // rozpadne dům na desítky dvoumetrových kousků, má přitom stejnou
+        // napojenost i pravoúhlost jako ta správná — na U Průhonu vyhrávala
+        // se 62 stěnami a 54 vymyšlenými, zatímco správná měla 24 stěn
+        // a 27 z 28 referenčních. Bez tohohle členu je od sebe nerozeznáme.
+        const naStenu = delka / osy.length;
+        const drobeni = Math.min(1, Math.max(0.25, (naStenu - 1) / 2));
+
         return {
             // pokrytí (délka) váží hodně — malá, byť čistá skupinka není půdorys
-            skore: napojenost * napojenost * typicke * pravouhle * rozsah * obalka * Math.min(1, delka / 120),
-            napojenost, typicke, pravouhle, delka, plocha,
+            skore: napojenost * typicke * pravouhle * rozsah * obalka
+                * drobeni * Math.min(1, delka / 120),
+            napojenost, typicke, pravouhle, delka, plocha, drobeni,
         };
     }
 

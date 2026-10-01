@@ -349,8 +349,8 @@
         "stredX": 0,
         "stredY": 0,
         "uhel": 0,
-        "pruhlednost": 0.65,
+        "pruhlednost": 0.15,
         "viditelny": true,
-        "zobrazeni": "nad"
+        "zobrazeni": "pod"
     }
 }
