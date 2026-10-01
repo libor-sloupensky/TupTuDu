@@ -1676,19 +1676,84 @@
     function sloucOtvory(otvory, mnb, nast = {}) {
         const dosah = (nast.tolTehozOtvoruM ?? 0.30) / mnb;
         const vysledek = [];
+        // Od nejširšího. Užší otvor, jehož střed padne DOVNITŘ už přijatého,
+        // je tentýž otvor nalezený podruhé (jednou z mezery ve zdivu, podruhé
+        // z přerušené šrafy) — jen hůř změřený. Pevný dosah na to nestačí:
+        // u dvoumetrového okna bývají oba nálezy přes půl metru od sebe.
         for (const o of otvory.sort((a, b) => b.sirka - a.sirka)) {
-            if (!vysledek.some(v => Math.hypot(v.x - o.x, v.y - o.y) < dosah)) vysledek.push(o);
+            const kryje = vysledek.some(v =>
+                Math.hypot(v.x - o.x, v.y - o.y) < Math.max(dosah, (v.sirka / mnb) / 2));
+            if (!kryje) vysledek.push(o);
         }
         return vysledek;
+    }
+
+    /**
+     * Nechal po sobě otvor na úseku zdi nějakou stopu v kresbě?
+     *
+     * Sama mezera (ve zdivu nebo ve šrafě) nestačí — stejně vypadá i místo,
+     * kde se jen nepovedlo rozpoznat zdivo. Otvor se ale vždycky něčím kreslí:
+     * příčnou čárou (osa otvoru, odkaz popisku) nebo podélnou (sklo okna,
+     * práh, parapet) uvnitř pásu zdi.
+     *
+     * @returns {{pricna: boolean, podelna: boolean}}
+     */
+    function stopaOtvoru(s, zacatek, konec, cary, mnb, nast = {}) {
+        const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+        const L = Math.hypot(dx, dy) || 1;
+        const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+        const pulTl = (s.tloustka / mnb) / 2;
+        const tolOsy = (nast.tolOsyOtvoru ?? 0.06) / mnb;
+
+        const podel = (x, y) => (x - s.x1) * ux + (y - s.y1) * uy;
+        const bok = (x, y) => (x - s.x1) * nx + (y - s.y1) * ny;
+        const odchylka = (c) => {
+            let r = Math.abs(Math.atan2(c.y2 - c.y1, c.x2 - c.x1) - Math.atan2(dy, dx)) % Math.PI;
+            return r > Math.PI / 2 ? Math.PI - r : r;
+        };
+
+        // PŘÍČNÁ čára středem otvoru — kolmo na zeď. Kreslí se u otvoru ve všech
+        // projektech, kdežto tam, kde zeď končí, není. Rovnoběžná čára sama
+        // nestačí: bývá i podél celé zdi.
+        const stred = (zacatek + konec) / 2;
+        const dovoleno = Math.max((konec - zacatek) * 0.3, 0.12 / mnb);
+        const pricna = cary.some(c => {
+            if (odchylka(c) < 84 * Math.PI / 180) return false;
+            const p1 = podel(c.x1, c.y1), p2 = podel(c.x2, c.y2);
+            if (Math.abs((p1 + p2) / 2 - stred) > dovoleno) return false;
+            // musí protnout pás zdi, ne ležet stranou
+            const b1 = bok(c.x1, c.y1), b2 = bok(c.x2, c.y2);
+            return Math.min(b1, b2) < pulTl && Math.max(b1, b2) > -pulTl;
+        });
+
+        // Rovnoběžná čára otvorem (práh, osa, sklo okna) — slabší, ale platná
+        // stopa. Hledá se v CELÉM pásu zdi, ne jen na její ose: okno se kreslí
+        // dvěma až třemi linkami posunutými od osy (na Kováčové ±10 cm),
+        // takže test na osu je minul a 15 z 16 oken propadlo.
+        const podelna = cary.some(c => {
+            if (odchylka(c) > 6 * Math.PI / 180) return false;
+            if (Math.abs(bok(c.x1, c.y1)) > pulTl + tolOsy) return false;
+            const c1 = Math.min(podel(c.x1, c.y1), podel(c.x2, c.y2));
+            const c2 = Math.max(podel(c.x1, c.y1), podel(c.x2, c.y2));
+            return Math.min(c2, konec) - Math.max(c1, zacatek) > (konec - zacatek) * 0.5;
+        });
+
+        return { pricna, podelna };
+    }
+
+    /** Čáry dost dlouhé na to, aby mohly být stopou otvoru (ne šrafa). */
+    function caryProStopu(usecky, mnb, nast = {}) {
+        const minSirka = nast.minSirkaOtvoru ?? 0.5;
+
+        return usecky.filter(u => !u.vyplnene
+            && Math.hypot(u.x2 - u.x1, u.y2 - u.y1) * mnb > minSirka * 0.5);
     }
 
     /**
      * Otvory podél už rozpoznaných stěn.
      *
      * Jde po ose stěny a hledá úseky, kde CHYBÍ zdivo (vyplněná plocha).
-     * Sama mezera nestačí — potvrdí ji až čára vedoucí středem otvoru po ose
-     * zdi. Tu tam kreslí architekt vždycky (osa otvoru, kóta šířky, práh),
-     * kdežto v místě, kde zeď opravdu končí, žádná není.
+     * Sama mezera nestačí — potvrdí ji až stopa otvoru v kresbě.
      *
      * @param {Array} steny    výsledné osy stěn
      * @param {Array} vyplne   syrové vyplněné plochy (zdivo)
@@ -1698,11 +1763,7 @@
         const minSirka = nast.minSirkaOtvoru ?? 0.5;
         const maxSirka = nast.maxOtvorM ?? 3.2;
         const krok = (nast.krokOtvoruM ?? 0.05) / mnb;
-        const tolOsy = (nast.tolOsyOtvoru ?? 0.06) / mnb;
-
-        // jen dost dlouhé čáry, ať osu nepotvrdí šrafa
-        const cary = usecky.filter(u => !u.vyplnene
-            && Math.hypot(u.x2 - u.x1, u.y2 - u.y1) * mnb > minSirka * 0.5);
+        const cary = caryProStopu(usecky, mnb, nast);
 
         const otvory = [];
         for (const s of steny) {
@@ -1736,46 +1797,106 @@
                     if (sirkaM >= minSirka && sirkaM <= maxSirka && uprostred) {
                         const stredT = (zacatek + t) / 2;
                         const sx = s.x1 + ux * stredT, sy = s.y1 + uy * stredT;
+                        const stopa = stopaOtvoru(s, zacatek, t, cary, mnb, nast);
 
-                        const podel = (x, y) => (x - s.x1) * ux + (y - s.y1) * uy;
-                        const bok = (x, y) => (x - s.x1) * nx + (y - s.y1) * ny;
-
-                        // PŘÍČNÁ čára středem otvoru — kolmo na zeď. Kreslí se u
-                        // otvoru ve všech projektech (osa otvoru / odkaz popisku),
-                        // kdežto tam, kde zeď končí, není. Rovnoběžná čára sama
-                        // nestačí: bývá i podél celé zdi.
-                        const stredOtvoru = (zacatek + t) / 2;
-                        const dovolenoOdStredu = Math.max((t - zacatek) * 0.3, 0.12 / mnb);
-                        const maPricnou = cary.some(c => {
-                            let r = Math.abs(Math.atan2(c.y2 - c.y1, c.x2 - c.x1) - Math.atan2(dy, dx)) % Math.PI;
-                            if (r > Math.PI / 2) r = Math.PI - r;
-                            if (r < 84 * Math.PI / 180) return false;            // musí být kolmá
-                            const p1 = podel(c.x1, c.y1), p2 = podel(c.x2, c.y2);
-                            if (Math.abs((p1 + p2) / 2 - stredOtvoru) > dovolenoOdStredu) return false;
-                            // musí protnout pás zdi, ne ležet stranou
-                            const b1 = bok(c.x1, c.y1), b2 = bok(c.x2, c.y2);
-                            return Math.min(b1, b2) < pulTl && Math.max(b1, b2) > -pulTl;
-                        });
-
-                        // rovnoběžná čára otvorem (práh, osa) — slabší, ale platná stopa
-                        const maPodelnou = cary.some(c => {
-                            let r = Math.abs(Math.atan2(c.y2 - c.y1, c.x2 - c.x1) - Math.atan2(dy, dx)) % Math.PI;
-                            if (r > Math.PI / 2) r = Math.PI - r;
-                            if (r > 6 * Math.PI / 180) return false;
-                            if (Math.abs(bok(c.x1, c.y1)) > tolOsy) return false;
-                            const c1 = Math.min(podel(c.x1, c.y1), podel(c.x2, c.y2));
-                            const c2 = Math.max(podel(c.x1, c.y1), podel(c.x2, c.y2));
-                            return Math.min(c2, t) - Math.max(c1, zacatek) > (t - zacatek) * 0.5;
-                        });
-
-                        if (maPricnou || maPodelnou) {
-                            otvory.push({ x: sx, y: sy, sirka: sirkaM, tloustka: s.tloustka, pricna: maPricnou });
+                        if (stopa.pricna || stopa.podelna) {
+                            otvory.push({ x: sx, y: sy, sirka: sirkaM, tloustka: s.tloustka, pricna: stopa.pricna });
                         }
                     }
                     zacatek = null;
                 }
             }
         }
+        return otvory;
+    }
+
+    /**
+     * Otvory podle toho, kde ve zdi končí ŠRAFA.
+     *
+     * Hledání mezer ve zdivu (`otvoryZeSten`) na ArchiCADu selhává: stěna je
+     * jedna vyplněná plocha přes celou délku — bílou výplní zakrývá kresbu pod
+     * sebou — a okno v ní žádnou mezeru nedělá. Na Kováčové tak propadlo 15
+     * z 16 oken, přestože jsou v kresbě zřetelná.
+     *
+     * Co se u otvoru opravdu mění, je VÝPLŇ zdiva: šrafa (krátké šikmé čárky
+     * nebo křivky uvnitř pásu zdi) se přeruší a zůstanou jen podélné linky
+     * skla nebo prahu. Úsek bez šrafy uprostřed jinak vyšrafované zdi je otvor.
+     */
+    function otvoryZeSrafy(steny, usecky, mnb, nast = {}) {
+        const minSirka = nast.minSirkaOtvoru ?? 0.5;
+        const maxSirka = nast.maxOtvorM ?? 3.2;
+        const krok = (nast.krokOtvoruM ?? 0.05) / mnb;
+        const maxSrafaM = nast.maxSrafaM ?? 0.6;      // delší čára už není šrafa
+
+        // Kandidáti na šrafu: krátké čáry i krátké křivky (ArchiCAD šrafuje
+        // Bézierem — na Klemově je jich 25 tisíc).
+        const kratke = [];
+        for (const u of usecky.concat(usecky.krivky || [])) {
+            const d = Math.hypot(u.x2 - u.x1, u.y2 - u.y1);
+            if (d * mnb <= maxSrafaM && d > 0) kratke.push(u);
+        }
+        if (kratke.length < 50) return [];
+        const cary = caryProStopu(usecky, mnb, nast);
+
+        const otvory = [];
+        for (const s of steny) {
+            const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+            const L = Math.hypot(dx, dy);
+            if (!L || L * mnb < minSirka * 2) continue;
+            const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+            const pulTl = (s.tloustka / mnb) / 2;
+            const smer = Math.atan2(dy, dx);
+
+            // kde podél zdi šrafa je
+            const poleKroku = Math.ceil(L / krok) + 1;
+            const srafa = new Uint8Array(poleKroku);
+            for (const c of kratke) {
+                const sx = (c.x1 + c.x2) / 2, sy = (c.y1 + c.y2) / 2;
+                const b = (sx - s.x1) * nx + (sy - s.y1) * ny;
+                if (Math.abs(b) > pulTl * 0.85) continue;        // musí být UVNITŘ zdi
+                const t = (sx - s.x1) * ux + (sy - s.y1) * uy;
+                if (t < 0 || t > L) continue;
+                let r = Math.abs(Math.atan2(c.y2 - c.y1, c.x2 - c.x1) - smer) % Math.PI;
+                if (r > Math.PI / 2) r = Math.PI - r;
+                if (r < 15 * Math.PI / 180) continue;            // podélné linky nejsou šrafa
+                const i = Math.round(t / krok);
+                // šrafa „drží“ na délku svého tahu, ať mezi čárkami nevznikne díra
+                const dosah = Math.max(1, Math.round(Math.hypot(c.x2 - c.x1, c.y2 - c.y1) / krok));
+                for (let k = Math.max(0, i - dosah); k <= Math.min(poleKroku - 1, i + dosah); k++) srafa[k] = 1;
+            }
+
+            // Zeď musí být převážně šrafovaná, jinak „chybějící šrafa“ nic neznamená
+            // (AutoCAD kreslí zdi jen dvěma čarami a celá by vyšla jako otvor).
+            let pokryti = 0;
+            for (let i = 0; i < poleKroku; i++) pokryti += srafa[i];
+            if (pokryti < poleKroku * 0.5) continue;
+
+            let zacatek = null;
+            for (let i = 0; i <= poleKroku; i++) {
+                const prazdno = i < poleKroku && !srafa[i];
+                if (prazdno && zacatek === null) zacatek = i;
+                if ((!prazdno || i === poleKroku) && zacatek !== null) {
+                    const sirkaM = (i - zacatek) * krok * mnb;
+                    const uprostred = zacatek > 1 && i < poleKroku - 1;
+                    if (sirkaM >= minSirka && sirkaM <= maxSirka && uprostred) {
+                        // Stopa otvoru (sklo, práh, osa) se tu ZÁMĚRNĚ nevyžaduje.
+                        // Zkoušeno: na měřené sadě nezabránila ani jednomu
+                        // vymyšlenému otvoru a o jeden skutečný připravila.
+                        // Přerušená šrafa uprostřed vyšrafované zdi je sama
+                        // o sobě tvrdý doklad — šrafa JE zdivo.
+                        const stredT = (zacatek + i) / 2 * krok;
+                        const stopa = stopaOtvoru(s, zacatek * krok, i * krok, cary, mnb, nast);
+                        otvory.push({
+                            x: s.x1 + ux * stredT, y: s.y1 + uy * stredT,
+                            sirka: sirkaM, tloustka: s.tloustka,
+                            pricna: stopa.pricna, zeSrafy: true,
+                        });
+                    }
+                    zacatek = null;
+                }
+            }
+        }
+
         return otvory;
     }
 
@@ -2111,7 +2232,8 @@
                 otvory: urciTypyOtvoru(
                     sloucOtvory(sbernaOtvoru
                         .concat(otvoryZeSten(osy, syrove, usecky, mnb, nast))
-                        .concat(otvoryZOblouku(osy, usecky, mnb, nast)), mnb, nast),
+                        .concat(otvoryZOblouku(osy, usecky, mnb, nast))
+                        .concat(otvoryZeSrafy(osy, usecky, mnb, nast)), mnb, nast),
                     usecky, mnb, nast),
                 ...hodnoceni,
             });
@@ -2135,7 +2257,8 @@
                     otvory: urciTypyOtvoru(
                         sloucOtvory(sbernaOtvoru
                             .concat(otvoryZeSten(osy, zVyplni, usecky, mnb, nast))
-                            .concat(otvoryZOblouku(osy, usecky, mnb, nast)), mnb, nast),
+                            .concat(otvoryZOblouku(osy, usecky, mnb, nast))
+                        .concat(otvoryZeSrafy(osy, usecky, mnb, nast)), mnb, nast),
                         usecky, mnb, nast),
                     ...hodnoceni,
                     // tenhle zdroj je průkazný, ne odhad — ať se nabídne první
@@ -2359,7 +2482,7 @@
         vycistiOsy, narovnej, odstranHrebeny,
         vPolygonu, orezObrysem, obvodoveSteny, sitoVrstev,
         shlukyTlousteks, vyberPodleRozdeleni, postavRastr, plochyVRastru,
-        stenyZVyplni, urciTypyOtvoru, otvoryZeSten, otvoryZOblouku, sloucOtvory, najdiObloukyDveri, odstranPrekryvy, spojPresOtvory, sloucVrstvy, srovnejTloustky, prekryvaSadu, odstranPohlcene, prichytLice, podobneVarianty, sloucKolinearni, spojRohy, nejvetsiSit,
+        stenyZVyplni, urciTypyOtvoru, otvoryZeSten, otvoryZOblouku, otvoryZeSrafy, sloucOtvory, najdiObloukyDveri, odstranPrekryvy, spojPresOtvory, sloucVrstvy, srovnejTloustky, prekryvaSadu, odstranPohlcene, prichytLice, podobneVarianty, sloucKolinearni, spojRohy, nejvetsiSit,
     };
 
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
