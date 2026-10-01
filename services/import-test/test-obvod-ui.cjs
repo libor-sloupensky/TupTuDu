@@ -7,7 +7,32 @@
  */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { otevriProhlizec, pauza } = require('./prohlizec.cjs');
+
+/**
+ * Zapamatované měřítko a obvod výkresu se při testu PŘEPÍŠOU (test si kreslí
+ * vlastní). U referenčních výkresů je to ale ruční práce uživatele a měření
+ * se o ni opírá — proto se soubor na začátku zálohuje a na konci vrátí.
+ *
+ * @returns {function(): void} obnovení
+ */
+function ochranNastaveniVykresu(pdf) {
+    const otisk = crypto.createHash('sha1').update(fs.readFileSync(pdf)).digest('hex');
+    const slozka = path.resolve(__dirname, '../../storage/app/private/koncept-v3-podklady');
+    if (!fs.existsSync(slozka)) return () => {};
+
+    const zalohy = [];
+    for (const uzivatel of fs.readdirSync(slozka)) {
+        const soubor = path.join(slozka, uzivatel, otisk + '.json');
+        if (fs.existsSync(soubor)) zalohy.push([soubor, fs.readFileSync(soubor)]);
+    }
+
+    return () => {
+        for (const [soubor, obsah] of zalohy) fs.writeFileSync(soubor, obsah);
+        if (zalohy.length) console.log('(zapamatované nastavení výkresu vráceno zpět)');
+    };
+}
 
 const ZAKLAD = process.env.V3_URL || 'http://127.0.0.1:8000';
 const EMAIL = process.env.V3_EMAIL || 'libor.sloupensky@seznam.cz';
@@ -20,6 +45,7 @@ async function main() {
     if (!pdf || !fs.existsSync(pdf)) { console.error('Zadejte cestu k PDF.'); process.exit(1); }
     fs.mkdirSync(vystup, { recursive: true });
 
+    const obnovNastaveni = ochranNastaveniVykresu(pdf);
     const p = await otevriProhlizec({ viditelny: process.env.V3_VIDITELNY === '1', sirka: 1700, vyska: 1050 });
     const stav = (v) => p.vyhodnot(`(() => { const d = ${DATA}; return JSON.parse(JSON.stringify(${v} ?? null)); })()`);
     const proved = (v) => p.vyhodnot(`(() => { const d = ${DATA}; ${v}; return true; })()`);
@@ -146,6 +172,7 @@ async function main() {
         console.log('Snímky:', vystup);
     } finally {
         await p.zavri();
+        obnovNastaveni();
     }
 }
 
