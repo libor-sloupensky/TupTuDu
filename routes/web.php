@@ -85,6 +85,7 @@ Route::middleware(['auth', 'master'])->prefix('masterteam')->name('masterteam.')
     Route::get('koncept-v3/podklad/{otisk}/nahled/{strana}', [KonceptV3PodkladController::class, 'nahled'])->name('koncept-v3.podklad.nahled');
     Route::get('koncept-v3/podklad/{otisk}/obrazek/{strana}/{dpi}', [KonceptV3PodkladController::class, 'obrazek'])->name('koncept-v3.podklad.obrazek');
     Route::get('koncept-v3/podklad/{otisk}/vektor/{strana}', [KonceptV3PodkladController::class, 'vektor'])->name('koncept-v3.podklad.vektor');
+    Route::get('koncept-v3/podklad/{otisk}/vrstvy/{strana}', [KonceptV3PodkladController::class, 'vrstvy'])->name('koncept-v3.podklad.vrstvy');
 
     // ───────── Koncept testování (porovnání modelů, ASCII) ─────────
     Route::get('koncept-testovani', [KonceptTestovaniController::class, 'index'])->name('koncept-testovani');

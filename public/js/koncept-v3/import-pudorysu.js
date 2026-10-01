@@ -554,12 +554,26 @@ window.KonceptImport = {
 
         try {
             const svg = await (await fetch(d.vektor)).text();
+
+            // Hladiny PDF jsou bonus, ne podmínka — zploštělá PDF je nemají.
+            // Selhání téhle adresy proto rozpoznávání nezastaví, jen se o jednu
+            // variantu připraví; zapsat ji ale chceme, ať o tom víme.
+            let vrstvy = null;
+            if (d.vrstvy) {
+                try {
+                    vrstvy = await (await fetch(d.vrstvy)).json();
+                } catch (e) {
+                    window.zalogujChybu?.(e, 'import — hladiny PDF', { otisk: d.otisk, strana: d.strana });
+                }
+            }
+
             const nast = {
                 metryNaBod: this.impMetryNaBod(),
                 vyrez: this.impVyrezVBodech(),
                 // obkreslený obvod = tvrdá hranice i jisté obvodové stěny
                 obrys: this.impObrysVBodech(),
                 maxVariant: 4,
+                vrstvy,
             };
 
             const verze = _kkInitData.verzeImportu || Date.now();
@@ -687,14 +701,12 @@ window.KonceptImport = {
             varianta.osy, varianta.otvory || [], this.impMetryNaBod(),
         );
 
-        // Podklad (ať je podle čeho opravovat) vložit vždy — i když ho uživatel přeskočil.
-        // Podklad musí odpovídat PRÁVĚ importovanému výkresu. Dřív se vkládal
-        // jen tehdy, když žádný nebyl — takže po importu druhého výkresu zůstal
-        // pod kresbou ten první a stěny "nelícovaly" (každá strana má jiný rozměr).
-        const jinyPodklad = !this.podklad
-            || this.podklad.otisk !== this.impOtisk
-            || Number(this.podklad.strana) !== Number(this.impStrana);
-        if (jinyPodklad) this.impVloz(false);
+        // Podklad (ať je podle čeho opravovat) vložit VŽDY — i když ho uživatel
+        // přeskočil a i když jde o tentýž výkres. Musí odpovídat právě
+        // importovaným stěnám: dřív se nevyměnil, když šlo o stejný výkres a
+        // stranu, takže po přeměření (jiná kóta, jiné měřítko) zůstal pod novou
+        // kresbou podklad v původní velikosti — malé stěny na velkém podkladu.
+        this.impVloz(false);
 
         this.engine.fromJSON({ steny, otvory });
         this.impSrovnejOtvory();
@@ -713,6 +725,14 @@ window.KonceptImport = {
         const d = this.impStranaData;
         if (!r || !d) return;
 
+        // Při výměně podkladu za tentýž výkres si uživatel zaslouží ponechat,
+        // jak si ho nastavil (sytost, pod/nad kresbou).
+        const stejnyVykres = this.podklad
+            && this.podklad.otisk === this.impOtisk
+            && Number(this.podklad.strana) === Number(this.impStrana);
+        const pruhlednost = stejnyVykres ? (this.podklad.pruhlednost ?? 0.5) : 0.5;
+        const zobrazeni = stejnyVykres ? (this.podklad.zobrazeni || 'pod') : 'pod';
+
         this.podklad = {
             url: d.obrazek,
             vektor: d.vektor || null,
@@ -729,8 +749,8 @@ window.KonceptImport = {
             stredX: 0,
             stredY: 0,
             uhel: 0,
-            pruhlednost: 0.5,
-            zobrazeni: 'pod',
+            pruhlednost,
+            zobrazeni,
         };
 
         this.renderer?.nactiPodklad(this.podklad, () => {

@@ -45,6 +45,35 @@ function svgVykresu(otisk, strana) {
     return fs.readFileSync(cil, 'utf8');
 }
 
+/**
+ * Hladiny výkresu z PDF (kóty, šrafy, stěny…) — co dostane i prohlížeč.
+ * Drží se v cache, protože čtení PDF je jediná pomalá část měření.
+ */
+function vrstvyVykresu(otisk, strana) {
+    if (process.argv.includes('--bez-vrstev')) return null;
+    fs.mkdirSync(CACHE, { recursive: true });
+    const cil = path.join(CACHE, otisk + '-' + strana + '-vrstvy.json');
+    if (!fs.existsSync(cil)) {
+        let vystup;
+        try {
+            vystup = execFileSync('php', ['artisan', 'koncept-v3:vrstvy', otisk, '--strana=' + strana],
+                { cwd: KOREN, stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 }).toString();
+        } catch (e) {
+            console.error('hladiny se nepodařilo přečíst:', e.message);
+            return null;
+        }
+        fs.writeFileSync(cil, vystup);
+    }
+    const text = fs.readFileSync(cil, 'utf8').trim();
+    if (!text || text === 'null') return null;
+    try {
+        const v = JSON.parse(text);
+        const tol = (process.argv.find(a => a.startsWith('--tol=')) || '').slice(6);
+        if (tol) v.tolerance = parseFloat(tol);
+        return v;
+    } catch { return null; }
+}
+
 /** Jaká část stěny `a` leží na některé stěně ze sady. */
 function pokryti(a, sada, tolerance) {
     tolerance = tolerance || 0.30;
@@ -124,7 +153,8 @@ function zmerReferenci(soubor) {
         return { nazev: ref.nazev, chyba: 'z výkresu se přečetlo jen ' + usecky.length + ' úseček' };
     }
 
-    const { varianty } = A.navrhniVarianty(svg, { metryNaBod: mnb, obrys, maxVariant: 4 });
+    const vrstvy = vrstvyVykresu(pk.otisk, strana);
+    const { varianty } = A.navrhniVarianty(svg, { metryNaBod: mnb, obrys, maxVariant: 4, vrstvy });
     if (!varianty.length) return { nazev: ref.nazev, chyba: 'žádná varianta' };
 
     const refSteny = ref.steny.map(w => ({
@@ -191,6 +221,7 @@ function zmerReferenci(soubor) {
         refOtvoru: refOtvory.length,
         usecek: usecky.length,
         krivek: (usecky.krivky || []).length,
+        vrstvy: vrstvy ? vrstvy.rezim + ' ' + vrstvy.hladiny.length + ' hladin / ' + vrstvy.usecky.length + ' úseček' : 'bez hladin',
         top1: zmerene[0],
         nejlepsi,
         variant: zmerene.length,
@@ -239,6 +270,7 @@ console.log('');
 for (const v of vysledky) {
     if (v.chyba) continue;
     console.log(v.nazev.slice(0, 13).padEnd(13) + ' · přečteno ' + v.usecek + ' úseček a ' + v.krivek + ' křivek'
+        + ' · hladiny: ' + v.vrstvy
         + ' · variant ' + v.variant
         + (v.nejlepsi.styl !== v.top1.styl
             ? ' · NEJLEPŠÍ by byla "' + v.nejlepsi.styl.slice(0, 30) + '" ('

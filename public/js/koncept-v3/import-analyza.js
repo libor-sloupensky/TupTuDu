@@ -1972,11 +1972,71 @@
     }
 
     /**
+     * Síto podle vrstev PDF.
+     *
+     * Dostane geometrii vybraných hladin (v bodech PDF, stejná soustava jako
+     * SVG) a vrátí test „leží tahle čára na některé z nich“. Páruje se podle
+     * vzdálenosti od TĚLA úsečky, ne od jejího středu — poppler dlouhé čáry
+     * někdy rozseká a oblouky zplošťuje, takže středy nesedí.
+     *
+     * @param {{usecky: number[][], tolerance?: number}} vrstvy
+     */
+    function sitoVrstev(vrstvy) {
+        const zdroj = vrstvy && vrstvy.usecky || [];
+        if (!zdroj.length) return null;
+
+        // Body PDF. Naměřeno: při 1,6 a výš se na Na bělidle začnou chytat
+        // i čáry stěn ležící podél kót a varianta z hladin se zhorší.
+        const tol = vrstvy.tolerance ?? 0.6;
+        const bunka = Math.max(2, tol * 4);
+        const mrizka = new Map();
+        const pridej = (x, y, u) => {
+            const k = Math.floor(x / bunka) + ':' + Math.floor(y / bunka);
+            let s = mrizka.get(k);
+            if (!s) mrizka.set(k, s = []);
+            s.push(u);
+        };
+        for (const u of zdroj) {
+            const [x1, y1, x2, y2] = u;
+            const kroku = Math.max(1, Math.ceil(Math.hypot(x2 - x1, y2 - y1) / (bunka / 2)));
+            for (let i = 0; i <= kroku; i++) {
+                pridej(x1 + (x2 - x1) * i / kroku, y1 + (y2 - y1) * i / kroku, u);
+            }
+        }
+
+        const blizko = (px, py) => {
+            const cx = Math.floor(px / bunka), cy = Math.floor(py / bunka);
+            for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+                for (const [x1, y1, x2, y2] of mrizka.get((cx + dx) + ':' + (cy + dy)) || []) {
+                    const ax = x2 - x1, ay = y2 - y1;
+                    const L2 = ax * ax + ay * ay || 1;
+                    let t = ((px - x1) * ax + (py - y1) * ay) / L2;
+                    t = Math.max(0, Math.min(1, t));
+                    if (Math.hypot(x1 + ax * t - px, y1 + ay * t - py) <= tol) return true;
+                }
+            }
+            return false;
+        };
+
+        // Stačí, aby na hladině ležel kterýkoli ze tří vzorků. Krátké úsečky
+        // (šrafa) tak projdou i při drobném posunu koncových bodů.
+        return (u) => blizko((u.x1 + u.x2) / 2, (u.y1 + u.y2) / 2)
+            || blizko(u.x1, u.y1) || blizko(u.x2, u.y2);
+    }
+
+    /**
      * Najde varianty rozpoznání — pro každý styl kreslení jedna.
      * Vrací seřazené (nejslibnější první), aby šly nabídnout jako náhledy.
      */
     function navrhniVarianty(svgText, nast = {}) {
         let usecky = extrahujUsecky(svgText);
+
+        // Volitelné síto nad syrovými čarami — nižší patro pro testy v Node.
+        if (typeof nast.filtrUsecek === 'function') {
+            const puvodniKrivky = usecky.krivky || [];
+            usecky = usecky.filter(nast.filtrUsecek);
+            usecky.krivky = puvodniKrivky;
+        }
 
         /**
          * Křivky se vezou jako vlastnost pole úseček, takže je každé `filter()`
@@ -2087,6 +2147,20 @@
         // Stěna může mít každou stranu jiným perem — proto i varianta přes všechny styly.
         zkus('všechny čáry dohromady', usecky);
         for (const [styl, skupina] of skupiny) zkus(styl, skupina);
+
+        // Hladiny PDF jako další „styl kreslení“. CAD dává stěny na pojmenované
+        // hladiny („Stěna vnější.3D“, „Zdivo - obvodové“) a kóty, popisky a šrafy
+        // na jiné. Nabízí se jako SAMOSTATNÁ varianta, ne jako síto nad vstupem:
+        // měření ukázalo, že plošné sítí si výkresy, kde stěny leží na bezejmenné
+        // hladině „0“, uškodí. Takhle hladiny můžou jen přidat.
+        if (nast.vrstvy && (nast.vrstvy.usecky || []).length) {
+            const sito = sitoVrstev(nast.vrstvy);
+            if (sito) {
+                const bez = nast.vrstvy.rezim === 'bez';
+                zkus('hladiny PDF (' + (bez ? 'bez šumu' : 'jen stěny') + ')',
+                    usecky.filter(bez ? (u => !sito(u)) : sito));
+            }
+        }
 
         // Nejčastější případ v CAD: stěna je vyplněná plocha (bílá, šedá, šrafa).
         // Líce jedné stěny pak leží na stejném obrysu → páruje se jen uvnitř něj.
@@ -2283,7 +2357,7 @@
         extrahujUsecky, klicStylu, seskupPodleStylu,
         osySten, ohodnotOsy, navrhniVarianty, osyNaSteny, otvoryNaSteny,
         vycistiOsy, narovnej, odstranHrebeny,
-        vPolygonu, orezObrysem, obvodoveSteny,
+        vPolygonu, orezObrysem, obvodoveSteny, sitoVrstev,
         shlukyTlousteks, vyberPodleRozdeleni, postavRastr, plochyVRastru,
         stenyZVyplni, urciTypyOtvoru, otvoryZeSten, otvoryZOblouku, sloucOtvory, najdiObloukyDveri, odstranPrekryvy, spojPresOtvory, sloucVrstvy, srovnejTloustky, prekryvaSadu, odstranPohlcene, prichytLice, podobneVarianty, sloucKolinearni, spojRohy, nejvetsiSit,
     };

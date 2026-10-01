@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Masterteam;
 
 use App\Http\Controllers\Controller;
 use App\Services\Koncept\PdfPodkladService;
+use App\Services\Koncept\PdfVrstvyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -208,7 +209,10 @@ class KonceptV3PodkladController extends Controller
             return response()->json([
                 'ok' => true,
                 'typ' => 'obrazek',
-                'obrazek' => route('masterteam.koncept-v3.podklad.nahled', [$otisk, 1]),
+                // Relativní adresa: koncept se ukládá i s ní a otevírá se pod různými
+                // adresami (127.0.0.1, localhost, doména). Absolutní by při jiné
+                // adrese byla cizí původ a podklad by se vůbec nenačetl.
+                'obrazek' => route('masterteam.koncept-v3.podklad.nahled', [$otisk, 1], false),
                 'sirka_px' => $rozmer[0],
                 'vyska_px' => $rozmer[1],
                 'vektor' => null,
@@ -236,8 +240,11 @@ class KonceptV3PodkladController extends Controller
             'typ' => 'pdf',
             'strana' => $strana,
             'dpi' => $dpi,
-            'obrazek' => route('masterteam.koncept-v3.podklad.obrazek', [$otisk, $strana, $dpi]),
-            'vektor' => route('masterteam.koncept-v3.podklad.vektor', [$otisk, $strana]),
+            // Relativní — viz poznámka u náhledu výš
+            'obrazek' => route('masterteam.koncept-v3.podklad.obrazek', [$otisk, $strana, $dpi], false),
+            'vektor' => route('masterteam.koncept-v3.podklad.vektor', [$otisk, $strana], false),
+            'vrstvy' => route('masterteam.koncept-v3.podklad.vrstvy', [$otisk, $strana], false),
+            'otisk' => $otisk,
             'sirka_pt' => $info['sirka_pt'],
             'vyska_pt' => $info['vyska_pt'],
             // Měřítko z popisku výkresu se ZÁMĚRNĚ nepřebírá — u printscreenu,
@@ -270,6 +277,31 @@ class KonceptV3PodkladController extends Controller
         abort_unless(str_ends_with($orig, '.pdf'), 404);
 
         return $this->posliSoubor($this->pdf->svg(Storage::path($orig), $otisk, $strana), 'image/svg+xml');
+    }
+
+    /**
+     * Kresba vybraných hladin PDF (stěnové / šumové) pro rozpoznávání.
+     *
+     * Vlastní adresa, ne součást odpovědi `strana` — u velkých výkresů je to
+     * přes megabajt čísel a při prohlížení stran by se to tahalo zbytečně.
+     * Vrací `null`, když výkres hladiny nemá (zploštělá, vytištěná PDF).
+     */
+    public function vrstvy(string $otisk, int $strana, PdfVrstvyService $vrstvy)
+    {
+        $orig = $this->najdiOriginal($otisk);
+        if (!str_ends_with($orig, '.pdf')) {
+            return response()->json(null);
+        }
+
+        $rel = PdfPodkladService::SLOZKA . "/cache/$otisk/s$strana-vrstvy.json";
+        if (!Storage::exists($rel)) {
+            Storage::put($rel, json_encode($vrstvy->proRozpoznani(Storage::path($orig), $strana)));
+        }
+
+        return response()->file(Storage::path($rel), [
+            'Content-Type' => 'application/json',
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 
     /**
