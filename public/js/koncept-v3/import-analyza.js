@@ -1600,10 +1600,17 @@
         // krátké kusy schované uvnitř jiné stěny (ostění otvorů) jsou navíc
         v = odstranPohlcene(v, mnb, nast);
 
-        // Zeď musí být aspoň tak dlouhá, jak je tlustá. Kus 22 cm dlouhý a
-        // 75 cm tlustý není stěna, ale úlomek kresby (ostění, roh, kóta).
-        return v.filter(o => Math.hypot(o.x2 - o.x1, o.y2 - o.y1) * mnb
-            >= o.tloustka * (nast.minPomerDelkaTloustka ?? 1));
+        // Zeď musí být aspoň tak dlouhá, jak je tlustá, a vůbec nesmí být kratší
+        // než minDelkaSteny. Obě podmínky musí platit TEĎ, na konci: krátké kusy
+        // vznikají až protahováním rohů a slučováním po prvním sítu. Na Křemelné
+        // takhle propadlo sedm 22cm úlomků, a to byly všechny její stěny navíc.
+        const minDelka = nast.minDelkaSteny ?? 0.3;
+        const minPomer = nast.minPomerDelkaTloustka ?? 1;
+
+        return v.filter(o => {
+            const delka = Math.hypot(o.x2 - o.x1, o.y2 - o.y1) * mnb;
+            return delka >= minDelka && delka >= o.tloustka * minPomer;
+        });
     }
 
     /**
