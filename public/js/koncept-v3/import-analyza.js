@@ -1961,6 +1961,11 @@
             const tKonce = podel(naZdi.x, naZdi.y);
             const stredT = (tPantu + tKonce) / 2;
 
+            // Otvor se musí vejít DO zdi. U dveří v rohu leží pant blízko
+            // sousední zdi a bez téhle kontroly vznikal otvor přesahující konec
+            // — v editoru pak visí ve vzduchu za stěnou.
+            if (Math.min(tPantu, tKonce) < -0.05 / mnb || Math.max(tPantu, tKonce) > nej.L + 0.05 / mnb) continue;
+
             otvory.push({
                 x: s.x1 + ux * stredT,
                 y: s.y1 + uy * stredT,
@@ -1981,6 +1986,16 @@
     function urciTypyOtvoru(otvory, usecky, mnb, nast = {}) {
         if (!otvory.length) return [];
         const obloukyDveri = najdiObloukyDveri(usecky, mnb, nast);
+
+        // Poslední síto na nesmysly, ať sem přitečou odkudkoli. Otvor užší než
+        // 60 cm se nestaví (ČSN 74 6401 začíná u dveří na 60 cm) a nejužší okno
+        // v referencích má 90 cm. Z oblouku dveří přitom vycházely i otvory
+        // o nulové šířce — když pant a konec křídla padnou na stejné místo
+        // podél zdi, odečet šířky dá nulu. Na U Průhonu to dělalo
+        // tři vymyšlené otvory z šestnácti.
+        const minSirka = nast.minSirkaOtvoru ?? 0.5;
+        const maxSirka = nast.maxOtvorM ?? 3.2;
+        otvory = otvory.filter(o => o.sirka >= minSirka && o.sirka <= maxSirka);
 
         return otvory.map(o => {
             // Oblouk patří k otvoru, jen když sedí OBOJÍ: pant leží u jeho okraje
