@@ -74,6 +74,10 @@ async function main() {
             await proved('d.impNaObrys()');
             await p.cekej(`${DATA}.impKrok === 'obrys'`, 5000, 'krok obrys');
             if (await stav('d.pzNastroj') !== 'obrys') throw new Error('nenastavil se nástroj obrysu');
+            // Výkres, který už se jednou obkresloval, si obrys pamatuje (podle
+            // otisku souboru). Test kreslí vlastní, takže musí začít na čistém —
+            // jinak kliky padnou do uzavřeného obrysu a nic neudělají.
+            if (await stav('d.pzObrys.length')) await proved('d.pzObrys = []; d.pzObrysUzavren = false');
         });
 
         // rohy obdélníku v px obrázku — musí padnout do právě viditelné části,
