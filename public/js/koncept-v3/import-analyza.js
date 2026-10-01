@@ -1879,9 +1879,41 @@
         const minR = nast.minPolomerDveri ?? 0.5;
         const maxR = nast.maxPolomerDveri ?? 1.4;
         const krivky = usecky.krivky || [];
-        if (!krivky.length) return [];
 
         const oblouky = [];
+
+        // Oblouk nakreslený jako POLYLINIE, ne Bézier (Křemelná). Segmenty
+        // jedné dráhy drží pohromadě přes `obrys`, takže se nemusí slepovat
+        // po koncích — to se dřív třikrát nepovedlo.
+        const drahy = new Map();
+        for (const u of usecky) {
+            if (u.vyplnene) continue;
+            if (!drahy.has(u.obrys)) drahy.set(u.obrys, []);
+            drahy.get(u.obrys).push(u);
+        }
+        for (const hrany of drahy.values()) {
+            if (hrany.length < 8) continue;                  // oblouk má hodně krátkých segmentů
+
+            const body = hrany.map(u => ({ x: u.x1, y: u.y1 }));
+            body.push({ x: hrany[hrany.length - 1].x2, y: hrany[hrany.length - 1].y2 });
+
+            const kruh = prolozKruznici(body);
+            if (!kruh) continue;
+            const rM = kruh.r * mnb;
+            if (rM < minR || rM > maxR) continue;
+            if (kruh.odchylka * mnb > 0.02) continue;        // musí opravdu ležet na kružnici
+
+            const uhly = body.map(b => Math.atan2(b.y - kruh.cy, b.x - kruh.cx));
+            let rozsah = (Math.max(...uhly) - Math.min(...uhly)) * 180 / Math.PI;
+            if (rozsah > 180) rozsah = 360 - rozsah;
+            if (rozsah < 55 || rozsah > 130) continue;       // čtvrtkruh
+
+            oblouky.push({
+                cx: kruh.cx, cy: kruh.cy, r: kruh.r, sirkaM: rM, rozsah,
+                konceA: body[0], konceB: body[body.length - 1],
+            });
+        }
+
         for (const k of krivky) {
             // tětiva zhruba odpovídá šířce dveří — hrubé síto před proložením
             const tetiva = Math.hypot(k.x2 - k.x1, k.y2 - k.y1) * mnb;

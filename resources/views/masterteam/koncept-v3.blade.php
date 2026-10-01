@@ -684,21 +684,9 @@
                     <span class="font-semibold">(1)</span>
                 </template>
             </summary>
+            {{-- V panelu je jen výkres, který se právě používá. Ostatní dřív nahrané
+                 jsou pod „Nový výkres…“ v průvodci, ať se seznam nepřehlcuje. --}}
             <div class="border-t border-gray-100 px-3 py-2 space-y-2">
-                {{-- Dříve nahrané výkresy rovnou tady — ať se k nim nemusí přes průvodce --}}
-                <template x-if="impDrive.length > 0">
-                    <div class="divide-y divide-gray-100 border border-gray-100 rounded max-h-40 overflow-y-auto kk-posuvnik">
-                        <template x-for="v in impDrive" :key="v.otisk">
-                            <button @click="impOtevriVykres(v)"
-                                    class="block w-full px-2 py-1.5 text-left text-xs hover:bg-orange-50">
-                                <span class="block truncate" x-text="v.nazev"></span>
-                                <span x-show="Object.keys(v.strany || {}).length"
-                                      class="text-[10px] text-green-700">měřítko i obvod hotové</span>
-                            </button>
-                        </template>
-                    </div>
-                </template>
-
                 <template x-if="!podklad">
                     <div>
                         <button @click="impOtevri()" class="kk-btn w-full text-xs">Nový výkres…</button>
@@ -1209,20 +1197,58 @@ var _kkInitData = {
 
         function redraw() {
             dofLayer.destroyChildren();
-            if (ctx._snapPreview) {
-                var sp = ctx._snapPreview;
-                var hostA = ctx.engine.nodes.get(sp.wall.nodeA);
-                var hostB = ctx.engine.nodes.get(sp.wall.nodeB);
-                if (hostA && hostB) {
-                    dofLayer.add(new Konva.Line({
-                        points: [hostA.x, hostA.y, hostB.x, hostB.y],
-                        stroke: '#10b981', strokeWidth: 2, dash: [6, 4], opacity: 0.9,
-                    }));
+            // Zelený náhled přichycení. Pro napojení „I" vede po čele hostitele
+            // (kratičká úsečka), jinak po ose stěny, na kterou se konec chytá.
+            var zelenaCara = function (body, bod, koncoveZarazky) {
+                var mer = (ctx.stage && ctx.stage.scaleX()) || 1;
+                dofLayer.add(new Konva.Line({ listening: false,
+                    points: body,
+                    stroke: '#10b981', strokeWidth: 2 / mer, dash: [6 / mer, 4 / mer], opacity: 0.9,
+                }));
+                // Krátká vodicí čára (čelo stěny) by sama o sobě zanikla —
+                // zarážky na koncích ukážou, kam až lze posunout (líc).
+                if (koncoveZarazky) {
+                    var dx = body[2] - body[0], dy = body[3] - body[1];
+                    var L = Math.hypot(dx, dy) || 1;
+                    var kx = (-dy / L) * (5 / mer), ky = (dx / L) * (5 / mer);
+                    [[body[0], body[1]], [body[2], body[3]]].forEach(function (p) {
+                        dofLayer.add(new Konva.Line({ listening: false,
+                            points: [p[0] - kx, p[1] - ky, p[0] + kx, p[1] + ky],
+                            stroke: '#10b981', strokeWidth: 2 / mer, opacity: 0.9,
+                        }));
+                    });
+                }
+                if (bod) {
                     dofLayer.add(new Konva.Circle({
-                        x: sp.point.x, y: sp.point.y,
+                        listening: false,
+                        x: bod.x, y: bod.y,
                         radius: 8, fill: '#10b981', opacity: 0.5,
                         stroke: '#059669', strokeWidth: 2,
                     }));
+                }
+            };
+            if (ctx._snapPreview) {
+                var sp = ctx._snapPreview;
+                if (sp.cela && sp.line) {
+                    zelenaCara([sp.line.a.x, sp.line.a.y, sp.line.b.x, sp.line.b.y], sp.point, true);
+                } else if (sp.wall) {
+                    var hostA = ctx.engine.nodes.get(sp.wall.nodeA);
+                    var hostB = ctx.engine.nodes.get(sp.wall.nodeB);
+                    if (hostA && hostB) zelenaCara([hostA.x, hostA.y, hostB.x, hostB.y], sp.point);
+                }
+            }
+
+            // Hotové napojení „I": zelená čára po čele se ukáže i při posouvání
+            // hotové stěny, ať je vidět, kam až se smí a kde je líc.
+            if (ctx.isDraggingNode && ctx.draggingNodeId) {
+                var cDrag = ctx.engine.getNodeMovementConstraint(ctx.draggingNodeId);
+                if (cDrag && cDrag.type === 'slide' && cDrag.cela && cDrag.line) {
+                    var nDrag = ctx.engine.nodes.get(ctx.draggingNodeId);
+                    zelenaCara(
+                        [cDrag.line.a.x, cDrag.line.a.y, cDrag.line.b.x, cDrag.line.b.y],
+                        nDrag ? { x: nDrag.x, y: nDrag.y } : null,
+                        true
+                    );
                 }
             }
             var selNodes = ctx.renderer.selectedNodes;
@@ -1242,10 +1268,15 @@ var _kkInitData = {
                 if (c && c.type === 'frozen') {
                     // Frozen × — malý, aby se vešel do kruhu uzlu (radius ~5 px)
                     var s = 3 / scale;
-                    dofLayer.add(new Konva.Line({ points: [node.x - s, node.y - s, node.x + s, node.y + s], stroke: '#dc2626', strokeWidth: 1.5 / scale }));
-                    dofLayer.add(new Konva.Line({ points: [node.x - s, node.y + s, node.x + s, node.y - s], stroke: '#dc2626', strokeWidth: 1.5 / scale }));
+                    dofLayer.add(new Konva.Line({ listening: false, points: [node.x - s, node.y - s, node.x + s, node.y + s], stroke: '#dc2626', strokeWidth: 1.5 / scale }));
+                    dofLayer.add(new Konva.Line({ listening: false, points: [node.x - s, node.y + s, node.x + s, node.y - s], stroke: '#dc2626', strokeWidth: 1.5 / scale }));
                 } else if (c && c.type === 'slide') {
-                    dofLayer.add(new Konva.Line({ points: [c.line.a.x, c.line.a.y, c.line.b.x, c.line.b.y], stroke: '#dd5500', strokeWidth: 1.5 / scale, dash: [4 / scale, 3 / scale], opacity: 0.8 }));
+                    // Zelená jako u přichytávání — je to táž věc: „tudy se smí posouvat"
+                    zelenaCara(
+                        [c.line.a.x, c.line.a.y, c.line.b.x, c.line.b.y],
+                        null,
+                        !!c.cela        // u krátkého čela i zarážky na koncích
+                    );
                 }
                 var walls = ctx.engine.getNodeWalls(nodeId);
                 var hasMultipleWalls = walls.length >= 2;
@@ -1382,7 +1413,7 @@ var _kkInitData = {
                     var rotation = diff > 0 ? (angA + shiftA) : (angB + shiftB);
                     var sweep = absDiff - shiftA - shiftB;
                     if (sweep <= 1) return;
-                    dofLayer.add(new Konva.Arc({
+                    dofLayer.add(new Konva.Arc({ listening: false,
                         x: cx, y: cy,
                         innerRadius: r, outerRadius: r,
                         angle: sweep, rotation: rotation,
@@ -1398,7 +1429,7 @@ var _kkInitData = {
                         : absDiff.toFixed(1)) + '°';
                     // Text ve stejné škále jako arc (world-constant) — proporčně k rádiusu
                     var fontPx = r * 0.45;
-                    dofLayer.add(new Konva.Text({
+                    dofLayer.add(new Konva.Text({ listening: false,
                         x: tx, y: ty,
                         text: txt,
                         fontSize: fontPx,

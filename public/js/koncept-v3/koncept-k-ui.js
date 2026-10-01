@@ -1161,6 +1161,10 @@ function konceptKEditor(initialData) {
                 // "chytání" k ostatním uzlům, což user nechce. Magnet se zapíná
                 // jen explicitně pro volný uzel níže.
                 let target = { x: pos.x, y: pos.y };
+                // Pozici určilo napojení na čelo — mřížka ani úhlový magnet do ní nesmí
+                let magnetUhluPreskocit = false;
+                // Navázané příčky, které se při tomhle posunu povezou se stěnou
+                let detiNaVezeni = null;
                 // Vývoj editor: respektuj constraint (T-junction = 1D slide, frozen = block)
                 if (initialData.vyvojMode) {
                     const c = this.engine.getNodeMovementConstraint(this.draggingNodeId);
@@ -1291,7 +1295,19 @@ function konceptKEditor(initialData) {
                         const wallsAtNode = this.engine.getNodeWalls(this.draggingNodeId);
                         const scale = this.stage ? this.stage.scaleX() : 1;
                         const tol = 20 / scale;
-                        if (wallsAtNode.length <= 1) {
+                        // Napojení „I" na čelo souosé stěny má přednost — kurzor
+                        // se rovnou přitáhne na čelo (líc/osa/líc) a náhled ukáže,
+                        // kam to sedne. Bez toho by se konec choval jako volný a
+                        // po puštění skočil na osu.
+                        const celo = this._kandidatCela(this.draggingNodeId, target);
+                        if (celo) {
+                            target = celo.bod;
+                            this._snapPreview = {
+                                cela: true, line: celo.line, point: celo.bod,
+                                wall: celo.host, t: celo.konec === 'A' ? 0 : 1,
+                            };
+                            magnetUhluPreskocit = true;   // pozice je daná čelem, mřížka ani úhel do ní nesmí
+                        } else if (wallsAtNode.length <= 1) {
                             const cand = this.engine.findSnapCandidate(target.x, target.y, tol, this.draggingNodeId);
                             this._snapPreview = cand;
                         } else {
@@ -1347,36 +1363,31 @@ function konceptKEditor(initialData) {
                         }
                     }
                 }
-                // T-child RESTRICTION pro node drag:
-                // Pokud stěna na draggovaném uzlu má T-children, pohyb uzlu
-                // musí být POUZE podél osy této stěny (zachovat směr stěny,
-                // aby T-children zůstaly přesně na svých místech).
-                // Pro W9 (s T-child W10) a free node W9.nodeB: pohyb jen po
-                // W9 ose = vertikálně.
+                // Stěna s navázanými příčkami se dřív směla posouvat JEN po své ose,
+                // aby příčky zůstaly přesně na místě. Zvenčí to ale vypadalo, že je
+                // stěna pořád přichycená — nešla odtáhnout do strany ani po odpojení
+                // rohu a nebylo poznat proč. Nově se příčky vezou s sebou: drží si
+                // svoje místo na stěně (uložené t) a stěna jde posouvat volně.
                 if (initialData.vyvojMode) {
-                    const nodeObj = this.engine.nodes.get(this.draggingNodeId);
-                    if (nodeObj) {
-                        const origX = nodeObj.x, origY = nodeObj.y;
-                        const wallsWithTC = this.engine.getNodeWalls(this.draggingNodeId)
-                            .filter(w => this.engine.getTChildren(w.id).length > 0);
-                        for (const wTC of wallsWithTC) {
-                            const otherId = wTC.nodeA === this.draggingNodeId ? wTC.nodeB : wTC.nodeA;
-                            const other = this.engine.nodes.get(otherId);
-                            if (!other) continue;
-                            const wdx = origX - other.x, wdy = origY - other.y;
-                            const wL2 = wdx * wdx + wdy * wdy;
-                            if (wL2 < 1) continue;
-                            // Promítnout pohyb (target - orig) na wall axis
-                            const reqDx0 = target.x - origX, reqDy0 = target.y - origY;
-                            const proj = (reqDx0 * wdx + reqDy0 * wdy) / wL2;
-                            target = { x: origX + wdx * proj, y: origY + wdy * proj };
+                    const naVezeni = [];
+                    for (const hostWall of this.engine.getNodeWalls(this.draggingNodeId)) {
+                        for (const ch of this.engine.getTChildren(hostWall.id)) {
+                            const vazba = ch.end === 'a' ? ch.wall.odConstraint : ch.wall.doConstraint;
+                            if (!vazba || vazba.konec) continue;   // napojení na čelo se neveze
+                            naVezeni.push({
+                                hostId: hostWall.id,
+                                uzelId: ch.end === 'a' ? ch.wall.nodeA : ch.wall.nodeB,
+                                t: vazba.t,
+                            });
                         }
                     }
+                    if (naVezeni.length) detiNaVezeni = naVezeni;
                 }
                 // T-child LIMIT pro node drag: kontrola zda by pohyb
                 // uzlu nepřesunul T-children stěn na uzlu mimo [0, 1]
                 // (aka kterýkoli T-child by se vytlačil mimo svou osu).
-                if (initialData.vyvojMode) {
+                // Když příčky vezeme s sebou, ořezávat pohyb netřeba.
+                if (initialData.vyvojMode && !detiNaVezeni) {
                     const nodeObj = this.engine.nodes.get(this.draggingNodeId);
                     if (nodeObj) {
                         const nA = nodeObj;
@@ -1428,8 +1439,24 @@ function konceptKEditor(initialData) {
                                     }
                                 }
                             }
+                            // Dřív se pohyb v tomhle místě ořízl (tcFactor), aby navázané
+                            // příčky zůstaly na svém místě. Stěna pak ale šla odtáhnout
+                            // jen o kousek a vypadalo to, že je pořád přichycená — bez
+                            // zjevného důvodu. Místo blokování vezmeme příčky s sebou:
+                            // drží si svoje místo na stěně (uložené t) a jedou s ní.
                             if (tcFactor < 1.0) {
-                                target = { x: origX + reqDx * tcFactor, y: origY + reqDy * tcFactor };
+                                detiNaVezeni = [];
+                                for (const hostWall of wallsOnDrag) {
+                                    for (const ch of this.engine.getTChildren(hostWall.id)) {
+                                        const vazba = ch.end === 'a' ? ch.wall.odConstraint : ch.wall.doConstraint;
+                                        if (!vazba || vazba.konec) continue;   // napojení na čelo se neveze
+                                        detiNaVezeni.push({
+                                            hostId: hostWall.id,
+                                            uzelId: ch.end === 'a' ? ch.wall.nodeA : ch.wall.nodeB,
+                                            t: vazba.t,
+                                        });
+                                    }
+                                }
                             }
                         }
                     }
@@ -1439,7 +1466,7 @@ function konceptKEditor(initialData) {
                 // typu 90,5°, které vypadají jako pravý úhel, ale nejsou.
                 // Neaplikuje se, když zabral constraint snap — ten má vlastní úhly.
                 let magnetUhluZabral = false;
-                if (this._rightAngleNodeId !== this.draggingNodeId) {
+                if (!magnetUhluPreskocit && this._rightAngleNodeId !== this.draggingNodeId) {
                     const snapnuty = this._magnetUhlu(this.draggingNodeId, target);
                     if (snapnuty) { target = snapnuty; magnetUhluZabral = true; }
                 }
@@ -1447,11 +1474,26 @@ function konceptKEditor(initialData) {
                 // Pokud magnetický úhel snap aktivní, obejít grid snap — jinak by
                 // snapToGrid posunul uzel z přesné pozice a zobrazený úhel by ukázal
                 // 44° místo 45° atd.
-                if (this._rightAngleNodeId === this.draggingNodeId || magnetUhluZabral) {
+                if (this._rightAngleNodeId === this.draggingNodeId || magnetUhluZabral || magnetUhluPreskocit) {
                     const _n = this.engine.nodes.get(this.draggingNodeId);
                     if (_n) { _n.x = target.x; _n.y = target.y; }
                 } else {
                     this.engine.moveNode(this.draggingNodeId, target.x, target.y);
+                }
+
+                // Příčky, které by jinak posun zablokovaly, posadit na novou osu
+                // na jejich původní místo (uložené t) — jedou se stěnou.
+                if (detiNaVezeni && detiNaVezeni.length) {
+                    for (const dite of detiNaVezeni) {
+                        const hostStena = this.engine.walls.get(dite.hostId);
+                        const uzelDitete = this.engine.nodes.get(dite.uzelId);
+                        if (!hostStena || !uzelDitete) continue;
+                        const a = this.engine.nodes.get(hostStena.nodeA);
+                        const b = this.engine.nodes.get(hostStena.nodeB);
+                        if (!a || !b) continue;
+                        uzelDitete.x = a.x + (b.x - a.x) * dite.t;
+                        uzelDitete.y = a.y + (b.y - a.y) * dite.t;
+                    }
                 }
 
                 // T-children a otvory na stěně dragged node zachovávají
@@ -1460,9 +1502,11 @@ function konceptKEditor(initialData) {
                 if (initialData.vyvojMode) {
                     const PX_PER_M = this.engine.PX_PER_M;
                     const wallsOfDraggedNode = this.engine.getNodeWalls(this.draggingNodeId);
+                    const vezeneHosty = new Set((detiNaVezeni || []).map(d => d.hostId));
                     for (const hostW of wallsOfDraggedNode) {
-                        // Sync T-children t na novou osu (zachovává absolute pozici children)
-                        this.engine.syncTChildrenT(hostW.id);
+                        // Sync T-children t na novou osu (zachovává absolute pozici children).
+                        // U vezených příček se t nepřepočítává — to je jejich místo na stěně.
+                        if (!vezeneHosty.has(hostW.id)) this.engine.syncTChildrenT(hostW.id);
                         // Přepočítat pozice otvorů (zachovává absolute pozice)
                         const oldA = oldNodePosForDrag.get(hostW.nodeA);
                         const oldB = oldNodePosForDrag.get(hostW.nodeB);
@@ -2722,15 +2766,25 @@ function konceptKEditor(initialData) {
         _uzelProTazeni(nodeId) {
             const n = this.engine.nodes.get(nodeId);
             if (!n) return nodeId;
-            const soucasny = this.engine.getNodeMovementConstraint(nodeId);
-            if (soucasny && soucasny.type === 'slide') return nodeId;
+
+            const naMiste = [];
             for (const jiny of this.engine.nodes.values()) {
-                if (jiny.id === nodeId) continue;
-                if (Math.hypot(jiny.x - n.x, jiny.y - n.y) > 1) continue;
-                const c = this.engine.getNodeMovementConstraint(jiny.id);
-                if (c && c.type === 'slide' && c.cela) return jiny.id;
+                if (Math.hypot(jiny.x - n.x, jiny.y - n.y) <= 1) naMiste.push(jiny.id);
             }
-            return nodeId;
+            if (naMiste.length <= 1) return nodeId;
+
+            // Posuvný po čele první — o ten jde skoro vždy
+            const posuvny = (id) => {
+                const c = this.engine.getNodeMovementConstraint(id);
+                return !!(c && c.type === 'slide');
+            };
+            naMiste.sort((a, b) => (posuvny(b) ? 1 : 0) - (posuvny(a) ? 1 : 0));
+
+            // Opakovaný klik na stejné místo přepíná mezi uzly, které tam leží
+            // (jinak by se na roh a jeho odpojovací šipky nedalo vůbec dostat).
+            const vybrany = naMiste.findIndex(id => this.renderer.selectedNodes.has(id));
+            if (vybrany >= 0) return naMiste[(vybrany + 1) % naMiste.length];
+            return naMiste[0];
         },
 
         /** Do kolika stupňů se dvě stěny berou jako souosé (napojení „I"). */
@@ -2750,54 +2804,109 @@ function konceptKEditor(initialData) {
         _napojNaCelo(nodeId) {
             const uzel = this.engine.nodes.get(nodeId);
             if (!uzel) return false;
+            const kandidat = this._kandidatCela(nodeId, uzel);
+            if (!kandidat) return false;
+
+            // Uzel zůstane přesně tam, kam ho ukázal náhled (včetně líce)
+            uzel.x = kandidat.bod.x;
+            uzel.y = kandidat.bod.y;
+
+            const moje = kandidat.moje;
+
+            // Srovnat stěnu přesně do osy hostitele (do spoje se najíždí od oka,
+            // takže bývá o pár stupňů nakřivo). Jen když je druhý konec volný —
+            // jinak bychom táhli i geometrii, která na něm visí.
+            const druhyId = moje.nodeA === nodeId ? moje.nodeB : moje.nodeA;
+            const druhy = this.engine.nodes.get(druhyId);
+            const vazbaDruhy = moje.nodeA === druhyId ? moje.odConstraint : moje.doConstraint;
+            if (druhy && !vazbaDruhy && this.engine.getNodeWalls(druhyId).length === 1) {
+                const hostA = this.engine.nodes.get(kandidat.host.nodeA);
+                const hostB = this.engine.nodes.get(kandidat.host.nodeB);
+                if (hostA && hostB) {
+                    // Směr „pryč od hostitele" = opačný, než kam hostitel od spoje vede
+                    const konecUzel = kandidat.konec === 'A' ? hostA : hostB;
+                    const protiUzel = kandidat.konec === 'A' ? hostB : hostA;
+                    const dx = konecUzel.x - protiUzel.x, dy = konecUzel.y - protiUzel.y;
+                    const L = Math.hypot(dx, dy);
+                    if (L > 0) {
+                        const delka = Math.hypot(druhy.x - uzel.x, druhy.y - uzel.y);
+                        druhy.x = uzel.x + (dx / L) * delka;
+                        druhy.y = uzel.y + (dy / L) * delka;
+                    }
+                }
+            }
+            const vazba = { host: kandidat.host.id, konec: kandidat.konec };
+            if (moje.nodeA === nodeId) moje.odConstraint = vazba; else moje.doConstraint = vazba;
+            return true;
+        },
+
+        /**
+         * Kandidát na napojení „I" pro daný volný konec a cílovou pozici.
+         *
+         * Jediné místo, kde se počítá, KAM konec sedne — používá ho zelený
+         * náhled při tažení i vlastní napojení po puštění. Díky tomu po puštění
+         * zůstane přesně to, co náhled ukazoval (dřív to skočilo na osu).
+         *
+         * Poloha se přichytává na líc / osu / líc, jinak jde plynule po čele.
+         *
+         * @returns {?{host, konec, moje, celo, bod, line}}
+         */
+        _kandidatCela(nodeId, cil) {
+            const uzel = this.engine.nodes.get(nodeId);
+            if (!uzel || !cil) return null;
             const mojeSteny = this.engine.getNodeWalls(nodeId);
-            if (mojeSteny.length !== 1) return false;      // jen volný konec
+            if (mojeSteny.length !== 1) return null;       // jen volný konec
             const moje = mojeSteny[0];
             const jeKonecA = moje.nodeA === nodeId;
-            if (jeKonecA ? moje.odConstraint : moje.doConstraint) return false;  // už je navázaná
+            if (jeKonecA ? moje.odConstraint : moje.doConstraint) return null;  // už je navázaná
 
             const druhyMujId = jeKonecA ? moje.nodeB : moje.nodeA;
             const druhyMuj = this.engine.nodes.get(druhyMujId);
-            if (!druhyMuj) return false;
-            const mujSmer = Math.atan2(uzel.y - druhyMuj.y, uzel.x - druhyMuj.x) * 180 / Math.PI;
+            if (!druhyMuj) return null;
+            const mujSmer = Math.atan2(cil.y - druhyMuj.y, cil.x - druhyMuj.x) * 180 / Math.PI;
 
             let nej = null;
             for (const host of this.engine.walls.values()) {
                 if (host.id === moje.id) continue;
-                if (Math.abs((host.tloustka || 0) - (moje.tloustka || 0)) < 0.001) continue;  // stejná tloušťka → stačí roh
-                if ((host.tloustka || 0) <= (moje.tloustka || 0)) continue;                   // hostitel musí být tlustší
+                if ((host.tloustka || 0) <= (moje.tloustka || 0) + 0.001) continue;   // hostitel musí být znatelně tlustší
                 for (const konec of ['A', 'B']) {
                     const konecUzel = this.engine.nodes.get(konec === 'A' ? host.nodeA : host.nodeB);
                     if (!konecUzel || konecUzel.id === nodeId) continue;
-                    const vzdalenost = Math.hypot(uzel.x - konecUzel.x, uzel.y - konecUzel.y);
+                    const vzdalenost = Math.hypot(cil.x - konecUzel.x, cil.y - konecUzel.y);
                     if (vzdalenost > this.engine.MAGNET_DIST * 1.5) continue;
 
                     // Souosost: hostitel míří od svého konce opačným směrem než moje stěna
                     const protiUzel = this.engine.nodes.get(konec === 'A' ? host.nodeB : host.nodeA);
                     if (!protiUzel) continue;
                     const hostSmer = Math.atan2(protiUzel.y - konecUzel.y, protiUzel.x - konecUzel.x) * 180 / Math.PI;
-                    // Souosé pokračování = směry míří proti sobě (180°)
-                    const rozdil = Math.abs(((mujSmer - hostSmer + 540) % 360) - 180);
-                    if (Math.abs(rozdil - 180) > this.CELO_TOLERANCE_DEG) continue;
+                    // mujSmer je směr, KTERÝM stěna do spoje přichází (od svého druhého
+                    // konce), hostSmer vede od spoje po hostiteli — u souosého
+                    // pokračování jsou tyhle dva směry shodné (odchylka kolem 0°).
+                    const odchylka = Math.abs(((mujSmer - hostSmer + 540) % 360) - 180);
+                    if (odchylka > this.CELO_TOLERANCE_DEG) continue;
 
                     if (!nej || vzdalenost < nej.vzdalenost) nej = { host, konec, vzdalenost };
                 }
             }
-            if (!nej) return false;
+            if (!nej) return null;
 
             const celo = this.engine.celoHostitele(nej.host.id, nej.konec, moje.tloustka);
-            if (!celo) return false;
+            if (!celo) return null;
 
-            // Poloha podle puštění: líc / osa / líc, podle toho, co je nejblíž
-            const odchylka = (uzel.x - celo.stred.x) * celo.kolmice.x + (uzel.y - celo.stred.y) * celo.kolmice.y;
-            const volby = [-celo.dosah, 0, celo.dosah];
-            const vybrana = volby.reduce((a, b) => Math.abs(b - odchylka) < Math.abs(a - odchylka) ? b : a);
-            uzel.x = celo.stred.x + celo.kolmice.x * vybrana;
-            uzel.y = celo.stred.y + celo.kolmice.y * vybrana;
+            // Kam na čele: plynule podle kurzoru, s přichycením na líc / osu / líc
+            const odchylka = (cil.x - celo.stred.x) * celo.kolmice.x + (cil.y - celo.stred.y) * celo.kolmice.y;
+            let u = Math.max(-celo.dosah, Math.min(celo.dosah, odchylka));
+            const scale = this.stage ? this.stage.scaleX() : 1;
+            const tol = 8 / scale;
+            for (const volba of [-celo.dosah, 0, celo.dosah]) {
+                if (Math.abs(u - volba) < tol) { u = volba; break; }
+            }
 
-            const vazba = { host: nej.host.id, konec: nej.konec };
-            if (jeKonecA) moje.odConstraint = vazba; else moje.doConstraint = vazba;
-            return true;
+            return {
+                host: nej.host, konec: nej.konec, moje, celo,
+                bod: { x: celo.stred.x + celo.kolmice.x * u, y: celo.stred.y + celo.kolmice.y * u },
+                line: { a: celo.a, b: celo.b },
+            };
         },
 
         /**

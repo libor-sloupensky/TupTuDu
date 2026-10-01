@@ -477,71 +477,79 @@ class StavebniEngine {
     }
 
     /**
-     * Převede napojení „I" ve sdíleném uzlu na klouzavé po čele.
-     *
-     * Dvě souosé stěny RŮZNÉ tloušťky ve společném uzlu jsou nutně vycentrované
-     * na jednu osu — tenčí pak nelícuje ani jednou stranou, což v praxi skoro
-     * nenastává. Tenčí stěna proto dostane vlastní uzel (na stejném místě) a
-     * vazbu na čelo tlustší, takže jde posunout až na líc.
-     *
-     * Poloha se nemění — jen se odemkne posun. Vrací true, když převod proběhl.
+     * Odemkne napojení „I" v daném uzlu. Obal nad _zaridCeloNapojeni(), aby
+     * výpočet spoje byl na jednom místě. Poloha se nemění, jen se odemkne posun.
      */
     oddelCeloNapojeni(nodeId, toleranceDeg = 5) {
-        const node = this.nodes.get(nodeId);
-        if (!node) return false;
-        const walls = this.getNodeWalls(nodeId);
-        if (walls.length < 2) return false;
-
-        const smer = (w) => {
-            const druhyId = w.nodeA === nodeId ? w.nodeB : w.nodeA;
-            const d = this.nodes.get(druhyId);
-            if (!d) return null;
-            return Math.atan2(d.y - node.y, d.x - node.x) * 180 / Math.PI;
-        };
-        const vazbaNaUzlu = (w) => (w.nodeA === nodeId ? w.odConstraint : w.doConstraint);
-
-        // Najít souosou dvojici s RŮZNOU tloušťkou. Uzel může mít i další stěny
-        // (typicky příčku kolmo) — ty na spoji zůstanou, řeší se jen ta dvojice.
-        let host = null, dite = null;
-        for (let i = 0; i < walls.length && !host; i++) {
-            for (let j = i + 1; j < walls.length; j++) {
-                const w1 = walls[i], w2 = walls[j];
-                if (vazbaNaUzlu(w1) || vazbaNaUzlu(w2)) continue;     // už navázané
-                const t1 = w1.tloustka || 0, t2 = w2.tloustka || 0;
-                if (Math.abs(t1 - t2) < 0.001) continue;              // stejná tloušťka → obyčejné pokračování
-                const s1 = smer(w1), s2 = smer(w2);
-                if (s1 === null || s2 === null) continue;
-                // Souosé pokračování = směry ze společného uzlu míří proti sobě (180°)
-                const rozdil = Math.abs(((s1 - s2 + 540) % 360) - 180);
-                if (Math.abs(rozdil - 180) > toleranceDeg) continue;  // je to roh, ne pokračování
-                host = t1 > t2 ? w1 : w2;                             // tlustší drží uzel
-                dite = t1 > t2 ? w2 : w1;
-                break;
-            }
+        for (const stena of this.getNodeWalls(nodeId)) {
+            const konec = stena.nodeA === nodeId ? 'A' : 'B';
+            if (this._zaridCeloNapojeni(stena, konec, toleranceDeg)) return true;
         }
-        if (!host || !dite) return false;
-        const konec = host.nodeA === nodeId ? 'A' : 'B';
-
-        // Tenčí stěna dostane vlastní uzel na stejném místě
-        const novy = { id: this._id('N'), x: node.x, y: node.y };
-        this.nodes.set(novy.id, novy);
-        if (dite.nodeA === nodeId) {
-            dite.nodeA = novy.id;
-            dite.odConstraint = { host: host.id, konec };
-        } else {
-            dite.nodeB = novy.id;
-            dite.doConstraint = { host: host.id, konec };
-        }
-        return true;
+        return false;
     }
 
-    /** Projde všechna napojení „I" a odemkne ta, kde se mění tloušťka. */
-    oddelVsechnaCelaNapojeni() {
+    /**
+     * Projde konce všech stěn a u napojení „I" se změnou tloušťky zařídí
+     * klouzavé uložení po čele.
+     *
+     * Jde přes konce stěn (ne přes uzly), aby to zabralo ve všech podobách,
+     * v jakých spoj v datech bývá: sdílený uzel, vlastní uzel bez vazby i
+     * stará vazba na OSU hostitele z importu. Ta poslední je důvod, proč se
+     * u starších konceptů posun po čele vůbec nenabízel.
+     */
+    oddelVsechnaCelaNapojeni(toleranceDeg = 5) {
         let pocet = 0;
-        for (const id of [...this.nodes.keys()]) {
-            if (this.oddelCeloNapojeni(id)) pocet++;
+        for (const stena of [...this.walls.values()]) {
+            for (const konec of ['A', 'B']) {
+                if (this._zaridCeloNapojeni(stena, konec, toleranceDeg)) pocet++;
+            }
         }
         return pocet;
+    }
+
+    /** Jeden konec jedné stěny — viz oddelVsechnaCelaNapojeni(). */
+    _zaridCeloNapojeni(stena, konecSteny, toleranceDeg = 5) {
+        const uzelId = konecSteny === 'A' ? stena.nodeA : stena.nodeB;
+        const uzel = this.nodes.get(uzelId);
+        if (!uzel) return false;
+        const vazba = konecSteny === 'A' ? stena.odConstraint : stena.doConstraint;
+        if (vazba && vazba.konec) return false;              // už je po čele
+
+        const druhyId = konecSteny === 'A' ? stena.nodeB : stena.nodeA;
+        const druhy = this.nodes.get(druhyId);
+        if (!druhy) return false;
+        const smerVen = Math.atan2(druhy.y - uzel.y, druhy.x - uzel.x) * 180 / Math.PI;
+
+        let host = null, konecHost = null;
+        for (const h of this.walls.values()) {
+            if (h.id === stena.id) continue;
+            if ((h.tloustka || 0) <= (stena.tloustka || 0) + 0.001) continue;   // hostitel musí být tlustší
+            for (const konec of ['A', 'B']) {
+                const hUzel = this.nodes.get(konec === 'A' ? h.nodeA : h.nodeB);
+                if (!hUzel) continue;
+                if (Math.hypot(hUzel.x - uzel.x, hUzel.y - uzel.y) > this.MAGNET_DIST) continue;
+                const protiUzel = this.nodes.get(konec === 'A' ? h.nodeB : h.nodeA);
+                if (!protiUzel) continue;
+                const smerHost = Math.atan2(protiUzel.y - hUzel.y, protiUzel.x - hUzel.x) * 180 / Math.PI;
+                // Souosé pokračování = obě stěny vedou od spoje opačným směrem
+                const rozdil = Math.abs(((smerVen - smerHost + 540) % 360) - 180);
+                if (Math.abs(rozdil - 180) > toleranceDeg) continue;
+                host = h; konecHost = konec;
+                break;
+            }
+            if (host) break;
+        }
+        if (!host) return false;
+
+        // Sdílený uzel rozdělit — tenčí stěna musí mít svůj, aby šla posunout
+        if (this.getNodeWalls(uzelId).length > 1) {
+            const novy = { id: this._id('N'), x: uzel.x, y: uzel.y };
+            this.nodes.set(novy.id, novy);
+            if (konecSteny === 'A') stena.nodeA = novy.id; else stena.nodeB = novy.id;
+        }
+        const nova = { host: host.id, konec: konecHost };
+        if (konecSteny === 'A') stena.odConstraint = nova; else stena.doConstraint = nova;
+        return true;
     }
 
     /**
