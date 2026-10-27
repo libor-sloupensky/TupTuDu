@@ -9,7 +9,8 @@ Převzato 1:1 z Kalkulia (2026-10-25). Záměrné odchylky jsou níže — při 
 synchronizaci je nepřepsat.
 
 ## Aktuální stav
-- **Nasazeno na produkci 2026-10-27** (commit `7998f06`), migrace proběhly.
+- **Nasazeno na produkci 2026-10-27** (commit `7998f06`), migrace proběhly. E-mail ověřen
+  (přes WebSMTP, commit `baf6a05`), DB proxy nasazena (`c1dfd93`). Po úklidu 0 aktivních bugů.
 - GitHub Secrets `CRON_TOKEN` a `MAIL_PASSWORD_WEBSMTP`, hostingový cron na
   `https://www.tuptudu.com/cron/bugy/{CRON_TOKEN}` (min. perioda hostingu 15 min).
 - Pošta z webu jde přes **WebSMTP** hostingu (`websmtp.cesky-hosting.cz:25`, login = `tuptudu.com`).
