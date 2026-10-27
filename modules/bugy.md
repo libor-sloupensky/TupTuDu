@@ -10,8 +10,11 @@ synchronizaci je nepřepsat.
 
 ## Aktuální stav
 - **Nasazeno na produkci 2026-10-27** (commit `7998f06`), migrace proběhly.
-- GitHub Secrets `CRON_TOKEN` a `MAIL_PASSWORD_INFO`, hostingový cron na
+- GitHub Secrets `CRON_TOKEN` a `MAIL_PASSWORD_WEBSMTP`, hostingový cron na
   `https://www.tuptudu.com/cron/bugy/{CRON_TOKEN}` (min. perioda hostingu 15 min).
+- Pošta z webu jde přes **WebSMTP** hostingu (`websmtp.cesky-hosting.cz:25`, login = `tuptudu.com`).
+  Přímé SMTP (`smtp.cesky-hosting.cz:465`) hosting z PHP blokuje — „No route to host" (ověřeno 2026-10-27).
+- Ruční otevření cronu ukáže u přeskočené úlohy i `poslední výsledek:` — tam je vidět selhání mailu.
 - Subdomény `app.` a `masterteam.` nastavila podpora cesky-hosting.cz jako alias
   hlavního webu (svépomocí to nejde: vlastní `open_basedir`, symlinky zakázané).
 - Testování z Git Bash: diakritiku v JSON posílat přes `curl --data-binary @soubor`,

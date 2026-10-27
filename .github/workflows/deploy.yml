@@ -109,13 +109,16 @@ jobs:
           FILESYSTEM_DISK=local
           QUEUE_CONNECTION=sync
           CACHE_STORE=file
-          # Systémová pošta (info@) — ověřovací maily, pozvánky, notifikace
+          # Systémová pošta (info@) — ověřovací maily, pozvánky, notifikace.
+          # Z webserveru jen přes WebSMTP hostingu (smtp.cesky-hosting.cz:465 je z PHP
+          # zablokovaný — „No route to host"). Přihlášení = jméno domény + heslo WebSMTP
+          # (panel → doména → Webserver). Limit 100 příjemců/h, odesílatel jen @tuptudu.com.
+          # Šifrování: bez MAIL_SCHEME použije Symfony na portu 25 STARTTLS, pokud ho server nabídne.
           MAIL_MAILER=smtp
-          MAIL_HOST=smtp.cesky-hosting.cz
-          MAIL_PORT=465
-          MAIL_USERNAME=info@tuptudu.com
-          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD_INFO }}
-          MAIL_ENCRYPTION=ssl
+          MAIL_HOST=websmtp.cesky-hosting.cz
+          MAIL_PORT=25
+          MAIL_USERNAME=tuptudu.com
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD_WEBSMTP }}
           MAIL_FROM_ADDRESS="info@tuptudu.com"
           MAIL_FROM_NAME="TupTuDu"
           # Hlásič bugů — e-mail o nových závažných bugech (bugy:notifikace, cron /cron/bugy/{token})
