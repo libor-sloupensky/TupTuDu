@@ -40,6 +40,23 @@ catch (e) { chybaUzivateli(e, 'Uložení nastavení', { firmaIco }); }
 - **E-mail o nových závažných bugech** (úroveň `error`): `bugy:notifikace` přes `/cron/bugy/{CRON_TOKEN}` — souhrnně, max 1 za 10 min, denní strop `BUGY_NOTIFIKACE_MAX_DEN`, adresa `BUGY_NOTIFIKACE_EMAIL`. Opakování aktivního bugu mail neposílá.
 - Podrobnosti (co se zachytává, šum, příkazy, odchylky od Kalkulia, stav nasazení): `modules/bugy.md`.
 
+## Bugy v systému — „oprav bugy / oprav chyby" workflow
+Když uživatel řekne **„oprav bugy"** (nebo „oprav chyby") bez podrobností, myslí **aktivní bugy na produkci** v [/masterteam/bugy](https://masterteam.tuptudu.com/masterteam/bugy) (tabulka `bugy`, model `App\Models\Bug`). Postup:
+1. Obsah z produkce přes `public/db-proxy.php` (převzato z Kalkulia): POST JSON `{"sql": "SELECT …"}`, hlavička `X-DB-Token` = produkční `CRON_TOKEN`. Ten je **jen v lokálním `.env` jako `PROD_CRON_TOKEN`** — nikdy ho nevypisovat ani necommitovat:
+   ```bash
+   T=$(grep ^PROD_CRON_TOKEN= .env | cut -d= -f2-)
+   curl -s -X POST https://www.tuptudu.com/db-proxy.php -H "X-DB-Token: $T" -H 'Content-Type: application/json' \
+     --data-binary '{"sql":"SELECT id, typ, uroven, zprava, soubor, uri, pocet_vyskytu, naposledy_v FROM bugy WHERE opraveno=0"}'
+   ```
+   Stack trace a kontext: `SELECT stack_trace, kontext FROM bugy WHERE id=…`. Diakritiku v SQL posílat přes `--data-binary @soubor` (Git Bash jinak pošle špatné kódování → falešné 400).
+2. Pro každý bug určit: **aktuální bug** vs. **šum / starý artefakt** (výpadky sítě, rozšíření prohlížeče, staré cache, testovací `ClaudeTest …`).
+3. Aktuální bugy opravit v kódu; u šumu upravit hlásič, aby ho příště nezapisoval.
+4. Vyřešené i artefaktové označit na produkci: `db-proxy.php?write=1` s `UPDATE bugy SET opraveno=1, opraveno_v=NOW() WHERE id IN (…)`. Opakovaný výskyt bug sám reaktivuje (dedup přes hash), předčasné označení neuškodí.
+5. Po deployi ověřit stejným SELECTem, že se bug nevrací.
+6. Uživateli vypsat, co v bugách bylo a co se s každým udělalo.
+
+Proxy čte celou DB (i uživatele) — **jen SELECT** pro ladění; zápis (`?write=1`) jen na označení bugů nebo na výslovný pokyn. Žádné DROP/ALTER/TRUNCATE (proxy je stejně blokuje).
+
 ## Překlady — zákaznická část (web, app)
 - Texty, které uvidí zákazník, **nikdy natvrdo česky** — Blade `__('skupina.klic')`, JS `preloz('skupina.klic')`. Nový text rovnou do `lang/cs` i `lang/en`, pak `php artisan preklady:kontrola`.
 - Národní služby (katastr, výškový profil, mapový podklad) jen přes profil země: `@funkce('katastr')`, middleware `funkce:katastr`, `Lokalizace::maFunkci()`.

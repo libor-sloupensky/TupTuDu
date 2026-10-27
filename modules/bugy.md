@@ -56,6 +56,7 @@ z `artisan tinker`, 404/419/422/401/403 v `report()`.
 | 404 | `app/Models/Seo404.php`, `Masterteam/Seo404Controller.php`, `resources/views/masterteam/seo404/` |
 | Cron (notifikace 10 min, hlídač logu denně, pomalé dotazy) | společný plánovač `App\Support\PlanovaneUlohy` ← `/cron/{token}` i `/cron/bugy/{token}` |
 | Ladění produkce (poslední chyby se stack trace) | `/cron/chyby/{token}` → `chyby:posledni` |
+| Přímý pohled do produkční DB (Claude, workflow „oprav bugy" v CLAUDE.md) | `public/db-proxy.php` 1:1 z Kalkulia, token `CRON_TOKEN` (lokálně `PROD_CRON_TOKEN` v `.env`) |
 | Příkazy | `bugy:vypis`, `bug:detail --id=`, `bugy:vyresit-vse [--ids=]`, `bugy:notifikace [--dry-run]`, `seo404:vypis`, `seo-404:cleanup` |
 | Odkaz v menu s počtem | `resources/views/partials/sidebar.blade.php` (cache `bugy-aktivni-pocet` 60 s) |
 
