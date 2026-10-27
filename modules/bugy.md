@@ -9,13 +9,13 @@ Převzato 1:1 z Kalkulia (2026-10-25). Záměrné odchylky jsou níže — při 
 synchronizaci je nepřepsat.
 
 ## Aktuální stav
-- Lokálně hotové a otestované, **necommitnuté** (2026-10-26).
-- Produkce: GitHub Secrets `CRON_TOKEN` a `MAIL_PASSWORD_INFO` založené, hostingový
-  cron na `https://www.tuptudu.com/cron/bugy/{CRON_TOKEN}` nastavený (min. perioda
-  hostingu 15 min).
-- **Čeká se na podporu cesky-hosting.cz:** subdomény `app.` a `masterteam.` mají
-  vlastní adresář a `open_basedir`, symlinky hosting zakazuje → požádáno o alias
-  na hlavní web. Do té doby vede odkaz „Detail bugu" z e-mailu na 403.
+- **Nasazeno na produkci 2026-10-27** (commit `7998f06`), migrace proběhly.
+- GitHub Secrets `CRON_TOKEN` a `MAIL_PASSWORD_INFO`, hostingový cron na
+  `https://www.tuptudu.com/cron/bugy/{CRON_TOKEN}` (min. perioda hostingu 15 min).
+- Subdomény `app.` a `masterteam.` nastavila podpora cesky-hosting.cz jako alias
+  hlavního webu (svépomocí to nejde: vlastní `open_basedir`, symlinky zakázané).
+- Testování z Git Bash: diakritiku v JSON posílat přes `curl --data-binary @soubor`,
+  jinak ji Windows pošle ve špatném kódování a Apache vrátí falešné 400.
 
 ## Co se zachytává
 | Zdroj | Typ / úroveň | Kde |
