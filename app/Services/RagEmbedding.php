@@ -88,6 +88,7 @@ class RagEmbedding
                     $err = "Voyage AI HTTP {$response->status()}: " . mb_substr($response->body(), 0, 200);
                     echo "  [VOYAGE ERROR] {$err}\n";
                     Log::warning('Voyage AI chyba', ['status' => $response->status(), 'body' => $response->body()]);
+                    \App\Models\Bug::nahlasVypadekAi('Voyage', $this->modul, $response->status(), $response->body());
                     $this->logVolani(0, count($chunk), false, $response->status(), $trvaniMs, $inputType);
                     return array_fill(0, count($texts), []);
                 }
@@ -104,6 +105,7 @@ class RagEmbedding
                 $trvaniMs = (int) round((microtime(true) - $start) * 1000);
                 echo "  [VOYAGE EXCEPTION] {$e->getMessage()}\n";
                 Log::error('Voyage AI exception: ' . $e->getMessage());
+                \App\Models\Bug::nahlasVypadekAi('Voyage', $this->modul, null, $e->getMessage());
                 $this->logVolani(0, count($chunk), false, null, $trvaniMs, $inputType, $e->getMessage());
                 return array_fill(0, count($texts), []);
             }

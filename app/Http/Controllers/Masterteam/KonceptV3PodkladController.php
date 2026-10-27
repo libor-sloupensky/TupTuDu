@@ -212,7 +212,7 @@ class KonceptV3PodkladController extends Controller
                 // Relativní adresa: koncept se ukládá i s ní a otevírá se pod různými
                 // adresami (127.0.0.1, localhost, doména). Absolutní by při jiné
                 // adrese byla cizí původ a podklad by se vůbec nenačetl.
-                'obrazek' => route('masterteam.koncept-v3.podklad.nahled', [$otisk, 1], false),
+                'obrazek' => $this->trasa('nahled', [$otisk, 1], false),
                 'sirka_px' => $rozmer[0],
                 'vyska_px' => $rozmer[1],
                 'vektor' => null,
@@ -241,9 +241,9 @@ class KonceptV3PodkladController extends Controller
             'strana' => $strana,
             'dpi' => $dpi,
             // Relativní — viz poznámka u náhledu výš
-            'obrazek' => route('masterteam.koncept-v3.podklad.obrazek', [$otisk, $strana, $dpi], false),
-            'vektor' => route('masterteam.koncept-v3.podklad.vektor', [$otisk, $strana], false),
-            'vrstvy' => route('masterteam.koncept-v3.podklad.vrstvy', [$otisk, $strana], false),
+            'obrazek' => $this->trasa('obrazek', [$otisk, $strana, $dpi], false),
+            'vektor' => $this->trasa('vektor', [$otisk, $strana], false),
+            'vrstvy' => $this->trasa('vrstvy', [$otisk, $strana], false),
             'otisk' => $otisk,
             'sirka_pt' => $info['sirka_pt'],
             'vyska_pt' => $info['vyska_pt'],
@@ -302,6 +302,17 @@ class KonceptV3PodkladController extends Controller
             'Content-Type' => 'application/json',
             'Cache-Control' => 'private, max-age=3600',
         ]);
+    }
+
+    /**
+     * Adresa routy podkladu se stejnou předponou, přes jakou přišel request —
+     * editor běží v masterteamu (masterteam.koncept-v3.*) i v aplikaci (app.projekty.*).
+     */
+    private function trasa(string $nazev, array $parametry, bool $absolutni): string
+    {
+        $predpona = \Illuminate\Support\Str::before((string) request()->route()?->getName(), '.podklad.');
+
+        return route("{$predpona}.podklad.{$nazev}", $parametry, $absolutni);
     }
 
     /**

@@ -7,6 +7,18 @@
  */
 
 /**
+ * Jednotné zvýraznění uchopeného objektu — stěna, otvor, bod i cokoli dalšího.
+ *
+ * Mění se POUZE BARVA obrysu, nikdy jeho tloušťka ani velikost. Dřív se obrys
+ * zesiloval a body zvětšovaly, takže hranice objektu opticky odskočila a nedalo
+ * se poznat, kde zeď doopravdy končí — zvlášť při obkreslování podkladu.
+ */
+const VYBER = {
+    obrys: '#dc2626',        // červená — „tenhle objekt právě držím"
+    obrysTmavy: '#991b1b',   // tmavší odstín tam, kde se obrys kreslí na výplň
+};
+
+/**
  * Podklad se zobrazuje třemi způsoby: pod kresbou, nad kresbou, nebo vůbec.
  * Starší koncepty mají jen `viditelny` — ty se čtou jako pod/skrytý.
  */
@@ -33,9 +45,8 @@ class KonvaRenderer {
         this.podkladLayer = new Konva.Layer({ listening: false });   // 1b: obrázek výkresu
         this.katastrLayer = new Konva.Layer({ listening: true });    // 2: katastr + mapy
         this.mistnostiLayer = new Konva.Layer({ listening: true });  // 3: vyplněné plochy místností + label
-        this.wallLayer = new Konva.Layer();                          // 4: stěny + otvory + nody
+        this.wallLayer = new Konva.Layer();                          // 4: stěny + otvory
         this.openingLayer = this.wallLayer;                          // alias
-        this.nodeLayer = this.wallLayer;                             // alias
         // Listening true, aby vybavení (nábytek) přijímal click/drag events.
         // Ostatní shapes (kóty, ID popisky, highlights, temp) mají individuálně
         // listening: false — viz renderKoty, renderIds.
@@ -43,6 +54,11 @@ class KonvaRenderer {
         this.labelLayer = this.overlayLayer;                         // alias
         this.highlightLayer = this.overlayLayer;                     // alias
         this.tempLayer = this.overlayLayer;                          // alias
+        // Body spojů mají vlastní vrstvu NAD otvory i nábytkem. Dřív seděly ve
+        // vrstvě stěn, takže je kresba otvoru (pouzdro posuvných dveří, křídlo)
+        // i nábytek překryly — opticky i pro klikání. Na bod spoje se pak nedalo
+        // kliknout vůbec.
+        this.nodeLayer = new Konva.Layer({ listening: true });        // 5b: body spojů
         this.selectionLayer = new Konva.Layer();                     // 6: výběr / madla
 
         this.stage.add(this.gridLayer);
@@ -51,6 +67,7 @@ class KonvaRenderer {
         this.stage.add(this.mistnostiLayer);
         this.stage.add(this.wallLayer);
         this.stage.add(this.overlayLayer);
+        this.stage.add(this.nodeLayer);
         this.stage.add(this.selectionLayer);
 
         // Zobrazení
@@ -87,8 +104,11 @@ class KonvaRenderer {
         if (this.showMistnosti) this.renderMistnosti();
         else if (this.mistnostiLayer) this.mistnostiLayer.batchDraw();
         this.renderWalls();
-        this.renderNodes();
         this.renderOpenings();
+        // Uzly mají vlastní vrstvu nad otvory i nábytkem (viz nodeLayer) —
+        // pořadí v rámci jedné vrstvy nestačilo, protože kresba otvoru i nábytek
+        // leží v overlayLayer nad stěnami.
+        this.renderNodes();
         // Vybavení (nábytek) — vždy vyčistit, vykreslit dle showVybaveni
         for (const s of (this._vybaveniShapes || [])) s.destroy();
         this._vybaveniShapes = [];
@@ -233,11 +253,11 @@ class KonvaRenderer {
             });
             this.mistnostiLayer.add(hit);
             this._mistnostiShapes.push(hit);
-            // Outline pro vybranou místnost — modrý čárkovaný okraj polygonu.
+            // Outline pro vybranou místnost — stejná červená jako u ostatních objektů.
             if (isSel) {
                 const outline = new Konva.Line({
                     points: flat, closed: true,
-                    fill: null, stroke: '#3b82f6',
+                    fill: null, stroke: VYBER.obrys,
                     strokeWidth: 2 / scale,
                     dash: [8 / scale, 5 / scale],
                     listening: false,
@@ -408,9 +428,9 @@ class KonvaRenderer {
             const shape = new Konva.Line({
                 points: points,
                 closed: true,
-                fill: selected ? '#374151' : fillColor,
-                stroke: selected ? '#3b82f6' : strokeColor,
-                strokeWidth: selected ? 3 : 1,
+                fill: fillColor,
+                stroke: selected ? VYBER.obrys : strokeColor,
+                strokeWidth: 1,
                 hitStrokeWidth: 20,
             });
 
@@ -428,7 +448,9 @@ class KonvaRenderer {
         for (const shape of this._nodeShapes.values()) shape.destroy();
         this._nodeShapes.clear();
 
-        if (!this.showNodes) return;
+        // Vlastní vrstva se po smazání uzlů musí překreslit, jinak by na plátně
+        // zůstaly viset staré kroužky.
+        if (!this.showNodes) { this.nodeLayer.batchDraw(); return; }
 
         // Nový režim editoru: barvy podle typu napojení (L/T/X/frozen).
         // Aktivuje se pomocí this.nodeColorByJunctionType = true (option).
@@ -440,28 +462,20 @@ class KonvaRenderer {
 
             const wallsAtNode = this.engine.getNodeWalls(node.id);
 
+            // Výběr mění JEN barvu okraje — výplň i velikost zůstávají. Přebarvený
+            // celý bod překryl informaci, kterou výplň nese (typ napojení).
             if (useJunctionColors) {
                 const type = this.engine.getNodeJunctionType(node.id);
-                if (selected) {
-                    fill = '#f97316';     // oranžová = aktivní
-                    stroke = '#c2410c';
-                    radius = 7;
-                } else if (type === 'frozen') {
-                    fill = '#9ca3af';     // šedá = frozen
-                    stroke = '#6b7280';
-                    radius = 5;
-                } else {
-                    fill = '#3b82f6';     // modrá = vše ostatní
-                    stroke = '#1d4ed8';
-                    radius = 5;
-                }
+                radius = 5;                                       // výběr velikost nemění
+                fill = type === 'frozen' ? '#9ca3af' : '#3b82f6'; // šedá = frozen, modrá = ostatní
+                stroke = selected ? VYBER.obrys : (type === 'frozen' ? '#6b7280' : '#1d4ed8');
                 node._junctionType = type; // pro tooltip / další UI
             } else {
                 // Původní barvy (zachovat pro produkční koncept-k)
                 const hasMultipleWalls = wallsAtNode.length >= 2;
-                fill = selected ? '#3b82f6' : (hasMultipleWalls ? '#f97316' : '#9ca3af');
-                stroke = selected ? '#1d4ed8' : '#6b7280';
-                radius = selected ? 6 : (hasMultipleWalls ? 5 : 4);
+                fill = hasMultipleWalls ? '#f97316' : '#9ca3af';
+                stroke = selected ? VYBER.obrys : '#6b7280';
+                radius = hasMultipleWalls ? 5 : 4;
             }
 
             const circle = new Konva.Circle({
@@ -520,9 +534,9 @@ class KonvaRenderer {
                 y: oy,
                 width: sirPx,
                 height: tl + 4,
-                fill: selected ? '#fef3c7' : '#ffffff',
-                stroke: selected ? '#3b82f6' : barva,
-                strokeWidth: selected ? 2.5 : 1.5,
+                fill: '#ffffff',
+                stroke: selected ? VYBER.obrys : barva,
+                strokeWidth: 1.5,
                 rotation: uhel,
                 offsetY: (tl + 4) / 2,
                 hitStrokeWidth: 15,
@@ -728,8 +742,8 @@ class KonvaRenderer {
             const defaultStroke = typDef.barva2dStroke || '#1f2937';
             const selected = this.selectedWalls.has(id);
             const hovered = id === wallId;
-            shape.fill(selected ? '#374151' : (hovered ? '#2563eb' : defaultFill));
-            shape.stroke(selected ? '#3b82f6' : (hovered ? '#1d4ed8' : defaultStroke));
+            shape.fill(hovered ? '#2563eb' : defaultFill);
+            shape.stroke(selected ? VYBER.obrys : (hovered ? '#1d4ed8' : defaultStroke));
             shape.opacity(hovered ? 0.8 : 1);
         }
         this.wallLayer.batchDraw();
@@ -988,6 +1002,10 @@ class KonvaRenderer {
             return { type: 'rotate' };
         }
 
+        if (konvaTarget?.getAttr?.('_spojMadlo')) {
+            return { type: 'spoj' };
+        }
+
         const wallId = konvaTarget?.getAttr?.('_wallId');
         if (wallId) return { type: 'wall', id: wallId };
 
@@ -1087,6 +1105,61 @@ class KonvaRenderer {
             offsetX: ts / 2,
             offsetY: ts / 2,
             rotation: -bbox.angle * 180 / Math.PI,
+            listening: false,
+        }));
+
+        this.selectionLayer.add(group);
+        this.selectionLayer.batchDraw();
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // MADLO SLOUČENÍ — nad uzlem, kde se dají spojit dvě stěny v jednu
+    // ═══════════════════════════════════════════════════════
+    /** @param {?{x: number, y: number}} uzel  null = madlo schovat */
+    renderSpojMadlo(uzel) {
+        this.selectionLayer.find('.spojMadlo').forEach(n => n.destroy());
+        if (!uzel) { this.selectionLayer.batchDraw(); return; }
+
+        const scale = this.stage.scaleX() || 1;
+        const rot = this.stage.rotation() * Math.PI / 180;
+        const odsazeni = 28 / scale;
+        const r = 11 / scale;
+        const barva = '#3b82f6';
+
+        // Madlo má být nad uzlem na OBRAZOVCE, ne ve světě — plátno se dá otočit.
+        const group = new Konva.Group({
+            x: uzel.x - Math.sin(rot) * odsazeni,
+            y: uzel.y - Math.cos(rot) * odsazeni,
+            rotation: -this.stage.rotation(),
+            name: 'spojMadlo',
+        });
+
+        group.add(new Konva.Circle({
+            x: 0, y: 0,
+            radius: r,
+            fill: '#dbeafe',
+            stroke: barva,
+            strokeWidth: 1.5 / scale,
+            _spojMadlo: true,
+        }));
+
+        // Dvě šipky proti sobě = „sluč tyhle dvě stěny v jednu“.
+        for (const znamenko of [-1, 1]) {
+            group.add(new Konva.Arrow({
+                points: [znamenko * 6.5 / scale, 0, znamenko * 1.8 / scale, 0],
+                pointerLength: 3.2 / scale,
+                pointerWidth: 3.6 / scale,
+                fill: barva,
+                stroke: barva,
+                strokeWidth: 1.4 / scale,
+                listening: false,
+            }));
+        }
+        // Svislá čárka uprostřed = rušený spoj
+        group.add(new Konva.Line({
+            points: [0, -4.5 / scale, 0, 4.5 / scale],
+            stroke: barva,
+            strokeWidth: 1.2 / scale,
             listening: false,
         }));
 
@@ -1544,7 +1617,17 @@ class KonvaRenderer {
         if (!p || !p.url) return;
 
         this._podklad = { ...p };
-        Konva.Image.fromURL(p.url, (img) => {
+        // Adresa podkladu se u starších konceptů uložila i s hostitelem
+        // (http://localhost:8000/…). Při otevření na jiné adrese (127.0.0.1,
+        // jiný port, doména) je to cizí původ — obrázek se nenačte a podklad
+        // je prostě neviditelný. Bereme proto jen cestu a doplníme dnešní server.
+        let adresa = p.url;
+        try {
+            const u = new URL(p.url, window.location.origin);
+            adresa = u.pathname + u.search;
+        } catch (_) { /* nestandardní adresa — zkusíme ji tak, jak je */ }
+
+        Konva.Image.fromURL(adresa, (img) => {
             // Mezitím mohl uživatel podklad zrušit nebo nahradit jiným.
             if (!this._podklad || this._podklad.url !== p.url) { img.destroy(); return; }
             img.setAttr('_podklad', true);

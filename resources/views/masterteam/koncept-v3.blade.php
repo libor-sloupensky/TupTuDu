@@ -1,4 +1,10 @@
-<x-layouts.app title="Koncept V3 — TupTuDu" :fullWidth="true">
+@php
+    // Stejný editor běží v masterteamu i v zákaznické aplikaci (app.tuptudu.com/projects/{kod}).
+    // Liší se jen předponou názvů rout a layoutem — předává je Aplikace\ProjektyController.
+    $trasaV3 ??= 'masterteam.koncept-v3';
+    $layoutV3 ??= 'layouts.app';
+@endphp
+<x-dynamic-component :component="$layoutV3" :title="$titulekV3 ?? 'Koncept V3 — TupTuDu'" :fullWidth="true">
 
 {{-- Konva.js + Three.js + StavebníEngine + Renderer — všechno self-hosted,
      aby fungovalo i v zemích, kde jsou unpkg/cdnjs/jsdelivr blokované
@@ -27,6 +33,25 @@
     }
     #kk-tooltip.visible { opacity: 1; }
     .kk-section { border-bottom: 3px solid var(--color-primary, #dd5500); }
+    /* Bliknutí po Zpět / Vpřed — ať si uživatel všimne, že se posunul v historii.
+       Rychlý náběh do brand barvy (120 ms, ease-out), pomalý dozvuk zpět
+       (~660 ms). Mezikroky chybí záměrně: začátek a konec je vlastní styl prvku,
+       takže to sedí na šedou šipku i na zvýrazněný řádek. */
+    @keyframes kk-blik {
+        0%  { animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
+        15% { color: var(--c-primary); background-color: color-mix(in srgb, var(--c-primary) 14%, transparent);
+              animation-timing-function: cubic-bezier(.4, 0, .2, 1); }
+    }
+    @keyframes kk-blik-tlacitko {
+        0%  { animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
+        15% { color: var(--c-primary); transform: scale(1.18);
+              animation-timing-function: cubic-bezier(.4, 0, .2, 1); }
+    }
+    .kk-blik { animation: kk-blik 780ms; }
+    .kk-blik-tlacitko { animation: kk-blik-tlacitko 780ms; }
+    @media (prefers-reduced-motion: reduce) {
+        .kk-blik-tlacitko { animation-name: kk-blik; }   /* jen barva, bez zvětšení */
+    }
     /* Širší posuvník v okně importu — výchozí je v prohlížečích velmi tenký.
        POZOR: Chrome dává přednost standardní vlastnosti scrollbar-width před
        ::-webkit-scrollbar, takže se tu ZÁMĚRNĚ neuvádí (jinak by se šířka
@@ -92,7 +117,8 @@
                 <button @click="rezim3d = false; prepni2d()" class="px-2 py-0.5 text-xs transition" :class="!rezim3d ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-100'">2D</button>
                 <button @click="rezim3d = true; prepni3d()" class="px-2 py-0.5 text-xs border-l border-gray-200 transition" :class="rezim3d ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-100'">3D</button>
             </div>
-            <button @click="undo()" class="rounded px-2.5 py-1 text-base text-gray-600 hover:bg-gray-200 disabled:opacity-30" data-tip-below="Zpět (Ctrl+Z)">&#8630;</button>
+            <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="rounded px-2.5 py-1 text-base text-gray-600 hover:bg-gray-200 disabled:opacity-30" data-tip-below="Zpět (Ctrl+Z)">&#8630;</button>
+            <button @click="redo()" data-historie-vpred :disabled="historiePozice >= historie.length - 1" class="-ml-2 rounded px-2.5 py-1 text-base text-gray-600 hover:bg-gray-200 disabled:opacity-30" data-tip-below="Vpřed (Ctrl+Shift+Z)">&#8631;</button>
             <button @click="zoomOut()" class="rounded border border-gray-200 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-200">&minus;</button>
             <span class="text-xs text-gray-400 w-8 text-center" x-text="Math.round(zoom * 100) + '%'"></span>
             <button @click="zoomIn()" class="rounded border border-gray-200 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-200">+</button>
@@ -733,14 +759,23 @@
 
         {{-- Historie --}}
         <details class="kk-section flex-shrink-0" :open="panelOpen.historie" @toggle="panelOpen.historie = $el.open; ulozitPanely()">
-            <summary class="px-3 py-2 text-xs font-medium text-gray-500 cursor-pointer hover:bg-gray-50 flex items-center gap-1 select-none">
+            <summary data-historie-souhrn class="px-3 py-2 text-xs font-medium text-gray-500 cursor-pointer hover:bg-gray-50 flex items-center gap-1 select-none">
                 <svg class="h-3 w-3 transition-transform shrink-0" :class="panelOpen.historie && 'rotate-90'" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l8 6-8 6V4z"/></svg>
-                <span x-text="'Historie (' + historie.length + ')'">Historie (0)</span>
+                {{-- Po Zpět je vidět i u sbaleného panelu, na kterém kroku se stojí --}}
+                <span x-text="historiePozice < historie.length - 1
+                    ? 'Historie (krok ' + (historiePozice + 1) + ' z ' + historie.length + ')'
+                    : 'Historie (' + historie.length + ')'">Historie (0)</span>
             </summary>
             <div class="max-h-40 overflow-y-auto divide-y divide-gray-100">
-                <template x-for="(h, i) in historie.slice().reverse()" :key="i">
-                    <div class="flex items-center justify-between px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer" @click="nactiHistorii(historie.length - 1 - i)">
-                        <span x-text="h.popis" class="truncate text-gray-600"></span>
+                {{-- Nejnovější nahoře. Aktuální krok je zvýrazněný, kroky „v budoucnosti“
+                     (po Zpět) jsou zašedlé — Vpřed je vrátí, nová úprava je zahodí. --}}
+                <template x-for="(h, i) in historie.slice().reverse()" :key="h.id || i">
+                    <div class="flex items-center justify-between px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer"
+                         :class="historie.length - 1 - i === historiePozice ? 'bg-primary/10 font-medium' : ''"
+                         :data-krok="h.id"
+                         @click="nactiHistorii(historie.length - 1 - i)">
+                        <span x-text="h.popis" class="truncate"
+                              :class="historie.length - 1 - i > historiePozice ? 'text-gray-300 line-through' : 'text-gray-600'"></span>
                         <span x-text="h.cas?.substring(11, 16)" class="text-gray-400 ml-2 shrink-0"></span>
                     </div>
                 </template>
@@ -1117,7 +1152,7 @@
 if (!{{ $aktivni?->id ?? 'null' }}) {
     const lastId = localStorage.getItem('kv3_lastProjekt');
     if (lastId && !new URLSearchParams(window.location.search).has('id')) {
-        window.location.href = '{{ route("masterteam.koncept-v3") }}?id=' + lastId;
+        window.location.href = '{{ route($trasaV3) }}?id=' + lastId;
     }
 }
 </script>
@@ -1141,27 +1176,28 @@ var _kkInitData = {
     metadata: @json($aktivni?->metadata ?? []),
     chat: @json($aktivni?->chat ?? []),
     historie: @json($aktivni?->historie ?? []),
+    historieAktualni: @json($aktivni?->historie_aktualni),
     csrf: '{{ csrf_token() }}',
     routes: {
-        ulozit: '{{ route("masterteam.koncept-v3.ulozit", ":id") }}',
-        aiVytvor: '{{ route("masterteam.koncept-v3.aiVytvor") }}',
-        aiUprav: '{{ route("masterteam.koncept-v3.aiUprav", ":id") }}',
-        vytvorit: '{{ route("masterteam.koncept-v3.vytvorit") }}',
-        indexK: '{{ route("masterteam.koncept-v3") }}',
-        katastrParcela: '{{ route("masterteam.koncept-v3.katastr.parcela") }}',
-        katastrStavby: '{{ route("masterteam.koncept-v3.katastr.stavby") }}',
-        katastrOkolni: '{{ route("masterteam.koncept-v3.katastr.okolni") }}',
-        katastrVyskovy: '{{ route("masterteam.koncept-v3.katastr.vyskovy") }}',
-        katastrSousednost: '{{ route("masterteam.koncept-v3.katastr.sousednost") }}',
-        katastrUlozit: '{{ route("masterteam.koncept-v3.katastr.ulozit", ":id") }}',
-        vysvetleni: '{{ route("masterteam.koncept-v3.vysvetleni") }}',
-        smazat: '{{ route("masterteam.koncept-v3.smazat", ":id") }}',
+        ulozit: '{{ route($trasaV3 . ".ulozit", ":id") }}',
+        aiVytvor: '{{ route($trasaV3 . ".aiVytvor") }}',
+        aiUprav: '{{ route($trasaV3 . ".aiUprav", ":id") }}',
+        vytvorit: '{{ route($trasaV3 . ".vytvorit") }}',
+        indexK: '{{ route($trasaV3) }}',
+        katastrParcela: '{{ route($trasaV3 . ".katastr.parcela") }}',
+        katastrStavby: '{{ route($trasaV3 . ".katastr.stavby") }}',
+        katastrOkolni: '{{ route($trasaV3 . ".katastr.okolni") }}',
+        katastrVyskovy: '{{ route($trasaV3 . ".katastr.vyskovy") }}',
+        katastrSousednost: '{{ route($trasaV3 . ".katastr.sousednost") }}',
+        katastrUlozit: '{{ route($trasaV3 . ".katastr.ulozit", ":id") }}',
+        vysvetleni: '{{ route($trasaV3 . ".vysvetleni") }}',
+        smazat: '{{ route($trasaV3 . ".smazat", ":id") }}',
         // Import půdorysu — podklad
-        podkladNahrat: '{{ route("masterteam.koncept-v3.podklad.nahrat") }}',
-        podkladSeznam: '{{ route("masterteam.koncept-v3.podklad.seznam") }}',
-        podkladStrana: '{{ route("masterteam.koncept-v3.podklad.strana", ":otisk") }}',
-        podkladNastaveni: '{{ route("masterteam.koncept-v3.podklad.nastaveni", ":otisk") }}',
-        podkladNahled: '{{ route("masterteam.koncept-v3.podklad.nahled", [":otisk", ":strana"]) }}',
+        podkladNahrat: '{{ route($trasaV3 . ".podklad.nahrat") }}',
+        podkladSeznam: '{{ route($trasaV3 . ".podklad.seznam") }}',
+        podkladStrana: '{{ route($trasaV3 . ".podklad.strana", ":otisk") }}',
+        podkladNastaveni: '{{ route($trasaV3 . ".podklad.nastaveni", ":otisk") }}',
+        podkladNahled: '{{ route($trasaV3 . ".podklad.nahled", [":otisk", ":strana"]) }}',
     },
     // verze analyzátoru — worker si ji přidá do adresy, aby nebral starou verzi z cache
     {{-- verze pro cache: nejnovější ze VŠECH souborů importu, ne jen analyzátoru —
@@ -1199,42 +1235,68 @@ var _kkInitData = {
             dofLayer.destroyChildren();
             // Zelený náhled přichycení. Pro napojení „I" vede po čele hostitele
             // (kratičká úsečka), jinak po ose stěny, na kterou se konec chytá.
-            var zelenaCara = function (body, bod, koncoveZarazky) {
+            var zelenaCara = function (body, bod, koncoveZarazky, usek) {
                 var mer = (ctx.stage && ctx.stage.scaleX()) || 1;
                 dofLayer.add(new Konva.Line({ listening: false,
                     points: body,
                     stroke: '#10b981', strokeWidth: 2 / mer, dash: [6 / mer, 4 / mer], opacity: 0.9,
                 }));
+                if (bod) {
+                    dofLayer.add(new Konva.Circle({
+                        listening: false,
+                        x: bod.x, y: bod.y,
+                        // v kresebných pixelech kolečko při přiblížení narostlo tak,
+                        // že zakrylo celý spoj — držíme ho na stálé velikosti
+                        radius: 8 / mer, fill: '#10b981', opacity: 0.5,
+                        stroke: '#059669', strokeWidth: 2 / mer,
+                    }));
+                }
+                // U čela je přerušovaná čára jen orientační (vede přes celou tloušťku
+                // stěny, ať je spoj vidět). Přichytit se dá na kratší úsek uvnitř —
+                // ten se kreslí plně, aby bylo poznat, kam až stěna smí.
+                var zar = body;
+                if (usek) {
+                    zar = [usek.a.x, usek.a.y, usek.b.x, usek.b.y];
+                    dofLayer.add(new Konva.Line({ listening: false,
+                        points: zar,
+                        stroke: '#10b981', strokeWidth: 4 / mer, opacity: 0.95, lineCap: 'round',
+                    }));
+                }
                 // Krátká vodicí čára (čelo stěny) by sama o sobě zanikla —
                 // zarážky na koncích ukážou, kam až lze posunout (líc).
                 if (koncoveZarazky) {
-                    var dx = body[2] - body[0], dy = body[3] - body[1];
+                    var dx = zar[2] - zar[0], dy = zar[3] - zar[1];
                     var L = Math.hypot(dx, dy) || 1;
+                    if (L < 0.001) { dx = body[2] - body[0]; dy = body[3] - body[1]; L = Math.hypot(dx, dy) || 1; }
                     var kx = (-dy / L) * (5 / mer), ky = (dx / L) * (5 / mer);
-                    [[body[0], body[1]], [body[2], body[3]]].forEach(function (p) {
+                    [[zar[0], zar[1]], [zar[2], zar[3]]].forEach(function (p) {
                         dofLayer.add(new Konva.Line({ listening: false,
                             points: [p[0] - kx, p[1] - ky, p[0] + kx, p[1] + ky],
                             stroke: '#10b981', strokeWidth: 2 / mer, opacity: 0.9,
                         }));
                     });
                 }
-                if (bod) {
-                    dofLayer.add(new Konva.Circle({
-                        listening: false,
-                        x: bod.x, y: bod.y,
-                        radius: 8, fill: '#10b981', opacity: 0.5,
-                        stroke: '#059669', strokeWidth: 2,
-                    }));
-                }
             };
             if (ctx._snapPreview) {
                 var sp = ctx._snapPreview;
-                if (sp.cela && sp.line) {
-                    zelenaCara([sp.line.a.x, sp.line.a.y, sp.line.b.x, sp.line.b.y], sp.point, true);
+                if (sp.line) {
+                    // Čára vede přesně tudy, kam konec sedne: po čele hostitele
+                    // (napojení „I"), po jeho líci (okraj), nebo po jeho ose (střih).
+                    var spCara = sp.zobrazLine || sp.line;   // u čela celá šířka stěny
+                    zelenaCara([spCara.a.x, spCara.a.y, spCara.b.x, spCara.b.y], sp.point, !!sp.cela,
+                        sp.zobrazLine ? sp.line : null);
                 } else if (sp.wall) {
                     var hostA = ctx.engine.nodes.get(sp.wall.nodeA);
                     var hostB = ctx.engine.nodes.get(sp.wall.nodeB);
                     if (hostA && hostB) zelenaCara([hostA.x, hostA.y, hostB.x, hostB.y], sp.point);
+                }
+                // Nůžky u bodu říkají, že puštění hostitele rozstřihne
+                if (sp.rezim === 'strih' && sp.point) {
+                    var merStrih = (ctx.stage && ctx.stage.scaleX()) || 1;
+                    dofLayer.add(new Konva.Text({ listening: false,
+                        x: sp.point.x - 38 / merStrih, y: sp.point.y - 34 / merStrih,
+                        text: '\u2702', fontSize: 24 / merStrih, fill: '#10b981',
+                    }));
                 }
             }
 
@@ -1244,10 +1306,12 @@ var _kkInitData = {
                 var cDrag = ctx.engine.getNodeMovementConstraint(ctx.draggingNodeId);
                 if (cDrag && cDrag.type === 'slide' && cDrag.cela && cDrag.line) {
                     var nDrag = ctx.engine.nodes.get(ctx.draggingNodeId);
+                    var caraDrag = cDrag.zobrazLine || cDrag.line;   // celá šířka čela
                     zelenaCara(
-                        [cDrag.line.a.x, cDrag.line.a.y, cDrag.line.b.x, cDrag.line.b.y],
+                        [caraDrag.a.x, caraDrag.a.y, caraDrag.b.x, caraDrag.b.y],
                         nDrag ? { x: nDrag.x, y: nDrag.y } : null,
-                        true
+                        true,
+                        cDrag.zobrazLine ? cDrag.line : null
                     );
                 }
             }
@@ -1272,10 +1336,12 @@ var _kkInitData = {
                     dofLayer.add(new Konva.Line({ listening: false, points: [node.x - s, node.y + s, node.x + s, node.y - s], stroke: '#dc2626', strokeWidth: 1.5 / scale }));
                 } else if (c && c.type === 'slide') {
                     // Zelená jako u přichytávání — je to táž věc: „tudy se smí posouvat"
+                    var cara = c.zobrazLine || c.line;   // u čela celá šířka stěny
                     zelenaCara(
-                        [c.line.a.x, c.line.a.y, c.line.b.x, c.line.b.y],
+                        [cara.a.x, cara.a.y, cara.b.x, cara.b.y],
                         null,
-                        !!c.cela        // u krátkého čela i zarážky na koncích
+                        !!c.cela,       // u krátkého čela i zarážky na koncích
+                        c.zobrazLine ? c.line : null
                     );
                 }
                 var walls = ctx.engine.getNodeWalls(nodeId);
@@ -1312,8 +1378,16 @@ var _kkInitData = {
                         btn.setAttr('_detachNodeId', nodeId);
                         btn.on('click tap', function () {
                             ctx.engine.pushUndo && ctx.engine.pushUndo();
-                            var ok = ctx.engine.detachWallFromNode(w.id, nodeId);
+                            // Mezera musí být větší než dosah přichytávání (20 px
+                            // obrazovky), jinak se stěna hned chytí zpátky.
+                            var merMez = (ctx.stage && ctx.stage.scaleX()) || 1;
+                            var ok = ctx.engine.detachWallFromNode(w.id, nodeId, (20 / merMez) + 6);
                             if (ok) {
+                                // Ve výběru zůstane jen odpojená stěna. Kliknutím na
+                                // roh se totiž vybraly VŠECHNY stěny v uzlu (kvůli
+                                // úhlům) a tažení pak hýbalo i tou, od které jsme se
+                                // právě odpojili — odpojení vypadalo jako neúčinné.
+                                ctx.renderer.setSelection([w.id]);
                                 ctx.renderer.render();
                                 if (typeof ctx.markDirty === 'function') ctx.markDirty();
                                 else if (typeof ctx.scheduleAutoSave === 'function') ctx.scheduleAutoSave();
@@ -1345,99 +1419,117 @@ var _kkInitData = {
                 var drawAngleArc = function (nodeId, wallA, wallB) {
                     var node = ctx.engine.nodes.get(nodeId);
                     if (!node || !wallA || !wallB) return;
-                    // Idealní junction pozice: pro T-junction leží přesně na ose hostitele
-                    // (stored t × host vector). Stored node může být driftovaný kvůli floating-point,
-                    // arc se pak vizuálně odlepí od průsečíku stěn. Spočítat ideal ze constraintu.
-                    var cx = node.x, cy = node.y;
-                    var recenterFromConstraint = function (childW, hostW, isEndA) {
-                        if (!childW || !hostW) return false;
-                        var con = isEndA ? childW.odConstraint : childW.doConstraint;
-                        if (!con || con.host !== hostW.id) return false;
-                        var ha = ctx.engine.nodes.get(hostW.nodeA);
-                        var hb = ctx.engine.nodes.get(hostW.nodeB);
-                        if (!ha || !hb) return false;
-                        // Projekce aktuální pozice uzlu na osu hostitele — sleduje pohyb při dragu.
-                        // Stored con.t se BĚHEM drag neaktualizuje, takže projekce je spolehlivější.
-                        var childNode = ctx.engine.nodes.get(isEndA ? childW.nodeA : childW.nodeB);
-                        if (!childNode) return false;
-                        var hdx = hb.x - ha.x, hdy = hb.y - ha.y;
-                        var hL2 = hdx * hdx + hdy * hdy;
-                        if (hL2 === 0) return false;
-                        var projT = ((childNode.x - ha.x) * hdx + (childNode.y - ha.y) * hdy) / hL2;
-                        projT = Math.max(0, Math.min(1, projT));
-                        cx = ha.x + projT * hdx;
-                        cy = ha.y + projT * hdy;
-                        return true;
+                    // Rameno = osa stěny (bod na ní + směr ven z uzlu). Vrchol úhlu se
+                    // počítá z os a líců, ne z polohy uzlu — u napojení na okraj leží
+                    // uzel na líci hostitele, u střihu na jeho ose; průsečík líců je
+                    // v obou případech tentýž skutečný roh.
+                    var rameno = function (w) {
+                        var a = ctx.engine.nodes.get(w.nodeA);
+                        var d = wallDirFromNode(nodeId, w);
+                        return a && d ? { p: { x: a.x, y: a.y }, d: d } : null;
                     };
-                    if (wallA.nodeA === nodeId) recenterFromConstraint(wallA, wallB, true);
-                    else if (wallA.nodeB === nodeId) recenterFromConstraint(wallA, wallB, false);
-                    if (cx === node.x && cy === node.y) {
-                        if (wallB.nodeA === nodeId) recenterFromConstraint(wallB, wallA, true);
-                        else if (wallB.nodeB === nodeId) recenterFromConstraint(wallB, wallA, false);
-                    }
-                    var dirA = wallDirFromNode(nodeId, wallA);
-                    var dirB = wallDirFromNode(nodeId, wallB);
-                    if (!dirA || !dirB) return;
-                    vykresliUhel(cx, cy, dirA, dirB,
+                    var rA = rameno(wallA), rB = rameno(wallB);
+                    if (!rA || !rB) return;
+                    vykresliUhel(rA, rB,
                         (wallA.tloustka || 0.1) * ctx.engine.PX_PER_M / 2,
-                        (wallB.tloustka || 0.1) * ctx.engine.PX_PER_M / 2);
+                        (wallB.tloustka || 0.1) * ctx.engine.PX_PER_M / 2,
+                        { x: node.x, y: node.y });
                 };
                 /**
-                 * Vykreslí obloučkem úhel mezi dvěma směry vycházejícími z bodu.
-                 * JEDINÉ místo, kde se úhelník kreslí — používá ho jak označená
-                 * stěna, tak rozkreslená stěna při kreslení (viz kresliRozkreslenou).
+                 * Vykreslí obloučkem úhel mezi dvěma stěnami.
+                 * JEDINÉ místo, kde se úhelník kreslí — používá ho označená stěna,
+                 * rozkreslená stěna i náhled přichycení při tažení.
                  *
-                 * @param cx,cy   vrchol úhlu (px plátna)
-                 * @param dirA,dirB  směrové vektory obou ramen
-                 * @param halfA,halfB  poloviční tloušťky ramen v px (oblouk začne až za lícem)
+                 * Jako na výkrese: vrchol je v ROHU LÍCŮ, oblouk opisuje celý úhel
+                 * mezi nimi. U pravého úhlu je to čtvrtkruh a jeho konce jsou
+                 * souběžné se stěnami, ke kterým přiléhají. (Dřív byl střed v ose
+                 * a oblouk se jen ořízl na líce — konce šly šikmo, velikost se
+                 * měnila s tloušťkou zdi a u napojení na okraj byl úhel odsunutý.)
+                 *
+                 * Velikost se drží na OBRAZOVCE (poloměr 24 px, čára 2,5 px,
+                 * písmo 11 px) — u příčky stejná jako u nosné zdi, při oddálení
+                 * nezmizí, při přiblížení nepřeroste.
+                 *
+                 * @param ramenoA,ramenoB  {p, d} — bod na ose stěny a směr ramene od vrcholu
+                 * @param halfA,halfB      poloviční tloušťky ramen v px
+                 * @param zaloha           bod spoje pro stěny v přímce (osy se neprotnou)
                  */
-                var vykresliUhel = function (cx, cy, dirA, dirB, halfA, halfB) {
-                    var ax = dirA.x, ay = dirA.y;
-                    var bx = dirB.x, by = dirB.y;
-                    var aL = Math.hypot(ax, ay), bL = Math.hypot(bx, by);
+                var vykresliUhel = function (ramenoA, ramenoB, halfA, halfB, zaloha) {
+                    var aL = Math.hypot(ramenoA.d.x, ramenoA.d.y), bL = Math.hypot(ramenoB.d.x, ramenoB.d.y);
                     if (aL === 0 || bL === 0) return;
-                    var angA = Math.atan2(ay, ax) * 180 / Math.PI;
-                    var angB = Math.atan2(by, bx) * 180 / Math.PI;
+                    var ua = { x: ramenoA.d.x / aL, y: ramenoA.d.y / aL };
+                    var ub = { x: ramenoB.d.x / bL, y: ramenoB.d.y / bL };
+                    var angA = Math.atan2(ua.y, ua.x) * 180 / Math.PI;
+                    var angB = Math.atan2(ub.y, ub.x) * 180 / Math.PI;
                     var diff = angB - angA;
                     while (diff > 180) diff -= 360;
                     while (diff < -180) diff += 360;
                     var absDiff = Math.abs(diff);
                     if (absDiff < 1) return;
-                    // Arc radius je WORLD-constant (v metrech reálu) — plave se zoomem jako budova.
-                    // Bez toho by při odzoomování byly arcy obrovské vůči stěnám a překrývaly se
-                    // (screen-constant 32 px = velké vůči malé budově). 30 cm world = přirozená škála.
-                    var r = 0.30 * ctx.engine.PX_PER_M;
-                    var maxShiftDeg = absDiff * 0.4;
-                    var shiftA = Math.min(maxShiftDeg, Math.asin(Math.min(1, halfA / r)) * 180 / Math.PI);
-                    var shiftB = Math.min(maxShiftDeg, Math.asin(Math.min(1, halfB / r)) * 180 / Math.PI);
-                    var rotation = diff > 0 ? (angA + shiftA) : (angB + shiftB);
-                    var sweep = absDiff - shiftA - shiftB;
-                    if (sweep <= 1) return;
-                    dofLayer.add(new Konva.Arc({ listening: false,
-                        x: cx, y: cy,
-                        innerRadius: r, outerRadius: r,
-                        angle: sweep, rotation: rotation,
-                        stroke: '#f59e0b', strokeWidth: r * 0.05,
+                    // Oblouk jde po směru hodinových ručiček (plátno má +y dolů) od ramene,
+                    // od kterého je to k druhému kratší cestou.
+                    var start = diff > 0 ? angA : angB;
+
+                    // Líc, který svírá úhel = osa posunutá o půl tloušťky k druhému rameni.
+                    var lic = function (rameno, u, half, k) {
+                        var n = { x: -u.y, y: u.x };
+                        if (n.x * k.x + n.y * k.y < 0) { n.x = -n.x; n.y = -n.y; }
+                        return { x: rameno.p.x + n.x * half, y: rameno.p.y + n.y * half };
+                    };
+                    var det = ua.x * ub.y - ua.y * ub.x;
+                    var V;
+                    if (Math.abs(det) > 1e-6) {
+                        var fA = lic(ramenoA, ua, halfA, ub);
+                        var fB = lic(ramenoB, ub, halfB, ua);
+                        var t = ((fB.x - fA.x) * ub.y - (fB.y - fA.y) * ub.x) / det;
+                        V = { x: fA.x + ua.x * t, y: fA.y + ua.y * t };
+                    } else if (zaloha) {
+                        // Stěny v přímce: vrchol na společném líci na straně oblouku.
+                        var s = (start + 90) * Math.PI / 180;
+                        V = { x: zaloha.x + Math.cos(s) * halfA, y: zaloha.y + Math.sin(s) * halfA };
+                    } else {
+                        return;
+                    }
+
+                    var R = 24 / scale;
+                    var a0 = start * Math.PI / 180, a1 = (start + absDiff) * Math.PI / 180;
+                    dofLayer.add(new Konva.Shape({ listening: false,
+                        // zaoblené konce — lineCap u Konva.Arc nefunguje (kreslí uzavřený tvar)
+                        sceneFunc: function (c, tvar) {
+                            c.beginPath();
+                            c.arc(V.x, V.y, R, a0, a1, false);
+                            c.strokeShape(tvar);
+                        },
+                        stroke: '#f59e0b', strokeWidth: 2.5 / scale, lineCap: 'round',
                     }));
-                    var midAng = (rotation + sweep / 2) * Math.PI / 180;
-                    var tx = cx + Math.cos(midAng) * r * 1.55;
-                    var ty = cy + Math.sin(midAng) * r * 1.55;
+                    var midAng = (start + absDiff / 2) * Math.PI / 180;
+                    if (Math.abs(absDiff - 90) < 0.05) {
+                        // Stavařská značka pravého úhlu — tečka uprostřed čtvrtkruhu.
+                        dofLayer.add(new Konva.Circle({ listening: false,
+                            x: V.x + Math.cos(midAng) * R * 0.5,
+                            y: V.y + Math.sin(midAng) * R * 0.5,
+                            radius: 2.2 / scale, fill: '#f59e0b',
+                        }));
+                    }
                     // Desetinu ukázat jen u „nekulatého" úhlu — jinak by zaokrouhlení
                     // tvářilo 90,5° jako 90° a nešlo by poznat, že roh není pravý.
                     var txt = (Math.abs(absDiff - Math.round(absDiff)) < 0.05
                         ? Math.round(absDiff)
                         : absDiff.toFixed(1)) + '°';
-                    // Text ve stejné škále jako arc (world-constant) — proporčně k rádiusu
-                    var fontPx = r * 0.45;
-                    dofLayer.add(new Konva.Text({ listening: false,
-                        x: tx, y: ty,
+                    // Bílý obrys pod písmem — čitelné i nad čárami podkladu a stěn.
+                    var popisek = new Konva.Text({ listening: false,
+                        x: V.x + Math.cos(midAng) * (R + 12 / scale),
+                        y: V.y + Math.sin(midAng) * (R + 12 / scale),
                         text: txt,
-                        fontSize: fontPx,
+                        fontSize: 11 / scale,
                         fontStyle: 'bold',
                         fill: '#b45309',
-                        offsetX: (txt.length * fontPx * 0.27),
-                        offsetY: fontPx * 0.45,
-                    }));
+                        stroke: '#ffffff', strokeWidth: 3 / scale,
+                        fillAfterStrokeEnabled: true,
+                    });
+                    popisek.offsetX(popisek.width() / 2);
+                    popisek.offsetY(popisek.height() / 2);
+                    dofLayer.add(popisek);
                 };
                 var addPair = function (nodeId, wA, wB) {
                     if (!wA || !wB || wA.id === wB.id) return;
@@ -1478,6 +1570,33 @@ var _kkInitData = {
                             if (soused.id !== rozkreslena.id) addPair(nId, rozkreslena, soused);
                         });
                     });
+                }
+
+                // ─── Úhel k přichytávané stěně UŽ PŘI TAŽENÍ ───
+                // Dokud spoj nevznikl, nebyla dvojice stěn, ke které úhel patří —
+                // ukázal se až po napojení a dalším kliknutí a nedalo se mířit.
+                // Kreslí se z náhledu přichycení, takže sedí na tutéž polohu,
+                // kam konec po puštění sedne.
+                var sp = ctx._snapPreview;
+                if (sp && sp.wall && sp.point && !sp.cela && ctx.isDraggingNode && ctx.draggingNodeId) {
+                    var hostW = ctx.engine.walls.get(sp.wall.id);
+                    var hostA = hostW && ctx.engine.nodes.get(hostW.nodeA);
+                    var hostB = hostW && ctx.engine.nodes.get(hostW.nodeB);
+                    if (hostW && hostA && hostB) {
+                        ctx.engine.getNodeWalls(ctx.draggingNodeId).forEach(function (tazena) {
+                            if (tazena.id === hostW.id) return;
+                            // Osa tažené stěny po přichycení: z jejího pevného konce do
+                            // bodu, kam konec sedne (na líc u okraje, na osu u střihu).
+                            var opora = ctx.engine.nodes.get(tazena.nodeA === ctx.draggingNodeId ? tazena.nodeB : tazena.nodeA);
+                            if (!opora) return;
+                            vykresliUhel(
+                                { p: { x: hostA.x, y: hostA.y }, d: { x: hostB.x - hostA.x, y: hostB.y - hostA.y } },
+                                { p: { x: opora.x, y: opora.y }, d: { x: opora.x - sp.point.x, y: opora.y - sp.point.y } },
+                                (hostW.tloustka || 0.1) * ctx.engine.PX_PER_M / 2,
+                                (tazena.tloustka || 0.1) * ctx.engine.PX_PER_M / 2,
+                                sp.point);
+                        });
+                    }
                 }
             }
 
@@ -1523,4 +1642,4 @@ var _kkInitData = {
 })();
 </script>
 
-</x-layouts.app>
+</x-dynamic-component>

@@ -708,7 +708,13 @@ window.KonceptImport = {
         // kresbou podklad v původní velikosti — malé stěny na velkém podkladu.
         this.impVloz(false);
 
-        this.engine.fromJSON({ steny, otvory });
+        // Tloušťky z měření se smí srovnat na normovou řadu (0.1437 → 0.14).
+        this.engine.fromJSON({ steny, otvory }, { snapTloustky: true });
+        // Z rozpoznávání vycházejí úhly na desetiny stupně mimo — čáry ve
+        // výkrese nejsou přesně rovnoběžné a měřítko to ještě zvětší. Srovnat
+        // se musí hned, jinak se ta odchylka přenese do všeho, co uživatel
+        // nakreslí navazujícího.
+        this._srovnejPraveUhly?.();
         this.impSrovnejOtvory();
         this.renderer.render();
         this.fitView?.();                       // ukázat rovnou celý výsledek
@@ -797,6 +803,65 @@ window.KonceptImport = {
         Object.assign(this.podklad, zmeny);
         this.renderer?.aktualizujPodklad(zmeny);
         this.podkladUloz();
+    },
+
+    // ─── Podklad jede s celým domem ─────────────────────────
+    // Výkres a podklad tvoří celek: když uživatel chytí VŠECHNY stěny
+    // (umisťuje dům na parcelu), posune/otočí se i podklad. Při úpravě jen
+    // části stěn podklad stojí — slouží jako pravítko, podle kterého se opravuje.
+
+    /** Je vybraný celý dům (všechny stěny) a je co s ním vézt? */
+    podkladJedeSVyberem() {
+        const pocet = this.engine?.walls.size || 0;
+        return !!(this.podklad && this.renderer && pocet > 0
+            && this.renderer.selectedWalls.size === pocet);
+    },
+
+    /** Posune podklad o dx/dy (px plátna) — jen zobrazení, uloží se po puštění. */
+    podkladPosun(dx, dy) {
+        if (!this.podklad) return;
+        this.podklad.stredX = (this.podklad.stredX || 0) + dx;
+        this.podklad.stredY = (this.podklad.stredY || 0) + dy;
+        this.renderer?.aktualizujPodklad({ stredX: this.podklad.stredX, stredY: this.podklad.stredY });
+    },
+
+    /**
+     * Otočí podklad z výchozí polohy `vychozi` kolem (cx, cy) o `delta` rad.
+     * Stejný vzorec jako u uzlů stěn (plátno má +y dolů, kladný úhel = po směru
+     * hodinových ručiček), takže sedí i na Konva `rotation` ve stupních.
+     */
+    podkladOtoc(vychozi, cx, cy, delta) {
+        if (!this.podklad || !vychozi) return;
+        const cos = Math.cos(delta), sin = Math.sin(delta);
+        const rx = vychozi.stredX - cx, ry = vychozi.stredY - cy;
+        this.podklad.stredX = cx + rx * cos - ry * sin;
+        this.podklad.stredY = cy + rx * sin + ry * cos;
+        this.podklad.uhel = vychozi.uhel + delta * 180 / Math.PI;
+        this.renderer?.aktualizujPodklad({
+            stredX: this.podklad.stredX, stredY: this.podklad.stredY, uhel: this.podklad.uhel,
+        });
+    },
+
+    /** Poloha podkladu pro krok Zpět (jen poloha — sytost a režim Zpět nevrací). */
+    podkladPolohaZachyt() {
+        // Při startu editoru (výchozí krok historie) ještě podklad nemusí být
+        // načtený — jeho uložený stav ale už je v metadatech.
+        const p = this.podklad || this.metadata?.podklad;
+        if (!p || !p.url) return null;
+        return {
+            url: p.url,
+            stredX: p.stredX || 0,
+            stredY: p.stredY || 0,
+            uhel: p.uhel || 0,
+        };
+    },
+
+    podkladPolohaObnov(s) {
+        // Jiný podklad (mezitím vyměněný) se podle starého kroku nehýbe.
+        if (!s || !this.podklad || this.podklad.url !== s.url) return;
+        const p = this.podklad;
+        if ((p.stredX || 0) === s.stredX && (p.stredY || 0) === s.stredY && (p.uhel || 0) === s.uhel) return;
+        this.podkladZmena({ stredX: s.stredX, stredY: s.stredY, uhel: s.uhel });
     },
 
     podkladOdeber() {

@@ -42,6 +42,17 @@ class KonceptV3Controller extends Controller
             'akce' => 'sometimes|string|max:100',
             // metadata drží mj. stav podkladu importu (obrázek výkresu pod kresbou)
             'metadata' => 'sometimes|nullable|array',
+            // Historie = časová osa kroků (stav PO akci). Klient posílá nové
+            // kroky, id kroku, za který patří (`po` — co bylo za ním, se po
+            // Zpět zahodí), a id kroku, na kterém uživatel stojí (`aktualni`).
+            'kroky' => 'sometimes|array|max:60',
+            'kroky.*.id' => 'required|string|max:40',
+            'kroky.*.popis' => 'nullable|string|max:200',
+            'kroky.*.data' => 'nullable|array',
+            'kroky.*.cas' => 'nullable|string|max:40',
+            'kroky.*.podklad' => 'nullable|array',
+            'po' => 'nullable|string|max:40',
+            'aktualni' => 'nullable|string|max:40',
         ]);
 
         $updateData = [
@@ -49,10 +60,33 @@ class KonceptV3Controller extends Controller
         ];
 
         if ($request->has('data')) {
-            $akce = $request->input('akce', 'Automatické uložení');
-            $this->ulozitSnapshot($koncept, $akce);
             $updateData['data'] = $request->data;
             $updateData['verze'] = $koncept->verze + 1;
+        }
+
+        if ($request->has('kroky')) {
+            $kroky = $koncept->historie ?? [];
+            $po = $request->input('po');
+            // Bez předchůdce = historie začíná znovu. Neznámý předchůdce (třeba
+            // už odrolovaný za limit 50) → připojit na konec, nic nezahodit.
+            $i = $po === null ? -1 : collect($kroky)->search(fn ($k) => ($k['id'] ?? null) === $po);
+            if ($i === false) $i = count($kroky) - 1;
+            $kroky = array_slice($kroky, 0, $i + 1);
+            foreach ($request->input('kroky') as $k) {
+                $kroky[] = [
+                    'id' => $k['id'],
+                    'popis' => Str::limit($k['popis'] ?? 'Úprava', 120),
+                    'data' => $k['data'] ?? null,
+                    'cas' => $k['cas'] ?? now()->toISOString(),
+                    'podklad' => $k['podklad'] ?? null,
+                ];
+            }
+            $updateData['historie'] = array_values(array_slice($kroky, -50));
+        }
+
+        if ($request->filled('aktualni')) {
+            // mimo $fillable modelu (sdílí ho V2) — nastavit přímo, update() ho uloží s ostatním
+            $koncept->historie_aktualni = $request->input('aktualni');
         }
 
         if ($request->has('chat')) {
@@ -790,18 +824,24 @@ class KonceptV3Controller extends Controller
 
     // ─── Helpers ─────────────────────────────────────
 
+    /**
+     * Před tím, než server přepíše data konceptu (AI, import), musí současný
+     * stav existovat v historii jako krok — jinak by se k němu nešlo vrátit.
+     * Historie drží stavy PO akci, takže stačí výchozí krok u prázdné historie;
+     * krok s novými daty pak zapíše klient při svém uložení.
+     */
     private function ulozitSnapshot(Koncept $koncept, string $popis): void
     {
-        if (!$koncept->data) return;
+        if (!$koncept->data || !empty($koncept->historie)) return;
 
-        $historie = $koncept->historie ?? [];
-        $historie[] = [
-            'verze' => $koncept->verze,
-            'popis' => Str::limit($popis, 120),
+        $id = 'z' . $koncept->id . '-' . $koncept->verze;
+        $koncept->historie = [[
+            'id' => $id,
+            'popis' => 'Začátek',
             'data' => $koncept->data,
             'cas' => now()->toISOString(),
-        ];
-        $koncept->historie = array_slice($historie, -50);
+        ]];
+        $koncept->historie_aktualni = $id;
         $koncept->save();
     }
 

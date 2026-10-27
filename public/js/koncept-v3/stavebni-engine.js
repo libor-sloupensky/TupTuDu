@@ -364,6 +364,10 @@ class StavebniEngine {
         this.SNAP_STEP = options.snapStep || 8;
         this.undoStack = [];
         this.maxUndo = 50;
+        // Stav mimo kresbu, který se musí vracet spolu s ní (poloha podkladu).
+        // UI sem dosadí { zachyt() → stav, obnov(stav) }; bez něj by Zpět vrátil
+        // posunutý dům, ale podklad by zůstal posunutý a rozjely by se.
+        this.undoDoplnek = null;
     }
 
     // ─── ID generátor ──────────────────────────────────
@@ -371,9 +375,22 @@ class StavebniEngine {
         return prefix + (this.nextId++);
     }
 
+    /**
+     * Prefix id otvoru podle typu: D pro dveře (všechny dveřní typy), O pro okna.
+     *
+     * Na jednom místě proto, že se to počítalo zvlášť v addOpening a zvlášť ve
+     * fromJSON — a tam natvrdo „O", takže dveře načtené bez id dostaly okenní id.
+     */
+    static prefixOtvoru(typ) {
+        return (typ === 'dvere' || typ === 'francouzske_okno'
+            || typ === 'pruchod' || typ === 'garazova_vrata') ? 'D' : 'O';
+    }
+
     // ─── UNDO ──────────────────────────────────────────
     pushUndo() {
-        this.undoStack.push(this.toJSON());
+        const stav = this.toJSON();
+        if (this.undoDoplnek) stav._doplnek = this.undoDoplnek.zachyt();
+        this.undoStack.push(stav);
         if (this.undoStack.length > this.maxUndo) this.undoStack.shift();
     }
 
@@ -381,6 +398,7 @@ class StavebniEngine {
         if (this.undoStack.length === 0) return false;
         const state = this.undoStack.pop();
         this.fromJSON(state);
+        if (this.undoDoplnek && '_doplnek' in state) this.undoDoplnek.obnov(state._doplnek);
         return true;
     }
 
@@ -415,9 +433,14 @@ class StavebniEngine {
     addNode(x, y) {
         // Pokud existuje blízký node, vrať ho
         for (const node of this.nodes.values()) {
-            if (Math.hypot(x - node.x, y - node.y) < this.MAGNET_DIST) {
-                return node;
-            }
+            if (Math.hypot(x - node.x, y - node.y) >= this.MAGNET_DIST) continue;
+            // …ale ne přes zeď. U tenké příčky je protější líc blíž než dosah
+            // magnetu, takže nová stěna na druhé straně hostitele se jinak
+            // slepí s uzlem té první a vznikne „X", které ve skutečnosti
+            // sdílí jeden bod uprostřed zdi.
+            if (this.naOpacnychLicich({ x, y }, node)) continue;
+
+            return node;
         }
         const id = this._id('N');
         const node = { id, x, y };
@@ -461,19 +484,177 @@ class StavebniEngine {
         const ha = this.nodes.get(host.nodeA);
         const hb = this.nodes.get(host.nodeB);
         if (!ha || !hb) return null;
-        const stred = konec === 'A' ? ha : hb;
+        const uzel = konec === 'A' ? ha : hb;
         const dx = hb.x - ha.x, dy = hb.y - ha.y;
         const L = Math.hypot(dx, dy);
         if (!L) return null;
         const kolmiceX = -dy / L, kolmiceY = dx / L;
-        const dosah = Math.max(0, ((host.tloustka || 0) - (tloustkaDitete || 0)) / 2) * this.PX_PER_M;
+        // Směr ven ze stěny — od druhého konce k tomuhle.
+        const venX = (konec === 'A' ? -dx : dx) / L;
+        const venY = (konec === 'A' ? -dy : dy) / L;
+
+        // V rohu stěna fyzicky končí až na vnějším líci souseda. Spojovací uzel
+        // ale leží v průsečíku OS, tedy uprostřed souseda — kdyby čelo zůstalo
+        // tam, napojená stěna by skončila půlkou souseda uvnitř rohu, opticky
+        // „na střed" místo na okraj. Posuneme ho proto ven o polovinu tloušťky
+        // souseda. U volného konce (prosté napojení „I") žádný soused není
+        // a čelo zůstává v uzlu.
+        const soused = this.sousedVCele(hostId, konec);
+        const posunVen = soused ? (soused.tloustka || 0) / 2 * this.PX_PER_M : 0;
+        const stred = { x: uzel.x + venX * posunVen, y: uzel.y + venY * posunVen };
+
+        // Rozsah posunu = rozdíl polotloušťek. V absolutní hodnotě, aby šlo
+        // napojit i tlustší stěnu na tenčí (pak čelo hostitele leží v čele dítěte).
+        const dosah = Math.abs(((host.tloustka || 0) - (tloustkaDitete || 0)) / 2) * this.PX_PER_M;
+        const a = { x: stred.x - kolmiceX * dosah, y: stred.y - kolmiceY * dosah };
+        const b = { x: stred.x + kolmiceX * dosah, y: stred.y + kolmiceY * dosah };
+
+        // Pro kreslení se čára vede přes CELOU tloušťku hostitele, ať je čelo
+        // vidět i tam, kde je dosah posunu jen pár centimetrů. Přichytit se dá
+        // pořád jen na úsek a–b, ten se vykresluje zvlášť.
+        const poloHost = (host.tloustka || 0) / 2 * this.PX_PER_M;
         return {
-            stred: { x: stred.x, y: stred.y },
+            stred,
             kolmice: { x: kolmiceX, y: kolmiceY },
             dosah,
-            a: { x: stred.x - kolmiceX * dosah, y: stred.y - kolmiceY * dosah },
-            b: { x: stred.x + kolmiceX * dosah, y: stred.y + kolmiceY * dosah },
+            a, b,
+            jeRoh: !!soused,
+            zobrazA: { x: stred.x - kolmiceX * poloHost, y: stred.y - kolmiceY * poloHost },
+            zobrazB: { x: stred.x + kolmiceX * poloHost, y: stred.y + kolmiceY * poloHost },
         };
+    }
+
+    /**
+     * Stěna, která se s hostitelem potkává v jeho čele a dělá z něj roh.
+     *
+     * Souosé pokračování roh nedělá — hledá se soused, který z uzlu odbočuje do
+     * strany. Je-li jich víc, vítězí ten nejkolmější. Vrací null u volného konce.
+     *
+     * @returns {?Object} stěna souseda, nebo null
+     */
+    sousedVCele(hostId, konec) {
+        const host = this.walls.get(hostId);
+        if (!host) return null;
+        const uzelId = konec === 'A' ? host.nodeA : host.nodeB;
+        const uzel = this.nodes.get(uzelId);
+        const ha = this.nodes.get(host.nodeA), hb = this.nodes.get(host.nodeB);
+        if (!uzel || !ha || !hb) return null;
+        const dx = hb.x - ha.x, dy = hb.y - ha.y;
+        const L = Math.hypot(dx, dy) || 1;
+        const kx = -dy / L, ky = dx / L;
+        let nej = null;
+        for (const soused of this.getNodeWalls(uzelId)) {
+            if (soused.id === host.id) continue;
+            const druhyId = soused.nodeA === uzelId ? soused.nodeB : soused.nodeA;
+            const druhy = this.nodes.get(druhyId);
+            if (!druhy) continue;
+            const sL = Math.hypot(druhy.x - uzel.x, druhy.y - uzel.y) || 1;
+            const odklon = ((druhy.x - uzel.x) * kx + (druhy.y - uzel.y) * ky) / sL;
+            if (Math.abs(odklon) < 0.08) continue;   // souosé pokračování
+            if (!nej || Math.abs(odklon) > Math.abs(nej.odklon)) nej = { wall: soused, odklon };
+        }
+        return nej ? nej.wall : null;
+    }
+
+    /**
+     * Na kterou stranu čela hostitele padne „vnější" líc rohu.
+     *
+     * Vnější strana je ta odvrácená od směru, kterým soused z rohu vede — po té
+     * pokračuje obvodová čára dál. Bez souseda vrací 0 = roh tam není.
+     *
+     * @returns {number} -1 / +1 podle strany, 0 když to není roh
+     */
+    vnejsiStranaCela(hostId, konec, kolmice) {
+        const host = this.walls.get(hostId);
+        const soused = this.sousedVCele(hostId, konec);
+        if (!host || !soused) return 0;
+        const uzelId = konec === 'A' ? host.nodeA : host.nodeB;
+        const uzel = this.nodes.get(uzelId);
+        const druhyId = soused.nodeA === uzelId ? soused.nodeB : soused.nodeA;
+        const druhy = this.nodes.get(druhyId);
+        if (!uzel || !druhy) return 0;
+        const smer = (druhy.x - uzel.x) * kolmice.x + (druhy.y - uzel.y) * kolmice.y;
+        return Math.abs(smer) > 0.01 ? -Math.sign(smer) : 0;
+    }
+
+    /**
+     * Stěna napojená „I" na čelo hostitele musí v rohu končit na jeho VNĚJŠÍ
+     * hraně, ne v průsečíku os.
+     *
+     * Dřív se sázela do spojovacího uzlu, který leží uprostřed souseda, takže
+     * zasahovala půlkou souseda dovnitř rohu. V uložených konceptech tam takhle
+     * zůstala — při načtení ji proto posadíme na hranu. Posun po čele (na který
+     * líc) si drží.
+     *
+     * @returns {number} kolik stěn se srovnalo
+     */
+    srovnejCelaNaRoh() {
+        let opraveno = 0;
+        for (const w of this.walls.values()) {
+            for (const kde of ['odConstraint', 'doConstraint']) {
+                const c = w[kde];
+                if (!c || !c.konec) continue;
+                const celo = this.celoHostitele(c.host, c.konec, w.tloustka);
+                if (!celo) continue;
+                const uzel = this.nodes.get(kde === 'odConstraint' ? w.nodeA : w.nodeB);
+                if (!uzel) continue;
+                // Pojistka: srovnání je dorovnání o pár centimetrů, ne skok.
+                // Když konec u čela vůbec neleží, je vazba rozbitá (řeší ji
+                // opravVisiciVazby) a tady se nesmí přesouvat nic.
+                const stavVazbyCela = this.stavVazby(w, kde);
+                if (stavVazbyCela && !stavVazbyCela.drzi) continue;
+                // podél čela zůstat (jen ořezat na dosah), kolmo sednout na jeho rovinu
+                const u = (uzel.x - celo.stred.x) * celo.kolmice.x
+                        + (uzel.y - celo.stred.y) * celo.kolmice.y;
+                const uOrez = Math.max(-celo.dosah, Math.min(celo.dosah, u));
+                const nx = celo.stred.x + celo.kolmice.x * uOrez;
+                const ny = celo.stred.y + celo.kolmice.y * uOrez;
+                if (Math.hypot(nx - uzel.x, ny - uzel.y) > 0.01) {
+                    uzel.x = nx; uzel.y = ny;
+                    opraveno++;
+                }
+            }
+        }
+        return opraveno;
+    }
+
+    /**
+     * Příčka napojená na stěnu nesmí končit na opačném líci, než kam míří její
+     * tělo — tam by procházela skrz hostitele.
+     *
+     * Vznikalo to překlápěním v srovnejPraveUhly() (znaménko odsazení záviselo
+     * na směru zápisu hostitele, A→B). Chyba je opravená, ale v uložených
+     * konceptech ty překlopené příčky zůstaly, tak je při načtení srovnáme zpět
+     * na bližší líc. Konec v ose hostitele (střih) se nechává být.
+     *
+     * @returns {number} kolik příček se srovnalo
+     */
+    srovnejPrickyNaLic() {
+        let opraveno = 0;
+        for (const w of this.walls.values()) {
+            for (const kde of ['odConstraint', 'doConstraint']) {
+                const c = w[kde];
+                if (!c || c.konec) continue;
+                const host = this.walls.get(c.host);
+                if (!host) continue;
+                const ha = this.nodes.get(host.nodeA), hb = this.nodes.get(host.nodeB);
+                const uzel = this.nodes.get(kde === 'odConstraint' ? w.nodeA : w.nodeB);
+                const daleky = this.nodes.get(kde === 'odConstraint' ? w.nodeB : w.nodeA);
+                if (!ha || !hb || !uzel || !daleky) continue;
+                const dx = hb.x - ha.x, dy = hb.y - ha.y;
+                const L = Math.hypot(dx, dy);
+                if (!L) continue;
+                const odsazeni = (p) => ((p.x - ha.x) * (-dy) + (p.y - ha.y) * dx) / L;
+                const uKonce = odsazeni(uzel), uTela = odsazeni(daleky);
+                if (Math.abs(uTela) < 0.5) continue;        // tělo leží v ose hostitele — neřešitelné
+                if (Math.abs(uKonce) < 0.5) continue;       // konec na ose = střih, je v pořádku
+                if (Math.sign(uKonce) === Math.sign(uTela)) continue;   // už je na správné straně
+                uzel.x += (-dy / L) * (-2 * uKonce);
+                uzel.y += (dx / L) * (-2 * uKonce);
+                opraveno++;
+            }
+        }
+        return opraveno;
     }
 
     /**
@@ -618,8 +799,9 @@ class StavebniEngine {
         const children = this.getTChildren(hostWallId);
         const moved = new Set();
         // Pokud známe delta pohybu hostitele, translatujeme T-children o stejnou
-        // hodnotu (zachovává perpendikulární offset od osy hostitele).
-        // Bez delty (legacy): node položíme na host.axis v t-pozici (ztratí perp offset).
+        // hodnotu (zachovává kolmé odsazení od osy hostitele).
+        // Bez delty: dítě položíme na t-pozici, ale kolmé odsazení mu necháme —
+        // stěna napojená na líc hostitele na líci zůstane.
         const haveDelta = (typeof dx === 'number' && typeof dy === 'number');
         const ha = this.nodes.get(host.nodeA);
         const hb = this.nodes.get(host.nodeB);
@@ -637,8 +819,10 @@ class StavebniEngine {
             } else if (jeCelo) {
                 continue;   // bez delty neumíme čelo dopočítat; zůstane, kde je
             } else {
-                const newX = ha.x + ch.t * hdx;
-                const newY = ha.y + ch.t * hdy;
+                const hL = Math.hypot(hdx, hdy) || 1;
+                const odsazeni = ((attachedNode.x - ha.x) * (-hdy) + (attachedNode.y - ha.y) * hdx) / hL;
+                const newX = ha.x + ch.t * hdx + (-hdy / hL) * odsazeni;
+                const newY = ha.y + ch.t * hdy + (hdx / hL) * odsazeni;
                 deltaX = newX - attachedNode.x;
                 deltaY = newY - attachedNode.y;
             }
@@ -670,12 +854,62 @@ class StavebniEngine {
     }
 
     /**
+     * Leží dva body na OPAČNÝCH lících téže stěny?
+     *
+     * Na křížení (X) visí z každé strany hostitele jedna příčka a jejich konce
+     * dělí jen tloušťka zdi — u 14cm příčky 14 px, tedy míň než dosah magnetu
+     * uzlů (16 px). Puštěný konec se proto slučoval s uzlem na protějším líci
+     * a příčka přeskočila na druhou stranu zdi (Kováčová, W106).
+     *
+     * Body musí oba ležet v pásu té stěny a každý na jiné straně její osy —
+     * jinak o žádné „přeskočení přes zeď" nejde.
+     *
+     * @returns {boolean}
+     */
+    naOpacnychLicich(p1, p2) {
+        for (const w of this.walls.values()) {
+            const a = this.nodes.get(w.nodeA);
+            const b = this.nodes.get(w.nodeB);
+            if (!a || !b) continue;
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const L = Math.hypot(dx, dy);
+            if (L < 1e-6) continue;
+
+            const pul = (w.tloustka || 0) * this.PX_PER_M / 2;
+            if (pul <= 0) continue;
+            // Tažený konec ještě nemusí na líci přesně sedět, proto se počítá
+            // s vůlí o půl dosahu magnetu. Bez ní test u tenké zdi neplatil:
+            // 14cm příčka má při 80 px/m líc jen 5,6 px od osy.
+            const okraj = pul + this.MAGNET_DIST / 2;
+            const prah = pul / 3;           // blíž k ose = bod na líci neleží
+
+            const strany = [p1, p2].map((p) => {
+                const podel = ((p.x - a.x) * dx + (p.y - a.y) * dy) / (L * L);
+                if (podel < -0.02 || podel > 1.02) return null;      // mimo stěnu
+                return ((p.x - a.x) * -dy + (p.y - a.y) * dx) / L;
+            });
+            if (strany[0] === null || strany[1] === null) continue;
+            if (Math.abs(strany[0]) > okraj || Math.abs(strany[1]) > okraj) continue;
+            if (Math.abs(strany[0]) < prah || Math.abs(strany[1]) < prah) continue;
+            if ((strany[0] > 0) !== (strany[1] > 0)) return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Najít blízkou stěnu pro snap kandidát.
      * Vrátí { wall, t, point } pro nejbližší T-junction kandidát v dosahu,
      * nebo null. Vyloučí stěny obsahující excludeNodeId.
      * Tolerance v px (typicky 20).
      */
-    findSnapCandidate(x, y, tolerancePx, excludeNodeId = null) {
+    /**
+     * @param {boolean} odPovrchu  měřit vzdálenost od POVRCHU stěny, ne od osy.
+     *        Bez toho se konec dal přichytit jen zevnitř stěny: u 400mm zdi leží
+     *        líc 16 px od osy, takže z 20px dosahu zbyly 4 px venku a „přichyť
+     *        se na okraj" bylo prakticky nedostupné.
+     */
+    findSnapCandidate(x, y, tolerancePx, excludeNodeId = null, odPovrchu = false) {
         let best = null;
         let bestDist = tolerancePx;
         for (const wall of this.walls.values()) {
@@ -690,8 +924,12 @@ class StavebniEngine {
             if (t < 0.02 || t > 0.98) continue;
             const px = a.x + t * dx, py = a.y + t * dy;
             const d = Math.hypot(x - px, y - py);
-            if (d < bestDist) {
-                bestDist = d;
+            // Uvnitř stěny je vzdálenost od povrchu nulová — pak rozhoduje osa,
+            // aby se ze dvou překrytých stěn vybrala ta bližší.
+            const polotl = odPovrchu ? (wall.tloustka || 0) / 2 * this.PX_PER_M : 0;
+            const dMer = Math.max(0, d - polotl);
+            if (dMer < bestDist || (dMer === bestDist && best && d < best.distance)) {
+                bestDist = dMer;
                 best = { wall, t, point: { x: px, y: py }, distance: d };
             }
         }
@@ -706,7 +944,13 @@ class StavebniEngine {
      *  - s T-children: jen detached endpoint se posune PO OSE směrem k druhému konci
      *    (zkrátit) — zachová vazby T-children na hostiteli s minimálním skokem.
      */
-    detachWallFromNode(wallId, nodeId) {
+    /**
+     * @param {number} minimalniMezera  jak daleko (v px kresby) musí odpojený konec
+     *        skončit od spoje. Volající (editor) ji počítá z dosahu přichytávání —
+     *        bez toho se stěna odsune o pár pixelů, hned se zase chytí a vypadá to,
+     *        že odpojení nefunguje.
+     */
+    detachWallFromNode(wallId, nodeId, minimalniMezera = 0) {
         const wall = this.walls.get(wallId);
         if (!wall) return false;
         const node = this.nodes.get(nodeId);
@@ -716,73 +960,94 @@ class StavebniEngine {
 
         const constraint = isEndA ? wall.odConstraint : wall.doConstraint;
         const hasTChildren = this.getTChildren(wallId).length > 0;
-        const OFFSET_PX = 0.10 * this.PX_PER_M; // 10 cm
+        const OFFSET_PX = Math.max(0.10 * this.PX_PER_M, minimalniMezera || 0);
 
-        // Vypočítat směr offsetu PŘED aplikací detachu (potřebujeme původní host info)
-        let perpX = 0, perpY = 0; // kolmo od host (pro bounce mimo host)
-        if (constraint) {
-            const host = this.walls.get(constraint.host);
-            if (host) {
-                const ha = this.nodes.get(host.nodeA);
-                const hb = this.nodes.get(host.nodeB);
-                if (ha && hb) {
-                    const hdx = hb.x - ha.x, hdy = hb.y - ha.y;
-                    const hL = Math.hypot(hdx, hdy);
-                    if (hL > 0) {
-                        // Normal na host osu
-                        const nx = -hdy / hL, ny = hdx / hL;
-                        // Strana = kde leží druhý endpoint stěny
-                        const otherId = isEndA ? wall.nodeB : wall.nodeA;
-                        const other = this.nodes.get(otherId);
-                        if (other) {
-                            const side = (other.x - ha.x) * nx + (other.y - ha.y) * ny;
-                            const sign = side >= 0 ? 1 : -1;
-                            perpX = nx * sign * OFFSET_PX;
-                            perpY = ny * sign * OFFSET_PX;
-                        }
-                    }
-                }
+        // Směr hostitele (stěny, od které se odpojujeme) — podle něj se pozná,
+        // jestli stačí stěnu zkrátit po ose, nebo ji musí odsunout kolmo.
+        let hostSmer = null;
+        const hostStena = constraint ? this.walls.get(constraint.host)
+            : this.getNodeWalls(nodeId).find(w => w.id !== wallId);
+        if (hostStena) {
+            const ha = this.nodes.get(hostStena.nodeA);
+            const hb = this.nodes.get(hostStena.nodeB);
+            if (ha && hb) {
+                const hL = Math.hypot(hb.x - ha.x, hb.y - ha.y);
+                if (hL > 0) hostSmer = { x: (hb.x - ha.x) / hL, y: (hb.y - ha.y) / hL };
             }
         }
 
-        // Aplikovat detach
+        // Vypočítat směr offsetu PŘED aplikací detachu (potřebujeme původní host info).
+        //
+        // Hostitele hledáme i tam, kde žádná vazba není — u napojení „I" přes
+        // SDÍLENÝ UZEL (dvě souosé stěny konec na konec) se zkrácením po vlastní
+        // ose nic neodsune, a dokud se tenhle směr počítal jen z vazby, zůstal
+        // konec přesně na místě. Odpojení pak vypadalo, že nic neudělalo,
+        // a kliklo se na uzel té druhé stěny.
+        let perpX = 0, perpY = 0; // kolmo od host (pro bounce mimo host)
+        if (hostSmer) {
+            const nx = -hostSmer.y, ny = hostSmer.x;
+            // Strana = kde leží druhý endpoint stěny. U souosých stěn vyjde nula,
+            // pak je jedno kam — hlavně ať se konec vzdálí.
+            const otherId = isEndA ? wall.nodeB : wall.nodeA;
+            const other = this.nodes.get(otherId);
+            const side = other ? (other.x - node.x) * nx + (other.y - node.y) * ny : 0;
+            const sign = side >= 0 ? 1 : -1;
+            perpX = nx * sign * OFFSET_PX;
+            perpY = ny * sign * OFFSET_PX;
+        }
+
+        // Aplikovat detach. Stěna může být v uzlu držená DVĚMA způsoby najednou:
+        // vazbou (T / čelo) a sdíleným uzlem. Dřív se zrušilo jen to první, takže
+        // stěna zůstala fyzicky přilepená — vypadala odpojeně, ale posun ji táhl
+        // i se sousedy. Rušíme proto obojí.
+        let odpojeno = false;
         if (isEndA && wall.odConstraint) {
             wall.odConstraint = null;
+            odpojeno = true;
         } else if (!isEndA && wall.doConstraint) {
             wall.doConstraint = null;
-        } else {
-            // Sdílený corner node
-            const wallsAtNode = this.getNodeWalls(nodeId);
-            if (wallsAtNode.length <= 1) return false;
+            odpojeno = true;
+        }
+
+        // Sdílený uzel → dát téhle stěně vlastní (na stejném místě)
+        if (this.getNodeWalls(nodeId).length > 1) {
             const newNode = { id: this._id('N'), x: node.x, y: node.y };
             this.nodes.set(newNode.id, newNode);
             if (isEndA) wall.nodeA = newNode.id;
             else wall.nodeB = newNode.id;
+            odpojeno = true;
         }
 
-        // Aplikovat optický offset
-        if (hasTChildren) {
-            // Zkrácení — detached endpoint se posune PO OSE směrem k druhému konci
-            const aNode = this.nodes.get(wall.nodeA);
-            const bNode = this.nodes.get(wall.nodeB);
-            if (aNode && bNode) {
-                const wdx = bNode.x - aNode.x, wdy = bNode.y - aNode.y;
-                const wL = Math.hypot(wdx, wdy);
-                if (wL > OFFSET_PX + 10) { // stěna dost dlouhá
-                    const ux = wdx / wL, uy = wdy / wL;
-                    const detachedNode = isEndA ? aNode : bNode;
-                    // Směr od detached k druhému konci
-                    const sign = isEndA ? 1 : -1;
-                    detachedNode.x += ux * sign * OFFSET_PX;
-                    detachedNode.y += uy * sign * OFFSET_PX;
-                }
+        if (!odpojeno) return false;   // nebylo co odpojovat
+
+        // Odsunout odpojený konec od spoje. Přednostně ZKRÁCENÍM po vlastní ose
+        // (zbytek kresby zůstane, kde byl); u stěn skoro rovnoběžných s hostitelem
+        // by zkrácení od osy neodsunulo nic, tam se stěna posune kolmo.
+        const aNode = this.nodes.get(wall.nodeA);
+        const bNode = this.nodes.get(wall.nodeB);
+        if (aNode && bNode) {
+            const wdx = bNode.x - aNode.x, wdy = bNode.y - aNode.y;
+            const wL = Math.hypot(wdx, wdy);
+            const ux = wL ? wdx / wL : 0, uy = wL ? wdy / wL : 0;
+
+            // Jak moc se konec vzdálí od osy hostitele na každý px zkrácení
+            let ucinnost = 1;
+            if (hostSmer) ucinnost = Math.abs(ux * hostSmer.y - uy * hostSmer.x);  // |sin úhlu|
+
+            const zkraceni = ucinnost > 0.3 ? OFFSET_PX / ucinnost : 0;
+            if (zkraceni > 0 && wL > zkraceni + 10) {
+                const detachedNode = isEndA ? aNode : bNode;
+                const sign = isEndA ? 1 : -1;      // směr k druhému konci
+                detachedNode.x += ux * sign * zkraceni;
+                detachedNode.y += uy * sign * zkraceni;
+            } else if (perpX !== 0 || perpY !== 0) {
+                // Skoro rovnoběžná (nebo moc krátká) — odsunout celou stěnu kolmo
+                const delka = Math.hypot(perpX, perpY) || 1;
+                const posunX = (perpX / delka) * OFFSET_PX;
+                const posunY = (perpY / delka) * OFFSET_PX;
+                aNode.x += posunX; aNode.y += posunY;
+                bNode.x += posunX; bNode.y += posunY;
             }
-        } else if (perpX !== 0 || perpY !== 0) {
-            // Bounce — translate celé stěny kolmo od host
-            const aNode = this.nodes.get(wall.nodeA);
-            const bNode = this.nodes.get(wall.nodeB);
-            if (aNode) { aNode.x += perpX; aNode.y += perpY; }
-            if (bNode) { bNode.x += perpX; bNode.y += perpY; }
         }
 
         return true;
@@ -828,23 +1093,36 @@ class StavebniEngine {
                     cela: true,
                     host: firstHost,
                     konec: prvni.konec,
-                    line: { a: celo.a, b: celo.b },
+                    line: { a: celo.a, b: celo.b },                   // osa — pro výpočet posunu
+                    zobrazLine: { a: celo.zobrazA, b: celo.zobrazB }, // líc — pro kreslení
                 };
             }
 
             const ha = this.nodes.get(host.nodeA);
             const hb = this.nodes.get(host.nodeB);
             if (!ha || !hb) return null;
+            // Vodicí čára vede TUDY, kudy uzel opravdu jezdí — po líci hostitele,
+            // je-li stěna napojená na okraj, ne po jeho ose. Dřív zelená čára
+            // slibovala pohyb po ose, zatímco stěna klouzala po líci.
+            const hdx = hb.x - ha.x, hdy = hb.y - ha.y;
+            const hL = Math.hypot(hdx, hdy) || 1;
+            const odsazeni = ((node.x - ha.x) * (-hdy) + (node.y - ha.y) * hdx) / hL;
+            const ox = (-hdy / hL) * odsazeni, oy = (hdx / hL) * odsazeni;
             return {
                 type: 'slide',
                 host: firstHost,
-                line: { a: { x: ha.x, y: ha.y }, b: { x: hb.x, y: hb.y } },
+                odsazeni,
+                line: { a: { x: ha.x + ox, y: ha.y + oy }, b: { x: hb.x + ox, y: hb.y + oy } },
             };
         }
 
-        // Bez constraint: uzel sdílený 2+ stěnami (roh, T/X napojení) = FROZEN.
-        // User rozhodl — rohy se nehýbou přímo za bod, hýbou se posunem stěny.
-        if (walls.length >= 2) return { type: 'frozen' };
+        // Roh dvou stěn jde chytit za bod a posunout — obě stěny se o ten kus
+        // prodlouží nebo zkrátí a příčky, které na nich visí, se přizpůsobí.
+        // (Dřív byl roh zamčený a nešlo s ním hnout vůbec.)
+        if (walls.length === 2) return null;
+        // Tři a víc stěn (T/X po střihu) zůstává zamčené: posun takového uzlu
+        // by zalomil průběžnou stěnu do „V".
+        if (walls.length >= 3) return { type: 'frozen' };
         // 1 stěna = volný konec → 2D pohyb
         return null;
     }
@@ -917,9 +1195,12 @@ class StavebniEngine {
             if (wall.nodeA === nodeBId) wall.nodeA = nodeAId;
             if (wall.nodeB === nodeBId) wall.nodeB = nodeAId;
         }
-        // Smazat duplicitní stěny (nodeA === nodeB)
+        // Smazat duplicitní stěny (nodeA === nodeB) — i s vazbami, které na ně vedly
         for (const [id, wall] of this.walls.entries()) {
-            if (wall.nodeA === wall.nodeB) this.walls.delete(id);
+            if (wall.nodeA === wall.nodeB) {
+                this.walls.delete(id);
+                this.zrusVazbyNa(id);
+            }
         }
         this.nodes.delete(nodeBId);
     }
@@ -934,7 +1215,9 @@ class StavebniEngine {
         const delka = Math.hypot(nodeB.x - nodeA.x, nodeB.y - nodeA.y);
         if (delka < this.SNAP_STEP) return null;
 
-        const id = this._id('S');
+        // Stěny mají jednotně prefix W. Dřív se tu zakládalo „S" a při dělení „W",
+        // takže v jednom konceptu byly obě řady a nešlo poznat, co je co.
+        const id = this._id('W');
         const typ = urcTypSteny(tloustka, explicitTyp);
         const wall = { id, nodeA: nodeA.id, nodeB: nodeB.id, tloustka, typ };
         this.walls.set(id, wall);
@@ -1024,6 +1307,352 @@ class StavebniEngine {
         return newId;
     }
 
+    /**
+     * Jde v uzlu sloučit dvě stěny do jedné?
+     *
+     * Slučovat se smí jen stěny, které jsou prakticky v jedné přímce. U většího
+     * úhlu by výsledkem byla úhlopříčka mezi vzdálenými konci, tedy něco úplně
+     * jiného, než co je nakreslené.
+     *
+     * @param {number} maxOdchylkaDeg  o kolik smí úhel chybět do 180°
+     * @returns {{ok: boolean, duvod: ?string, steny: ?Array, uhel: ?number}}
+     */
+    lzeSpojitVUzlu(nodeId, maxOdchylkaDeg = 5) {
+        const ne = (duvod) => ({ ok: false, duvod, steny: null, uhel: null });
+        const uzel = this.nodes.get(nodeId);
+        if (!uzel) return ne('uzel neexistuje');
+
+        const steny = this.getNodeWalls(nodeId);
+        if (steny.length !== 2) {
+            return ne(steny.length < 2 ? 'v uzlu je jen jedna stěna' : 'v uzlu se potkává víc než dvě stěny');
+        }
+
+        // Směry OD uzlu ke vzdáleným koncům. V jedné přímce svírají 180°.
+        const smery = steny.map(w => {
+            const vzdalenyId = w.nodeA === nodeId ? w.nodeB : w.nodeA;
+            const vzdaleny = this.nodes.get(vzdalenyId);
+            if (!vzdaleny) return null;
+            const dx = vzdaleny.x - uzel.x, dy = vzdaleny.y - uzel.y;
+            const L = Math.hypot(dx, dy);
+            return L > 0 ? { x: dx / L, y: dy / L } : null;
+        });
+        if (!smery[0] || !smery[1]) return ne('stěna má nulovou délku');
+
+        const skalar = Math.max(-1, Math.min(1, smery[0].x * smery[1].x + smery[0].y * smery[1].y));
+        const uhel = Math.acos(skalar) * 180 / Math.PI;
+        if (180 - uhel > maxOdchylkaDeg) {
+            return ne('stěny nejsou v jedné přímce (' + uhel.toFixed(0) + '°)');
+        }
+
+        return { ok: true, duvod: null, steny, uhel };
+    }
+
+    /**
+     * Opak splitWall(): sloučí dvě stěny potkávající se v uzlu do jedné
+     * a uzel zruší. Slouží k odstranění spoje, který po úpravách zbyl
+     * (typicky po odpojení příčky z T — hostitel zůstal rozdělený na dvě).
+     *
+     * Napojené stěny se nesmí rozbít. Osa se při slučování narovná (úhel
+     * nebývá přesně 180°), takže se napojeným stěnám přesune JEN napojený
+     * konec na novou osu — vzdálený zůstane stát. Stěna se tím prodlouží
+     * nebo zkrátí místo aby se posunula a utrhla svoje napojení jinde.
+     * Kolmé odsazení od líce hostitele se přitom zachová, ale měří se
+     * k PŮVODNÍ ose: z nové by do něj spadl i zlom a stěna by zůstala
+     * viset vedle hostitele.
+     *
+     * @returns {?object} sloučená stěna, nebo null když to nejde
+     */
+    spojSteny(nodeId, maxOdchylkaDeg = 5) {
+        const kontrola = this.lzeSpojitVUzlu(nodeId, maxOdchylkaDeg);
+        if (!kontrola.ok) return null;
+
+        const [w1, w2] = kontrola.steny;
+        const uzel = this.nodes.get(nodeId);
+        const aId = w1.nodeA === nodeId ? w1.nodeB : w1.nodeA;
+        const bId = w2.nodeA === nodeId ? w2.nodeB : w2.nodeA;
+        const a = this.nodes.get(aId);
+        const b = this.nodes.get(bId);
+        if (!a || !b || aId === bId) return null;
+
+        // Uložené t dětí nemusí sedět na jejich skutečnou polohu — nejdřív srovnat,
+        // jinak by se přepočítávala zastaralá hodnota.
+        this.syncTChildrenT(w1.id);
+        this.syncTChildrenT(w2.id);
+
+        const L1 = Math.hypot(uzel.x - a.x, uzel.y - a.y);
+        const L2 = Math.hypot(b.x - uzel.x, b.y - uzel.y);
+        const Lcelk = L1 + L2;
+        const Lnova = Math.hypot(b.x - a.x, b.y - a.y);
+        if (Lcelk <= 0 || Lnova <= 0) return null;
+
+        // Orientace původních stěn vůči novému směru A → B
+        const w1Vpred = w1.nodeA === aId;       // w1 vede A → uzel
+        const w2Vpred = w2.nodeA === nodeId;    // w2 vede uzel → B
+
+        /** Vzdálenost od A (v px) pro parametr t na původní stěně. */
+        const podelOsy = (w, t) => (w === w1
+            ? (w1Vpred ? t * L1 : (1 - t) * L1)
+            : L1 + (w2Vpred ? t * L2 : (1 - t) * L2));
+
+        /** Kterému konci sloučené stěny odpovídá konec původní stěny. */
+        const novyKonec = (w, konec) => {
+            const uzelKonce = konec === 'A' ? w.nodeA : w.nodeB;
+            if (uzelKonce === aId) return 'A';
+            if (uzelKonce === bId) return 'B';
+            return null;        // konec mizí i s uzlem → z čela se stane T
+        };
+
+        // Napojené stěny přepsat na sloučenou stěnu a přepočítat jejich t.
+        // Zároveň si zapamatovat jejich kolmé odsazení od PŮVODNÍ osy — podle
+        // něj se pak posadí na novou (viz komentář u metody).
+        const deti = [];
+        for (const w of this.walls.values()) {
+            if (w === w1 || w === w2) continue;
+            for (const konec of ['odConstraint', 'doConstraint']) {
+                const c = w[konec];
+                if (!c) continue;
+                if (c.host !== w1.id && c.host !== w2.id) continue;
+                const uzelDitete = this.nodes.get(konec === 'odConstraint' ? w.nodeA : w.nodeB);
+                if (!uzelDitete || c.konec) continue;       // čelo se neposouvá
+                const hostStena = c.host === w1.id ? w1 : w2;
+                const ha = this.nodes.get(hostStena.nodeA);
+                const hb = this.nodes.get(hostStena.nodeB);
+                if (!ha || !hb) continue;
+                const hdx = hb.x - ha.x, hdy = hb.y - ha.y;
+                const hL = Math.hypot(hdx, hdy) || 1;
+                deti.push({
+                    uzel: uzelDitete,
+                    vazba: c,
+                    odsazeni: ((uzelDitete.x - ha.x) * (-hdy) + (uzelDitete.y - ha.y) * hdx) / hL,
+                });
+            }
+        }
+
+        for (const w of this.walls.values()) {
+            if (w === w1 || w === w2) continue;
+            for (const c of [w.odConstraint, w.doConstraint]) {
+                if (!c) continue;
+                const host = c.host === w1.id ? w1 : (c.host === w2.id ? w2 : null);
+                if (!host) continue;
+
+                if (c.konec) {
+                    const konec = novyKonec(host, c.konec);
+                    if (konec) {
+                        c.konec = konec;
+                    } else {
+                        // Čelo mířilo na mizející uzel — drž se místa spoje na ose.
+                        delete c.konec;
+                        c.t = Math.max(0.02, Math.min(0.98, L1 / Lcelk));
+                    }
+                } else {
+                    c.t = Math.max(0.02, Math.min(0.98, podelOsy(host, c.t) / Lcelk));
+                }
+                c.host = w1.id;
+            }
+        }
+
+        // Otvory: pozice se měří v metrech od nodeA, takže se přepočítá
+        // na vzdálenost od A a zmenší v poměru skutečné délky nové stěny.
+        const naM = (px) => px / this.PX_PER_M;
+        const pomer = Lnova / Lcelk;
+        for (const op of this.openings.values()) {
+            if (op.wallId !== w1.id && op.wallId !== w2.id) continue;
+            const naW1 = op.wallId === w1.id;
+            const delka = naM(naW1 ? L1 : L2);
+            const vpred = naW1 ? w1Vpred : w2Vpred;
+            const odZacatku = vpred ? op.pozice : delka - op.pozice - op.sirka;
+            const odA = (naW1 ? 0 : naM(L1)) + odZacatku;
+            op.wallId = w1.id;
+            op.pozice = Math.max(0, Math.min(naM(Lnova) - op.sirka, odA * pomer));
+        }
+
+        // Vazby vzdálených konců si sloučená stěna bere z obou původních.
+        const konecW1 = w1Vpred ? w1.odConstraint : w1.doConstraint;
+        const konecW2 = w2Vpred ? w2.doConstraint : w2.odConstraint;
+        const ciziHost = (c) => (c && c.host !== w1.id && c.host !== w2.id) ? c : null;
+
+        // Tloušťku i typ udává delší stěna — ta určuje, co to ve skutečnosti je.
+        const hlavni = L1 >= L2 ? w1 : w2;
+        w1.tloustka = hlavni.tloustka;
+        w1.typ = hlavni.typ;
+        w1.nodeA = aId;
+        w1.nodeB = bId;
+        w1.odConstraint = ciziHost(konecW1);
+        w1.doConstraint = ciziHost(konecW2);
+
+        this.walls.delete(w2.id);
+        this._cleanOrphanNodes();
+
+        // Dotáhnout napojené stěny na narovnanou osu. Hýbe se VÝHRADNĚ
+        // napojeným koncem — vzdáleného se nedotýkáme, i když je volný:
+        // slučování má zrušit spoj, ne posouvat kusy výkresu.
+        const ndx = b.x - a.x, ndy = b.y - a.y;
+        const nL = Math.hypot(ndx, ndy) || 1;
+        for (const d of deti) {
+            d.uzel.x = a.x + d.vazba.t * ndx + (-ndy / nL) * d.odsazeni;
+            d.uzel.y = a.y + d.vazba.t * ndy + (ndx / nL) * d.odsazeni;
+        }
+
+        return w1;
+    }
+
+    /**
+     * Vrátí stěny do pravých úhlů tam, kde jsou mimo jen o kousek.
+     *
+     * Rozdíl desetiny stupně na obrazovce nepoznáte, ale v konstrukci se sčítá:
+     * změřeno na konceptech v databázi — ze 121 stěn jich 85 (70 %) leželo mimo
+     * pravý úhel o 0,001 až 1,99°, a nad 2° nebyla ANI JEDNA. Jinými slovy: žádná
+     * z nich nebyla šikmá záměrně, všechny ty odchylky byly nechtěné. Proto se
+     * srovnává do 2° — co je šikmé víc, je šikmé schválně a nikdo na to nesahá.
+     *
+     * Postup: najde hlavní směr domu, otočí si do něj souřadnice, a stěnám,
+     * které mají být svislé, srovná X na společnou hodnotu (vodorovným Y).
+     * Pracuje tedy přes SOUŘADNICE UZLŮ, ne přes natáčení jednotlivých stěn —
+     * uzly zůstanou sdílené a topologie se nerozpadne.
+     *
+     * @param {number} toleranceDeg  do kolika stupňů se ještě srovnává
+     * @returns {number} kolik uzlů se posunulo
+     */
+    srovnejPraveUhly(toleranceDeg = 2) {
+        const steny = [...this.walls.values()]
+            .filter(w => this.nodes.get(w.nodeA) && this.nodes.get(w.nodeB));
+        if (steny.length < 2) return 0;
+
+        // Hlavní směr domu. Úhly mají periodu 90°, takže se průměrují
+        // přes čtyřnásobek — jinak by se vodorovné a svislé stěny vyrušily.
+        let sx = 0, sy = 0;
+        for (const w of steny) {
+            const a = this.nodes.get(w.nodeA), b = this.nodes.get(w.nodeB);
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const L = Math.hypot(dx, dy);
+            if (L < 1) continue;
+            sx += Math.cos(4 * Math.atan2(dy, dx)) * L;
+            sy += Math.sin(4 * Math.atan2(dy, dx)) * L;
+        }
+        let zaklad = (sx || sy) ? Math.atan2(sy, sx) / 4 : 0;
+        const tol = toleranceDeg * Math.PI / 180;
+        // Dům kreslený „narovno" srovnáme na skutečnou vodorovnou, ne na svůj
+        // vlastní průměrný šum.
+        if (Math.abs(zaklad) <= tol) zaklad = 0;
+
+        const cos = Math.cos(zaklad), sin = Math.sin(zaklad);
+        const vRamci = new Map();
+        for (const [id, n] of this.nodes) {
+            vRamci.set(id, { x: n.x * cos + n.y * sin, y: -n.x * sin + n.y * cos });
+        }
+
+        // Které stěny mají být svislé a které vodorovné
+        const svisle = [], vodorovne = [];
+        for (const w of steny) {
+            const a = vRamci.get(w.nodeA), b = vRamci.get(w.nodeB);
+            const dx = b.x - a.x, dy = b.y - a.y;
+            if (Math.hypot(dx, dy) < 1) continue;
+            const uhel = Math.atan2(dy, dx);
+            const kNejblizsi = Math.round(uhel / (Math.PI / 2)) * (Math.PI / 2);
+            if (Math.abs(uhel - kNejblizsi) > tol) continue;        // šikmá schválně
+            (Math.abs(Math.cos(kNejblizsi)) < 0.5 ? svisle : vodorovne).push(w);
+        }
+        if (!svisle.length && !vodorovne.length) return 0;
+
+        // Odsazení napojených stěn od osy hostitele se musí změřit TEĎ —
+        // po srovnání už by do něj spadla i opravená odchylka.
+        const deti = [];
+        for (const w of this.walls.values()) {
+            for (const kde of ['odConstraint', 'doConstraint']) {
+                const c = w[kde];
+                if (!c || c.konec) continue;
+                const host = this.walls.get(c.host);
+                if (!host) continue;
+                const uzelId = kde === 'odConstraint' ? w.nodeA : w.nodeB;
+                const u = vRamci.get(uzelId);
+                const ha = vRamci.get(host.nodeA), hb = vRamci.get(host.nodeB);
+                if (!u || !ha || !hb) continue;
+                const hdx = hb.x - ha.x, hdy = hb.y - ha.y;
+                const hL = Math.hypot(hdx, hdy) || 1;
+                deti.push({
+                    uzelId, host,
+                    odsazeni: ((u.x - ha.x) * (-hdy) + (u.y - ha.y) * hdx) / hL,
+                });
+            }
+        }
+
+        // Skupiny uzlů, které musí sdílet souřadnici (union-find)
+        const skupiny = (dvojice) => {
+            const rodic = new Map();
+            const najdi = (x) => {
+                if (!rodic.has(x)) rodic.set(x, x);
+                while (rodic.get(x) !== x) { rodic.set(x, rodic.get(rodic.get(x))); x = rodic.get(x); }
+                return x;
+            };
+            for (const [a, b] of dvojice) {
+                const ra = najdi(a), rb = najdi(b);
+                if (ra !== rb) rodic.set(ra, rb);
+            }
+            const ven = new Map();
+            for (const x of rodic.keys()) {
+                const r = najdi(x);
+                if (!ven.has(r)) ven.set(r, []);
+                ven.get(r).push(x);
+            }
+            return [...ven.values()];
+        };
+
+        let posunuto = 0;
+        const srovnej = (steny2, osa) => {
+            for (const clenove of skupiny(steny2.map(w => [w.nodeA, w.nodeB]))) {
+                let suma = 0;
+                for (const id of clenove) suma += vRamci.get(id)[osa];
+                const prumer = suma / clenove.length;
+                for (const id of clenove) {
+                    if (Math.abs(vRamci.get(id)[osa] - prumer) > 1e-9) posunuto++;
+                    vRamci.get(id)[osa] = prumer;
+                }
+            }
+        };
+        srovnej(svisle, 'x');          // svislá stěna = oba konce mají stejné X
+        srovnej(vodorovne, 'y');
+
+        // Napojené stěny posadit zpět na hostitele: podél hostitele zůstane konec
+        // tam, kde byl (drží směr dítěte), kolmo se vrátí na změřené odsazení.
+        //
+        // Počítá se přes TUTÉŽ kolmici, jakou se odsazení měřilo. Dřív se dosazovalo
+        // zvlášť pro vodorovného a svislého hostitele s pevným znaménkem, jenže
+        // znaménko odsazení se otáčí podle toho, kterým směrem je stěna zapsaná
+        // (A→B). U poloviny stěn se tak příčka při každé úpravě překlopila na
+        // PROTILEHLÝ líc — a při další úpravě zase zpátky.
+        for (const d of deti) {
+            const ha = vRamci.get(d.host.nodeA), hb = vRamci.get(d.host.nodeB);
+            const u = vRamci.get(d.uzelId);
+            if (!ha || !hb || !u) continue;
+            const hdx = hb.x - ha.x, hdy = hb.y - ha.y;
+            const hL2 = hdx * hdx + hdy * hdy;
+            if (hL2 < 1e-9) continue;
+            const hL = Math.sqrt(hL2);
+            const t = ((u.x - ha.x) * hdx + (u.y - ha.y) * hdy) / hL2;
+            u.x = ha.x + hdx * t + (-hdy / hL) * d.odsazeni;
+            u.y = ha.y + hdy * t + (hdx / hL) * d.odsazeni;
+        }
+
+        for (const [id, n] of this.nodes) {
+            const p = vRamci.get(id);
+            if (!p) continue;
+            n.x = p.x * cos - p.y * sin;
+            n.y = p.x * sin + p.y * cos;
+        }
+
+        // Stěny se o zlomky změnily — otvor nesmí přečnívat.
+        for (const op of this.openings.values()) {
+            const w = this.walls.get(op.wallId);
+            if (!w) continue;
+            const a = this.nodes.get(w.nodeA), b = this.nodes.get(w.nodeB);
+            if (!a || !b) continue;
+            const delka = Math.hypot(b.x - a.x, b.y - a.y) / this.PX_PER_M;
+            op.pozice = Math.max(0, Math.min(delka - op.sirka, op.pozice));
+        }
+
+        return posunuto;
+    }
+
     moveWall(wallId, dx, dy) {
         const wall = this.walls.get(wallId);
         if (!wall) return;
@@ -1055,9 +1684,30 @@ class StavebniEngine {
         }
 
         this.walls.delete(wallId);
+        this.zrusVazbyNa(wallId);
 
         // Smazat osiřelé nody (nepřipojené k žádné stěně)
         this._cleanOrphanNodes();
+    }
+
+    /**
+     * Zruší vazby stěn, které visely na už neexistující stěně.
+     *
+     * Bez toho zůstane dítě ukazovat na smazaného hostitele: ve výkrese vypadá
+     * napojené, ale `getTChildren` ho pod novou stěnou nenajde, takže se při
+     * pohybu hostitele neveze ani neprodlouží. Takhle vznikly W32→W67 na
+     * Klemově, W8→S49 na Křemelné a S25→S19 na Na bělidle.
+     *
+     * @returns {number} kolik vazeb se zrušilo
+     */
+    zrusVazbyNa(wallId) {
+        let zruseno = 0;
+        for (const w of this.walls.values()) {
+            if (w.odConstraint && w.odConstraint.host === wallId) { w.odConstraint = null; zruseno++; }
+            if (w.doConstraint && w.doConstraint.host === wallId) { w.doConstraint = null; zruseno++; }
+        }
+
+        return zruseno;
     }
 
     removeNode(nodeId) {
@@ -1151,7 +1801,7 @@ class StavebniEngine {
                     node.y = Math.round(cy);
 
                     // Vytvořit druhou polovinu stěny
-                    const newId = this._id('S');
+                    const newId = this._id('W');
                     const newWall = {
                         id: newId,
                         nodeA: node.id,
@@ -1357,9 +2007,7 @@ class StavebniEngine {
         const wall = this.walls.get(wallId);
         if (!wall) return null;
 
-        // Prefix podle typu: D pro dveře (všechny dveřní typy), O pro okna
-        const prefix = (typ === 'dvere' || typ === 'francouzske_okno' || typ === 'pruchod' || typ === 'garazova_vrata') ? 'D' : 'O';
-        const id = this._id(prefix);
+        const id = this._id(StavebniEngine.prefixOtvoru(typ));
         const snappedSirka = extra.presnaSirka ? sirka : snapOpeningSirka(sirka, typ);
         const opening = {
             id, wallId, pozice, sirka: snappedSirka, typ,
@@ -1441,7 +2089,13 @@ class StavebniEngine {
         return { steny, otvory, prostory, vybaveni };
     }
 
-    fromJSON(data) {
+    /**
+     * @param {object} nast  `snapTloustky: true` = přichytit tloušťky stěn na
+     *        normovou řadu typu. Smí si o to říct jen import z výkresu, kde
+     *        tloušťka vyšla z měření (0.1437 → 0.14). Při načtení uloženého
+     *        konceptu a při undu se zachovává přesně to, co uživatel zadal.
+     */
+    fromJSON(data, nast = {}) {
         this.nodes.clear();
         this.walls.clear();
         this.openings.clear();
@@ -1478,8 +2132,14 @@ class StavebniEngine {
             const rawTl = s.tloustka || 0.3;
             let typ = s.typ || s.material; // fallback: AI někdy posílá 'material' místo 'typ'
             if (!typ || !TYPY_STEN[typ]) typ = urcTypSteny(rawTl);
-            // Snap tloušťky na standardní rozměr podle typu
-            const tl = snapWallTloustka(rawTl, typ);
+            // Uložená tloušťka se zachovává, jen se zaokrouhlí na milimetry.
+            // Přichytávání na normovou řadu typu tu tiše vracelo ručně zadané
+            // tloušťky zpátky (25cm příčka → 19cm) při každém reloadu i undu —
+            // stejná chyba, jaká byla u šířky otvoru. Normovou řadu si vyžádá
+            // jen import z výkresu (nast.snapTloustky).
+            const tl = nast.snapTloustky
+                ? snapWallTloustka(rawTl, typ)
+                : Math.min(1, Math.max(0.02, Math.round(rawTl * 1000) / 1000));
             const wall = {
                 // Bez id by se stěny v Mapě přepsaly navzájem — data z importu
                 // (rozpoznané z výkresu) id nemají.
@@ -1511,7 +2171,7 @@ class StavebniEngine {
                 if (!smer) smer = defaultOpeningSmer(o.typ);
             }
             const opening = {
-                id: o.id || this._id('O'),
+                id: o.id || this._id(StavebniEngine.prefixOtvoru(o.typ)),
                 wallId: o.stena,
                 pozice: o.pozice,
                 // Uložená šířka se zachovává, jen se zaokrouhlí na centimetry
@@ -1680,10 +2340,171 @@ class StavebniEngine {
             if (vnum >= this.nextId) this.nextId = vnum + 1;
         }
 
+        // Starší koncepty se opraví samy při otevření — viz obě metody níž.
+        // POŘADÍ: kontrola vazeb musí být PŘED srovnáváním. Srovnání nesmyslnou
+        // vazbu jinak vynutí a odtáhne uzel přes půl domu (Na bělidle: W53 se
+        // načetlo navázané na čelo W96 půl metru daleko a srovnání ji tam
+        // doopravdy přesunulo).
+        this.sjednotIdSten();
+        this.opravVisiciVazby();
+
         // Napojení „I" se změnou tloušťky odemknout na klouzavé po čele.
         // Poloha se nemění, jen jde nově srovnat na líc. Platí i pro stěny
         // z importu a z AI — ty vznikají automaticky a mají stejný problém.
         this.oddelVsechnaCelaNapojeni();
+        this.srovnejPrickyNaLic();
+        this.srovnejCelaNaRoh();
+    }
+
+    /**
+     * Sjednotí id stěn na prefix W.
+     *
+     * Stěna založená kreslením dostávala „S", stěna vzniklá rozdělením „W“.
+     * V jednom konceptu tak byly dvě řady a podle id nešlo poznat, co je co
+     * (Klemov: S36 a W32 jsou obojí příčky).
+     *
+     * @returns {number} kolik stěn se přejmenovalo
+     */
+    sjednotIdSten() {
+        const obsazena = new Set(this.walls.keys());
+        const prejmenovat = new Map();
+        for (const id of this.walls.keys()) {
+            const m = /^S(\d+)$/.exec(id);
+            if (!m) continue;
+            let novy = 'W' + m[1];
+            // Kdyby W s tímtéž číslem existovalo, vezme se další volné id.
+            while (obsazena.has(novy)) novy = this._id('W');
+            obsazena.add(novy);
+            prejmenovat.set(id, novy);
+        }
+        if (!prejmenovat.size) return 0;
+
+        const nove = new Map();
+        for (const [id, w] of this.walls) {
+            const novy = prejmenovat.get(id) || id;
+            w.id = novy;
+            nove.set(novy, w);
+        }
+        this.walls = nove;
+
+        for (const w of this.walls.values()) {
+            for (const c of [w.odConstraint, w.doConstraint]) {
+                if (c && prejmenovat.has(c.host)) c.host = prejmenovat.get(c.host);
+            }
+        }
+        for (const op of this.openings.values()) {
+            if (prejmenovat.has(op.wallId)) op.wallId = prejmenovat.get(op.wallId);
+        }
+        for (const p of this.prostory) {
+            for (const v of (p.vertices || p.vrcholy || [])) {
+                if (v && prejmenovat.has(v.wallA)) v.wallA = prejmenovat.get(v.wallA);
+                if (v && prejmenovat.has(v.wallB)) v.wallB = prejmenovat.get(v.wallB);
+            }
+        }
+
+        return prejmenovat.size;
+    }
+
+    /**
+     * Opraví vazby, které ukazují na už neexistující stěnu.
+     *
+     * Mazání stěny dřív vazby dětí nerušilo, takže zůstaly viset na mrtvém id.
+     * Ve výkrese to vypadá napojeně, ale getTChildren dítě pod skutečným
+     * hostitelem nenajde — při pohybu se nevveze ani neprodlouží. Nalezeno
+     * na třech konceptech: W32→W67 (Klemov), W8→S49 (Křemelná), S25→S19
+     * (Na bělidle).
+     *
+     * Pokud pod napojeným koncem nějaká stěna leží, vazba se na ni přepojí
+     * (to uživatel čekal). Když tam není nic, vazba se zruší — konec je volný.
+     *
+     * @returns {{prepojeno: number, zruseno: number}}
+     */
+    opravVisiciVazby() {
+        const dosah = 0.25 * this.PX_PER_M;      // půlka nejtlustší zdi se vejde
+        const vule = this.MAGNET_DIST / 2;       // co projde jako „u sebe"
+        let prepojeno = 0, zruseno = 0, osvezeno = 0;
+
+        for (const w of this.walls.values()) {
+            for (const kde of ['odConstraint', 'doConstraint']) {
+                const c = w[kde];
+                if (!c) continue;
+                const uzelId = kde === 'odConstraint' ? w.nodeA : w.nodeB;
+                const uzel = this.nodes.get(uzelId);
+
+                // a) hostitel už neexistuje — přepojit na to, co pod koncem leží
+                if (!this.walls.has(c.host)) {
+                    const kandidat = uzel ? this.findSnapCandidate(uzel.x, uzel.y, dosah, uzelId) : null;
+                    if (kandidat) {
+                        w[kde] = { host: kandidat.wall.id, t: kandidat.t };
+                        prepojeno++;
+                    } else {
+                        w[kde] = null;
+                        zruseno++;
+                    }
+                    continue;
+                }
+
+                // b) hostitel existuje, ale konec u něj vůbec neleží
+                if (!uzel) { w[kde] = null; zruseno++; continue; }
+                const stav = this.stavVazby(w, kde, vule);
+                if (!stav || !stav.drzi) { w[kde] = null; zruseno++; continue; }
+
+                // c) uložené t neodpovídá poloze uzlu — přepsat podle geometrie,
+                //    jinak dítě při prvním pohnutí hostitelem uskočí
+                if (stav.t !== null && Math.abs(stav.t - c.t) > 1e-6) { c.t = stav.t; osvezeno++; }
+            }
+        }
+
+        return { prepojeno, zruseno, osvezeno };
+    }
+
+    /**
+     * Drží vazba geometricky? Porovná uloženou polohu konce s hostitelem.
+     *
+     * Vazba je jen metadata; podle nich dítě při každém pohybu hostitele skáče.
+     * Když si ta dvě data odporují (konec leží půl metru jinde, než vazba tvrdí),
+     * je vazba zbytek po dřívější úpravě a nesmí se vynucovat — jinak se svážou
+     * stěny, které spolu vůbec nesousedí (hlášeno na Na bělidle: W53 + W96).
+     *
+     * @param {object} w     stěna s vazbou
+     * @param {string} kde   'odConstraint' | 'doConstraint'
+     * @param {number} vule  dovolená odchylka v px
+     * @returns {?{drzi: boolean, t: ?number}}  t = poloha podél hostitele
+     *          dopočítaná z geometrie (jen u klouzavé vazby, jinak null)
+     */
+    stavVazby(w, kde, vule = this.MAGNET_DIST / 2) {
+        const c = w[kde];
+        if (!c) return null;
+        const host = this.walls.get(c.host);
+        const uzel = this.nodes.get(kde === 'odConstraint' ? w.nodeA : w.nodeB);
+        if (!host || !uzel) return null;
+        const ha = this.nodes.get(host.nodeA), hb = this.nodes.get(host.nodeB);
+        if (!ha || !hb) return null;
+        const dx = hb.x - ha.x, dy = hb.y - ha.y;
+        const L = Math.hypot(dx, dy);
+        if (!L) return null;
+
+        // Dovolené odsazení od osy hostitele: konec sedí na jeho líci, u tenčí
+        // stěny ještě o vlastní polotloušťku vedle. Plus vůle na nepřesnosti.
+        const bokem = ((host.tloustka || 0) + (w.tloustka || 0)) / 2 * this.PX_PER_M + vule;
+
+        if (c.konec) {
+            // Napojení „I" — konec musí ležet v čele hostitele.
+            const celo = this.celoHostitele(host.id, c.konec, w.tloustka);
+            if (!celo) return { drzi: false, t: null };
+            const venX = (c.konec === 'A' ? -dx : dx) / L;
+            const venY = (c.konec === 'A' ? -dy : dy) / L;
+            const ox = uzel.x - celo.stred.x, oy = uzel.y - celo.stred.y;
+            const podel = ox * venX + oy * venY;              // před/za čelem
+            const napric = ox * celo.kolmice.x + oy * celo.kolmice.y;
+            return { drzi: Math.abs(podel) <= this.MAGNET_DIST && Math.abs(napric) <= bokem, t: null };
+        }
+
+        // Klouzavá vazba — konec musí ležet u osy hostitele a v jeho délce.
+        const t = ((uzel.x - ha.x) * dx + (uzel.y - ha.y) * dy) / (L * L);
+        const napric = Math.abs(((uzel.x - ha.x) * -dy + (uzel.y - ha.y) * dx) / L);
+        const vuleT = vule / L;
+        return { drzi: napric <= bokem && t >= -vuleT && t <= 1 + vuleT, t };
     }
 
     /**

@@ -2,15 +2,15 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Chyba;
+use App\Models\Bug;
 use Illuminate\Console\Command;
 
 /**
  * Vypíše poslední zaznamenané chyby do konzole.
  *
- * Přehled na /masterteam/chyby je za přihlášením, takže při ladění produkce
+ * Přehled na /masterteam/bugy je za přihlášením, takže při ladění produkce
  * (kde APP_DEBUG=false a stránka ukáže jen „Server Error") je tohle nejrychlejší
- * cesta ke stack trace — přes /cron/doklady/chyby/{token}.
+ * cesta ke stack trace — přes /cron/chyby/{token}.
  */
 class PosledniChyby extends Command
 {
@@ -22,7 +22,7 @@ class PosledniChyby extends Command
 
     public function handle(): int
     {
-        $chyby = Chyba::where('opraveno', false)
+        $chyby = Bug::where('opraveno', false)
             ->orderByDesc('naposledy_v')
             ->limit((int) $this->option('pocet'))
             ->get();

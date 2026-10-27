@@ -66,7 +66,7 @@ class KontrolaHtmlLayoutu
 
         // Chybí layout — zaloguj (v try/catch aby middleware nikdy neshodil response).
         try {
-            \App\Models\Chyba::zachyt([
+            \App\Models\Bug::zachyt([
                 'typ' => 'server',
                 'uroven' => 'warning',
                 'zprava' => 'HTML odpověď bez layoutu (missing <!doctype>/<html>). Controller pravděpodobně vrací partial jako plnou stránku.',

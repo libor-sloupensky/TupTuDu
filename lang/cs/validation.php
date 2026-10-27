@@ -150,6 +150,9 @@ return [
         'token' => 'token',
         'current_password' => 'současné heslo',
         'new_password' => 'nové heslo',
+        'jazyk' => 'jazyk',
+        'zeme' => 'země',
+        'souhlas' => 'souhlas s podmínkami',
     ],
 
 ];

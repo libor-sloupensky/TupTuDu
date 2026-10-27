@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class Uzivatel extends Authenticatable
+class Uzivatel extends Authenticatable implements MustVerifyEmail, HasLocalePreference
 {
     use HasFactory, Notifiable;
-    // Přístup k firmám modulu Doklady — officeFirmy(), officeAktivniFirma() atd.
-    use \App\Models\Office\MaPristupKFirmam;
 
     protected $table = 'uzivatele';
 
@@ -23,8 +23,11 @@ class Uzivatel extends Authenticatable
         'prijmeni',
         'email',
         'telefon',
+        'jazyk',
+        'zeme',
         'heslo',
         'google_id',
+        'souhlas_podminky_v',
         'notifikace_poptavky',
         'posledni_prihlaseni',
     ];
@@ -38,6 +41,7 @@ class Uzivatel extends Authenticatable
     {
         return [
             'email_overen_v' => 'datetime',
+            'souhlas_podminky_v' => 'datetime',
             'heslo' => 'hashed',
             'notifikace_poptavky' => 'boolean',
             'posledni_prihlaseni' => 'datetime',
@@ -47,7 +51,8 @@ class Uzivatel extends Authenticatable
     // Fortify/Auth používá sloupec `heslo` místo `password`.
     public function getAuthPassword(): string
     {
-        return $this->heslo;
+        // Účet založený přes Google heslo nemá (NULL) — prázdný řetězec žádnému heslu neodpovídá
+        return (string) $this->heslo;
     }
 
     public function getAuthPasswordName(): string
@@ -74,6 +79,22 @@ class Uzivatel extends Authenticatable
     public function getEmailForVerification(): string
     {
         return $this->email;
+    }
+
+    /** E-maily (ověření, obnova hesla) v jazyce uživatele, jinak v jazyce aktuální návštěvy. */
+    public function preferredLocale(): string
+    {
+        return \App\Support\Lokalizace::jeJazyk($this->jazyk) ? $this->jazyk : app()->getLocale();
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new \App\Notifications\OvereniEmailu);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\ObnovaHesla($token));
     }
 
     /** Je členem master týmu? (subjekt s IČO = config('app.master_ico')) */

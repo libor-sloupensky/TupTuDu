@@ -1,17 +1,18 @@
-{{-- Odchytávač JS chyb → /api/chyba (zobrazí se v /masterteam/chyby jako typ 'client').
+{{-- Client error tracking — silent JS chyby do tabulky `bugy` (/masterteam/bugy, typ 'client').
 
      Sdílený partial — includovat v KAŽDÉM layoutu, jinak jsou chyby z těch
      stránek neviditelné. Vyžaduje <meta name="csrf-token"> v hlavičce.
+     Do <head> patří navíc partials.hlasic-chyb-inline (nenačtené skripty/styly
+     a chyby dřív, než se tenhle hlásič inicializuje).
 
-     Převzato z kalkulia (resources/js/app.js). Endpoint má rate limit
-     30/5 min per IP + dedup přes hash. Kromě automatického zachytávání
-     (window.onerror, unhandledrejection) vystavuje:
+     Endpoint /api/bug má rate limit 30/5min per IP + dedup přes hash.
+     Kromě automatického zachytávání (window.onerror, unhandledrejection) vystavuje:
        - window.zalogujChybu(e, 'Kontext', {detaily})  — tichý zápis chyby
        - window.chybaUzivateli(e, 'Akce', {detaily})   — alert uživateli + zápis
      Obojí POVINNĚ v catch blocích (viz CLAUDE.md, „Hlášení chyb z frontendu"). --}}
 <script>
 (function () {
-    const ENDPOINT = '/api/chyba';
+    const ENDPOINT = '/api/bug';
     const csrfToken = document.querySelector('meta[name=csrf-token]')?.content;
 
     // Throttle — max 10 unikátních zpráv per stránka
@@ -19,8 +20,8 @@
     let pocet = 0;
 
     function odeslat(payload) {
-        // Bez CSRF tokenu by server odpověděl 419 — helpery níž ale existovat
-        // musí vždy, aby jejich volání v catch blocích nikdy nespadlo.
+        // Bez CSRF tokenu se nic neposílá — helpery níž ale existovat musí vždy,
+        // aby jejich volání v catch blocích nikdy nespadlo (ReferenceError).
         if (!csrfToken) return;
         if (pocet >= 10) return;
         const klic = payload.zprava + '|' + payload.soubor;
@@ -35,6 +36,18 @@
         }).catch(() => {});
     }
 
+    /**
+     * Manuální report chyby z try/catch nebo volitelný kontextový log.
+     * Bezpečné volat i když error tracking není dostupný (CSRF, network) —
+     * nikdy nevyhodí výjimku.
+     *
+     * Použití:
+     *   try { ... }
+     *   catch (e) {
+     *       console.error('Konva render selhal:', e);
+     *       window.zalogujChybu?.(e, 'Konva render');
+     *   }
+     */
     /**
      * Serializace detailů k chybě (co uživatel dělal / rozepsaná data).
      * Citlivé klíče se NIKDY neodesílají — filtrují se už tady na klientovi.
@@ -52,17 +65,10 @@
         }
     }
 
-    /**
-     * Manuální report chyby z try/catch nebo volitelný kontextový log.
-     * Bezpečné volat i když error tracking není dostupný (CSRF, network) —
-     * nikdy nevyhodí výjimku.
-     *
-     * Použití:
-     *   catch (e) {
-     *       status.textContent = 'Chyba připojení.';
-     *       window.zalogujChybu?.(e, 'Uložení kategorií', { firmaIco });
-     *   }
-     */
+    // Síťové selhání fetch (Firefox „NetworkError when attempting to fetch resource.",
+    // Chrome „Failed to fetch", Safari „Load failed") — viz zalogujChybu.
+    const SITOVA_CHYBA = /NetworkError when attempting to fetch|^Failed to fetch$|^Load failed$|network error/i;
+
     window.zalogujChybu = function (errorOrMessage, kontext, detaily) {
         try {
             let zprava, stack;
@@ -76,6 +82,9 @@
                 try { zprava = JSON.stringify(errorOrMessage); } catch (_) { zprava = String(errorOrMessage); }
                 stack = null;
             }
+            // Přerušené spojení (odchod ze stránky během načítání, ztráta signálu) není
+            // chyba kódu a nedá se opravit; výpadky serveru hlídá hlídač webu.
+            if (SITOVA_CHYBA.test(zprava)) return;
             // Kontext (= popis kde se chyba stala) se přidá před zprávu
             const prefix = kontext ? `[${kontext}] ` : '';
             odeslat({
@@ -92,7 +101,7 @@
     };
 
     /**
-     * Chyba, kterou VIDÍ uživatel — zároveň ji nahlásí do /masterteam/chyby.
+     * Chyba, kterou VIDÍ uživatel — zároveň ji nahlásí do /masterteam/bugy.
      *
      * POUŽÍVAT VŽDY místo holého alert() v catch blocích. Bez tohoto se o
      * selhání nedozvíme: window.onerror zachytí jen NEODCHYCENÉ chyby, takže
@@ -101,12 +110,12 @@
      * uživatel mlčky odejde.
      *
      * Použití:
-     *   catch (e) { chybaUzivateli(e, 'Uložení nastavení', { firmaIco }); }
-     *   → uživatel uvidí: „Uložení nastavení se nezdařilo: <důvod>"
-     *   → nám do chyb spadne zpráva + stack + ty detaily
+     *   catch (e) { chybaUzivateli(e, 'Uložení výkazu', { vvId, nazev }); }
+     *   → uživatel uvidí: „Uložení výkazu se nezdařilo: <důvod>"
+     *   → nám do bugů spadne zpráva + stack + ty detaily
      *
      * @param chyba   Error nebo text
-     * @param akce    co se nepovedlo, lidsky („Uložení nastavení")
+     * @param akce    co se nepovedlo, lidsky („Uložení výkazu")
      * @param detaily volitelný objekt s kontextem (ID, rozepsaná data).
      *                Citlivé klíče se odfiltrují automaticky.
      */
@@ -124,9 +133,14 @@
         return zprava;
     };
 
+    // Chyby, které nejsou naše: Firefox hlásí „Permission denied to access property",
+    // když Alpine (MutationObserver) narazí na uzel vložený rozšířením prohlížeče.
+    const IGNOROVAT = [/Permission denied to access property/i];
+
     window.addEventListener('error', function (e) {
         const msg = e.message || (e.error && e.error.message) || 'Unknown error';
         if (!msg || msg === 'Script error.') return;
+        if (IGNOROVAT.some(re => re.test(msg))) return;
         odeslat({
             zprava: msg.substring(0, 500),
             soubor: (e.filename ? e.filename.split('/').pop() : '') + (e.lineno ? ':' + e.lineno : ''),
@@ -147,7 +161,11 @@
             msg = reason;
         } else {
             try { msg = JSON.stringify(reason).substring(0, 500); } catch (_) {}
+            // Zamítnutí prázdným objektem / null (iOS Chrome, překladače, rozšíření)
+            // nenese žádnou informaci — v bugách jen šum („{}" bez stacku).
+            if (msg === '{}' || msg === 'null' || msg === undefined) return;
         }
+        if (SITOVA_CHYBA.test(msg)) return;
         odeslat({
             zprava: msg.substring(0, 500),
             soubor: 'promise',

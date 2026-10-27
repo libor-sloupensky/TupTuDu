@@ -23,7 +23,7 @@
 // ŠPATNĚ — uživatel chybu vidí (nebo ani to ne), my se o ní NIKDY nedozvíme
 catch (e) { alert('Uložení selhalo: ' + e.message); }
 
-// SPRÁVNĚ — hláška uživateli + zápis do /masterteam/chyby (stack + kontext)
+// SPRÁVNĚ — hláška uživateli + zápis do /masterteam/bugy (stack + kontext)
 catch (e) { chybaUzivateli(e, 'Uložení nastavení', { firmaIco }); }
 
 // SPRÁVNĚ — stránka má vlastní hlášku (status text, notifikace) → jen tichý zápis
@@ -35,7 +35,15 @@ catch (e) { chybaUzivateli(e, 'Uložení nastavení', { firmaIco }); }
 - **Platí i pro `fetch`**, kde se chyba řeší přes `if (!r.ok)` nebo `d.ok === false` a jde o neočekávané selhání (ne běžnou validační hlášku).
 - **Do 3. parametru předat kontext k ladění** — ID záznamu, parametry akce, rozepsaná data formuláře. Citlivé klíče (heslo, token, PIN…) filtruje helper sám, velikost je omezená na 2000 znaků. Hesla do kontextu raději vůbec nedávat.
 - **Při psaní nového frontend kódu tyhle body doplňovat rovnou**, bez vyzvání uživatele.
-- Server se hlásí sám: neošetřené výjimky (`bootstrap/app.php`), pomalé GET stránky nad 3 s (`MeriPomaleRequesty`, záložka „Pomalé stránky") a HTML odpověď bez layoutu (`KontrolaHtmlLayoutu`). Endpoint, který záměrně vrací HTML fragment, pošle hlavičku `X-Layout-Partial: 1`.
+- Server se hlásí sám: neošetřené výjimky (`bootstrap/app.php`), každé `Log::error`/`critical` (`ZrcadliLogDoBugu`), výpadky AI (`Bug::nahlasVypadekAi` v `ClaudeApi`/`RagEmbedding`), hromadné 419, 404 (`seo_404`), pomalé GET stránky nad 3 s (`MeriPomaleRequesty`, jen mimo lokál; typ `pomaly_request` v menu není) a HTML odpověď bez layoutu (`KontrolaHtmlLayoutu`). Endpoint, který záměrně vrací HTML fragment, pošle hlavičku `X-Layout-Partial: 1`.
+- **Selhání ve vlastním `catch` na serveru hlásit přes `Log::error(...)`** — zrcadlí se do bugů. `Log::warning` a nižší zůstávají jen v laravel.log.
+- **E-mail o nových závažných bugech** (úroveň `error`): `bugy:notifikace` přes `/cron/bugy/{CRON_TOKEN}` — souhrnně, max 1 za 10 min, denní strop `BUGY_NOTIFIKACE_MAX_DEN`, adresa `BUGY_NOTIFIKACE_EMAIL`. Opakování aktivního bugu mail neposílá.
+- Podrobnosti (co se zachytává, šum, příkazy, odchylky od Kalkulia, stav nasazení): `modules/bugy.md`.
+
+## Překlady — zákaznická část (web, app)
+- Texty, které uvidí zákazník, **nikdy natvrdo česky** — Blade `__('skupina.klic')`, JS `preloz('skupina.klic')`. Nový text rovnou do `lang/cs` i `lang/en`, pak `php artisan preklady:kontrola`.
+- Národní služby (katastr, výškový profil, mapový podklad) jen přes profil země: `@funkce('katastr')`, middleware `funkce:katastr`, `Lokalizace::maFunkci()`.
+- Masterteam je jen česky, nepřekládá se. Podrobnosti: `modules/lokalizace.md`.
 
 ## Brand
 - Veškerý UI stav projektu se ukládá konzistentně — promyslet stav i invalidaci PŘEDEM

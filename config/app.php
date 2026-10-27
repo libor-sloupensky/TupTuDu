@@ -127,9 +127,15 @@ return [
 
     'cron_token' => env('CRON_TOKEN'),
 
-    // Práh (ms), nad kterým se GET request zaloguje jako pomalý do `chyby`.
+    // Práh (ms), nad kterým se GET request zaloguje jako pomalý do `bugy`.
     // Viz App\Http\Middleware\MeriPomaleRequesty.
     'pomaly_request_ms' => (int) env('POMALY_REQUEST_MS', 3000),
+
+    // Kam posílat e-mail o nových závažných bugech (bugy:notifikace).
+    // Bez nastavení jde na adresu týdenních záloh.
+    'bugy_notifikace_email' => env('BUGY_NOTIFIKACE_EMAIL', env('ZALOHA_EMAIL')),
+    // Max. e-mailů o bugech za den — zbytek přijde v prvním mailu dalšího dne.
+    'bugy_notifikace_max_den' => (int) env('BUGY_NOTIFIKACE_MAX_DEN', 12),
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),

@@ -2,14 +2,14 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Chyba;
+use App\Models\Bug;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Změří dobu requestu a pomalé (nad práh) zapíše do tabulky `chyby` jako typ
- * `pomaly_request` — objeví se v /masterteam/chyby (záložka „Pomalé").
+ * Změří dobu requestu a pomalé (nad práh) zapíše do tabulky `bugy` jako typ
+ * `pomaly_request` — objeví se v /masterteam/bugy (záložka „Pomalé").
  *
  * Účel: chytit „vypršel čas spojení" KDEKOLI, ne jen na jedné stránce. Když se
  * stránka občas načítá 10 s místo 0,15 s, uživateli to spadne do timeoutu —
@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\Response;
  *  - loguje se v `terminate()` PO odeslání odpovědi → uživatel nečeká navíc,
  *  - jen GET (načtení stránky) — POST bývají AI/uploady, pomalé záměrně,
  *  - vyloučené cesty (streaming, cron, AI vyčítání) se přeskočí,
- *  - dedup přes `Chyba::zachyt` (čísla se v hashi normalizují) → stejná cesta =
+ *  - dedup přes `Bug::zachyt` (čísla se v hashi normalizují) → stejná cesta =
  *    jeden řádek s počtem výskytů, ne stovky záznamů,
  *  - selhání zápisu nikdy neshodí request.
  *
@@ -27,8 +27,8 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class MeriPomaleRequesty
 {
-    /** Cesty pomalé ZÁMĚRNĚ (cron, export, ZIP/stažení souborů, OAuth callback) — nelogovat. */
-    private const VYLOUCIT = ['stream', 'sse', 'cron', 'export', 'zip', 'stahnout', 'callback'];
+    /** Cesty pomalé ZÁMĚRNĚ (AI, streaming, cron, export, PDF→SVG) — nelogovat. */
+    private const VYLOUCIT = ['stream', 'sse', 'cron', 'export', 'poradce', 'chat', 'vycti-charakteristiky', 'vykaz-vymer'];
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -72,6 +72,20 @@ class MeriPomaleRequesty
                 return;
             }
 
+            // Stahování souboru (ZIP příloh, PDF…): terminate() běží až po
+            // odeslání, takže čas zahrnuje přenos po síti zákazníka — to není
+            // pomalost serveru (2026-10-20: ZIP příloh 4,4 s při nulové DB/zátěži).
+            if ($response instanceof \Symfony\Component\HttpFoundation\BinaryFileResponse
+                || $response instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
+                return;
+            }
+
+            // Lokálně (php artisan serve) je pomalost šum: jeden požadavek najednou,
+            // po každé změně překlad šablon → bugy plné /faktury, /kontakt, / (2026-10-25).
+            if (app()->isLocal()) {
+                return;
+            }
+
             $start = defined('LARAVEL_START') ? LARAVEL_START : (float) $request->server('REQUEST_TIME_FLOAT');
             if (! $start) {
                 return;
@@ -90,7 +104,7 @@ class MeriPomaleRequesty
             }
 
             $klic = 'GET ' . $cesta;
-            Chyba::zachyt([
+            Bug::zachyt([
                 'typ' => 'pomaly_request',
                 'uroven' => 'warning',
                 'zprava' => 'Pomalé načítání stránky: ' . $klic,

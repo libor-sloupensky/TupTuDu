@@ -30,37 +30,34 @@
                 </div>
             </div>
 
-            <a href="/masterteam/chyby" class="{{ request()->is('masterteam/chyby*') ? 'active' : '' }}">Chyby</a>
+            @php
+                // 60-sekundová cache aby sidebar nepřidával query při každém načtení.
+                $pocetAktivnichBugu = \Illuminate\Support\Facades\Cache::remember(
+                    'bugy-aktivni-pocet',
+                    60,
+                    fn () => \Illuminate\Support\Facades\Schema::hasTable('bugy')
+                        ? \App\Models\Bug::where('opraveno', false)->whereIn('typ', ['server', 'client'])->where('uroven', 'error')->count()
+                        : 0
+                );
+            @endphp
+            <a href="{{ route('masterteam.bugy') }}"
+               class="flex items-center justify-between {{ request()->routeIs('masterteam.bugy*', 'masterteam.seo404*') ? 'active' : '' }}">
+                <span>Bugy</span>
+                @if($pocetAktivnichBugu > 0)
+                    <span class="ml-2 inline-block min-w-[1.4rem] text-center text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">{{ $pocetAktivnichBugu }}</span>
+                @endif
+            </a>
             <a href="/masterteam/uzivatele" class="{{ request()->is('masterteam/uzivatele*') ? 'active' : '' }}">Uživatelé</a>
         </div>
-
-        {{-- Modul Doklady — vlastní sekce, zobrazí se jen když má uživatel firmu.
-             Test na existenci tabulky drží web nad vodou v okamžiku mezi nahráním
-             souborů a proběhnutím migrace (a na instalaci, kde modul ještě není). --}}
-        @php
-            $maDoklady = \Illuminate\Support\Facades\Cache::remember(
-                'office-tabulky-existuji',
-                300,
-                fn () => \Illuminate\Support\Facades\Schema::hasTable('office_user_firma')
-            ) && auth()->user()->officeFirmy()->exists();
-        @endphp
-        @if ($maDoklady)
-            <div class="tt-section">
-                <div class="tt-section-label">Doklady</div>
-                <a href="{{ route('office.doklady.index') }}" class="{{ request()->is('doklady') || request()->is('doklady/[0-9]*') ? 'active' : '' }}">Přehled dokladů</a>
-                @if (auth()->user()->officeMaRoli('ucetni'))
-                    <a href="{{ route('office.klienti.index') }}" class="{{ request()->is('doklady/klienti*') ? 'active' : '' }}">Klienti</a>
-                @endif
-                @if (! auth()->user()->officeProhlizimKlienta())
-                    <a href="{{ route('office.firma.nastaveni') }}" class="{{ request()->is('doklady/nastaveni*') ? 'active' : '' }}">Nastavení firmy</a>
-                @endif
-            </div>
-        @endif
 
         <form method="POST" action="/logout" class="tt-logout">
             @csrf
             <button type="submit" class="btn btn-sm">Odhlásit ({{ auth()->user()->celeJmeno() }})</button>
         </form>
+
+        {{-- Přepínač Masterteam → zákaznická aplikace, úplně dole pod odhlášením (jako v Kalkuliu).
+             Session je na každé subdoméně vlastní — poprvé se v app přihlásí znovu. --}}
+        <a href="{{ \App\Support\Domeny::url('app', '/') }}" class="btn btn-sm tt-prepinac">← Do aplikace</a>
     </div>
 </aside>
 

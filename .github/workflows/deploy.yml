@@ -118,23 +118,8 @@ jobs:
           MAIL_ENCRYPTION=ssl
           MAIL_FROM_ADDRESS="info@tuptudu.com"
           MAIL_FROM_NAME="TupTuDu"
-          # Doklady (doklady@) — příjem dokladů i odpovědi odesílatelům.
-          # Firmy posílají na {ICO}@doklady.tuptudu.com; schránka je nastavená
-          # jako koš, takže pochytá všechny adresy, a cron je rozřadí.
-          DOKLADY_EMAIL_DOMENA=doklady.tuptudu.com
-          MAIL_DOKLADY_USERNAME=doklady@tuptudu.com
-          MAIL_DOKLADY_PASSWORD=${{ secrets.MAIL_PASSWORD_DOKLADY }}
-          IMAP_SYSTEM_HOST=mail.cesky-hosting.cz
-          IMAP_SYSTEM_PORT=993
-          IMAP_SYSTEM_ENCRYPTION=ssl
-          IMAP_SYSTEM_USERNAME=doklady@tuptudu.com
-          IMAP_SYSTEM_PASSWORD=${{ secrets.MAIL_PASSWORD_DOKLADY }}
-          # S3 úložiště dokladů (modul Doklady)
-          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION=eu-west-1
-          AWS_BUCKET=${{ secrets.AWS_BUCKET }}
-          AWS_USE_PATH_STYLE_ENDPOINT=false
+          # Hlásič bugů — e-mail o nových závažných bugech (bugy:notifikace, cron /cron/bugy/{token})
+          BUGY_NOTIFIKACE_EMAIL=libor.sloupensky@seznam.cz
           MASTER_ICO=07994605
           MASTER_PASSWORD=${{ secrets.MASTER_PASSWORD }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
@@ -145,8 +130,8 @@ jobs:
           VOYAGE_API_KEY=${{ secrets.VOYAGE_API_KEY }}
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_REDIRECT_URI=https://www.tuptudu.com/auth/google/callback
           MIGRATE_TOKEN=${{ secrets.MIGRATE_TOKEN }}
+          CRON_TOKEN=${{ secrets.CRON_TOKEN }}
           ENVEOF
           sed -i 's/^          //' .env
           echo ".env vygenerován (hodnoty skryté)."

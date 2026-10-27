@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AiVolani;
+use App\Models\Bug;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -118,6 +119,7 @@ class ClaudeApi
         } catch (\Throwable $e) {
             $this->log($model, $modul, $uzivatelId, 0, 0, 0, 0, false, false, null,
                 (int)((microtime(true) - $start) * 1000), $poznamka);
+            Bug::nahlasVypadekAi('Anthropic', $modul, null, $e->getMessage(), ['model' => $model]);
             throw $e;
         }
 
@@ -126,6 +128,7 @@ class ClaudeApi
 
         if (!$response->successful()) {
             $this->log($model, $modul, $uzivatelId, 0, 0, 0, 0, false, false, $status, $duration, $poznamka);
+            Bug::nahlasVypadekAi('Anthropic', $modul, $status, $response->body(), ['model' => $model]);
 
             // Fatální chyby (kredit, auth, rate) → throw, ostatní vrátí null
             if (in_array($status, [400, 401, 403, 429, 529])) {
@@ -185,6 +188,7 @@ class ClaudeApi
         } catch (\Throwable $e) {
             $this->log($model, $modul, $uzivatelId, 0, 0, 0, 0, false, false, null,
                 (int)((microtime(true) - $start) * 1000), $poznamka);
+            Bug::nahlasVypadekAi('Anthropic', $modul, null, $e->getMessage(), ['model' => $model]);
             throw $e;
         }
 
@@ -193,6 +197,7 @@ class ClaudeApi
 
         if (!$response->successful()) {
             $this->log($model, $modul, $uzivatelId, 0, 0, 0, 0, false, false, $status, $duration, $poznamka);
+            Bug::nahlasVypadekAi('Anthropic', $modul, $status, $response->body(), ['model' => $model]);
             if (in_array($status, [400, 401, 403, 429, 529])) {
                 throw new \RuntimeException("Claude API ({$status}): " . Str::limit($response->body(), 200));
             }
@@ -272,6 +277,7 @@ class ClaudeApi
         } catch (\Throwable $e) {
             $this->log($model, $modul, $uzivatelId, 0, 0, 0, 0, false, false, null,
                 (int)((microtime(true) - $start) * 1000), $poznamka);
+            Bug::nahlasVypadekAi('Anthropic', $modul, null, $e->getMessage(), ['model' => $model]);
             throw $e;
         }
 
@@ -280,6 +286,7 @@ class ClaudeApi
 
         if (!$response->successful()) {
             $this->log($model, $modul, $uzivatelId, 0, 0, 0, 0, false, false, $status, $duration, $poznamka);
+            Bug::nahlasVypadekAi('Anthropic', $modul, $status, $response->body(), ['model' => $model]);
             if (in_array($status, [400, 401, 403, 429, 529])) {
                 throw new \RuntimeException("Claude API ({$status}): " . Str::limit($response->body(), 200));
             }
@@ -399,6 +406,7 @@ class ClaudeApi
 
         $ok = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlChyba = $ok === false ? curl_error($ch) : '';
         curl_close($ch);
 
         $duration = (int) ((microtime(true) - $start) * 1000);
@@ -412,6 +420,9 @@ class ClaudeApi
             $cacheRead, $cacheCreate, $uspesne, false, $httpCode, $duration, $poznamka, $cena);
 
         if (!$uspesne) {
+            // Tělo chybové odpovědi u streamu nemáme (write callback ho zahodí) —
+            // stačí status + curl chyba (timeout, DNS, SSL…).
+            Bug::nahlasVypadekAi('Anthropic', $modul, $httpCode ?: null, $curlChyba ?: "stream selhal (HTTP {$httpCode})", ['model' => $model, 'stream' => true]);
             $onChunk("\n\n[Chyba AI ({$httpCode})]");
         }
     }

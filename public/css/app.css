@@ -50,6 +50,64 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
     background: var(--c-surface);
 }
 .topbar .brand-title { font-weight: 800; font-size: 1.1rem; }
+.topbar-akce { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+/* Hlavička zákaznické aplikace (layouts.zakaznik) */
+.tt-zakaznik-hlavicka { padding: .6rem 1.25rem; }
+.tt-zakaznik-hlavicka a { color: var(--c-text-secondary); text-decoration: none; font-size: .9rem; }
+.tt-zakaznik-hlavicka a.aktivni, .tt-zakaznik-hlavicka a:hover { color: var(--c-text); }
+.tt-zakaznik-hlavicka .brand-title { font-size: 1.1rem; }
+/* Tailwind (preflight) ruší výchozí velikost nadpisů — obsah stránek aplikace je potřebuje */
+.tt-zakaznik-obsah h1 { font-size: 1.6rem; font-weight: 800; margin: 0 0 1rem; }
+.tt-zakaznik-obsah h2 { font-weight: 700; }
+
+/* Přihlašovací stránky (layouts.prihlaseni) */
+.tt-prihlaseni { display: flex; align-items: center; justify-content: center; min-height: 92vh; padding: 1.5rem; }
+.tt-prihlaseni .card { max-width: 24rem; width: 100%; }
+.tt-prihlaseni h1 { font-size: 1.35rem; margin-top: 0; }
+.tt-prihlaseni button[type=submit] { width: 100%; }
+.tt-prihlaseni .tt-jazyky { justify-content: center; margin-top: 1.25rem; }
+.tt-prihlaseni-odkazy { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem; font-size: .85rem; }
+.tt-prihlaseni-odkazy a, .tt-prihlaseni-pravni a { color: var(--c-text-secondary); }
+.tt-prihlaseni-pravni { font-size: .8rem; color: var(--c-text-secondary); margin: .75rem 0 0; text-align: center; }
+.tt-prihlaseni button.tt-odkaz-tlacitko, .tt-odkaz-tlacitko {
+    width: auto; background: none; border: 0; padding: 0; cursor: pointer;
+    color: var(--c-text-secondary); text-decoration: underline; font: inherit;
+}
+.row-check { display: flex; align-items: flex-start; gap: .5rem; margin-bottom: 1rem; }
+.row-check input { width: auto; margin: .2rem 0 0; }
+.row-check label { margin: 0; font-weight: 400; }
+
+/* Právní stránky (pravni/stranka) */
+.tt-pravni { max-width: 46rem; margin: 0 auto; padding: 2rem 1.5rem 3rem; line-height: 1.6; }
+.tt-pravni h1 { font-size: 1.6rem; }
+.tt-pravni h2 { font-size: 1.1rem; margin-top: 2rem; }
+.tt-pravni .tt-navrh { padding: .75rem 1rem; border-radius: var(--s-radius); background: color-mix(in srgb, var(--c-error) 12%, transparent); color: var(--c-error); font-weight: 700; }
+.tt-pravni table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.tt-pravni th, .tt-pravni td { border: 1px solid var(--c-border); padding: .4rem .6rem; text-align: left; vertical-align: top; }
+
+/* Účet (aplikace/ucet) */
+.tt-ucet-sekce { margin-top: 1.5rem; }
+.tt-ucet-sekce h2 { margin-top: 0; font-size: 1.1rem; }
+.tt-ucet-sekce select {
+    width: 100%; padding: .6rem .75rem; margin-bottom: 1rem; font-family: var(--s-font);
+    background: var(--c-surface); color: var(--c-text);
+    border: 1px solid var(--c-border); border-radius: var(--s-radius); font-size: 1rem; font-weight: 600;
+}
+.tt-napoveda { color: var(--c-text-secondary); font-size: .85rem; margin: -.25rem 0 1rem; }
+
+/* Úvod bez projektů (aplikace/prvni-projekt) */
+.tt-prvni-projekt { text-align: center; padding: 4rem 0; }
+.tt-prvni-projekt p { color: var(--c-text-secondary); margin: 1rem 0 2rem; }
+
+/* Přepínač jazyka (partials/prepinac-jazyka) */
+.tt-jazyky { display: flex; gap: .75rem; font-size: .85rem; color: var(--c-text-secondary); }
+.tt-jazyky a { color: inherit; }
+.tt-jazyky strong { color: var(--c-text); }
+
+/* Odkaz na zdroj polohy podle IP (partials/poloha-zdroj) — licence DB-IP */
+.tt-poloha-zdroj { text-align: center; padding: 1rem; font-size: .7rem; }
+.tt-poloha-zdroj a { color: var(--c-text-secondary); text-decoration: none; }
 
 /* Tlačítka */
 .btn {
@@ -124,6 +182,7 @@ th { color: var(--c-text-secondary); }
 
 .tt-logout { margin-top: auto; }
 .tt-logout button { width: 100%; }
+.tt-prepinac { display: block; width: 100%; margin-top: .5rem; text-align: center; box-sizing: border-box; }
 .tt-main { flex: 1; min-width: 0; }
 @media (max-width: 800px) {
     .tt-layout { flex-direction: column; }
