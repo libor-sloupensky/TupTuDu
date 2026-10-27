@@ -34,9 +34,15 @@ final class PlanovaneUlohy
 
         foreach (self::ULOHY as $prikaz => $interval) {
             $zamek = storage_path('framework/cache/' . str_replace([':', '-'], '_', $prikaz) . '_last_run.txt');
+            // Výstup posledního běhu — u přeskočené úlohy je jinak vidět jen „přeskočeno"
+            // a selhání (třeba odeslání mailu) by se při ručním otevření cronu nedalo zjistit.
+            $vysledek = substr($zamek, 0, -strlen('_last_run.txt')) . '_last_output.txt';
             $posledni = file_exists($zamek) ? (int) file_get_contents($zamek) : 0;
             if (time() - $posledni < $interval) {
                 $vystup .= "--- {$prikaz}: přeskočeno (běžel před " . (time() - $posledni) . " s)\n";
+                if (file_exists($vysledek)) {
+                    $vystup .= '    poslední výsledek: ' . trim((string) file_get_contents($vysledek)) . "\n";
+                }
                 continue;
             }
 
@@ -45,12 +51,14 @@ final class PlanovaneUlohy
             $vystup .= "--- {$prikaz}\n";
             try {
                 $kod = Artisan::call($prikaz);
-                $vystup .= Artisan::output();
+                $vystupUlohy = Artisan::output();
             } catch (\Throwable $e) {
                 $kod = 1;
-                $vystup .= 'CHYBA: ' . $e->getMessage() . "\n";
+                $vystupUlohy = 'CHYBA: ' . $e->getMessage() . "\n";
                 Log::warning("Cron {$prikaz} selhal: " . $e->getMessage());
             }
+            $vystup .= $vystupUlohy;
+            @file_put_contents($vysledek, date('d.m.Y H:i:s') . ' — ' . (trim($vystupUlohy) ?: '(bez výstupu)'));
 
             if ($kod !== 0 && $interval > self::OPAKOVANI_PO_CHYBE) {
                 @file_put_contents($zamek, time() - $interval + self::OPAKOVANI_PO_CHYBE);
