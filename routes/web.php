@@ -20,9 +20,10 @@ Route::get('/', function () {
         return redirect('/masterteam');
     }
     if (Domeny::jeApp()) {
-        // Nepřihlášenému popis produktu a ceník (s přihlášením a registrací), ne holý login —
+        // Nepřihlášenému celá titulní stránka (popis produktu, ukázky, odkaz na ceník), ne holý login —
         // Paddle schvaluje app.tuptudu.com jako doménu pokladny a za přihlášení nevidí.
-        return auth()->check() ? redirect('/projects') : app(App\Http\Controllers\CenikController::class)->index();
+        // Samotný ceník (tlačítka vedou na login) vyhodnotil 30. 10. 2026 jako login wall.
+        return auth()->check() ? redirect('/projects') : view('vitrina.index');
     }
 
     return view('vitrina.index');
