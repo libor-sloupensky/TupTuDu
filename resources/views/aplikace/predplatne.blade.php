@@ -135,13 +135,8 @@
                                     @if ($jeAktualni($obdobi))
                                         <span class="tag vlastnik">{{ __('tarify.aktualni') }}</span>
                                     @else
-                                        <form method="POST" action="{{ route('app.predplatne.zmenit') }}"
-                                              onsubmit="return confirm(@js(__('tarify.zmena_potvrzeni', ['tarif' => __('tarify.nazev.' . $tarif), 'obdobi' => __('tarify.obdobi.' . $obdobi)])))">
-                                            @csrf
-                                            <input type="hidden" name="tarif" value="{{ $tarif }}">
-                                            <input type="hidden" name="obdobi" value="{{ $obdobi }}">
-                                            <button type="submit" class="btn">{{ __('tarify.prejit') }}</button>
-                                        </form>
+                                        {{-- napřed náhled s částkami, změna až po potvrzení --}}
+                                        <a class="btn" href="{{ route('app.predplatne.nahled', ['tarif' => $tarif, 'obdobi' => $obdobi]) }}">{{ __('tarify.prejit') }}</a>
                                     @endif
                                 </div>
                             @endforeach

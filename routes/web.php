@@ -235,6 +235,7 @@ Route::middleware(['subdomena:app', 'auth', 'verified'])->name('app.')->group(fu
     Route::prefix('billing')->name('predplatne')->controller(App\Http\Controllers\Aplikace\PredplatneController::class)->group(function () {
         Route::get('/', 'index');
         Route::get('status', 'stav')->name('.stav');
+        Route::get('change', 'nahled')->middleware('throttle:20,1')->name('.nahled');
         Route::post('change', 'zmenit')->middleware('throttle:10,1')->name('.zmenit');
         Route::post('cancel', 'zrusit')->middleware('throttle:10,1')->name('.zrusit');
         Route::post('resume', 'obnovit')->middleware('throttle:10,1')->name('.obnovit');
