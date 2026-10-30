@@ -20,7 +20,9 @@ Route::get('/', function () {
         return redirect('/masterteam');
     }
     if (Domeny::jeApp()) {
-        return redirect(auth()->check() ? '/projects' : '/login');
+        // Nepřihlášenému popis produktu a ceník (s přihlášením a registrací), ne holý login —
+        // Paddle schvaluje app.tuptudu.com jako doménu pokladny a za přihlášení nevidí.
+        return auth()->check() ? redirect('/projects') : app(App\Http\Controllers\CenikController::class)->index();
     }
 
     return view('vitrina.index');
