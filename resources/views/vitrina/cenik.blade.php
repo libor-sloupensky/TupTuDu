@@ -38,6 +38,7 @@
                 <ul>
                     <li>{{ __('tarify.uprav_denne', ['limit' => $limity['zdarma']['kroku_denne']]) }}</li>
                     <li>{{ __('tarify.projekt_jeden') }}</li>
+                    @include('partials.tarif-funkce')
                 </ul>
                 <a class="btn" href="{{ Domeny::url('app', '/register') }}">{{ __('tarify.zacit_zdarma') }}</a>
             </div>
@@ -54,7 +55,7 @@
                     <ul>
                         <li>{{ __('tarify.uprav_neomezene') }}</li>
                         <li>{{ $karta['projektu'] === null ? __('tarify.projektu_neomezene') : __('tarify.projektu_az', ['limit' => $karta['projektu']]) }}</li>
-                        <li>{{ __('tarify.nove_funkce') }}</li>
+                        @include('partials.tarif-funkce')
                     </ul>
                     @foreach (Tarif::OBDOBI as $obdobi)
                         <a class="btn btn-primary tt-jen-{{ $obdobi }}" href="{{ Domeny::url('app', '/billing?tarif=' . $tarif . '&obdobi=' . $obdobi) }}">
@@ -71,9 +72,6 @@
                 @foreach (__('tarify.spolecne') as $funkce)
                     <li>{{ $funkce }}</li>
                 @endforeach
-                @funkce('katastr')
-                    <li>{{ __('tarify.spolecne_katastr') }}</li>
-                @endfunkce
             </ul>
         </section>
 

@@ -67,7 +67,8 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .tt-prihlaseni h1 { font-size: 1.35rem; margin-top: 0; }
 .tt-prihlaseni button[type=submit] { width: 100%; }
 .tt-prihlaseni .tt-jazyky { justify-content: center; margin-top: 1.25rem; }
-.tt-prihlaseni-odkazy { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem; font-size: .85rem; }
+/* Odkazy pod formulářem (zapomenuté heslo, registrace…) — každý na vlastním řádku */
+.tt-prihlaseni-odkazy { display: flex; flex-direction: column; align-items: center; gap: .5rem; margin-top: 1rem; font-size: .85rem; }
 .tt-prihlaseni-odkazy a, .tt-prihlaseni-pravni a { color: var(--c-text-secondary); }
 .tt-prihlaseni-pravni { font-size: .8rem; color: var(--c-text-secondary); margin: .75rem 0 0; text-align: center; }
 .tt-prihlaseni button.tt-odkaz-tlacitko, .tt-odkaz-tlacitko {

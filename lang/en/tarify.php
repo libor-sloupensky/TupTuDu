@@ -28,7 +28,9 @@ return [
     'projekt_jeden' => '1 project',
     'projektu_az' => 'Up to :limit projects',
     'projektu_neomezene' => 'Unlimited projects',
-    'nove_funkce' => 'New features as soon as they arrive',
+    'funkce_katastr' => 'Cadastral information about the plot — parcels, buildings, neighbours',
+    'funkce_mapy' => 'Mapy.com base map',
+    'funkce_teren' => 'Terrain elevation profile',
 
     'cenik_titulek' => 'Pricing — TupTuDu',
     'cenik_nadpis' => 'Pricing',
@@ -40,7 +42,6 @@ return [
         'A drawing (PDF or image) as a background to trace',
         'Unlimited viewing of your projects',
     ],
-    'spolecne_katastr' => 'Cadastral map and elevation profile of the plot',
     'zacit_zdarma' => 'Start for free',
     'vybrat' => 'Choose :tarif',
     'cenik_dph' => 'Prices include VAT. Businesses with a valid EU VAT ID pay without VAT — you will see the final amount before paying.',

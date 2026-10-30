@@ -126,7 +126,7 @@
                         <ul>
                             <li>{{ __('tarify.uprav_neomezene') }}</li>
                             <li>{{ $karta['projektu'] === null ? __('tarify.projektu_neomezene') : __('tarify.projektu_az', ['limit' => $karta['projektu']]) }}</li>
-                            <li>{{ __('tarify.nove_funkce') }}</li>
+                            @include('partials.tarif-funkce')
                         </ul>
 
                         @if ($lzeMenit)

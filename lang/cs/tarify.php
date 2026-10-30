@@ -31,7 +31,9 @@ return [
     'projekt_jeden' => '1 projekt',
     'projektu_az' => 'Až :limit projektů',
     'projektu_neomezene' => 'Neomezený počet projektů',
-    'nove_funkce' => 'Nové funkce, jakmile přibudou',
+    'funkce_katastr' => 'Katastrální informace k pozemku — parcely, stavby, sousedé',
+    'funkce_mapy' => 'Mapový podklad Mapy.com',
+    'funkce_teren' => 'Výškový profil terénu',
 
     // Ceník (web)
     'cenik_titulek' => 'Ceník — TupTuDu',
@@ -44,7 +46,6 @@ return [
         'Výkres (PDF nebo obrázek) jako podklad pro obkreslení',
         'Prohlížení projektů bez omezení',
     ],
-    'spolecne_katastr' => 'Katastrální mapa a výškový profil pozemku',
     'zacit_zdarma' => 'Začít zdarma',
     'vybrat' => 'Vybrat :tarif',
     'cenik_dph' => 'Ceny jsou včetně DPH. Firmy s platným DIČ z EU zaplatí bez DPH — konečnou částku uvidíte před zaplacením.',
