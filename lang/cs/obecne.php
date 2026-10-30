@@ -5,4 +5,5 @@ return [
     'jazyk' => 'Jazyk',
     'prihlaseni' => 'Přihlášení',
     'odhlasit' => 'Odhlásit',
+    'zavinac' => 'zavináč',
 ];

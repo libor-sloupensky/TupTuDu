@@ -9,7 +9,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Testovací nebo ostrý účet Paddle se pozná z klíče (testovací začíná pdl_sdbx_) —
+        // PADDLE_SANDBOX se nenastavuje, výměna klíče v GitHub secrets přepne vše najednou.
+        config(['cashier.sandbox' => str_starts_with((string) config('cashier.api_key'), 'pdl_sdbx_')]);
     }
 
     public function boot(): void

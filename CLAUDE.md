@@ -37,7 +37,7 @@ catch (e) { chybaUzivateli(e, 'Uložení nastavení', { firmaIco }); }
 - **Při psaní nového frontend kódu tyhle body doplňovat rovnou**, bez vyzvání uživatele.
 - Server se hlásí sám: neošetřené výjimky (`bootstrap/app.php`), každé `Log::error`/`critical` (`ZrcadliLogDoBugu`), výpadky AI (`Bug::nahlasVypadekAi` v `ClaudeApi`/`RagEmbedding`), hromadné 419, 404 (`seo_404`), pomalé GET stránky nad 3 s (`MeriPomaleRequesty`, jen mimo lokál; typ `pomaly_request` v menu není) a HTML odpověď bez layoutu (`KontrolaHtmlLayoutu`). Endpoint, který záměrně vrací HTML fragment, pošle hlavičku `X-Layout-Partial: 1`.
 - **Selhání ve vlastním `catch` na serveru hlásit přes `Log::error(...)`** — zrcadlí se do bugů. `Log::warning` a nižší zůstávají jen v laravel.log.
-- **E-mail o nových závažných bugech** (úroveň `error`): `bugy:notifikace` přes `/cron/bugy/{CRON_TOKEN}` — souhrnně, max 1 za 10 min, denní strop `BUGY_NOTIFIKACE_MAX_DEN`, adresa `BUGY_NOTIFIKACE_EMAIL`. Opakování aktivního bugu mail neposílá.
+- **E-mail o nových závažných bugech** (úroveň `error`): `bugy:notifikace` přes `/cron/bugy/{CRON_TOKEN}` — souhrnně, max 1 za 10 min, denní strop `BUGY_NOTIFIKACE_MAX_DEN`, adresa `INTERNI_EMAIL` (společná pro všechny interní zprávy vč. kontaktního formuláře; přebije ji `BUGY_NOTIFIKACE_EMAIL`). Opakování aktivního bugu mail neposílá.
 - Podrobnosti (co se zachytává, šum, příkazy, odchylky od Kalkulia, stav nasazení): `modules/bugy.md`.
 
 ## Bugy v systému — „oprav bugy / oprav chyby" workflow

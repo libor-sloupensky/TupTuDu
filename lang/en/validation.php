@@ -16,5 +16,8 @@ return [
         'jazyk' => 'language',
         'zeme' => 'country',
         'souhlas' => 'agreement to the terms',
+        'tema' => 'topic',
+        'zprava' => 'message',
+        'email_uctu' => 'account email',
     ],
 ];

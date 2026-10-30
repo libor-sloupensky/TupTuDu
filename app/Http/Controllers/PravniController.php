@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 /**
- * Obchodní podmínky a zásady ochrany osobních údajů (tuptudu.com/terms, /privacy).
- * Text je celý dokument v jazyce návštěvníka (resources/views/pravni/{dokument}-{jazyk}),
- * když verze v jeho jazyce není, ukáže se anglická.
+ * Obchodní podmínky, zásady ochrany osobních údajů a vrácení peněz
+ * (tuptudu.com/terms, /privacy, /refunds). Text je celý dokument v jazyce návštěvníka
+ * (resources/views/pravni/{dokument}-{jazyk}), když verze v jeho jazyce není, ukáže se anglická.
  */
 class PravniController extends Controller
 {
@@ -17,6 +17,12 @@ class PravniController extends Controller
     public function soukromi()
     {
         return $this->stranka('soukromi', __('pravni.soukromi_titulek'));
+    }
+
+    /** Vrácení peněz — Paddle ho chce mít na webu jako samostatnou stránku (modules/platby.md). */
+    public function vraceni()
+    {
+        return $this->stranka('vraceni', __('pravni.vraceni_titulek'));
     }
 
     private function stranka(string $dokument, string $titulek)

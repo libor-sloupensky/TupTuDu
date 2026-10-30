@@ -45,7 +45,7 @@ z `artisan tinker`, 404/419/422/401/403 v `report()`.
 - `bugy:notifikace` — jen při **vzniku** bugu úrovně `error` (opakování aktivního
   nic neposílá; opravený, který se vrátí, znovu nejdřív po 24 h).
 - Jeden souhrnný mail za běh, denní strop `BUGY_NOTIFIKACE_MAX_DEN` (12), adresa
-  `BUGY_NOTIFIKACE_EMAIL` (v `deploy.yml`). Odkazy přes `Domeny::url('masterteam', …)`.
+  `INTERNI_EMAIL` (společná pro interní zprávy, `libor@tuptudu.cz`; přebije ji `BUGY_NOTIFIKACE_EMAIL`). Odkazy přes `Domeny::url('masterteam', …)`.
 - Lokálně `MAIL_MAILER=log` → mail jen v `storage/logs/laravel.log`.
 
 ## Kde co je

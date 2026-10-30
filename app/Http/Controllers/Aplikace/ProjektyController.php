@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Aplikace;
 
 use App\Http\Controllers\Controller;
 use App\Models\KonceptV3;
+use App\Support\Tarif;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -50,12 +51,18 @@ class ProjektyController extends Controller
             'trasaV3' => 'app.projekty',
             'layoutV3' => 'layouts.zakaznik',
             'titulekV3' => $aktivni->nazev . ' — TupTuDu',
+            // limity tarifu pro editor (limit-tarifu.js); masterteam je nepředává = bez omezení
+            'limitTarifu' => Tarif::stav(Auth::user()),
         ]);
     }
 
     /** Založení projektu z úvodní obrazovky (v editoru se zakládá přes KonceptV3Controller::vytvorit). */
     public function novy()
     {
+        if (! Tarif::muzeZalozitProjekt(Auth::user())) {
+            return redirect()->route('app.predplatne')->with('chyba', __('tarify.limit_projektu_nadpis'));
+        }
+
         $projekt = KonceptV3::create([
             'uzivatel_id' => Auth::id(),
             'nazev' => __('projekty.novy_nazev'),

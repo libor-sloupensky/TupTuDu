@@ -131,9 +131,13 @@ return [
     // Viz App\Http\Middleware\MeriPomaleRequesty.
     'pomaly_request_ms' => (int) env('POMALY_REQUEST_MS', 3000),
 
+    // Kam chodí všechny interní zprávy pro provozovatele — kontaktní formulář, bugy…
+    // Jedna adresa pro všechno; jednotlivé druhy ji můžou přebít vlastní proměnnou.
+    'interni_email' => env('INTERNI_EMAIL', 'libor@tuptudu.cz'),
+
     // Kam posílat e-mail o nových závažných bugech (bugy:notifikace).
-    // Bez nastavení jde na adresu týdenních záloh.
-    'bugy_notifikace_email' => env('BUGY_NOTIFIKACE_EMAIL', env('ZALOHA_EMAIL')),
+    // Bez nastavení jde na interní adresu (výš).
+    'bugy_notifikace_email' => env('BUGY_NOTIFIKACE_EMAIL', env('INTERNI_EMAIL', 'libor@tuptudu.cz')),
     // Max. e-mailů o bugech za den — zbytek přijde v prvním mailu dalšího dne.
     'bugy_notifikace_max_den' => (int) env('BUGY_NOTIFIKACE_MAX_DEN', 12),
 

@@ -62,7 +62,7 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .tt-zakaznik-obsah h2 { font-weight: 700; }
 
 /* Přihlašovací stránky (layouts.prihlaseni) */
-.tt-prihlaseni { display: flex; align-items: center; justify-content: center; min-height: 92vh; padding: 1.5rem; }
+.tt-prihlaseni { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 7.5rem); padding: 1.5rem; }
 .tt-prihlaseni .card { max-width: 24rem; width: 100%; }
 .tt-prihlaseni h1 { font-size: 1.35rem; margin-top: 0; }
 .tt-prihlaseni button[type=submit] { width: 100%; }
@@ -79,10 +79,9 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .row-check label { margin: 0; font-weight: 400; }
 
 /* Právní stránky (pravni/stranka) */
-.tt-pravni { max-width: 46rem; margin: 0 auto; padding: 2rem 1.5rem 3rem; line-height: 1.6; }
+.tt-pravni { max-width: 46rem; margin: 0 auto; padding: 2rem 1.5rem 0; line-height: 1.6; }
 .tt-pravni h1 { font-size: 1.6rem; }
 .tt-pravni h2 { font-size: 1.1rem; margin-top: 2rem; }
-.tt-pravni .tt-navrh { padding: .75rem 1rem; border-radius: var(--s-radius); background: color-mix(in srgb, var(--c-error) 12%, transparent); color: var(--c-error); font-weight: 700; }
 .tt-pravni table { border-collapse: collapse; width: 100%; font-size: .9rem; }
 .tt-pravni th, .tt-pravni td { border: 1px solid var(--c-border); padding: .4rem .6rem; text-align: left; vertical-align: top; }
 
@@ -109,6 +108,65 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .tt-poloha-zdroj { text-align: center; padding: 1rem; font-size: .7rem; }
 .tt-poloha-zdroj a { color: var(--c-text-secondary); text-decoration: none; }
 
+/* Patička (partials/paticka) */
+.tt-paticka { margin-top: 3rem; padding: 1.5rem 1rem 1.25rem; border-top: 1px solid var(--c-border); text-align: center; font-size: .85rem; color: var(--c-text-secondary); }
+.tt-paticka nav { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem 1.5rem; margin-bottom: .75rem; }
+.tt-paticka a { color: var(--c-text-secondary); }
+.tt-paticka a:hover { color: var(--c-text); }
+.tt-paticka-spodek { font-size: .75rem; }
+.tt-prihlaseni + .tt-paticka { margin-top: 0; }
+
+/* Tarify — ceník webu (vitrina/cenik) a předplatné v aplikaci (aplikace/predplatne) */
+.tt-cenik { max-width: 62rem; margin: 0 auto; padding: 2rem 1.5rem 0; }
+.tt-cenik h1 { font-size: 1.6rem; margin-bottom: .5rem; }
+.tt-cenik-uvod { color: var(--c-text-secondary); max-width: 44rem; margin: 0 0 1.5rem; }
+.tt-tarify { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin: 1rem 0; }
+.tt-tarif { display: flex; flex-direction: column; padding: 1.5rem; }
+.tt-tarif h3 { margin: 0; font-size: 1.2rem; font-weight: 800; }
+.tt-tarif > .muted { margin: .25rem 0 1rem; font-size: .9rem; }
+.tt-tarif-cena { margin-bottom: 1rem; color: var(--c-text-secondary); font-size: .9rem; }
+.tt-tarif-cena strong { color: var(--c-text); font-size: 1.6rem; font-weight: 800; }
+.tt-tarif-cena .muted { font-size: .8rem; }
+.tt-tarif ul { margin: 0 0 1.5rem; padding-left: 1.1rem; flex: 1; list-style: disc; }
+.tt-tarif li { margin-bottom: .35rem; }
+.tt-tarif .btn, .tt-tarif form { align-self: flex-start; }
+.tt-tarif.zvyrazneny { border-color: var(--c-primary); box-shadow: 0 0 0 3px var(--c-primary-10), var(--s-shadow); }
+.tt-tarify-hlava { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.tt-tarify-hlava h2 { margin: 0; font-size: 1.1rem; }
+.tt-prepinac-obdobi { display: inline-flex; border: 1px solid var(--c-border); border-radius: 999px; background: var(--c-surface); padding: 3px; }
+.tt-prepinac-obdobi button, .tt-prepinac-obdobi label {
+    margin: 0; padding: .3rem .9rem; border: 0; border-radius: 999px; background: none; cursor: pointer;
+    font: inherit; font-size: .85rem; font-weight: 700; color: var(--c-text-secondary);
+}
+.tt-prepinac-obdobi button.aktivni { background: var(--c-primary); color: #fff; }
+/* Ceník webu: přepínač z rádií bez JS */
+.tt-obdobi-volba { position: absolute; opacity: 0; pointer-events: none; }
+#tt-obdobi-mesic:checked ~ .tt-prepinac-obdobi label[for=tt-obdobi-mesic],
+#tt-obdobi-rok:checked ~ .tt-prepinac-obdobi label[for=tt-obdobi-rok] { background: var(--c-primary); color: #fff; }
+#tt-obdobi-mesic:checked ~ .tt-tarify .tt-jen-rok,
+#tt-obdobi-rok:checked ~ .tt-tarify .tt-jen-mesic { display: none; }
+.tt-cenik-spolecne { margin-top: 2rem; }
+.tt-cenik-spolecne h2 { font-size: 1.1rem; }
+.tt-cenik-poznamky { margin: 1.5rem 0 0; padding-left: 1.1rem; color: var(--c-text-secondary); font-size: .85rem; }
+.tt-cenik-poznamky li { margin-bottom: .35rem; }
+.tt-predplatne-akce { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.tt-predplatne-akce form { margin: 0; }
+
+/* Kontaktní formulář (kontakt/formular) */
+.tt-kontakt { max-width: 34rem; margin: 0 auto; padding: 2rem 1.5rem 0; }
+.tt-kontakt h1 { font-size: 1.6rem; }
+.tt-kontakt-uvod { color: var(--c-text-secondary); margin-bottom: 1.5rem; }
+.tt-kontakt select, .tt-kontakt textarea {
+    width: 100%; padding: .6rem .75rem; margin-bottom: 1rem; font-family: var(--s-font);
+    background: var(--c-surface); color: var(--c-text);
+    border: 1px solid var(--c-border); border-radius: var(--s-radius); font-size: 1rem; font-weight: 600;
+}
+.tt-kontakt textarea { resize: vertical; min-height: 8rem; }
+.tt-kontakt textarea:focus, .tt-kontakt select:focus { outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 3px var(--c-primary-10); }
+.tt-kontakt-gdpr { margin: 1rem 0 0; }
+/* Past na roboty — mimo obrazovku, ne display:none (to někteří roboti poznají) */
+.tt-past { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
 /* Tlačítka */
 .btn {
     display: inline-block; cursor: pointer; font-family: var(--s-font); font-weight: 700;
@@ -120,6 +178,7 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .btn-primary:hover { background: var(--c-primary-text); border-color: var(--c-primary-text); }
 .btn-danger { color: var(--c-error); border-color: color-mix(in srgb, var(--c-error) 50%, var(--c-border)); }
 .btn-sm { padding: .35rem .6rem; font-size: .85rem; }
+.btn:disabled { opacity: .55; cursor: not-allowed; border-color: var(--c-border); }
 
 /* Karty */
 .card {

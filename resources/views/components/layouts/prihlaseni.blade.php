@@ -18,7 +18,7 @@
             @include('partials.prepinac-jazyka')
         </main>
     </div>
-@include('partials.poloha-zdroj')
+@include('partials.paticka')
 @include('partials.error-tracker')
 @include('partials.lokalizace-js')
 </body>

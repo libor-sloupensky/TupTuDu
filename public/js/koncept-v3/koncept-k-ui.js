@@ -489,6 +489,27 @@ function konceptKEditor(initialData) {
             return ((nodeX - hostAxis.a.x) * hostAxis.dx + (nodeY - hostAxis.a.y) * hostAxis.dy) / hostAxis.L2;
         },
 
+        /**
+         * Rozsah t, ve kterém smí uzel jezdit po hostiteli (viz engine.rozsahNapojeni).
+         * Směr a tloušťka se berou ze stěn v uzlu, úhel pro polohu tZkus;
+         * u víc stěn v uzlu platí nejužší rozsah.
+         */
+        _rozsahNaHostiteli(nodeId, hostId, hax, perpOff, tZkus) {
+            const bod = { x: hax.a.x + tZkus * hax.dx + hax.perpUx * perpOff, y: hax.a.y + tZkus * hax.dy + hax.perpUy * perpOff };
+            let od = -Infinity, d = Infinity;
+            for (const w of this.engine.getNodeWalls(nodeId)) {
+                const druhy = this.engine.nodes.get(w.nodeA === nodeId ? w.nodeB : w.nodeA);
+                if (!druhy) continue;
+                const sx = druhy.x - bod.x, sy = druhy.y - bod.y;
+                const sL = Math.hypot(sx, sy);
+                const r = this.engine.rozsahNapojeni(hostId, perpOff, sL > 1 ? { x: sx / sL, y: sy / sL } : null,
+                    (w.tloustka || 0) / 2 * this.PX_PER_M);
+                od = Math.max(od, r.od); d = Math.min(d, r.do);
+            }
+            if (!isFinite(od) || !isFinite(d)) return { od: 0.02, do: 0.98 };
+            return od <= d ? { od, do: d } : { od: (od + d) / 2, do: (od + d) / 2 };
+        },
+
         /** Čára rovnoběžná s osou hostitele, odsazená o perpOff (líc hostitele). */
         _caraLice(hax, perpOff) {
             const ox = hax.perpUx * perpOff, oy = hax.perpUy * perpOff;
@@ -857,6 +878,12 @@ function konceptKEditor(initialData) {
 
                 // Engine
                 this.engine = new StavebniEngine({ pxPerM: this.PX_PER_M });
+                // Čelo taženého konce leží na líci už v náhledu přichycení na okraj
+                this.engine.nahledNapojeni = (nodeId) => {
+                    const sp = this._snapPreview;
+                    return sp && sp.rezim === 'okraj' && sp.wall && nodeId === this.draggingNodeId
+                        ? { host: sp.wall.id } : null;
+                };
                 // Podklad se hýbe s celým domem → Zpět musí vracet i jeho polohu
                 this.engine.undoDoplnek = {
                     zachyt: () => {
@@ -1395,6 +1422,7 @@ function konceptKEditor(initialData) {
                             const TARGET_ANGLES_DEG = this.MAGNET_UHLY.filter(a => a > 0 && a < 180 && a % 180 !== 0);
                             const snapTolPx = 12 / scale;
                             let bestSnap = null;
+                            const rozsah = (tZkus) => this._rozsahNaHostiteli(this.draggingNodeId, hostWall.id, hax, perpOff, tZkus);
                             for (const myWall of walls) {
                                 const otherNodeId = myWall.nodeA === this.draggingNodeId ? myWall.nodeB : myWall.nodeA;
                                 const otherNode = this.engine.nodes.get(otherNodeId);
@@ -1408,7 +1436,8 @@ function konceptKEditor(initialData) {
                                     const L = (ang === 90) ? 0 : -deltaPerp / Math.tan(ang * Math.PI / 180);
                                     if (!isFinite(L)) continue;
                                     const candT = footT + L / hax.L;
-                                    if (candT < 0.02 || candT > 0.98) continue;
+                                    const r = rozsah(candT);
+                                    if (candT < r.od || candT > r.do) continue;
                                     const distPx = Math.abs(t - candT) * hax.L;
                                     if (distPx < snapTolPx && (!bestSnap || distPx < bestSnap.dist)) {
                                         bestSnap = { t: candT, dist: distPx };
@@ -1416,7 +1445,10 @@ function konceptKEditor(initialData) {
                                 }
                             }
                             if (bestSnap) { t = bestSnap.t; rightAngleSnap = true; }
-                            const tc = Math.max(0.02, Math.min(0.98, t));
+                            // Mez z geometrie (konec líce minus stopa čela). Stopa závisí
+                            // na úhlu stěny a ten na poloze uzlu — proto dvakrát.
+                            let tc = t;
+                            for (let i = 0; i < 2; i++) { const r = rozsah(tc); tc = Math.max(r.od, Math.min(r.do, t)); }
                             target = {
                                 x: hax.a.x + tc * hax.dx + hax.perpUx * perpOff,
                                 y: hax.a.y + tc * hax.dy + hax.perpUy * perpOff,
@@ -3054,8 +3086,7 @@ function konceptKEditor(initialData) {
             });
             this.zoom = newScale;
             this._selectionTick++;
-            this.renderer.renderGrid();
-            this.renderer.renderKoty(); this.renderer.resizeVysky();
+            this.renderer.poZmeneZoomu();   // mřížka, kóty, označení, úhly
             this._updateSpojMadlo();   // madlo má pevnou velikost na obrazovce
             this.ulozitNastaveni();
         },
@@ -3070,8 +3101,7 @@ function konceptKEditor(initialData) {
             this.stage.scale({ x: z, y: z });
             this.stage.position({ x: center.x - mpt.x * z, y: center.y - mpt.y * z });
             this.zoom = z;
-            this.renderer.renderGrid();
-            this.renderer.renderKoty(); this.renderer.resizeVysky();
+            this.renderer.poZmeneZoomu();   // mřížka, kóty, označení, úhly
             this._updateSpojMadlo();   // madlo má pevnou velikost na obrazovce
             this.ulozitNastaveni();
         },
@@ -3097,8 +3127,7 @@ function konceptKEditor(initialData) {
             this.stage.scale({ x: scale, y: scale });
             this.stage.position({ x: this.stage.width() / 2 - cx * scale, y: this.stage.height() / 2 - cy * scale });
             this.zoom = scale;
-            this.renderer.renderGrid();
-            this.renderer.renderKoty(); this.renderer.resizeVysky();
+            this.renderer.poZmeneZoomu();   // mřížka, kóty, označení, úhly
             this._updateSpojMadlo();   // madlo má pevnou velikost na obrazovce
         },
 
@@ -4727,6 +4756,10 @@ function konceptKEditor(initialData) {
             this._stavKroku = this.engine ? JSON.stringify(this.engine.toJSON()) : null;
             const i = this.historie.findIndex(k => k.id === aktualniId);
             this.historiePozice = i >= 0 ? i : this.historie.length - 1;
+            // Uložené adresy podkladu mohou patřit jinému hostu — porovnává se podle nich
+            for (const k of this.historie) {
+                if (k.podklad) k.podklad = this.podkladAdresy?.(k.podklad) ?? k.podklad;
+            }
             // Kroky z doby před vezením podkladu jeho polohu neznají. U kroku,
             // na kterém se stojí, platí ta uložená — Zpět sem ji pak umí vrátit.
             const aktualni = this.historie[this.historiePozice];
@@ -4759,6 +4792,8 @@ function konceptKEditor(initialData) {
             if (!this.engine) return false;
             const json = JSON.stringify(this.engine.toJSON());
             if (json === this._stavKroku) return false;
+            // denní limit úprav tarifu (limit-tarifu.js) — nad limit se kresba vrátí
+            if (this._limitPovolKrok?.() === false) return false;
             const krok = this._novyKrok(popis, JSON.parse(json));
             let kroky = this.historie.slice(0, this.historiePozice + 1);
             kroky.push(krok);
@@ -4767,6 +4802,7 @@ function konceptKEditor(initialData) {
             this.historiePozice = kroky.length - 1;
             this._stavKroku = json;
             this._neodeslaneKroky.push(krok.id);
+            this._limitPoKroku?.();
             return true;
         },
 
@@ -4839,6 +4875,8 @@ function konceptKEditor(initialData) {
                     body: JSON.stringify({ nazev }),
                 });
                 const d = await resp.json().catch(() => ({}));
+                // tarif nedovolí další projekt — nabídka předplatného, ne chyba
+                if (resp.status === 402) { this.limitDialog?.('projekty'); return; }
                 if (!resp.ok || !d.ok) throw new Error(d.message || ('HTTP ' + resp.status));
                 this.projektId = d.id;
                 this.projektNazev = nazev;
@@ -4900,6 +4938,12 @@ function konceptKEditor(initialData) {
                     this.verze = d.verze || this.verze + 1;
                     const odeslane = kroky.map(k => k.id);
                     this._neodeslaneKroky = this._neodeslaneKroky.filter(id => !odeslane.includes(id));
+                    this._limitZeServeru?.(d.zbyva);
+                } else if (resp.status === 402) {
+                    // Denní limit úprav vyčerpaný jinde (druhá karta) — server dávku nepřijal.
+                    // Kroky zůstávají neodeslané; nabídka předplatného, ne chyba.
+                    this._limitZeServeru?.(0);
+                    this.limitDialog?.('upravy');
                 } else {
                     // Neuložená práce — nejbolestivější tichý pád
                     window.zalogujChybu?.('Uložení projektu selhalo (HTTP ' + resp.status + ')', 'Koncept V3: autosave projektu', {
@@ -5357,6 +5401,12 @@ function konceptKEditor(initialData) {
                     body: JSON.stringify({ nazev: 'Nový koncept' }),
                 });
                 const d = await resp.json();
+                // tarif nedovolí další projekt — vrátit výběr a nabídnout předplatné (ne chyba)
+                if (resp.status === 402) {
+                    this.projektId = initialData.projektId || '';
+                    this.limitDialog?.('projekty');
+                    return;
+                }
                 // ?nove=1 → po načtení se rovnou otevře input s názvem (viz init)
                 if (d.id) {
                     window.location.href = initialData.routes.indexK + '?id=' + d.id + '&nove=1';

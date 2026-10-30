@@ -39,7 +39,7 @@ window.KonceptImport = {
 
         const ulozeny = this.metadata?.podklad;
         if (ulozeny && ulozeny.url) {
-            this.podklad = { ...ulozeny };
+            this.podklad = this.podkladAdresy(ulozeny);
             // Renderer vzniká až v init() editoru — počkat na něj.
             const zkus = () => {
                 if (!this.renderer) { setTimeout(zkus, 120); return; }
@@ -50,6 +50,27 @@ window.KonceptImport = {
             };
             zkus();
         }
+    },
+
+    /**
+     * Adresy podkladu (obrázek, vektor) složené znovu z otisku výkresu přes
+     * routy, pod kterými editor právě běží. Uložená adresa může patřit jinému
+     * hostu nebo jiné části aplikace (dřív tuptudu.com/masterteam/…, teď
+     * masterteam.tuptudu.com nebo app.tuptudu.com/editor/plans/…). Prohlížeč by
+     * ji přesměroval na subdoménu s jiným přihlášením a podklad by zmizel.
+     */
+    podkladAdresy(p) {
+        if (!p) return p;
+        const m = String(p.url || '').match(/([a-f0-9]{40})\/(?:nahled|preview|obrazek|image)\/(\d+)(?:\/(\d+))?/);
+        if (!m) return { ...p };
+        const [, otisk, strana, dpi] = m;
+        const r = _kkInitData.routes;
+        const dosad = (sablona) => sablona.replace(':otisk', otisk).replace(':strana', strana).replace(':dpi', dpi);
+        return {
+            ...p,
+            url: dosad(dpi ? r.podkladObrazek : r.podkladNahled),
+            vektor: p.vektor ? dosad(r.podkladVektor) : p.vektor,
+        };
     },
 
     // dříve nahrané výkresy (ať se stejný soubor nenahrává pořád dokola)
@@ -846,7 +867,7 @@ window.KonceptImport = {
     podkladPolohaZachyt() {
         // Při startu editoru (výchozí krok historie) ještě podklad nemusí být
         // načtený — jeho uložený stav ale už je v metadatech.
-        const p = this.podklad || this.metadata?.podklad;
+        const p = this.podklad || this.podkladAdresy(this.metadata?.podklad);
         if (!p || !p.url) return null;
         return {
             url: p.url,
@@ -858,7 +879,7 @@ window.KonceptImport = {
 
     podkladPolohaObnov(s) {
         // Jiný podklad (mezitím vyměněný) se podle starého kroku nehýbe.
-        if (!s || !this.podklad || this.podklad.url !== s.url) return;
+        if (!s || !this.podklad || this.podklad.url !== this.podkladAdresy(s).url) return;
         const p = this.podklad;
         if ((p.stredX || 0) === s.stredX && (p.stredY || 0) === s.stredY && (p.uhel || 0) === s.uhel) return;
         this.podkladZmena({ stredX: s.stredX, stredY: s.stredY, uhel: s.uhel });
@@ -887,7 +908,7 @@ window.KonceptImport = {
 };
 
 /**
- * Složí Alpine komponentu editoru V3 z editoru a mixinů importu.
+ * Složí Alpine komponentu editoru V3 z editoru a mixinů importu a limitů tarifu.
  *
  * NESMÍ se použít `{ ...editor, ...mixin }`: rozprostření getter zavolá a
  * uloží jako pevnou hodnotu. `gridStyle`, `vertikalni`, `seznamObjektu`
@@ -896,7 +917,7 @@ window.KonceptImport = {
  */
 window.konceptV3Komponenta = function (init) {
     const komponenta = konceptKEditor(init);
-    for (const mixin of [window.KonceptImport, window.KonceptImportProhlizec]) {
+    for (const mixin of [window.KonceptImport, window.KonceptImportProhlizec, window.KonceptLimit]) {
         if (mixin) Object.defineProperties(komponenta, Object.getOwnPropertyDescriptors(mixin));
     }
     return komponenta;

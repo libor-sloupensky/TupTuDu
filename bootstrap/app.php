@@ -36,7 +36,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Hlásič chyb (/api/bug) bez CSRF: stránka s prošlou session (otevřená
         // přes noc, z cache) by dostala 419 a o původní chybě bychom se nikdy
         // nedozvěděli. Ochranu dělá BugController sám (rate limit, roboti).
-        $middleware->validateCsrfTokens(except: ['api/bug']);
+        // Zprávy z Paddlu (paddle/webhook, Laravel Cashier) nemají CSRF token —
+        // pravost ověřuje Cashier podpisem (PADDLE_WEBHOOK_SECRET). Bez klíče by
+        // podpis neověřoval vůbec → mimo lokál je odmítne PaddleJenSPodpisem.
+        $middleware->validateCsrfTokens(except: ['api/bug', 'paddle/*']);
+        $middleware->append(\App\Http\Middleware\PaddleJenSPodpisem::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // 404 logujeme do `seo_404` přes render() hook — report() callback

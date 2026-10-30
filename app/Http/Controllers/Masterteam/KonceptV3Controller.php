@@ -9,6 +9,7 @@ use App\Services\KonceptAiService;
 use App\Services\Katastr\KatastrService;
 use App\Services\Katastr\Dmr5gService;
 use App\Services\Pravidla\RozhovorService;
+use App\Support\Tarif;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -55,6 +56,24 @@ class KonceptV3Controller extends Controller
             'aktualni' => 'nullable|string|max:40',
         ]);
 
+        // Denní limit úprav tarifu (App\Support\Tarif). Úprava = nový krok historie;
+        // výchozí krok nové historie (bez `po`) je stav před první úpravou, nepočítá se.
+        // Dávka se přijme celá, dokud dnes něco zbývá — limit přeteče nanejvýš o pár
+        // kroků, ale rozdělaná práce se neztratí. Editor hlídá zbytek sám (limit-tarifu.js).
+        $uzivatel = $request->user();
+        $novychUprav = $request->filled('kroky')
+            ? max(0, count($request->input('kroky')) - ($request->input('po') === null ? 1 : 0))
+            : 0;
+        $zbyva = Tarif::zbyvaUprav($uzivatel);
+        if ($novychUprav > 0 && $zbyva === 0) {
+            return response()->json([
+                'ok' => false,
+                'limit' => 'upravy',
+                'zbyva' => 0,
+                'error' => __('tarify.limit_uprav_text', ['limit' => Tarif::limit(Tarif::uzivatele($uzivatel), 'kroku_denne')]),
+            ], 402);
+        }
+
         $updateData = [
             'nazev' => $request->input('nazev', $koncept->nazev),
         ];
@@ -98,13 +117,38 @@ class KonceptV3Controller extends Controller
         }
 
         $koncept->update($updateData);
+        Tarif::zapocitejUpravy($uzivatel, $novychUprav);
 
-        return response()->json(['ok' => true, 'verze' => $koncept->verze]);
+        return response()->json([
+            'ok' => true,
+            'verze' => $koncept->verze,
+            'zbyva' => $zbyva === null ? null : max(0, $zbyva - $novychUprav),
+        ]);
+    }
+
+    /** Odpověď 402, když tarif nedovolí další projekt (null = smí). */
+    private function limitProjektu(): ?\Illuminate\Http\JsonResponse
+    {
+        $uzivatel = Auth::user();
+        if (Tarif::muzeZalozitProjekt($uzivatel)) {
+            return null;
+        }
+
+        $limit = Tarif::limit(Tarif::uzivatele($uzivatel), 'projektu');
+
+        return response()->json([
+            'ok' => false,
+            'limit' => 'projekty',
+            'error' => __('tarify.limit_projektu_text', ['limit' => $limit]),
+        ], 402);
     }
 
     public function vytvorit(Request $request)
     {
         $request->validate(['nazev' => 'required|string|max:255']);
+        if ($odmitnuti = $this->limitProjektu()) {
+            return $odmitnuti;
+        }
 
         $koncept = Koncept::create([
             'uzivatel_id' => Auth::id(),
@@ -188,6 +232,9 @@ class KonceptV3Controller extends Controller
         if ($request->koncept_id) {
             $koncept = Koncept::findOrFail($request->koncept_id);
             $this->autorizuj($koncept);
+        } elseif ($odmitnuti = $this->limitProjektu()) {
+            // bez konceptu se zakládá nový — ještě před voláním AI
+            return $odmitnuti;
         }
 
         // Přeskočit rozhovor — rovnou generovat návrh

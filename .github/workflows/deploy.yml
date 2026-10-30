@@ -121,8 +121,9 @@ jobs:
           MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD_WEBSMTP }}
           MAIL_FROM_ADDRESS="info@tuptudu.com"
           MAIL_FROM_NAME="TupTuDu"
-          # Hlásič bugů — e-mail o nových závažných bugech (bugy:notifikace, cron /cron/bugy/{token})
-          BUGY_NOTIFIKACE_EMAIL=libor.sloupensky@seznam.cz
+          # Interní zprávy pro provozovatele — kontaktní formulář i e-mail o nových bugech
+          # (bugy:notifikace); jednotlivé druhy jde přebít, např. BUGY_NOTIFIKACE_EMAIL
+          INTERNI_EMAIL=libor@tuptudu.cz
           MASTER_ICO=07994605
           MASTER_PASSWORD=${{ secrets.MASTER_PASSWORD }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
@@ -135,6 +136,19 @@ jobs:
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
           MIGRATE_TOKEN=${{ secrets.MIGRATE_TOKEN }}
           CRON_TOKEN=${{ secrets.CRON_TOKEN }}
+          # Platby — Paddle (modules/platby.md). Testovací/ostrý účet se pozná z klíče
+          # (pdl_sdbx_… = testovací) — přechod na ostrý = přepsat tyto secrets. Dokud chybí,
+          # tarify se jen ukazují a zprávy z Paddlu server odmítá (PaddleJenSPodpisem).
+          # Hodnoty zakládá `php artisan paddle:katalog`.
+          PADDLE_API_KEY=${{ secrets.PADDLE_API_KEY }}
+          PADDLE_CLIENT_SIDE_TOKEN=${{ secrets.PADDLE_CLIENT_SIDE_TOKEN }}
+          PADDLE_WEBHOOK_SECRET=${{ secrets.PADDLE_WEBHOOK_SECRET }}
+          PADDLE_PRODUKT_STAVEBNIK=${{ secrets.PADDLE_PRODUKT_STAVEBNIK }}
+          PADDLE_PRODUKT_PROFI=${{ secrets.PADDLE_PRODUKT_PROFI }}
+          PADDLE_CENA_STAVEBNIK_MESIC=${{ secrets.PADDLE_CENA_STAVEBNIK_MESIC }}
+          PADDLE_CENA_STAVEBNIK_ROK=${{ secrets.PADDLE_CENA_STAVEBNIK_ROK }}
+          PADDLE_CENA_PROFI_MESIC=${{ secrets.PADDLE_CENA_PROFI_MESIC }}
+          PADDLE_CENA_PROFI_ROK=${{ secrets.PADDLE_CENA_PROFI_ROK }}
           ENVEOF
           sed -i 's/^          //' .env
           echo ".env vygenerován (hodnoty skryté)."
@@ -166,6 +180,9 @@ jobs:
             --exclude CLAUDE.md \
             --exclude README.md \
             --exclude node_modules/ \
+            --exclude ^storage/app/ \
+            --exclude ^storage/logs/ \
+            --exclude ^storage/framework/sessions/ \
             . .
           LFTPEOF
             sed -i 's/^          //' "$LFTP_CMDS"

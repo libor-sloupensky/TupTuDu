@@ -37,7 +37,7 @@ class BugyNotifikace extends Command
     {
         $email = config('app.bugy_notifikace_email');
         if (! $email) {
-            $this->warn('Není nastavený BUGY_NOTIFIKACE_EMAIL ani ZALOHA_EMAIL — nic neposílám.');
+            $this->warn('Není nastavený INTERNI_EMAIL ani BUGY_NOTIFIKACE_EMAIL — nic neposílám.');
             return self::SUCCESS;
         }
 

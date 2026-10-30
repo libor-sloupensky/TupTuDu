@@ -160,5 +160,59 @@ console.log('\n6) Už srovnaný dům se podruhé nehýbe');
     kontrola('druhý průchod nic nemění', posunuto === 0, posunuto + ' posunů');
 }
 
+console.log('\n7) Nová křivá stěna dům nepootočí (Klemov: po každé stěně −0,2°)');
+{
+    const e = novyEngine();
+    const rad = -58 * Math.PI / 180;     // dům natočený podle podkladu
+    const otoc = (x, y) => ({ x: x * Math.cos(rad) - y * Math.sin(rad), y: x * Math.sin(rad) + y * Math.cos(rad) });
+    const uzly = [otoc(0, 0), otoc(800, 0), otoc(800, 500), otoc(0, 500)].map(p => e.addNode(p.x, p.y));
+    for (let i = 0; i < 4; i++) {
+        const w = e.addWall(uzly[i].x, uzly[i].y, uzly[(i + 1) % 4].x, uzly[(i + 1) % 4].y, 0.3);
+        w.nodeA = uzly[i].id; w.nodeB = uzly[(i + 1) % 4].id;
+    }
+    // šikmá stěna dřív průměr „hlavního směru" taky posouvala
+    e.addWall(otoc(100, 100).x, otoc(100, 100).y, otoc(300, 220).x, otoc(300, 220).y, 0.15);
+    e._cleanOrphanNodes();
+    const puvodni = new Map(uzly.map(u => [u.id, { x: u.x, y: u.y }]));
+
+    // pět nových stěn „schodem" ven z rohu, každá o 1–1,8° mimo směr domu;
+    // první začíná ve sdíleném rohu
+    let start = uzly[1];
+    for (let i = 0; i < 5; i++) {
+        const uhel = rad + (1 + i * 0.2) * Math.PI / 180;
+        const [ux, uy] = i % 2 ? [0, 120] : [150, 0];
+        const konec = {
+            x: start.x + ux * Math.cos(uhel) - uy * Math.sin(uhel),
+            y: start.y + ux * Math.sin(uhel) + uy * Math.cos(uhel),
+        };
+        const w = e.addWall(start.x, start.y, konec.x, konec.y, 0.15);
+        if (i === 0) { w.nodeA = start.id; e._cleanOrphanNodes(); }
+        e.srovnejPraveUhly(2);
+        start = e.nodes.get(w.nodeB);
+    }
+    const posun = Math.max(...uzly.map(u => Math.hypot(u.x - puvodni.get(u.id).x, u.y - puvodni.get(u.id).y)));
+    kontrola('rohy domu se nepohnuly', posun < 1e-6, 'max posun ' + posun.toExponential(2) + ' px');
+    // odchylka od směru domu v rozsahu 0–45°; šikmá stěna má ~31°, ostatní 0
+    const vuciDomu = zbytky(e).map(m => { const r = ((m - zbytky(e)[0]) % 90 + 90) % 90; return Math.min(r, 90 - r); });
+    const krive = vuciDomu.filter(r => r > 0.001);
+    kontrola('nové stěny jsou srovnané do směru domu', krive.length === 1,
+        krive.map(r => r.toFixed(3) + '°').join(', ') + ' (má zbýt jen ta šikmá)');
+}
+
+console.log('\n8) Dům natočený o 1° podle podkladu se nesrovná na vodorovnou');
+{
+    const e = novyEngine();
+    const rad = 1 * Math.PI / 180;
+    const otoc = (x, y) => ({ x: x * Math.cos(rad) - y * Math.sin(rad), y: x * Math.sin(rad) + y * Math.cos(rad) });
+    const uzly = [otoc(0, 0), otoc(600, 0), otoc(600, 400), otoc(0, 400)].map(p => e.addNode(p.x, p.y));
+    for (let i = 0; i < 4; i++) {
+        const w = e.addWall(uzly[i].x, uzly[i].y, uzly[(i + 1) % 4].x, uzly[(i + 1) % 4].y, 0.3);
+        w.nodeA = uzly[i].id; w.nodeB = uzly[(i + 1) % 4].id;
+    }
+    e._cleanOrphanNodes();
+    const posunuto = e.srovnejPraveUhly(2);
+    kontrola('přesně srovnaný natočený dům zůstal, jak je', posunuto === 0, posunuto + ' posunů');
+}
+
 console.log(chyb === 0 ? '\nVŠE PROŠLO\n' : `\nNEPROŠLO: ${chyb} kontrol\n`);
 process.exit(chyb === 0 ? 0 : 1);

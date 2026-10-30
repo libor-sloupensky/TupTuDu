@@ -7,10 +7,10 @@ use MaxMind\Db\Reader;
 /**
  * Země podle IP adresy z lokální databáze DB-IP „IP to Country Lite" (CC BY 4.0).
  * Nikam se nic neposílá. Databázi stahuje `php artisan poloha:aktualizovat`
- * (měsíčně cronem /cron/poloha/{token}). Bez databáze vrací null.
+ * (týdně přes App\Support\PlanovaneUlohy). Bez databáze vrací null.
  *
  * Licence: stránky, které výsledek používají, musí odkazovat na DB-IP
- * (partials/poloha-zdroj — patička zákaznických stránek).
+ * (partials/paticka, v editoru partials/poloha-zdroj).
  */
 final class PolohaIp
 {

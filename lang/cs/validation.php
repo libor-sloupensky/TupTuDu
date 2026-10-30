@@ -153,6 +153,9 @@ return [
         'jazyk' => 'jazyk',
         'zeme' => 'země',
         'souhlas' => 'souhlas s podmínkami',
+        'tema' => 'téma',
+        'zprava' => 'zpráva',
+        'email_uctu' => 'e-mail účtu',
     ],
 
 ];

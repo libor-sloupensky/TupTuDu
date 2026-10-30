@@ -46,7 +46,7 @@ Masterteam je interní a **vždy česky** — nepřekládá se.
 - Aktualizace: `php artisan poloha:aktualizovat`, týdně ze společného cronu (`App\Support\PlanovaneUlohy`,
   hosting volá `/cron/bugy/{token}` à 15 min — nic dalšího se nenastavuje). Bez databáze je země příchodu neznámá → jazyk `en`, země `CZ`.
 - **Licence CC BY 4.0:** každá stránka, která výsledek používá, musí mít odkaz
-  „IP Geolocation by DB-IP" → `@include('partials.poloha-zdroj')` (patička).
+  „IP Geolocation by DB-IP" → je v patičce `partials/paticka`, v editoru samostatně `partials/poloha-zdroj`.
 - Lokálně má 127.0.0.1 zemi neznámou → `en`.
 - Přepínač ukládá volbu do session a přihlášenému i do účtu.
 

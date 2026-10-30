@@ -478,7 +478,7 @@ window.KonceptImportProhlizec = {
         const g = platno.getContext('2d');
         g.clearRect(0, 0, sirka, vyska);
 
-        const barva = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#dd5500';
+        const barva = getComputedStyle(document.documentElement).getPropertyValue('--c-primary').trim();
         // odsazeni: záporné = nad čarou, kladné = pod čarou (v natočení čáry)
         const popisek = (text, bod, uhel, barvaTextu, odsazeni = -8) => {
             g.save();

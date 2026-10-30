@@ -19,6 +19,18 @@ const VYBER = {
 };
 
 /**
+ * Jedno pravidlo velikosti pro všechny popisky výkresu — kóty, označení stěn
+ * a otvorů, úhly. Od přiblížení `zoomMez` výš drží stálou velikost na obrazovce
+ * (neporostou s výkresem). Pod ní se zmenšují spolu s výkresem: dřív zůstávaly
+ * stejně velké i po oddálení a přerostly místnosti (úhly přes celý dům).
+ * Písmo menší než `minPismo` px na obrazovce už není čitelné — nekreslí se.
+ */
+const POPISKY = {
+    zoomMez: 0.8,   // 80 px na metr; úhel má pak poloměr nejvýš 0,3 m
+    minPismo: 6,
+};
+
+/**
  * Podklad se zobrazuje třemi způsoby: pod kresbou, nad kresbou, nebo vůbec.
  * Starší koncepty mají jen `viditelny` — ty se čtou jako pod/skrytý.
  */
@@ -341,9 +353,10 @@ class KonvaRenderer {
             }
         }
         toDel.forEach(k => this._labelShapes.delete(k));
-        const scale = this.stage ? this.stage.scaleX() : 1;
+        // Velikost podle společného pravidla s kótami a úhly (viz POPISKY)
+        const v = (px) => this.velikostPopisku(px);
         // Wall IDs
-        for (const wall of this.engine.walls.values()) {
+        for (const wall of (this.citelnePismo(10) ? this.engine.walls.values() : [])) {
             const nA = this.engine.nodes.get(wall.nodeA);
             const nB = this.engine.nodes.get(wall.nodeB);
             if (!nA || !nB) continue;
@@ -355,12 +368,12 @@ class KonvaRenderer {
             const tl = wall.tloustka * this.PX_PER_M;
             // Offset NA OPAČNOU stranu než kóta (směr -nx, -ny)
             const nx = -dy / len, ny = dx / len;
-            const offset = tl / 2 + 10 / scale;
+            const offset = tl / 2 + v(10);
             const text = new Konva.Text({
                 x: cx - nx * offset,
                 y: cy - ny * offset,
                 text: wall.id,
-                fontSize: 10 / scale,
+                fontSize: v(10),
                 fill: '#9333ea',
                 fontStyle: 'bold',
                 listening: false,
@@ -374,7 +387,7 @@ class KonvaRenderer {
             this._labelShapes.set('id_' + wall.id, text);
         }
         // Opening IDs
-        for (const opening of this.engine.openings.values()) {
+        for (const opening of (this.citelnePismo(9) ? this.engine.openings.values() : [])) {
             const wall = this.engine.walls.get(opening.wallId);
             if (!wall) continue;
             const nA = this.engine.nodes.get(wall.nodeA);
@@ -391,7 +404,7 @@ class KonvaRenderer {
                 x: ox,
                 y: oy,
                 text: opening.id,
-                fontSize: 9 / scale,
+                fontSize: v(9),
                 fill: '#ea580c',
                 fontStyle: 'bold',
                 listening: false,
@@ -677,12 +690,17 @@ class KonvaRenderer {
     // KÓTY (rozměry stěn)
     // ═══════════════════════════════════════════════════════
     renderKoty() {
-        for (const shape of this._labelShapes.values()) shape.destroy();
-        this._labelShapes.clear();
+        // Jen kóty — označení stěn a otvorů (id_*) sdílí tutéž mapu a dřív
+        // tady mizela s nimi, takže po zoomu kolečkem nebyla vidět.
+        for (const [key, shape] of this._labelShapes) {
+            if (!key.startsWith('kota_')) continue;
+            shape.destroy();
+            this._labelShapes.delete(key);
+        }
 
-        if (!this.showKoty) { this.labelLayer.batchDraw(); return; }
+        if (!this.showKoty || !this.citelnePismo(11)) { this.labelLayer.batchDraw(); return; }
 
-        const scale = this.stage.scaleX();
+        const v = (px) => this.velikostPopisku(px);
 
         for (const wall of this.engine.walls.values()) {
             const nA = this.engine.nodes.get(wall.nodeA);
@@ -702,13 +720,13 @@ class KonvaRenderer {
             const len = Math.hypot(dx, dy);
             const nx = -dy / len;
             const ny = dx / len;
-            const offset = tl / 2 + 10 / scale; // 10px od kraje stěny (screen space)
+            const offset = tl / 2 + v(10); // 10 px od kraje stěny (viz POPISKY)
 
             const text = new Konva.Text({
                 x: cx + nx * offset,
                 y: cy + ny * offset,
                 text: delka.toFixed(2) + 'm',
-                fontSize: 11 / scale,
+                fontSize: v(11),
                 fill: '#6b7280',
                 align: 'center',
                 offsetX: 0,
@@ -747,6 +765,29 @@ class KonvaRenderer {
             shape.opacity(hovered ? 0.8 : 1);
         }
         this.wallLayer.batchDraw();
+    }
+
+    /** Velikost popisku ve výkresu pro `px` obrazovkových pixelů (viz POPISKY). */
+    velikostPopisku(px) {
+        return px / Math.max(this.stage.scaleX() || 1, POPISKY.zoomMez);
+    }
+
+    /** Je písmo velikosti `px` (při plném zobrazení) na obrazovce ještě čitelné? */
+    citelnePismo(px) {
+        return px * Math.min(1, (this.stage.scaleX() || 1) / POPISKY.zoomMez) >= POPISKY.minPismo;
+    }
+
+    /**
+     * Překreslí vše, co závisí na přiblížení. Jediné místo — kolečko, tlačítka
+     * zoomu i „zobrazit vše" volají tohle, ať se nic nezapomene (dřív se úhly
+     * při zoomu nepřekreslily a označení stěn zmizela).
+     */
+    poZmeneZoomu() {
+        this.renderGrid();
+        this.renderKoty();
+        if (this.showIds) this.renderIds();
+        this.resizeVysky();
+        if (typeof this.afterZoom === 'function') this.afterZoom();
     }
 
     resizeVysky() {

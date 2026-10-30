@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Paddle\Billable;
 
 class Uzivatel extends Authenticatable implements MustVerifyEmail, HasLocalePreference
 {
-    use HasFactory, Notifiable;
+    // Billable = předplatné přes Paddle (Laravel Cashier) — tabulky customers, subscriptions, transactions
+    use Billable, HasFactory, Notifiable;
 
     protected $table = 'uzivatele';
 
@@ -123,6 +125,12 @@ class Uzivatel extends Authenticatable implements MustVerifyEmail, HasLocalePref
     public function celeJmeno(): string
     {
         return trim($this->jmeno . ' ' . $this->prijmeni);
+    }
+
+    /** Jméno zákazníka pro Paddle — Cashier jinak čte neexistující sloupec `name`. */
+    public function paddleName(): ?string
+    {
+        return $this->celeJmeno() ?: null;
     }
 
     /**

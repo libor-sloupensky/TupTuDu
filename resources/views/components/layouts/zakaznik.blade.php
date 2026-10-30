@@ -32,6 +32,7 @@
             @if (auth()->user()->jeMaster())
                 <a href="{{ \App\Support\Domeny::url('masterteam', '/masterteam') }}">{{ __('aplikace.do_masterteamu') }}</a>
             @endif
+            <a href="{{ route('app.predplatne') }}" class="{{ request()->routeIs('app.predplatne*') ? 'aktivni' : '' }}">{{ __('aplikace.predplatne') }}</a>
             <a href="{{ route('app.ucet') }}" class="{{ request()->routeIs('app.ucet*') ? 'aktivni' : '' }}">{{ __('aplikace.ucet') }}</a>
             <form method="POST" action="/logout">
                 @csrf
@@ -44,7 +45,8 @@
         {{ $slot }}
     </main>
 
-    @include('partials.poloha-zdroj')
+    {{-- Editor (fullWidth) zabírá celé okno — místo patičky jen povinný odkaz na DB-IP --}}
+    @include($fullWidth ? 'partials.poloha-zdroj' : 'partials.paticka')
     @include('partials.error-tracker')
     @include('partials.lokalizace-js')
 

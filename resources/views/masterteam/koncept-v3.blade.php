@@ -32,7 +32,37 @@
         transition: opacity 0.1s;
     }
     #kk-tooltip.visible { opacity: 1; }
-    .kk-section { border-bottom: 3px solid var(--color-primary, #dd5500); }
+    /* Pravý panel — samostatné bloky jako v Kalkuliu (zaoblená karta, tenká
+       obruba, tučný nadpis, šipka vpravo, obruba v brand barvě při najetí).
+       Barvy a font jsou naše (--c-*, Nunito z /css/app.css). */
+    .kk-panel-b { gap: 8px; }
+    .kk-karta, .kk-section {
+        background: var(--c-surface); border: 1px solid var(--c-border);
+        border-radius: var(--s-radius); overflow: hidden; flex-shrink: 0;
+        transition: border-color .15s;
+    }
+    .kk-section:hover { border-color: color-mix(in srgb, var(--c-primary) 45%, var(--c-border)); }
+    .kk-section-hlava {
+        display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+        font-size: 13.5px; font-weight: 700; line-height: 1.3; color: var(--c-text);
+        cursor: pointer; user-select: none; list-style: none;
+    }
+    .kk-section-hlava::-webkit-details-marker { display: none; }
+    .kk-sipka { margin-left: auto; flex-shrink: 0; color: var(--c-text-secondary); transition: transform .2s; }
+    .kk-section[open] > .kk-section-hlava .kk-sipka { transform: rotate(180deg); }
+    .kk-section[open] > .kk-section-hlava { border-bottom: 1px solid var(--c-border); }
+    .kk-panel-b input[type=checkbox], .kk-panel-b input[type=range] { accent-color: var(--c-primary); }
+    /* označení objektu (W3, D56) na začátku řádku seznamu — pevná šířka, ať názvy lícují */
+    .kk-oznaceni {
+        flex-shrink: 0; min-width: 34px; padding: 0 4px; border-radius: 4px; text-align: center;
+        font-size: 10px; font-weight: 800; line-height: 16px; font-variant-numeric: tabular-nums;
+    }
+    /* počet položek v nadpisu bloku */
+    .kk-pocet {
+        padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        background: var(--c-primary-10); color: var(--c-primary-text);
+    }
     /* Bliknutí po Zpět / Vpřed — ať si uživatel všimne, že se posunul v historii.
        Rychlý náběh do brand barvy (120 ms, ease-out), pomalý dozvuk zpět
        (~660 ms). Mezikroky chybí záměrně: začátek a konec je vlastní styl prvku,
@@ -72,12 +102,12 @@
     body.kk-fullscreen > footer,
     body.kk-fullscreen footer { display: none !important; }
     .kk-divider { cursor: col-resize; background: #e5e7eb; position: relative; }
-    .kk-divider:hover, .kk-divider.dragging { background: var(--color-primary, #dd5500); }
+    .kk-divider:hover, .kk-divider.dragging { background: var(--c-primary); }
     .kk-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
     .kk-toolbar button, .kk-toolbar select { font-size: 12px; }
     .kk-btn { padding: 4px 10px; border-radius: 4px; border: 1px solid #d1d5db; background: white; cursor: pointer; font-size: 12px; transition: all .15s; }
-    .kk-btn:hover { border-color: var(--color-primary, #dd5500); color: var(--color-primary, #dd5500); }
-    .kk-btn.active { background: var(--color-primary, #dd5500); color: white; border-color: var(--color-primary, #dd5500); }
+    .kk-btn:hover { border-color: var(--c-primary); color: var(--c-primary); }
+    .kk-btn.active { background: var(--c-primary); color: white; border-color: var(--c-primary); }
     .kk-status-row { position: absolute; bottom: 4px; left: 4px; display: flex; align-items: stretch; gap: 4px; z-index: 10; pointer-events: none; }
     .kk-status-row > div { padding: 2px 8px; border-radius: 3px; font: 12px/1.4 monospace; display: flex; align-items: center; }
     .kk-coords { background: rgba(0,80,0,.85); color: #0f0; }
@@ -151,7 +181,7 @@
             <div class="flex items-center gap-1">
                 {{-- Výběr --}}
                 <button @click="nastroj = 'vyber'" class="rounded p-1.5 transition"
-                        :style="nastroj === 'vyber' ? 'color: var(--color-primary, #DD5500)' : 'color: #6b7280'"
+                        :style="nastroj === 'vyber' ? 'color: var(--c-primary)' : 'color: #6b7280'"
                         @mouseenter="if (nastroj !== 'vyber') $el.style.backgroundColor='#f3f4f6'"
                         @mouseleave="$el.style.backgroundColor='transparent'"
                         data-tip="Výběr (1)">
@@ -161,7 +191,7 @@
                 </button>
                 {{-- Posun (ruka) --}}
                 <button @click="nastroj = 'posun'" class="rounded p-1.5 transition"
-                        :style="nastroj === 'posun' ? 'color: var(--color-primary, #DD5500)' : 'color: #6b7280'"
+                        :style="nastroj === 'posun' ? 'color: var(--c-primary)' : 'color: #6b7280'"
                         @mouseenter="if (nastroj !== 'posun') $el.style.backgroundColor='#f3f4f6'"
                         @mouseleave="$el.style.backgroundColor='transparent'"
                         data-tip="Posun (2 / pravé myšítko)">
@@ -195,7 +225,7 @@
                 </div>
                 {{-- Stěna --}}
                 <button @click="nastroj = 'stena'" class="rounded p-1.5 transition"
-                        :style="nastroj === 'stena' ? 'color: var(--color-primary, #DD5500)' : 'color: #6b7280'"
+                        :style="nastroj === 'stena' ? 'color: var(--c-primary)' : 'color: #6b7280'"
                         @mouseenter="if (nastroj !== 'stena') $el.style.backgroundColor='#f3f4f6'"
                         @mouseleave="$el.style.backgroundColor='transparent'"
                         data-tip="Kreslit stěnu (4)">
@@ -206,7 +236,7 @@
                 </button>
                 {{-- Metr --}}
                 <button @click="nastroj = nastroj === 'metr' ? 'vyber' : 'metr'" class="rounded p-1.5 transition"
-                        :style="nastroj === 'metr' ? 'color: var(--color-primary, #DD5500)' : 'color: #6b7280'"
+                        :style="nastroj === 'metr' ? 'color: var(--c-primary)' : 'color: #6b7280'"
                         @mouseenter="if (nastroj !== 'metr') $el.style.backgroundColor='#f3f4f6'"
                         @mouseleave="$el.style.backgroundColor='transparent'"
                         data-tip="Měřit vzdálenost (5 / M)">
@@ -218,7 +248,7 @@
                 </button>
                 {{-- Otvor --}}
                 <button @click="nastroj = nastroj === 'otvor' ? 'vyber' : 'otvor'" class="rounded p-1.5 transition"
-                        :style="nastroj === 'otvor' ? 'color: var(--color-primary, #DD5500)' : 'color: #6b7280'"
+                        :style="nastroj === 'otvor' ? 'color: var(--c-primary)' : 'color: #6b7280'"
                         @mouseenter="if (nastroj !== 'otvor') $el.style.backgroundColor='#f3f4f6'"
                         @mouseleave="$el.style.backgroundColor='transparent'"
                         data-tip="Vložit otvor do stěny (6 / O)">
@@ -344,7 +374,7 @@
             {{-- Inspector panel — vlastnosti vybraného objektu (ukotvený vlevo od kompasu) --}}
             <div x-show="inspector && !rezim3d" x-cloak
                  class="bg-white rounded-lg shadow-md text-xs"
-                 style="position:absolute;top:12px;right:80px;z-index:15;min-width:180px;border:1.5px solid var(--color-primary, #dd5500)">
+                 style="position:absolute;top:12px;right:80px;z-index:15;min-width:180px;border:1.5px solid var(--c-primary)">
                 <template x-if="inspector">
                     <div class="p-2 flex items-center gap-2 flex-wrap">
                         {{-- Multi-select indikátor --}}
@@ -481,10 +511,10 @@
     </div>
 
     {{-- ═══ PANEL B — Projekty + Chat ═══ --}}
-    <div class="flex flex-col overflow-hidden"
+    <div class="kk-panel-b flex flex-col overflow-y-auto"
          :style="'order:' + (obracene ? 0 : 2) + ';min-width:0;min-height:0'">
         {{-- Projekt select + přejmenování --}}
-        <div class="flex items-center gap-1 px-3 py-1.5 border-b border-gray-200 bg-white flex-shrink-0">
+        <div class="kk-karta flex items-center gap-1 px-2 py-1.5">
             <template x-if="!_prejmenovaniKonceptu">
                 <div class="flex items-center gap-1 flex-1 min-w-0 group">
                     <select x-model="projektId" @change="prepniProjekt()" class="kk-btn flex-1 truncate text-sm">
@@ -521,15 +551,13 @@
         </div>
 
         {{-- Parcela (Katastr) --}}
-        <details class="kk-section flex-shrink-0" :open="panelOpen.parcela" @toggle="panelOpen.parcela = $el.open; ulozitPanely()">
-            <summary class="px-3 py-2 text-xs font-medium text-gray-500 cursor-pointer hover:bg-gray-50 flex items-center gap-1 select-none">
-                <svg class="h-3 w-3 transition-transform shrink-0" :class="panelOpen.parcela && 'rotate-90'" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l8 6-8 6V4z"/></svg>
+        <details class="kk-section" :open="panelOpen.parcela" @toggle="panelOpen.parcela = $el.open; ulozitPanely()">
+            <summary class="kk-section-hlava">
                 <span>Parcela</span>
-                <template x-if="katastrParcely.length > 0">
-                    <span class="font-semibold" x-text="'(' + katastrParcely.length + ')'"></span>
-                </template>
+                <span x-show="katastrParcely.length > 0" class="kk-pocet" x-text="katastrParcely.length"></span>
+                <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
-            <div class="border-t border-gray-100 px-3 py-2 space-y-2 max-h-96 overflow-y-auto">
+            <div class="px-3 py-2 space-y-2 max-h-96 overflow-y-auto">
                 {{-- Checkboxy: Mřížka + katastr vrstvy (katastr jen s parcelami). Jeden řádek
                      pokud se vejdou, jinak wrap. gap-x menší aby se vešly vedle sebe. --}}
                 <div class="flex items-center gap-x-2 gap-y-1 text-xs text-gray-500 flex-wrap" @click.stop>
@@ -571,7 +599,7 @@
                     <button @click="katastrNactiParcelu()"
                             :disabled="!katastrVybraneKu || !katastrCislo.trim() || katastrNacitani"
                             class="px-2 h-7 text-xs rounded text-white disabled:opacity-40"
-                            style="background: var(--color-primary, #dd5500);">
+                            style="background: var(--c-primary);">
                         <span x-show="!katastrNacitani">Načíst</span>
                         <span x-show="katastrNacitani">...</span>
                     </button>
@@ -631,10 +659,11 @@
         </details>
 
         {{-- Objekty --}}
-        <details class="kk-section flex-shrink-0" :open="panelOpen.objekty" @toggle="panelOpen.objekty = $el.open; ulozitPanely()">
-            <summary class="px-3 py-2 text-xs font-medium text-gray-500 cursor-pointer hover:bg-gray-50 flex items-center gap-1 select-none">
-                <svg class="h-3 w-3 transition-transform shrink-0" :class="panelOpen.objekty && 'rotate-90'" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l8 6-8 6V4z"/></svg>
-                <span x-text="'Objekty (' + seznamObjektu.length + ')'">Objekty (0)</span>
+        <details class="kk-section" :open="panelOpen.objekty" @toggle="panelOpen.objekty = $el.open; ulozitPanely()">
+            <summary class="kk-section-hlava">
+                <span>Objekty</span>
+                <span x-show="seznamObjektu.length > 0" class="kk-pocet" x-text="seznamObjektu.length"></span>
+                <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <div class="px-3 py-1.5 flex items-center gap-3 border-b border-gray-100">
                 <label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Zobrazit/skrýt stěny a otvory">
@@ -668,6 +697,10 @@
                          @mouseenter="zvyrazniObjekt(obj.id)"
                          @mouseleave="zvyrazniObjekt(null)">
                         <div class="flex items-center gap-1 min-w-0">
+                            {{-- Označení z výkresu — stejná barva jako popisek na plátně
+                                 (stěny fialově, otvory oranžově), ať jde řádek spárovat s kresbou --}}
+                            <span class="kk-oznaceni" :class="obj.type === 'wall' ? 'text-purple-600 bg-purple-50' : 'text-orange-600 bg-orange-50'"
+                                  x-text="obj.id"></span>
                             <span x-show="editObjektId !== obj.id"
                                   :class="vybraneIds.includes(obj.id) ? 'font-bold text-blue-700' : 'text-gray-600'"
                                   x-text="obj.nazev" class="truncate"></span>
@@ -702,17 +735,15 @@
         </details>
 
         {{-- Podklad (import půdorysu z výkresu) --}}
-        <details class="kk-section flex-shrink-0" :open="panelOpen.podklad" @toggle="panelOpen.podklad = $el.open; ulozitPanely(); if ($el.open) impNactiDrive()">
-            <summary class="px-3 py-2 text-xs font-medium text-gray-500 cursor-pointer hover:bg-gray-50 flex items-center gap-1 select-none">
-                <svg class="h-3 w-3 transition-transform shrink-0" :class="panelOpen.podklad && 'rotate-90'" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l8 6-8 6V4z"/></svg>
+        <details class="kk-section" :open="panelOpen.podklad" @toggle="panelOpen.podklad = $el.open; ulozitPanely(); if ($el.open) impNactiDrive()">
+            <summary class="kk-section-hlava">
                 <span>Podklad</span>
-                <template x-if="podklad">
-                    <span class="font-semibold">(1)</span>
-                </template>
+                <span x-show="podklad" class="kk-pocet">1</span>
+                <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             {{-- V panelu je jen výkres, který se právě používá. Ostatní dřív nahrané
                  jsou pod „Nový výkres…“ v průvodci, ať se seznam nepřehlcuje. --}}
-            <div class="border-t border-gray-100 px-3 py-2 space-y-2">
+            <div class="px-3 py-2 space-y-2">
                 <template x-if="!podklad">
                     <div>
                         <button @click="impOtevri()" class="kk-btn w-full text-xs">Nový výkres…</button>
@@ -758,13 +789,15 @@
         </details>
 
         {{-- Historie --}}
-        <details class="kk-section flex-shrink-0" :open="panelOpen.historie" @toggle="panelOpen.historie = $el.open; ulozitPanely()">
-            <summary data-historie-souhrn class="px-3 py-2 text-xs font-medium text-gray-500 cursor-pointer hover:bg-gray-50 flex items-center gap-1 select-none">
-                <svg class="h-3 w-3 transition-transform shrink-0" :class="panelOpen.historie && 'rotate-90'" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l8 6-8 6V4z"/></svg>
+        <details class="kk-section" :open="panelOpen.historie" @toggle="panelOpen.historie = $el.open; ulozitPanely()">
+            <summary data-historie-souhrn class="kk-section-hlava">
+                <span>Historie</span>
                 {{-- Po Zpět je vidět i u sbaleného panelu, na kterém kroku se stojí --}}
-                <span x-text="historiePozice < historie.length - 1
-                    ? 'Historie (krok ' + (historiePozice + 1) + ' z ' + historie.length + ')'
-                    : 'Historie (' + historie.length + ')'">Historie (0)</span>
+                <span x-show="historie.length > 0" class="kk-pocet"
+                      x-text="historiePozice < historie.length - 1
+                          ? 'krok ' + (historiePozice + 1) + ' z ' + historie.length
+                          : historie.length"></span>
+                <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <div class="max-h-40 overflow-y-auto divide-y divide-gray-100">
                 {{-- Nejnovější nahoře. Aktuální krok je zvýrazněný, kroky „v budoucnosti“
@@ -831,7 +864,7 @@
                                       placeholder="Popiš změnu... (zkratka: /navrh popis = přeskoč rozhovor)"></textarea>
                             <button @click="posliAi()" :disabled="aiNacitani || !aiVstup.trim()"
                                     class="px-3 rounded bg-primary text-white text-sm font-medium disabled:opacity-40 hover:opacity-90 shrink-0"
-                                    style="background: var(--color-primary, #dd5500);">
+                                    style="background: var(--c-primary);">
                                 &rarr;
                             </button>
                         </div>
@@ -1075,13 +1108,13 @@
                         <div class="flex gap-2">
                             <button x-show="impKrok === 'meritko'" @click="impNaObrys()" :disabled="!impMeritkoPlatne()"
                                     class="px-3 py-1.5 rounded text-white text-xs font-medium disabled:opacity-40"
-                                    style="background: var(--color-primary, #dd5500);">
+                                    style="background: var(--c-primary);">
                                 Obkreslit obvod domu
                             </button>
                             <button x-show="impKrok === 'obrys'" @click="impRozpoznat()"
                                     :disabled="!pzObrysUzavren || !impStranaData?.vektor"
                                     class="px-3 py-1.5 rounded text-white text-xs font-medium disabled:opacity-40"
-                                    style="background: var(--color-primary, #dd5500);">
+                                    style="background: var(--c-primary);">
                                 Rozpoznat vnitřní stěny
                             </button>
                         </div>
@@ -1110,7 +1143,7 @@
                                                 <span x-show="impVybrana === i"
                                                       @click.stop="impPrevezmiSteny()"
                                                       class="px-3 py-1.5 rounded text-white text-xs font-medium cursor-pointer"
-                                                      style="background: var(--color-primary, #dd5500);">
+                                                      style="background: var(--c-primary);">
                                                     Převzít tuto variantu
                                                 </span>
                                             </span>
@@ -1162,8 +1195,11 @@ if (!{{ $aktivni?->id ?? 'null' }}) {
 <script src="/js/koncept-v3/import-analyza.js?v={{ filemtime(public_path('js/koncept-v3/import-analyza.js')) }}"></script>
 <script src="/js/koncept-v3/import-prohlizec.js?v={{ filemtime(public_path('js/koncept-v3/import-prohlizec.js')) }}"></script>
 <script src="/js/koncept-v3/import-pudorysu.js?v={{ filemtime(public_path('js/koncept-v3/import-pudorysu.js')) }}"></script>
+<script src="/js/koncept-v3/limit-tarifu.js?v={{ filemtime(public_path('js/koncept-v3/limit-tarifu.js')) }}"></script>
 <script>
 var _kkInitData = {
+    // Limity tarifu (App\Support\Tarif::stav) — jen v zákaznické aplikaci, null = bez omezení
+    limit: @json($limitTarifu ?? null),
     // Seznam konceptů do nabídky. Musí jít z dat (ne ze statického HTML) —
     // po přejmenování Alpine nabídku překreslí ze šablony a ručně opravený
     // text v DOM by se ztratil (ukázal by se starý název).
@@ -1197,7 +1233,11 @@ var _kkInitData = {
         podkladSeznam: '{{ route($trasaV3 . ".podklad.seznam") }}',
         podkladStrana: '{{ route($trasaV3 . ".podklad.strana", ":otisk") }}',
         podkladNastaveni: '{{ route($trasaV3 . ".podklad.nastaveni", ":otisk") }}',
-        podkladNahled: '{{ route($trasaV3 . ".podklad.nahled", [":otisk", ":strana"]) }}',
+        // Adresy obrázku podkladu relativně — ukládají se do konceptu a s hostem
+        // by po přesunu na jinou (sub)doménu přestaly fungovat (viz podkladAdresy)
+        podkladNahled: '{{ route($trasaV3 . ".podklad.nahled", [":otisk", ":strana"], false) }}',
+        podkladObrazek: '{{ route($trasaV3 . ".podklad.obrazek", [":otisk", ":strana", ":dpi"], false) }}',
+        podkladVektor: '{{ route($trasaV3 . ".podklad.vektor", [":otisk", ":strana"], false) }}',
     },
     // verze analyzátoru — worker si ji přidá do adresy, aby nebral starou verzi z cache
     {{-- verze pro cache: nejnovější ze VŠECH souborů importu, ne jen analyzátoru —
@@ -1446,9 +1486,10 @@ var _kkInitData = {
                  * a oblouk se jen ořízl na líce — konce šly šikmo, velikost se
                  * měnila s tloušťkou zdi a u napojení na okraj byl úhel odsunutý.)
                  *
-                 * Velikost se drží na OBRAZOVCE (poloměr 24 px, čára 2,5 px,
-                 * písmo 11 px) — u příčky stejná jako u nosné zdi, při oddálení
-                 * nezmizí, při přiblížení nepřeroste.
+                 * Velikost (poloměr 24 px, čára 2,5 px, písmo 11 px) se řídí
+                 * stejným pravidlem jako kóty a označení — renderer.velikostPopisku:
+                 * u příčky stejná jako u nosné zdi, při přiblížení nepřeroste,
+                 * po oddálení se zmenšuje s výkresem a nečitelný úhel se nekreslí.
                  *
                  * @param ramenoA,ramenoB  {p, d} — bod na ose stěny a směr ramene od vrcholu
                  * @param halfA,halfB      poloviční tloušťky ramen v px
@@ -1491,7 +1532,9 @@ var _kkInitData = {
                         return;
                     }
 
-                    var R = 24 / scale;
+                    if (!ctx.renderer.citelnePismo(11)) return;
+                    var v = function (px) { return ctx.renderer.velikostPopisku(px); };
+                    var R = v(24);
                     var a0 = start * Math.PI / 180, a1 = (start + absDiff) * Math.PI / 180;
                     dofLayer.add(new Konva.Shape({ listening: false,
                         // zaoblené konce — lineCap u Konva.Arc nefunguje (kreslí uzavřený tvar)
@@ -1500,7 +1543,7 @@ var _kkInitData = {
                             c.arc(V.x, V.y, R, a0, a1, false);
                             c.strokeShape(tvar);
                         },
-                        stroke: '#f59e0b', strokeWidth: 2.5 / scale, lineCap: 'round',
+                        stroke: '#f59e0b', strokeWidth: v(2.5), lineCap: 'round',
                     }));
                     var midAng = (start + absDiff / 2) * Math.PI / 180;
                     if (Math.abs(absDiff - 90) < 0.05) {
@@ -1508,7 +1551,7 @@ var _kkInitData = {
                         dofLayer.add(new Konva.Circle({ listening: false,
                             x: V.x + Math.cos(midAng) * R * 0.5,
                             y: V.y + Math.sin(midAng) * R * 0.5,
-                            radius: 2.2 / scale, fill: '#f59e0b',
+                            radius: v(2.2), fill: '#f59e0b',
                         }));
                     }
                     // Desetinu ukázat jen u „nekulatého" úhlu — jinak by zaokrouhlení
@@ -1518,13 +1561,13 @@ var _kkInitData = {
                         : absDiff.toFixed(1)) + '°';
                     // Bílý obrys pod písmem — čitelné i nad čárami podkladu a stěn.
                     var popisek = new Konva.Text({ listening: false,
-                        x: V.x + Math.cos(midAng) * (R + 12 / scale),
-                        y: V.y + Math.sin(midAng) * (R + 12 / scale),
+                        x: V.x + Math.cos(midAng) * (R + v(12)),
+                        y: V.y + Math.sin(midAng) * (R + v(12)),
                         text: txt,
-                        fontSize: 11 / scale,
+                        fontSize: v(11),
                         fontStyle: 'bold',
                         fill: '#b45309',
-                        stroke: '#ffffff', strokeWidth: 3 / scale,
+                        stroke: '#ffffff', strokeWidth: v(3),
                         fillAfterStrokeEnabled: true,
                     });
                     popisek.offsetX(popisek.width() / 2);
@@ -1605,6 +1648,8 @@ var _kkInitData = {
         }
         var origRender = ctx.renderer.render.bind(ctx.renderer);
         ctx.renderer.render = function () { origRender(); redraw(); };
+        // Úhly a ostatní značky mají velikost podle přiblížení — po zoomu znovu
+        ctx.renderer.afterZoom = redraw;
         redraw();
     }
     document.addEventListener('alpine:initialized', dofIndicator);

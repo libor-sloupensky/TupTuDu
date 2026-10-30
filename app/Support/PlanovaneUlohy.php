@@ -23,6 +23,9 @@ final class PlanovaneUlohy
 
         // Lokalizace (modules/lokalizace.md) — DB-IP vychází měsíčně, týdenní kontrola ji chytí do týdne
         'poloha:aktualizovat' => 604800,
+
+        // Lhůty uchovávání údajů (config/uchovavani.php, zásady ochrany osobních údajů)
+        'uchovavani:promazat' => 86400,
     ];
 
     /** Po neúspěšném běhu dlouhé úlohy to zkusit znovu nejpozději za hodinu, ne až po celém intervalu. */

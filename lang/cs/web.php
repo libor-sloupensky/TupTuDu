@@ -4,4 +4,5 @@
 return [
     'titulek' => 'TupTuDu — projekt v přípravě',
     'v_priprave' => 'Projekt v přípravě.',
+    'cenik' => 'Ceník',
 ];

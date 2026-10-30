@@ -171,10 +171,16 @@ Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('mastertea
     Route::delete('seo-404/{seo404}', [Seo404Controller::class, 'smazat'])->name('seo404.smazat');
 });
 
-// ───────── Právní stránky (veřejný web) ─────────
+// ───────── Právní stránky a kontakt (veřejný web) ─────────
 Route::middleware('subdomena:web')->group(function () {
     Route::get('/terms', [App\Http\Controllers\PravniController::class, 'podminky'])->name('pravni.podminky');
     Route::get('/privacy', [App\Http\Controllers\PravniController::class, 'soukromi'])->name('pravni.soukromi');
+    Route::get('/refunds', [App\Http\Controllers\PravniController::class, 'vraceni'])->name('pravni.vraceni');
+    Route::get('/pricing', [App\Http\Controllers\CenikController::class, 'index'])->name('cenik');
+    Route::get('/contact', [App\Http\Controllers\KontaktController::class, 'formular'])->name('kontakt');
+    // 5 zpráv za 10 minut z jedné IP — člověku stačí, spam brzdí
+    Route::post('/contact', [App\Http\Controllers\KontaktController::class, 'odeslat'])
+        ->middleware('throttle:5,10')->name('kontakt.odeslat');
 });
 
 // ───────── Zákaznická aplikace (app.tuptudu.com) ─────────
@@ -223,4 +229,16 @@ Route::middleware(['subdomena:app', 'auth', 'verified'])->name('app.')->group(fu
     Route::get('/account', [App\Http\Controllers\Aplikace\UcetController::class, 'upravit'])->name('ucet');
     Route::patch('/account', [App\Http\Controllers\Aplikace\UcetController::class, 'ulozit'])->name('ucet.ulozit');
     Route::put('/account/password', [App\Http\Controllers\Aplikace\UcetController::class, 'zmenitHeslo'])->name('ucet.heslo');
+
+    // Předplatné (Paddle přes Laravel Cashier, modules/platby.md). Zprávy z Paddlu
+    // chodí na POST /paddle/webhook — routu registruje Cashier sám.
+    Route::prefix('billing')->name('predplatne')->controller(App\Http\Controllers\Aplikace\PredplatneController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('status', 'stav')->name('.stav');
+        Route::post('change', 'zmenit')->middleware('throttle:10,1')->name('.zmenit');
+        Route::post('cancel', 'zrusit')->middleware('throttle:10,1')->name('.zrusit');
+        Route::post('resume', 'obnovit')->middleware('throttle:10,1')->name('.obnovit');
+        Route::get('payment-method', 'karta')->middleware('throttle:10,1')->name('.karta');
+        Route::get('invoices/{transakce}', 'doklad')->whereNumber('transakce')->name('.doklad');
+    });
 });
