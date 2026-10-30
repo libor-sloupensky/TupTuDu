@@ -6,14 +6,16 @@ předplatného přes **Paddle** — ten je prodejcem (Merchant of Record): faktu
 odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. WormUP s.r.o. dostává
 1× měsíčně výplatu se samofakturou. Poplatek 5 % + 0,50 $ za platbu, bez paušálu.
 
-## Aktuální stav (2026-10-30)
-- **Na produkci s testovacím (sandbox) účtem Paddle**, Libor prošel platbu, změnu tarifu, zrušení,
-  pokračování i doklady — funguje.
-- Z ročního na měsíční jen přes zrušení (automatický přechod Libor nechce).
-- **Zbývá přechod na ostrý účet:** ověření firmy a totožnosti v Paddlu, eurový účet na výplaty,
-  schválení domén (Paddle chce na webu popis produktu — titulka je zatím „v přípravě"),
-  ostrý klíč do `.env` → `paddle:katalog` (Postup, krok 4), smazat testovací záznamy Cashieru
-  (`customers`, `subscriptions`, `subscription_items`, `transactions`) z produkční DB.
+## Aktuální stav (2026-10-30 večer)
+- Libor prošel celý tok na produkci s testovacím účtem — funguje.
+- **Ostrý účet založený**, ověření firmy u Paddlu běží (automated_review, pending).
+  V ostrém účtu založené produkty, ceny, client-side token a cíl zpráv (app.tuptudu.com/paddle/webhook);
+  měna výplat EUR; GitHub secrets a lokální `.env` už jsou na OSTRÉM účtu.
+- Produkce běží do dalšího nasazení na testovacím účtu; další nasazení ji přepne na ostrý.
+- **Chybí:** schválení domén (zadaná byla omylem `tutudu.com` → zamítnuto; zadat `tuptudu.com`
+  a `app.tuptudu.com`, předtím skutečná úvodní stránka), výchozí odkaz pokladny (`paddle:katalog
+  --odkaz=https://app.tuptudu.com/billing` až po schválení), smazat testovací záznamy Cashieru
+  z produkční DB při přepnutí, test se 100% slevou (krok 03 v Paddlu).
 
 ## Tarify (rozhodl Libor 2026-10-29)
 | | Zdarma | Stavebník (en Home) | Profi (en Pro) |
