@@ -86,6 +86,7 @@ return [
     'potvrdit_zaplatit' => 'Confirm and pay :castka',
     'potvrdit_zmenu' => 'Confirm change',
     'zpet' => 'Back',
+    'z_rocniho_na_mesicni' => 'You can switch to monthly billing after the yearly period ends: cancel the subscription, it stays active until the end of the year, then choose monthly here.',
     'zmeneno' => 'Your plan has been changed to :tarif.',
     'zmena_chyba' => 'We could not change your plan. Please try again or write to us.',
     'akce_chyba' => 'The action failed. Please try again or write to us.',

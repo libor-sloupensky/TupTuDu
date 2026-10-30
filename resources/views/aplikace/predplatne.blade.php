@@ -134,6 +134,9 @@
                                 <div x-show="obdobi === @js($obdobi)" @if ($obdobi !== $vychoziObdobi) x-cloak @endif>
                                     @if ($jeAktualni($obdobi))
                                         <span class="tag vlastnik">{{ __('tarify.aktualni') }}</span>
+                                    @elseif (($aktualniCena['obdobi'] ?? null) === 'rok' && $obdobi === 'mesic')
+                                        {{-- z ročního na měsíční Paddle nevyúčtuje (viz PredplatneController::zmena) --}}
+                                        <p class="tt-napoveda">{{ __('tarify.z_rocniho_na_mesicni') }}</p>
                                     @else
                                         {{-- napřed náhled s částkami, změna až po potvrzení --}}
                                         <a class="btn" href="{{ route('app.predplatne.nahled', ['tarif' => $tarif, 'obdobi' => $obdobi]) }}">{{ __('tarify.prejit') }}</a>

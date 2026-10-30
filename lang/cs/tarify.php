@@ -91,6 +91,7 @@ return [
     'potvrdit_zaplatit' => 'Potvrdit a zaplatit :castka',
     'potvrdit_zmenu' => 'Potvrdit změnu',
     'zpet' => 'Zpět',
+    'z_rocniho_na_mesicni' => 'Na měsíční placení přejdete po skončení ročního: předplatné zrušte, do konce roku platí, pak si měsíční zvolíte tady.',
     'zmeneno' => 'Tarif je změněný na :tarif.',
     'zmena_chyba' => 'Tarif se nepodařilo změnit. Zkuste to prosím znovu, případně nám napište.',
     'akce_chyba' => 'Akce se nepodařila. Zkuste to prosím znovu, případně nám napište.',

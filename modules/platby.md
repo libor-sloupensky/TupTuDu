@@ -58,7 +58,10 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
 - **Platba:** `/billing` připraví přes Cashier (`subscribe($cena, 'default')`) volby platebního
   okna, tlačítko ho otevře jako overlay. Předplatné založí až zpráva `subscription.created`
   z Paddlu; stránka se vrátí s `?zaplaceno=1` a čeká (`/billing/status`, max 60 s).
-- **Změna tarifu** `swap()` — rozdíl Paddle dopočítá poměrně (`prorated_immediately`).
+- **Změna tarifu** přes náhled `/billing/change` (částky z Paddlu, `subscriptions/{id}/preview`), `swap()` až po potvrzení.
+  Dražší tarif a změna období = rozdíl hned (`prorated_immediately`, Paddle při změně období nic jiného nedovolí);
+  levnější ve stejném období = `prorated_next_billing_period` (okamžitý dobropis drobných částek Paddle odmítá).
+  Pozor: výchozí režim Cashieru je `prorated_next_billing_period` — vždy nastavit `setProrationBehavior()`.
   **Zrušení** `cancel()` ke konci období, **pokračování** `stopCancelation()`.
   **Karta** = stránka Paddlu (`management_urls.update_payment_method`). **Doklady** = PDF od Paddlu.
 - **Limit úprav:** server přijme dávku kroků, dokud dnes něco zbývá (limit přeteče nanejvýš

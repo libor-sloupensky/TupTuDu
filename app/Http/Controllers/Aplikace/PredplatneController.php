@@ -257,6 +257,11 @@ class PredplatneController extends Controller
         abort_if($predplatne->onGracePeriod(), 409);
         $cena = Tarif::cenaPaddle($data['tarif'], $data['obdobi']);
         abort_unless($cena, 404);
+        // Z ročního na měsíční: nevyužitý zbytek roku převýší měsíční platbu a Paddle
+        // pak odmítne vyúčtovat drobný zbytek (minimální platba) — bug #18. Zákazník
+        // předplatné zruší, rok doběhne a pak si zvolí měsíční (text na stránce).
+        abort_if((Tarif::podleCeny($predplatne->items->first()?->price_id)['obdobi'] ?? null) === 'rok'
+            && $data['obdobi'] === 'mesic', 409);
 
         return [$predplatne, $cena, $data];
     }
