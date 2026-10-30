@@ -53,6 +53,7 @@ async function main() {
             const w2 = e.splitWall(w.id, 0.5, n.id);
             const pr = e.addWall(250, 400, 250, 0, 0.15);
             pr.doConstraint = { host: w.id, t: 0.5 };
+            d.nastroj = 'vyber';   // nástroj se pamatuje v localStorage — jiný test mohl nechat Stěnu
             d.renderer.render(); d.fitView(); d.renderer.render();
             return { uzel: n.id, w1: w.id, w2, pricka: pr.id, volny: pr.nodeA }; })()`);
         kontrola('vznikly tři stěny', (await stav('d.engine.walls.size')) === 3);

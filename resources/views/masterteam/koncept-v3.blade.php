@@ -67,6 +67,28 @@
        Rychlý náběh do brand barvy (120 ms, ease-out), pomalý dozvuk zpět
        (~660 ms). Mezikroky chybí záměrně: začátek a konec je vlastní styl prvku,
        takže to sedí na šedou šipku i na zvýrazněný řádek. */
+    /* Lišty editoru — tlačítka jako ve výkazu výměr: bílý čtvereček s tenkou
+       obrubou, aktivní nástroj v barvě značky. Najetí řeší CSS (dřív @mouseenter
+       s natvrdo zapsanou barvou na každém tlačítku zvlášť). */
+    .kk-lista { background: color-mix(in srgb, var(--c-bg) 55%, var(--c-surface)); }
+    .kk-tl { display: inline-flex; align-items: center; justify-content: center; height: 28px; min-width: 28px;
+             padding: 0 6px; border: 1px solid var(--c-border); border-radius: 6px; background: var(--c-surface);
+             color: var(--c-text-secondary); line-height: 1; transition: border-color .15s, color .15s, background-color .15s; }
+    .kk-tl:hover:not(:disabled) { border-color: var(--c-primary); color: var(--c-primary); }
+    .kk-tl:disabled { opacity: .35; cursor: default; }
+    .kk-tl.kk-tl-aktivni { border-color: var(--c-primary); background: var(--c-primary-10); color: var(--c-primary); }
+    .kk-skupina { display: inline-flex; align-items: stretch; height: 28px; border: 1px solid var(--c-border);
+                  border-radius: 6px; background: var(--c-surface); overflow: hidden; font-size: 12px; }
+    .kk-skupina > button { padding: 0 8px; color: var(--c-text-secondary); transition: color .15s, background-color .15s; }
+    .kk-skupina > button:hover:not(.kk-tl-aktivni) { background: var(--c-primary-10); color: var(--c-primary); }
+    .kk-skupina > button.kk-tl-aktivni { background: var(--c-primary); color: var(--c-surface); }
+    .kk-skupina-dily > * + * { border-left: 1px solid var(--c-border); }
+    .kk-skupina > span { display: inline-flex; align-items: center; justify-content: center; min-width: 40px;
+                         color: var(--c-text-secondary); font-variant-numeric: tabular-nums; }
+    .kk-oddelovac { width: 1px; height: 16px; margin: 0 4px; background: var(--c-border); }
+    .kk-pole { height: 28px; border: 1px solid var(--c-border); border-radius: 6px; background: var(--c-surface);
+               padding: 0 6px; font-size: 12px; color: var(--c-text-secondary); }
+    .kk-pole:focus { outline: none; border-color: var(--c-primary); }
     @keyframes kk-blik {
         0%  { animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
         15% { color: var(--c-primary); background-color: color-mix(in srgb, var(--c-primary) 14%, transparent);
@@ -130,31 +152,33 @@
     <div class="flex flex-col bg-white" :class="celaObrazovka ? '' : 'rounded-lg border border-gray-200'"
          :style="'order:' + (obracene ? 2 : 0) + ';min-width:0;min-height:0'">
         {{-- Toolbar — řádek 1: název, 2D/3D, zoom, layout, fullscreen --}}
-        <div class="flex items-center px-3 py-1.5 bg-white border-b border-gray-200 gap-1">
+        <div class="kk-lista flex items-center px-3 py-1.5 border-b border-gray-200 gap-1.5">
             <span class="text-sm font-medium text-gray-700 truncate max-w-[200px]" x-text="projektNazev || 'Nový koncept'"></span>
             <div class="flex-1"></div>
             {{-- Mapový podklad --}}
             <select x-model="katastrMapaPodklad"
                     @change="if (katastrParcely.length === 0 && katastrMapaPodklad !== 'zadny') { katastrMapaPodklad = 'zadny'; alert('Nejprve načtěte parcelu.'); } else { katastrZmenPodklad(); ulozitNastaveni(); }"
-                    class="text-xs border border-gray-200 rounded px-1 py-0.5 bg-white text-gray-600 mr-1">
+                    class="kk-pole">
                 <option value="zadny">Bez podkladu</option>
                 <option value="zakladni">Základní mapa</option>
                 <option value="ortofoto">Ortofoto</option>
                 <option value="turisticka">Turistická</option>
             </select>
             {{-- 2D/3D přepínač --}}
-            <div class="flex items-center rounded overflow-hidden border border-gray-200 mr-2">
-                <button @click="rezim3d = false; prepni2d()" class="px-2 py-0.5 text-xs transition" :class="!rezim3d ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-100'">2D</button>
-                <button @click="rezim3d = true; prepni3d()" class="px-2 py-0.5 text-xs border-l border-gray-200 transition" :class="rezim3d ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-100'">3D</button>
+            <div class="kk-skupina kk-skupina-dily">
+                <button @click="rezim3d = false; prepni2d()" :class="!rezim3d && 'kk-tl-aktivni'">2D</button>
+                <button @click="rezim3d = true; prepni3d()" :class="rezim3d && 'kk-tl-aktivni'">3D</button>
             </div>
-            <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="rounded px-2.5 py-1 text-base text-gray-600 hover:bg-gray-200 disabled:opacity-30" data-tip-below="Zpět (Ctrl+Z)">&#8630;</button>
-            <button @click="redo()" data-historie-vpred :disabled="historiePozice >= historie.length - 1" class="-ml-2 rounded px-2.5 py-1 text-base text-gray-600 hover:bg-gray-200 disabled:opacity-30" data-tip-below="Vpřed (Ctrl+Shift+Z)">&#8631;</button>
-            <button @click="zoomOut()" class="rounded border border-gray-200 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-200">&minus;</button>
-            <span class="text-xs text-gray-400 w-8 text-center" x-text="Math.round(zoom * 100) + '%'"></span>
-            <button @click="zoomIn()" class="rounded border border-gray-200 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-200">+</button>
-            <span class="text-gray-300 mx-1">|</span>
+            <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="kk-tl text-base" data-tip-below="Zpět (Ctrl+Z)">&#8630;</button>
+            <button @click="redo()" data-historie-vpred :disabled="historiePozice >= historie.length - 1" class="kk-tl text-base" data-tip-below="Vpřed (Ctrl+Shift+Z)">&#8631;</button>
+            <div class="kk-skupina">
+                <button @click="zoomOut()" data-tip-below="Oddálit (kolečko)">&minus;</button>
+                <span x-text="Math.round(zoom * 100) + ' %'"></span>
+                <button @click="zoomIn()" data-tip-below="Přiblížit (kolečko)">+</button>
+            </div>
+            <span class="kk-oddelovac"></span>
             {{-- Layout --}}
-            <button @click="cyklujLayout()" class="rounded p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition" :data-tip-below="layoutTip">
+            <button @click="cyklujLayout()" class="kk-tl" :data-tip-below="layoutTip">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
                     <g x-show="layoutMode === 0">
                         <rect x="1" y="1" width="8" height="14" rx="1" fill="currentColor" opacity="0.15"/><rect x="1" y="1" width="8" height="14" rx="1"/>
@@ -167,7 +191,7 @@
                 </svg>
             </button>
             {{-- Fullscreen --}}
-            <button @click="prepniFullscreen()" class="rounded p-1 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition" :data-tip-below="celaObrazovka ? 'Zmenšit (F11)' : 'Celá obrazovka (F11)'">
+            <button @click="prepniFullscreen()" class="kk-tl" :data-tip-below="celaObrazovka ? 'Zmenšit (F11)' : 'Celá obrazovka (F11)'">
                 <svg x-show="!celaObrazovka" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="1,5 1,1 5,1"/><polyline points="11,1 15,1 15,5"/><polyline points="15,11 15,15 11,15"/><polyline points="5,15 1,15 1,11"/>
                 </svg>
@@ -177,23 +201,17 @@
             </button>
         </div>
         {{-- Toolbar — řádek 2: nástroje + nápověda --}}
-        <div class="flex items-center px-3 py-1 gap-2 border-b border-gray-100">
-            <div class="flex items-center gap-1">
+        <div class="kk-lista flex items-center px-3 py-1.5 gap-2 border-b border-gray-200">
+            <div class="flex items-center gap-1.5">
                 {{-- Výběr --}}
-                <button @click="nastroj = 'vyber'" class="rounded p-1.5 transition"
-                        :style="nastroj === 'vyber' ? 'color: var(--c-primary)' : 'color: #6b7280'"
-                        @mouseenter="if (nastroj !== 'vyber') $el.style.backgroundColor='#f3f4f6'"
-                        @mouseleave="$el.style.backgroundColor='transparent'"
+                <button @click="nastroj = 'vyber'" class="kk-tl" :class="nastroj === 'vyber' && 'kk-tl-aktivni'"
                         data-tip="Výběr (1)">
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="1" y="1" width="14" height="14" rx="1" stroke-dasharray="3 2"/>
                     </svg>
                 </button>
                 {{-- Posun (ruka) --}}
-                <button @click="nastroj = 'posun'" class="rounded p-1.5 transition"
-                        :style="nastroj === 'posun' ? 'color: var(--c-primary)' : 'color: #6b7280'"
-                        @mouseenter="if (nastroj !== 'posun') $el.style.backgroundColor='#f3f4f6'"
-                        @mouseleave="$el.style.backgroundColor='transparent'"
+                <button @click="nastroj = 'posun'" class="kk-tl" :class="nastroj === 'posun' && 'kk-tl-aktivni'"
                         data-tip="Posun (2 / pravé myšítko)">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6 9V3.5a1 1 0 012 0V8.5"/>
@@ -224,21 +242,15 @@
                             title="Smazat zvýraznění">&times;</button>
                 </div>
                 {{-- Stěna --}}
-                <button @click="nastroj = 'stena'" class="rounded p-1.5 transition"
-                        :style="nastroj === 'stena' ? 'color: var(--c-primary)' : 'color: #6b7280'"
-                        @mouseenter="if (nastroj !== 'stena') $el.style.backgroundColor='#f3f4f6'"
-                        @mouseleave="$el.style.backgroundColor='transparent'"
-                        data-tip="Kreslit stěnu (4)">
+                <button @click="nastroj = 'stena'" class="kk-tl" :class="nastroj === 'stena' && 'kk-tl-aktivni'"
+                        data-tip="Kreslit stěnu (4) · držet Alt = bez magnetu">
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="2" y1="14" x2="14" y2="2"/>
                         <line x1="1" y1="13" x2="13" y2="1"/>
                     </svg>
                 </button>
                 {{-- Metr --}}
-                <button @click="nastroj = nastroj === 'metr' ? 'vyber' : 'metr'" class="rounded p-1.5 transition"
-                        :style="nastroj === 'metr' ? 'color: var(--c-primary)' : 'color: #6b7280'"
-                        @mouseenter="if (nastroj !== 'metr') $el.style.backgroundColor='#f3f4f6'"
-                        @mouseleave="$el.style.backgroundColor='transparent'"
+                <button @click="nastroj = nastroj === 'metr' ? 'vyber' : 'metr'" class="kk-tl" :class="nastroj === 'metr' && 'kk-tl-aktivni'"
                         data-tip="Měřit vzdálenost (5 / M)">
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="1" y1="15" x2="15" y2="15"/><line x1="1" y1="13" x2="1" y2="15"/><line x1="15" y1="13" x2="15" y2="15"/>
@@ -247,10 +259,7 @@
                     </svg>
                 </button>
                 {{-- Otvor --}}
-                <button @click="nastroj = nastroj === 'otvor' ? 'vyber' : 'otvor'" class="rounded p-1.5 transition"
-                        :style="nastroj === 'otvor' ? 'color: var(--c-primary)' : 'color: #6b7280'"
-                        @mouseenter="if (nastroj !== 'otvor') $el.style.backgroundColor='#f3f4f6'"
-                        @mouseleave="$el.style.backgroundColor='transparent'"
+                <button @click="nastroj = nastroj === 'otvor' ? 'vyber' : 'otvor'" class="kk-tl" :class="nastroj === 'otvor' && 'kk-tl-aktivni'"
                         data-tip="Vložit otvor do stěny (6 / O)">
                     {{-- zeď v řezu s proraženým otvorem --}}
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -264,7 +273,7 @@
             {{-- Volby stěny — jen když je nástroj zapnutý (stejně jako u otvoru) --}}
             <div x-show="nastroj === 'stena'" x-cloak class="flex items-center gap-1 ml-1 text-xs">
                 <select x-model="stenaTyp" @change="tloustkaSteny = vychoziTloustka(stenaTyp); ulozitNastaveni()"
-                        class="border border-gray-200 rounded px-1 py-0.5 text-xs text-gray-600 bg-white">
+                        class="kk-pole">
                     <option value="obvodova">Obvodová</option>
                     <option value="nosna">Nosná</option>
                     <option value="pricka">Příčka</option>
@@ -276,14 +285,14 @@
                        :value="Math.round(tloustkaSteny * 100)"
                        @change="tloustkaSteny = Math.min(0.6, Math.max(0.05, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
                        @keydown.enter.prevent="$event.target.blur()"
-                       class="w-14 border border-gray-200 rounded px-1 py-0.5 text-xs text-gray-600">
+                       class="kk-pole w-14">
                 <span class="text-gray-400">cm</span>
             </div>
 
             {{-- Volby otvoru — jen když je nástroj zapnutý --}}
             <div x-show="nastroj === 'otvor'" x-cloak class="flex items-center gap-1 ml-1 text-xs">
                 <select x-model="otvorTyp" @change="otvorSirka = { dvere: 0.9, okno: 1.2, pruchod: 0.9 }[otvorTyp] || otvorSirka; ulozitNastaveni()"
-                        class="border border-gray-200 rounded px-1 py-0.5 text-xs text-gray-600 bg-white">
+                        class="kk-pole">
                     {{-- Průchod tu není schválně — je mezi typy dveří v panelu vlastností --}}
                     <option value="dvere">Dveře</option>
                     <option value="okno">Okno</option>
@@ -293,7 +302,7 @@
                        :value="Math.round(otvorSirka * 100)"
                        @change="otvorSirka = Math.min(3, Math.max(0.4, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
                        @keydown.enter.prevent="$event.target.blur()"
-                       class="w-14 border border-gray-200 rounded px-1 py-0.5 text-xs text-gray-600">
+                       class="kk-pole w-14">
                 <span class="text-gray-400">cm</span>
                 <span x-show="otvorZprava" x-cloak class="text-orange-700" x-text="otvorZprava"></span>
             </div>
@@ -338,6 +347,7 @@
                     <div class="font-semibold text-gray-600 mb-1">Úpravy</div>
                     <table class="napoveda-tabulka" style="border-collapse:collapse">
                         <tr><td><strong>R</strong></td><td>otočit 90°</td></tr>
+                        <tr><td><strong>Alt + tah</strong></td><td>bez magnetu (bod, stěna, otáčení)</td></tr>
                         <tr><td><strong>Delete</strong></td><td>smazat vybrané</td></tr>
                         <tr><td><strong>Ctrl+Z</strong></td><td>zpět</td></tr>
                     </table>
@@ -345,7 +355,8 @@
                 <div>
                     <div class="font-semibold text-gray-600 mb-1">Kreslení a nástroje</div>
                     <table class="napoveda-tabulka" style="border-collapse:collapse">
-                        <tr><td><strong>1 / 2 / 3 / 4</strong></td><td>výběr / stěna / posun / zvýrazňovač</td></tr>
+                        <tr><td><strong>1 / 2 / 3 / 4</strong></td><td>výběr / posun / zvýrazňovač / stěna</td></tr>
+                        <tr><td><strong>Alt</strong></td><td>kreslit stěnu bez magnetu</td></tr>
                         <tr><td><strong>B</strong></td><td>zvýrazňovač zap/vyp</td></tr>
                         <tr><td><strong>Shift + klik</strong></td><td>rovná čára zvýrazňovačem</td></tr>
                         <tr><td><strong>Ctrl+C / V / D</strong></td><td>kopírovat / vložit / duplikovat</td></tr>
@@ -1273,13 +1284,18 @@ var _kkInitData = {
 
         function redraw() {
             dofLayer.destroyChildren();
-            // Zelený náhled přichycení. Pro napojení „I" vede po čele hostitele
+            // Magnety a náhledy napojení v barvě značky (dřív zelené). Plátno CSS
+            // proměnné nezná — čte se jejich hodnota.
+            var cssMagnetu = getComputedStyle(document.documentElement);
+            var barvaMagnetu = cssMagnetu.getPropertyValue('--c-primary').trim();
+            var barvaMagnetuTmava = cssMagnetu.getPropertyValue('--c-primary-text').trim();
+            // Náhled přichycení (barva značky). Pro napojení „I" vede po čele hostitele
             // (kratičká úsečka), jinak po ose stěny, na kterou se konec chytá.
-            var zelenaCara = function (body, bod, koncoveZarazky, usek) {
+            var caraMagnetu = function (body, bod, koncoveZarazky, usek) {
                 var mer = (ctx.stage && ctx.stage.scaleX()) || 1;
                 dofLayer.add(new Konva.Line({ listening: false,
                     points: body,
-                    stroke: '#10b981', strokeWidth: 2 / mer, dash: [6 / mer, 4 / mer], opacity: 0.9,
+                    stroke: barvaMagnetu, strokeWidth: 2 / mer, dash: [6 / mer, 4 / mer], opacity: 0.9,
                 }));
                 if (bod) {
                     dofLayer.add(new Konva.Circle({
@@ -1287,8 +1303,8 @@ var _kkInitData = {
                         x: bod.x, y: bod.y,
                         // v kresebných pixelech kolečko při přiblížení narostlo tak,
                         // že zakrylo celý spoj — držíme ho na stálé velikosti
-                        radius: 8 / mer, fill: '#10b981', opacity: 0.5,
-                        stroke: '#059669', strokeWidth: 2 / mer,
+                        radius: 8 / mer, fill: barvaMagnetu, opacity: 0.4,
+                        stroke: barvaMagnetuTmava, strokeWidth: 2 / mer,
                     }));
                 }
                 // U čela je přerušovaná čára jen orientační (vede přes celou tloušťku
@@ -1299,7 +1315,7 @@ var _kkInitData = {
                     zar = [usek.a.x, usek.a.y, usek.b.x, usek.b.y];
                     dofLayer.add(new Konva.Line({ listening: false,
                         points: zar,
-                        stroke: '#10b981', strokeWidth: 4 / mer, opacity: 0.95, lineCap: 'round',
+                        stroke: barvaMagnetu, strokeWidth: 4 / mer, opacity: 0.95, lineCap: 'round',
                     }));
                 }
                 // Krátká vodicí čára (čelo stěny) by sama o sobě zanikla —
@@ -1312,7 +1328,7 @@ var _kkInitData = {
                     [[zar[0], zar[1]], [zar[2], zar[3]]].forEach(function (p) {
                         dofLayer.add(new Konva.Line({ listening: false,
                             points: [p[0] - kx, p[1] - ky, p[0] + kx, p[1] + ky],
-                            stroke: '#10b981', strokeWidth: 2 / mer, opacity: 0.9,
+                            stroke: barvaMagnetu, strokeWidth: 2 / mer, opacity: 0.9,
                         }));
                     });
                 }
@@ -1323,31 +1339,61 @@ var _kkInitData = {
                     // Čára vede přesně tudy, kam konec sedne: po čele hostitele
                     // (napojení „I"), po jeho líci (okraj), nebo po jeho ose (střih).
                     var spCara = sp.zobrazLine || sp.line;   // u čela celá šířka stěny
-                    zelenaCara([spCara.a.x, spCara.a.y, spCara.b.x, spCara.b.y], sp.point, !!sp.cela,
+                    caraMagnetu([spCara.a.x, spCara.a.y, spCara.b.x, spCara.b.y], sp.point, !!sp.cela,
                         sp.zobrazLine ? sp.line : null);
                 } else if (sp.wall) {
                     var hostA = ctx.engine.nodes.get(sp.wall.nodeA);
                     var hostB = ctx.engine.nodes.get(sp.wall.nodeB);
-                    if (hostA && hostB) zelenaCara([hostA.x, hostA.y, hostB.x, hostB.y], sp.point);
+                    if (hostA && hostB) caraMagnetu([hostA.x, hostA.y, hostB.x, hostB.y], sp.point);
                 }
                 // Nůžky u bodu říkají, že puštění hostitele rozstřihne
                 if (sp.rezim === 'strih' && sp.point) {
                     var merStrih = (ctx.stage && ctx.stage.scaleX()) || 1;
                     dofLayer.add(new Konva.Text({ listening: false,
                         x: sp.point.x - 38 / merStrih, y: sp.point.y - 34 / merStrih,
-                        text: '\u2702', fontSize: 24 / merStrih, fill: '#10b981',
+                        text: '\u2702', fontSize: 24 / merStrih, fill: barvaMagnetu,
                     }));
                 }
             }
 
-            // Hotové napojení „I": zelená čára po čele se ukáže i při posouvání
+            // Vodítka zarovnání: tečkovaně v barvě značky od rohu, se kterým se tažený
+            // konec srovnal (v prodloužení jeho stěny nebo napříč), kroužek na rohu.
+            if (ctx.isDraggingNode && ctx._voditkaZobraz) {
+                var merV = (ctx.stage && ctx.stage.scaleX()) || 1;
+                ctx._voditkaZobraz.forEach(function (g) {
+                    var dx = g.k.x - g.od.x, dy = g.k.y - g.od.y, dl = Math.hypot(dx, dy) || 1;
+                    var pres = 24 / merV;   // kousek za konec, ať je vidět, že čára jde skrz
+                    dofLayer.add(new Konva.Line({ listening: false,
+                        points: [g.od.x, g.od.y, g.k.x + dx / dl * pres, g.k.y + dy / dl * pres],
+                        stroke: barvaMagnetu, strokeWidth: 1.2 / merV, dash: [2 / merV, 4 / merV], lineCap: 'round',
+                    }));
+                    dofLayer.add(new Konva.Circle({ listening: false, x: g.od.x, y: g.od.y,
+                        radius: 4 / merV, stroke: barvaMagnetu, strokeWidth: 1.2 / merV }));
+                });
+            }
+            // Vodicí osa zachyceného úhlu: kudy stěna povede — čárkovaně v barvě
+            // úhlu, od vzdáleného konce přes tažený bod až za okraj plátna.
+            if (ctx.isDraggingNode && ctx._osaUhlu) {
+                var merO = (ctx.stage && ctx.stage.scaleX()) || 1;
+                var o = ctx._osaUhlu, odx = o.k.x - o.od.x, ody = o.k.y - o.od.y, ol = Math.hypot(odx, ody);
+                if (ol > 1) {
+                    var dal = Math.max(ctx.stage.width(), ctx.stage.height()) / merO;
+                    dofLayer.add(new Konva.Line({ listening: false,
+                        points: [o.od.x, o.od.y, o.k.x + odx / ol * dal, o.k.y + ody / ol * dal],
+                        stroke: barvaMagnetu,
+                        strokeWidth: 1 / merO, dash: [8 / merO, 5 / merO], opacity: 0.7,
+                    }));
+                }
+            }
+
+            // Hotové napojení „I": čára po čele se ukáže i při posouvání
             // hotové stěny, ať je vidět, kam až se smí a kde je líc.
             if (ctx.isDraggingNode && ctx.draggingNodeId) {
                 var cDrag = ctx.engine.getNodeMovementConstraint(ctx.draggingNodeId);
                 if (cDrag && cDrag.type === 'slide' && cDrag.cela && cDrag.line) {
                     var nDrag = ctx.engine.nodes.get(ctx.draggingNodeId);
                     var caraDrag = cDrag.zobrazLine || cDrag.line;   // celá šířka čela
-                    zelenaCara(
+                    caraMagnetu(
                         [caraDrag.a.x, caraDrag.a.y, caraDrag.b.x, caraDrag.b.y],
                         nDrag ? { x: nDrag.x, y: nDrag.y } : null,
                         true,
@@ -1363,6 +1409,10 @@ var _kkInitData = {
             var kresliSe = !!(ctx.kreslimStenu && ctx._stenaUsekId && ctx.engine.walls.get(ctx._stenaUsekId));
             if (!anyNodeSel && !anyWallSel && !kresliSe) { dofLayer.listening(false); dofLayer.batchDraw(); return; }
             var scale = (ctx.stage && ctx.stage.scaleX()) || 1;
+            // Barvy úhlů ze značky. Plátno CSS proměnné nezná — čte se jejich hodnota.
+            var cssZnacky = getComputedStyle(document.documentElement);
+            var barvaUhlu = cssZnacky.getPropertyValue('--c-primary').trim();
+            var barvaPopisku = cssZnacky.getPropertyValue('--c-primary-text').trim();
 
             // ─── Indikátory na vybraných uzlech (frozen, slide, detach buttons) ───
             if (anyNodeSel) selNodes.forEach(function (nodeId) {
@@ -1375,9 +1425,9 @@ var _kkInitData = {
                     dofLayer.add(new Konva.Line({ listening: false, points: [node.x - s, node.y - s, node.x + s, node.y + s], stroke: '#dc2626', strokeWidth: 1.5 / scale }));
                     dofLayer.add(new Konva.Line({ listening: false, points: [node.x - s, node.y + s, node.x + s, node.y - s], stroke: '#dc2626', strokeWidth: 1.5 / scale }));
                 } else if (c && c.type === 'slide') {
-                    // Zelená jako u přichytávání — je to táž věc: „tudy se smí posouvat"
+                    // Barva jako u přichytávání — je to táž věc: „tudy se smí posouvat"
                     var cara = c.zobrazLine || c.line;   // u čela celá šířka stěny
-                    zelenaCara(
+                    caraMagnetu(
                         [cara.a.x, cara.a.y, cara.b.x, cara.b.y],
                         null,
                         !!c.cela,       // u krátkého čela i zarážky na koncích
@@ -1470,10 +1520,13 @@ var _kkInitData = {
                     };
                     var rA = rameno(wallA), rB = rameno(wallB);
                     if (!rA || !rB) return;
+                    // Zacvaknout může jen úhel u právě taženého bodu (kreslení i posun)
+                    var tazeny = ctx.isDraggingNode && ctx.draggingNodeId;
+                    var uTazeneho = !!tazeny && [wallA, wallB].some(function (w) { return w.nodeA === tazeny || w.nodeB === tazeny; });
                     vykresliUhel(rA, rB,
                         (wallA.tloustka || 0.1) * ctx.engine.PX_PER_M / 2,
                         (wallB.tloustka || 0.1) * ctx.engine.PX_PER_M / 2,
-                        { x: node.x, y: node.y });
+                        { x: node.x, y: node.y }, uTazeneho);
                 };
                 /**
                  * Vykreslí obloučkem úhel mezi dvěma stěnami.
@@ -1494,8 +1547,11 @@ var _kkInitData = {
                  * @param ramenoA,ramenoB  {p, d} — bod na ose stěny a směr ramene od vrcholu
                  * @param halfA,halfB      poloviční tloušťky ramen v px
                  * @param zaloha           bod spoje pro stěny v přímce (osy se neprotnou)
+                 * @param uTazeneho        úhel u taženého bodu — když na něj zabral magnet,
+                 *                         zvýrazní se (silnější oblouk, číslo v štítku)
+                 * @param pripona          text za číslem (např. „ k osám domu")
                  */
-                var vykresliUhel = function (ramenoA, ramenoB, halfA, halfB, zaloha) {
+                var vykresliUhel = function (ramenoA, ramenoB, halfA, halfB, zaloha, uTazeneho, pripona) {
                     var aL = Math.hypot(ramenoA.d.x, ramenoA.d.y), bL = Math.hypot(ramenoB.d.x, ramenoB.d.y);
                     if (aL === 0 || bL === 0) return;
                     var ua = { x: ramenoA.d.x / aL, y: ramenoA.d.y / aL };
@@ -1535,6 +1591,11 @@ var _kkInitData = {
                     if (!ctx.renderer.citelnePismo(11)) return;
                     var v = function (px) { return ctx.renderer.velikostPopisku(px); };
                     var R = v(24);
+                    // Zacvaknutý úhel: magnet právě drží tažený bod a úhel je jeden
+                    // z magnetových (90°, 45°…) — ne třeba 87,3° k jiné stěně, když
+                    // bod drží vodorovná osa.
+                    var zacvaknuto = uTazeneho && ctx._magnet && ctx._magnet.uhel
+                        && ctx.MAGNET_UHLY.some(function (u) { return Math.abs(absDiff - u) < 0.05; });
                     var a0 = start * Math.PI / 180, a1 = (start + absDiff) * Math.PI / 180;
                     dofLayer.add(new Konva.Shape({ listening: false,
                         // zaoblené konce — lineCap u Konva.Arc nefunguje (kreslí uzavřený tvar)
@@ -1543,7 +1604,7 @@ var _kkInitData = {
                             c.arc(V.x, V.y, R, a0, a1, false);
                             c.strokeShape(tvar);
                         },
-                        stroke: '#f59e0b', strokeWidth: v(2.5), lineCap: 'round',
+                        stroke: barvaUhlu, strokeWidth: v(zacvaknuto ? 4 : 2.5), lineCap: 'round',
                     }));
                     var midAng = (start + absDiff / 2) * Math.PI / 180;
                     if (Math.abs(absDiff - 90) < 0.05) {
@@ -1551,14 +1612,28 @@ var _kkInitData = {
                         dofLayer.add(new Konva.Circle({ listening: false,
                             x: V.x + Math.cos(midAng) * R * 0.5,
                             y: V.y + Math.sin(midAng) * R * 0.5,
-                            radius: v(2.2), fill: '#f59e0b',
+                            radius: v(zacvaknuto ? 2.8 : 2.2), fill: barvaUhlu,
                         }));
                     }
                     // Desetinu ukázat jen u „nekulatého" úhlu — jinak by zaokrouhlení
                     // tvářilo 90,5° jako 90° a nešlo by poznat, že roh není pravý.
                     var txt = (Math.abs(absDiff - Math.round(absDiff)) < 0.05
                         ? Math.round(absDiff)
-                        : absDiff.toFixed(1)) + '°';
+                        : absDiff.toFixed(1)) + '°' + (pripona || '');
+                    if (zacvaknuto) {
+                        // Číslo ve štítku barvy značky — „zacvaklo to“
+                        var stitek = new Konva.Label({ listening: false,
+                            x: V.x + Math.cos(midAng) * (R + v(13)),
+                            y: V.y + Math.sin(midAng) * (R + v(13)),
+                        });
+                        stitek.add(new Konva.Tag({ fill: barvaUhlu, cornerRadius: v(4) }));
+                        stitek.add(new Konva.Text({ text: txt, fontSize: v(11), fontStyle: 'bold',
+                            fill: '#ffffff', padding: v(3) }));
+                        stitek.offsetX(stitek.width() / 2);
+                        stitek.offsetY(stitek.height() / 2);
+                        dofLayer.add(stitek);
+                        return;
+                    }
                     // Bílý obrys pod písmem — čitelné i nad čárami podkladu a stěn.
                     var popisek = new Konva.Text({ listening: false,
                         x: V.x + Math.cos(midAng) * (R + v(12)),
@@ -1566,7 +1641,7 @@ var _kkInitData = {
                         text: txt,
                         fontSize: v(11),
                         fontStyle: 'bold',
-                        fill: '#b45309',
+                        fill: barvaPopisku,
                         stroke: '#ffffff', strokeWidth: v(3),
                         fillAfterStrokeEnabled: true,
                     });
@@ -1613,6 +1688,9 @@ var _kkInitData = {
                             if (soused.id !== rozkreslena.id) addPair(nId, rozkreslena, soused);
                         });
                     });
+                    // Začátek napojený na stěnu (vazba, ne sdílený uzel) — úhel k ní
+                    var hostZacatku = rozkreslena.odConstraint && ctx.engine.walls.get(rozkreslena.odConstraint.host);
+                    if (hostZacatku) addPair(rozkreslena.nodeA, rozkreslena, hostZacatku);
                 }
 
                 // ─── Úhel k přichytávané stěně UŽ PŘI TAŽENÍ ───
@@ -1637,10 +1715,51 @@ var _kkInitData = {
                                 { p: { x: opora.x, y: opora.y }, d: { x: opora.x - sp.point.x, y: opora.y - sp.point.y } },
                                 (hostW.tloustka || 0.1) * ctx.engine.PX_PER_M / 2,
                                 (tazena.tloustka || 0.1) * ctx.engine.PX_PER_M / 2,
-                                sp.point);
+                                sp.point, true);
                         });
                     }
                 }
+            }
+
+            // ─── K čemu úhel zacvakl (reference magnetu) ───
+            // Stěna: obrys v barvě značky. Osa domu (rastr): čárkovaná osa přes
+            // začátek stěny a oblouk s popiskem. Bez toho nebylo poznat, proč
+            // stěna drží zrovna tenhle úhel (Klemov W60: 135° k obrazovce).
+            var refUhlu = ctx.isDraggingNode && ctx._magnet && ctx._magnet.reference;
+            if (refUhlu && refUhlu.stena) {
+                var polyRef = ctx.engine.getWallPolygon(refUhlu.stena);
+                if (polyRef && polyRef.length) {
+                    var bodyRef = [];
+                    polyRef.forEach(function (b) { bodyRef.push(b.x, b.y); });
+                    dofLayer.add(new Konva.Line({ listening: false, closed: true, points: bodyRef,
+                        fill: barvaMagnetu, opacity: 0.18 }));
+                    dofLayer.add(new Konva.Line({ listening: false, closed: true, points: bodyRef,
+                        stroke: barvaMagnetu, strokeWidth: 2 / scale }));
+                }
+            }
+            if (refUhlu && refUhlu.osa && ctx._osaUhlu) {
+                var osa = refUhlu.osa, rOsy = osa.uhel * Math.PI / 180;
+                var wdx = ctx._osaUhlu.k.x - osa.p.x, wdy = ctx._osaUhlu.k.y - osa.p.y;
+                var smerSteny = Math.atan2(wdy, wdx);
+                // ze čtyř směrů osy ten nejbližší ke stěně — od něj se úhel měří
+                var smerOsy = rOsy, odchylkaOsy = 9;
+                for (var kOsy = 0; kOsy < 4; kOsy++) {
+                    var aOsy = rOsy + kOsy * Math.PI / 2;
+                    var dOsy = Math.abs(Math.atan2(Math.sin(smerSteny - aOsy), Math.cos(smerSteny - aOsy)));
+                    if (dOsy < odchylkaOsy) { odchylkaOsy = dOsy; smerOsy = aOsy; }
+                }
+                var dalOsy = Math.max(ctx.stage.width(), ctx.stage.height()) / scale;
+                dofLayer.add(new Konva.Line({ listening: false,
+                    points: [osa.p.x - Math.cos(smerOsy) * dalOsy, osa.p.y - Math.sin(smerOsy) * dalOsy,
+                             osa.p.x + Math.cos(smerOsy) * dalOsy, osa.p.y + Math.sin(smerOsy) * dalOsy],
+                    stroke: barvaMagnetu, strokeWidth: 1 / scale, dash: [3 / scale, 4 / scale], opacity: 0.8,
+                }));
+                var tazenaSt = ctx.engine.getNodeWalls(ctx.draggingNodeId)[0];
+                vykresliUhel(
+                    { p: { x: osa.p.x, y: osa.p.y }, d: { x: Math.cos(smerOsy), y: Math.sin(smerOsy) } },
+                    { p: { x: osa.p.x, y: osa.p.y }, d: { x: wdx, y: wdy } },
+                    0, ((tazenaSt && tazenaSt.tloustka) || 0.1) * ctx.engine.PX_PER_M / 2,
+                    osa.p, true, osa.domu ? ' k osám domu' : ' k vodorovné');
             }
 
             dofLayer.listening(anyNodeSel);
@@ -1650,6 +1769,8 @@ var _kkInitData = {
         ctx.renderer.render = function () { origRender(); redraw(); };
         // Úhly a ostatní značky mají velikost podle přiblížení — po zoomu znovu
         ctx.renderer.afterZoom = redraw;
+        // Náhledy bez změny kresby (napojení začátku stěny při najetí myší)
+        ctx.renderer.prekresliPrekryv = redraw;
         redraw();
     }
     document.addEventListener('alpine:initialized', dofIndicator);

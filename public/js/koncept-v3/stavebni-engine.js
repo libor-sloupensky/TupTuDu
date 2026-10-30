@@ -410,12 +410,13 @@ class StavebniEngine {
         return Math.round(val / this.SNAP_STEP) * this.SNAP_STEP;
     }
 
-    snapPoint(x, y) {
+    /** @param {number} [dosah]  dosah magnetu k uzlům v px výkresu (UI ho počítá z přiblížení) */
+    snapPoint(x, y, dosah = this.MAGNET_DIST) {
         let sx = this.snapToGrid(x);
         let sy = this.snapToGrid(y);
 
         // Magnet k existujícím nodům
-        let minDist = this.MAGNET_DIST;
+        let minDist = dosah;
         let magnetNode = null;
 
         for (const node of this.nodes.values()) {
@@ -1504,32 +1505,16 @@ class StavebniEngine {
     }
 
     /**
-     * Vrátí stěny do pravých úhlů tam, kde jsou mimo jen o kousek.
-     *
-     * Rozdíl desetiny stupně na obrazovce nepoznáte, ale v konstrukci se sčítá:
-     * změřeno na konceptech v databázi — ze 121 stěn jich 85 (70 %) leželo mimo
-     * pravý úhel o 0,001 až 1,99°, a nad 2° nebyla ANI JEDNA. Jinými slovy: žádná
-     * z nich nebyla šikmá záměrně, všechny ty odchylky byly nechtěné. Proto se
-     * srovnává do 2° — co je šikmé víc, je šikmé schválně a nikdo na to nesahá.
-     *
-     * Postup: najde hlavní směr domu, otočí si do něj souřadnice, a stěnám,
-     * které mají být svislé, srovná X na společnou hodnotu (vodorovným Y).
-     * Pracuje tedy přes SOUŘADNICE UZLŮ, ne přes natáčení jednotlivých stěn —
-     * uzly zůstanou sdílené a topologie se nerozpadne.
-     *
-     * @param {number} toleranceDeg  do kolika stupňů se ještě srovnává
-     * @returns {number} kolik uzlů se posunulo
+     * Kostra domu: nejpočetnější sada stěn, které jsou navzájem PŘESNĚ kolmé
+     * nebo rovnoběžné (aspoň tři). Z ní se bere hlavní směr domu.
      */
-    srovnejPraveUhly(toleranceDeg = 2) {
-        const steny = [...this.walls.values()]
-            .filter(w => this.nodes.get(w.nodeA) && this.nodes.get(w.nodeB));
-        if (steny.length < 2) return 0;
-
+    _kostraDomu(steny) {
         // Úhly mají periodu 90°, takže se průměrují přes čtyřnásobek — jinak by
         // se vodorovné a svislé stěny vyrušily.
         const smery = [];
         for (const w of steny) {
             const a = this.nodes.get(w.nodeA), b = this.nodes.get(w.nodeB);
+            if (!a || !b) continue;
             const L = Math.hypot(b.x - a.x, b.y - a.y);
             if (L >= 1) smery.push({ w, L, uhel4: 4 * Math.atan2(b.y - a.y, b.x - a.x) });
         }
@@ -1553,8 +1538,50 @@ class StavebniEngine {
             if (shoda.length > kostra.length || (shoda.length === kostra.length && delka(shoda) > delka(kostra))) kostra = shoda;
         }
         // Kostra až od tří stěn — dvě přesně kolmé můžou vzniknout i náhodou.
-        // Bez kostry (čerstvý import, první stěny) se směr odhadne z průměru všech.
         if (kostra.length < 3) kostra = [];
+        return { smery, kostra, odchylka4, prumer4, PRESNE4 };
+    }
+
+    /**
+     * Směr rastru domu (rad, perioda 90°) z jeho kostry — k němu se vztahují
+     * magnety úhlů místo vodorovné osy obrazovky. U domu natočeného podle
+     * podkladu (Klemov 58°) by „45° k vodorovné" byl úhel, který s domem nijak
+     * nesouvisí. Bez kostry (prázdný výkres, první stěny) vrací null — pak
+     * platí vodorovná osa obrazovky.
+     *
+     * @param {Iterable<string>} vynech  stěny, které se právě táhnou
+     */
+    smerRastru(vynech = []) {
+        const bez = new Set(vynech);
+        const steny = [...this.walls.values()].filter(w => !bez.has(w.id));
+        const { kostra, prumer4 } = this._kostraDomu(steny);
+        return kostra.length ? prumer4(kostra) / 4 : null;
+    }
+
+    /**
+     * Vrátí stěny do pravých úhlů tam, kde jsou mimo jen o kousek.
+     *
+     * Rozdíl desetiny stupně na obrazovce nepoznáte, ale v konstrukci se sčítá:
+     * změřeno na konceptech v databázi — ze 121 stěn jich 85 (70 %) leželo mimo
+     * pravý úhel o 0,001 až 1,99°, a nad 2° nebyla ANI JEDNA. Jinými slovy: žádná
+     * z nich nebyla šikmá záměrně, všechny ty odchylky byly nechtěné. Proto se
+     * srovnává do 2° — co je šikmé víc, je šikmé schválně a nikdo na to nesahá.
+     *
+     * Postup: najde hlavní směr domu, otočí si do něj souřadnice, a stěnám,
+     * které mají být svislé, srovná X na společnou hodnotu (vodorovným Y).
+     * Pracuje tedy přes SOUŘADNICE UZLŮ, ne přes natáčení jednotlivých stěn —
+     * uzly zůstanou sdílené a topologie se nerozpadne.
+     *
+     * @param {number} toleranceDeg  do kolika stupňů se ještě srovnává
+     * @returns {number} kolik uzlů se posunulo
+     */
+    srovnejPraveUhly(toleranceDeg = 2) {
+        const steny = [...this.walls.values()]
+            .filter(w => this.nodes.get(w.nodeA) && this.nodes.get(w.nodeB));
+        if (steny.length < 2) return 0;
+
+        const { smery, kostra, odchylka4, prumer4, PRESNE4 } = this._kostraDomu(steny);
+        // Bez kostry (čerstvý import, první stěny) se směr odhadne z průměru všech.
         let zaklad = prumer4(kostra.length ? kostra : smery) / 4;
         const tol = toleranceDeg * Math.PI / 180;
         // Dům kreslený „narovno" srovnáme na skutečnou vodorovnou, ne na svůj
@@ -1943,6 +1970,12 @@ class StavebniEngine {
             const withRelAngle = withRelAngleAll.filter(n =>
                 Math.abs(Math.abs(n.relAngle) - Math.PI) > COLLINEAR_TOL
             );
+            // Stěna, která ve spoji pokračuje rovně dál (rozstřižená zeď, do které
+            // vede příčka), se NEzkosí vůbec — konec zůstane kolmý a navazuje na
+            // pokračování. Dřív se obě půlky zkosily podle odbočky, každá jinak,
+            // a ve zdi vznikl klín (Klemov W3 + W58 s W5). Odbočka si svůj konec
+            // srovná na líc sama (její sousedi jsou obě půlky).
+            if (withRelAngle.length < withRelAngleAll.length) return;
 
             // Levý soused = nejmenší kladný relativní úhel (po směru hodin)
             // Pravý soused = největší záporný relativní úhel (proti směru hodin)
