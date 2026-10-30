@@ -117,6 +117,30 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .tt-paticka-spodek { font-size: .75rem; }
 .tt-prihlaseni + .tt-paticka { margin-top: 0; }
 
+/* Titulní stránka webu (vitrina/index) */
+.tt-vitrina { max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem 0; }
+.tt-vitrina section { margin-top: 3rem; }
+.tt-vitrina h2 { font-size: 1.35rem; margin: 0 0 1rem; }
+.tt-vitrina-hlavni { max-width: 44rem; margin: 2rem auto 0 !important; text-align: center; }
+.tt-vitrina-hlavni h1 { font-size: 2.4rem; line-height: 1.2; margin: 0 0 1rem; font-weight: 800; }
+.tt-vitrina-perex { font-size: 1.1rem; color: var(--c-text-secondary); margin: 0 0 1.5rem; }
+.tt-vitrina-akce { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
+.tt-vitrina img { display: block; width: 100%; height: auto; border-radius: var(--s-radius); }
+.tt-vitrina-mrizka { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; }
+.tt-vitrina-karta { padding: 1.5rem; }
+.tt-vitrina-karta h3 { margin: 0 0 .5rem; font-size: 1.1rem; font-weight: 800; }
+.tt-vitrina-karta p { margin: 0; color: var(--c-text-secondary); }
+.tt-vitrina-pohledy { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; margin-top: 1rem; }
+.tt-vitrina-pohledy figure { margin: 0; padding: .5rem; }
+.tt-vitrina-pohledy figcaption { padding: .5rem .25rem .25rem; font-size: .85rem; color: var(--c-text-secondary); text-align: center; }
+.tt-vitrina-postup { padding-left: 1.3rem; }
+.tt-vitrina-postup li { margin-bottom: .5rem; }
+.tt-vitrina-zaver { text-align: center; padding: 2rem 1.5rem; }
+.tt-vitrina-zaver p { color: var(--c-text-secondary); }
+@media (max-width: 760px) {
+    .tt-vitrina-hlavni h1 { font-size: 1.7rem; }
+}
+
 /* Tarify — ceník webu (vitrina/cenik) a předplatné v aplikaci (aplikace/predplatne) */
 .tt-cenik { max-width: 62rem; margin: 0 auto; padding: 2rem 1.5rem 0; }
 .tt-cenik h1 { font-size: 1.6rem; margin-bottom: .5rem; }
