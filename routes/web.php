@@ -29,6 +29,10 @@ Route::get('/', function () {
     return view('vitrina.index');
 });
 
+// robots.txt a sitemap.xml — obsah podle části (web indexovat, app a masterteam ne), viz SeoController.
+Route::get('/robots.txt', [App\Http\Controllers\SeoController::class, 'robots'])->name('seo.robots');
+Route::get('/sitemap.xml', [App\Http\Controllers\SeoController::class, 'sitemap'])->name('seo.sitemap');
+
 // Error tracking — endpoint pro JS bugy (window.onerror, unhandledrejection)
 Route::post('/api/bug', [BugController::class, 'ulozit'])
     ->middleware('throttle:60,1')

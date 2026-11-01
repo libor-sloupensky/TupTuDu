@@ -43,12 +43,26 @@ zatím nerozhodnuto — třešinky na dortu, až web poběží veřejně.
   VS Code se všechny tři servery připojují a vracejí data přímo z Claude Code.
 - Google účty má Libor v **češtině** — návody psát s českými názvy položek.
 
+## Indexace webu (od 1. 11. 2026)
+Rozhodnutí Libora: indexovat kvůli historii domény, organické návštěvy vítány, ale **na SEO zatím
+netlačit** (produkt čeká mnoho úprav).
+- `App\Http\Controllers\SeoController`: `/robots.txt` a `/sitemap.xml` generované podle části
+  (`Domeny::cast()`), protože všechny tři subdomény sdílejí jeden `public/`:
+  web → `Disallow: /cron/ /jazyk/ /api/` + odkaz na sitemapu; app a masterteam → `Disallow: /`,
+  sitemapa tam 404. **Nová veřejná stránka = přidat do `STRANKY_WEBU`** (ruční seznam: `/`, `/pricing`,
+  `/contact`, `/terms`, `/privacy`, `/refunds`).
+- Layout `components/layouts/web`: na tuptudu.com `<link rel="canonical">` na www, jinde (app.tuptudu.com
+  má stejnou titulku kvůli Paddle, lokál) `noindex`. Layouty app/prihlaseni/zakaznik mají `noindex` dál.
+- `public/.htaccess`: `tuptudu.com` → 301 na `www.tuptudu.com` (dřív obě odpovídaly 200 = duplicita).
+- Jazyk není v URL (session/IP) → jedna adresa na stránku, bez hreflang. Až budou národní domény,
+  přidat hreflang a sitemapu per doména.
+- Chybí zatím meta description na stránkách webu — doplnit, až se bude na SEO tlačit.
+
 ## Co dál (až bude čas, rozhodnuto 2026-11-01 odložit)
-- Analýzu zatím nepouštět — web je na `noindex`, data v GA4 se sbírají od 1. 11. 2026, kampaně žádné.
-  Priorita je dodělat produkt a získat návštěvníky.
-- První „analyzuj web" až po: sitemap.xml + robots.txt, zrušení `noindex`, odeslání sitemapy do
-  Search Console (`submit_sitemap`). Pak pravidla pro „analyzuj web" do CLAUDE.md (co stáhnout,
-  co smí Claude měnit sám, rozpočty v Ads jen s potvrzením).
+- Analýzu zatím nepouštět — data v GA4 se sbírají od 1. 11. 2026, indexace teprve začíná, kampaně
+  žádné. Priorita je dodělat produkt a získat návštěvníky.
+- Pravidla pro „analyzuj web" do CLAUDE.md (co stáhnout, co smí Claude měnit sám, rozpočty v Ads
+  jen s potvrzením).
 - Později: klíčové události v GA4 (registrace, založení projektu) → import do Ads jako konverze;
   Sklik, PageSpeed; placené nástroje (Screaming Frog, Ahrefs/Semrush) jen pokud se ukáže potřeba.
 - Údržba: `pipx upgrade-all`, `uv tool upgrade --all`; kontrola přístupů `py services/google-kontrola.py`.
@@ -135,8 +149,8 @@ zatím nerozhodnuto — třešinky na dortu, až web poběží veřejně.
    Návod Googlu: https://support.google.com/webmasters/answer/9008080
 3. Přístup pro servisní účet: vlevo dole **Settings** → **Users and permissions** → Add user →
    e-mail servisního účtu → oprávnění **Full** (server `mcp-search-console` ho vyžaduje).
-4. Sitemapu zatím neposílat — web je na `noindex`. Až půjde ven: vytvořím `sitemap.xml`
-   v Laravelu a pošle se přes Sitemaps → `https://www.tuptudu.com/sitemap.xml`.
+4. Sitemapa `https://www.tuptudu.com/sitemap.xml` odeslána 1. 11. 2026 (přes MCP `submit_sitemap`),
+   viz sekce „Indexace webu".
 
 ### 4. Google Ads (~20 min)
 1. https://ads.google.com → **Start now** → přihlásit stejným Google účtem. Průvodce nutí
@@ -204,7 +218,7 @@ Po krocích 1–4 poslat: Project ID, e-mail servisního účtu, Measurement ID,
 ### 6. Co pak udělám v kódu
 - Cookie lišta se souhlasem + Google consent mode v2 + GA4 tag z `GA4_MEASUREMENT_ID`
   (cs/en překlady), úprava zásad soukromí čl. 3 (cs i en, posunout „Účinné od").
-- `sitemap.xml` a `robots.txt` připravené na zrušení `noindex`.
+- ~~`sitemap.xml` a `robots.txt`~~ hotovo 1. 11. 2026, viz „Indexace webu".
 - Do `CLAUDE.md` pravidla pro „analyzuj web" (jaká data, jaké období, co smím měnit sám,
   co jen s potvrzením — rozpočty a nabídky v Ads nikdy bez potvrzení).
 - Později: vlastní zápis do Ads (Python `google-ads` knihovna nebo REST), Sklik API,

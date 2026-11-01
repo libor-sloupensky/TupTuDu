@@ -15,6 +15,11 @@
     RewriteCond %{HTTPS} off
     RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
 
+    # Veřejný web jen na www.tuptudu.com — holá doména by byla pro Google duplicita
+    # (kanonická adresa v layoutu i sitemapa ukazují na www). Subdomén se netýká.
+    RewriteCond %{HTTP_HOST} ^tuptudu\.com$ [NC]
+    RewriteRule ^(.*)$ https://www.tuptudu.com/$1 [L,R=301]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

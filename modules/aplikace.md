@@ -99,7 +99,9 @@ nedaří najít volný, prodlouží se (sloupec má 12 znaků).
 - Účty a projekty se nemažou — žijí, dokud účet existuje. Zrušení účtu je zatím ruční.
 
 ## Před spuštěním pro veřejnost
-1. Odstranit `noindex` z `components/layouts/web` (a ostatních layoutů, kde má smysl indexovat).
+1. ~~Odstranit `noindex` z `components/layouts/web`~~ — hotovo 1. 11. 2026: tuptudu.com se indexuje
+   (kanonická adresa na www, `robots.txt` + `sitemap.xml` ze `SeoController`), app a masterteam zůstávají
+   `noindex` + `Disallow: /`. Podrobnosti `modules/marketing.md`.
 2. Přeložit editor V3 a skrýt katastrální panel mimo země s katastrem.
 3. Zrušení účtu jako funkce (teď ručně přes kontaktní formulář) — smazat účet, projekty i podklady.
 

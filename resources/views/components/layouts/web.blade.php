@@ -6,8 +6,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    {{-- Web zatím neindexovat (vitrína „v přípravě") — při spuštění odstranit, viz modules/aplikace.md --}}
+    {{-- Indexuje se jen tuptudu.com (od 1. 11. 2026). Stejná titulka běží i na app.tuptudu.com (kvůli Paddle)
+         a lokálně — tam noindex, ať Google nemá duplicitu. Kanonická adresa vždy na www. --}}
+    @if (\App\Support\Domeny::jeWeb())
+    <link rel="canonical" href="{{ \App\Support\Domeny::url('web', request()->path()) }}">
+    @else
     <meta name="robots" content="noindex">
+    @endif
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @include('partials.hlasic-chyb-inline')
     <title>{{ $title }}</title>
