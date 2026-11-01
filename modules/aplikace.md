@@ -71,8 +71,10 @@ nedaří najít volný, prodlouží se (sloupec má 12 znaků).
 - `components/layouts/prihlaseni` — login, registrace, hesla, ověření.
 - `components/layouts/web` — veřejný web (vitrína, právní stránky, kontakt); vlastní styly do slotu `hlava`.
 - Právní stránky: `pravni/stranka` + `pravni/{podminky,soukromi}-{jazyk}` (chybí-li jazyk → en).
-- Patička `partials/paticka` (podmínky, soukromí, kontakt, © a povinný odkaz DB-IP) — na webu,
+- Patička `partials/paticka` (podmínky, soukromí, kontakt, nastavení cookies, © a povinný odkaz DB-IP) — na webu,
   přihlašovacích stránkách a v aplikaci. Editor (`fullWidth`) má jen odkaz DB-IP (`partials/poloha-zdroj`).
+- Cookie lišta + GA4 `partials/cookies-lista` — na konci `<body>` všech tří zákaznických layoutů
+  (web, přihlášení, zakaznik), masterteam ne. Zobrazí se jen s `GA4_MEASUREMENT_ID` (viz `modules/marketing.md`).
 
 ## Kontaktní formulář
 - Veřejně neuvádíme e-mail — dotazy, zrušení účtu i žádosti GDPR jdou přes `/contact`.
@@ -113,7 +115,9 @@ e-mailem 14 dní předem (slib v podmínkách čl. 9).
   svých pravidel; případně ještě nechat přečíst právníkem.
 - **Telefon provozovatele** — u placených spotřebitelských smluv ho vyžadují předsmluvní informace
   (směrnice 2011/83/EU po novele Omnibus); doplnit do podmínek čl. 1.
-- **Cookies:** jakmile přibude analytika nebo reklama → lišta se souhlasem a úprava zásad čl. 3.
+- **Cookies:** lišta se souhlasem + Google Analytics 4 hotovo 2026-11-01 (`partials/cookies-lista`,
+  zásady čl. 2–5 upraveny, účinné od 1. 11. 2026; podrobně `modules/marketing.md`). Až přibude měření
+  reklamy (Google Ads), zapojit uloženou marketingovou volbu a upravit čl. 3.
 - **Další země:** zásady čl. 4 — poskytovatelé mapových, katastrálních a výškových dat dané země.
 - AI v zákaznické části (teď vypnutá) → doplnit Anthropic jako příjemce do zásad čl. 4 a 5.
 

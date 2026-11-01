@@ -30,5 +30,6 @@
 @include('partials.paticka')
 @include('partials.error-tracker')
 @include('partials.lokalizace-js')
+@include('partials.cookies-lista')
 </body>
 </html>

@@ -11,6 +11,10 @@
         <a href="{{ \App\Support\Domeny::url('web', '/privacy') }}">{{ __('pravni.soukromi_titulek') }}</a>
         <a href="{{ \App\Support\Domeny::url('web', '/refunds') }}">{{ __('pravni.vraceni_titulek') }}</a>
         <a href="{{ \App\Support\Domeny::url('web', '/contact') }}">{{ __('kontakt.titulek') }}</a>
+        @if (config('services.ga4.measurement_id'))
+            {{-- Změna volby cookies — lišta (partials/cookies-lista) je na všech stránkách s patičkou --}}
+            <button type="button" onclick="window.ttCookiesOtevrit?.()">{{ __('cookies.odkaz_paticka') }}</button>
+        @endif
     </nav>
     <div class="tt-paticka-spodek">
         © {{ date('Y') }} WormUP s.r.o. · <a href="https://db-ip.com" rel="noopener">IP Geolocation by DB-IP</a>

@@ -58,6 +58,12 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
     ],
 
+    // Google Analytics 4 — měřicí ID (G-…) zákaznické části (web, app, přihlášení; masterteam ne).
+    // Bez hodnoty se nic neměří a cookie lišta se nezobrazí (partials/cookies-lista, modules/marketing.md).
+    'ga4' => [
+        'measurement_id' => env('GA4_MEASUREMENT_ID'),
+    ],
+
     // Token cron URL (/cron/bugy/{token}, /cron/chyby/{token}). Jen z env — na produkci
     // GitHub Secret CRON_TOKEN přes deploy.yml. Repo je veřejné → ŽÁDNÁ výchozí hodnota
     // (bez tokenu jsou cron URL zavřené, hash_equals s prázdným řetězcem neprojde).

@@ -1,5 +1,5 @@
 <h1>Privacy Policy</h1>
-<p>Effective from: 30 October 2026</p>
+<p>Effective from: 1 November 2026</p>
 
 <h2>1. Controller</h2>
 <p>
@@ -52,19 +52,43 @@
         <td>Detecting and fixing errors in the service</td>
         <td>Legitimate interest</td>
     </tr>
+    <tr>
+        <td>Visit data under a random identifier stored in a cookie: pages visited and features used,
+            traffic source, device and browser type, approximate location (country, city)</td>
+        <td>Measuring traffic and improving the site (Google Analytics, see section 3)</td>
+        <td>Consent (Art. 6(1)(a) GDPR) — only if you give it in the cookie banner</td>
+    </tr>
 </table>
 <p>We do not use the data for profiling or automated decision-making, and we do not sell it.</p>
 
 <h2>3. Cookies</h2>
 <p>
-    We use essential cookies: for sign-in (session), form protection (CSRF) and remembering the chosen
-    language.
+    <strong>Essential cookies</strong> are always used: for sign-in (session), form protection (CSRF),
+    remembering the chosen language and storing your choice from the cookie banner (<code>tt_cookies</code>, 12 months).
+</p>
+<p>
+    <strong>Analytics cookies</strong> (Google Analytics 4: <code>_ga</code>, <code>_ga_*</code>, valid for
+    up to 2 years) are stored only with your consent given in the cookie banner. They measure traffic — which
+    pages and features you use, where you came from, your device and browser type and approximate location.
+    Google Analytics does not store IP addresses. The data is processed by Google (Google Ireland Ltd., or
+    Google LLC in the USA) and kept for 14 months; we only see aggregated reports. Without consent, nothing
+    is sent to Google.
+</p>
+<p>
+    <strong>Marketing cookies</strong> (ad measurement) are likewise used only with consent; we do not use
+    them at the moment — once we introduce them, the choice you made in the banner will apply.
+</p>
+<p>
+    You can change or withdraw your consent at any time via the “Cookie settings” link in the site footer;
+    withdrawal does not affect the lawfulness of earlier processing. Legal basis: your consent (Art. 6(1)(a)
+    GDPR and Section 89(3) of the Czech Electronic Communications Act No. 127/2005 Coll.).
 </p>
 
 <h2>4. Who works with the data</h2>
 <ul>
     <li><strong>THINline s.r.o.</strong> (Český hosting), company ID 26747359, Jeseniova 1196/52, Prague 3 — servers and email in the Czech Republic.</li>
-    <li><strong>Google</strong> — only if you sign in with Google (Google Ireland Ltd. / Google LLC).</li>
+    <li><strong>Google</strong> (Google Ireland Ltd. / Google LLC) — if you sign in with Google, and if you
+        consent to analytics cookies, traffic measurement with Google Analytics (section 3).</li>
     <li><strong>Paddle.com Market Limited</strong> (London, United Kingdom) — our online reseller of paid plans
         (Merchant of Record). You enter payment and billing details (name, email, country and address, payment card)
         directly into the Paddle checkout and Paddle processes them as an independent controller under its
@@ -75,8 +99,8 @@
 
 <h2>5. Transfers outside the EU</h2>
 <p>
-    We store data in the EU. Data may leave the EU only when you sign in with Google (USA); Google participates
-    in the EU–US Data Privacy Framework. When you pay for a subscription, data reaches Paddle in the United
+    We store data in the EU. Data may leave the EU only when you sign in with Google and, if you have consented
+    to it, for Google Analytics traffic measurement (USA); Google participates in the EU–US Data Privacy Framework. When you pay for a subscription, data reaches Paddle in the United
     Kingdom, which is covered by a European Commission adequacy decision.
 </p>
 

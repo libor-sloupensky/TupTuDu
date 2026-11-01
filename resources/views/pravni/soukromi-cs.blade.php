@@ -1,5 +1,5 @@
 <h1>Zásady ochrany osobních údajů</h1>
-<p>Účinné od: 30. 10. 2026</p>
+<p>Účinné od: 1. 11. 2026</p>
 
 <h2>1. Správce</h2>
 <p>
@@ -52,19 +52,43 @@
         <td>Odhalování a oprava chyb služby</td>
         <td>Oprávněný zájem</td>
     </tr>
+    <tr>
+        <td>Údaje o návštěvě pod náhodným identifikátorem v cookie: navštívené stránky a použité funkce,
+            zdroj návštěvy, typ zařízení a prohlížeče, přibližná poloha (země, město)</td>
+        <td>Měření návštěvnosti a zlepšování webu (Google Analytics, viz čl. 3)</td>
+        <td>Souhlas (čl. 6 odst. 1 písm. a GDPR) — jen pokud ho dáte v cookie liště</td>
+    </tr>
 </table>
 <p>Údaje nepoužíváme k profilování ani k automatizovanému rozhodování a neprodáváme je.</p>
 
 <h2>3. Cookies</h2>
 <p>
-    Používáme nezbytné cookies: pro přihlášení (relace), ochranu formulářů (CSRF) a zapamatování
-    zvoleného jazyka.
+    <strong>Nezbytné cookies</strong> používáme vždy: pro přihlášení (relace), ochranu formulářů (CSRF),
+    zapamatování zvoleného jazyka a uložení vaší volby v cookie liště (<code>tt_cookies</code>, 12 měsíců).
+</p>
+<p>
+    <strong>Analytické cookies</strong> (Google Analytics 4: <code>_ga</code>, <code>_ga_*</code>, platnost
+    až 2 roky) ukládáme jen s vaším souhlasem daným v cookie liště. Slouží k měření návštěvnosti — které
+    stránky a funkce používáte, odkud jste přišli, jaké máte zařízení a prohlížeč a přibližnou polohu.
+    Google Analytics IP adresu neukládá. Údaje zpracovává Google (Google Ireland Ltd., případně Google LLC
+    v USA) a uchovává je 14 měsíců; my je vidíme jen v souhrnných přehledech. Bez souhlasu se Googlu
+    neodesílá nic.
+</p>
+<p>
+    <strong>Marketingové cookies</strong> (měření účinnosti reklamy) rovněž jen se souhlasem; v tuto chvíli
+    je nepoužíváme — až je zavedeme, uplatní se volba, kterou jste v liště udělali.
+</p>
+<p>
+    Souhlas můžete kdykoli změnit nebo odvolat odkazem „Nastavení cookies" v patičce webu; odvolání
+    nemá vliv na zákonnost dřívějšího zpracování. Právní základ: váš souhlas (čl. 6 odst. 1 písm. a GDPR
+    a § 89 odst. 3 českého zákona č. 127/2005 Sb., o elektronických komunikacích).
 </p>
 
 <h2>4. Kdo s údaji pracuje</h2>
 <ul>
     <li><strong>THINline s.r.o.</strong> (Český hosting), IČO 26747359, Jeseniova 1196/52, Praha 3 — servery a e-mail v České republice.</li>
-    <li><strong>Google</strong> — jen pokud se přihlásíte přes Google (Google Ireland Ltd. / Google LLC).</li>
+    <li><strong>Google</strong> (Google Ireland Ltd. / Google LLC) — pokud se přihlásíte přes Google, a pokud
+        dáte souhlas s analytickými cookies, měření návštěvnosti Google Analytics (čl. 3).</li>
     <li><strong>Paddle.com Market Limited</strong> (Londýn, Spojené království) — náš online prodejce placených tarifů
         (Merchant of Record). Platební a fakturační údaje (jméno, e-mail, země a adresa, platební karta) zadáváte
         přímo do platebního okna Paddle a Paddle je zpracovává jako samostatný správce podle svých
@@ -75,8 +99,9 @@
 
 <h2>5. Předávání mimo EU</h2>
 <p>
-    Údaje ukládáme v EU. Mimo EU se mohou dostat jen při přihlášení přes Google (USA); Google je zapojen
-    do rámce EU–USA pro ochranu údajů (Data Privacy Framework). Při placení předplatného se údaje dostanou
+    Údaje ukládáme v EU. Mimo EU se mohou dostat jen při přihlášení přes Google a při měření návštěvnosti
+    Google Analytics, pokud jste s ním souhlasili (USA); Google je zapojen do rámce EU–USA pro ochranu
+    údajů (Data Privacy Framework). Při placení předplatného se údaje dostanou
     ke společnosti Paddle ve Spojeném království, pro které platí rozhodnutí Evropské komise o odpovídající
     ochraně osobních údajů.
 </p>

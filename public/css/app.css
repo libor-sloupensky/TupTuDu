@@ -116,6 +116,25 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .tt-paticka a:hover { color: var(--c-text); }
 .tt-paticka-spodek { font-size: .75rem; }
 .tt-prihlaseni + .tt-paticka { margin-top: 0; }
+.tt-paticka button { background: none; border: 0; padding: 0; font: inherit; color: var(--c-text-secondary); cursor: pointer; }
+.tt-paticka button:hover { color: var(--c-text); text-decoration: underline; }
+
+/* Cookie lišta (partials/cookies-lista) — nad vším včetně editoru */
+.tt-cookies {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10000;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem 2rem; flex-wrap: wrap;
+    padding: 1rem 1.5rem; background: var(--c-surface); color: var(--c-text);
+    border-top: 1px solid var(--c-border); box-shadow: 0 -4px 16px rgba(0, 0, 0, .08); font-size: .9rem;
+}
+.tt-cookies[hidden] { display: none; }
+.tt-cookies-text { flex: 1 1 24rem; }
+.tt-cookies-text p { margin: .25rem 0 0; color: var(--c-text-secondary); }
+.tt-cookies-text a { color: var(--c-primary-text); }
+.tt-cookies-volby { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: .75rem; }
+.tt-cookies-volby[hidden] { display: none; }
+.tt-cookies-volby label { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
+.tt-cookies-tlacitka { display: flex; flex-wrap: wrap; gap: .5rem; }
+.tt-cookies-tlacitka [hidden] { display: none; }
 
 /* Titulní stránka webu (vitrina/index) */
 .tt-vitrina { max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem 0; }
