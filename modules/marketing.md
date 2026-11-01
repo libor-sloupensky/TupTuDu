@@ -39,8 +39,19 @@ zatím nerozhodnuto — třešinky na dortu, až web poběží veřejně.
   služba odebrána); Google Ads **ID zákazníka 134-646-0395** („TupTuDu.com", CZK, Europe/Prague,
   starší účet původně pro WormUP, 0 kampaní) se servisním účtem jako Standardní. Skript rovnou
   vypisuje i měnu, pásmo a kampaně (GAQL přes `googleAds:search`, hlavička `login-customer-id`).
-  Zbývá: propojení GA4↔Ads (6d), restart VS Code a test MCP serverů, první „analyzuj web".
+  GA4↔Ads propojeno (googleAdsLinks/16247982656). **Nastavení uzavřeno 2026-11-01:** po restartu
+  VS Code se všechny tři servery připojují a vracejí data přímo z Claude Code.
 - Google účty má Libor v **češtině** — návody psát s českými názvy položek.
+
+## Co dál (až bude čas, rozhodnuto 2026-11-01 odložit)
+- Analýzu zatím nepouštět — web je na `noindex`, data v GA4 se sbírají od 1. 11. 2026, kampaně žádné.
+  Priorita je dodělat produkt a získat návštěvníky.
+- První „analyzuj web" až po: sitemap.xml + robots.txt, zrušení `noindex`, odeslání sitemapy do
+  Search Console (`submit_sitemap`). Pak pravidla pro „analyzuj web" do CLAUDE.md (co stáhnout,
+  co smí Claude měnit sám, rozpočty v Ads jen s potvrzením).
+- Později: klíčové události v GA4 (registrace, založení projektu) → import do Ads jako konverze;
+  Sklik, PageSpeed; placené nástroje (Screaming Frog, Ahrefs/Semrush) jen pokud se ukáže potřeba.
+- Údržba: `pipx upgrade-all`, `uv tool upgrade --all`; kontrola přístupů `py services/google-kontrola.py`.
 
 ## GA4 na webu (hotovo 2026-11-01)
 - **ID** z `.env` `GA4_MEASUREMENT_ID` (`config('services.ga4.measurement_id')`); produkce ho má
