@@ -583,10 +583,11 @@ class KonvaRenderer {
         const wall = this.engine.walls.get(opening.wallId);
         const tlPx = wall ? wall.tloustka * PX : 10;
         const pas = tlPx + 4; // výška obdélníku otvoru (viz renderOpenings)
-        const strana = opening.strana || 'in';
+        // Okna se otvírají dovnitř automaticky, dveře podle uložené strany (viz engine.stranaOtvoru)
+        const strana = this.engine.stranaOtvoru ? this.engine.stranaOtvoru(opening) : (opening.strana || 'in');
         const sideSign = strana === 'in' ? 1 : -1;
-        const parapet = (typeof parapetOtvoru === 'function') ? parapetOtvoru(opening) : 0;
-        const kPodlaze = parapet < 0.05; // křídlo až k podlaze = kreslí se jako dveře
+        // Každý díl může mít vlastní parapet (dvojokno); díl k podlaze se kreslí jako dveře
+        const dilKPodlaze = (k) => ((typeof parapetKridla === 'function') ? parapetKridla(opening, k) : 0) < 0.05;
         const name = '_doorDetail_' + opening.id;
         // Značky jsou jen dekorace: listening:false, jinak kliknutí dopadlo na
         // trojúhelník okna (leží v pásu stěny), hitTest nenašel _openingId a výběr
@@ -647,7 +648,15 @@ class KonvaRenderer {
 
         kridla.forEach((k, i) => {
             const [t0, t1] = rozsahy[i];
-            if (t1 - t0 < 1 || k.otv === 'fix') return;
+            const sklopne = (typeof kridloSklopne === 'function') ? kridloSklopne(k) : false;
+            if (t1 - t0 < 1 || (k.otv === 'fix' && !sklopne)) return;
+            // Sklopné (i u posuvného a u pevného = větračka): čárkovaný trojúhelník napříč —
+            // základna podél křídla na odvrácené straně, hrot uprostřed na straně otvírání
+            if (sklopne) {
+                cara([bod(t0, -sideSign * pas / 2), bod(t1, -sideSign * pas / 2), bod((t0 + t1) / 2, sideSign * pas / 2)],
+                     { closed: true, dash: [3, 2] });
+            }
+            if (k.otv === 'fix') return;
 
             if (k.otv === 'posuvne') {
                 // HS portál: křídlo vysunuté na stranu otvírání + šipka k pevnému dílu, před který se zasouvá
@@ -656,7 +665,7 @@ class KonvaRenderer {
                 cara([bod(t0, s - tloustkaKridla / 2), bod(t1, s - tloustkaKridla / 2),
                       bod(t1, s + tloustkaKridla / 2), bod(t0, s + tloustkaKridla / 2)],
                      { closed: true, fill: barva, opacity: 0.35 });
-                const kPevnemu = (kridla[i + 1] && kridla[i + 1].otv === 'fix') ? 1 : -1;
+                const kPevnemu = (typeof smerPosunuKridla === 'function') ? smerPosunuKridla(kridla, i) : 1;
                 const stredT = (t0 + t1) / 2;
                 const delkaSipky = Math.min((t1 - t0) * 0.4, 20);
                 const od = bod(stredT - kPevnemu * delkaSipky / 2, s);
@@ -670,22 +679,15 @@ class KonvaRenderer {
             }
 
             const panty = (typeof kridloPanty === 'function') ? kridloPanty(k.otv) : null;
-            const sklopne = (typeof kridloSklopne === 'function') ? kridloSklopne(k.otv) : false;
-
             if (panty) {
                 const hingeT = panty === 'levy' ? t0 : t1;
                 const volnyT = panty === 'levy' ? t1 : t0;
-                if (kPodlaze) {
+                if (dilKPodlaze(k)) {
                     drawLeaf(hingeT, panty === 'levy' ? 1 : -1, t1 - t0);
                 } else {
                     // Okno: tenký trojúhelník — základna přes pás u pantů, hrot u volného konce
                     cara([bod(hingeT, -pas / 2), bod(hingeT, pas / 2), bod(volnyT, 0)], { closed: true });
                 }
-            }
-            if (sklopne && !kPodlaze) {
-                // Sklopné: základna podél křídla na odvrácené straně, hrot uprostřed na straně otvírání
-                cara([bod(t0, -sideSign * pas / 2), bod(t1, -sideSign * pas / 2), bod((t0 + t1) / 2, sideSign * pas / 2)],
-                     { closed: true, dash: [3, 2] });
             }
         });
     }

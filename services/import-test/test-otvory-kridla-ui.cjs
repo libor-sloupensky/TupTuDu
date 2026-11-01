@@ -56,19 +56,19 @@ async function main() {
             const w3 = e.addWall(10*PX, 7*PX, 0, 7*PX, 0.4, 'obvodova');
             const w4 = e.addWall(0, 7*PX, 0, 0, 0.4, 'obvodova');
             const w5 = e.addWall(5*PX, 0, 5*PX, 7*PX, 0.15, 'pricka');
-            const pred = (o, key) => { const pv = PREDVOLBY_KRIDEL[o.typ].find(x => x.key === key); o.kridla = kridlaZPredvolby(pv, o.sirka); o.smer = smerZKridel(o); return o; };
+            const pred = (o, dily) => { o.kridla = dily.map(([sirka, otv, s]) => s ? { sirka, otv, sklopne: true } : { sirka, otv }); o.smer = smerZKridel(o); return o; };
             const o = {};
             o.oknoOS = e.addOpening(w1.id, 1.0, 1.2, 'okno', { presnaSirka: true });           // odvozené: 1 křídlo OS
-            o.oknoFOF = pred(e.addOpening(w1.id, 3.0, 2.4, 'okno', { presnaSirka: true }), 'fix_o_fix');
-            o.oknoSkl = pred(e.addOpening(w1.id, 7.5, 1.0, 'okno', { presnaSirka: true }), 'sklopne');
+            o.oknoFOF = pred(e.addOpening(w1.id, 3.0, 2.4, 'okno', { presnaSirka: true }), [[0.72, 'fix'], [0.96, 'pravy', true], [0.72, 'fix']]);
+            o.oknoSkl = pred(e.addOpening(w1.id, 7.5, 1.0, 'okno', { presnaSirka: true }), [[1, 'fix', true]]);
             o.oknoSkl.parapet = 1.5; o.oknoSkl.vyska = 0.6;
-            o.frDvere = pred(e.addOpening(w2.id, 1.5, 2.4, 'francouzske_okno', { presnaSirka: true }), 'o_fix');
-            o.frHS = pred(e.addOpening(w2.id, 4.5, 2.2, 'francouzske_okno', { presnaSirka: true }), 'hs');
+            o.frDvere = pred(e.addOpening(w2.id, 1.5, 2.4, 'francouzske_okno', { presnaSirka: true }), [[1.2, 'levy', true], [1.2, 'fix']]);
+            o.frHS = pred(e.addOpening(w2.id, 4.5, 2.2, 'francouzske_okno', { presnaSirka: true }), [[1.1, 'posuvne'], [1.1, 'fix']]);
             o.dverePrave = e.addOpening(w3.id, 1.0, 1.0, 'dvere', { presnaSirka: true });
-            o.dvere2 = pred(e.addOpening(w3.id, 3.0, 1.6, 'dvere', { presnaSirka: true }), 'dvoukridle');
+            o.dvere2 = pred(e.addOpening(w3.id, 3.0, 1.6, 'dvere', { presnaSirka: true }), [[0.8, 'levy'], [0.8, 'pravy']]);
             o.vrata = e.addOpening(w3.id, 6.0, 2.5, 'garazova_vrata', { presnaSirka: true });
             o.okno2 = e.addOpening(w4.id, 1.0, 1.5, 'okno', { presnaSirka: true });            // odvozené: 2 křídla
-            o.posuvne = pred(e.addOpening(w4.id, 4.0, 0.9, 'dvere', { presnaSirka: true }), 'posuvne');
+            o.posuvne = pred(e.addOpening(w4.id, 4.0, 0.9, 'dvere', { presnaSirka: true }), [[0.9, 'posuvne']]);
             o.vnitrni = e.addOpening(w5.id, 2.0, 0.8, 'dvere', { presnaSirka: true });
             o.pruchod = e.addOpening(w5.id, 4.5, 1.2, 'pruchod', { presnaSirka: true });
             d.fitView(); d.renderer.render();
@@ -78,13 +78,13 @@ async function main() {
         const detaily = await p.vyhodnot(`(() => { const d = ${D}; const ids = ${JSON.stringify(ids)}; const out = {};
             for (const k in ids) { if (k === 'steny') continue;
                 out[k] = { znacky: d.renderer.overlayLayer.find('._doorDetail_' + ids[k]).length,
-                           kridla: kridlaOtvoru(d.engine.openings.get(ids[k])).map(x => x.otv + ':' + x.sirka).join(' ') }; }
+                           kridla: kridlaOtvoru(d.engine.openings.get(ids[k])).map(x => x.otv + (x.sklopne ? '+s' : '') + ':' + x.sirka).join(' ') }; }
             return out; })()`);
-        kontrola('okno 1,2 m: 1 křídlo OS, trojúhelník + sklopná značka', detaily.oknoOS.kridla === 'pravy_sklopne:1.2' && detaily.oknoOS.znacky === 2, JSON.stringify(detaily.oknoOS));
-        kontrola('okno 1,5 m: 2 křídla OS', detaily.okno2.kridla === 'levy_sklopne:0.75 pravy_sklopne:0.75' && detaily.okno2.znacky >= 5, JSON.stringify(detaily.okno2));
-        kontrola('pevné + otevíravé + pevné: 2 příčle + 2 značky', detaily.oknoFOF.kridla === 'fix:0.72 pravy_sklopne:0.96 fix:0.72' && detaily.oknoFOF.znacky === 4, JSON.stringify(detaily.oknoFOF));
+        kontrola('okno 1,2 m: 1 křídlo OS, trojúhelník + sklopná značka', detaily.oknoOS.kridla === 'pravy+s:1.2' && detaily.oknoOS.znacky === 2, JSON.stringify(detaily.oknoOS));
+        kontrola('okno 1,5 m: 2 křídla OS', detaily.okno2.kridla === 'levy+s:0.75 pravy+s:0.75' && detaily.okno2.znacky >= 5, JSON.stringify(detaily.okno2));
+        kontrola('pevné + otevíravé + pevné: 2 příčle + 2 značky', detaily.oknoFOF.kridla === 'fix:0.72 pravy+s:0.96 fix:0.72' && detaily.oknoFOF.znacky === 4, JSON.stringify(detaily.oknoFOF));
         kontrola('sklopné okno: jen sklopná značka', detaily.oknoSkl.znacky === 1, JSON.stringify(detaily.oknoSkl));
-        kontrola('francouzské dveře + pevné: oblouk a křídlo + příčel', detaily.frDvere.kridla === 'levy:1.2 fix:1.2' && detaily.frDvere.znacky === 3, JSON.stringify(detaily.frDvere));
+        kontrola('francouzské dveře + pevné: oblouk, křídlo, sklopná značka + příčel', detaily.frDvere.kridla === 'levy+s:1.2 fix:1.2' && detaily.frDvere.znacky === 4, JSON.stringify(detaily.frDvere));
         kontrola('HS portál: příčel, křídlo a šipka', detaily.frHS.kridla === 'posuvne:1.1 fix:1.1' && detaily.frHS.znacky === 3, JSON.stringify(detaily.frHS));
         kontrola('dvoukřídlé dveře: 2 oblouky, 2 křídla, příčel', detaily.dvere2.znacky === 5, JSON.stringify(detaily.dvere2));
         kontrola('posuvné do pouzdra: křídlo, pouzdro, šipka', detaily.posuvne.znacky === 3, JSON.stringify(detaily.posuvne));
@@ -102,11 +102,34 @@ async function main() {
         await pauza(400);
         const poKliku = await p.vyhodnot(`(() => { const d = ${D}; const znacky = d.renderer.overlayLayer.find('._doorDetail_' + ${JSON.stringify(ids.oknoOS)});
             const panel = document.getElementById('kk-panel-otvoru'); const pr = panel.getBoundingClientRect();
-            const br = document.querySelector('[x-ref=tlOtvor]').getBoundingClientRect(); const wr = document.getElementById('kk-canvas-wrap').getBoundingClientRect();
+            const wr = document.getElementById('kk-canvas-wrap').getBoundingClientRect();
             return { vybrano: [...d.renderer.selectedOpenings], znackyNeposlouchaji: znacky.length > 0 && znacky.every(s => !s.listening()), kind: d.inspector && d.inspector.kind,
-                     viditelny: panel.offsetParent !== null, odsazeni: Math.round(pr.left - br.left), podListou: Math.round(pr.top - wr.top) }; })()`);
+                     viditelny: panel.offsetParent !== null, left: Math.round(pr.left - wr.left), top: Math.round(pr.top - wr.top) }; })()`);
         kontrola('kliknutí doprostřed okna okno vybere (značky nechytají klik)', poKliku.vybrano.length === 1 && poKliku.vybrano[0] === ids.oknoOS && poKliku.znackyNeposlouchaji && poKliku.kind === 'opening', JSON.stringify(poKliku));
-        kontrola('panel je vidět na plátně těsně pod tlačítkem Otvor', poKliku.viditelny && Math.abs(poKliku.odsazeni) <= 2 && poKliku.podListou <= 8, JSON.stringify(poKliku));
+        kontrola('panel je v levém horním rohu plátna s odsazením 6 px', poKliku.viditelny && poKliku.left === 6 && poKliku.top === 6, JSON.stringify(poKliku));
+
+        // Tažení za úchop o (+200, +150) — pointer events vznikají z CDP myši
+        const uchop = () => p.vyhodnot(`(() => { const r = document.querySelector('#kk-panel-otvoru .kk-panel-uchop').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; })()`);
+        let u = await uchop();
+        await p.cmd('Input.dispatchMouseEvent', { type: 'mousePressed', x: u.x, y: u.y, button: 'left', clickCount: 1, buttons: 1 });
+        await p.cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: u.x + 100, y: u.y + 80, button: 'left', buttons: 1 });
+        await p.cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: u.x + 200, y: u.y + 150, button: 'left', buttons: 1 });
+        await p.cmd('Input.dispatchMouseEvent', { type: 'mouseReleased', x: u.x + 200, y: u.y + 150, button: 'left', clickCount: 1 });
+        await pauza(300);
+        const stavPanelu = () => p.vyhodnot(`(() => { const d = ${D}; const pr = document.getElementById('kk-panel-otvoru').getBoundingClientRect(); const wr = document.getElementById('kk-canvas-wrap').getBoundingClientRect();
+            const ulozeno = JSON.parse(localStorage.getItem('kv3_state') || '{}').panelOtvoruPoz || null;
+            return { poz: d.panelOtvoruPoz, left: Math.round(pr.left - wr.left), top: Math.round(pr.top - wr.top), ulozeno }; })()`);
+        const poTahu = await stavPanelu();
+        kontrola('panel jde přetáhnout za úchop a poloha se uloží do nastavení', poTahu.left === 206 && poTahu.top === 156 && poTahu.ulozeno && poTahu.ulozeno.x === 206 && poTahu.ulozeno.y === 156, JSON.stringify(poTahu));
+        await p.snimek(path.join(vystup, 'otvory-kridla-panel-pretazeny.png'));
+        u = await uchop();
+        for (const n of [1, 2]) {
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mousePressed', x: u.x, y: u.y, button: 'left', clickCount: n, buttons: 1 });
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mouseReleased', x: u.x, y: u.y, button: 'left', clickCount: n });
+        }
+        await pauza(300);
+        const poResetu = await stavPanelu();
+        kontrola('dvojklik na úchop vrátí panel do rohu', poResetu.poz === null && poResetu.left === 6 && poResetu.top === 6 && poResetu.ulozeno === null, JSON.stringify(poResetu));
         const panelNovy = await p.vyhodnot(`(async () => { const d = ${D}; d.nastroj = 'otvor'; await new Promise(r => setTimeout(r, 250));
             const panel = document.getElementById('kk-panel-otvoru'); const text = panel.innerText.replace(/\\s+/g, ' ');
             return { viditelny: panel.offsetParent !== null, novy: /Nový otvor/.test(text), bezInspektoru: !/parapet/.test(text), vListe: !!document.querySelector('.kk-lista select[x-model=otvorTyp]') }; })()`);
@@ -114,22 +137,78 @@ async function main() {
         await p.snimek(path.join(vystup, 'otvory-kridla-panel-novy.png'));
         await p.vyhodnot(`(() => { const d = ${D}; d.nastroj = 'vyber'; return true; })()`);
         const insp = await p.vyhodnot(`(() => { const d = ${D}; d.renderer.selectedOpenings.clear(); d.renderer.selectedOpenings.add(${JSON.stringify(ids.oknoFOF)}); d._selectionTick++;
-            const i = d.inspector; return { kind: i.kind, predvolba: i.predvolba, kridla: i.kridla.length, vyska: i.vyska, parapet: i.parapet, flip: i.canFlipStrana, predvolby: i.predvolby.length }; })()`);
-        kontrola('vybrané okno: předvolba fix_o_fix, 3 křídla, výška 1,2, parapet 0,9', insp.predvolba === 'fix_o_fix' && insp.kridla === 3 && insp.vyska === 1.2 && insp.parapet === 0.9 && insp.flip && insp.predvolby === 8, JSON.stringify(insp));
+            const i = d.inspector; return { kind: i.kind, pocet: i.pocetKridel, kridla: i.kridla.length, vyska: i.vyska, parapety: i.kridla.map(k => k.parapet), flip: i.canFlipStrana, zrcadlit: i.canZrcadlit, volby: i.pocetVolby }; })()`);
+        kontrola('vybrané okno: 3 díly, výška 1,2, parapet dílů 0,9, volby počtu 1–4', insp.pocet === 3 && insp.kridla === 3 && insp.vyska === 1.2 && JSON.stringify(Object.values(insp.parapety)) === '[0.9,0.9,0.9]' && JSON.stringify(Object.values(insp.volby)) === '[1,2,3,4]', JSON.stringify(insp));
+        kontrola('okno: zrcadlit ano, dovnitř/ven ne (okno se otvírá vždy dovnitř)', insp.zrcadlit && !insp.flip, JSON.stringify(insp));
+        const strany = await p.vyhodnot(`(() => { const d = ${D}; const e = d.engine; const ids = ${JSON.stringify(ids)};
+            const dveře = e.openings.get(ids.dverePrave); const pred = dveře.strana; d.renderer.selectedOpenings.clear(); d.renderer.selectedOpenings.add(ids.oknoOS); d._selectionTick++; d.flipOpeningStrana();
+            return { okna: ['oknoOS', 'oknoFOF', 'okno2', 'oknoSkl'].map(k => e.stranaOtvoru(e.openings.get(ids[k]))), oknoPoFlipu: e.openings.get(ids.oknoOS).strana,
+                     dvereFlip: (() => { d.renderer.selectedOpenings.clear(); d.renderer.selectedOpenings.add(ids.dverePrave); d._selectionTick++; d.flipOpeningStrana(); const po = dveře.strana; return pred !== po; })(),
+                     dvereInsp: { flip: d.inspector.canFlipStrana, zrcadlit: d.inspector.canZrcadlit } }; })()`);
+        kontrola('okna na všech čtyřech stěnách se otvírají dovnitř (k těžišti domu) a flip je u nich bez účinku', strany.okna.every(s => s === 'in') && strany.oknoPoFlipu === 'in', JSON.stringify(strany));
+        kontrola('dveře: dovnitř/ven jde přepnout, zrcadlit také', strany.dvereFlip && strany.dvereInsp.flip && strany.dvereInsp.zrcadlit, JSON.stringify(strany));
+        const zrc = await p.vyhodnot(`(() => { const d = ${D}; d.renderer.selectedOpenings.clear(); d.renderer.selectedOpenings.add(${JSON.stringify(ids.frDvere)}); d._selectionTick++;
+            d.zrcadlitOtvor(); const o = d.engine.openings.get(${JSON.stringify(ids.frDvere)}); const z = (k) => k.otv + (k.sklopne ? '+s' : '') + ':' + k.sirka; const po = o.kridla.map(z).join(' ');
+            d.zrcadlitOtvor(); return { po, zpet: o.kridla.map(z).join(' ') }; })()`);
+        kontrola('zrcadlení „dveře + pevné" → „pevné + dveře" (panty prohozené), druhé zrcadlení vrátí', zrc.po === 'fix:1.2 pravy+s:1.2' && zrc.zpet === 'levy+s:1.2 fix:1.2', JSON.stringify(zrc));
+        await p.vyhodnot(`(() => { const d = ${D}; d.renderer.selectedOpenings.clear(); d.renderer.selectedOpenings.add(${JSON.stringify(ids.oknoFOF)}); d._selectionTick++; return true; })()`);
         await pauza(300);
         await p.snimek(path.join(vystup, 'otvory-kridla-inspektor.png'));
         const poKridle = await p.vyhodnot(`(() => { const d = ${D}; d.setKridloSirka(0, 1.0); const o = d.engine.openings.get(${JSON.stringify(ids.oknoFOF)});
-            return { kridla: o.kridla.map(k => k.sirka), sirka: o.sirka, predvolba: d.inspector.predvolba }; })()`);
-        kontrola('šířka 1. křídla 100 cm → prostřední se zúžilo, otvor stejný', JSON.stringify(poKridle.kridla) === '[1,0.68,0.72]' && poKridle.sirka === 2.4 && poKridle.predvolba === 'fix_o_fix', JSON.stringify(poKridle));
-        const poTypu = await p.vyhodnot(`(() => { const d = ${D}; d.setKridloTyp(0, 'levy_sklopne'); const o = d.engine.openings.get(${JSON.stringify(ids.oknoFOF)});
-            return { otv: o.kridla[0].otv, predvolba: d.inspector.predvolba }; })()`);
-        kontrola('typ 1. křídla změněn → vlastní sestava', poTypu.otv === 'levy_sklopne' && poTypu.predvolba === 'vlastni', JSON.stringify(poTypu));
+            return { kridla: o.kridla.map(k => k.sirka), sirka: o.sirka }; })()`);
+        kontrola('šířka 1. křídla 100 cm → prostřední se zúžilo, otvor stejný', JSON.stringify(poKridle.kridla) === '[1,0.68,0.72]' && poKridle.sirka === 2.4, JSON.stringify(poKridle));
+        const poTypu = await p.vyhodnot(`(() => { const d = ${D}; d.setKridloTyp(0, 'levy'); const o = d.engine.openings.get(${JSON.stringify(ids.oknoFOF)});
+            return { otv: o.kridla[0].otv }; })()`);
+        kontrola('typ 1. křídla změněn na levé', poTypu.otv === 'levy', JSON.stringify(poTypu));
         const poVysce = await p.vyhodnot(`(() => { const d = ${D}; d.setOpeningVyska(2.5); const o = d.engine.openings.get(${JSON.stringify(ids.oknoFOF)});
             d.setOpeningParapet(0.5); return { vyska: o.vyska, parapet: o.parapet }; })()`);
         kontrola('výška 250 cm se vejde pod strop 2,8 m (parapet 0,9 → 1,9), parapet 50 cm', poVysce.vyska === 1.9 && poVysce.parapet === 0.5, JSON.stringify(poVysce));
-        const poPredvolbe = await p.vyhodnot(`(() => { const d = ${D}; d.setOpeningPredvolba('dvoukridle'); const o = d.engine.openings.get(${JSON.stringify(ids.oknoFOF)});
-            return { kridla: o.kridla.map(k => k.otv + ':' + k.sirka).join(' '), predvolba: d.inspector.predvolba }; })()`);
-        kontrola('předvolba dvoukřídlé', poPredvolbe.kridla === 'levy_sklopne:1.2 pravy_sklopne:1.2' && poPredvolbe.predvolba === 'dvoukridle', JSON.stringify(poPredvolbe));
+        const poPoctu = await p.vyhodnot(`(() => { const d = ${D}; const o = d.engine.openings.get(${JSON.stringify(ids.oknoFOF)}); const z = (k) => k.otv + (k.sklopne ? '+s' : '') + ':' + k.sirka;
+            d.setPocetKridel(4); const ctyri = o.kridla.map(z).join(' '); d.setPocetKridel(2); const dva = o.kridla.map(z).join(' ');
+            d.setPocetKridel(1); const jeden = o.kridla.map(z).join(' '); d.setPocetKridel(2);
+            return { ctyri, dva, jeden, zpet: o.kridla.map(z).join(' '), pocet: d.inspector.pocetKridel }; })()`);
+        kontrola('počet dílů: 4 (nový díl = otevíravé pravé + skl.), 2 (zachované typy), 1, zpět 2 (samotné pravé → levé krajní)',
+            poPoctu.ctyri === 'levy:0.6 pravy+s:0.6 fix:0.6 pravy+s:0.6' && poPoctu.dva === 'levy:1.2 pravy+s:1.2' && poPoctu.jeden === 'levy:2.4' && poPoctu.zpet === 'levy:1.2 pravy+s:1.2' && poPoctu.pocet === 2, JSON.stringify(poPoctu));
+        const sklop = await p.vyhodnot(`(() => { const d = ${D}; d.setKridloSklopne(1, false); const o = d.engine.openings.get(${JSON.stringify(ids.oknoFOF)});
+            const bez = { sklopne: !!o.kridla[1].sklopne, kridlaInsp: d.inspector.kridla.map(k => k.sklopne) };
+            d.setKridloSklopne(1, true); return { bez, zpet: { sklopne: !!o.kridla[1].sklopne, kridlaInsp: d.inspector.kridla.map(k => k.sklopne) } }; })()`);
+        kontrola('zaškrtávátko sklopné: vypnout a zapnout u 2. dílu', !sklop.bez.sklopne && JSON.stringify(sklop.bez.kridlaInsp) === '[false,false]' && sklop.zpet.sklopne && JSON.stringify(sklop.zpet.kridlaInsp) === '[false,true]', JSON.stringify(sklop));
+        const smery = await p.vyhodnot(`(() => { const f = window.smerPosunuKridla; const P = { otv: 'posuvne' }, F = { otv: 'fix' };
+            return { pf: f([P, F], 0), fp: f([F, P], 1), pp: [f([P, P], 0), f([P, P], 1)], fppf: [f([F, P, P, F], 1), f([F, P, P, F], 2)], ppp: [f([P,P,P],0), f([P,P,P],1), f([P,P,P],2)] }; })()`);
+        kontrola('směr posunu: ke středu; přes pevný díl jen když je po straně', smery.pf === 1 && smery.fp === -1 && JSON.stringify(smery.pp) === '[1,-1]' && JSON.stringify(smery.fppf) === '[-1,1]' && JSON.stringify(smery.ppp) === '[1,-1,-1]', JSON.stringify(smery));
+        const stara = await p.vyhodnot(`(() => { const e = new StavebniEngine(); e.fromJSON({ steny: [{ id: 'W1', od: [0, 0], do: [5, 0], tloustka: 0.3, typ: 'obvodova' }],
+            otvory: [{ id: 'O1', stena: 'W1', pozice: 1, sirka: 1.5, typ: 'okno', kridla: [{ sirka: 0.75, otv: 'levy_sklopne' }, { sirka: 0.75, otv: 'sklopne' }] }] });
+            return e.openings.get('O1').kridla; })()`);
+        kontrola('starší data: levy_sklopne → levé + sklopné, sklopne → pevné + sklopné', JSON.stringify(stara) === '[{"sirka":0.75,"otv":"levy","sklopne":true},{"sirka":0.75,"otv":"fix","sklopne":true}]', JSON.stringify(stara));
+        // Parapet dílu: 2. díl dolů na podlahu → otvor (parapet 0,5, v 1,9) se nemění, díl nese vlastní 0 a sahá ke společné horní hraně
+        const parDilu = await p.vyhodnot(`(() => { const d = ${D}; const o = d.engine.openings.get(${JSON.stringify(ids.oknoFOF)}); const vrsekPred = vrsekOtvoru(o);
+            d.setKridloParapet(1, 0); const po = { parapet: o.parapet, vyska: o.vyska, vrsek: vrsekOtvoru(o), dily: o.kridla.map(k => k.parapet ?? null), insp: d.inspector.kridla.map(k => k.parapet),
+                znacky: d.renderer.overlayLayer.find('._doorDetail_' + o.id).length, flip: d.inspector.canFlipStrana, strana: d.engine.stranaOtvoru(o), json: d.engine.toJSON().otvory.find(x => x.id === o.id).kridla.map(k => k.parapet ?? null) };
+            // Parapet celého otvoru o 20 cm výš: výška zůstane, díl s vlastním parapetem jede s ním
+            d.setOpeningParapet(0.7); const posun = { parapet: o.parapet, vyska: o.vyska, dily: o.kridla.map(k => k.parapet ?? null) };
+            d.setOpeningParapet(0.5); d.setKridloParapet(1, 0.5); const zpet = { parapet: o.parapet, vyska: o.vyska, dily: o.kridla.map(k => k.parapet ?? null) };
+            return { vrsekPred, po, posun, zpet }; })()`);
+        kontrola('parapet 2. dílu 0: otvor zůstává 0,5 / 1,9, díl má vlastní 0, kreslí se jako dveře (flip povolen), uloží se',
+            parDilu.po.parapet === 0.5 && parDilu.po.vyska === 1.9 && parDilu.po.vrsek === parDilu.vrsekPred && JSON.stringify(parDilu.po.dily) === '[null,0]' && JSON.stringify(Object.values(parDilu.po.insp)) === '[0.5,0]'
+            && parDilu.po.znacky === 5 && parDilu.po.flip && JSON.stringify(parDilu.po.json) === '[null,0]', JSON.stringify(parDilu));
+        kontrola('parapet otvoru 0,5 → 0,7 posune celek: výška 1,9 zůstává, vlastní parapet dílu 0 → 0,2; návrat na 0,5 a díl na 0,5 vlastní hodnotu zruší',
+            parDilu.posun.parapet === 0.7 && parDilu.posun.vyska === 1.9 && JSON.stringify(parDilu.posun.dily) === '[null,0.2]' && parDilu.zpet.parapet === 0.5 && parDilu.zpet.vyska === 1.9 && JSON.stringify(parDilu.zpet.dily) === '[null,null]', JSON.stringify(parDilu));
+        // Rozepsaná šířka + klik na plátno (mimo panel): hodnota se musí odevzdat dřív, než se změní výběr
+        await p.vyhodnot(`(() => { const d = ${D}; d.renderer.selectedOpenings.clear(); d.renderer.selectedOpenings.add(${JSON.stringify(ids.oknoOS)}); d._selectionTick++; return true; })()`);
+        await pauza(300); // panel se překreslí až po ticku — pole hledat až potom
+        const vstup = await p.vyhodnot(`(() => { const d = ${D};
+            const el = document.querySelector('#kk-panel-otvoru input[type=number]'); el.focus(); el.value = ''; // vymazat, vložení textu pak projde jako uživatelský vstup
+            const r = d.stage.container().getBoundingClientRect(); const styl = getComputedStyle(document.querySelector('#kk-panel-otvoru label'));
+            return { prazdno: { x: Math.round(r.left + r.width * 0.5), y: Math.round(r.top + r.height * 0.85) }, label: { vaha: styl.fontWeight, velikost: styl.fontSize }, aktivni: document.activeElement === el, hodnotaPred: el.value }; })()`);
+        kontrola('popisek „skl." má běžnou váhu a 12 px jako ostatní text', (vstup.label.vaha === '400' || vstup.label.vaha === 'normal') && vstup.label.velikost === '12px', JSON.stringify(vstup.label));
+        await p.cmd('Input.insertText', { text: '150' });
+        const predKlikem = await p.vyhodnot(`(() => { const a = document.activeElement; return { tag: a && a.tagName, typ: a && a.type, hodnota: a && a.value, vPanelu: !!(a && a.closest && a.closest('#kk-panel-otvoru')) }; })()`);
+        await p.cmd('Input.dispatchMouseEvent', { type: 'mousePressed', x: vstup.prazdno.x, y: vstup.prazdno.y, button: 'left', clickCount: 1, buttons: 1 });
+        await p.cmd('Input.dispatchMouseEvent', { type: 'mouseReleased', x: vstup.prazdno.x, y: vstup.prazdno.y, button: 'left', clickCount: 1 });
+        await pauza(400);
+        const poKlikuMimo = await p.vyhodnot(`(() => { const d = ${D}; return { sirka: d.engine.openings.get(${JSON.stringify(ids.oknoOS)}).sirka, vybrano: d.renderer.selectedOpenings.size }; })()`);
+        kontrola('rozepsaná šířka 150 se uloží i při kliknutí mimo panel (výběr se pak zruší)', poKlikuMimo.sirka === 1.5 && poKlikuMimo.vybrano === 0, JSON.stringify(poKlikuMimo));
+        await p.vyhodnot(`(() => { const d = ${D}; d.renderer.selectedOpenings.add(${JSON.stringify(ids.oknoFOF)}); d._selectionTick++; return true; })()`);
         const sirkaOtvoru = await p.vyhodnot(`(() => { const d = ${D}; d.setOpeningSirka(1.8); const o = d.engine.openings.get(${JSON.stringify(ids.oknoFOF)});
             return o.kridla.map(k => k.sirka); })()`);
         kontrola('šířka otvoru 180 cm přeškáluje křídla', JSON.stringify(sirkaOtvoru) === '[0.9,0.9]', JSON.stringify(sirkaOtvoru));
@@ -149,8 +228,8 @@ async function main() {
         await p.jdiNa(url);
         await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine && ${D}.engine.openings.size > 0)`, 15000, 'editor po obnovení');
         const poReloadu = await p.vyhodnot(`(() => { const d = ${D}; const o = d.engine.openings.get(${JSON.stringify(ids.frDvere)}); const s = d.engine.openings.get(${JSON.stringify(ids.oknoSkl)});
-            return { kridla: o.kridla.map(k => k.otv + ':' + k.sirka).join(' '), vyska: s.vyska, parapet: s.parapet, pocet: d.engine.openings.size }; })()`);
-        kontrola('po obnovení stránky sestava i výšky drží', poReloadu.kridla === 'levy:1.2 fix:1.2' && poReloadu.vyska === 0.6 && poReloadu.parapet === 1.5 && poReloadu.pocet === 12, JSON.stringify(poReloadu));
+            return { kridla: o.kridla.map(k => k.otv + (k.sklopne ? '+s' : '') + ':' + k.sirka).join(' '), vyska: s.vyska, parapet: s.parapet, pocet: d.engine.openings.size }; })()`);
+        kontrola('po obnovení stránky sestava i výšky drží', poReloadu.kridla === 'levy+s:1.2 fix:1.2' && poReloadu.vyska === 0.6 && poReloadu.parapet === 1.5 && poReloadu.pocet === 12, JSON.stringify(poReloadu));
 
         console.log('\n4) 3D');
         await p.vyhodnot(`(async () => { const d = ${D}; d.rezim3d = true; await d.prepni3d(); return true; })()`);
@@ -174,6 +253,14 @@ async function main() {
             return { steny, skupiny: skupiny.length, naStene, min: [box.min.x, box.min.y, box.min.z].map(v => +v.toFixed(2)), max: [box.max.x, box.max.y, box.max.z].map(v => +v.toFixed(2)),
                      dily: skupiny.map(s => s.children.length) }; })()`);
         kontrola('stěny rozřezané na díly (víc než 5 těles)', stav3d.steny > 5, stav3d.steny + ' těles');
+        const ruznyParapet = await p.vyhodnot(`(async () => { const d = ${D}; const o = d.engine.openings.get(${JSON.stringify(ids.okno2)}); o.kridla = kridlaOtvoru(o).map(k => ({ ...k })); o.kridla[1].parapet = 0.2;
+            const pred = window._kk3d.wallGroup.children.filter(c => c.isMesh).length; d._build3d(); const po = window._kk3d.wallGroup.children.filter(c => c.isMesh).length;
+            const sk = window._kk3d.wallGroup.children.filter(c => c.isGroup).find(g => Math.abs(g.position.x) < 0.3 && Math.abs(g.position.z - 5.25) < 0.3);
+            const box = new THREE.Box3().setFromObject(sk);
+            // Kusy stěny W4 (x ≈ 0) pod díly: parapetní kusy mají vršek 0,2 a 0,9 m
+            const vrsky = window._kk3d.wallGroup.children.filter(c => c.isMesh).map(m => new THREE.Box3().setFromObject(m)).filter(b => Math.abs(b.min.x) < 0.5 && b.max.x < 0.5 && b.min.z > 4 && b.max.z < 6.5).map(b => +b.max.y.toFixed(2)).sort();
+            return { pred, po, spodek: +box.min.y.toFixed(2), vrsek: +box.max.y.toFixed(2), vrsky }; })()`);
+        kontrola('3D: rám jde od 0,2 m ke společné horní hraně 2,1 m; pod díly jsou parapetní kusy stěny 0,2 a 0,9 m', ruznyParapet.spodek === 0.2 && ruznyParapet.vrsek === 2.1 && ruznyParapet.vrsky.includes(0.2) && ruznyParapet.vrsky.includes(0.9), JSON.stringify(ruznyParapet));
         kontrola('11 otvorů s výplní (průchod jen výřez)', stav3d.skupiny === 11, stav3d.skupiny + ' skupin');
         kontrola('každý otvor sedí na ose své stěny', stav3d.naStene === 11, stav3d.naStene + ' z ' + stav3d.skupiny);
         kontrola('dům 10 × 7 × 2,8 m v kladném Z jako terén', stav3d.min[1] === 0 && stav3d.max[1] === 2.8 && stav3d.min[2] >= -0.3 && stav3d.max[2] <= 7.3 && stav3d.max[0] <= 10.3, JSON.stringify([stav3d.min, stav3d.max]));

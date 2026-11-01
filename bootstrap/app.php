@@ -153,6 +153,14 @@ return Application::configure(basePath: dirname(__DIR__))
             // Roboti (Googlebot, GPTBot, spidery) posílají formuláře bez session —
             // to není rozbitá session, jen šum v bugách → nelogovat.
             $jeRobot = (bool) preg_match('/bot|spider|crawl|slurp|scrapy|python-requests|curl\//i', (string) $request->userAgent());
+            // Skenery s prohlížečovým User-Agentem (bugy 16, 19–21, 1. 11. 2026): POST
+            // na /login bez jediné cookie a bez refereru, stejná délka těla na všech
+            // doménách během pár sekund z datacentrových IP. Prohlížeč, který si
+            // formulář opravdu načetl, má aspoň session cookie a u POSTu ze stejné
+            // domény posílá referer (Referrer-Policy nenastavujeme) → bez obojího robot.
+            if (! $jeRobot && $request->cookies->count() === 0 && ! $request->headers->has('referer')) {
+                $jeRobot = true;
+            }
             // Referer = sama cílová adresa POSTu, která NENÍ stránka (jen příjem
             // formuláře): člověk na ní nikdy nestojí, odesílá ze stránky
             // s formulářem → robot přehrávající request.

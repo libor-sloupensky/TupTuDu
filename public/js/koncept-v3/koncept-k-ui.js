@@ -214,14 +214,18 @@ function konceptKEditor(initialData) {
                 const sameVyska = openings.every(o => Math.abs(vyskaOtvoru(o) - vyska0) < 0.001);
                 const parapet0 = parapetOtvoru(openings[0]);
                 const sameParapet = openings.every(o => Math.abs(parapetOtvoru(o) - parapet0) < 0.001);
-                // Křídla: předvolby podle typu, jednotlivá křídla jen u jednoho otvoru
+                // Křídla: počet dílů (společný pro výběr), jednotlivé díly jen u jednoho otvoru
                 const maKridla = sameTyp && typ0 !== 'pruchod';
-                const predvolby = maKridla ? (PREDVOLBY_KRIDEL[typ0] || []).map(p => ({ key: p.key, label: p.nazev })) : [];
-                const predvolba0 = predvolbaKridel(openings[0]);
-                const samePredvolba = openings.every(o => predvolbaKridel(o) === predvolba0);
-                const kridla = openings.length === 1 ? kridlaOtvoru(openings[0]).map(k => ({ sirka: k.sirka, otv: k.otv })) : null;
+                const pocet0 = kridlaOtvoru(openings[0]).length;
+                const samePocet = openings.every(o => kridlaOtvoru(o).length === pocet0);
+                const pocetVolby = maKridla ? pocetKridelVolby(typ0) : [];
+                const kridla = openings.length === 1 ? kridlaOtvoru(openings[0]).map(k => ({ sirka: k.sirka, otv: k.otv, sklopne: !!k.sklopne, parapet: parapetKridla(openings[0], k) })) : null;
                 const kridlaVolby = Object.entries(TYPY_KRIDEL).map(([key, d]) => ({ key, label: d.nazev }));
-                const maPohyblive = openings.some(o => kridlaOtvoru(o).some(k => k.otv !== 'fix'));
+                const maPohyblive = openings.some(o => kridlaOtvoru(o).some(k => k.otv !== 'fix' || k.sklopne));
+                // Dovnitř/ven jen u otvorů k podlaze (dveře, francouzské okno, vrata) — okno se otvírá vždy dovnitř
+                const kPodlaze = openings.some(o => minParapetOtvoru(o) < 0.05);
+                // Zrcadlení má smysl, když je co obrátit: víc křídel, nebo křídlo s panty / posuvné
+                const jdeZrcadlit = openings.some(o => { const k = kridlaOtvoru(o); return k.length > 1 || k.some(x => x.otv !== 'fix'); });
                 return {
                     kind: openings.length > 1 ? 'opening_multi' : 'opening',
                     count: openings.length,
@@ -232,12 +236,13 @@ function konceptKEditor(initialData) {
                     vyska: sameVyska ? vyska0 : null,
                     parapet: sameParapet ? parapet0 : null,
                     maKridla,
-                    predvolby,
-                    predvolba: maKridla && samePredvolba ? predvolba0 : null,
+                    pocetVolby,
+                    pocetKridel: maKridla && samePocet ? pocet0 : null,
                     kridla,
                     kridlaVolby,
                     strana: sameStrana ? (openings[0].strana || 'in') : null,
-                    canFlipStrana: maKridla && maPohyblive,
+                    canFlipStrana: maKridla && maPohyblive && kPodlaze,
+                    canZrcadlit: maKridla && jdeZrcadlit,
                 };
             }
             // Jen stěny
@@ -264,21 +269,64 @@ function konceptKEditor(initialData) {
         },
 
         /**
-         * Poloha panelu otvoru: na plátně těsně pod tlačítkem nástroje Otvor
-         * (Libor 1. 11. 2026 — jedno pevné místo pro nový otvor i pro vlastnosti výběru,
-         * dřív byl panel vpravo u kompasu a volby nástroje zvlášť v liště).
+         * Poloha panelu otvoru (Libor 1. 11. 2026): jedno pevné místo pro nový otvor
+         * i pro vlastnosti výběru — levý horní roh plátna s odsazením 6 px. Kdo chce,
+         * přetáhne si ho úchopem jinam; poloha se pamatuje v nastavení (kv3_state).
+         * Dřív byl panel vpravo u kompasu a volby nástroje zvlášť v liště.
          */
+        PANEL_OKRAJ: 6,
+        panelOtvoruPoz: _s.panelOtvoruPoz || null,   // {x, y} vůči plátnu, null = výchozí roh
+        _panelTah: null,
         _rozmerTick: 0,
         get panelOtvoruStyl() {
             // eslint-disable-next-line no-unused-vars
-            const _zavislosti = this._selectionTick + this._rozmerTick + (this.nastroj === 'otvor' ? 1 : 0);
-            const tl = this.$refs?.tlOtvor, wrap = this.$refs?.canvasWrap;
-            let left = 12;
-            if (tl && wrap) {
-                left = Math.max(4, Math.round(tl.getBoundingClientRect().left - wrap.getBoundingClientRect().left));
+            const _zavislosti = this._selectionTick + this._rozmerTick;
+            let x = this.PANEL_OKRAJ, y = this.PANEL_OKRAJ;
+            if (this.panelOtvoruPoz) {
+                const o = this._panelOtvoruOmez(this.panelOtvoruPoz.x, this.panelOtvoruPoz.y);
+                x = o.x; y = o.y;
             }
             // Objekt, ne řetězec — řetězec by v Alpine nahradil celý inline styl (position, z-index…)
-            return { left: left + 'px', top: '6px' };
+            return { left: x + 'px', top: y + 'px' };
+        },
+
+        /** Udrží panel uvnitř plátna (po zmenšení okna by jinak zmizel mimo). */
+        _panelOtvoruOmez(x, y) {
+            const wrap = this.$refs?.canvasWrap, panel = document.getElementById('kk-panel-otvoru');
+            if (!wrap || !panel) return { x, y };
+            const maxX = Math.max(this.PANEL_OKRAJ, wrap.clientWidth - panel.offsetWidth - this.PANEL_OKRAJ);
+            const maxY = Math.max(this.PANEL_OKRAJ, wrap.clientHeight - panel.offsetHeight - this.PANEL_OKRAJ);
+            return { x: Math.round(Math.min(maxX, Math.max(this.PANEL_OKRAJ, x))), y: Math.round(Math.min(maxY, Math.max(this.PANEL_OKRAJ, y))) };
+        },
+
+        /** Začátek tažení za úchop (pointer events = myš i prst). */
+        panelOtvoruTahniStart(e) {
+            const panel = document.getElementById('kk-panel-otvoru');
+            if (!panel) return;
+            const r = panel.getBoundingClientRect();
+            this._panelTah = { id: e.pointerId, dx: e.clientX - r.left, dy: e.clientY - r.top, posun: false };
+            try { e.currentTarget.setPointerCapture(e.pointerId); } catch (chyba) { /* starší prohlížeč bez capture — tažení funguje jen nad úchopem */ }
+        },
+        panelOtvoruTahni(e) {
+            const tah = this._panelTah;
+            if (!tah || tah.id !== e.pointerId) return;
+            const wrap = this.$refs?.canvasWrap;
+            if (!wrap) return;
+            const w = wrap.getBoundingClientRect();
+            this.panelOtvoruPoz = this._panelOtvoruOmez(e.clientX - w.left - tah.dx, e.clientY - w.top - tah.dy);
+            tah.posun = true;
+        },
+        panelOtvoruTahniKonec(e) {
+            const tah = this._panelTah;
+            if (!tah || tah.id !== e.pointerId) return;
+            this._panelTah = null;
+            if (tah.posun) this.ulozitNastaveni();
+        },
+        /** Dvojklik na úchop: zpět do výchozího rohu. */
+        panelOtvoruReset() {
+            this.panelOtvoruPoz = null;
+            this._panelTah = null;
+            this.ulozitNastaveni();
         },
 
         /** Screen pozice inspector panelu (relativní ke kk-canvas-wrap). */
@@ -338,21 +386,18 @@ function konceptKEditor(initialData) {
             this._selectionTick++;
         },
 
-        /** Sestava křídel z předvolby na vybrané otvory (jen otvory stejného typu, jako je předvolba). */
-        setOpeningPredvolba(key) {
+        /** Počet dílů (křídel) na vybrané otvory; typ dílů zůstává, šířky se rozdělí rovnoměrně. */
+        setPocetKridel(pocet) {
             if (!this.renderer || !this.engine) return;
             const ids = [...this.renderer.selectedOpenings];
             if (ids.length === 0) return;
             this.engine.pushUndo();
             for (const id of ids) {
                 const o = this.engine.openings.get(id);
-                if (!o) continue;
-                const predvolba = (PREDVOLBY_KRIDEL[o.typ] || []).find(p => p.key === key);
-                if (!predvolba) continue;
-                o.kridla = kridlaZPredvolby(predvolba, o.sirka);
-                o.smer = smerZKridel(o);
+                if (!o || !pocetKridelVolby(o.typ).includes(pocet)) continue;
+                nastavPocetKridel(o, pocet);
             }
-            this._poUpraveOtvoru('Křídla otvoru');
+            this._poUpraveOtvoru('Počet dílů otvoru');
         },
 
         /** Vybraný otvor (jen jeden) s uloženými křídly — odvozená se před úpravou zkopírují. */
@@ -362,7 +407,7 @@ function konceptKEditor(initialData) {
             if (ids.length !== 1) return null;
             const o = this.engine.openings.get(ids[0]);
             if (!o) return null;
-            if (!Array.isArray(o.kridla)) o.kridla = kridlaOtvoru(o).map(k => ({ sirka: k.sirka, otv: k.otv }));
+            if (!Array.isArray(o.kridla)) o.kridla = kridlaOtvoru(o).map(normalizujKridlo).filter(Boolean);
             return o;
         },
 
@@ -374,6 +419,28 @@ function konceptKEditor(initialData) {
             o.kridla[i].otv = otv;
             o.smer = smerZKridel(o);
             this._poUpraveOtvoru('Typ křídla');
+        },
+
+        /**
+         * Parapet jednoho dílu v m — rozdělení výšek, které si uživatel zvolí sám.
+         * Horní hrana otvoru zůstává, mění se jen výška tohoto dílu.
+         */
+        setKridloParapet(i, novyParapet) {
+            const o = this._otvorSKridly();
+            if (!o || !o.kridla[i] || !(novyParapet >= 0)) return;
+            const strop = vrsekOtvoru(o) - 0.3;
+            this.engine.pushUndo();
+            nastavParapetKridla(o, o.kridla[i], Math.min(strop, novyParapet));
+            this._poUpraveOtvoru('Parapet dílu');
+        },
+
+        /** Příznak sklopné u jednoho křídla (doplněk k typu). */
+        setKridloSklopne(i, sklopne) {
+            const o = this._otvorSKridly();
+            if (!o || !o.kridla[i]) return;
+            this.engine.pushUndo();
+            if (sklopne) o.kridla[i].sklopne = true; else delete o.kridla[i].sklopne;
+            this._poUpraveOtvoru('Sklopné křídlo');
         },
 
         /**
@@ -416,7 +483,7 @@ function konceptKEditor(initialData) {
             this._poUpraveOtvoru('Výška otvoru');
         },
 
-        /** Parapet v m na vybrané otvory; výška zůstává, parapet se vejde pod strop stěny. */
+        /** Parapet celého otvoru v m: otvor se posune, výška zůstane (i díly s vlastním parapetem jedou s ním). */
         setOpeningParapet(novyParapet) {
             if (!this.renderer || !this.engine || !(novyParapet >= 0)) return;
             const ids = [...this.renderer.selectedOpenings];
@@ -426,12 +493,28 @@ function konceptKEditor(initialData) {
                 const o = this.engine.openings.get(id);
                 if (!o) continue;
                 const strop = this._vyskaStenyOtvoru(o) - vyskaOtvoru(o);
-                o.parapet = Math.round(Math.max(0, Math.min(strop, novyParapet)) * 100) / 100;
+                posunParapetOtvoru(o, Math.min(strop, novyParapet));
             }
             this._poUpraveOtvoru('Parapet otvoru');
         },
 
-        /** Převrátí stranu zdi (in/out), na kterou se křídla otvírají či vysouvají. */
+        /** Zrcadlí sestavu křídel zleva doprava (pořadí křídel i strana pantů). */
+        zrcadlitOtvor() {
+            if (!this.renderer || !this.engine) return;
+            const ids = [...this.renderer.selectedOpenings];
+            if (ids.length === 0) return;
+            this.engine.pushUndo();
+            for (const id of ids) {
+                const o = this.engine.openings.get(id);
+                if (o) zrcadliKridla(o);
+            }
+            this._poUpraveOtvoru('Zrcadlit otvor');
+        },
+
+        /**
+         * Převrátí stranu zdi (in/out), na kterou se křídla otvírají či vysouvají.
+         * Jen otvory k podlaze — okna s parapetem se otvírají dovnitř automaticky.
+         */
         flipOpeningStrana() {
             if (!this.renderer || !this.engine) return;
             const ids = [...this.renderer.selectedOpenings];
@@ -439,7 +522,7 @@ function konceptKEditor(initialData) {
             this.engine.pushUndo();
             for (const id of ids) {
                 const o = this.engine.openings.get(id);
-                if (!o) continue;
+                if (!o || parapetOtvoru(o) >= 0.05) continue;
                 if (!kridlaOtvoru(o).some(k => k.otv !== 'fix')) continue;
                 o.strana = (o.strana === 'out') ? 'in' : 'out';
             }
@@ -1108,6 +1191,19 @@ function konceptKEditor(initialData) {
                 };
                 window.addEventListener('mouseup', this._globalMouseUpHandler);
 
+                // Rozepsaná hodnota v panelu otvoru se odevzdává až s odchodem z pole
+                // (change). Klik na plátno ale nejdřív změnil výběr, panel se překreslil
+                // a pole zmizelo dřív, než hodnotu odevzdalo — změna se ztratila (i šířka
+                // nového otvoru při kliknutí na stěnu). Proto při stisku mimo panel pole
+                // opustit ještě před zpracováním kliknutí (zachycení před Konvou).
+                this._panelOdevzdejHandler = (e) => {
+                    const aktivni = document.activeElement;
+                    if (!aktivni || !aktivni.closest || !aktivni.closest('#kk-panel-otvoru')) return;
+                    if (e.target && e.target.closest && e.target.closest('#kk-panel-otvoru')) return;
+                    aktivni.blur();
+                };
+                document.addEventListener('pointerdown', this._panelOdevzdejHandler, true);
+
                 // Alt = kreslit a táhnout bez magnetu. Stav se drží i bez pohybu
                 // myši (stisk Altu hned přepne značku kurzoru). Puštěný Alt by
                 // prohlížeč vzal jako vstup do své nabídky (Firefox ukáže lištu
@@ -1147,8 +1243,10 @@ function konceptKEditor(initialData) {
                     // smysl a Konva pak u průhledných tvarů kreslí přes prázdné
                     // pomocné plátno — Firefox na tom padá (bug 58).
                     if (!wrap.offsetWidth || !wrap.offsetHeight) return;
-                    this.stage.width(wrap.offsetWidth);
-                    this.stage.height(wrap.offsetHeight);
+                    // Obě hodnoty najednou: samotné width() překreslí ještě se starou
+                    // výškou (0 u plátna skrytého při startu) → pomocné plátno 0 px
+                    // a Firefox hlásí „Passed-in canvas is empty" (bug 58 podruhé).
+                    this.stage.size({ width: wrap.offsetWidth, height: wrap.offsetHeight });
                     this.renderer.renderGrid();
                 });
                 ro.observe(wrap);
@@ -5527,6 +5625,7 @@ function konceptKEditor(initialData) {
                 showVysky: this.katastrZobrazitVysky,
                 kompasUhel: this.kompasUhel,
                 rezim3d: this.rezim3d,
+                panelOtvoruPoz: this.panelOtvoruPoz,   // kam si uživatel přetáhl panel otvoru (null = výchozí roh)
                 // celaObrazovka záměrně NEUKLÁDAT — fullscreen je per-sezení
                 lastProjekt: this.projektId || null,
                 stageX: this.stage ? this.stage.x() : 0,
@@ -6039,8 +6138,7 @@ function konceptKEditor(initialData) {
             if (!this.stage) return;
             const c = this.$refs.konvaContainer;
             if (!c || !c.offsetWidth || !c.offsetHeight) return;   // skryté plátno — viz ResizeObserver
-            this.stage.width(c.offsetWidth);
-            this.stage.height(c.offsetHeight);
+            this.stage.size({ width: c.offsetWidth, height: c.offsetHeight }); // najednou, viz ResizeObserver (bug 58)
             this._rozmerTick++; // panel otvoru si přepočítá polohu pod tlačítkem
             if (renderGrid && this.renderer) this.renderer.renderGrid();
         },
@@ -6785,13 +6883,24 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 const ux = (B.x - A.x) / L, uz = (B.z - A.z) / L;
                 const tBodu = (p) => (p.x - A.x) * ux + (p.z - A.z) * uz;
 
-                // Výřezy podél stěny (m od uzlu A), překrývající se sloučené
-                const vyrezy = (otvoryPodleSteny.get(wall.id) || []).map(op => {
-                    const par = parapetOtvoru(op);
-                    return { t0: op.pozice, t1: op.pozice + op.sirka, od: par, do: Math.min(H, par + vyskaOtvoru(op)) };
-                }).filter(v => v.t1 - v.t0 > 0.01 && v.do - v.od > 0.01).sort((a, b) => a.t0 - b.t0);
+                // Výřezy podél stěny (m od uzlu A) — po dílech, každý díl může mít jiný parapet;
+                // překrývající se výřezy se sloučí, sousední díly téhož otvoru zůstanou zvlášť
+                const vyrezy = [];
+                for (const op of (otvoryPodleSteny.get(wall.id) || [])) {
+                    const vrsek = Math.min(H, vrsekOtvoru(op));
+                    const kr = kridlaOtvoru(op);
+                    if (kr.length === 0) { vyrezy.push({ t0: op.pozice, t1: op.pozice + op.sirka, od: parapetOtvoru(op), do: vrsek }); continue; }
+                    let t = op.pozice;
+                    kr.forEach((k, i) => {
+                        const t1 = i === kr.length - 1 ? op.pozice + op.sirka : Math.min(op.pozice + op.sirka, t + k.sirka);
+                        vyrezy.push({ t0: t, t1, od: parapetKridla(op, k), do: vrsek });
+                        t = t1;
+                    });
+                }
+                vyrezy.sort((a, b) => a.t0 - b.t0);
+                const platne = vyrezy.filter(v => v.t1 - v.t0 > 0.01 && v.do - v.od > 0.01);
                 const slouceno = [];
-                for (const v of vyrezy) {
+                for (const v of platne) {
                     const posledni = slouceno[slouceno.length - 1];
                     if (posledni && v.t0 < posledni.t1 - 0.001) {
                         posledni.t1 = Math.max(posledni.t1, v.t1);
@@ -6803,7 +6912,7 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 // Mitry na koncích přesahují t < 0 a t > L, proto krajní díly bez meze
                 let tPred = -Infinity;
                 for (const v of slouceno) {
-                    pridejHranol(orizni(orizni(poly, p => tBodu(p) - tPred), p => v.t0 - tBodu(p)), 0, H, mat);
+                    if (v.t0 - tPred > 0.001) pridejHranol(orizni(orizni(poly, p => tBodu(p) - tPred), p => v.t0 - tBodu(p)), 0, H, mat);
                     const dil = orizni(orizni(poly, p => tBodu(p) - v.t0), p => v.t1 - tBodu(p));
                     if (v.od > 0.01) pridejHranol(dil, 0, v.od, mat);        // parapet
                     if (v.do < H - 0.01) pridejHranol(dil, v.do, H, mat);    // nadpraží
@@ -6843,15 +6952,14 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 const ux = (B.x - A.x) / L, uz = (B.z - A.z) / L;
 
                 const H = vyskaSteny(wall);
-                const parapet = parapetOtvoru(op);
-                const vyska = Math.min(H, parapet + vyskaOtvoru(op)) - parapet;
+                const vrsek = Math.min(H, vrsekOtvoru(op));   // společná horní hrana dílů
                 const sirka = op.sirka;
-                if (vyska < 0.05 || sirka < 0.05) continue;
+                if (vrsek - minParapetOtvoru(op) < 0.05 || sirka < 0.05) continue;
 
-                // Lokální soustava otvoru: x podél stěny, y nahoru, z napříč tloušťkou
+                // Lokální soustava otvoru: x podél stěny, y nad podlahou, z napříč tloušťkou
                 const g = new THREE.Group();
                 const tStred = op.pozice + sirka / 2;
-                g.position.set(A.x + ux * tStred, parapet, A.z + uz * tStred);
+                g.position.set(A.x + ux * tStred, 0, A.z + uz * tStred);
                 g.rotation.y = Math.atan2(-uz, ux);
                 const kvadr = (w, h, d, x, y, z, mat) => {
                     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -6864,31 +6972,38 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 const HL = Math.min(wall.tloustka || 0.3, 0.1);    // hloubka rámu v ostění
                 const plne = op.typ === 'dvere' || op.typ === 'garazova_vrata';
                 const matVyplne = op.typ === 'garazova_vrata' ? matVrata : matDvere;
-                // Dveře práh nemají; vše s parapetem a prosklené sestavy mají rám dokola
-                const spodniRam = parapet > 0.01 || op.typ !== 'dvere';
-                kvadr(RAM, vyska, HL, -sirka / 2 + RAM / 2, vyska / 2, 0, matRam);
-                kvadr(RAM, vyska, HL, sirka / 2 - RAM / 2, vyska / 2, 0, matRam);
-                kvadr(sirka - 2 * RAM, RAM, HL, 0, vyska - RAM / 2, 0, matRam);
-                if (spodniRam) kvadr(sirka - 2 * RAM, RAM, HL, 0, RAM / 2, 0, matRam);
 
-                const yOd = spodniRam ? RAM : 0;
-                const vnitrniV = vyska - RAM - yOd;
-                const skala = (sirka - 2 * RAM) / sirka;   // křídla se vejdou mezi svislé rámy
-                let x = -sirka / 2 + RAM;
-                kridla.forEach((k, i) => {
-                    const w = Math.max(0.01, k.sirka * skala);
-                    if (i > 0) kvadr(RAM * 0.8, vnitrniV, HL, x, yOd + vnitrniV / 2, 0, matRam); // sloupek mezi křídly
-                    if (plne) {
-                        kvadr(w, vnitrniV, 0.045, x + w / 2, yOd + vnitrniV / 2, 0, matVyplne);
-                    } else {
-                        kvadr(w, vnitrniV, 0.012, x + w / 2, yOd + vnitrniV / 2, 0, skloTypu(op.typ));
-                        if (k.otv !== 'fix' && w > 3 * RAM && vnitrniV > 3 * RAM) {
-                            // Rám otevíravého křídla kolem skla
-                            const KR = 0.05;
-                            kvadr(KR, vnitrniV, 0.04, x + KR / 2, yOd + vnitrniV / 2, 0, matRam);
-                            kvadr(KR, vnitrniV, 0.04, x + w - KR / 2, yOd + vnitrniV / 2, 0, matRam);
-                            kvadr(w - 2 * KR, KR, 0.04, x + w / 2, yOd + vnitrniV - KR / 2, 0, matRam);
-                            kvadr(w - 2 * KR, KR, 0.04, x + w / 2, yOd + KR / 2, 0, matRam);
+                // Každý díl má vlastní rám (dva sousední svislé rámy tvoří sloupek) — díly
+                // mohou mít různý parapet, horní hrana je společná
+                const celkem = kridla.reduce((a, k) => a + k.sirka, 0) || sirka;
+                let x = -sirka / 2;
+                kridla.forEach((k) => {
+                    const w = Math.max(0.02, k.sirka * sirka / celkem);
+                    const spodek = Math.min(parapetKridla(op, k), vrsek - 0.05);
+                    const v = vrsek - spodek;
+                    // Dveřní křídlo k podlaze práh nemá; okno a prosklené díly mají rám dokola
+                    const spodniRam = spodek > 0.01 || op.typ !== 'dvere';
+                    kvadr(RAM, v, HL, x + RAM / 2, spodek + v / 2, 0, matRam);
+                    kvadr(RAM, v, HL, x + w - RAM / 2, spodek + v / 2, 0, matRam);
+                    kvadr(Math.max(0.01, w - 2 * RAM), RAM, HL, x + w / 2, vrsek - RAM / 2, 0, matRam);
+                    if (spodniRam) kvadr(Math.max(0.01, w - 2 * RAM), RAM, HL, x + w / 2, spodek + RAM / 2, 0, matRam);
+
+                    const yOd = spodek + (spodniRam ? RAM : 0);
+                    const vnitrniV = vrsek - RAM - yOd;
+                    const vnitrniW = w - 2 * RAM;
+                    if (vnitrniV > 0.02 && vnitrniW > 0.02) {
+                        if (plne) {
+                            kvadr(vnitrniW, vnitrniV, 0.045, x + w / 2, yOd + vnitrniV / 2, 0, matVyplne);
+                        } else {
+                            kvadr(vnitrniW, vnitrniV, 0.012, x + w / 2, yOd + vnitrniV / 2, 0, skloTypu(op.typ));
+                            if ((k.otv !== 'fix' || k.sklopne) && vnitrniW > 3 * RAM && vnitrniV > 3 * RAM) {
+                                // Rám otevíravého křídla kolem skla
+                                const KR = 0.05;
+                                kvadr(KR, vnitrniV, 0.04, x + RAM + KR / 2, yOd + vnitrniV / 2, 0, matRam);
+                                kvadr(KR, vnitrniV, 0.04, x + w - RAM - KR / 2, yOd + vnitrniV / 2, 0, matRam);
+                                kvadr(vnitrniW - 2 * KR, KR, 0.04, x + w / 2, yOd + vnitrniV - KR / 2, 0, matRam);
+                                kvadr(vnitrniW - 2 * KR, KR, 0.04, x + w / 2, yOd + KR / 2, 0, matRam);
+                            }
                         }
                     }
                     x += w;

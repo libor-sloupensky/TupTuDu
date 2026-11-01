@@ -91,6 +91,19 @@
     .kk-pole { height: 28px; border: 1px solid #6b7280; border-radius: 6px; background: var(--c-surface);
                padding: 0 6px; font-size: 12px; color: var(--c-text-secondary); }
     .kk-pole:focus { outline: none; border-color: var(--c-primary); }
+    /* Úchop panelu otvoru — svislý proužek s tečkami, táhne se myší i prstem (touch-action: none) */
+    .kk-panel-uchop { flex: none; width: 16px; display: flex; align-items: center; justify-content: center;
+                      color: #6b7280; background: #f3f4f6; border-right: 1px solid #e5e7eb; border-radius: 6px 0 0 6px;
+                      cursor: grab; touch-action: none; user-select: none; }
+    .kk-panel-uchop:active { cursor: grabbing; background: #fdf0e7; color: var(--c-primary); }
+    /* Jednotné řádky panelu otvoru: všechna pole 24 px vysoká, písmo 12 px, řádek 26 px */
+    #kk-panel-otvoru { font-size: 12px; line-height: 1.2; }
+    #kk-panel-otvoru input[type=number], #kk-panel-otvoru select { height: 24px; font-size: 12px; line-height: 22px; padding-top: 0; padding-bottom: 0; }
+    #kk-panel-otvoru input[type=checkbox] { width: 13px; height: 13px; margin: 0; }
+    /* Globální label (app.css) je tučný, blokový a s okrajem — v panelu má být jako ostatní popisky */
+    #kk-panel-otvoru label { display: inline-flex; align-items: center; font-size: 12px; font-weight: 400; margin: 0; color: #6b7280; }
+    #kk-panel-otvoru button { height: 24px; font-size: 12px; line-height: 22px; padding-top: 0; padding-bottom: 0; }
+    #kk-panel-otvoru .flex.items-center { min-height: 26px; }
     @keyframes kk-blik {
         0%  { animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
         15% { color: var(--c-primary); background-color: color-mix(in srgb, var(--c-primary) 14%, transparent);
@@ -261,7 +274,7 @@
                     </svg>
                 </button>
                 {{-- Otvor --}}
-                <button x-ref="tlOtvor" @click="nastroj = nastroj === 'otvor' ? 'vyber' : 'otvor'" class="kk-tl" :class="nastroj === 'otvor' && 'kk-tl-aktivni'"
+                <button @click="nastroj = nastroj === 'otvor' ? 'vyber' : 'otvor'" class="kk-tl" :class="nastroj === 'otvor' && 'kk-tl-aktivni'"
                         data-tip="Vložit otvor do stěny (6 / O)">
                     {{-- zeď v řezu s proraženým otvorem --}}
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -369,12 +382,26 @@
                 <img src="/img/external/mapy-com-logo.png" alt="Mapy.com" style="height:14px;display:block">
             </a>
 
-            {{-- Panel otvoru — vždy na stejném místě: na plátně těsně pod tlačítkem nástroje Otvor.
-                 Ukazuje buď volby nového otvoru (nástroj zapnutý), nebo vlastnosti výběru. --}}
+            {{-- Panel otvoru — na plátně v levém horním rohu (odsazení 6 px jako nahoře), úchopem vlevo
+                 jde přetáhnout jinam (poloha se pamatuje), dvojklik na úchop ho vrátí. Ukazuje buď
+                 volby nového otvoru (nástroj zapnutý), nebo vlastnosti výběru. --}}
             <div id="kk-panel-otvoru" x-show="!rezim3d && (nastroj === 'otvor' || inspector)" x-cloak
-                 class="bg-white rounded-lg shadow-md text-xs"
+                 class="bg-white rounded-lg shadow-md text-xs flex items-stretch"
                  :style="panelOtvoruStyl"
-                 style="position:absolute;z-index:15;min-width:250px;max-width:320px;border:1.5px solid var(--c-primary)">
+                 style="position:absolute;z-index:15;min-width:250px;max-width:420px;border:1.5px solid var(--c-primary)">
+                <div class="kk-panel-uchop" data-tip-below="Tažením přesunout panel · Dvojklik = vrátit na místo"
+                     @pointerdown.prevent="panelOtvoruTahniStart($event)"
+                     @pointermove="panelOtvoruTahni($event)"
+                     @pointerup="panelOtvoruTahniKonec($event)"
+                     @pointercancel="panelOtvoruTahniKonec($event)"
+                     @dblclick.prevent="panelOtvoruReset()">
+                    <svg width="8" height="18" viewBox="0 0 8 18" fill="currentColor" aria-hidden="true">
+                        <circle cx="2" cy="3" r="1.4"/><circle cx="6" cy="3" r="1.4"/>
+                        <circle cx="2" cy="9" r="1.4"/><circle cx="6" cy="9" r="1.4"/>
+                        <circle cx="2" cy="15" r="1.4"/><circle cx="6" cy="15" r="1.4"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
                 <template x-if="nastroj === 'otvor'">
                     <div class="p-2 flex flex-col gap-1">
                         <div class="flex items-center gap-2">
@@ -435,55 +462,67 @@
                                                 </template>
                                             </select>
                                         </template>
+                                        {{-- Výška a parapet otvoru hned vedle šířky — Libor 1. 11. 2026.
+                                             Parapet posune celý otvor (výška zůstane); díl zvlášť jen v řádcích dílů. --}}
+                                        <span class="text-gray-500 ml-1">v:</span>
+                                        <input type="number" min="30" max="400" step="1"
+                                               class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                               :value="inspector.vyska !== null ? Math.round(inspector.vyska * 100) : ''"
+                                               @change="setOpeningVyska(parseFloat($event.target.value) / 100)"
+                                               @keydown.enter.prevent="$event.target.blur()">
+                                        <span class="text-gray-500">cm</span>
+                                        <span class="text-gray-500 ml-1">par:</span>
+                                        <input type="number" min="0" max="300" step="1"
+                                               class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                               :value="inspector.parapet !== null ? Math.round(inspector.parapet * 100) : ''"
+                                               @change="setOpeningParapet(parseFloat($event.target.value) / 100)"
+                                               @keydown.enter.prevent="$event.target.blur()">
+                                        <span class="text-gray-500">cm</span>
                                     </div>
                                 </div>
-                                {{-- Výška a parapet v cm — výchozí podle typu, zadaná hodnota se uloží k otvoru --}}
-                                <div class="flex items-center gap-1">
-                                    <span class="text-gray-500">v:</span>
-                                    <input type="number" min="30" max="400" step="1"
-                                           class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
-                                           :value="inspector.vyska !== null ? Math.round(inspector.vyska * 100) : ''"
-                                           @change="setOpeningVyska(parseFloat($event.target.value) / 100)"
-                                           @keydown.enter.prevent="$event.target.blur()">
-                                    <span class="text-gray-500">cm</span>
-                                    <span class="text-gray-500 ml-auto">parapet:</span>
-                                    <input type="number" min="0" max="300" step="1"
-                                           class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
-                                           :value="inspector.parapet !== null ? Math.round(inspector.parapet * 100) : ''"
-                                           @change="setOpeningParapet(parseFloat($event.target.value) / 100)"
-                                           @keydown.enter.prevent="$event.target.blur()">
-                                    <span class="text-gray-500">cm</span>
-                                </div>
-                                {{-- Křídla: předvolba sestavy; u jednoho otvoru s více křídly i každé křídlo zvlášť --}}
+                                {{-- Křídla: počet dílů, každý díl si uživatel nastaví zvlášť (typ, sklopné, šířka).
+                                     Žádné předvolby sestav — Libor 1. 11. 2026. --}}
                                 <template x-if="inspector.maKridla">
                                     <div class="flex flex-col gap-1">
                                         <div class="flex items-center gap-2">
-                                            <select class="border border-gray-500 rounded px-1 py-0.5 text-xs flex-1"
-                                                    @change="setOpeningPredvolba($event.target.value)">
-                                                <option value="" disabled :selected="inspector.predvolba === null">—</option>
-                                                <option value="vlastni" disabled :selected="inspector.predvolba === 'vlastni'">Vlastní sestava</option>
-                                                <template x-for="v in inspector.predvolby" :key="v.key">
-                                                    <option :value="v.key"
-                                                            :selected="inspector.predvolba === v.key"
-                                                            x-text="v.label"></option>
+                                            <span class="text-gray-500">dílů:</span>
+                                            <select class="border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                                    @change="setPocetKridel(parseInt($event.target.value, 10))">
+                                                <option value="" disabled :selected="inspector.pocetKridel === null">—</option>
+                                                <template x-for="n in inspector.pocetVolby" :key="n">
+                                                    <option :value="n"
+                                                            :selected="inspector.pocetKridel === n"
+                                                            x-text="n === 0 ? 'jen otvor' : n"></option>
                                                 </template>
                                             </select>
+                                            <span class="flex-1"></span>
+                                            {{-- Zrcadlení (levé ↔ pravé) je pro všechny sestavy; dovnitř/ven jen pro
+                                                 otvory k podlaze — okno se otvírá vždy dovnitř (strana se určí sama). --}}
+                                            <button type="button"
+                                                    x-show="inspector.canZrcadlit"
+                                                    @click="zrcadlitOtvor()"
+                                                    class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50 hover:border-orange-400"
+                                                    title="Zrcadlit (levé ↔ pravé)">
+                                                ⇄
+                                            </button>
                                             <button type="button"
                                                     x-show="inspector.canFlipStrana"
                                                     @click="flipOpeningStrana()"
                                                     class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50 hover:border-orange-400"
-                                                    title="Otevírat na druhou stranu zdi">
-                                                ⇄
+                                                    title="Otevírat na druhou stranu zdi (dovnitř ↔ ven)">
+                                                ⇵
                                             </button>
                                         </div>
-                                        <template x-if="inspector.kridla && inspector.kridla.length > 1">
+                                        <template x-if="inspector.kridla && inspector.kridla.length > 0">
                                             <div class="flex flex-col gap-0.5">
                                                 <template x-for="(k, i) in inspector.kridla" :key="i">
                                                     <div class="flex items-center gap-1">
                                                         <span class="text-gray-500 w-3" x-text="(i + 1) + '.'"></span>
+                                                        {{-- Šířka dílu má smysl až od dvou dílů; u jednoho je rovna šířce otvoru --}}
                                                         <input type="number" min="20" max="300" step="1"
-                                                               class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                                               class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs disabled:bg-gray-100 disabled:text-gray-500"
                                                                :value="Math.round(k.sirka * 100)"
+                                                               :disabled="inspector.kridla.length < 2"
                                                                @change="setKridloSirka(i, parseFloat($event.target.value) / 100)"
                                                                @keydown.enter.prevent="$event.target.blur()">
                                                         <span class="text-gray-500">cm</span>
@@ -493,6 +532,25 @@
                                                                 <option :value="v.key" :selected="k.otv === v.key" x-text="v.label"></option>
                                                             </template>
                                                         </select>
+                                                        {{-- Sklopné je doplněk k typu (otevíravě-sklopné, posuvně-sklopné, pevné + sklopné = větračka) --}}
+                                                        <label class="flex items-center gap-1 text-gray-500 whitespace-nowrap cursor-pointer" title="Křídlo jde navíc sklopit">
+                                                            <input type="checkbox" :checked="k.sklopne" @change="setKridloSklopne(i, $event.target.checked)"> skl.
+                                                        </label>
+                                                        {{-- Parapet dílu jen u více dílů (dvojokno s nižším parapetem, boční díl
+                                                             u francouzského okna); předvyplněný parapetem otvoru, zadává se až rozdíl --}}
+                                                        <template x-if="inspector.kridla.length > 1">
+                                                            <span class="flex items-center gap-1">
+                                                                <input type="number" min="0" max="300" step="1"
+                                                                       class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                                                       :class="Math.abs(k.parapet - inspector.parapet) > 0.001 && 'border-orange-500 bg-orange-50'"
+                                                                       :value="Math.round(k.parapet * 100)"
+                                                                       title="Parapet tohoto dílu v cm"
+                                                                       @change="setKridloParapet(i, parseFloat($event.target.value) / 100)"
+                                                                       @keydown.enter.prevent="$event.target.blur()">
+                                                                {{-- Popisek až za polem, jako „skl." za zaškrtávátkem (Libor) --}}
+                                                                <span class="text-gray-500" title="Parapet tohoto dílu">par.</span>
+                                                            </span>
+                                                        </template>
                                                     </div>
                                                 </template>
                                             </div>
@@ -530,6 +588,7 @@
                         </template>
                     </div>
                 </template>
+                </div>
             </div>
             {{-- Měřítko s pravítkem --}}
             <div style="position:absolute;bottom:8px;right:12px;z-index:10;pointer-events:none;display:flex;align-items:center;gap:0" x-show="!rezim3d">
