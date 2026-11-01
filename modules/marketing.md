@@ -11,11 +11,29 @@ zatím nerozhodnuto — třešinky na dortu, až web poběží veřejně.
   Všechny tři MCP servery se stáhly a spustily (Python 3.14 nevadí):
   `pipx run analytics-mcp`, `pipx run --spec git+https://github.com/googleads/google-ads-mcp.git google-ads-mcp`,
   `uvx mcp-search-console`.
-- **GA4 property založena** (krok 2), Measurement ID `G-RZ5R886K95`. Web má GA4 nasazené v kódu
-  (lokálně necommitováno, viz níž). Stále `noindex`.
-- **Google Cloud projekt, servisní účet, Search Console, Ads:** zatím ne — kroky 1, 3, 4 níže.
-- `.mcp.json` v projektu zatím není — vznikne po kroku 1 (jinak by servery při každém startu
-  VS Code hlásily chybějící klíč).
+- **GA4 property založena** (krok 2), Measurement ID `G-RZ5R886K95`. GA4 + cookie lišta **nasazeny
+  na produkci 2026-11-01** (commity ce9dd7b, ff1e7ca; ověřeno: web a app lištu mají, masterteam ne).
+  Stále `noindex`.
+- **Google Cloud projekt:** v účtu jsou DVA projekty se jménem „TupTuDu". Ten pravý je
+  **Project ID `woven-nimbus-474913-i4`** (číslo 190679332975) — má Google Ads API
+  **schválené na Explorer 2026-11-01** (2 880 operací/den) a nejspíš i OAuth klienta pro
+  přihlášení přes Google (GOOGLE_CLIENT_ID) → **nikdy nemazat**. Druhý projekt `tuptudu`
+  (číslo 59788977139) vznikl omylem 2026-11-01 a byl vypnut.
+- **Hotovo 2026-11-01:** tři API zapnutá, servisní účet `tuptudu-mcp@woven-nimbus-474913-i4.iam.gserviceaccount.com`,
+  klíč v `C:\Users\HP\.tuptudu-google\service-account.json`, uživatelské proměnné `TUPTUDU_GOOGLE_SA`
+  a `TUPTUDU_GCP_PROJECT` nastavené, `.mcp.json` v projektu vytvořen (servery se načtou po restartu VS Code).
+- **Kontrolní skript** `py services/google-kontrola.py` (jen čte). Stav k 2026-11-01 večer:
+  token OK; **GA4 OK** (servisní účet má Viewer, property `properties/561796471`, účet „TupTuDu.com");
+  v IAM projektu má servisní účet roli **Service Usage Consumer** (Ads API bez ní vrací 403 na
+  hlavičku `x-goog-user-project`; MCP server posílá projekt z `GOOGLE_PROJECT_ID`). V IAM je i
+  Libor jako Owner (Legacy) — **nemazat**, je to jeho vlastnictví projektu.
+  **Vše OK k 2026-11-01 večer:** GA4 Editor (Libor dal rovnou Editor místo Viewer), uchovávání
+  14 měsíců; Search Console doménová služba `sc-domain:tuptudu.com` s plným oprávněním (předponová
+  služba odebrána); Google Ads **ID zákazníka 134-646-0395** („TupTuDu.com", CZK, Europe/Prague,
+  starší účet původně pro WormUP, 0 kampaní) se servisním účtem jako Standardní. Skript rovnou
+  vypisuje i měnu, pásmo a kampaně (GAQL přes `googleAds:search`, hlavička `login-customer-id`).
+  Zbývá: propojení GA4↔Ads (6d), restart VS Code a test MCP serverů, první „analyzuj web".
+- Google účty má Libor v **češtině** — návody psát s českými názvy položek.
 
 ## GA4 na webu (hotovo 2026-11-01)
 - **ID** z `.env` `GA4_MEASUREMENT_ID` (`config('services.ga4.measurement_id')`); produkce ho má
