@@ -207,18 +207,21 @@ function konceptKEditor(initialData) {
                 const typ0 = openings[0].typ;
                 const sameTyp = openings.every(o => o.typ === typ0);
                 const sameSirka = openings.every(o => Math.abs(o.sirka - openings[0].sirka) < 0.001);
-                const sameSmer = openings.every(o => (o.smer || null) === (openings[0].smer || null));
                 const sameStrana = openings.every(o => (o.strana || 'in') === (openings[0].strana || 'in'));
                 const cfg = TYPY_OTVORU[typ0];
-                // Směr otvírání — jen pro typy s dveřmi (ne okno)
-                const hasDoor = typ0 && (typ0 === 'dvere' || typ0 === 'francouzske_okno' || typ0 === 'garazova_vrata' || typ0 === 'pruchod');
-                const smeryVolby = hasDoor ? [
-                    { key: 'pravy', label: 'Pravé' },
-                    { key: 'levy', label: 'Levé' },
-                    { key: 'posuvne', label: 'Posuvné' },
-                    { key: 'otvor', label: 'Otvor (bez křídla)' },
-                ] : [];
-                const smerAktual = sameSmer ? (openings[0].smer || null) : null;
+                // Výška a parapet — vlastní, nebo výchozí podle typu
+                const vyska0 = vyskaOtvoru(openings[0]);
+                const sameVyska = openings.every(o => Math.abs(vyskaOtvoru(o) - vyska0) < 0.001);
+                const parapet0 = parapetOtvoru(openings[0]);
+                const sameParapet = openings.every(o => Math.abs(parapetOtvoru(o) - parapet0) < 0.001);
+                // Křídla: předvolby podle typu, jednotlivá křídla jen u jednoho otvoru
+                const maKridla = sameTyp && typ0 !== 'pruchod';
+                const predvolby = maKridla ? (PREDVOLBY_KRIDEL[typ0] || []).map(p => ({ key: p.key, label: p.nazev })) : [];
+                const predvolba0 = predvolbaKridel(openings[0]);
+                const samePredvolba = openings.every(o => predvolbaKridel(o) === predvolba0);
+                const kridla = openings.length === 1 ? kridlaOtvoru(openings[0]).map(k => ({ sirka: k.sirka, otv: k.otv })) : null;
+                const kridlaVolby = Object.entries(TYPY_KRIDEL).map(([key, d]) => ({ key, label: d.nazev }));
+                const maPohyblive = openings.some(o => kridlaOtvoru(o).some(k => k.otv !== 'fix'));
                 return {
                     kind: openings.length > 1 ? 'opening_multi' : 'opening',
                     count: openings.length,
@@ -226,11 +229,15 @@ function konceptKEditor(initialData) {
                     typLabel: sameTyp && cfg ? cfg.nazev : 'Různé typy',
                     sirka: sameSirka ? openings[0].sirka : null,
                     sirky: sameTyp && cfg ? cfg.standardSirky : [],
-                    hasDoor,
-                    smer: smerAktual,
-                    smeryVolby,
+                    vyska: sameVyska ? vyska0 : null,
+                    parapet: sameParapet ? parapet0 : null,
+                    maKridla,
+                    predvolby,
+                    predvolba: maKridla && samePredvolba ? predvolba0 : null,
+                    kridla,
+                    kridlaVolby,
                     strana: sameStrana ? (openings[0].strana || 'in') : null,
-                    canFlipStrana: hasDoor && (smerAktual === 'levy' || smerAktual === 'pravy' || smerAktual === 'posuvne'),
+                    canFlipStrana: maKridla && maPohyblive,
                 };
             }
             // Jen stěny
@@ -254,6 +261,24 @@ function konceptKEditor(initialData) {
                 };
             }
             return null;
+        },
+
+        /**
+         * Poloha panelu otvoru: na plátně těsně pod tlačítkem nástroje Otvor
+         * (Libor 1. 11. 2026 — jedno pevné místo pro nový otvor i pro vlastnosti výběru,
+         * dřív byl panel vpravo u kompasu a volby nástroje zvlášť v liště).
+         */
+        _rozmerTick: 0,
+        get panelOtvoruStyl() {
+            // eslint-disable-next-line no-unused-vars
+            const _zavislosti = this._selectionTick + this._rozmerTick + (this.nastroj === 'otvor' ? 1 : 0);
+            const tl = this.$refs?.tlOtvor, wrap = this.$refs?.canvasWrap;
+            let left = 12;
+            if (tl && wrap) {
+                left = Math.max(4, Math.round(tl.getBoundingClientRect().left - wrap.getBoundingClientRect().left));
+            }
+            // Objekt, ne řetězec — řetězec by v Alpine nahradil celý inline styl (position, z-index…)
+            return { left: left + 'px', top: '6px' };
         },
 
         /** Screen pozice inspector panelu (relativní ke kk-canvas-wrap). */
@@ -306,8 +331,15 @@ function konceptKEditor(initialData) {
             return { x: Math.round(x), y: Math.round(y) };
         },
 
-        /** Aplikuje směr otvírání (pravy/levy/litaci/posuvne/otvor) na vybrané otvory. */
-        setOpeningSmer(novySmer) {
+        /** Společný závěr úprav vybraných otvorů: překreslit, uložit, obnovit inspektor. */
+        _poUpraveOtvoru(popis) {
+            this.renderer.render();
+            this.autoSave(popis);
+            this._selectionTick++;
+        },
+
+        /** Sestava křídel z předvolby na vybrané otvory (jen otvory stejného typu, jako je předvolba). */
+        setOpeningPredvolba(key) {
             if (!this.renderer || !this.engine) return;
             const ids = [...this.renderer.selectedOpenings];
             if (ids.length === 0) return;
@@ -315,14 +347,91 @@ function konceptKEditor(initialData) {
             for (const id of ids) {
                 const o = this.engine.openings.get(id);
                 if (!o) continue;
-                o.smer = novySmer;
+                const predvolba = (PREDVOLBY_KRIDEL[o.typ] || []).find(p => p.key === key);
+                if (!predvolba) continue;
+                o.kridla = kridlaZPredvolby(predvolba, o.sirka);
+                o.smer = smerZKridel(o);
             }
-            this.renderer.render();
-            this.autoSave('Směr otvírání');
-            this._selectionTick++;
+            this._poUpraveOtvoru('Křídla otvoru');
         },
 
-        /** Převrátí stranu zdi (in/out) na vybraných otvorech — smysl jen pro levé/pravé. */
+        /** Vybraný otvor (jen jeden) s uloženými křídly — odvozená se před úpravou zkopírují. */
+        _otvorSKridly() {
+            if (!this.renderer || !this.engine) return null;
+            const ids = [...this.renderer.selectedOpenings];
+            if (ids.length !== 1) return null;
+            const o = this.engine.openings.get(ids[0]);
+            if (!o) return null;
+            if (!Array.isArray(o.kridla)) o.kridla = kridlaOtvoru(o).map(k => ({ sirka: k.sirka, otv: k.otv }));
+            return o;
+        },
+
+        /** Typ otvírání jednoho křídla. */
+        setKridloTyp(i, otv) {
+            const o = this._otvorSKridly();
+            if (!o || !o.kridla[i] || !TYPY_KRIDEL[otv]) return;
+            this.engine.pushUndo();
+            o.kridla[i].otv = otv;
+            o.smer = smerZKridel(o);
+            this._poUpraveOtvoru('Typ křídla');
+        },
+
+        /**
+         * Šířka jednoho křídla v m. Šířka otvoru se nemění — rozdíl převezme
+         * sousední křídlo (napravo, u posledního nalevo), nejméně 20 cm.
+         */
+        setKridloSirka(i, novaSirka) {
+            const o = this._otvorSKridly();
+            if (!o || !o.kridla[i] || !(novaSirka > 0) || o.kridla.length < 2) return;
+            const MIN = 0.2;
+            const j = i < o.kridla.length - 1 ? i + 1 : i - 1;
+            const spolecne = Math.round((o.kridla[i].sirka + o.kridla[j].sirka) * 100) / 100;
+            const s = Math.min(spolecne - MIN, Math.max(MIN, Math.round(novaSirka * 100) / 100));
+            if (!(s > 0)) return;
+            this.engine.pushUndo();
+            o.kridla[i].sirka = s;
+            o.kridla[j].sirka = Math.round((spolecne - s) * 100) / 100;
+            this._poUpraveOtvoru('Šířka křídla');
+        },
+
+        /** Výška stěny, ve které otvor sedí (strop výšky a parapetu otvoru). */
+        _vyskaStenyOtvoru(o) {
+            const w = this.engine.walls.get(o.wallId);
+            const typDef = (w && TYPY_STEN[w.typ]) || {};
+            return typDef.vyska?.default || 2.8;
+        },
+
+        /** Výška otvoru v m na vybrané otvory; parapet zůstává, výška se vejde pod strop stěny. */
+        setOpeningVyska(novaVyska) {
+            if (!this.renderer || !this.engine || !(novaVyska > 0)) return;
+            const ids = [...this.renderer.selectedOpenings];
+            if (ids.length === 0) return;
+            this.engine.pushUndo();
+            for (const id of ids) {
+                const o = this.engine.openings.get(id);
+                if (!o) continue;
+                const strop = this._vyskaStenyOtvoru(o) - parapetOtvoru(o);
+                o.vyska = Math.round(Math.min(strop, Math.max(0.3, novaVyska)) * 100) / 100;
+            }
+            this._poUpraveOtvoru('Výška otvoru');
+        },
+
+        /** Parapet v m na vybrané otvory; výška zůstává, parapet se vejde pod strop stěny. */
+        setOpeningParapet(novyParapet) {
+            if (!this.renderer || !this.engine || !(novyParapet >= 0)) return;
+            const ids = [...this.renderer.selectedOpenings];
+            if (ids.length === 0) return;
+            this.engine.pushUndo();
+            for (const id of ids) {
+                const o = this.engine.openings.get(id);
+                if (!o) continue;
+                const strop = this._vyskaStenyOtvoru(o) - vyskaOtvoru(o);
+                o.parapet = Math.round(Math.max(0, Math.min(strop, novyParapet)) * 100) / 100;
+            }
+            this._poUpraveOtvoru('Parapet otvoru');
+        },
+
+        /** Převrátí stranu zdi (in/out), na kterou se křídla otvírají či vysouvají. */
         flipOpeningStrana() {
             if (!this.renderer || !this.engine) return;
             const ids = [...this.renderer.selectedOpenings];
@@ -331,12 +440,10 @@ function konceptKEditor(initialData) {
             for (const id of ids) {
                 const o = this.engine.openings.get(id);
                 if (!o) continue;
-                if (o.smer !== 'levy' && o.smer !== 'pravy' && o.smer !== 'posuvne') continue;
+                if (!kridlaOtvoru(o).some(k => k.otv !== 'fix')) continue;
                 o.strana = (o.strana === 'out') ? 'in' : 'out';
             }
-            this.renderer.render();
-            this.autoSave('Otočit dveře');
-            this._selectionTick++;
+            this._poUpraveOtvoru('Otočit křídla');
         },
 
         /**
@@ -367,6 +474,7 @@ function konceptKEditor(initialData) {
                 }
 
                 o.sirka = delkaSteny !== null ? Math.min(pozadovana, delkaSteny) : pozadovana;
+                zmenSirkuKridel(o, o.sirka);
                 if (delkaSteny !== null) {
                     o.pozice = Math.max(0, Math.min(delkaSteny - o.sirka, stred - o.sirka / 2));
                 } else {
@@ -5933,6 +6041,7 @@ function konceptKEditor(initialData) {
             if (!c || !c.offsetWidth || !c.offsetHeight) return;   // skryté plátno — viz ResizeObserver
             this.stage.width(c.offsetWidth);
             this.stage.height(c.offsetHeight);
+            this._rozmerTick++; // panel otvoru si přepočítá polohu pod tlačítkem
             if (renderGrid && this.renderer) this.renderer.renderGrid();
         },
 
@@ -6069,9 +6178,8 @@ function konceptKEditor(initialData) {
             scene.add(grid);
             _3d.grid = grid;
 
-            // Axes
-            const axes = new THREE.AxesHelper(3);
-            scene.add(axes);
+            // Ladicí osy (AxesHelper) tu byly od začátku — v počátku kresby trčela
+            // z podlahy zelená čára, kterou viděl i zákazník. Pryč.
 
             // Nápověda 3D — přesunuta do Blade .kk-3d-help (řádek vedle kk-coords)
             container.style.position = 'relative';
@@ -6595,7 +6703,7 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
             if (_3d.terrainHeights && this.engine.nodes.size > 0) {
                 let xmin = Infinity, xmax = -Infinity, zmin = Infinity, zmax = -Infinity;
                 for (const n of this.engine.nodes.values()) {
-                    const x = n.x / pxM, z = -n.y / pxM;
+                    const x = n.x / pxM, z = n.y / pxM; // Z shodně se stěnami a terénem
                     if (x < xmin) xmin = x; if (x > xmax) xmax = x;
                     if (z < zmin) zmin = z; if (z > zmax) zmax = z;
                 }
@@ -6611,72 +6719,181 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 return;
             }
 
-            // Stěny — extruze z 2D polygonu (mitre join, konzistentní s 2D)
-            for (const wall of this.engine.walls.values()) {
-                const poly = this.engine.getWallPolygon(wall.id);
-                if (!poly || poly.length < 3) continue;
+            // Souřadnice scény: X = canvas.x / pxM, Z = canvas.y / pxM — stejně jako terén
+            // (_buildTerrain3D). Extruze stěn jde v ose Z tvaru a po rotation.x = -90°
+            // se z ní stane výška Y; shape.y = -Z, aby Z vyšlo kladné jako u terénu.
+            const doSceny = (p) => ({ x: p.x / pxM, z: p.y / pxM });
 
-                const typDef = (typeof TYPY_STEN !== 'undefined' && TYPY_STEN[wall.typ]) || {};
-                const vyskaSteny = typDef.vyska?.default || defaultVyskaSteny;
-
-                const shape = new THREE.Shape();
-                shape.moveTo(poly[0].x / pxM, -poly[0].y / pxM);
-                for (let i = 1; i < poly.length; i++) {
-                    shape.lineTo(poly[i].x / pxM, -poly[i].y / pxM);
+            // Ořez polygonu polorovinou (Sutherland–Hodgman): zůstanou body s f(p) >= 0
+            const orizni = (poly, f) => {
+                const out = [];
+                for (let i = 0; i < poly.length; i++) {
+                    const a = poly[i], b = poly[(i + 1) % poly.length];
+                    const fa = f(a), fb = f(b);
+                    if (fa >= 0) out.push(a);
+                    if ((fa >= 0) !== (fb >= 0)) {
+                        const k = fa / (fa - fb);
+                        out.push({ x: a.x + (b.x - a.x) * k, z: a.z + (b.z - a.z) * k });
+                    }
                 }
-                shape.closePath();
+                return out;
+            };
 
-                const geom = new THREE.ExtrudeGeometry(shape, {
-                    depth: vyskaSteny,
-                    bevelEnabled: false,
-                });
-                const mat = new THREE.MeshStandardMaterial({
-                    color: typDef.barva3d || 0x8b8b8b,
-                    roughness: 0.85,
-                });
+            // Svislý hranol nad půdorysným polygonem od výšky yOd do yDo
+            const pridejHranol = (poly, yOd, yDo, mat) => {
+                if (!poly || poly.length < 3 || yDo - yOd < 0.005) return;
+                const shape = new THREE.Shape();
+                shape.moveTo(poly[0].x, -poly[0].z);
+                for (let i = 1; i < poly.length; i++) shape.lineTo(poly[i].x, -poly[i].z);
+                shape.closePath();
+                const geom = new THREE.ExtrudeGeometry(shape, { depth: yDo - yOd, bevelEnabled: false });
                 const mesh = new THREE.Mesh(geom, mat);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
-
-                // ExtrudeGeometry vytahuje v ose Z — otočíme aby výška šla do Y
                 mesh.rotation.x = -Math.PI / 2;
-
+                mesh.position.y = yOd;
                 group.add(mesh);
+            };
+
+            const vyskaSteny = (wall) => {
+                const typDef = (typeof TYPY_STEN !== 'undefined' && TYPY_STEN[wall.typ]) || {};
+                return typDef.vyska?.default || defaultVyskaSteny;
+            };
+
+            const otvoryPodleSteny = new Map();
+            for (const op of this.engine.openings.values()) {
+                if (!otvoryPodleSteny.has(op.wallId)) otvoryPodleSteny.set(op.wallId, []);
+                otvoryPodleSteny.get(op.wallId).push(op);
             }
 
-            // Otvory — jednoduché průhledné boxy
+            // Stěny — extruze z 2D polygonu (mitre join, konzistentní s 2D), rozřezané
+            // podél osy na díly: plné úseky, pod otvorem parapet a nad otvorem nadpraží.
+            for (const wall of this.engine.walls.values()) {
+                const polyPx = this.engine.getWallPolygon(wall.id);
+                if (!polyPx || polyPx.length < 3) continue;
+                const nA = this.engine.nodes.get(wall.nodeA);
+                const nB = this.engine.nodes.get(wall.nodeB);
+                if (!nA || !nB) continue;
+
+                const typDef = (typeof TYPY_STEN !== 'undefined' && TYPY_STEN[wall.typ]) || {};
+                const H = vyskaSteny(wall);
+                const mat = new THREE.MeshStandardMaterial({ color: typDef.barva3d || 0x8b8b8b, roughness: 0.85 });
+                const poly = polyPx.map(doSceny);
+                const A = doSceny(nA), B = doSceny(nB);
+                const L = Math.hypot(B.x - A.x, B.z - A.z);
+                if (L < 0.01) continue;
+                const ux = (B.x - A.x) / L, uz = (B.z - A.z) / L;
+                const tBodu = (p) => (p.x - A.x) * ux + (p.z - A.z) * uz;
+
+                // Výřezy podél stěny (m od uzlu A), překrývající se sloučené
+                const vyrezy = (otvoryPodleSteny.get(wall.id) || []).map(op => {
+                    const par = parapetOtvoru(op);
+                    return { t0: op.pozice, t1: op.pozice + op.sirka, od: par, do: Math.min(H, par + vyskaOtvoru(op)) };
+                }).filter(v => v.t1 - v.t0 > 0.01 && v.do - v.od > 0.01).sort((a, b) => a.t0 - b.t0);
+                const slouceno = [];
+                for (const v of vyrezy) {
+                    const posledni = slouceno[slouceno.length - 1];
+                    if (posledni && v.t0 < posledni.t1 - 0.001) {
+                        posledni.t1 = Math.max(posledni.t1, v.t1);
+                        posledni.od = Math.min(posledni.od, v.od);
+                        posledni.do = Math.max(posledni.do, v.do);
+                    } else slouceno.push({ ...v });
+                }
+
+                // Mitry na koncích přesahují t < 0 a t > L, proto krajní díly bez meze
+                let tPred = -Infinity;
+                for (const v of slouceno) {
+                    pridejHranol(orizni(orizni(poly, p => tBodu(p) - tPred), p => v.t0 - tBodu(p)), 0, H, mat);
+                    const dil = orizni(orizni(poly, p => tBodu(p) - v.t0), p => v.t1 - tBodu(p));
+                    if (v.od > 0.01) pridejHranol(dil, 0, v.od, mat);        // parapet
+                    if (v.do < H - 0.01) pridejHranol(dil, v.do, H, mat);    // nadpraží
+                    tPred = v.t1;
+                }
+                pridejHranol(orizni(poly, p => tBodu(p) - tPred), 0, H, mat);
+            }
+
+            // Otvory — rám, křídla (sklo nebo plná výplň) a příčle mezi křídly
+            const matRam = new THREE.MeshStandardMaterial({ color: 0xf3f4f6, roughness: 0.55 });
+            const matSklo = new Map();
+            const skloTypu = (typ) => {
+                if (!matSklo.has(typ)) {
+                    const otvorDef = (typeof TYPY_OTVORU !== 'undefined' && TYPY_OTVORU[typ]) || {};
+                    matSklo.set(typ, new THREE.MeshStandardMaterial({
+                        color: otvorDef.barva3d || 0xa3d5f7, transparent: true, opacity: 0.45,
+                        roughness: 0.1, metalness: 0.1, side: THREE.DoubleSide,
+                    }));
+                }
+                return matSklo.get(typ);
+            };
+            const matDvere = new THREE.MeshStandardMaterial({ color: 0x6b4226, roughness: 0.7 });
+            const matVrata = new THREE.MeshStandardMaterial({ color: 0x8a8a8a, roughness: 0.6 });
+
             for (const op of this.engine.openings.values()) {
                 const wall = this.engine.walls.get(op.wallId);
                 if (!wall) continue;
                 const nA = this.engine.nodes.get(wall.nodeA);
                 const nB = this.engine.nodes.get(wall.nodeB);
                 if (!nA || !nB) continue;
+                const kridla = kridlaOtvoru(op);
+                if (kridla.length === 0) continue; // průchod / otvor bez křídla = jen výřez
 
-                const x1 = nA.x / pxM, z1 = -nA.y / pxM;
-                const x2 = nB.x / pxM, z2 = -nB.y / pxM;
-                const dx = x2 - x1, dz = z2 - z1;
-                const delka = Math.hypot(dx, dz);
-                if (delka < 0.01) continue;
+                const A = doSceny(nA), B = doSceny(nB);
+                const L = Math.hypot(B.x - A.x, B.z - A.z);
+                if (L < 0.01) continue;
+                const ux = (B.x - A.x) / L, uz = (B.z - A.z) / L;
 
-                const uhel = -Math.atan2(dz, dx);
-                const posX = x1 + dx * op.position;
-                const posZ = z1 + dz * op.position;
-                const otvorDef = (typeof TYPY_OTVORU !== 'undefined' && TYPY_OTVORU[op.type]) || {};
-                const sirka = op.width / pxM;
-                const tl = wall.tloustka || 0.3;
-                const vyska = otvorDef.vyska?.default || 2.1;
-                const spodek = otvorDef.parapet ?? 0;
+                const H = vyskaSteny(wall);
+                const parapet = parapetOtvoru(op);
+                const vyska = Math.min(H, parapet + vyskaOtvoru(op)) - parapet;
+                const sirka = op.sirka;
+                if (vyska < 0.05 || sirka < 0.05) continue;
 
-                const geom = new THREE.BoxGeometry(sirka, vyska, tl + 0.02);
-                const mat = new THREE.MeshStandardMaterial({
-                    color: otvorDef.barva3d || 0x6b4226,
-                    transparent: true,
-                    opacity: 0.7,
+                // Lokální soustava otvoru: x podél stěny, y nahoru, z napříč tloušťkou
+                const g = new THREE.Group();
+                const tStred = op.pozice + sirka / 2;
+                g.position.set(A.x + ux * tStred, parapet, A.z + uz * tStred);
+                g.rotation.y = Math.atan2(-uz, ux);
+                const kvadr = (w, h, d, x, y, z, mat) => {
+                    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+                    m.position.set(x, y, z);
+                    m.castShadow = true;
+                    g.add(m);
+                };
+
+                const RAM = 0.06;                                  // profil rámu
+                const HL = Math.min(wall.tloustka || 0.3, 0.1);    // hloubka rámu v ostění
+                const plne = op.typ === 'dvere' || op.typ === 'garazova_vrata';
+                const matVyplne = op.typ === 'garazova_vrata' ? matVrata : matDvere;
+                // Dveře práh nemají; vše s parapetem a prosklené sestavy mají rám dokola
+                const spodniRam = parapet > 0.01 || op.typ !== 'dvere';
+                kvadr(RAM, vyska, HL, -sirka / 2 + RAM / 2, vyska / 2, 0, matRam);
+                kvadr(RAM, vyska, HL, sirka / 2 - RAM / 2, vyska / 2, 0, matRam);
+                kvadr(sirka - 2 * RAM, RAM, HL, 0, vyska - RAM / 2, 0, matRam);
+                if (spodniRam) kvadr(sirka - 2 * RAM, RAM, HL, 0, RAM / 2, 0, matRam);
+
+                const yOd = spodniRam ? RAM : 0;
+                const vnitrniV = vyska - RAM - yOd;
+                const skala = (sirka - 2 * RAM) / sirka;   // křídla se vejdou mezi svislé rámy
+                let x = -sirka / 2 + RAM;
+                kridla.forEach((k, i) => {
+                    const w = Math.max(0.01, k.sirka * skala);
+                    if (i > 0) kvadr(RAM * 0.8, vnitrniV, HL, x, yOd + vnitrniV / 2, 0, matRam); // sloupek mezi křídly
+                    if (plne) {
+                        kvadr(w, vnitrniV, 0.045, x + w / 2, yOd + vnitrniV / 2, 0, matVyplne);
+                    } else {
+                        kvadr(w, vnitrniV, 0.012, x + w / 2, yOd + vnitrniV / 2, 0, skloTypu(op.typ));
+                        if (k.otv !== 'fix' && w > 3 * RAM && vnitrniV > 3 * RAM) {
+                            // Rám otevíravého křídla kolem skla
+                            const KR = 0.05;
+                            kvadr(KR, vnitrniV, 0.04, x + KR / 2, yOd + vnitrniV / 2, 0, matRam);
+                            kvadr(KR, vnitrniV, 0.04, x + w - KR / 2, yOd + vnitrniV / 2, 0, matRam);
+                            kvadr(w - 2 * KR, KR, 0.04, x + w / 2, yOd + vnitrniV - KR / 2, 0, matRam);
+                            kvadr(w - 2 * KR, KR, 0.04, x + w / 2, yOd + KR / 2, 0, matRam);
+                        }
+                    }
+                    x += w;
                 });
-                const mesh = new THREE.Mesh(geom, mat);
-                mesh.position.set(posX, spodek + vyska / 2, posZ);
-                mesh.rotation.y = uhel;
-                group.add(mesh);
+                group.add(g);
             }
 
             // Střecha — jednoduchá sedlová/pultová/plochá
@@ -6684,7 +6901,7 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
             if (streData && this.engine.walls.size > 0) {
                 let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
                 for (const n of this.engine.nodes.values()) {
-                    const wx = n.x / pxM, wz = -n.y / pxM;
+                    const wx = n.x / pxM, wz = n.y / pxM; // Z shodně se stěnami a terénem
                     if (wx < minX) minX = wx; if (wx > maxX) maxX = wx;
                     if (wz < minZ) minZ = wz; if (wz > maxZ) maxZ = wz;
                 }
@@ -6770,7 +6987,7 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 let sumX = 0, sumZ = 0, count = 0;
                 for (const n of this.engine.nodes.values()) {
                     sumX += n.x / pxM;
-                    sumZ += -n.y / pxM;
+                    sumZ += n.y / pxM; // Z shodně se stěnami a terénem
                     count++;
                 }
                 if (count > 0) {

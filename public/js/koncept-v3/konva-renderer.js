@@ -566,92 +566,65 @@ class KonvaRenderer {
         this.overlayLayer.batchDraw();
     }
 
-    /** Kreslí detail otvoru: dveřní křídlo + oblouk / posuvné / lítačky. */
+    /**
+     * Kreslí detail otvoru podle křídel: dveřní oblouky, posuvné křídlo s pouzdrem,
+     * u oken trojúhelník otevírání (značka V podle ČSN 01 3420: otevřená strana
+     * u závěsů, hrot od osy otáčení) a dělicí příčle mezi křídly.
+     */
     _drawOpeningDetail(opening, ctx) {
         // Vyčistit předchozí shapes tohoto otvoru
         this.overlayLayer.find('._doorDetail_' + opening.id).forEach(n => n.destroy());
-        const typ = opening.typ;
-        // Pouze typy s dveřmi mají otvírací směr
-        const hasDoor = (typ === 'dvere' || typ === 'francouzske_okno' || typ === 'garazova_vrata');
-        if (!hasDoor) return;
-        const smer = opening.smer || 'pravy';
-        if (smer === 'otvor') return; // bez křídla = nic nekreslit
+        const kridla = (typeof kridlaOtvoru === 'function') ? kridlaOtvoru(opening) : [];
+        if (kridla.length === 0) return; // průchod / otvor bez křídla = nic nekreslit
 
         const { nA, dirX, dirY, pozPx, sirPx, barva } = ctx;
         const nx = -dirY, ny = dirX; // normála zdi
+        const PX = this.PX_PER_M;
+        const wall = this.engine.walls.get(opening.wallId);
+        const tlPx = wall ? wall.tloustka * PX : 10;
+        const pas = tlPx + 4; // výška obdélníku otvoru (viz renderOpenings)
+        const strana = opening.strana || 'in';
+        const sideSign = strana === 'in' ? 1 : -1;
+        const parapet = (typeof parapetOtvoru === 'function') ? parapetOtvoru(opening) : 0;
+        const kPodlaze = parapet < 0.05; // křídlo až k podlaze = kreslí se jako dveře
+        const name = '_doorDetail_' + opening.id;
+        // Značky jsou jen dekorace: listening:false, jinak kliknutí dopadlo na
+        // trojúhelník okna (leží v pásu stěny), hitTest nenašel _openingId a výběr
+        // se zrušil — proto se u oken „někdy" neukázal panel vlastností.
+        // Bod: t = vzdálenost podél stěny od uzlu A (px), s = odsazení kolmo (px)
+        const bod = (t, s) => ({ x: nA.x + dirX * t + nx * s, y: nA.y + dirY * t + ny * s });
+        const cara = (body, extra = {}) => this.overlayLayer.add(new Konva.Line({
+            points: body.flatMap(b => [b.x, b.y]),
+            stroke: barva, strokeWidth: 1, name, listening: false,
+            ...extra,
+        }));
 
-        if (smer === 'posuvne') {
-            const wall = this.engine.walls.get(opening.wallId);
-            const tlPx = wall ? wall.tloustka * this.PX_PER_M : 10;
-            // Posuvné dveře — křídlo jako obdélník přes otvor + pouzdro (chráněná oblast)
-            // vedle otvoru, kam se křídlo zasouvá. Strana zasunutí: strana='in' = směr nodeA,
-            // strana='out' = směr nodeB.
-            const strana = opening.strana || 'in';
-            const slideToNodeA = (strana === 'in');
-            // Křídlo (thin rectangle přes otvor)
-            const wingThk = Math.min(3, tlPx * 0.3);
-            const wingStartT = pozPx;
-            const wingEndT = pozPx + sirPx;
-            const wingPts = [
-                nA.x + dirX * wingStartT - nx * wingThk / 2, nA.y + dirY * wingStartT - ny * wingThk / 2,
-                nA.x + dirX * wingEndT - nx * wingThk / 2, nA.y + dirY * wingEndT - ny * wingThk / 2,
-                nA.x + dirX * wingEndT + nx * wingThk / 2, nA.y + dirY * wingEndT + ny * wingThk / 2,
-                nA.x + dirX * wingStartT + nx * wingThk / 2, nA.y + dirY * wingStartT + ny * wingThk / 2,
-            ];
-            this.overlayLayer.add(new Konva.Line({
-                points: wingPts, closed: true,
-                fill: barva, opacity: 0.35,
-                stroke: barva, strokeWidth: 1,
-                name: '_doorDetail_' + opening.id,
-            }));
-            // Pouzdro — čárkovaný obdélník vedle otvoru, délka = sirPx, výška = wall thickness
-            const pouzdroStart = slideToNodeA ? (pozPx - sirPx) : (pozPx + sirPx);
-            const pouzdroEnd = slideToNodeA ? pozPx : (pozPx + 2 * sirPx);
-            const halfTl = tlPx / 2;
-            const pts = [
-                nA.x + dirX * pouzdroStart - nx * halfTl, nA.y + dirY * pouzdroStart - ny * halfTl,
-                nA.x + dirX * pouzdroEnd - nx * halfTl, nA.y + dirY * pouzdroEnd - ny * halfTl,
-                nA.x + dirX * pouzdroEnd + nx * halfTl, nA.y + dirY * pouzdroEnd + ny * halfTl,
-                nA.x + dirX * pouzdroStart + nx * halfTl, nA.y + dirY * pouzdroStart + ny * halfTl,
-            ];
-            this.overlayLayer.add(new Konva.Line({
-                points: pts, closed: true,
-                stroke: barva, strokeWidth: 1,
-                dash: [5, 3],
-                opacity: 0.7,
-                name: '_doorDetail_' + opening.id,
-            }));
-            // Šipka směru zasunutí (malá, uprostřed pouzdra)
-            const arrowMidT = (pouzdroStart + pouzdroEnd) / 2;
-            const arrowMidX = nA.x + dirX * arrowMidT;
-            const arrowMidY = nA.y + dirY * arrowMidT;
-            const arrowLen = Math.min(sirPx * 0.3, 20);
-            const arrowDirSign = slideToNodeA ? -1 : 1;
-            this.overlayLayer.add(new Konva.Arrow({
-                points: [
-                    arrowMidX - dirX * arrowLen / 2 * arrowDirSign,
-                    arrowMidY - dirY * arrowLen / 2 * arrowDirSign,
-                    arrowMidX + dirX * arrowLen / 2 * arrowDirSign,
-                    arrowMidY + dirY * arrowLen / 2 * arrowDirSign,
-                ],
-                stroke: barva, strokeWidth: 1.5,
-                fill: barva,
-                pointerLength: 5, pointerWidth: 5,
-                opacity: 0.8,
-                name: '_doorDetail_' + opening.id,
-            }));
+        // Rozsahy křídel podél stěny; poslední křídlo dorovná na konec otvoru
+        const rozsahy = [];
+        let t = pozPx;
+        kridla.forEach((k, i) => {
+            const t1 = i === kridla.length - 1 ? pozPx + sirPx : Math.min(pozPx + sirPx, t + k.sirka * PX);
+            rozsahy.push([t, t1]);
+            t = t1;
+        });
+
+        // Dělicí příčle mezi křídly
+        for (let i = 1; i < rozsahy.length; i++) {
+            cara([bod(rozsahy[i][0], -pas / 2), bod(rozsahy[i][0], pas / 2)], { strokeWidth: 1.2 });
+        }
+
+        // Samotné posuvné křídlo — zasouvá se do pouzdra ve stěně
+        if (kridla.length === 1 && kridla[0].otv === 'posuvne') {
+            this._drawPosuvneSPouzdrem(opening, { nA, dirX, dirY, nx, ny, pozPx, sirPx, tlPx, barva, name });
             return;
         }
 
-        // levy / pravy / litaci — kresba 1/4 kruhu + linie křídla
-        const strana = opening.strana || 'in';
-        const sideSign = strana === 'in' ? 1 : -1;
-
-        const drawLeaf = (hingeT, closedSign, sideSignLocal, wingLen, dashed) => {
+        // Dveřní křídlo s obloukem — hingeT = pant, closedSign = směr zavřeného křídla podél stěny
+        const drawLeaf = (hingeT, closedSign, wingLen) => {
             const hingeX = nA.x + dirX * hingeT;
             const hingeY = nA.y + dirY * hingeT;
             const closedDX = dirX * closedSign, closedDY = dirY * closedSign;
-            const openDX = nx * sideSignLocal, openDY = ny * sideSignLocal;
+            const openDX = nx * sideSign, openDY = ny * sideSign;
             const a0 = Math.atan2(closedDY, closedDX);
             const a1 = Math.atan2(openDY, openDX);
             let delta = a1 - a0;
@@ -664,26 +637,117 @@ class KonvaRenderer {
                     c.arc(hingeX, hingeY, wingLen, a0, a1, counterclockwise);
                     c.strokeShape(s);
                 },
-                stroke: barva,
-                strokeWidth: dashed ? 1 : 1.2,
-                dash: dashed ? [3, 2] : null,
-                name: '_doorDetail_' + opening.id,
+                stroke: barva, strokeWidth: 1.2, name, listening: false,
             }));
             this.overlayLayer.add(new Konva.Line({
                 points: [hingeX, hingeY, hingeX + openDX * wingLen, hingeY + openDY * wingLen],
-                stroke: barva,
-                strokeWidth: dashed ? 1 : 1.5,
-                dash: dashed ? [3, 2] : null,
-                name: '_doorDetail_' + opening.id,
+                stroke: barva, strokeWidth: 1.5, name, listening: false,
             }));
         };
 
-        if (smer === 'levy' || smer === 'pravy') {
-            const isLeft = smer === 'levy';
-            const hingeT = isLeft ? pozPx : (pozPx + sirPx);
-            const closedSign = isLeft ? 1 : -1;
-            drawLeaf(hingeT, closedSign, sideSign, sirPx, false);
-        }
+        kridla.forEach((k, i) => {
+            const [t0, t1] = rozsahy[i];
+            if (t1 - t0 < 1 || k.otv === 'fix') return;
+
+            if (k.otv === 'posuvne') {
+                // HS portál: křídlo vysunuté na stranu otvírání + šipka k pevnému dílu, před který se zasouvá
+                const s = sideSign * pas / 4;
+                const tloustkaKridla = Math.min(3, tlPx * 0.3);
+                cara([bod(t0, s - tloustkaKridla / 2), bod(t1, s - tloustkaKridla / 2),
+                      bod(t1, s + tloustkaKridla / 2), bod(t0, s + tloustkaKridla / 2)],
+                     { closed: true, fill: barva, opacity: 0.35 });
+                const kPevnemu = (kridla[i + 1] && kridla[i + 1].otv === 'fix') ? 1 : -1;
+                const stredT = (t0 + t1) / 2;
+                const delkaSipky = Math.min((t1 - t0) * 0.4, 20);
+                const od = bod(stredT - kPevnemu * delkaSipky / 2, s);
+                const kam = bod(stredT + kPevnemu * delkaSipky / 2, s);
+                this.overlayLayer.add(new Konva.Arrow({
+                    points: [od.x, od.y, kam.x, kam.y],
+                    stroke: barva, strokeWidth: 1.5, fill: barva,
+                    pointerLength: 5, pointerWidth: 5, opacity: 0.8, name, listening: false,
+                }));
+                return;
+            }
+
+            const panty = (typeof kridloPanty === 'function') ? kridloPanty(k.otv) : null;
+            const sklopne = (typeof kridloSklopne === 'function') ? kridloSklopne(k.otv) : false;
+
+            if (panty) {
+                const hingeT = panty === 'levy' ? t0 : t1;
+                const volnyT = panty === 'levy' ? t1 : t0;
+                if (kPodlaze) {
+                    drawLeaf(hingeT, panty === 'levy' ? 1 : -1, t1 - t0);
+                } else {
+                    // Okno: tenký trojúhelník — základna přes pás u pantů, hrot u volného konce
+                    cara([bod(hingeT, -pas / 2), bod(hingeT, pas / 2), bod(volnyT, 0)], { closed: true });
+                }
+            }
+            if (sklopne && !kPodlaze) {
+                // Sklopné: základna podél křídla na odvrácené straně, hrot uprostřed na straně otvírání
+                cara([bod(t0, -sideSign * pas / 2), bod(t1, -sideSign * pas / 2), bod((t0 + t1) / 2, sideSign * pas / 2)],
+                     { closed: true, dash: [3, 2] });
+            }
+        });
+    }
+
+    /** Posuvné křídlo do pouzdra: křídlo přes otvor, čárkované pouzdro vedle a šipka směru zasunutí. */
+    _drawPosuvneSPouzdrem(opening, ctx) {
+        const { nA, dirX, dirY, nx, ny, pozPx, sirPx, tlPx, barva, name } = ctx;
+        // Strana zasunutí: strana='in' = směr nodeA, strana='out' = směr nodeB.
+        const strana = opening.strana || 'in';
+        const slideToNodeA = (strana === 'in');
+        // Křídlo (tenký obdélník přes otvor)
+        const wingThk = Math.min(3, tlPx * 0.3);
+        const wingStartT = pozPx;
+        const wingEndT = pozPx + sirPx;
+        const wingPts = [
+            nA.x + dirX * wingStartT - nx * wingThk / 2, nA.y + dirY * wingStartT - ny * wingThk / 2,
+            nA.x + dirX * wingEndT - nx * wingThk / 2, nA.y + dirY * wingEndT - ny * wingThk / 2,
+            nA.x + dirX * wingEndT + nx * wingThk / 2, nA.y + dirY * wingEndT + ny * wingThk / 2,
+            nA.x + dirX * wingStartT + nx * wingThk / 2, nA.y + dirY * wingStartT + ny * wingThk / 2,
+        ];
+        this.overlayLayer.add(new Konva.Line({
+            points: wingPts, closed: true,
+            fill: barva, opacity: 0.35,
+            stroke: barva, strokeWidth: 1,
+            name, listening: false,
+        }));
+        // Pouzdro — čárkovaný obdélník vedle otvoru, délka = sirPx, výška = tloušťka stěny
+        const pouzdroStart = slideToNodeA ? (pozPx - sirPx) : (pozPx + sirPx);
+        const pouzdroEnd = slideToNodeA ? pozPx : (pozPx + 2 * sirPx);
+        const halfTl = tlPx / 2;
+        const pts = [
+            nA.x + dirX * pouzdroStart - nx * halfTl, nA.y + dirY * pouzdroStart - ny * halfTl,
+            nA.x + dirX * pouzdroEnd - nx * halfTl, nA.y + dirY * pouzdroEnd - ny * halfTl,
+            nA.x + dirX * pouzdroEnd + nx * halfTl, nA.y + dirY * pouzdroEnd + ny * halfTl,
+            nA.x + dirX * pouzdroStart + nx * halfTl, nA.y + dirY * pouzdroStart + ny * halfTl,
+        ];
+        this.overlayLayer.add(new Konva.Line({
+            points: pts, closed: true,
+            stroke: barva, strokeWidth: 1,
+            dash: [5, 3],
+            opacity: 0.7,
+            name, listening: false,
+        }));
+        // Šipka směru zasunutí (malá, uprostřed pouzdra)
+        const arrowMidT = (pouzdroStart + pouzdroEnd) / 2;
+        const arrowMidX = nA.x + dirX * arrowMidT;
+        const arrowMidY = nA.y + dirY * arrowMidT;
+        const arrowLen = Math.min(sirPx * 0.3, 20);
+        const arrowDirSign = slideToNodeA ? -1 : 1;
+        this.overlayLayer.add(new Konva.Arrow({
+            points: [
+                arrowMidX - dirX * arrowLen / 2 * arrowDirSign,
+                arrowMidY - dirY * arrowLen / 2 * arrowDirSign,
+                arrowMidX + dirX * arrowLen / 2 * arrowDirSign,
+                arrowMidY + dirY * arrowLen / 2 * arrowDirSign,
+            ],
+            stroke: barva, strokeWidth: 1.5,
+            fill: barva,
+            pointerLength: 5, pointerWidth: 5,
+            opacity: 0.8,
+            name, listening: false,
+        }));
     }
 
     // ═══════════════════════════════════════════════════════

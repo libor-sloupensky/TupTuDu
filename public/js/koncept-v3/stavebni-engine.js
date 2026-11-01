@@ -108,6 +108,159 @@ const TYPY_OTVORU = {
 };
 
 /**
+ * Křídla otvoru.
+ *
+ * Otvor je JEDEN rám v jedné stěně (jeden překlad); uvnitř má jedno nebo víc
+ * křídel. Francouzské okno „dveře + pevný díl" je tedy jeden otvor se dvěma
+ * křídly, ne dva otvory vedle sebe — ty by šly od sebe odtrhnout, ve 3D by
+ * mezi nimi vznikl kus zdi a kóty by ukazovaly dva kusy.
+ *
+ *   otv: fix | pravy | levy | sklopne | pravy_sklopne | levy_sklopne | posuvne
+ *   levy / pravy = panty u začátku / konce křídla ve směru stěny A→B
+ *   (stejná konvence jako dřív u `smer` celého otvoru).
+ *
+ * Otvor bez pole `kridla` (starší projekty, import z výkresu) se odvodí
+ * z typu a `smer` za běhu — viz odvodKridla(); migrace není potřeba.
+ */
+const TYPY_KRIDEL = {
+    fix: { nazev: 'Pevné (jen sklo)' },
+    pravy: { nazev: 'Otevíravé pravé' },
+    levy: { nazev: 'Otevíravé levé' },
+    sklopne: { nazev: 'Sklopné' },
+    pravy_sklopne: { nazev: 'Otevíravě-sklopné pravé' },
+    levy_sklopne: { nazev: 'Otevíravě-sklopné levé' },
+    posuvne: { nazev: 'Posuvné' },
+};
+
+/** Předvolby sestav křídel podle typu otvoru. `dily` = [podíl šířky, typ křídla]. */
+const PREDVOLBY_KRIDEL = {
+    dvere: [
+        { key: 'prave', nazev: 'Jednokřídlé pravé', dily: [[1, 'pravy']] },
+        { key: 'leve', nazev: 'Jednokřídlé levé', dily: [[1, 'levy']] },
+        { key: 'dvoukridle', nazev: 'Dvoukřídlé', dily: [[0.5, 'levy'], [0.5, 'pravy']] },
+        { key: 'posuvne', nazev: 'Posuvné do pouzdra', dily: [[1, 'posuvne']] },
+        { key: 'otvor', nazev: 'Otvor bez křídla', dily: [] },
+    ],
+    okno: [
+        { key: 'os_prave', nazev: 'Jednokřídlé pravé', dily: [[1, 'pravy_sklopne']] },
+        { key: 'os_leve', nazev: 'Jednokřídlé levé', dily: [[1, 'levy_sklopne']] },
+        { key: 'dvoukridle', nazev: 'Dvoukřídlé', dily: [[0.5, 'levy_sklopne'], [0.5, 'pravy_sklopne']] },
+        { key: 'fix', nazev: 'Pevné zasklení', dily: [[1, 'fix']] },
+        { key: 'o_fix', nazev: 'Otevíravé + pevné', dily: [[0.5, 'levy_sklopne'], [0.5, 'fix']] },
+        { key: 'fix_o', nazev: 'Pevné + otevíravé', dily: [[0.5, 'fix'], [0.5, 'pravy_sklopne']] },
+        { key: 'fix_o_fix', nazev: 'Pevné + otevíravé + pevné', dily: [[0.3, 'fix'], [0.4, 'pravy_sklopne'], [0.3, 'fix']] },
+        { key: 'sklopne', nazev: 'Sklopné', dily: [[1, 'sklopne']] },
+    ],
+    francouzske_okno: [
+        { key: 'prave', nazev: 'Jednokřídlé pravé', dily: [[1, 'pravy']] },
+        { key: 'leve', nazev: 'Jednokřídlé levé', dily: [[1, 'levy']] },
+        { key: 'dvoukridle', nazev: 'Dvoukřídlé', dily: [[0.5, 'levy'], [0.5, 'pravy']] },
+        { key: 'o_fix', nazev: 'Dveře + pevné', dily: [[0.5, 'levy'], [0.5, 'fix']] },
+        { key: 'fix_o', nazev: 'Pevné + dveře', dily: [[0.5, 'fix'], [0.5, 'pravy']] },
+        { key: 'hs', nazev: 'Posuvné HS (posuvné + pevné)', dily: [[0.5, 'posuvne'], [0.5, 'fix']] },
+        { key: 'fix', nazev: 'Pevné zasklení', dily: [[1, 'fix']] },
+    ],
+    garazova_vrata: [
+        { key: 'posuvna', nazev: 'Sekční / posuvná', dily: [[1, 'posuvne']] },
+        { key: 'dvoukridla', nazev: 'Dvoukřídlá', dily: [[0.5, 'levy'], [0.5, 'pravy']] },
+    ],
+    pruchod: [
+        { key: 'otvor', nazev: 'Otvor bez křídla', dily: [] },
+    ],
+};
+
+const naCm = (m) => Math.round(m * 100) / 100;
+
+/** Křídla sestavená z předvolby pro danou šířku otvoru (poslední díl dorovná zaokrouhlení). */
+function kridlaZPredvolby(predvolba, sirka) {
+    const dily = predvolba?.dily || [];
+    if (dily.length === 0) return [];
+    const kridla = [];
+    let zbyva = naCm(sirka);
+    dily.forEach(([podil, otv], i) => {
+        const s = i === dily.length - 1 ? zbyva : naCm(sirka * podil);
+        kridla.push({ sirka: s, otv });
+        zbyva = naCm(zbyva - s);
+    });
+    return kridla;
+}
+
+/** Křídla odvozená pro otvor bez pole `kridla` (starší data, import). */
+function odvodKridla(opening) {
+    const s = naCm(opening.sirka || 0);
+    if (opening.typ === 'okno') {
+        // Běžné české okno je otevíravě-sklopné; nad 1,3 m dvoukřídlé
+        if (s <= 1.3) return [{ sirka: s, otv: 'pravy_sklopne' }];
+        const pul = naCm(s / 2);
+        return [{ sirka: pul, otv: 'levy_sklopne' }, { sirka: naCm(s - pul), otv: 'pravy_sklopne' }];
+    }
+    if (opening.typ === 'pruchod') return [];
+    const smer = opening.smer || defaultOpeningSmer(opening.typ);
+    if (!smer || smer === 'otvor') return [];
+    return [{ sirka: s, otv: smer }];
+}
+
+/** Křídla otvoru — uložená, nebo odvozená z typu a směru. */
+function kridlaOtvoru(opening) {
+    if (Array.isArray(opening.kridla)) return opening.kridla;
+    return odvodKridla(opening);
+}
+
+/** Klíč předvolby, které sestava odpovídá (podle pořadí typů křídel), jinak 'vlastni'. */
+function predvolbaKridel(opening) {
+    const kridla = kridlaOtvoru(opening);
+    const podpis = kridla.map(k => k.otv).join(',');
+    const nalezena = (PREDVOLBY_KRIDEL[opening.typ] || []).find(p => p.dily.map(d => d[1]).join(',') === podpis);
+    return nalezena ? nalezena.key : 'vlastni';
+}
+
+/** Po změně šířky otvoru přeškálovat uložená křídla (odvozená se přepočítají sama). */
+function zmenSirkuKridel(opening, novaSirka) {
+    if (!Array.isArray(opening.kridla) || opening.kridla.length === 0) return;
+    const soucet = opening.kridla.reduce((a, k) => a + k.sirka, 0) || 1;
+    let zbyva = naCm(novaSirka);
+    opening.kridla.forEach((k, i) => {
+        const s = i === opening.kridla.length - 1 ? zbyva : naCm(novaSirka * k.sirka / soucet);
+        k.sirka = s;
+        zbyva = naCm(zbyva - s);
+    });
+}
+
+/** Souhrnný `smer` otvoru podle křídel — pro starší kód a výpisy. Okna směr nemají. */
+function smerZKridel(opening) {
+    if (opening.typ === 'okno') return null;
+    const kridla = kridlaOtvoru(opening);
+    if (kridla.length === 0) return 'otvor';
+    const prvni = kridla.find(k => k.otv !== 'fix');
+    if (!prvni) return 'otvor';
+    if (prvni.otv === 'posuvne') return 'posuvne';
+    return kridloPanty(prvni.otv) || 'otvor';
+}
+
+/** Strana pantů křídla: 'levy' (u začátku), 'pravy' (u konce), nebo null. */
+function kridloPanty(otv) {
+    if (otv === 'levy' || otv === 'levy_sklopne') return 'levy';
+    if (otv === 'pravy' || otv === 'pravy_sklopne') return 'pravy';
+    return null;
+}
+
+function kridloSklopne(otv) {
+    return otv === 'sklopne' || otv === 'levy_sklopne' || otv === 'pravy_sklopne';
+}
+
+/** Výška otvoru v m — vlastní, nebo výchozí podle typu. */
+function vyskaOtvoru(opening) {
+    if (typeof opening.vyska === 'number' && opening.vyska > 0) return opening.vyska;
+    return TYPY_OTVORU[opening.typ]?.vyska?.default ?? 2.1;
+}
+
+/** Parapet (spodní hrana nad podlahou) v m — vlastní, nebo výchozí podle typu. */
+function parapetOtvoru(opening) {
+    if (typeof opening.parapet === 'number' && opening.parapet >= 0) return opening.parapet;
+    return TYPY_OTVORU[opening.typ]?.parapet ?? 0;
+}
+
+/**
  * Snap šířky otvoru na nejbližší standardní rozměr (ČSN 74 6401).
  * fineSnap=true → snap na 5 cm (pro atypické), jinak na seznam standardů typu.
  */
@@ -132,7 +285,10 @@ function snapOpeningSirka(sirka, typ, fineSnap = false) {
  * takže na jedné straně musí být volný prostor = sirka navíc.
  */
 function getOpeningExtent(opening) {
-    if (opening.smer === 'posuvne') {
+    // Pouzdro potřebuje jen samotné posuvné křídlo. HS portál (posuvné + pevné)
+    // se zasouvá před pevný díl, stěnu vedle otvoru nepotřebuje.
+    const kridla = kridlaOtvoru(opening);
+    if (kridla.length === 1 && kridla[0].otv === 'posuvne') {
         const slideToA = (opening.strana || 'in') === 'in';
         if (slideToA) return { leftExt: opening.sirka, rightExt: opening.sirka };
         return { leftExt: 0, rightExt: 2 * opening.sirka };
@@ -355,7 +511,7 @@ class StavebniEngine {
     constructor(options = {}) {
         this.nodes = new Map();   // id → {id, x, y}
         this.walls = new Map();   // id → {id, nodeA, nodeB, tloustka, typ}
-        this.openings = new Map(); // id → {id, wallId, pozice, sirka, typ, nazev}
+        this.openings = new Map(); // id → {id, wallId, pozice, sirka, typ, nazev, smer, strana, vyska?, parapet?, kridla?}
         this.prostory = [];        // [{id, typ, podtyp, polygon:[[x,y]..m], plocha_m2, nazev, venkovni}]
         this.vybaveni = [];        // [{id, typ, podtyp, kategorie, polygon, stred:[x,y px], sirka, hloubka, uhel, vyska}] — souřadnice v canvas px
         this.nextId = 1;
@@ -2115,6 +2271,10 @@ class StavebniEngine {
             smer: extra.smer || defaultOpeningSmer(typ),
             strana: extra.strana || 'in',
         };
+        // Výška, parapet a křídla jen když jsou zadané — jinak platí výchozí podle typu
+        if (typeof extra.vyska === 'number') opening.vyska = extra.vyska;
+        if (typeof extra.parapet === 'number') opening.parapet = extra.parapet;
+        if (Array.isArray(extra.kridla)) opening.kridla = extra.kridla.map(k => ({ sirka: k.sirka, otv: k.otv }));
         this.openings.set(id, opening);
         return opening;
     }
@@ -2158,6 +2318,9 @@ class StavebniEngine {
             };
             if (opening.smer) out.smer = opening.smer;
             if (opening.strana) out.strana = opening.strana;
+            if (typeof opening.vyska === 'number') out.vyska = opening.vyska;
+            if (typeof opening.parapet === 'number') out.parapet = opening.parapet;
+            if (Array.isArray(opening.kridla)) out.kridla = opening.kridla.map(k => ({ sirka: k.sirka, otv: k.otv }));
             otvory.push(out);
         }
 
@@ -2283,6 +2446,15 @@ class StavebniEngine {
                 smer,
                 strana,
             };
+            if (typeof o.vyska === 'number' && o.vyska > 0) opening.vyska = o.vyska;
+            if (typeof o.parapet === 'number' && o.parapet >= 0) opening.parapet = o.parapet;
+            if (Array.isArray(o.kridla)) {
+                const kridla = o.kridla
+                    .filter(k => k && typeof k.sirka === 'number' && k.sirka > 0 && TYPY_KRIDEL[k.otv])
+                    .map(k => ({ sirka: Math.round(k.sirka * 100) / 100, otv: k.otv }));
+                // Prázdné pole je platná sestava (otvor bez křídla); poškozená data se raději odvodí znovu
+                if (kridla.length === o.kridla.length) opening.kridla = kridla;
+            }
             this.openings.set(opening.id, opening);
 
             const num = parseInt(String(o.id ?? '').replace(/\D/g, ''));
@@ -3611,6 +3783,18 @@ if (typeof window !== 'undefined') {
     window.TYPY_PLOCH = TYPY_PLOCH;
     window.TYPY_STRECHY = TYPY_STRECHY;
     window.TYPY_PRISLUSENSTVI = TYPY_PRISLUSENSTVI;
+    // Křídla, výška a parapet otvoru — sdílí je 2D renderer, inspektor i 3D
+    window.TYPY_KRIDEL = TYPY_KRIDEL;
+    window.PREDVOLBY_KRIDEL = PREDVOLBY_KRIDEL;
+    window.kridlaOtvoru = kridlaOtvoru;
+    window.kridlaZPredvolby = kridlaZPredvolby;
+    window.predvolbaKridel = predvolbaKridel;
+    window.zmenSirkuKridel = zmenSirkuKridel;
+    window.smerZKridel = smerZKridel;
+    window.kridloPanty = kridloPanty;
+    window.kridloSklopne = kridloSklopne;
+    window.vyskaOtvoru = vyskaOtvoru;
+    window.parapetOtvoru = parapetOtvoru;
 }
 
 // Export pro Node.js (testovací skripty)
@@ -3622,5 +3806,16 @@ if (typeof module !== 'undefined' && module.exports) {
         TYPY_PLOCH,
         TYPY_STRECHY,
         TYPY_PRISLUSENSTVI,
+        TYPY_KRIDEL,
+        PREDVOLBY_KRIDEL,
+        kridlaOtvoru,
+        kridlaZPredvolby,
+        predvolbaKridel,
+        zmenSirkuKridel,
+        smerZKridel,
+        kridloPanty,
+        kridloSklopne,
+        vyskaOtvoru,
+        parapetOtvoru,
     };
 }

@@ -86,7 +86,9 @@
     .kk-skupina > span { display: inline-flex; align-items: center; justify-content: center; min-width: 40px;
                          color: var(--c-text-secondary); font-variant-numeric: tabular-nums; }
     .kk-oddelovac { width: 1px; height: 16px; margin: 0 4px; background: var(--c-border); }
-    .kk-pole { height: 28px; border: 1px solid var(--c-border); border-radius: 6px; background: var(--c-surface);
+    /* Rámeček polí a pomocné texty: WCAG 2.1 chce u ovládacích prvků kontrast 3:1 a u textu 4,5:1.
+       --c-border (#e5e1dc) má proti bílé 1,3:1 a text-gray-400 2,5:1, proto v editoru gray-500 (4,8:1). */
+    .kk-pole { height: 28px; border: 1px solid #6b7280; border-radius: 6px; background: var(--c-surface);
                padding: 0 6px; font-size: 12px; color: var(--c-text-secondary); }
     .kk-pole:focus { outline: none; border-color: var(--c-primary); }
     @keyframes kk-blik {
@@ -259,7 +261,7 @@
                     </svg>
                 </button>
                 {{-- Otvor --}}
-                <button @click="nastroj = nastroj === 'otvor' ? 'vyber' : 'otvor'" class="kk-tl" :class="nastroj === 'otvor' && 'kk-tl-aktivni'"
+                <button x-ref="tlOtvor" @click="nastroj = nastroj === 'otvor' ? 'vyber' : 'otvor'" class="kk-tl" :class="nastroj === 'otvor' && 'kk-tl-aktivni'"
                         data-tip="Vložit otvor do stěny (6 / O)">
                     {{-- zeď v řezu s proraženým otvorem --}}
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -286,29 +288,14 @@
                        @change="tloustkaSteny = Math.min(0.6, Math.max(0.05, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
                        @keydown.enter.prevent="$event.target.blur()"
                        class="kk-pole w-14">
-                <span class="text-gray-400">cm</span>
+                <span class="text-gray-500">cm</span>
             </div>
 
-            {{-- Volby otvoru — jen když je nástroj zapnutý --}}
-            <div x-show="nastroj === 'otvor'" x-cloak class="flex items-center gap-1 ml-1 text-xs">
-                <select x-model="otvorTyp" @change="otvorSirka = { dvere: 0.9, okno: 1.2, pruchod: 0.9 }[otvorTyp] || otvorSirka; ulozitNastaveni()"
-                        class="kk-pole">
-                    {{-- Průchod tu není schválně — je mezi typy dveří v panelu vlastností --}}
-                    <option value="dvere">Dveře</option>
-                    <option value="okno">Okno</option>
-                </select>
-                {{-- Šířka v cm (v enginu zůstávají metry) --}}
-                <input type="number" min="40" max="300" step="5"
-                       :value="Math.round(otvorSirka * 100)"
-                       @change="otvorSirka = Math.min(3, Math.max(0.4, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
-                       @keydown.enter.prevent="$event.target.blur()"
-                       class="kk-pole w-14">
-                <span class="text-gray-400">cm</span>
-                <span x-show="otvorZprava" x-cloak class="text-orange-700" x-text="otvorZprava"></span>
-            </div>
+            {{-- Volby otvoru nejsou v liště — jsou v panelu na plátně pod tlačítkem Otvor,
+                 stejně jako vlastnosti vybraného otvoru (Libor, 1. 11. 2026). --}}
             {{-- Nápověda toggle --}}
             <button @click="napovedaOtevrena = !napovedaOtevrena"
-                    class="ml-auto text-xs text-gray-400 hover:text-primary transition flex items-center gap-1">
+                    class="ml-auto text-xs text-gray-500 hover:text-primary transition flex items-center gap-1">
                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
@@ -382,11 +369,36 @@
                 <img src="/img/external/mapy-com-logo.png" alt="Mapy.com" style="height:14px;display:block">
             </a>
 
-            {{-- Inspector panel — vlastnosti vybraného objektu (ukotvený vlevo od kompasu) --}}
-            <div x-show="inspector && !rezim3d" x-cloak
+            {{-- Panel otvoru — vždy na stejném místě: na plátně těsně pod tlačítkem nástroje Otvor.
+                 Ukazuje buď volby nového otvoru (nástroj zapnutý), nebo vlastnosti výběru. --}}
+            <div id="kk-panel-otvoru" x-show="!rezim3d && (nastroj === 'otvor' || inspector)" x-cloak
                  class="bg-white rounded-lg shadow-md text-xs"
-                 style="position:absolute;top:12px;right:80px;z-index:15;min-width:180px;border:1.5px solid var(--c-primary)">
-                <template x-if="inspector">
+                 :style="panelOtvoruStyl"
+                 style="position:absolute;z-index:15;min-width:250px;max-width:320px;border:1.5px solid var(--c-primary)">
+                <template x-if="nastroj === 'otvor'">
+                    <div class="p-2 flex flex-col gap-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-600 font-medium whitespace-nowrap">Nový otvor</span>
+                            <select x-model="otvorTyp" @change="otvorSirka = { dvere: 0.9, okno: 1.2, pruchod: 0.9 }[otvorTyp] || otvorSirka; ulozitNastaveni()"
+                                    class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto">
+                                {{-- Průchod tu není schválně — je mezi typy dveří v panelu vlastností --}}
+                                <option value="dvere">Dveře</option>
+                                <option value="okno">Okno</option>
+                            </select>
+                            <span class="text-gray-500">š:</span>
+                            {{-- Šířka v cm (v enginu zůstávají metry) --}}
+                            <input type="number" min="40" max="300" step="5"
+                                   :value="Math.round(otvorSirka * 100)"
+                                   @change="otvorSirka = Math.min(3, Math.max(0.4, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
+                                   @keydown.enter.prevent="$event.target.blur()"
+                                   class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs">
+                            <span class="text-gray-500">cm</span>
+                        </div>
+                        <div class="text-gray-500" x-show="!otvorZprava">Klepněte na stěnu, kam otvor patří.</div>
+                        <div class="text-orange-700" x-show="otvorZprava" x-cloak x-text="otvorZprava"></div>
+                    </div>
+                </template>
+                <template x-if="nastroj !== 'otvor' && inspector">
                     <div class="p-2 flex items-center gap-2 flex-wrap">
                         {{-- Multi-select indikátor --}}
                         <span x-show="inspector.count > 1" class="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-semibold"
@@ -404,7 +416,7 @@
                                         <template x-if="inspector.typ === 'okno'">
                                             <span class="flex items-center gap-1">
                                                 <input type="number" min="10" max="600" step="1"
-                                                       class="w-16 border border-gray-300 rounded px-1 py-0.5 text-xs"
+                                                       class="w-16 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                        :value="inspector.sirka !== null ? Math.round(inspector.sirka * 100) : ''"
                                                        @change="setOpeningSirka(parseFloat($event.target.value) / 100)"
                                                        @keydown.enter.prevent="$event.target.blur()">
@@ -412,7 +424,7 @@
                                             </span>
                                         </template>
                                         <template x-if="inspector.typ !== 'okno'">
-                                            <select class="border border-gray-300 rounded px-1 py-0.5 text-xs"
+                                            <select class="border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                     @change="setOpeningSirka(parseFloat($event.target.value))"
                                                     :disabled="inspector.typ === null">
                                                 <option value="" disabled :selected="inspector.sirka === null">—</option>
@@ -425,24 +437,66 @@
                                         </template>
                                     </div>
                                 </div>
-                                <template x-if="inspector.hasDoor">
-                                    <div class="flex items-center gap-2">
-                                        <select class="border border-gray-300 rounded px-1 py-0.5 text-xs flex-1"
-                                                @change="setOpeningSmer($event.target.value)">
-                                            <option value="" disabled :selected="inspector.smer === null">—</option>
-                                            <template x-for="v in inspector.smeryVolby" :key="v.key">
-                                                <option :value="v.key"
-                                                        :selected="inspector.smer === v.key"
-                                                        x-text="v.label"></option>
-                                            </template>
-                                        </select>
-                                        <button type="button"
-                                                x-show="inspector.canFlipStrana"
-                                                @click="flipOpeningStrana()"
-                                                class="border border-gray-300 rounded px-2 py-0.5 text-xs hover:bg-orange-50 hover:border-orange-400"
-                                                title="Otočit na druhou stranu zdi">
-                                            ⇄
-                                        </button>
+                                {{-- Výška a parapet v cm — výchozí podle typu, zadaná hodnota se uloží k otvoru --}}
+                                <div class="flex items-center gap-1">
+                                    <span class="text-gray-500">v:</span>
+                                    <input type="number" min="30" max="400" step="1"
+                                           class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                           :value="inspector.vyska !== null ? Math.round(inspector.vyska * 100) : ''"
+                                           @change="setOpeningVyska(parseFloat($event.target.value) / 100)"
+                                           @keydown.enter.prevent="$event.target.blur()">
+                                    <span class="text-gray-500">cm</span>
+                                    <span class="text-gray-500 ml-auto">parapet:</span>
+                                    <input type="number" min="0" max="300" step="1"
+                                           class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                           :value="inspector.parapet !== null ? Math.round(inspector.parapet * 100) : ''"
+                                           @change="setOpeningParapet(parseFloat($event.target.value) / 100)"
+                                           @keydown.enter.prevent="$event.target.blur()">
+                                    <span class="text-gray-500">cm</span>
+                                </div>
+                                {{-- Křídla: předvolba sestavy; u jednoho otvoru s více křídly i každé křídlo zvlášť --}}
+                                <template x-if="inspector.maKridla">
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex items-center gap-2">
+                                            <select class="border border-gray-500 rounded px-1 py-0.5 text-xs flex-1"
+                                                    @change="setOpeningPredvolba($event.target.value)">
+                                                <option value="" disabled :selected="inspector.predvolba === null">—</option>
+                                                <option value="vlastni" disabled :selected="inspector.predvolba === 'vlastni'">Vlastní sestava</option>
+                                                <template x-for="v in inspector.predvolby" :key="v.key">
+                                                    <option :value="v.key"
+                                                            :selected="inspector.predvolba === v.key"
+                                                            x-text="v.label"></option>
+                                                </template>
+                                            </select>
+                                            <button type="button"
+                                                    x-show="inspector.canFlipStrana"
+                                                    @click="flipOpeningStrana()"
+                                                    class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50 hover:border-orange-400"
+                                                    title="Otevírat na druhou stranu zdi">
+                                                ⇄
+                                            </button>
+                                        </div>
+                                        <template x-if="inspector.kridla && inspector.kridla.length > 1">
+                                            <div class="flex flex-col gap-0.5">
+                                                <template x-for="(k, i) in inspector.kridla" :key="i">
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-gray-500 w-3" x-text="(i + 1) + '.'"></span>
+                                                        <input type="number" min="20" max="300" step="1"
+                                                               class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                                               :value="Math.round(k.sirka * 100)"
+                                                               @change="setKridloSirka(i, parseFloat($event.target.value) / 100)"
+                                                               @keydown.enter.prevent="$event.target.blur()">
+                                                        <span class="text-gray-500">cm</span>
+                                                        <select class="border border-gray-500 rounded px-1 py-0.5 text-xs flex-1"
+                                                                @change="setKridloTyp(i, $event.target.value)">
+                                                            <template x-for="v in inspector.kridlaVolby" :key="v.key">
+                                                                <option :value="v.key" :selected="k.otv === v.key" x-text="v.label"></option>
+                                                            </template>
+                                                        </select>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
                                     </div>
                                 </template>
                             </div>
@@ -451,7 +505,7 @@
                         {{-- STĚNY: typ (editable) + tloušťka --}}
                         <template x-if="inspector.kind === 'wall' || inspector.kind === 'wall_multi'">
                             <div class="flex items-center gap-2 w-full">
-                                <select class="border border-gray-300 rounded px-1 py-0.5 text-xs font-medium"
+                                <select class="border border-gray-500 rounded px-1 py-0.5 text-xs font-medium"
                                         @change="setWallTyp($event.target.value)">
                                     <option value="" disabled :selected="inspector.typ === null">Různé</option>
                                     <template x-for="tv in inspector.typyVolby" :key="tv.key">
@@ -465,7 +519,7 @@
                                     {{-- Volně psaná tloušťka v cm (jako šířka okna) — stěny bývají
                                          i atypické, přichytávání na normovou řadu tu překáželo. --}}
                                     <input type="number" min="2" max="100" step="1"
-                                           class="w-16 border border-gray-300 rounded px-1 py-0.5 text-xs"
+                                           class="w-16 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                            :value="inspector.tloustka !== null ? Math.round(inspector.tloustka * 100) : ''"
                                            :disabled="inspector.typ === null"
                                            @change="setWallTloustka(parseFloat($event.target.value) / 100, true)"
@@ -536,13 +590,13 @@
                     </select>
                     {{-- Přejmenování double-click --}}
                     <button x-show="projektId" @click="zahajPreimenovaniKonceptu()"
-                            class="p-0.5 text-gray-400 hover:text-gray-600"
+                            class="p-0.5 text-gray-500 hover:text-gray-600"
                             title="Přejmenovat">
                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 1.5l3.5 3.5L5 14.5H1.5V11z"/></svg>
                     </button>
                     {{-- Smazat --}}
                     <button x-show="projektId" @click="smazatKoncept()"
-                            class="p-0.5 text-gray-400 hover:text-red-500"
+                            class="p-0.5 text-gray-500 hover:text-red-500"
                             title="Smazat koncept">
                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>
                     </button>
@@ -580,7 +634,7 @@
                 </div>
                 {{-- KÚ hledání --}}
                 <div class="relative">
-                    <label class="text-xs text-gray-400">Katastrální území</label>
+                    <label class="text-xs text-gray-500">Katastrální území</label>
                     <input type="text" x-model="katastrKuHledani"
                            @input.debounce.200ms="katastrHledejKu()"
                            @focus="katastrKuNabidk = katastrKuVysledky.length > 0"
@@ -592,7 +646,7 @@
                         <template x-for="ku in katastrKuVysledky" :key="ku.k">
                             <button @click="katastrVyberKu(ku)" class="block w-full text-left px-2 py-1 text-xs hover:bg-gray-50">
                                 <span class="font-medium" x-text="ku.n"></span>
-                                <span class="text-gray-400 ml-1" x-text="ku.o"></span>
+                                <span class="text-gray-500 ml-1" x-text="ku.o"></span>
                             </button>
                         </template>
                     </div>
@@ -626,19 +680,19 @@
                         <details :open="p._detailsOpen !== false" @toggle="p._detailsOpen = $el.open">
                             <summary class="flex items-center justify-between cursor-pointer select-none list-none">
                                 <span class="flex items-center gap-1">
-                                    <svg class="h-2.5 w-2.5 transition-transform text-gray-400" :class="(p._detailsOpen !== false) && 'rotate-90'" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l8 6-8 6V4z"/></svg>
+                                    <svg class="h-2.5 w-2.5 transition-transform text-gray-500" :class="(p._detailsOpen !== false) && 'rotate-90'" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l8 6-8 6V4z"/></svg>
                                     <span class="font-medium select-text" style="user-select:text"
                                           @click.stop.prevent
                                           @mousedown.stop
                                           x-text="p.cislo + ' (' + (p.typ === 'stavebni' ? 'st.' : 'p.č.') + ')'"></span>
                                 </span>
-                                <button @click.stop.prevent="katastrOdeberParcelu(i)" class="text-gray-400 hover:text-red-500">&times;</button>
+                                <button @click.stop.prevent="katastrOdeberParcelu(i)" class="text-gray-500 hover:text-red-500">&times;</button>
                             </summary>
-                            <div class="text-gray-600 mt-0.5"><span class="text-gray-400">Druh:</span> <span x-text="(p.druh_pozemku_cz || '—') + ', ' + (p.vymera || '?') + ' m²'"></span></div>
+                            <div class="text-gray-600 mt-0.5"><span class="text-gray-500">Druh:</span> <span x-text="(p.druh_pozemku_cz || '—') + ', ' + (p.vymera || '?') + ' m²'"></span></div>
                             <template x-for="field in [{k:'radon', lbl:'Radon'}, {k:'geologie', lbl:'Geologie'}, {k:'ig_rajon', lbl:'Základy'}]" :key="field.k">
                                 <div x-show="p[field.k]">
                                     <div class="text-gray-600 mt-0.5 flex items-start gap-1">
-                                        <div class="flex-1"><span class="text-gray-400" x-text="field.lbl + ':'"></span> <span x-text="p[field.k]"></span></div>
+                                        <div class="flex-1"><span class="text-gray-500" x-text="field.lbl + ':'"></span> <span x-text="p[field.k]"></span></div>
                                         <button @click.stop="otevriVysvetleni(i, field.k)"
                                                 class="text-gray-300 hover:text-orange-600 border border-current rounded-full w-4 h-4 text-[9px] leading-none flex items-center justify-center flex-shrink-0"
                                                 title="Vysvětlit AI">?</button>
@@ -664,7 +718,7 @@
                             <span class="ml-2">Převýšení: <strong x-text="vyskovyProfil.vyskovy_rozdil + ' m'"></strong></span>
                         </div>
                     </template>
-                    <span x-show="katastrNacitaniProfil" class="mt-1 text-xs text-gray-400">Načítám výškový profil...</span>
+                    <span x-show="katastrNacitaniProfil" class="mt-1 text-xs text-gray-500">Načítám výškový profil...</span>
                 </div>
             </div>
         </details>
@@ -730,7 +784,7 @@
                                    class="text-xs border border-primary rounded px-1 py-0 w-28 outline-none">
                         </div>
                         <div class="flex items-center gap-1 shrink-0 ml-1">
-                            <span class="text-gray-400 text-[10px]" x-text="obj.info"></span>
+                            <span class="text-gray-500 text-[10px]" x-text="obj.info"></span>
                             <button @click.stop="smazatObjekt(obj.id)" class="text-gray-300 hover:text-red-500 transition" title="Smazat">
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <path d="M18 6L6 18M6 6l12 12"/>
@@ -739,7 +793,7 @@
                         </div>
                     </div>
                 </template>
-                <div x-show="seznamObjektu.length === 0" class="px-3 py-2 text-xs text-gray-400">
+                <div x-show="seznamObjektu.length === 0" class="px-3 py-2 text-xs text-gray-500">
                     Žádné objekty
                 </div>
             </div>
@@ -758,19 +812,19 @@
                 <template x-if="!podklad">
                     <div>
                         <button @click="impOtevri()" class="kk-btn w-full text-xs">Nový výkres…</button>
-                        <div class="text-[10px] text-gray-400 mt-1">PDF od architekta, sken nebo obrázek půdorysu.</div>
+                        <div class="text-[10px] text-gray-500 mt-1">PDF od architekta, sken nebo obrázek půdorysu.</div>
                     </div>
                 </template>
                 <template x-if="podklad">
                     <div class="space-y-1.5">
                         <div class="text-xs text-gray-600 truncate" x-text="podklad.nazev || 'Výkres'"></div>
-                        <div class="text-[10px] text-gray-400">
+                        <div class="text-[10px] text-gray-500">
                             změřeno · <span x-text="podklad.sirkaM.toFixed(1) + ' × ' + podklad.vyskaM.toFixed(1) + ' m'"></span>
                         </div>
                         {{-- Zobrazení podkladu — oddělené čarou, ať je vidět, že patří k sobě.
                              „Nad“ umožní obkreslovat i tam, kde už stěna leží. --}}
                         <div class="pt-2 mt-1 border-t border-gray-200">
-                            <div class="text-[10px] text-gray-400 mb-1">Zobrazení podkladu</div>
+                            <div class="text-[10px] text-gray-500 mb-1">Zobrazení podkladu</div>
                             <div class="flex items-center rounded overflow-hidden border border-gray-200 w-full">
                                 <template x-for="v in [{ k: 'pod', t: 'Pod' }, { k: 'nad', t: 'Nad' }, { k: 'skryt', t: 'Skrýt' }]" :key="v.k">
                                     <button @click="podkladZmena({ zobrazeni: v.k })"
@@ -781,12 +835,12 @@
                             </div>
                             {{-- vlevo bledý, vpravo sytý; x-model, ať jezdec drží polohu i po překreslení --}}
                             <div class="flex items-center gap-2 mt-1.5" x-show="podkladZobrazeni() !== 'skryt'">
-                                <span class="text-[10px] text-gray-400 shrink-0">Sytost</span>
+                                <span class="text-[10px] text-gray-500 shrink-0">Sytost</span>
                                 <input type="range" min="0.1" max="1" step="0.05"
                                        x-model.number="podklad.pruhlednost"
                                        @input="podkladZmena({ pruhlednost: parseFloat($event.target.value) })"
                                        class="flex-1">
-                                <span class="text-[10px] text-gray-400 w-7 text-right"
+                                <span class="text-[10px] text-gray-500 w-7 text-right"
                                       x-text="Math.round((podklad.pruhlednost ?? 0.5) * 100) + '%'"></span>
                             </div>
                         </div>
@@ -820,7 +874,7 @@
                          @click="nactiHistorii(historie.length - 1 - i)">
                         <span x-text="h.popis" class="truncate"
                               :class="historie.length - 1 - i > historiePozice ? 'text-gray-300 line-through' : 'text-gray-600'"></span>
-                        <span x-text="h.cas?.substring(11, 16)" class="text-gray-400 ml-2 shrink-0"></span>
+                        <span x-text="h.cas?.substring(11, 16)" class="text-gray-500 ml-2 shrink-0"></span>
                     </div>
                 </template>
             </div>
@@ -924,7 +978,7 @@
                             Esc = zpět
                         </span>
                     </div>
-                    <button @click="impZavri()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+                    <button @click="impZavri()" class="text-gray-500 hover:text-gray-600 text-xl leading-none">&times;</button>
                 </div>
             </div>
 
@@ -962,12 +1016,12 @@
                                             class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs hover:bg-orange-50">
                                         <span class="truncate">
                                             <span class="font-medium" x-text="v.nazev"></span>
-                                            <span class="text-gray-400" x-show="v.stran > 1" x-text="' · ' + v.stran + ' stran'"></span>
+                                            <span class="text-gray-500" x-show="v.stran > 1" x-text="' · ' + v.stran + ' stran'"></span>
                                             {{-- výkres si pamatuje měřítko i obvod → kroky se přeskočí --}}
                                             <span x-show="Object.keys(v.strany || {}).length"
                                                   class="ml-1 rounded bg-green-50 px-1.5 py-0.5 text-[10px] text-green-700">měřítko i obvod hotové</span>
                                         </span>
-                                        <span class="shrink-0 text-gray-400"
+                                        <span class="shrink-0 text-gray-500"
                                               x-text="(v.velikost ? Math.round(v.velikost / 1024) + ' kB' : '')
                                                   + (v.nahrano ? ' · ' + v.nahrano.substring(0, 10) : '')"></span>
                                     </button>
@@ -976,7 +1030,7 @@
                         </div>
                     </template>
                     <label class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded border-2 border-dashed py-10 text-sm transition"
-                           :class="impPretahuje ? 'border-orange-500 text-orange-700 bg-orange-50' : 'border-gray-300 text-gray-500 hover:border-orange-400 hover:text-orange-700'"
+                           :class="impPretahuje ? 'border-orange-500 text-orange-700 bg-orange-50' : 'border-gray-500 text-gray-500 hover:border-orange-400 hover:text-orange-700'"
                            @dragover.prevent="impPretahuje = true"
                            @dragleave.prevent="impPretahuje = false"
                            @drop.prevent="impPustSoubor($event)">
@@ -984,7 +1038,7 @@
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/>
                         </svg>
                         <span>Klikni nebo přetáhni výkres půdorysu (PDF, PNG nebo JPG, max 25 MB)</span>
-                        <span class="text-xs text-gray-400">Nejlépe vektorové PDF od architekta — z něj jdou rozpoznat stěny.</span>
+                        <span class="text-xs text-gray-500">Nejlépe vektorové PDF od architekta — z něj jdou rozpoznat stěny.</span>
                         <input type="file" accept=".pdf,.png,.jpg,.jpeg" class="hidden" @change="impNahrajSoubor($event)">
                     </label>
                     <p x-show="impNacitani" x-cloak class="mt-2 text-xs text-gray-500">Nahrávám…</p>
@@ -1002,7 +1056,7 @@
                             </button>
                         </template>
                     </div>
-                    <div x-show="impNacitani" class="text-xs text-gray-400 mt-2">Připravuji stranu…</div>
+                    <div x-show="impNacitani" class="text-xs text-gray-500 mt-2">Připravuji stranu…</div>
                 </div>
 
                 {{-- Krok 3 a 4: měřítko s výřezem, pak obkreslení obvodu — stejný prohlížeč --}}
@@ -1025,12 +1079,12 @@
 
                             <span class="text-gray-300">|</span>
                             <button @click="pzZoomKrok(-1)" class="rounded border border-gray-200 px-1.5 py-0.5 text-gray-600 hover:bg-gray-200">&minus;</button>
-                            <span class="w-10 text-center text-gray-400" x-text="pzZoomProcent() + '%'"></span>
+                            <span class="w-10 text-center text-gray-500" x-text="pzZoomProcent() + '%'"></span>
                             <button @click="pzZoomKrok(1)" class="rounded border border-gray-200 px-1.5 py-0.5 text-gray-600 hover:bg-gray-200">+</button>
                             {{-- magnet jako ikona — zapnutý svítí barvou značky --}}
                             <button @click="pzMagnetySila = pzMagnetySila > 0 ? 0 : 100"
                                     class="rounded p-1 transition hover:bg-gray-200"
-                                    :class="pzMagnetySila > 0 ? 'text-primary' : 'text-gray-400'"
+                                    :class="pzMagnetySila > 0 ? 'text-primary' : 'text-gray-500'"
                                     data-tip-below="Přichytávání ke koncům a čarám výkresu">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"
                                      stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
@@ -1040,7 +1094,7 @@
                                     <line x1="10.2" y1="11.4" x2="13.8" y2="11.4"/>
                                 </svg>
                             </button>
-                            <span class="text-gray-400" x-show="pzNacitamMagnety">načítám…</span>
+                            <span class="text-gray-500" x-show="pzNacitamMagnety">načítám…</span>
                         </div>
                     </div>
 
@@ -1097,7 +1151,7 @@
                                        class="w-28 rounded px-1 py-0.5 border"
                                        :class="impChybiRozmer() ? 'border-orange-500 bg-orange-50' : 'border-gray-200'">
                                 <span>mm</span>
-                                <button @click="impKalibZnovu()" class="text-gray-400 hover:text-gray-600 underline">změřit znovu</button>
+                                <button @click="impKalibZnovu()" class="text-gray-500 hover:text-gray-600 underline">změřit znovu</button>
                                 <span x-show="impChybiRozmer()" class="text-orange-700">← doplňte, jinak neznáme měřítko</span>
                             </span>
                         </template>
@@ -1144,12 +1198,12 @@
                                 <template x-for="(v, i) in impVarianty" :key="i">
                                     <button @click="impVyberVariantu(i)"
                                             class="block w-full border-2 rounded p-2 text-left transition-colors"
-                                            :class="impVybrana === i ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'">
+                                            :class="impVybrana === i ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-500'">
                                         <div class="flex items-center justify-between text-xs mb-1.5">
                                             <span class="font-medium"
                                                   x-text="(i + 1) + '. ' + v.osy.length + ' stěn · ' + v.delka.toFixed(0) + ' m'"></span>
                                             <span class="flex items-center gap-3">
-                                                <span class="text-gray-400" x-text="v.plocha ? v.plocha.toFixed(0) + ' m² plocha' : ''"></span>
+                                                <span class="text-gray-500" x-text="v.plocha ? v.plocha.toFixed(0) + ' m² plocha' : ''"></span>
                                                 {{-- potvrzení u vybrané varianty, ne až dole pod seznamem --}}
                                                 <span x-show="impVybrana === i"
                                                       @click.stop="impPrevezmiSteny()"
@@ -1167,7 +1221,7 @@
                                 </template>
                             </div>
                             <div class="flex items-center justify-between">
-                                <div class="text-[11px] text-gray-400">
+                                <div class="text-[11px] text-gray-500">
                                     Rozpoznání trvalo <span x-text="impCas.toFixed(1)"></span> s.
                                     Výsledek je podklad k doúpravě — stěny pak opravíte v editoru nad výkresem.
                                 </div>
