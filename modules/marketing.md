@@ -7,10 +7,17 @@ udělat v kódu a pushnout. Placené nástroje (Screaming Frog, Ahrefs/Semrush, 
 zatím nerozhodnuto — třešinky na dortu, až web poběží veřejně.
 
 ## Stav (2026-11-01)
-- **PC:** pipx 1.18.10 a uv 0.13.6 nainstalovány uživatelsky (`C:\Users\HP\.local\bin`).
-  Všechny tři MCP servery se stáhly a spustily (Python 3.14 nevadí):
-  `pipx run analytics-mcp`, `pipx run --spec git+https://github.com/googleads/google-ads-mcp.git google-ads-mcp`,
-  `uvx mcp-search-console`.
+- **PC:** pipx 1.18.10 a uv 0.13.6 nainstalovány uživatelsky (`C:\Users\HP\.local\bin`, je v uživatelské PATH).
+  MCP servery jsou **trvale nainstalované** (`pipx install analytics-mcp`,
+  `pipx install git+https://github.com/googleads/google-ads-mcp.git`, `uv tool install mcp-search-console`),
+  `.mcp.json` volá přímo `analytics-mcp`, `google-ads-mcp`, `mcp-search-console`. Původní `pipx run --spec git+…`
+  stavěl google-ads-mcp při každém startu znovu (minuty) → VS Code hlásil CONNECT_TIMEOUT po 30 s.
+  Start teď: analytics ~7 s, google-ads ~10 s, search-console ~3 s. Aktualizace: `pipx upgrade-all`, `uv tool upgrade --all`.
+- **Ověřeno 2026-11-01 přes MCP (stdio test):** analytics `run_report` (CZK, Europe/Prague, zatím 0 řádků),
+  `list_google_ads_links` → propojení s účtem 1346460395 existuje; search-console `list_properties` → `sc-domain:tuptudu.com`;
+  google-ads `customers_list_accessible_customers` → `1346460395`, `search_search` vrací název/měnu/pásmo.
+  Názvy nástrojů Ads serveru: `customers_list_accessible_customers`, `search_search` (argumenty `customer_id`,
+  `fields`, `resource`, ne `query`), `metadata_get_resource_metadata`.
 - **GA4 property založena** (krok 2), Measurement ID `G-RZ5R886K95`. GA4 + cookie lišta **nasazeny
   na produkci 2026-11-01** (commity ce9dd7b, ff1e7ca; ověřeno: web a app lištu mají, masterteam ne).
   Stále `noindex`.
