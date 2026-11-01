@@ -56,6 +56,8 @@ Skript potřebuje `fonty/Rubik-var.ttf` (Google Fonts, repozitář google/fonts,
 vedle sebe — stahuje se ručně, v repozitáři není. Pythonové balíčky: `fonttools`, `uharfbuzz`, `resvg-py`.
 
 ## Co ještě není rozhodnuto
+**Příští sezení (Libor, 1. 11. 2026):** odrážky, číslování, bloky článků a další prvky — opět výběr
+z několika návrhů na stránce s písmem Rubik + Plex a paletou Noc.
 1. **Tvary a odstupy:** zakulacení rohů tlačítek/panelů/polí (štítek má 0,10 em → návrh 6–8 px),
    tloušťky čar, velikostní řada písma.
 2. **Prvky:** tlačítka, pole, tabulky, záložky, upozornění, sada ikon (návrh: Lucide, tah 1,75 px).
