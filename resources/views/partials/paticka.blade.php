@@ -11,7 +11,7 @@
         <a href="{{ \App\Support\Domeny::url('web', '/privacy') }}">{{ __('pravni.soukromi_titulek') }}</a>
         <a href="{{ \App\Support\Domeny::url('web', '/refunds') }}">{{ __('pravni.vraceni_titulek') }}</a>
         <a href="{{ \App\Support\Domeny::url('web', '/contact') }}">{{ __('kontakt.titulek') }}</a>
-        @if (config('services.ga4.measurement_id'))
+        @if (config('services.ga4.measurement_id') && ! \App\Support\Domeny::jeMasterteam())
             {{-- Změna volby cookies — lišta (partials/cookies-lista) je na všech stránkách s patičkou --}}
             <button type="button" onclick="window.ttCookiesOtevrit?.()">{{ __('cookies.odkaz_paticka') }}</button>
         @endif

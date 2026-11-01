@@ -11,7 +11,8 @@
 
      Includovat na konec <body> AŽ ZA partials.error-tracker (používá window.zalogujChybu). --}}
 @php
-    $ttGa4 = config('services.ga4.measurement_id');
+    // Masterteam (vč. jeho přihlašovací stránky, která sdílí layout prihlaseni) se neměří — interní část.
+    $ttGa4 = \App\Support\Domeny::jeMasterteam() ? null : config('services.ga4.measurement_id');
     // Cookie na celé doméně webu (.tuptudu.com), aby volba platila i na app.; jinde (127.0.0.1) bez domény.
     $ttWebDomena = config('domeny.web')[0];
     $ttHost = request()->getHost();
