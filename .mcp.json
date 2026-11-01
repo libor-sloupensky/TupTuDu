@@ -1,24 +1,24 @@
 {
   "mcpServers": {
     "analytics": {
-      "command": "pipx",
-      "args": ["run", "analytics-mcp"],
+      "command": "analytics-mcp",
+      "args": [],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "${TUPTUDU_GOOGLE_SA}",
         "GOOGLE_CLOUD_PROJECT": "${TUPTUDU_GCP_PROJECT}"
       }
     },
     "google-ads": {
-      "command": "pipx",
-      "args": ["run", "--spec", "git+https://github.com/googleads/google-ads-mcp.git", "google-ads-mcp"],
+      "command": "google-ads-mcp",
+      "args": [],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "${TUPTUDU_GOOGLE_SA}",
         "GOOGLE_PROJECT_ID": "${TUPTUDU_GCP_PROJECT}"
       }
     },
     "search-console": {
-      "command": "uvx",
-      "args": ["mcp-search-console"],
+      "command": "mcp-search-console",
+      "args": [],
       "env": {
         "GSC_CREDENTIALS_PATH": "${TUPTUDU_GOOGLE_SA}",
         "GSC_SKIP_OAUTH": "true"
