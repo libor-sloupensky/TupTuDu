@@ -140,6 +140,9 @@ const TYPY_KRIDEL = {
 
 const naCm = (m) => Math.round(m * 100) / 100;
 
+/** Jemné pastelové barvy místností (sytost kolem 15 %) — přidělují se dokola. */
+const PALETA_MISTNOSTI = ['#fbe9dc', '#e4eefb', '#e5f3e4', '#fbf4d6', '#efe8f8', '#e0f3f1', '#f8e6ea', '#ececec'];
+
 /**
  * Křídlo do aktuálního tvaru { sirka, otv, sklopne? }. Starší hodnoty otv
  * (sklopne, levy_sklopne, pravy_sklopne) rozloží na typ + příznak. Null = poškozené.
@@ -594,6 +597,8 @@ class StavebniEngine {
         this.openings = new Map(); // id → {id, wallId, pozice, sirka, typ, nazev, smer, strana, vyska?, parapet?, kridla?}
         this.prostory = [];        // [{id, typ, podtyp, polygon:[[x,y]..m], plocha_m2, nazev, venkovni}]
         this.vybaveni = [];        // [{id, typ, podtyp, kategorie, polygon, stred:[x,y px], sirka, hloubka, uhel, vyska}] — souřadnice v canvas px
+        this.oddelovace = new Map(); // id → {id, a, b, delkaPx}; konec = {x, y, host?: {stena, t, strana}} — viz addOddelovac
+        this.mistnosti = [];         // [{id, nazev, barva, kotva:{x,y px}}] — plochy počítá rastr (mistnosti.js), záznam drží jméno a barvu u kotvy
         this.nextId = 1;
         this.MAGNET_DIST = options.magnetDist || 16;
         this.PX_PER_M = options.pxPerM || 80;
@@ -1041,6 +1046,7 @@ class StavebniEngine {
         const host = this.walls.get(hostWallId);
         if (!host) return;
         const children = this.getTChildren(hostWallId);
+        this._vezOddelovace(hostWallId, dx, dy);
         const moved = new Set();
         // Pokud známe delta pohybu hostitele, translatujeme T-children o stejnou
         // hodnotu (zachovává kolmé odsazení od osy hostitele).
@@ -1504,6 +1510,8 @@ class StavebniEngine {
             doConstraint: origDoConstraint,  // nodeB je původní → zachová původní constraint
         };
         this.walls.set(newId, newWall);
+
+        this._premapujOddelovace(wallId, newId, tSplit);
 
         // Přepočítat T-children constraints
         for (const w of this.walls.values()) {
@@ -1984,6 +1992,7 @@ class StavebniEngine {
             if (opening.wallId === wallId) this.openings.delete(id);
         }
 
+        this._odpojOddelovaceOd(wallId);
         this.walls.delete(wallId);
         this.zrusVazbyNa(wallId);
 
@@ -2016,6 +2025,284 @@ class StavebniEngine {
         const wallsToRemove = this.getNodeWalls(nodeId);
         wallsToRemove.forEach(w => this.removeWall(w.id));
         this.nodes.delete(nodeId);
+    }
+
+    // ─── ODDĚLOVAČE MÍSTNOSTÍ ──────────────────────────────
+    /**
+     * Oddělovač místnosti (Libor 1. 11. 2026): úsečka nulové tloušťky, která
+     * dělí plochu na místnosti, ale NENÍ stěna — nemá tloušťku ani 3D, nespojuje
+     * se s rohy, neřeže stěny a nikdy neblokuje jejich posun. Konec může viset
+     * na líci stěny: { host: { stena, t, strana } } — poloha se počítá z hostitele
+     * (bodKonceOddelovace), takže se oddělovač s posunem stěny protáhne nebo
+     * zkrátí sám; volný konec se s hostitelem veze (_vezOddelovace).
+     */
+    addOddelovac(a, b) {
+        const odd = { id: this._id('R'), a: this._konecOddelovace(a), b: this._konecOddelovace(b) };
+        odd.delkaPx = this.delkaOddelovace(odd);
+        this.oddelovace.set(odd.id, odd);
+        return odd;
+    }
+
+    _konecOddelovace(k) {
+        const out = { x: k.x, y: k.y };
+        if (k.host && this.walls.has(k.host.stena)) {
+            // Ořez na rozsah LÍCE, ne osy: líc sahá přes pokos až za konec osy (t < 0 nebo > 1).
+            // Ořez na 0–1 posouval začátek kliknutý u rohu a rozpadl zacvaknutý úhel (Klemov W11→W36).
+            const strana = k.host.strana >= 0 ? 1 : -1;
+            const lic = this.rozsahLice(k.host.stena, strana);
+            out.host = { stena: k.host.stena, t: Math.max(lic.od, Math.min(lic.do, k.host.t)), strana };
+            const p = this.bodNaLici(out.host.stena, out.host.t, out.host.strana);
+            if (p) { out.x = p.x; out.y = p.y; }
+        }
+        return out;
+    }
+
+    /** Skutečná poloha konce: z líce hostitele, jinak uložené souřadnice (hostitel bez stěny se odpojí). */
+    bodKonceOddelovace(konec) {
+        if (konec.host) {
+            const p = this.bodNaLici(konec.host.stena, konec.host.t, konec.host.strana);
+            if (p) { konec.x = p.x; konec.y = p.y; return p; }
+            delete konec.host;
+        }
+        return { x: konec.x, y: konec.y };
+    }
+
+    /** Bod na líci stěny: t po ose A→B, strana +1 = vlevo od směru (normála jako v rendereru), -1 vpravo. */
+    bodNaLici(wallId, t, strana) {
+        const w = this.walls.get(wallId);
+        if (!w) return null;
+        const a = this.nodes.get(w.nodeA), b = this.nodes.get(w.nodeB);
+        if (!a || !b) return null;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const L = Math.hypot(dx, dy);
+        if (!L) return null;
+        const half = (w.tloustka || 0) * this.PX_PER_M / 2;
+        return { x: a.x + dx * t - dy / L * half * strana, y: a.y + dy * t + dx / L * half * strana };
+    }
+
+    delkaOddelovace(odd) {
+        const a = this.bodKonceOddelovace(odd.a), b = this.bodKonceOddelovace(odd.b);
+        return Math.hypot(b.x - a.x, b.y - a.y);
+    }
+
+    /**
+     * Přichycení konce oddělovače: konec jiného oddělovače, jinak líc stěny
+     * (ne roh, ne čelo — t v rozsahu 2–98 %). Vrací { bod, host } nebo null.
+     */
+    najdiUchytOddelovace(x, y, tolerancePx, vynechatId = null) {
+        let best = null, bestD = tolerancePx;
+        for (const o of this.oddelovace.values()) {
+            if (o.id === vynechatId) continue;
+            for (const k of [o.a, o.b]) {
+                const p = this.bodKonceOddelovace(k);
+                const d = Math.hypot(p.x - x, p.y - y);
+                if (d < bestD) { bestD = d; best = { typ: 'oddelovac', bod: p, host: k.host ? { ...k.host } : null }; }
+            }
+        }
+        if (best) return best;
+        // Líc stěny: nejbližší úsek líce na kterékoli straně. Rozsah líce (rozsahLice)
+        // sahá až k pokosu v rohu, takže se oddělovač chytí i těsně u spoje stěn —
+        // findSnapCandidate konce stěny vynechává (2 %), to tu vadilo (Libor 1. 11. 2026).
+        let nej = null, nejD = tolerancePx;
+        for (const w of this.walls.values()) {
+            const a = this.nodes.get(w.nodeA), b = this.nodes.get(w.nodeB);
+            if (!a || !b) continue;
+            const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+            if (!L2) continue;
+            for (const strana of [1, -1]) {
+                const lic = this.rozsahLice(w.id, strana);
+                const p0 = this.bodNaLici(w.id, lic.od, strana), p1 = this.bodNaLici(w.id, lic.do, strana);
+                if (!p0 || !p1) continue;
+                const ex = p1.x - p0.x, ey = p1.y - p0.y, E2 = ex * ex + ey * ey;
+                if (!E2) continue;
+                const u = Math.max(0, Math.min(1, ((x - p0.x) * ex + (y - p0.y) * ey) / E2));
+                const px = p0.x + ex * u, py = p0.y + ey * u;
+                const d = Math.hypot(x - px, y - py);
+                if (d < nejD) {
+                    const t = ((px - a.x) * dx + (py - a.y) * dy) / L2;
+                    nejD = d;
+                    nej = { typ: 'stena', bod: { x: px, y: py }, host: { stena: w.id, t, strana } };
+                }
+            }
+        }
+        return nej;
+    }
+
+    removeOddelovac(id) {
+        this.oddelovace.delete(id);
+    }
+
+    /**
+     * Posune konec oddělovače k bodu (x, y): konec na líci klouže po líci (t se
+     * ořízne na rozsah líce), volný konec se tam položí. Pro tažení celku i konce.
+     */
+    posunKonecOddelovace(konec, x, y) {
+        if (konec.host) {
+            const w = this.walls.get(konec.host.stena);
+            const a = w && this.nodes.get(w.nodeA), b = w && this.nodes.get(w.nodeB);
+            if (a && b) {
+                const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+                if (L2 > 0) {
+                    const lic = this.rozsahLice(w.id, konec.host.strana);
+                    const t = ((x - a.x) * dx + (y - a.y) * dy) / L2;
+                    konec.host.t = Math.max(lic.od, Math.min(lic.do, t));
+                    this.bodKonceOddelovace(konec);
+                    return;
+                }
+            }
+            delete konec.host;
+        }
+        konec.x = x;
+        konec.y = y;
+    }
+
+    /**
+     * Posune celý oddělovač o (dx, dy) jako tuhé těleso — jako stěna:
+     *  - konec na líci může jen po líci, proto se posun promítne do směru líce
+     *    (kolmá složka se zahodí) a volný konec jede o totéž, tvar drží;
+     *  - když některý konec dojede na kraj líce, zastaví se CELÝ oddělovač
+     *    (dřív jel druhý konec dál a rozbil zacvaknutý úhel — Libor 1. 11. 2026).
+     */
+    posunOddelovac(odd, dx, dy) {
+        const osa = (k) => {
+            const w = k.host && this.walls.get(k.host.stena);
+            const a = w && this.nodes.get(w.nodeA), b = w && this.nodes.get(w.nodeB);
+            if (!a || !b) return null;
+            const wdx = b.x - a.x, wdy = b.y - a.y, L2 = wdx * wdx + wdy * wdy;
+            return L2 ? { w, wdx, wdy, L2, ux: wdx / Math.sqrt(L2), uy: wdy / Math.sqrt(L2) } : null;
+        };
+        const konce = [odd.a, odd.b].map(k => ({ k, osa: osa(k) }));
+        const hostovane = konce.filter(c => c.osa);
+        let ex = dx, ey = dy;
+        if (hostovane.length) {
+            const u = hostovane[0].osa;
+            const pr = dx * u.ux + dy * u.uy;
+            ex = u.ux * pr; ey = u.uy * pr;
+        }
+        // Mez: nejmenší povolený podíl posunu přes všechny hostované konce
+        let s = 1;
+        for (const c of hostovane) {
+            const dt = (ex * c.osa.wdx + ey * c.osa.wdy) / c.osa.L2;
+            if (Math.abs(dt) < 1e-9) continue;
+            const lic = this.rozsahLice(c.osa.w.id, c.k.host.strana);
+            const cil = c.k.host.t + dt;
+            const orez = Math.max(lic.od, Math.min(lic.do, cil));
+            const sk = (orez - c.k.host.t) / dt;
+            if (sk < s) s = Math.max(0, sk);
+        }
+        ex *= s; ey *= s;
+        if (Math.abs(ex) < 1e-9 && Math.abs(ey) < 1e-9) return false;
+        for (const c of konce) {
+            if (c.osa) {
+                c.k.host.t += (ex * c.osa.wdx + ey * c.osa.wdy) / c.osa.L2;
+                this.bodKonceOddelovace(c.k);
+            } else {
+                c.k.x += ex; c.k.y += ey;
+            }
+        }
+        odd.delkaPx = this.delkaOddelovace(odd);
+        return true;
+    }
+
+    /** Před smazáním stěny: konce na ní zmrazit tam, kde právě jsou. */
+    _odpojOddelovaceOd(wallId) {
+        for (const o of this.oddelovace.values()) {
+            for (const k of [o.a, o.b]) {
+                if (k.host && k.host.stena === wallId) { this.bodKonceOddelovace(k); delete k.host; }
+            }
+        }
+    }
+
+    /** Hostitel se posunul o (dx, dy): oddělovač s jedním koncem na něm a druhým volným jede celý. */
+    _vezOddelovace(hostWallId, dx, dy) {
+        if (typeof dx !== 'number' || typeof dy !== 'number') return;
+        for (const o of this.oddelovace.values()) {
+            const naHostiteli = (k) => k.host && k.host.stena === hostWallId;
+            if (naHostiteli(o.a) && !o.b.host) { o.b.x += dx; o.b.y += dy; }
+            else if (naHostiteli(o.b) && !o.a.host) { o.a.x += dx; o.a.y += dy; }
+        }
+    }
+
+    /**
+     * Po úpravě stěn: oddělovač stlačený pod 10 cm. Volný konec se odsune na
+     * původní délku; konec na jiné stěně nemá kam → oddělovač zmizí (Zpět ho vrátí).
+     * @returns {boolean} něco se změnilo
+     */
+    uklidOddelovace() {
+        const MIN = 0.1 * this.PX_PER_M;
+        let zmena = false;
+        for (const o of [...this.oddelovace.values()]) {
+            const a = this.bodKonceOddelovace(o.a), b = this.bodKonceOddelovace(o.b);
+            const L = Math.hypot(b.x - a.x, b.y - a.y);
+            if (L >= MIN) { o.delkaPx = L; continue; }
+            const volny = !o.a.host ? 'a' : (!o.b.host ? 'b' : null);
+            if (volny && o.delkaPx > MIN) {
+                const pevny = volny === 'a' ? b : a;
+                const k = o[volny];
+                let ux = (volny === 'a' ? a.x - b.x : b.x - a.x), uy = (volny === 'a' ? a.y - b.y : b.y - a.y);
+                const n = Math.hypot(ux, uy);
+                if (n > 1e-6) { ux /= n; uy /= n; }
+                else {
+                    // Délka nula: směr kolmo od líce hostitele
+                    const h = o[volny === 'a' ? 'b' : 'a'].host;
+                    const w = h && this.walls.get(h.stena);
+                    const na = w && this.nodes.get(w.nodeA), nb = w && this.nodes.get(w.nodeB);
+                    if (na && nb) { const ddx = nb.x - na.x, ddy = nb.y - na.y, LL = Math.hypot(ddx, ddy) || 1; ux = -ddy / LL * h.strana; uy = ddx / LL * h.strana; }
+                    else { ux = 1; uy = 0; }
+                }
+                k.x = pevny.x + ux * o.delkaPx;
+                k.y = pevny.y + uy * o.delkaPx;
+            } else {
+                this.oddelovace.delete(o.id);
+            }
+            zmena = true;
+        }
+        return zmena;
+    }
+
+    // ─── MÍSTNOSTI ────────────────────────────────────────
+    /**
+     * Sladí záznamy místností s plochami z rastru: plocha, ve které leží kotva
+     * záznamu, dostane jeho jméno a barvu; plocha bez záznamu dostane nový
+     * („Místnost N", barva z palety dokola). Záznam bez plochy (sloučené
+     * místnosti, rozestavěná stěna) se nemaže — jakmile se jeho kotva zase
+     * ocitne v uzavřené ploše, jméno se vrátí.
+     *
+     * @param {Array<{stitek:number, stred:{x,y}}>} komponenty  plochy z rastru
+     * @param {(x:number,y:number)=>number} stitekVBode
+     * @returns {Map<number, object>} štítek → záznam místnosti
+     */
+    sladMistnosti(komponenty, stitekVBode) {
+        const mapa = new Map();
+        for (const m of this.mistnosti) {
+            const s = stitekVBode(m.kotva.x, m.kotva.y);
+            if (s < 2 || mapa.has(s) || !komponenty.some(k => k.stitek === s)) continue;
+            mapa.set(s, m);
+        }
+        for (const k of komponenty) {
+            if (mapa.has(k.stitek)) continue;
+            const m = {
+                id: this._id('M'),
+                nazev: this.dalsiNazevMistnosti(),
+                barva: PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length],
+                kotva: { x: k.stred.x, y: k.stred.y },
+            };
+            this.mistnosti.push(m);
+            mapa.set(k.stitek, m);
+        }
+        return mapa;
+    }
+
+    /** „Místnost N" — první volné číslo. */
+    dalsiNazevMistnosti() {
+        let n = 1;
+        const obsazena = new Set(this.mistnosti.map(m => m.nazev));
+        while (obsazena.has('Místnost ' + n)) n++;
+        return 'Místnost ' + n;
+    }
+
+    najdiMistnost(id) {
+        return (this.mistnosti || []).find(m => m.id === id) || null;
     }
 
     removeVybaveni(id) {
@@ -2123,10 +2410,28 @@ class StavebniEngine {
                         }
                     }
 
+                    this._premapujOddelovace(wall.id, newId, t);
+
                     changed = true;
                     break; // restart inner loop
                 }
                 if (changed) break; // restart outer loop
+            }
+        }
+    }
+
+    /**
+     * Po rozdělení stěny v parametru tSplit: konce oddělovačů za řezem přejdou
+     * na novou polovinu, parametr se přepočítá. Volá splitWall i _autoSplitWalls
+     * (to při načtení dělí stěny u T-napojení ručně — bez tohoto se oddělovač
+     * po obnovení stránky stáhl na zkrácenou stěnu a šel šikmo).
+     */
+    _premapujOddelovace(wallId, newId, tSplit) {
+        for (const o of this.oddelovace.values()) {
+            for (const k of [o.a, o.b]) {
+                if (!k.host || k.host.stena !== wallId) continue;
+                if (k.host.t < tSplit) k.host.t = k.host.t / tSplit;
+                else { k.host.stena = newId; k.host.t = (k.host.t - tSplit) / (1 - tSplit); }
             }
         }
     }
@@ -2457,7 +2762,25 @@ class StavebniEngine {
             zadni_strana: v.zadni_strana ?? null,
         }));
 
-        return { steny, otvory, prostory, vybaveni };
+        // Oddělovače místností — konce v metrech (y nahoru jako u stěn), vazba na líc stěny zvlášť
+        const oddelovace = [];
+        for (const o of this.oddelovace.values()) {
+            const konec = (k) => {
+                const p = this.bodKonceOddelovace(k);
+                const out = { x: Math.round(p.x / this.PX_PER_M * 1000) / 1000, y: Math.round(-p.y / this.PX_PER_M * 1000) / 1000 };
+                if (k.host) out.host = { stena: k.host.stena, t: k.host.t, strana: k.host.strana };
+                return out;
+            };
+            oddelovace.push({ id: o.id, a: konec(o.a), b: konec(o.b) });
+        }
+
+        // Místnosti: jméno + barva + kotva (metry, y nahoru); plochy se nepersistují, počítá je rastr
+        const mistnosti = (this.mistnosti || []).map(m => ({
+            id: m.id, nazev: m.nazev, barva: m.barva,
+            kotva: [Math.round(m.kotva.x / this.PX_PER_M * 1000) / 1000, Math.round(-m.kotva.y / this.PX_PER_M * 1000) / 1000],
+        }));
+
+        return { steny, otvory, prostory, vybaveni, oddelovace, mistnosti };
     }
 
     /**
@@ -2472,6 +2795,8 @@ class StavebniEngine {
         this.openings.clear();
         this.prostory = [];
         this.vybaveni = [];
+        this.oddelovace.clear();
+        this.mistnosti = [];
         this.nextId = 1;
 
         if (!data || !data.steny) return;
@@ -2563,6 +2888,28 @@ class StavebniEngine {
             this.openings.set(opening.id, opening);
 
             const num = parseInt(String(o.id ?? '').replace(/\D/g, ''));
+            if (num >= this.nextId) this.nextId = num + 1;
+        });
+
+        (data.oddelovace || []).forEach(o => {
+            if (!o || !o.a || !o.b) return;
+            const konec = (k) => ({ x: k.x * this.PX_PER_M, y: -k.y * this.PX_PER_M, host: k.host || null });
+            const odd = { id: o.id || this._id('R'), a: this._konecOddelovace(konec(o.a)), b: this._konecOddelovace(konec(o.b)) };
+            odd.delkaPx = this.delkaOddelovace(odd);
+            this.oddelovace.set(odd.id, odd);
+            const num = parseInt(String(o.id ?? '').replace(/\D/g, ''));
+            if (num >= this.nextId) this.nextId = num + 1;
+        });
+
+        (data.mistnosti || []).forEach(m => {
+            if (!m || !Array.isArray(m.kotva)) return;
+            this.mistnosti.push({
+                id: m.id || this._id('M'),
+                nazev: String(m.nazev || ''),
+                barva: /^#[0-9a-fA-F]{6}$/.test(m.barva || '') ? m.barva : PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length],
+                kotva: { x: m.kotva[0] * this.PX_PER_M, y: -m.kotva[1] * this.PX_PER_M },
+            });
+            const num = parseInt(String(m.id ?? '').replace(/\D/g, ''));
             if (num >= this.nextId) this.nextId = num + 1;
         });
 
@@ -2732,6 +3079,18 @@ class StavebniEngine {
         this.oddelVsechnaCelaNapojeni();
         this.srovnejPrickyNaLic();
         this.srovnejCelaNaRoh();
+
+        // Starší projekty z importu mají pojmenované prostory (polygony) — jména
+        // přejdou na kotvy místností (těžiště polygonu), plochu už počítá rastr.
+        if (this.mistnosti.length === 0 && Array.isArray(this.prostory) && this.prostory.length > 0) {
+            for (const p of this.prostory) {
+                if (p.venkovni) continue;
+                const body = (p.vertices || []).map(v => this.getProstorVertexPx(v)).filter(Boolean);
+                if (body.length < 3) continue;
+                const kotva = { x: body.reduce((a, b) => a + b.x, 0) / body.length, y: body.reduce((a, b) => a + b.y, 0) / body.length };
+                this.mistnosti.push({ id: this._id('M'), nazev: String(p.nazev || p.typ || ''), barva: PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length], kotva });
+            }
+        }
     }
 
     /**
@@ -3067,6 +3426,8 @@ class StavebniEngine {
         this.openings.clear();
         this.prostory = [];
         this.vybaveni = [];
+        this.oddelovace.clear();
+        this.mistnosti = [];
         this.nextId = 1;
 
         const px = this.PX_PER_M;
@@ -3386,6 +3747,8 @@ class StavebniEngine {
         this.openings.clear();
         this.prostory = [];
         this.vybaveni = [];
+        this.oddelovace.clear();
+        this.mistnosti = [];
         this.nextId = 1;
 
         const granularita = paket.granularita || 0.25;
@@ -3890,6 +4253,7 @@ if (typeof window !== 'undefined') {
     window.TYPY_PRISLUSENSTVI = TYPY_PRISLUSENSTVI;
     // Křídla, výška a parapet otvoru — sdílí je 2D renderer, inspektor i 3D
     window.TYPY_KRIDEL = TYPY_KRIDEL;
+    window.PALETA_MISTNOSTI = PALETA_MISTNOSTI;
     window.kridlaOtvoru = kridlaOtvoru;
     window.nastavPocetKridel = nastavPocetKridel;
     window.pocetKridelVolby = pocetKridelVolby;

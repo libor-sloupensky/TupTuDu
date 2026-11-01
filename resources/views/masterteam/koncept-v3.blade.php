@@ -21,6 +21,7 @@
 <script src="/js/three/Line2.js?v=0.128"></script>
 <script src="/js/koncept-v3/stavebni-engine.js?v={{ filemtime(public_path('js/koncept-v3/stavebni-engine.js')) }}"></script>
 <script src="/js/koncept-v3/pudorys-icons.js?v={{ filemtime(public_path('js/koncept-v3/pudorys-icons.js')) }}"></script>
+<script src="/js/koncept-v3/mistnosti.js?v={{ filemtime(public_path('js/koncept-v3/mistnosti.js')) }}"></script>
 <script src="/js/koncept-v3/konva-renderer.js?v={{ filemtime(public_path('js/koncept-v3/konva-renderer.js')) }}"></script>
 
 <style>
@@ -285,24 +286,7 @@
                 </button>
             </div>
 
-            {{-- Volby stěny — jen když je nástroj zapnutý (stejně jako u otvoru) --}}
-            <div x-show="nastroj === 'stena'" x-cloak class="flex items-center gap-1 ml-1 text-xs">
-                <select x-model="stenaTyp" @change="tloustkaSteny = vychoziTloustka(stenaTyp); ulozitNastaveni()"
-                        class="kk-pole">
-                    <option value="obvodova">Obvodová</option>
-                    <option value="nosna">Nosná</option>
-                    <option value="pricka">Příčka</option>
-                    <option value="zidka">Zídka</option>
-                    <option value="plot">Plot</option>
-                </select>
-                {{-- Tloušťka v cm (v enginu zůstávají metry) --}}
-                <input type="number" min="5" max="60" step="1"
-                       :value="Math.round(tloustkaSteny * 100)"
-                       @change="tloustkaSteny = Math.min(0.6, Math.max(0.05, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
-                       @keydown.enter.prevent="$event.target.blur()"
-                       class="kk-pole w-14">
-                <span class="text-gray-500">cm</span>
-            </div>
+            {{-- Volby stěny nejsou v liště — jsou v panelu na plátně jako volby otvoru (Libor 1. 11. 2026). --}}
 
             {{-- Volby otvoru nejsou v liště — jsou v panelu na plátně pod tlačítkem Otvor,
                  stejně jako vlastnosti vybraného otvoru (Libor, 1. 11. 2026). --}}
@@ -385,7 +369,7 @@
             {{-- Panel otvoru — na plátně v levém horním rohu (odsazení 6 px jako nahoře), úchopem vlevo
                  jde přetáhnout jinam (poloha se pamatuje), dvojklik na úchop ho vrátí. Ukazuje buď
                  volby nového otvoru (nástroj zapnutý), nebo vlastnosti výběru. --}}
-            <div id="kk-panel-otvoru" x-show="!rezim3d && (nastroj === 'otvor' || inspector)" x-cloak
+            <div id="kk-panel-otvoru" x-show="!rezim3d && (nastroj === 'otvor' || nastroj === 'stena' || inspector)" x-cloak
                  class="bg-white rounded-lg shadow-md text-xs flex items-stretch"
                  :style="panelOtvoruStyl"
                  style="position:absolute;z-index:15;min-width:250px;max-width:420px;border:1.5px solid var(--c-primary)">
@@ -402,6 +386,37 @@
                     </svg>
                 </div>
                 <div class="flex-1 min-w-0">
+                {{-- Nová stěna / oddělovač: typ a tloušťka (dřív v liště nástrojů) --}}
+                <template x-if="nastroj === 'stena'">
+                    <div class="p-2 flex flex-col gap-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-600 font-medium whitespace-nowrap" x-text="stenaTyp === 'oddelovac' ? 'Oddělovač místnosti' : 'Nová stěna'"></span>
+                            <select x-model="stenaTyp" @change="tloustkaSteny = vychoziTloustka(stenaTyp); ulozitNastaveni()"
+                                    class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto">
+                                <option value="obvodova">Obvodová</option>
+                                <option value="nosna">Nosná</option>
+                                <option value="pricka">Příčka</option>
+                                <option value="zidka">Zídka</option>
+                                <option value="plot">Plot</option>
+                                {{-- Oddělovač místnosti: čára nulové tloušťky, chytá se jen na líc stěn (Libor 1. 11. 2026) --}}
+                                <option value="oddelovac">Oddělovač místnosti</option>
+                            </select>
+                            <template x-if="stenaTyp !== 'oddelovac'">
+                                <span class="flex items-center gap-1">
+                                    <span class="text-gray-500">tl:</span>
+                                    {{-- Tloušťka v cm (v enginu zůstávají metry) --}}
+                                    <input type="number" min="5" max="60" step="1"
+                                           :value="Math.round(tloustkaSteny * 100)"
+                                           @change="tloustkaSteny = Math.min(0.6, Math.max(0.05, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
+                                           @keydown.enter.prevent="$event.target.blur()"
+                                           class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs">
+                                    <span class="text-gray-500">cm</span>
+                                </span>
+                            </template>
+                        </div>
+                        <div class="text-gray-500" x-text="stenaTyp === 'oddelovac' ? 'Klepněte na líc stěny, pak na druhý. Esc ukončí.' : 'Klepněte na začátek stěny, táhněte a pusťte na konci.'"></div>
+                    </div>
+                </template>
                 <template x-if="nastroj === 'otvor'">
                     <div class="p-2 flex flex-col gap-1">
                         <div class="flex items-center gap-2">
@@ -425,7 +440,7 @@
                         <div class="text-orange-700" x-show="otvorZprava" x-cloak x-text="otvorZprava"></div>
                     </div>
                 </template>
-                <template x-if="nastroj !== 'otvor' && inspector">
+                <template x-if="nastroj !== 'otvor' && nastroj !== 'stena' && inspector">
                     <div class="p-2 flex items-center gap-2 flex-wrap">
                         {{-- Multi-select indikátor --}}
                         <span x-show="inspector.count > 1" class="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-semibold"
@@ -454,7 +469,7 @@
                                             <select class="border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                     @change="setOpeningSirka(parseFloat($event.target.value))"
                                                     :disabled="inspector.typ === null">
-                                                <option value="" disabled :selected="inspector.sirka === null">—</option>
+                                                <template x-if="inspector.sirka === null"><option value="" disabled selected>—</option></template>
                                                 <template x-for="s in inspector.sirky" :key="s">
                                                     <option :value="s"
                                                             :selected="inspector.sirka !== null && Math.abs(s - inspector.sirka) < 0.001"
@@ -471,24 +486,48 @@
                                                @change="setOpeningVyska(parseFloat($event.target.value) / 100)"
                                                @keydown.enter.prevent="$event.target.blur()">
                                         <span class="text-gray-500">cm</span>
-                                        <span class="text-gray-500 ml-1">par:</span>
-                                        <input type="number" min="0" max="300" step="1"
-                                               class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
-                                               :value="inspector.parapet !== null ? Math.round(inspector.parapet * 100) : ''"
-                                               @change="setOpeningParapet(parseFloat($event.target.value) / 100)"
-                                               @keydown.enter.prevent="$event.target.blur()">
-                                        <span class="text-gray-500">cm</span>
+                                        {{-- Parapet jen u oken; dveře, vrata a průchod ho nemají --}}
+                                        <template x-if="!inspector.jeDvere">
+                                            <span class="flex items-center gap-1">
+                                                <span class="text-gray-500 ml-1">par:</span>
+                                                <input type="number" min="0" max="300" step="1"
+                                                       class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                                       :value="inspector.parapet !== null ? Math.round(inspector.parapet * 100) : ''"
+                                                       @change="setOpeningParapet(parseFloat($event.target.value) / 100)"
+                                                       @keydown.enter.prevent="$event.target.blur()">
+                                                <span class="text-gray-500">cm</span>
+                                            </span>
+                                        </template>
                                     </div>
                                 </div>
+                                {{-- DVEŘE / VRATA: původní nástroj — směr otvírání + dovnitř/ven (Libor 1. 11. 2026) --}}
+                                <template x-if="inspector.jeDvere && inspector.dvereVolby.length > 0">
+                                    <div class="flex items-center gap-2">
+                                        <select class="border border-gray-500 rounded px-1 py-0.5 text-xs flex-1"
+                                                @change="setDvereSmer($event.target.value)">
+                                            <template x-if="inspector.dvereSmer === null"><option value="" disabled selected>—</option></template>
+                                            <template x-for="v in inspector.dvereVolby" :key="v.key">
+                                                <option :value="v.key" :selected="inspector.dvereSmer === v.key" x-text="v.label"></option>
+                                            </template>
+                                        </select>
+                                        <button type="button"
+                                                x-show="inspector.canFlipStrana"
+                                                @click="flipOpeningStrana()"
+                                                class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50 hover:border-orange-400"
+                                                title="Otevírat na druhou stranu zdi (dovnitř ↔ ven)">
+                                            ⇵
+                                        </button>
+                                    </div>
+                                </template>
                                 {{-- Křídla: počet dílů, každý díl si uživatel nastaví zvlášť (typ, sklopné, šířka).
                                      Žádné předvolby sestav — Libor 1. 11. 2026. --}}
-                                <template x-if="inspector.maKridla">
+                                <template x-if="inspector.maKridla && !inspector.jeDvere">
                                     <div class="flex flex-col gap-1">
                                         <div class="flex items-center gap-2">
                                             <span class="text-gray-500">dílů:</span>
                                             <select class="border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                     @change="setPocetKridel(parseInt($event.target.value, 10))">
-                                                <option value="" disabled :selected="inspector.pocetKridel === null">—</option>
+                                                <template x-if="inspector.pocetKridel === null"><option value="" disabled selected>—</option></template>
                                                 <template x-for="n in inspector.pocetVolby" :key="n">
                                                     <option :value="n"
                                                             :selected="inspector.pocetKridel === n"
@@ -560,12 +599,49 @@
                             </div>
                         </template>
 
+                        {{-- MÍSTNOST: název, barva z palety, plocha jen pro čtení --}}
+                        <template x-if="inspector.kind === 'mistnost'">
+                            <div class="flex flex-col gap-1 w-full">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-600 font-medium whitespace-nowrap">Místnost</span>
+                                    <input type="text" maxlength="40" placeholder="Název"
+                                           class="flex-1 min-w-0 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                           :value="inspector.nazev"
+                                           @change="setMistnostNazev($event.target.value)"
+                                           @keydown.enter.prevent="$event.target.blur()">
+                                    <span class="text-gray-500 whitespace-nowrap" x-text="inspector.plocha !== null ? inspector.plocha.toFixed(1).replace('.', ',') + ' m²' : ''"></span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-gray-500 mr-1">barva:</span>
+                                    <template x-for="b in inspector.paleta" :key="b">
+                                        <button type="button" @click="setMistnostBarva(b)"
+                                                class="rounded border"
+                                                :class="b === inspector.barva ? 'border-orange-500 ring-1 ring-orange-400' : 'border-gray-400'"
+                                                :style="{ background: b, width: '20px', height: '20px', padding: 0 }"
+                                                :title="b"></button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- ODDĚLOVAČ MÍSTNOSTI: jen informace a smazání --}}
+                        <template x-if="inspector.kind === 'oddelovac'">
+                            <div class="flex items-center gap-2 w-full">
+                                <span class="text-gray-600 font-medium whitespace-nowrap" x-text="inspector.count > 1 ? 'Oddělovače místností' : 'Oddělovač místnosti'"></span>
+                                <span class="text-gray-500" x-show="inspector.delka !== null" x-text="inspector.delka !== null ? inspector.delka.toFixed(2) + ' m' : ''"></span>
+                                <button type="button" @click="smazatVybraneOddelovace()"
+                                        class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400"
+                                        title="Smazat (Delete)">Smazat</button>
+                            </div>
+                        </template>
+
                         {{-- STĚNY: typ (editable) + tloušťka --}}
                         <template x-if="inspector.kind === 'wall' || inspector.kind === 'wall_multi'">
                             <div class="flex items-center gap-2 w-full">
                                 <select class="border border-gray-500 rounded px-1 py-0.5 text-xs font-medium"
                                         @change="setWallTyp($event.target.value)">
-                                    <option value="" disabled :selected="inspector.typ === null">Různé</option>
+                                    {{-- „Různé" jen při výběru stěn různých typů, jinak v nabídce zbytečně straší --}}
+                                    <template x-if="inspector.typ === null"><option value="" disabled selected>Různé</option></template>
                                     <template x-for="tv in inspector.typyVolby" :key="tv.key">
                                         <option :value="tv.key"
                                                 :selected="inspector.typ === tv.key"
@@ -1486,7 +1562,8 @@ var _kkInitData = {
             }
             // Vodicí osa zachyceného úhlu: kudy stěna povede — čárkovaně v barvě
             // úhlu, od vzdáleného konce přes tažený bod až za okraj plátna.
-            if (ctx.isDraggingNode && ctx._osaUhlu) {
+            // (i při kreslení oddělovače místnosti — ten má stejný magnet úhlu)
+            if ((ctx.isDraggingNode || ctx._oddelovacStart) && ctx._osaUhlu) {
                 var merO = (ctx.stage && ctx.stage.scaleX()) || 1;
                 var o = ctx._osaUhlu, odx = o.k.x - o.od.x, ody = o.k.y - o.od.y, ol = Math.hypot(odx, ody);
                 if (ol > 1) {

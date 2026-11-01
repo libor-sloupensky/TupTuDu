@@ -144,9 +144,15 @@ async function main() {
             const dveře = e.openings.get(ids.dverePrave); const pred = dveře.strana; d.renderer.selectedOpenings.clear(); d.renderer.selectedOpenings.add(ids.oknoOS); d._selectionTick++; d.flipOpeningStrana();
             return { okna: ['oknoOS', 'oknoFOF', 'okno2', 'oknoSkl'].map(k => e.stranaOtvoru(e.openings.get(ids[k]))), oknoPoFlipu: e.openings.get(ids.oknoOS).strana,
                      dvereFlip: (() => { d.renderer.selectedOpenings.clear(); d.renderer.selectedOpenings.add(ids.dverePrave); d._selectionTick++; d.flipOpeningStrana(); const po = dveře.strana; return pred !== po; })(),
-                     dvereInsp: { flip: d.inspector.canFlipStrana, zrcadlit: d.inspector.canZrcadlit } }; })()`);
+                     dvereInsp: { flip: d.inspector.canFlipStrana, jeDvere: d.inspector.jeDvere, smer: d.inspector.dvereSmer, volby: d.inspector.dvereVolby.length } }; })()`);
+        await pauza(300); // panel se překreslí až po ticku
+        strany.dvereInsp.panel = await p.vyhodnot(`document.getElementById('kk-panel-otvoru').innerText.split(String.fromCharCode(10)).join(' ')`);
         kontrola('okna na všech čtyřech stěnách se otvírají dovnitř (k těžišti domu) a flip je u nich bez účinku', strany.okna.every(s => s === 'in') && strany.oknoPoFlipu === 'in', JSON.stringify(strany));
-        kontrola('dveře: dovnitř/ven jde přepnout, zrcadlit také', strany.dvereFlip && strany.dvereInsp.flip && strany.dvereInsp.zrcadlit, JSON.stringify(strany));
+        kontrola('dveře: původní nástroj — směr Pravé, 5 voleb, dovnitř/ven jde přepnout, bez parapetu a dílů', strany.dvereFlip && strany.dvereInsp.flip && strany.dvereInsp.jeDvere && strany.dvereInsp.smer === 'pravy' && strany.dvereInsp.volby === 5 && /Dveře/.test(strany.dvereInsp.panel) && !/par:|dílů|skl\./.test(strany.dvereInsp.panel), JSON.stringify(strany.dvereInsp));
+        const dvereSmery = await p.vyhodnot(`(() => { const d = ${D}; const o = d.engine.openings.get(${JSON.stringify(ids.dverePrave)}); const z = () => kridlaOtvoru(o).map(k => k.otv + ':' + k.sirka).join(' ');
+            d.setDvereSmer('dvoukridle'); const dvou = { k: z(), smer: d.inspector.dvereSmer }; d.setDvereSmer('levy'); const leve = { k: z(), smer: d.inspector.dvereSmer };
+            d.setDvereSmer('otvor'); const otvor = { k: z(), smer: d.inspector.dvereSmer, flip: d.inspector.canFlipStrana }; d.setDvereSmer('pravy'); return { dvou, leve, otvor, zpet: z() }; })()`);
+        kontrola('směr dveří: dvoukřídlé 2× 0,5, levé, otvor bez křídla (flip skrytý), zpět pravé', dvereSmery.dvou.k === 'levy:0.5 pravy:0.5' && dvereSmery.dvou.smer === 'dvoukridle' && dvereSmery.leve.k === 'levy:1' && dvereSmery.otvor.k === '' && dvereSmery.otvor.smer === 'otvor' && !dvereSmery.otvor.flip && dvereSmery.zpet === 'pravy:1', JSON.stringify(dvereSmery));
         const zrc = await p.vyhodnot(`(() => { const d = ${D}; d.renderer.selectedOpenings.clear(); d.renderer.selectedOpenings.add(${JSON.stringify(ids.frDvere)}); d._selectionTick++;
             d.zrcadlitOtvor(); const o = d.engine.openings.get(${JSON.stringify(ids.frDvere)}); const z = (k) => k.otv + (k.sklopne ? '+s' : '') + ':' + k.sirka; const po = o.kridla.map(z).join(' ');
             d.zrcadlitOtvor(); return { po, zpet: o.kridla.map(z).join(' ') }; })()`);

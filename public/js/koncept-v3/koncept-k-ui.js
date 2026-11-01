@@ -154,6 +154,8 @@ function konceptKEditor(initialData) {
         isDraggingOpening: false,
         draggingOpeningId: null,
         isDraggingVybaveni: false,
+        isDraggingOddelovac: false,   // tažení oddělovače místnosti (celek nebo jeden konec)
+        dragOddelovac: null,          // { id, konec: 'a'|'b'|null, last: {x,y} }
         draggingVybaveniId: null,
         dragVybaveniStart: null,
         _pendingDrag: null,
@@ -222,6 +224,18 @@ function konceptKEditor(initialData) {
                 const kridla = openings.length === 1 ? kridlaOtvoru(openings[0]).map(k => ({ sirka: k.sirka, otv: k.otv, sklopne: !!k.sklopne, parapet: parapetKridla(openings[0], k) })) : null;
                 const kridlaVolby = Object.entries(TYPY_KRIDEL).map(([key, d]) => ({ key, label: d.nazev }));
                 const maPohyblive = openings.some(o => kridlaOtvoru(o).some(k => k.otv !== 'fix' || k.sklopne));
+                // Dveře, vrata a průchod mají původní jednoduchý nástroj: směr otvírání
+                // místo dílů, bez parapetu a bez sklopného (Libor 1. 11. 2026). Díly
+                // a parapet dílu mají jen okno a francouzské okno.
+                const jeDvere = sameTyp && (typ0 === 'dvere' || typ0 === 'garazova_vrata' || typ0 === 'pruchod');
+                const dvereVolby = typ0 === 'garazova_vrata'
+                    ? [{ key: 'posuvne', label: 'Sekční / posuvná' }, { key: 'dvoukridle', label: 'Dvoukřídlá' }]
+                    : typ0 === 'dvere'
+                        ? [{ key: 'pravy', label: 'Pravé' }, { key: 'levy', label: 'Levé' }, { key: 'dvoukridle', label: 'Dvoukřídlé' },
+                           { key: 'posuvne', label: 'Posuvné do pouzdra' }, { key: 'otvor', label: 'Otvor bez křídla' }]
+                        : [];
+                const dvereSmer0 = this._dvereSmer(openings[0]);
+                const sameDvereSmer = openings.every(o => this._dvereSmer(o) === dvereSmer0);
                 // Dovnitř/ven jen u otvorů k podlaze (dveře, francouzské okno, vrata) — okno se otvírá vždy dovnitř
                 const kPodlaze = openings.some(o => minParapetOtvoru(o) < 0.05);
                 // Zrcadlení má smysl, když je co obrátit: víc křídel, nebo křídlo s panty / posuvné
@@ -236,6 +250,9 @@ function konceptKEditor(initialData) {
                     vyska: sameVyska ? vyska0 : null,
                     parapet: sameParapet ? parapet0 : null,
                     maKridla,
+                    jeDvere,
+                    dvereVolby,
+                    dvereSmer: jeDvere && sameDvereSmer ? dvereSmer0 : null,
                     pocetVolby,
                     pocetKridel: maKridla && samePocet ? pocet0 : null,
                     kridla,
@@ -244,6 +261,23 @@ function konceptKEditor(initialData) {
                     canFlipStrana: maKridla && maPohyblive && kPodlaze,
                     canZrcadlit: maKridla && jdeZrcadlit,
                 };
+            }
+            // Místnost (jen jedna)
+            const sm = this.renderer.selectedMistnosti;
+            if (sm.size > 0 && so.size === 0 && sw.size === 0) {
+                const m = this.engine.najdiMistnost([...sm][0]);
+                if (!m) return null;
+                return { kind: 'mistnost', count: 1, id: m.id, nazev: m.nazev, barva: m.barva,
+                         plocha: this.renderer.plochaMistnosti(m.id), paleta: window.PALETA_MISTNOSTI || [] };
+            }
+            // Jen oddělovače místností
+            const sr = this.renderer.selectedOddelovace;
+            if (sr.size > 0 && so.size === 0 && sw.size === 0) {
+                const odd = [...sr].map(id => this.engine.oddelovace.get(id)).filter(Boolean);
+                if (odd.length === 0) return null;
+                const delka = odd.length === 1 ? this.engine.delkaOddelovace(odd[0]) / this.PX_PER_M : null;
+                const konce = odd.length === 1 ? [odd[0].a, odd[0].b].map(k => k.host ? 'na stěně ' + k.host.stena : 'volný') : null;
+                return { kind: 'oddelovac', count: odd.length, delka, konce };
             }
             // Jen stěny
             if (sw.size > 0 && so.size === 0) {
@@ -329,6 +363,173 @@ function konceptKEditor(initialData) {
             this.ulozitNastaveni();
         },
 
+        // ─── ODDĚLOVAČ MÍSTNOSTI (volba v nástroji Stěna) ───────────
+        _oddelovacStart: null,     // { bod, host } po prvním kliknutí
+        _oddelovacNahled: null,    // Konva.Line náhledu
+
+        /**
+         * Kam by konec oddělovače padl: konec jiného oddělovače (přesně), jinak líc stěny
+         * nebo volný bod. Od druhého bodu má přednost úhel 90°/45° vůči stěně, na které
+         * oddělovač začíná (natočený dům), jinak vůči osám: na líci bod sklouzne po líci
+         * do průsečíku s paprskem úhlu (Libor 1. 11. 2026: „jinak se špatně ukotvuje").
+         */
+        _oddelovacUchyt(pos, e, vynechatId = null) {
+            const bezMagnetu = this._bezMagnetu(e);
+            const uchyt = bezMagnetu ? null : this.engine.najdiUchytOddelovace(pos.x, pos.y, this._dosahMagnetu(15), vynechatId);
+            let bod = uchyt ? uchyt.bod : { x: pos.x, y: pos.y };
+            let host = uchyt ? uchyt.host : null;
+            let uhel = null;
+            const start = this._oddelovacStart;
+            if (start && !bezMagnetu && (!uchyt || uchyt.typ === 'stena')) {
+                let ref = 0;
+                const refW = start.host && this.engine.walls.get(start.host.stena);
+                if (refW) ref = this.engine.getWallAngle(refW.id);
+                const od = start.bod;
+                const dx = bod.x - od.x, dy = bod.y - od.y, L = Math.hypot(dx, dy);
+                if (L > 1) {
+                    const a = Math.atan2(dy, dx) - ref;
+                    const krok = Math.PI / 4;
+                    const z = Math.round(a / krok) * krok;
+                    if (Math.abs(a - z) < 6 * Math.PI / 180) {
+                        const smer = { x: Math.cos(z + ref), y: Math.sin(z + ref) };
+                        if (uchyt && uchyt.typ === 'stena') {
+                            // Průsečík paprsku z počátku s přímkou líce hostitele
+                            const w = this.engine.walls.get(host.stena);
+                            const na = w && this.engine.nodes.get(w.nodeA), nb = w && this.engine.nodes.get(w.nodeB);
+                            if (na && nb) {
+                                const wx = nb.x - na.x, wy = nb.y - na.y;
+                                const jm = smer.x * wy - smer.y * wx;
+                                if (Math.abs(jm) > 1e-6) {
+                                    const fx = bod.x - od.x, fy = bod.y - od.y;
+                                    const s = (fx * wy - fy * wx) / jm;             // podél paprsku
+                                    const P = { x: od.x + smer.x * s, y: od.y + smer.y * s };
+                                    const L2 = wx * wx + wy * wy;
+                                    const t = ((P.x - na.x) * wx + (P.y - na.y) * wy) / L2;
+                                    if (s > 0 && t >= 0.02 && t <= 0.98) {
+                                        bod = P;
+                                        host = { stena: host.stena, t, strana: host.strana };
+                                        uhel = z;
+                                    }
+                                }
+                            }
+                        } else {
+                            const d = dx * smer.x + dy * smer.y;
+                            if (d > 1) { bod = { x: od.x + smer.x * d, y: od.y + smer.y * d }; uhel = z; }
+                        }
+                    }
+                }
+            }
+            return { bod, host, uchyt, uhel, refStena: start && start.host ? start.host.stena : null };
+        },
+
+        /** Štítek úhlu u náhledu oddělovače (jako u stěn): „90°" vůči referenční stěně nebo ose. */
+        _oddelovacStitek(od, kam, uhel) {
+            if (uhel === null || uhel === undefined) {
+                if (this._oddelovacStitekNode) { this._oddelovacStitekNode.destroy(); this._oddelovacStitekNode = null; }
+                return;
+            }
+            const s = this.stage.scaleX() || 1;
+            let deg = Math.round(Math.abs(uhel) * 180 / Math.PI) % 180;
+            if (deg === 0) deg = 180;
+            if (!this._oddelovacStitekNode) {
+                const label = new Konva.Label({ listening: false });
+                label.add(new Konva.Tag({ fill: '#ffffff', stroke: '#e8590c', strokeWidth: 1, cornerRadius: 3, opacity: 0.95 }));
+                label.add(new Konva.Text({ text: '', fontSize: 11, padding: 3, fill: '#b5430a', fontFamily: 'ui-monospace, Consolas, monospace' }));
+                this.renderer.tempLayer.add(label);
+                this._oddelovacStitekNode = label;
+            }
+            const label = this._oddelovacStitekNode;
+            label.getText().text(deg + '°');
+            label.getText().fontSize(11 / s); label.getText().padding(3 / s);
+            label.getTag().strokeWidth(1 / s); label.getTag().cornerRadius(3 / s);
+            const mx = (od.x + kam.x) / 2, my = (od.y + kam.y) / 2;
+            const dx = kam.x - od.x, dy = kam.y - od.y, L = Math.hypot(dx, dy) || 1;
+            label.position({ x: mx - dy / L * 14 / s, y: my + dx / L * 14 / s });
+        },
+
+        _oddelovacPohyb(pos, e) {
+            const u = this._oddelovacUchyt(pos, e);
+            const magnet = (u.uchyt || u.uhel !== null)
+                ? { stena: u.uchyt && u.uchyt.typ === 'stena' ? u.host.stena : undefined,
+                    uzel: u.uchyt && u.uchyt.typ === 'oddelovac' ? 'oddelovac' : undefined,
+                    uhel: u.uhel !== null ? true : undefined,
+                    reference: u.uhel !== null ? (u.refStena ? { stena: u.refStena } : { osa: { uhel: 0, p: this._oddelovacStart.bod } }) : undefined }
+                : null;
+            this._nastavMagnet(magnet, u.bod);
+            if (!this._oddelovacStart) return;
+            const od = this._oddelovacStart.bod;
+            if (!this._oddelovacNahled) {
+                this._oddelovacNahled = new Konva.Line({ stroke: '#6b7280', strokeWidth: 1.5, strokeScaleEnabled: false, dash: [6, 4], listening: false });
+                this.renderer.tempLayer.add(this._oddelovacNahled);
+            }
+            this._oddelovacNahled.points([od.x, od.y, u.bod.x, u.bod.y]);
+            this._oddelovacStitek(od, u.bod, u.uhel);
+            // Vodicí osa zachyceného úhlu — stejná čárkovaná osa jako u kreslení stěny (šablona)
+            this._osaUhlu = u.uhel !== null ? { od: { x: od.x, y: od.y }, k: { x: u.bod.x, y: u.bod.y } } : null;
+            this.renderer.tempLayer.batchDraw();
+            if (this.renderer.prekresliPrekryv) this.renderer.prekresliPrekryv();
+        },
+
+        _oddelovacKlik(pos, e) {
+            const u = this._oddelovacUchyt(pos, e);
+            if (!this._oddelovacStart) {
+                this._oddelovacStart = { bod: u.bod, host: u.host };
+                return;
+            }
+            const od = this._oddelovacStart;
+            if (Math.hypot(u.bod.x - od.bod.x, u.bod.y - od.bod.y) < 0.1 * this.PX_PER_M) {
+                this.otvorHlaska('Oddělovač by byl kratší než 10 cm.');
+                return;
+            }
+            this.engine.pushUndo();
+            const odd = this.engine.addOddelovac({ x: od.bod.x, y: od.bod.y, host: od.host }, { x: u.bod.x, y: u.bod.y, host: u.host });
+            this._oddelovacZrus();
+            // Řetězení: další oddělovač hned navazuje na konec tohoto
+            this._oddelovacStart = { bod: this.engine.bodKonceOddelovace(odd.b), host: odd.b.host ? { ...odd.b.host } : null };
+            this.renderer.render();
+            this.autoSave('Oddělovač místnosti');
+        },
+
+        _oddelovacZrus() {
+            this._oddelovacStart = null;
+            this._osaUhlu = null;
+            if (this._oddelovacStitekNode) { this._oddelovacStitekNode.destroy(); this._oddelovacStitekNode = null; }
+            if (this._oddelovacNahled) { this._oddelovacNahled.destroy(); this._oddelovacNahled = null; this.renderer.tempLayer.batchDraw(); }
+        },
+
+        // ─── MÍSTNOSTI ───────────────────────────────────────────
+        _vybranaMistnost() {
+            const ids = this.renderer ? [...this.renderer.selectedMistnosti] : [];
+            return ids.length === 1 ? this.engine.najdiMistnost(ids[0]) : null;
+        },
+        setMistnostNazev(nazev) {
+            const m = this._vybranaMistnost();
+            if (!m) return;
+            const n = String(nazev || '').trim().slice(0, 40);
+            if (n === m.nazev) return;
+            this.engine.pushUndo();
+            m.nazev = n;
+            this._poUpraveOtvoru('Název místnosti');
+        },
+        setMistnostBarva(hex) {
+            const m = this._vybranaMistnost();
+            if (!m || !/^#[0-9a-fA-F]{6}$/.test(hex) || hex === m.barva) return;
+            this.engine.pushUndo();
+            m.barva = hex;
+            this._poUpraveOtvoru('Barva místnosti');
+        },
+
+        smazatVybraneOddelovace() {
+            const ids = [...this.renderer.selectedOddelovace];
+            if (ids.length === 0) return;
+            this.engine.pushUndo();
+            for (const id of ids) this.engine.removeOddelovac(id);
+            this.renderer.selectedOddelovace.clear();
+            this.renderer.render();
+            this.autoSave('Smazání oddělovače');
+            this._selectionTick++;
+        },
+
         /** Screen pozice inspector panelu (relativní ke kk-canvas-wrap). */
         get inspectorPos() {
             // Dummy tick read pro reaktivitu
@@ -384,6 +585,35 @@ function konceptKEditor(initialData) {
             this.renderer.render();
             this.autoSave(popis);
             this._selectionTick++;
+        },
+
+        /** Směr otvírání dveří odvozený z křídel: pravy | levy | dvoukridle | posuvne | otvor. */
+        _dvereSmer(o) {
+            const k = kridlaOtvoru(o);
+            if (k.length === 0) return 'otvor';
+            if (k.length >= 2) return 'dvoukridle';
+            if (k[0].otv === 'posuvne') return 'posuvne';
+            return k[0].otv === 'levy' ? 'levy' : 'pravy';
+        },
+
+        /** Směr otvírání dveří (původní jednoduchý nástroj) na vybrané otvory. */
+        setDvereSmer(key) {
+            if (!this.renderer || !this.engine) return;
+            const ids = [...this.renderer.selectedOpenings];
+            if (ids.length === 0) return;
+            this.engine.pushUndo();
+            for (const id of ids) {
+                const o = this.engine.openings.get(id);
+                if (!o) continue;
+                const s = Math.round(o.sirka * 100) / 100;
+                const pul = Math.round(s / 2 * 100) / 100;
+                if (key === 'otvor') o.kridla = [];
+                else if (key === 'dvoukridle') o.kridla = [{ sirka: pul, otv: 'levy' }, { sirka: Math.round((s - pul) * 100) / 100, otv: 'pravy' }];
+                else if (key === 'posuvne' || key === 'levy' || key === 'pravy') o.kridla = [{ sirka: s, otv: key }];
+                else continue;
+                o.smer = smerZKridel(o);
+            }
+            this._poUpraveOtvoru('Směr otvírání');
         },
 
         /** Počet dílů (křídel) na vybrané otvory; typ dílů zůstává, šířky se rozdělí rovnoměrně. */
@@ -1185,7 +1415,7 @@ function konceptKEditor(initialData) {
                     if (!this.isPanning && e.button != null && e.button !== 0) return;
                     if (this.isDraggingWall || this.isDraggingNode || this.isDraggingVybaveni
                             || this.isDraggingOpening || this.isRotating || this.isPanning
-                            || this.selectionStart || this._pendingDrag) {
+                            || this.selectionStart || this._pendingDrag || this.isDraggingOddelovac) {
                         this.onMouseUp({ evt: e });
                     }
                 };
@@ -1405,7 +1635,7 @@ function konceptKEditor(initialData) {
             // Threshold 5 px (dříve 3) — při 3 px se drag aktivoval i nechtěným malým
             // pohybem při kliknutí, takže klik na objekt v multi-výběru se chápal jako
             // drag celé skupiny místo přepnutí výběru na ten jeden objekt.
-            if (this._pendingDrag && !this.isDraggingNode && !this.isDraggingWall && !this.isDraggingVybaveni && !this.isRotating) {
+            if (this._pendingDrag && !this.isDraggingNode && !this.isDraggingWall && !this.isDraggingVybaveni && !this.isRotating && !this.isDraggingOddelovac) {
                 const dist = Math.hypot(pos.x - this._pendingDrag.startPos.x, pos.y - this._pendingDrag.startPos.y);
                 if (dist > 5) {
                     // Uložit pravou počáteční pozici myši pro click-vs-drag detekci v mouseUp:
@@ -1451,6 +1681,15 @@ function konceptKEditor(initialData) {
                         // Režim napojení (okraj/střih) se při novém uchopení neurčuje
                         // z minulosti — rozhodne ho poloha kurzoru v _rezimNapojeni().
                         this._attachMode = null;
+                    } else if (this._pendingDrag.type === 'oddelovac') {
+                        this.isDraggingOddelovac = true;
+                        this.dragOddelovac = { id: this._pendingDrag.id, konec: this._pendingDrag.konec, last: { x: pos.x, y: pos.y } };
+                        const odd = this.engine.oddelovace.get(this._pendingDrag.id);
+                        if (odd && this.dragOddelovac.konec) {
+                            // Tažený konec se chytá a drží úhel vůči druhému konci — jako při kreslení
+                            const druhy = odd[this.dragOddelovac.konec === 'a' ? 'b' : 'a'];
+                            this._oddelovacStart = { bod: this.engine.bodKonceOddelovace(druhy), host: druhy.host ? { ...druhy.host } : null };
+                        }
                     } else if (this._pendingDrag.type === 'vybaveni') {
                         this.isDraggingVybaveni = true;
                         this.draggingVybaveniId = this._pendingDrag.id;
@@ -2622,6 +2861,7 @@ function konceptKEditor(initialData) {
                         // Předat dx/dy — T-children se translatují o stejnou
                         // hodnotu (zachová perpendikulární offset od osy).
                         this.engine.propagateTChildren(this.draggingWallId, dx, dy);
+                        this.engine.uklidOddelovace();
                     }
                 }
 
@@ -2704,6 +2944,30 @@ function konceptKEditor(initialData) {
 
             // Dragging vybavení (jeden objekt nebo celý vybraný blok). Posouvá se
             // všechno, co je v selectedVybaveni (nebo aspoň aktuálně tažený objekt).
+            if (this.isDraggingOddelovac && this.dragOddelovac) {
+                const odd = this.engine.oddelovace.get(this.dragOddelovac.id);
+                if (!odd) return;
+                if (this.dragOddelovac.konec) {
+                    const u = this._oddelovacUchyt(pos, e, odd.id);
+                    const k = odd[this.dragOddelovac.konec];
+                    const novy = this.engine._konecOddelovace({ x: u.bod.x, y: u.bod.y, host: u.host });
+                    k.x = novy.x; k.y = novy.y;
+                    if (novy.host) k.host = novy.host; else delete k.host;
+                    odd.delkaPx = this.engine.delkaOddelovace(odd);
+                    const od = this._oddelovacStart ? this._oddelovacStart.bod : null;
+                    if (od) { this._oddelovacStitek(od, u.bod, u.uhel); this._osaUhlu = u.uhel !== null ? { od: { x: od.x, y: od.y }, k: { x: u.bod.x, y: u.bod.y } } : null; }
+                    this._nastavMagnet(u.uchyt || u.uhel !== null
+                        ? { stena: u.uchyt && u.uchyt.typ === 'stena' ? u.host.stena : undefined, uzel: u.uchyt && u.uchyt.typ === 'oddelovac' ? 'oddelovac' : undefined,
+                            uhel: u.uhel !== null ? true : undefined, reference: u.uhel !== null && u.refStena ? { stena: u.refStena } : undefined }
+                        : null, u.bod);
+                } else {
+                    this.engine.posunOddelovac(odd, pos.x - this.dragOddelovac.last.x, pos.y - this.dragOddelovac.last.y);
+                }
+                this.dragOddelovac.last = { x: pos.x, y: pos.y };
+                this.renderer.render();
+                return;
+            }
+
             if (this.isDraggingVybaveni && this.draggingVybaveniId) {
                 const dx = pos.x - this.dragVybaveniStart.x;
                 const dy = pos.y - this.dragVybaveniStart.y;
@@ -2785,7 +3049,9 @@ function konceptKEditor(initialData) {
 
             // Nástroj Stěna mimo tažení: značka ukazuje, kam padne klik
             // (uzel v dosahu magnetu, jinak bod pod myší).
-            if (this.nastroj === 'stena' && !this.isDraggingNode && !this.isPanning) {
+            if (this.nastroj === 'stena' && this.stenaTyp === 'oddelovac' && !this.isDraggingNode && !this.isPanning) {
+                this._oddelovacPohyb(pos, e);
+            } else if (this.nastroj === 'stena' && !this.isDraggingNode && !this.isPanning) {
                 const bezMagnetu = this._bezMagnetu(e);
                 const bod = bezMagnetu ? { x: pos.x, y: pos.y } : this.engine.snapPoint(pos.x, pos.y, this._dosahMagnetu(15));
                 // Bod, ze kterého se právě kreslí, není cíl — jinak by značka
@@ -2897,6 +3163,22 @@ function konceptKEditor(initialData) {
                     return;
                 }
 
+                // Klik na oddělovač místnosti → připravit tah: u konce (do 10 px) jen konec, jinak celek
+                if (hit.type === 'oddelovac') {
+                    const odd = this.engine.oddelovace.get(hit.id);
+                    if (odd) {
+                        if (!this.renderer.selectedOddelovace.has(hit.id)) this.renderer.setSelection([], [], [], [], [], [hit.id]);
+                        const tol = 10 / (this.stage.scaleX() || 1);
+                        let konec = null;
+                        for (const k of ['a', 'b']) {
+                            const p = this.engine.bodKonceOddelovace(odd[k]);
+                            if (Math.hypot(p.x - pos.x, p.y - pos.y) <= tol) { konec = k; break; }
+                        }
+                        this._pendingDrag = { type: 'oddelovac', id: hit.id, konec, startPos: { x: pos.x, y: pos.y } };
+                    }
+                    return;
+                }
+
                 // Klik na nábytek/vybavení → připravit drag (jeden objekt nebo celý výběr).
                 if (hit.type === 'vybaveni') {
                     if (!this.renderer.selectedVybaveni.has(hit.id)) {
@@ -2906,8 +3188,8 @@ function konceptKEditor(initialData) {
                     return;
                 }
 
-                // Klik na prázdno → rubber-band (screen space pro rovný obdélník)
-                if (hit.type === 'empty') {
+                // Klik na prázdno (i do plochy místnosti) → rubber-band (screen space pro rovný obdélník)
+                if (hit.type === 'empty' || hit.type === 'mistnost') {
                     const ptr = this.stage.getPointerPosition();
                     this.selectionStart = { x: pos.x, y: pos.y, sx: ptr.x, sy: ptr.y };
                 }
@@ -2987,6 +3269,22 @@ function konceptKEditor(initialData) {
             }
 
             // Vybavení drag konec
+            if (this.isDraggingOddelovac) {
+                const odd = this.engine.oddelovace.get(this.dragOddelovac && this.dragOddelovac.id);
+                this.isDraggingOddelovac = false;
+                this.dragOddelovac = null;
+                this._dragRealOrigin = null;
+                this._oddelovacStart = null;
+                this._osaUhlu = null;
+                this._oddelovacStitek(null, null, null);
+                this._nastavMagnet(null, pos);
+                if (odd) odd.delkaPx = this.engine.delkaOddelovace(odd);
+                this.engine.uklidOddelovace();
+                this.renderer.render();
+                this.autoSave('Posun oddělovače');
+                return;
+            }
+
             if (this.isDraggingVybaveni) {
                 const draggedVbId = this.draggingVybaveniId;
                 if (this._dragRealOrigin && this._dragRealOrigin.type === 'vybaveni') {
@@ -3279,6 +3577,11 @@ function konceptKEditor(initialData) {
 
             // Stěna nástroj — klik jen zakládá tah. Vlastní úsek vzniká při pohybu
             // (zacniUsekSteny) a dokončí se puštěním myši, stejně jako tažení uzlu.
+            if (this.nastroj === 'stena' && this.stenaTyp === 'oddelovac') {
+                this._oddelovacKlik(pos, e);
+                return;
+            }
+
             if (this.nastroj === 'stena') {
                 // Klik, kterým uživatel dokončil úsek, už nový bod nezakládá
                 if (this._stenaPreskocKlik) {
@@ -3369,6 +3672,14 @@ function konceptKEditor(initialData) {
                     } else {
                         this.renderer.setSelection([], [], [hit.id]);
                     }
+                } else if (hit.type === 'oddelovac') {
+                    if (multiSelect) {
+                        if (this.renderer.selectedOddelovace.has(hit.id)) this.renderer.selectedOddelovace.delete(hit.id);
+                        else this.renderer.selectedOddelovace.add(hit.id);
+                        this.renderer.render();
+                    } else {
+                        this.renderer.setSelection([], [], [], [], [], [hit.id]);
+                    }
                 } else if (hit.type === 'node') {
                     if (multiSelect) {
                         // Toggle node ve výběru
@@ -3393,6 +3704,11 @@ function konceptKEditor(initialData) {
                     } else {
                         this.renderer.setSelection([], [], [], [], [hit.id]);
                     }
+                } else if (hit.type === 'mistnost' && !multiSelect) {
+                    // Po gumovém výběru nebo posunu plátna klik místnost nevybírá (jako u prázdna)
+                    if (this._justRubberBand) { this._justRubberBand = false; return; }
+                    if (this._justPanned) { this._justPanned = false; return; }
+                    this.renderer.setSelection([], [], [], [], [], [], [hit.id]);
                 } else if (hit.type === 'empty' && !multiSelect) {
                     // POZN: po rubber-band výběru prohlížeč fires click event na empty
                     // oblast (kam uživatel táhl). Bez tohoto flagu by se výběr hned smazal.
@@ -4286,17 +4602,19 @@ function konceptKEditor(initialData) {
                 if (this.nastroj === 'stena' && (this.kreslimStenu || this.stenaUseky.length)) {
                     this.stenaEsc();
                 }
+                if (this._oddelovacStart) this._oddelovacZrus();
                 if (this._metrMeri) {
                     this.metrEscape();
                 }
                 // Escape uprostřed dragu = abort: vrátit změny a uvolnit objekt.
                 // pushUndo() se volá při aktivaci dragu, takže máme co vrátit.
-                if (this.isDraggingWall || this.isDraggingNode || this.isDraggingVybaveni
+                if (this.isDraggingWall || this.isDraggingNode || this.isDraggingVybaveni || this.isDraggingOddelovac
                         || this.isDraggingOpening || this.isRotating || this._pendingDrag) {
-                    if (this.isDraggingWall || this.isDraggingNode || this.isDraggingVybaveni
+                    if (this.isDraggingWall || this.isDraggingNode || this.isDraggingVybaveni || this.isDraggingOddelovac
                             || this.isDraggingOpening || this.isRotating) {
                         this.engine.undo();
                     }
+                    if (this.isDraggingOddelovac) { this.isDraggingOddelovac = false; this.dragOddelovac = null; this._oddelovacZrus(); }
                     this.isDraggingWall = false;
                     this.draggingWallId = null;
                     this.dragWallStart = null;
@@ -4322,6 +4640,10 @@ function konceptKEditor(initialData) {
             }
 
             if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (this.renderer && this.renderer.selectedOddelovace.size > 0) {
+                    this.smazatVybraneOddelovace();
+                    if (!this.renderer.selectedWalls.size && !this.renderer.selectedOpenings.size && !this.renderer.selectedNodes.size) return;
+                }
                 // Během drag — smazat držený objekt
                 if (this.isDraggingWall && this.draggingWallId) {
                     this.engine.pushUndo();

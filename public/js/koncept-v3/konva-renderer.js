@@ -56,7 +56,7 @@ class KonvaRenderer {
         // kreslí se přes něj, takže nesmí brát events ani zakrývat kresbu.
         this.podkladLayer = new Konva.Layer({ listening: false });   // 1b: obrázek výkresu
         this.katastrLayer = new Konva.Layer({ listening: true });    // 2: katastr + mapy
-        this.mistnostiLayer = new Konva.Layer({ listening: true });  // 3: vyplněné plochy místností + label
+        this.mistnostiLayer = new Konva.Layer({ listening: true, imageSmoothingEnabled: false });  // 3: výplň místností (bitmapa) + popisky
         this.wallLayer = new Konva.Layer();                          // 4: stěny + otvory
         this.openingLayer = this.wallLayer;                          // alias
         // Listening true, aby vybavení (nábytek) přijímal click/drag events.
@@ -97,6 +97,9 @@ class KonvaRenderer {
         this.selectedOpenings = new Set();
         this.selectedVybaveni = new Set();
         this.selectedProstory = new Set();
+        this.selectedOddelovace = new Set();
+        this._oddelovacShapes = [];
+        this.selectedMistnosti = new Set();
 
         // Konva objekty mapy (id → Konva shape)
         this._wallShapes = new Map();
@@ -116,6 +119,7 @@ class KonvaRenderer {
         if (this.showMistnosti) this.renderMistnosti();
         else if (this.mistnostiLayer) this.mistnostiLayer.batchDraw();
         this.renderWalls();
+        this.renderOddelovace();
         this.renderOpenings();
         // Uzly mají vlastní vrstvu nad otvory i nábytkem (viz nodeLayer) —
         // pořadí v rámci jedné vrstvy nestačilo, protože kresba otvoru i nábytek
@@ -161,186 +165,86 @@ class KonvaRenderer {
         this.overlayLayer.batchDraw();
     }
 
+    /**
+     * Místnosti: plochy z rastru (mistnosti.js) — stěny a oddělovače do bitmapy,
+     * záplava, každá uzavřená plocha = místnost. Výplň je bitmapa pod stěnami
+     * (schody na okrajích schová stěna), popisek název + m². Jména a barvy drží
+     * záznamy v engine.mistnosti podle kotvy (sladMistnosti). Při tažení se
+     * přepočet dusí na ~6× za sekundu a doběhne po puštění.
+     */
     renderMistnosti() {
-        // Vyčistit staré shapes místností
         for (const s of (this._mistnostiShapes || [])) s.destroy();
         this._mistnostiShapes = [];
-        const prostory = Array.isArray(this.engine.prostory) ? this.engine.prostory : [];
-        if (prostory.length === 0) return;
-        const scale = this.stage ? this.stage.scaleX() : 1;
-        const roomLabelCz = (window.PudorysIcons && window.PudorysIcons.roomLabelCz)
-            || function (p) { return (p.nazev || p.typ || '—'); };
-        // Je polygon edge (A, B) překrytý reálnou stěnou? Test: najít zeď,
-        // jejíž osa je rovnoběžná s edge, obě vertices jsou blízko osy
-        // (do tloušťky + tolerance) a leží v rozsahu zdi [t=0..1].
-        const edgeCoveredByWall = (A, B) => {
-            const edx = B.x - A.x, edy = B.y - A.y;
-            const eL = Math.hypot(edx, edy);
-            if (eL < 1) return false;
-            const eUx = edx / eL, eUy = edy / eL;
-            for (const w of this.engine.walls.values()) {
-                const nA = this.engine.nodes.get(w.nodeA);
-                const nB = this.engine.nodes.get(w.nodeB);
-                if (!nA || !nB) continue;
-                const wdx = nB.x - nA.x, wdy = nB.y - nA.y;
-                const wL = Math.hypot(wdx, wdy);
-                if (wL < 1) continue;
-                const wUx = wdx / wL, wUy = wdy / wL;
-                // Rovnoběžnost (širší tolerance — 10° odchylky povolena)
-                const cosAng = Math.abs(eUx * wUx + eUy * wUy);
-                if (cosAng < 0.985) continue;
-                // Perp vzdálenost A i B od wall axis. Tolerance = half_thk + 4 px
-                // aby pokryla i mírné odchylky polygon vrcholů od ideální pozice.
-                const tol = (w.tloustka * this.PX_PER_M) / 2 + 4;
-                const perpA = Math.abs((A.x - nA.x) * (-wdy) + (A.y - nA.y) * wdx) / wL;
-                const perpB = Math.abs((B.x - nA.x) * (-wdy) + (B.y - nA.y) * wdx) / wL;
-                if (perpA > tol || perpB > tol) continue;
-                // Along projection t musí být v [0..1] rozsahu pro OBĚ
-                const tA = ((A.x - nA.x) * wdx + (A.y - nA.y) * wdy) / (wL * wL);
-                const tB = ((B.x - nA.x) * wdx + (B.y - nA.y) * wdy) / (wL * wL);
-                if (Math.max(tA, tB) < -0.02 || Math.min(tA, tB) > 1.02) continue;
-                return true;
+        const R = window.MistnostiRastr;
+        if (!R || this.engine.walls.size === 0) { this._mistnostiCache = null; this.mistnostiLayer.batchDraw(); return; }
+
+        const ted = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        let v = null;
+        if (this._mistnostiCache && ted - (this._mistnostiCas || 0) < 150) {
+            v = this._mistnostiCache;
+            if (!this._mistnostiCasovac) {
+                this._mistnostiCasovac = setTimeout(() => {
+                    this._mistnostiCasovac = null;
+                    this._mistnostiCache = null;
+                    if (this.showMistnosti) { this.renderMistnosti(); if (typeof this.afterRender === 'function') this.afterRender(); }
+                }, 180);
             }
-            return false;
-        };
-        // Eviduj již vykreslené hranice — sdílené mezi místnostmi se kreslí jen 1×.
-        // Kandidáty na hranice collecтujeme všechny, pak v druhém kroku zmergujeme
-        // blízké rovnoběžné (aby dvě sousedící místnosti s mírně odlišnými polygon
-        // vrcholy nekreslily dvě téměř totožné čárkované linky).
-        const boundaryCandidates = []; // [{A, B}]
-        const addBoundary = (A, B) => {
-            // Duplicitní paralelní? Merge.
-            for (const c of boundaryCandidates) {
-                const dAB = Math.hypot(c.A.x - A.x, c.A.y - A.y);
-                const dBA = Math.hypot(c.B.x - B.x, c.B.y - B.y);
-                const dAB2 = Math.hypot(c.A.x - B.x, c.A.y - B.y);
-                const dBA2 = Math.hypot(c.B.x - A.x, c.B.y - A.y);
-                if ((dAB < 6 && dBA < 6) || (dAB2 < 6 && dBA2 < 6)) return; // duplicit
-            }
-            boundaryCandidates.push({ A, B });
-        };
-        for (const p of prostory) {
-            // Polygon z aktuálních pozic vertices (refNodeId → node pos, jinak x,y)
-            const vertsPx = (p.vertices || []).map(v => this.engine.getProstorVertexPx(v)).filter(Boolean);
-            if (vertsPx.length < 3) continue;
-            const flat = [];
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            for (const pt of vertsPx) {
-                flat.push(pt.x, pt.y);
-                if (pt.x < minX) minX = pt.x;
-                if (pt.x > maxX) maxX = pt.x;
-                if (pt.y < minY) minY = pt.y;
-                if (pt.y > maxY) maxY = pt.y;
-            }
-            const w = maxX - minX, h = maxY - minY;
-            const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-            // Podkladový polygon (subtle tint pro visibility)
-            const fill = new Konva.Line({
-                points: flat, closed: true,
-                fill: p.venkovni ? '#fef3c7' : '#eff6ff',
-                opacity: 0.35,
-                stroke: null, strokeWidth: 0,
-                listening: false,
-            });
-            this.mistnostiLayer.add(fill);
-            this._mistnostiShapes.push(fill);
-            // Interactive shape (hover highlight + click target)
-            const isSel = this.selectedProstory.has(p.id);
-            const hit = new Konva.Line({
-                points: flat, closed: true,
-                fill: '#3b82f6', opacity: isSel ? 0.22 : 0.001,
-                stroke: null, strokeWidth: 0,
-                listening: true,
-            });
-            hit.setAttr('_prostorId', p.id);
-            hit.on('mouseenter', () => {
-                if (!this.selectedProstory.has(p.id)) hit.opacity(0.18);
-                this.mistnostiLayer.batchDraw();
-                this.stage.container().style.cursor = 'pointer';
-            });
-            hit.on('mouseleave', () => {
-                if (!this.selectedProstory.has(p.id)) hit.opacity(0.001);
-                this.mistnostiLayer.batchDraw();
-                this.stage.container().style.cursor = 'default';
-            });
-            this.mistnostiLayer.add(hit);
-            this._mistnostiShapes.push(hit);
-            // Outline pro vybranou místnost — stejná červená jako u ostatních objektů.
-            if (isSel) {
-                const outline = new Konva.Line({
-                    points: flat, closed: true,
-                    fill: null, stroke: VYBER.obrys,
-                    strokeWidth: 2 / scale,
-                    dash: [8 / scale, 5 / scale],
-                    listening: false,
-                });
-                this.mistnostiLayer.add(outline);
-                this._mistnostiShapes.push(outline);
-            }
-            // Label: název + m² (přepočteno z aktuálního polygonu)
-            const label = roomLabelCz(p);
-            const plochaM2 = this.engine.getProstorPlocha(p);
-            const plocha = plochaM2 ? plochaM2.toFixed(1) + ' m²' : '';
-            const text = label + (plocha ? '\n' + plocha : '');
-            const area = w * h;
-            const fontSize = Math.max(9, Math.min(16, Math.sqrt(area) / 12));
-            const t = new Konva.Text({
-                x: minX, y: cy - fontSize, width: w,
-                text, fontSize,
-                fontFamily: 'sans-serif',
-                fill: p.venkovni ? '#92400e' : '#374151',
-                align: 'center', listening: false,
-            });
-            this.mistnostiLayer.add(t);
-            this._mistnostiShapes.push(t);
-            // Collect hranice místnosti — čárkované linie tam, kde edge
-            // NEOKOPÍROVÁVÁ reálnou stěnu. Zeď sama o sobě je hranicí.
-            for (let i = 0; i < p.vertices.length; i++) {
-                const vA = p.vertices[i];
-                const vB = p.vertices[(i + 1) % p.vertices.length];
-                const pA = this.engine.getProstorVertexPx(vA);
-                const pB = this.engine.getProstorVertexPx(vB);
-                if (!pA || !pB) continue;
-                if (edgeCoveredByWall(pA, pB)) continue;
-                addBoundary(pA, pB);
-            }
+        } else {
+            v = R.spocitej(this.engine);
+            this._mistnostiCache = v;
+            this._mistnostiCas = ted;
         }
-        // Vykreslit sloučené hranice (open-plan, virtuální)
-        const boundaryNodes = new Set();  // pro body (stringy "x,y")
-        for (const c of boundaryCandidates) {
-            const ln = new Konva.Line({
-                points: [c.A.x, c.A.y, c.B.x, c.B.y],
-                stroke: '#9ca3af',
-                strokeWidth: 1,
-                dash: [6 / scale, 4 / scale],
-                listening: false,
-            });
-            this.mistnostiLayer.add(ln);
-            this._mistnostiShapes.push(ln);
-            const keyA = Math.round(c.A.x / 3) * 3 + ',' + Math.round(c.A.y / 3) * 3;
-            const keyB = Math.round(c.B.x / 3) * 3 + ',' + Math.round(c.B.y / 3) * 3;
-            if (!boundaryNodes.has(keyA)) {
-                boundaryNodes.add(keyA);
-                const dot = new Konva.Circle({
-                    x: c.A.x, y: c.A.y, radius: 3,
-                    fill: '#9ca3af', stroke: '#6b7280', strokeWidth: 1,
-                    listening: false,
+        if (!v) { this.mistnostiLayer.batchDraw(); return; }
+
+        const mapa = this.engine.sladMistnosti(v.komponenty, (x, y) => R.stitekVBode(v, x, y));
+        this._mistnostiStitky = mapa;
+        this._plochyMistnosti = new Map();
+        for (const k of v.komponenty) { const m = mapa.get(k.stitek); if (m) this._plochyMistnosti.set(m.id, k.plocha_m2); }
+
+        // Výplň: barva záznamu, vybraná místnost o něco sytější
+        const ztmav = (hex, f) => '#' + [1, 3, 5].map(i => Math.round(parseInt(hex.slice(i, i + 2), 16) * f).toString(16).padStart(2, '0')).join('');
+        const obraz = R.obrazVyplne(v, (stitek) => {
+            const m = mapa.get(stitek);
+            if (!m) return null;
+            return this.selectedMistnosti.has(m.id) ? ztmav(m.barva, 0.93) : m.barva;
+        });
+        const img = new Konva.Image({ image: obraz, x: v.x0, y: v.y0, scaleX: v.krok, scaleY: v.krok, listening: true });
+        img.setAttr('_mistnostiObraz', true);
+        this.mistnostiLayer.add(img);
+        this._mistnostiShapes.push(img);
+
+        // Popisky: název a plocha uprostřed, vzpřímeně i při otočeném kompasu
+        if (this.citelnePismo(11)) {
+            const rot = -(this.stage.rotation() || 0);
+            for (const k of v.komponenty) {
+                const m = mapa.get(k.stitek);
+                if (!m) continue;
+                const text = new Konva.Text({
+                    x: k.stred.x, y: k.stred.y,
+                    text: (m.nazev || '') + '\n' + k.plocha_m2.toFixed(1).replace('.', ',') + ' m²',
+                    fontSize: this.velikostPopisku(12), fontFamily: 'Nunito, system-ui, sans-serif', fontStyle: '600',
+                    fill: '#374151', align: 'center', lineHeight: 1.25, listening: false, rotation: rot,
                 });
-                this.mistnostiLayer.add(dot);
-                this._mistnostiShapes.push(dot);
-            }
-            if (!boundaryNodes.has(keyB)) {
-                boundaryNodes.add(keyB);
-                const dot = new Konva.Circle({
-                    x: c.B.x, y: c.B.y, radius: 3,
-                    fill: '#9ca3af', stroke: '#6b7280', strokeWidth: 1,
-                    listening: false,
-                });
-                this.mistnostiLayer.add(dot);
-                this._mistnostiShapes.push(dot);
+                text.offsetX(text.width() / 2);
+                text.offsetY(text.height() / 2);
+                this.mistnostiLayer.add(text);
+                this._mistnostiShapes.push(text);
             }
         }
         this.mistnostiLayer.batchDraw();
+    }
+
+    /** Id místnosti pod bodem plátna (kreslicí px), nebo null. */
+    mistnostVBode(x, y) {
+        const R = window.MistnostiRastr;
+        if (!R || !this._mistnostiCache || !this._mistnostiStitky) return null;
+        const s = R.stitekVBode(this._mistnostiCache, x, y);
+        const m = s >= 2 ? this._mistnostiStitky.get(s) : null;
+        return m ? m.id : null;
+    }
+
+    plochaMistnosti(id) {
+        return this._plochyMistnosti ? (this._plochyMistnosti.get(id) ?? null) : null;
     }
 
     renderIds() {
@@ -450,6 +354,41 @@ class KonvaRenderer {
             shape.setAttr('_wallId', wall.id);
             this.wallLayer.add(shape);
             this._wallShapes.set(wall.id, shape);
+        }
+        this.wallLayer.batchDraw();
+    }
+
+    /**
+     * Oddělovače místností: tenká čárkovaná čára konstantní šířky na obrazovce
+     * (nulová tloušťka v datech), s tečkami na koncích. Leží ve vrstvě stěn nad nimi.
+     */
+    renderOddelovace() {
+        for (const s of this._oddelovacShapes) s.destroy();
+        this._oddelovacShapes = [];
+        const scale = this.stage ? this.stage.scaleX() || 1 : 1;
+        for (const o of this.engine.oddelovace.values()) {
+            const a = this.engine.bodKonceOddelovace(o.a);
+            const b = this.engine.bodKonceOddelovace(o.b);
+            const selected = this.selectedOddelovace.has(o.id);
+            const barva = selected ? VYBER.obrys : '#6b7280';
+            const cara = new Konva.Line({
+                points: [a.x, a.y, b.x, b.y],
+                stroke: barva, strokeWidth: selected ? 2.5 : 1.5, strokeScaleEnabled: false,
+                dash: [6, 4], lineCap: 'round', hitStrokeWidth: 12,
+            });
+            cara.setAttr('_oddelovacId', o.id);
+            this.wallLayer.add(cara);
+            this._oddelovacShapes.push(cara);
+            for (const p of [a, b]) {
+                const tecka = new Konva.Circle({ x: p.x, y: p.y, radius: 3 / scale, fill: barva, listening: false });
+                this.wallLayer.add(tecka);
+                this._oddelovacShapes.push(tecka);
+                // Neviditelný úchop konce nad stěnou: konec leží na líci a stisk by jinak chytil stěnu
+                const uchop = new Konva.Circle({ x: p.x, y: p.y, radius: 9 / scale, fill: 'rgba(0,0,0,0.001)' });
+                uchop.setAttr('_oddelovacId', o.id);
+                this.wallLayer.add(uchop);
+                this._oddelovacShapes.push(uchop);
+            }
         }
         this.wallLayer.batchDraw();
     }
@@ -853,6 +792,8 @@ class KonvaRenderer {
         this.renderKoty();
         if (this.showIds) this.renderIds();
         this.resizeVysky();
+        this.renderOddelovace();   // tečky a úchopy konců mají pevnou velikost na obrazovce
+        if (this.showMistnosti) this.renderMistnosti();   // popisky místností v čitelné velikosti
         if (typeof this.afterZoom === 'function') this.afterZoom();
     }
 
@@ -959,12 +900,14 @@ class KonvaRenderer {
     // ═══════════════════════════════════════════════════════
     // SELECTION
     // ═══════════════════════════════════════════════════════
-    setSelection(wallIds = [], nodeIds = [], openingIds = [], vybaveniIds = [], prostoryIds = []) {
+    setSelection(wallIds = [], nodeIds = [], openingIds = [], vybaveniIds = [], prostoryIds = [], oddelovaceIds = [], mistnostiIds = []) {
         this.selectedWalls = new Set(wallIds);
         this.selectedNodes = new Set(nodeIds);
         this.selectedOpenings = new Set(openingIds);
         this.selectedVybaveni = new Set(vybaveniIds);
         this.selectedProstory = new Set(prostoryIds);
+        this.selectedOddelovace = new Set(oddelovaceIds);
+        this.selectedMistnosti = new Set(mistnostiIds);
         this.render();
     }
 
@@ -973,6 +916,8 @@ class KonvaRenderer {
         this.selectedNodes.clear();
         this.selectedOpenings.clear();
         this.selectedVybaveni.clear();
+        this.selectedOddelovace.clear();
+        this.selectedMistnosti.clear();
         this.selectedProstory.clear();
         this.render();
     }
@@ -1122,6 +1067,9 @@ class KonvaRenderer {
         const openingId = konvaTarget?.getAttr?.('_openingId');
         if (openingId) return { type: 'opening', id: openingId };
 
+        const oddelovacId = konvaTarget?.getAttr?.('_oddelovacId');
+        if (oddelovacId) return { type: 'oddelovac', id: oddelovacId };
+
         // _vybaveniId je nastavené na Konva.Group v renderVybaveni; klik
         // dopadne na vnitřní hit Rect, jehož parent je tato group.
         let cursor = konvaTarget;
@@ -1133,6 +1081,17 @@ class KonvaRenderer {
 
         const prostorId = konvaTarget?.getAttr?.('_prostorId');
         if (prostorId) return { type: 'prostor', id: prostorId };
+
+        // Bitmapa místností je jeden obraz — která místnost, řekne mřížka pod kurzorem
+        if (konvaTarget?.getAttr?.('_mistnostiObraz') && this.stage) {
+            const p = this.stage.getPointerPosition();
+            if (p) {
+                const q = this.stage.getAbsoluteTransform().copy().invert().point(p);
+                const id = this.mistnostVBode(q.x, q.y);
+                if (id) return { type: 'mistnost', id };
+            }
+            return { type: 'empty' };
+        }
 
         return { type: 'empty' };
     }
