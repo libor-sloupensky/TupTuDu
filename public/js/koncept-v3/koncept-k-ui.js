@@ -74,6 +74,14 @@ function konceptKEditor(initialData) {
         showNodes: _s.showNodes ?? true,
         showGrid: _s.showGrid ?? true,
         showMistnosti: _s.showMistnosti ?? true,
+        // Magnet (podle výkazu výměr): jedno tlačítko s panelem — síla 0–100 % (0 = vypnuto),
+        // úhly 90°/45°, vodítka zarovnání, blikání při zachycení. Alt magnet vypíná dočasně.
+        magnetSila: Math.max(0, Math.min(100, Number(_s.magnetSila ?? 100) || 0)),
+        magnetUhly: _s.magnetUhly ?? true,
+        magnetVoditka: _s.magnetVoditka ?? true,
+        magnetBlik: _s.magnetBlik ?? true,
+        magnetPanel: false,
+        magnetPuls: false,            // tlačítko krátce zapulzuje, když magnet zabere
         showVybaveni: _s.showVybaveni ?? true,
         rezim3d: _s.rezim3d || false,
         // Three.js objekty jsou MIMO Alpine (proxy konflikt s modelViewMatrix)
@@ -380,7 +388,7 @@ function konceptKEditor(initialData) {
             let host = uchyt ? uchyt.host : null;
             let uhel = null;
             const start = this._oddelovacStart;
-            if (start && !bezMagnetu && (!uchyt || uchyt.typ === 'stena')) {
+            if (start && !bezMagnetu && this.magnetUhly && (!uchyt || uchyt.typ === 'stena')) {
                 let ref = 0;
                 const refW = start.host && this.engine.walls.get(start.host.stena);
                 if (refW) ref = this.engine.getWallAngle(refW.id);
@@ -4175,6 +4183,7 @@ function konceptKEditor(initialData) {
          *          domu = rastr domu, jinak vodorovná osa obrazovky)
          */
         _magnetUhlu(nodeId, target) {
+            if (!this.magnetUhly) return null;   // úhly vypnuté v nastavení magnetu
             const steny = this.engine.getNodeWalls(nodeId);
             if (!steny.length) return null;
             let nej = null;
@@ -4240,7 +4249,9 @@ function konceptKEditor(initialData) {
          */
         _dosahMagnetu(px) {
             const s = (this.stage && this.stage.scaleX()) || 1;
-            return Math.min(px / s, this.DOSAH_MAGNETU_MAX_M * this.PX_PER_M);
+            // Síla magnetu škáluje dosah: 100 % = plný, 50 % = poloviční, 0 % = magnet vypnutý (viz _bezMagnetu)
+            const sila = Math.max(0, Math.min(100, Number(this.magnetSila ?? 100))) / 100;
+            return Math.min(px * sila / s, this.DOSAH_MAGNETU_MAX_M * this.PX_PER_M);
         },
 
         /**
@@ -4283,6 +4294,7 @@ function konceptKEditor(initialData) {
          * @returns {?{bod:{x,y}, voditka:Array}} null = žádné vodítko v dosahu
          */
         _prichytNaVoditka(nodeId, cil, paprsek) {
+            if (!this.magnetVoditka) return null;   // vodítka vypnutá v nastavení magnetu
             const tol = this._dosahMagnetu(8);
             const pruseciky = (a, b) => {
                 const det = a.d.x * b.d.y - a.d.y * b.d.x;
@@ -4359,6 +4371,7 @@ function konceptKEditor(initialData) {
 
         /** Alt = bez magnetu. Událost myši nese stav Altu sama, klávesnice ho drží v _altDrzen. */
         _bezMagnetu(e) {
+            if (!(Number(this.magnetSila ?? 100) > 0)) return true;   // vypnuto v nastavení magnetu
             return e && e.evt && typeof e.evt.altKey === 'boolean' ? e.evt.altKey : this._altDrzen;
         },
 
@@ -4385,6 +4398,12 @@ function konceptKEditor(initialData) {
             const nove = klic && klic !== this._magnetKlic;
             this._magnetKlic = klic;
             this._kurzorUkaz(bod, !!klic, nove);
+            // Tlačítko magnetu v liště zapulzuje s každým novým zachycením — je vidět, že magnet pracuje
+            if (nove && this.magnetBlik) {
+                this.magnetPuls = false;
+                clearTimeout(this._magnetPulsCasovac);
+                requestAnimationFrame(() => { this.magnetPuls = true; this._magnetPulsCasovac = setTimeout(() => { this.magnetPuls = false; }, 600); });
+            }
             // Vlnka na tom, k čemu úhel zacvakl — na referenční stěně nebo ose
             if (novaReference) this._vlnkaReference(magnet.reference, bod);
         },
@@ -4423,6 +4442,7 @@ function konceptKEditor(initialData) {
 
         /** Bliknutí při zachycení magnetu: rozbíhající se kroužek (780 ms jako u Historie). */
         _kurzorBlik(bod) {
+            if (!this.magnetBlik) return;   // vypnuto v nastavení magnetu
             if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;   // změnu ukáže barva značky
             const s = this.stage.scaleX() || 1;
             const kruh = new Konva.Circle({ listening: false, x: bod.x, y: bod.y,
@@ -5948,6 +5968,10 @@ function konceptKEditor(initialData) {
                 kompasUhel: this.kompasUhel,
                 rezim3d: this.rezim3d,
                 panelOtvoruPoz: this.panelOtvoruPoz,   // kam si uživatel přetáhl panel otvoru (null = výchozí roh)
+                magnetSila: this.magnetSila,
+                magnetUhly: this.magnetUhly,
+                magnetVoditka: this.magnetVoditka,
+                magnetBlik: this.magnetBlik,
                 // celaObrazovka záměrně NEUKLÁDAT — fullscreen je per-sezení
                 lastProjekt: this.projektId || null,
                 stageX: this.stage ? this.stage.x() : 0,

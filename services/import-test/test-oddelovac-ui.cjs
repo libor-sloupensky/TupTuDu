@@ -206,6 +206,23 @@ async function main() {
         s = await stav();
         kontrola('Delete smaže vybraný oddělovač', s.length === 1 && s[0].b[2] === 'volny', JSON.stringify(s));
 
+        console.log('\n9) Nastavení magnetu');
+        const magnet = await p.vyhodnot(`(async () => { const d = ${D}; const e = d.engine; const tl = document.getElementById('kk-magnet-tl'); const panel = document.getElementById('kk-magnet-panel');
+            const plny = d._dosahMagnetu(15); d.magnetSila = 50; const polovicni = d._dosahMagnetu(15);
+            d.magnetSila = 0; const bez = d._bezMagnetu({ evt: { altKey: false } }); const uchytVyp = d._oddelovacUchyt({ x: 2.5 * 80, y: 0.07 * 80 }, { evt: { altKey: false } });
+            d.magnetSila = 100; const uchytZap = d._oddelovacUchyt({ x: 2.5 * 80, y: 0.07 * 80 }, { evt: { altKey: false } });
+            d._oddelovacStart = { bod: uchytZap.bod, host: uchytZap.host }; const sUhlem = d._oddelovacUchyt({ x: 2.6 * 80, y: 3 * 80 }, { evt: { altKey: false } });
+            d.magnetUhly = false; const bezUhlu = d._oddelovacUchyt({ x: 2.6 * 80, y: 3 * 80 }, { evt: { altKey: false } }); d.magnetUhly = true; d._oddelovacZrus();
+            tl.click(); await new Promise(r => setTimeout(r, 200)); const otevreno = panel.offsetParent !== null && /Síla přichytávání/.test(panel.innerText); tl.click();
+            d.ulozitNastaveni(); const ulozeno = JSON.parse(localStorage.getItem('kv3_state') || '{}');
+            return { plny, polovicni, bez, uchytVyp: !!uchytVyp.uchyt, uchytZap: !!uchytZap.uchyt, sUhlem: sUhlem.uhel, bezUhlu: bezUhlu.uhel, otevreno, aktivni: tl.classList.contains('kk-tl-aktivni'), ulozeno: ulozeno.magnetSila }; })()`);
+        kontrola('síla: 50 % = poloviční dosah, 0 % = magnet vypnutý (konec se nechytí), 100 % chytí', Math.abs(magnet.polovicni - magnet.plny / 2) < 0.01 && magnet.bez && !magnet.uchytVyp && magnet.uchytZap, JSON.stringify(magnet));
+        await p.vyhodnot(`(() => { document.getElementById('kk-magnet-tl').click(); return true; })()`);
+        await pauza(250);
+        await p.snimek(path.join(vystup, 'magnet-panel.png'));
+        await p.vyhodnot(`(() => { ${D}.magnetPanel = false; return true; })()`);
+        kontrola('úhly jdou vypnout; panel s nastavením se otevře z tlačítka v liště, tlačítko je zvýrazněné a nastavení se ukládá', magnet.sUhlem !== null && magnet.bezUhlu === null && magnet.otevreno && magnet.aktivni && magnet.ulozeno === 100, JSON.stringify(magnet));
+
         const vazne = p.chybyDetail.filter(c => !/404/.test(c.text));
         kontrola('bez chyb v konzoli (404 jen vypsat)', vazne.length === 0, vazne.slice(0, 3).map(c => c.text).join(' | '));
     } finally {

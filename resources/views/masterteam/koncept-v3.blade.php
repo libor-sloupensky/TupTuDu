@@ -78,6 +78,11 @@
     .kk-tl:hover:not(:disabled) { border-color: var(--c-primary); color: var(--c-primary); }
     .kk-tl:disabled { opacity: .35; cursor: default; }
     .kk-tl.kk-tl-aktivni { border-color: var(--c-primary); background: var(--c-primary-10); color: var(--c-primary); }
+    /* Tlačítko magnetu zapulzuje, když magnet nově zabere (jako kroužek u kurzoru) */
+    @keyframes kk-magnet-puls { 0% { box-shadow: 0 0 0 0 var(--c-primary); } 100% { box-shadow: 0 0 0 7px rgba(0,0,0,0); } }
+    .kk-tl.kk-magnet-puls { animation: kk-magnet-puls .6s ease-out 1; }
+    @media (prefers-reduced-motion: reduce) { .kk-tl.kk-magnet-puls { animation: none; } }
+    .kk-magnet-kolecko { position: absolute; right: -4px; top: -4px; width: 11px; height: 11px; border-radius: 50%; background: var(--c-surface); color: var(--c-text-secondary); }
     .kk-skupina { display: inline-flex; align-items: stretch; height: 28px; border: 1px solid var(--c-border);
                   border-radius: 6px; background: var(--c-surface); overflow: hidden; font-size: 12px; }
     .kk-skupina > button { padding: 0 8px; color: var(--c-text-secondary); transition: color .15s, background-color .15s; }
@@ -286,6 +291,41 @@
                 </button>
             </div>
 
+            {{-- Magnet: jedno tlačítko s kolečkem → panel s nastavením (podle výkazu výměr).
+                 Zvýrazněné, dokud magnet působí; pulz při každém novém zachycení. --}}
+            <div class="relative ml-1" @click.outside="magnetPanel = false">
+                <button type="button" id="kk-magnet-tl" @click="magnetPanel = !magnetPanel"
+                        class="kk-tl relative" :class="[(magnetPanel || magnetSila > 0) && 'kk-tl-aktivni', magnetPuls && 'kk-magnet-puls']"
+                        data-tip="Magnet — přichytávání k bodům, stěnám a úhlům (klik = nastavení · Alt = dočasně bez magnetu)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m6 15-4-4 6.75-6.77a7.79 7.79 0 0 1 11 11L13 22l-4-4 6.39-6.36a2.14 2.14 0 0 0-3-3L6 15"/><path d="m5 8 4 4"/><path d="m12 15 4 4"/>
+                    </svg>
+                    <svg class="kk-magnet-kolecko" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+                <div x-show="magnetPanel" x-cloak id="kk-magnet-panel"
+                     class="absolute left-0 top-full z-40 mt-1 w-64 rounded-lg border border-gray-300 bg-white p-3 text-xs shadow-lg">
+                    <label class="mb-2 block">
+                        <span class="flex justify-between text-gray-600"><span>Síla přichytávání</span><span class="tabular-nums" x-text="magnetSila === 0 ? 'vypnuto' : magnetSila + ' %'"></span></span>
+                        <input type="range" min="0" max="100" step="10" x-model.number="magnetSila" @input="ulozitNastaveni()"
+                               class="h-1 w-full cursor-pointer" style="accent-color: var(--c-primary);">
+                    </label>
+                    <label class="flex items-center gap-2 text-gray-600 mb-1">
+                        <input type="checkbox" x-model="magnetUhly" @change="ulozitNastaveni()" style="accent-color: var(--c-primary);">
+                        Úhly 90° a 45° vůči rastru domu
+                    </label>
+                    <label class="flex items-center gap-2 text-gray-600 mb-1">
+                        <input type="checkbox" x-model="magnetVoditka" @change="ulozitNastaveni()" style="accent-color: var(--c-primary);">
+                        Vodítka zarovnání s rohy
+                    </label>
+                    <label class="flex items-center gap-2 text-gray-600">
+                        <input type="checkbox" x-model="magnetBlik" @change="ulozitNastaveni()" style="accent-color: var(--c-primary);">
+                        Bliknout při zachycení
+                    </label>
+                    <p class="mt-2 text-gray-500">Alt při kreslení = dočasně bez magnetu.</p>
+                </div>
+            </div>
             {{-- Volby stěny nejsou v liště — jsou v panelu na plátně jako volby otvoru (Libor 1. 11. 2026). --}}
 
             {{-- Volby otvoru nejsou v liště — jsou v panelu na plátně pod tlačítkem Otvor,
