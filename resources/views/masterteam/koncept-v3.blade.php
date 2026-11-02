@@ -82,7 +82,6 @@
     @keyframes kk-magnet-puls { 0% { box-shadow: 0 0 0 0 var(--c-primary); } 100% { box-shadow: 0 0 0 7px rgba(0,0,0,0); } }
     .kk-tl.kk-magnet-puls { animation: kk-magnet-puls .6s ease-out 1; }
     @media (prefers-reduced-motion: reduce) { .kk-tl.kk-magnet-puls { animation: none; } }
-    .kk-magnet-kolecko { position: absolute; right: -4px; top: -4px; width: 11px; height: 11px; border-radius: 50%; background: var(--c-surface); color: var(--c-text-secondary); }
     .kk-skupina { display: inline-flex; align-items: stretch; height: 28px; border: 1px solid var(--c-border);
                   border-radius: 6px; background: var(--c-surface); overflow: hidden; font-size: 12px; }
     .kk-skupina > button { padding: 0 8px; color: var(--c-text-secondary); transition: color .15s, background-color .15s; }
@@ -291,7 +290,7 @@
                 </button>
             </div>
 
-            {{-- Magnet: jedno tlačítko s kolečkem → panel s nastavením (podle výkazu výměr).
+            {{-- Magnet: jedno tlačítko → panel s nastavením (podle výkazu výměr; bez kolečka — Libor).
                  Zvýrazněné, dokud magnet působí; pulz při každém novém zachycení. --}}
             <div class="relative ml-1" @click.outside="magnetPanel = false">
                 <button type="button" id="kk-magnet-tl" @click="magnetPanel = !magnetPanel"
@@ -299,9 +298,6 @@
                         data-tip="Magnet — přichytávání k bodům, stěnám a úhlům (klik = nastavení · Alt = dočasně bez magnetu)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m6 15-4-4 6.75-6.77a7.79 7.79 0 0 1 11 11L13 22l-4-4 6.39-6.36a2.14 2.14 0 0 0-3-3L6 15"/><path d="m5 8 4 4"/><path d="m12 15 4 4"/>
-                    </svg>
-                    <svg class="kk-magnet-kolecko" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                     </svg>
                 </button>
                 <div x-show="magnetPanel" x-cloak id="kk-magnet-panel"
