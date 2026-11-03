@@ -24,6 +24,8 @@ class KonceptV3 extends Koncept
         static::creating(function (KonceptV3 $koncept) {
             $koncept->kod ??= self::novyKod();
         });
+        // Cizí klíč smaže jen řádek odkazu, soubory by zůstaly na disku
+        static::deleting(fn (KonceptV3 $koncept) => KonceptV3Sdileni::where('koncept_id', $koncept->id)->first()?->delete());
     }
 
     /**

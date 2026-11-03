@@ -37,7 +37,7 @@ window.KonceptImport = {
         // být po načtení stránky rozbalený a @toggle by se tehdy nespustil
         this.impNactiDrive();
 
-        const ulozeny = this.metadata?.podklad;
+        const ulozeny = this._podkladUlozeny();
         if (ulozeny && ulozeny.url) {
             this.podklad = this.podkladAdresy(ulozeny);
             // Renderer vzniká až v init() editoru — počkat na něj.
@@ -730,13 +730,15 @@ window.KonceptImport = {
         this.impVloz(false);
 
         // Tloušťky z měření se smí srovnat na normovou řadu (0.1437 → 0.14).
-        this.engine.fromJSON({ steny, otvory }, { snapTloustky: true });
+        this.engine.fromJSON({ steny, otvory }, { snapTloustky: true, zachovatDum: true });
         // Z rozpoznávání vycházejí úhly na desetiny stupně mimo — čáry ve
         // výkrese nejsou přesně rovnoběžné a měřítko to ještě zvětší. Srovnat
         // se musí hned, jinak se ta odchylka přenese do všeho, co uživatel
         // nakreslí navazujícího.
         this._srovnejPraveUhly?.();
         this.impSrovnejOtvory();
+        // Až po narovnání úhlů: spodní podlaží je narovnané taky, jinak by vyšlo zbytečné natočení
+        this.domSrovnejImport?.();
         this.renderer.render();
         this.fitView?.();                       // ukázat rovnou celý výsledek
         this._posledniAkce = 'Import stěn z výkresu'
@@ -867,7 +869,7 @@ window.KonceptImport = {
     podkladPolohaZachyt() {
         // Při startu editoru (výchozí krok historie) ještě podklad nemusí být
         // načtený — jeho uložený stav ale už je v metadatech.
-        const p = this.podklad || this.podkladAdresy(this.metadata?.podklad);
+        const p = this.podklad || this.podkladAdresy(this._podkladUlozeny());
         if (!p || !p.url) return null;
         return {
             url: p.url,
@@ -894,7 +896,7 @@ window.KonceptImport = {
     /** Uloží stav podkladu do metadat konceptu (bez verzování kresby). */
     async podkladUloz() {
         if (!this.projektId) return;
-        this.metadata = { ...(this.metadata || {}), podklad: this.podklad };
+        this._podkladZapis(this.podklad);
         try {
             await fetch(_kkInitData.routes.ulozit.replace(':id', this.projektId), {
                 method: 'PATCH',
@@ -917,7 +919,7 @@ window.KonceptImport = {
  */
 window.konceptV3Komponenta = function (init) {
     const komponenta = konceptKEditor(init);
-    for (const mixin of [window.KonceptImport, window.KonceptImportProhlizec, window.KonceptLimit]) {
+    for (const mixin of [window.KonceptImport, window.KonceptImportProhlizec, window.KonceptLimit, window.KonceptDum, window.KonceptExport]) {
         if (mixin) Object.defineProperties(komponenta, Object.getOwnPropertyDescriptors(mixin));
     }
     return komponenta;

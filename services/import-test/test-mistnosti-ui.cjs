@@ -45,7 +45,7 @@ async function main() {
         await p.vyhodnot(`document.querySelector('input[name=email]').value = ${JSON.stringify(EMAIL)};
             document.querySelector('input[name=password]').value = ${JSON.stringify(HESLO)};
             document.querySelector('form').submit(); true`);
-        await pauza(1500);
+        await pauza(3000);
         await p.jdiNa(ZAKLAD + '/masterteam/koncept-v3');
         await p.cekej(`!!(window.Alpine && ${D})`, 15000, 'Alpine');
         await p.vyhodnot(`(async () => { const r = await fetch(_kkInitData.routes.vytvorit, { method:'POST',

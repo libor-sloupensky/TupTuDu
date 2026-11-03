@@ -6,16 +6,22 @@ předplatného přes **Paddle** — ten je prodejcem (Merchant of Record): faktu
 odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. WormUP s.r.o. dostává
 1× měsíčně výplatu se samofakturou. Poplatek 5 % + 0,50 $ za platbu, bez paušálu.
 
-## Aktuální stav (2026-10-30 večer)
+## Aktuální stav (2026-11-01)
 - Libor prošel celý tok na produkci s testovacím účtem — funguje.
-- **Ostrý účet založený**, ověření firmy u Paddlu běží (automated_review, pending).
-  V ostrém účtu založené produkty, ceny, client-side token a cíl zpráv (app.tuptudu.com/paddle/webhook);
-  měna výplat EUR; GitHub secrets a lokální `.env` už jsou na OSTRÉM účtu.
-- Produkce běží do dalšího nasazení na testovacím účtu; další nasazení ji přepne na ostrý.
-- **Chybí:** schválení domén (zadaná byla omylem `tutudu.com` → zamítnuto; zadat `tuptudu.com`
-  a `app.tuptudu.com`, předtím skutečná úvodní stránka), výchozí odkaz pokladny (`paddle:katalog
-  --odkaz=https://app.tuptudu.com/billing` až po schválení), smazat testovací záznamy Cashieru
-  z produkční DB při přepnutí, test se 100% slevou (krok 03 v Paddlu).
+- **Produkce běží na OSTRÉM účtu** (GitHub secrets i lokální `.env`). V ostrém účtu založené
+  produkty, ceny, client-side token a cíl zpráv (app.tuptudu.com/paddle/webhook); měna výplat EUR.
+- **Domény:** `tuptudu.com` schválená. `app.tuptudu.com` opakovaně `action_required` — Paddle tam
+  viděl jen ceník s tlačítky na login („login wall"). Commit f425c8b: nepřihlášený na app.tuptudu.com
+  dostane celou titulní stránku (`vitrina.index`). Nasazeno; Libor dal Resubmit. Subdoménu NEMAZAT —
+  každá doména s pokladnou se schvaluje zvlášť. SSL je v pořádku (ověřeno). Stav domén z tinkeru:
+  `Laravel\Paddle\Cashier::api('GET','checkout-domains')`.
+- **Ověření firmy:** po první kontrole (automated_review prošel) Paddle chce ověření přes Sumsub
+  (vlastnická struktura, jednatelé) — Libor vyplnil 31. 10., čeká se na Paddle. Odpovědi na jejich
+  maily jdou na no-reply; podpora jen přes formulář v dashboardu.
+- **Chybí (až po schválení):** výchozí odkaz pokladny (`paddle:katalog
+  --odkaz=https://app.tuptudu.com/billing`), ostrý test za 0 Kč (100% sleva, skutečná karta,
+  ověřit webhooky, změnu a zrušení tarifu, pak uklidit), ověřit, že v produkční DB nezůstaly
+  testovací záznamy Cashieru ze sandboxu.
 
 ## Tarify (rozhodl Libor 2026-10-29)
 | | Zdarma | Stavebník (en Home) | Profi (en Pro) |

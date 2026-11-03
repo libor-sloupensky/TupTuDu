@@ -17,7 +17,10 @@
 
     /**
      * @param {StavebniEngine} engine
-     * @param {{res?: number}} nast  res = krok rastru v metrech
+     * @param {{res?: number, vyrezy?: Array, pod13?: Array, bezOddelovacu?: boolean}} nast  res = krok rastru v metrech;
+     *        bezOddelovacu = prostor ohraničený jen stěnami (kuchyň a obývák s oddělovačem jsou jeden);
+     *        vyrezy = polygony (px), které se do plochy nepočítají (galerie, prostupy);
+     *        pod13 = polygony (px) pod výškou 1,3 m v podkroví — zapocitatelna_m2 je bez nich
      * @returns {null|{x0,y0,krok,w,h,stitky:Int32Array,komponenty:Array}}
      */
     function spocitej(engine, nast = {}) {
@@ -56,7 +59,7 @@
         }
         g.lineWidth = 1;   // jedna buňka — oddělovač nemá tloušťku, ať neubírá plochu
         g.lineCap = 'square';
-        for (const o of engine.oddelovace.values()) {
+        for (const o of nast.bezOddelovacu ? [] : engine.oddelovace.values()) {
             const a = engine.bodKonceOddelovace(o.a), b = engine.bodKonceOddelovace(o.b);
             g.beginPath();
             g.moveTo((a.x - x0) / krok, (a.y - y0) / krok);
@@ -118,6 +121,38 @@
                 stred: { x: x0 + (cx + 0.5) * krok, y: y0 + (cy + 0.5) * krok },
             });
         }
+        // Plochy s výřezy: druhá bitmapa, spočítat buňky po místnostech
+        const vyrezy = nast.vyrezy || [], pod13 = nast.pod13 || [];
+        if (komponenty.length && (vyrezy.length || pod13.length)) {
+            const kresli = (polygony) => {
+                const c2 = document.createElement('canvas');
+                c2.width = w; c2.height = h;
+                const g2 = c2.getContext('2d', { willReadFrequently: true });
+                g2.fillStyle = '#000';
+                for (const poly of polygony) {
+                    g2.beginPath();
+                    poly.forEach((p, i) => { const x = (p.x - x0) / krok, y = (p.y - y0) / krok; if (i === 0) g2.moveTo(x, y); else g2.lineTo(x, y); });
+                    g2.closePath();
+                    g2.fill();
+                }
+                return g2.getImageData(0, 0, w, h).data;
+            };
+            const dv = vyrezy.length ? kresli(vyrezy) : null;
+            const dp = pod13.length ? kresli(pod13) : null;
+            const vyr = new Map(), niz = new Map();
+            for (let i = 0; i < w * h; i++) {
+                const s = stitky[i];
+                if (s < 2) continue;
+                const jeVyrez = dv && dv[i * 4 + 3] > 127;
+                if (jeVyrez) vyr.set(s, (vyr.get(s) || 0) + 1);
+                else if (dp && dp[i * 4 + 3] > 127) niz.set(s, (niz.get(s) || 0) + 1);
+            }
+            for (const k of komponenty) {
+                const celkem = k.plocha_m2;
+                k.plocha_m2 = Math.round((celkem - (vyr.get(k.stitek) || 0) * plochaBunky) * 100) / 100;
+                if (pod13.length) k.zapocitatelna_m2 = Math.round((k.plocha_m2 - (niz.get(k.stitek) || 0) * plochaBunky) * 100) / 100;
+            }
+        }
         return { x0, y0, krok, w, h, stitky, komponenty };
     }
 
@@ -154,5 +189,65 @@
         return cv;
     }
 
-    window.MistnostiRastr = { spocitej, stitekVBode, obrazVyplne, MIN_PLOCHA_M2 };
+    /**
+     * Obrys jedné místnosti (komponenta se štítkem `stitek`) jako polygon v kreslicích px.
+     * Jde po rozích buněk kolem vnější hranice (stejný postup jako obrys domu ve strecha.js)
+     * a zjednoduší se na 1,6 buňky, takže rovné stěny dají rovné hrany. Díry uvnitř
+     * místnosti (sloup) se do obrysu nepromítají. Slouží výškovým plochám (dum.js).
+     */
+    function obrysMistnosti(v, stitek) {
+        const { w, h, stitky, x0, y0, krok } = v;
+        const uvnitr = (x, y) => x >= 0 && y >= 0 && x < w && y < h && stitky[y * w + x] === stitek;
+        let sx = -1, sy = -1;
+        hledej: for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                if (uvnitr(x, y)) { sx = x; sy = y; break hledej; }
+            }
+        }
+        if (sx < 0) return [];
+        // Pohyb po rozích buněk; směr 0 = východ, 1 = jih, 2 = západ, 3 = sever (y dolů)
+        const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];
+        const cesta = [];
+        let x = sx, y = sy, s = 0, kroku = 0;
+        const limit = 4 * (w + h) * 20;
+        do {
+            cesta.push({ x, y });
+            let lx, ly, px, py;
+            if (s === 0) { lx = x; ly = y - 1; px = x; py = y; }
+            else if (s === 1) { lx = x; ly = y; px = x - 1; py = y; }
+            else if (s === 2) { lx = x - 1; ly = y; px = x - 1; py = y - 1; }
+            else { lx = x - 1; ly = y - 1; px = x; py = y - 1; }
+            if (uvnitr(lx, ly)) s = (s + 3) % 4;
+            else if (!uvnitr(px, py)) s = (s + 1) % 4;
+            x += DX[s]; y += DY[s];
+        } while ((x !== sx || y !== sy) && ++kroku < limit);
+        return zjednodus(cesta.map(c => ({ x: x0 + c.x * krok, y: y0 + c.y * krok })), krok * 1.6);
+    }
+
+    /** Douglas-Peucker na uzavřené křivce. */
+    function zjednodus(body, tol) {
+        if (body.length < 4) return body;
+        let dal = 0, ib = 0;
+        for (let i = 1; i < body.length; i++) {
+            const d = Math.hypot(body[i].x - body[0].x, body[i].y - body[0].y);
+            if (d > dal) { dal = d; ib = i; }
+        }
+        const dp = (p) => {
+            if (p.length < 3) return p;
+            const a = p[0], b = p[p.length - 1];
+            const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1;
+            let m = -1, im = 0;
+            for (let i = 1; i < p.length - 1; i++) {
+                const d = Math.abs((p[i].x - a.x) * dy - (p[i].y - a.y) * dx) / L;
+                if (d > m) { m = d; im = i; }
+            }
+            if (m <= tol) return [a, b];
+            return dp(p.slice(0, im + 1)).slice(0, -1).concat(dp(p.slice(im)));
+        };
+        const c1 = dp(body.slice(0, ib + 1));
+        const c2 = dp(body.slice(ib).concat([body[0]]));
+        return c1.slice(0, -1).concat(c2.slice(0, -1));
+    }
+
+    window.MistnostiRastr = { spocitej, stitekVBode, obrazVyplne, obrysMistnosti, MIN_PLOCHA_M2 };
 })();

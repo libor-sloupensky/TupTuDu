@@ -38,7 +38,7 @@ async function main() {
         await p.vyhodnot(`document.querySelector('input[name=email]').value = ${JSON.stringify(EMAIL)};
             document.querySelector('input[name=password]').value = ${JSON.stringify(HESLO)};
             document.querySelector('form').submit(); true`);
-        await pauza(1500);
+        await pauza(3000);
         await p.jdiNa(ZAKLAD + '/masterteam/koncept-v3');
         await p.cekej(`!!(window.Alpine && ${D})`, 15000, 'Alpine');
         await p.vyhodnot(`(async () => { const r = await fetch(_kkInitData.routes.vytvorit, { method:'POST',
@@ -240,7 +240,7 @@ async function main() {
         console.log('\n4) 3D');
         await p.vyhodnot(`(async () => { const d = ${D}; d.rezim3d = true; await d.prepni3d(); return true; })()`);
         await pauza(1500);
-        const stav3d = await p.vyhodnot(`(() => { const d = ${D}; const g = window._kk3d.wallGroup; const e = d.engine; const PX = e.PX_PER_M;
+        const stav3d = await p.vyhodnot(`(() => { const d = ${D}; const g = window._kk3d.podlaziSkupiny.get('P1'); const e = d.engine; const PX = e.PX_PER_M;
             const steny = g.children.filter(c => c.isMesh).length;
             const skupiny = g.children.filter(c => c.isGroup);
             // Každá skupina otvoru musí ležet na ose některé stěny (do poloviny tloušťky) a uvnitř jejího rozsahu
@@ -260,11 +260,11 @@ async function main() {
                      dily: skupiny.map(s => s.children.length) }; })()`);
         kontrola('stěny rozřezané na díly (víc než 5 těles)', stav3d.steny > 5, stav3d.steny + ' těles');
         const ruznyParapet = await p.vyhodnot(`(async () => { const d = ${D}; const o = d.engine.openings.get(${JSON.stringify(ids.okno2)}); o.kridla = kridlaOtvoru(o).map(k => ({ ...k })); o.kridla[1].parapet = 0.2;
-            const pred = window._kk3d.wallGroup.children.filter(c => c.isMesh).length; d._build3d(); const po = window._kk3d.wallGroup.children.filter(c => c.isMesh).length;
-            const sk = window._kk3d.wallGroup.children.filter(c => c.isGroup).find(g => Math.abs(g.position.x) < 0.3 && Math.abs(g.position.z - 5.25) < 0.3);
+            const pred = window._kk3d.podlaziSkupiny.get('P1').children.filter(c => c.isMesh).length; d._build3d(); const po = window._kk3d.podlaziSkupiny.get('P1').children.filter(c => c.isMesh).length;
+            const sk = window._kk3d.podlaziSkupiny.get('P1').children.filter(c => c.isGroup).find(g => Math.abs(g.position.x) < 0.3 && Math.abs(g.position.z - 5.25) < 0.3);
             const box = new THREE.Box3().setFromObject(sk);
             // Kusy stěny W4 (x ≈ 0) pod díly: parapetní kusy mají vršek 0,2 a 0,9 m
-            const vrsky = window._kk3d.wallGroup.children.filter(c => c.isMesh).map(m => new THREE.Box3().setFromObject(m)).filter(b => Math.abs(b.min.x) < 0.5 && b.max.x < 0.5 && b.min.z > 4 && b.max.z < 6.5).map(b => +b.max.y.toFixed(2)).sort();
+            const vrsky = window._kk3d.podlaziSkupiny.get('P1').children.filter(c => c.isMesh).map(m => new THREE.Box3().setFromObject(m)).filter(b => Math.abs(b.min.x) < 0.5 && b.max.x < 0.5 && b.min.z > 4 && b.max.z < 6.5).map(b => +b.max.y.toFixed(2)).sort();
             return { pred, po, spodek: +box.min.y.toFixed(2), vrsek: +box.max.y.toFixed(2), vrsky }; })()`);
         kontrola('3D: rám jde od 0,2 m ke společné horní hraně 2,1 m; pod díly jsou parapetní kusy stěny 0,2 a 0,9 m', ruznyParapet.spodek === 0.2 && ruznyParapet.vrsek === 2.1 && ruznyParapet.vrsky.includes(0.2) && ruznyParapet.vrsky.includes(0.9), JSON.stringify(ruznyParapet));
         kontrola('11 otvorů s výplní (průchod jen výřez)', stav3d.skupiny === 11, stav3d.skupiny + ' skupin');

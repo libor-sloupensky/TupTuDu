@@ -31,6 +31,7 @@ return [
     'projekt_jeden' => '1 projekt',
     'projektu_az' => 'Až :limit projektů',
     'projektu_neomezene' => 'Neomezený počet projektů',
+    'funkce_export' => 'Export obrázků PNG a sdílení projektu odkazem',
     'funkce_katastr' => 'Katastrální informace k pozemku — parcely, stavby, sousedé',
     'funkce_mapy' => 'Mapový podklad Mapy.com',
     'funkce_teren' => 'Výškový profil terénu',
@@ -117,4 +118,5 @@ return [
     'limit_uprav_text' => 'Ve verzi Zdarma můžete udělat :limit úprav denně — počítá se každá nová stěna, posun nebo otvor. Prohlížet můžete dál, upravovat zase zítra. S předplatným upravujete bez omezení.',
     'limit_projektu_nadpis' => 'Další projekt váš tarif nedovoluje',
     'limit_projektu_text' => 'Počet projektů ve vašem tarifu: :limit. Vyšší tarif dovolí víc projektů — nebo smažte projekt, který už nepotřebujete.',
+    'exporty_jen_placene' => 'Export a sdílení odkazem jsou v placených tarifech.',
 ];

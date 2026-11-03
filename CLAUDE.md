@@ -62,6 +62,9 @@ Proxy čte celou DB (i uživatele) — **jen SELECT** pro ladění; zápis (`?wr
 - Národní služby (katastr, výškový profil, mapový podklad) jen přes profil země: `@funkce('katastr')`, middleware `funkce:katastr`, `Lokalizace::maFunkci()`.
 - Masterteam je jen česky, nepřekládá se. Podrobnosti: `modules/lokalizace.md`.
 
+## Formuláře editoru
+- Zarovnání polí a nápisů řeší jedno pravidlo `.kk-editor` v `koncept-v3.blade.php`, ne okraje u jednotlivých polí. Přidaný nebo změněný panel ověřit `node services/import-test/test-formulare-ui.cjs` a nový panel do toho testu doplnit.
+
 ## Brand
 - Veškerý UI stav projektu se ukládá konzistentně — promyslet stav i invalidaci PŘEDEM
 - Brand barvy NIKDY nehard-codovat hex — vždy CSS proměnné (`var(--c-primary)` atd.)

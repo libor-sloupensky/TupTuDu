@@ -22,6 +22,11 @@
 <script src="/js/koncept-v3/stavebni-engine.js?v={{ filemtime(public_path('js/koncept-v3/stavebni-engine.js')) }}"></script>
 <script src="/js/koncept-v3/pudorys-icons.js?v={{ filemtime(public_path('js/koncept-v3/pudorys-icons.js')) }}"></script>
 <script src="/js/koncept-v3/mistnosti.js?v={{ filemtime(public_path('js/koncept-v3/mistnosti.js')) }}"></script>
+<script src="/js/koncept-v3/koty-vyberu.js?v={{ filemtime(public_path('js/koncept-v3/koty-vyberu.js')) }}"></script>
+<script src="/js/koncept-v3/strecha.js?v={{ filemtime(public_path('js/koncept-v3/strecha.js')) }}"></script>
+<script src="/js/koncept-v3/ral.js?v={{ filemtime(public_path('js/koncept-v3/ral.js')) }}"></script>
+<script src="/js/koncept-v3/vyber-barvy.js?v={{ filemtime(public_path('js/koncept-v3/vyber-barvy.js')) }}"></script>
+<script src="/js/koncept-v3/export-sdileni.js?v={{ filemtime(public_path('js/koncept-v3/export-sdileni.js')) }}"></script>
 <script src="/js/koncept-v3/konva-renderer.js?v={{ filemtime(public_path('js/koncept-v3/konva-renderer.js')) }}"></script>
 
 <style>
@@ -101,6 +106,48 @@
                       color: #6b7280; background: #f3f4f6; border-right: 1px solid #e5e7eb; border-radius: 6px 0 0 6px;
                       cursor: grab; touch-action: none; user-select: none; }
     .kk-panel-uchop:active { cursor: grabbing; background: #fdf0e7; color: var(--c-primary); }
+    /* Panel „Podlaží a plochy": řádek = podlaží, klik přepíná, tužka rozbalí úpravy právě tohoto řádku */
+    .kk-podlazi-radek { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 8px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--c-text-secondary); }
+    .kk-podlazi-radek:hover { background: var(--c-primary-10); }
+    .kk-podlazi-radek.kk-aktivni { background: var(--c-primary-10); color: var(--c-primary-text); font-weight: 700; box-shadow: inset 3px 0 0 var(--c-primary); }
+    .kk-podlazi-radek.kk-skryte { opacity: .45; }
+    .kk-podlazi-pozor { min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px; background: var(--c-error); color: var(--c-surface); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; }
+    .kk-podlazi-tuzka { flex: none; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; color: #6b7280; }
+    .kk-podlazi-tuzka:hover, .kk-podlazi-tuzka.kk-aktivni { background: var(--c-surface); color: var(--c-primary); }
+    .kk-podlazi-uprava { margin: 2px 0 4px 8px; padding: 6px 8px; border-left: 2px solid var(--c-primary); font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .kk-podlazi-uprava input[type=number], .kk-podlazi-uprava input[type=text] { height: 24px; margin: 0; color: var(--c-text); font-size: 12px; padding: 0 4px; border: 1px solid #6b7280; border-radius: 4px; }
+    .kk-podlazi-uprava input[type=number] { flex: none; width: 4rem; }
+    #kk-panel-otvoru input[type=number] { flex: none; width: 4rem; padding-left: 4px; padding-right: 2px; }
+    #kk-panel-otvoru .kk-barva-vzorek button { height: auto; line-height: normal; }
+    #kk-panel-otvoru label.kk-barva-posuvnik { display: flex; flex-direction: column; align-items: stretch; }
+    #kk-panel-otvoru .kk-paleta-krytina { height: 22px; }
+    #kk-panel-otvoru input[type=text] { height: 24px; font-size: 12px; padding: 0 4px; border: 1px solid #6b7280; border-radius: 4px; }
+    .kk-kota-pole { position: absolute; z-index: 14; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 3px; padding: 2px 4px; background: var(--c-surface); border: 1.5px solid var(--c-primary); border-radius: 5px; font-size: 12px; color: var(--c-text-secondary); }
+    .kk-kota-pole input { width: 4.5rem; height: 22px; margin: 0; padding: 0 4px; font-size: 12px; color: var(--c-text); border: 0; outline: none; background: transparent; }
+    .kk-barva-symbol { flex: none; width: 24px; height: 24px; border-radius: 5px; border: 1px solid #6b7280; padding: 0; cursor: pointer; }
+    .kk-barva-symbol[aria-expanded="true"] { outline: 2px solid var(--c-primary); outline-offset: 1px; }
+    .kk-barva-nastroj { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 6px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; color: #6b7280; }
+    .kk-barva-vzorek { display: grid; grid-template-columns: 1fr 2fr; height: 56px; border: 1px solid #6b7280; border-radius: 5px; overflow: hidden; }
+    .kk-barva-vzorek > * { display: flex; align-items: flex-end; padding: 0 0 0 4px; border: 0; margin: 0; min-width: 0; }
+    .kk-barva-vzorek span { font-size: 10px; line-height: 14px; padding: 0 4px; margin-bottom: 3px; border-radius: 3px; background: rgba(255,255,255,.85); color: #374151; }
+    .kk-barva-vzorek button { cursor: pointer; }
+    .kk-barva-kod { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; color: var(--c-text); }
+    .kk-barva-posuvnik { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 12px; font-weight: 400; color: #6b7280; }
+    .kk-barva-posuvnik > span { display: flex; justify-content: space-between; }
+    .kk-barva-posuvnik output { color: var(--c-text); font-variant-numeric: tabular-nums; }
+    .kk-barva-posuvnik input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; margin: 0; padding: 0; border-radius: 7px; border: 1px solid #9ca3af; cursor: pointer; }
+    .kk-barva-posuvnik input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #374151; }
+    .kk-barva-posuvnik input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid #374151; }
+    .kk-barva-posuvnik input[type=range]::-moz-range-track { background: transparent; }
+    .kk-podlazi-uprava select { height: 24px; margin: 0; color: var(--c-text); font-size: 12px; padding: 0 4px; border: 1px solid #6b7280; border-radius: 4px; }
+    .kk-podlazi-pole label, .kk-podlazi-pole { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 400; margin: 0; color: #6b7280; }
+    .kk-dum-zprava { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 20; max-width: 80%; background: var(--c-text, #2a2a2a); color: var(--c-surface); border-radius: 6px; padding: 6px 12px; font-size: 12px; }
+    .kk-paleta-krytina { width: 22px; height: 22px; border-radius: 4px; border: 1px solid #9ca3af; padding: 0; }
+    .kk-paleta-krytina.kk-aktivni { outline: 2px solid var(--c-primary); outline-offset: 1px; }
+    /* Formuláře editoru. app.css dává polím a nápisům spodní okraj pro formuláře webu; v řádku editoru
+       by pole sedělo o 8 px výš než text a selecty vedle něj. Zarovnání hlídá test-formulare-ui.cjs. */
+    .kk-editor input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]), .kk-editor select, .kk-editor textarea, .kk-editor label { margin: 0; }
+    .kk-section input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]), .kk-section select { height: 24px; padding-top: 0; padding-bottom: 0; font-size: 12px; }
     /* Jednotné řádky panelu otvoru: všechna pole 24 px vysoká, písmo 12 px, řádek 26 px */
     #kk-panel-otvoru { font-size: 12px; line-height: 1.2; }
     #kk-panel-otvoru input[type=number], #kk-panel-otvoru select { height: 24px; font-size: 12px; line-height: 22px; padding-top: 0; padding-bottom: 0; }
@@ -160,7 +207,7 @@
 </style>
 
 {{-- komponenta se skládá funkcí, ne rozprostřením — jinak zmrznou gettery --}}
-<div x-data="konceptV3Komponenta(_kkInitData)" x-init="init(); podkladInit()" x-cloak
+<div class="kk-editor" x-data="konceptV3Komponenta(_kkInitData)" x-init="init(); podkladInit()" x-cloak
      class="koncept-k-wrap" :class="{ 'fullscreen': celaObrazovka }"
      :style="'height:' + editorHeight + 'px'"
      x-effect="document.body.classList.toggle('kk-fullscreen', celaObrazovka)"
@@ -174,6 +221,8 @@
         {{-- Toolbar — řádek 1: název, 2D/3D, zoom, layout, fullscreen --}}
         <div class="kk-lista flex items-center px-3 py-1.5 border-b border-gray-200 gap-1.5">
             <span class="text-sm font-medium text-gray-700 truncate max-w-[200px]" x-text="projektNazev || 'Nový koncept'"></span>
+            {{-- Na jakém podlaží se kreslí, když je panel vpravo sbalený --}}
+            <span class="text-xs text-gray-500 whitespace-nowrap" x-show="seznamPodlazi.length > 1 && !rezim3d" x-cloak x-text="'· ' + nazevAktivniho"></span>
             <div class="flex-1"></div>
             {{-- Mapový podklad --}}
             <select x-model="katastrMapaPodklad"
@@ -211,7 +260,7 @@
                 </svg>
             </button>
             {{-- Fullscreen --}}
-            <button @click="prepniFullscreen()" class="kk-tl" :data-tip-below="celaObrazovka ? 'Zmenšit (F11)' : 'Celá obrazovka (F11)'">
+            <button @click="prepniFullscreen()" class="kk-tl" :data-tip-below="celaObrazovka ? 'Zmenšit (Ctrl+F)' : 'Celá obrazovka (Ctrl+F)'">
                 <svg x-show="!celaObrazovka" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="1,5 1,1 5,1"/><polyline points="11,1 15,1 15,5"/><polyline points="15,11 15,15 11,15"/><polyline points="5,15 1,15 1,11"/>
                 </svg>
@@ -288,6 +337,13 @@
                         <line x1="5" y1="4" x2="5" y2="12"/><line x1="11" y1="4" x2="11" y2="12"/>
                     </svg>
                 </button>
+                {{-- Schodiště --}}
+                <button @click="nastroj === 'schody' ? (nastroj = 'vyber') : zacniSchody()" class="kk-tl" :class="nastroj === 'schody' && 'kk-tl-aktivni'" data-tip="Schodiště do vyššího podlaží (7)">
+                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 14h3v-3h3V8h3V5h3V2"/>
+                    </svg>
+                </button>
+                {{-- Úroveň podlahy (zvýšená, snížená, bez podlahy) se nastavuje v panelu místnosti, samostatný nástroj není --}}
             </div>
 
             {{-- Magnet: jedno tlačítko → panel s nastavením (podle výkazu výměr; bez kolečka — Libor).
@@ -380,7 +436,7 @@
                         <tr><td><strong>B</strong></td><td>zvýrazňovač zap/vyp</td></tr>
                         <tr><td><strong>Shift + klik</strong></td><td>rovná čára zvýrazňovačem</td></tr>
                         <tr><td><strong>Ctrl+C / V / D</strong></td><td>kopírovat / vložit / duplikovat</td></tr>
-                        <tr><td><strong>F11</strong></td><td>celá obrazovka</td></tr>
+                        <tr><td><strong>Ctrl+F</strong></td><td>celá obrazovka</td></tr>
                     </table>
                 </div>
             </div>
@@ -390,6 +446,10 @@
         <div id="kk-canvas-wrap" x-ref="canvasWrap" class="flex-1" style="position:relative;overflow:hidden" :class="nastroj === 'zvyraznovac' ? 'zvyraznovac-cursor' : ''">
             <div id="kk-container" x-ref="konvaContainer" style="position:absolute;inset:0;" x-show="!rezim3d"></div>
             <div id="kk-3d-container" x-ref="threeContainer" style="position:absolute;inset:0;" x-show="rezim3d" x-cloak></div>
+            {{-- Přepsání kóty u vybrané stěny nebo otvoru: pole na místě čísla --}}
+            <div class="kk-kota-pole" x-show="kotaEdit && !rezim3d" x-cloak :style="kotaEdit ? { left: kotaEdit.x + 'px', top: kotaEdit.y + 'px' } : {}" data-kota-pole>
+                <input type="number" min="0" step="1" x-ref="kotaInput" title="Vzdálenost v cm. Enter potvrdí, Esc zruší." @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="kotaEdit = null" @blur="kotaPotvrd($event.target.value)"><span>cm</span>
+            </div>
             <div class="kk-status-row">
                 <div class="kk-coords" x-text="'X: ' + kurzorX.toFixed(2) + ' Y: ' + kurzorY.toFixed(2)"></div>
                 <div class="kk-3d-help" x-show="rezim3d" x-cloak>Levé tl. = rotace · Pravé tl. = posun · Kolečko = zoom</div>
@@ -405,7 +465,7 @@
             {{-- Panel otvoru — na plátně v levém horním rohu (odsazení 6 px jako nahoře), úchopem vlevo
                  jde přetáhnout jinam (poloha se pamatuje), dvojklik na úchop ho vrátí. Ukazuje buď
                  volby nového otvoru (nástroj zapnutý), nebo vlastnosti výběru. --}}
-            <div id="kk-panel-otvoru" x-show="!rezim3d && (nastroj === 'otvor' || nastroj === 'stena' || inspector)" x-cloak
+            <div id="kk-panel-otvoru" x-show="rezim3d ? ['opening', 'opening_multi', 'mistnost', 'schodiste'].includes(inspector?.kind) : (nastroj === 'otvor' || nastroj === 'stena' || nastroj === 'schody' || nastroj === 'lico' || posunPodkladu || inspector)" x-cloak
                  class="bg-white rounded-lg shadow-md text-xs flex items-stretch"
                  :style="panelOtvoruStyl"
                  style="position:absolute;z-index:15;min-width:250px;max-width:420px;border:1.5px solid var(--c-primary)">
@@ -422,6 +482,35 @@
                     </svg>
                 </div>
                 <div class="flex-1 min-w-0">
+                {{-- Nástroje domu: schody, usazení plánku, posun plánku --}}
+                <template x-if="nastroj === 'schody'">
+                    <div class="p-2 flex flex-col gap-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-600 font-medium whitespace-nowrap">Nové schodiště</span>
+                            <select x-model="schodyTvar" class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto">
+                                <option value="prime">Přímé</option>
+                                <option value="L">Do L</option>
+                                <option value="U">Do U</option>
+                            </select>
+                        </div>
+                        <div class="text-gray-500" x-text="schodyStart ? 'Klepněte ve směru výstupu.' : 'Klepněte na začátek schodiště (první stupeň).'"></div>
+                    </div>
+                </template>
+                <template x-if="nastroj === 'lico'">
+                    <div class="p-2 flex flex-col gap-1">
+                        <span class="text-gray-600 font-medium">Usazení plánku na spodní podlaží</span>
+                        <div class="text-gray-500" x-text="licoKrok"></div>
+                        <label class="flex items-center gap-1 text-gray-500" x-show="engine && engine.walls.size > 0">
+                            <input type="checkbox" x-model="licoSeStenami"> i se stěnami tohoto podlaží
+                        </label>
+                    </div>
+                </template>
+                <template x-if="posunPodkladu">
+                    <div class="p-2 flex items-center gap-2">
+                        <span class="text-gray-600">Táhněte plánek. Kresba stojí.</span>
+                        <button type="button" @click="prepniPosunPodkladu()" class="border border-gray-500 rounded px-2 py-0.5 text-xs ml-auto hover:bg-orange-50">Hotovo</button>
+                    </div>
+                </template>
                 {{-- Nová stěna / oddělovač: typ a tloušťka (dřív v liště nástrojů) --}}
                 <template x-if="nastroj === 'stena'">
                     <div class="p-2 flex flex-col gap-1">
@@ -476,7 +565,7 @@
                         <div class="text-orange-700" x-show="otvorZprava" x-cloak x-text="otvorZprava"></div>
                     </div>
                 </template>
-                <template x-if="nastroj !== 'otvor' && nastroj !== 'stena' && inspector">
+                <template x-if="nastroj !== 'otvor' && nastroj !== 'stena' && nastroj !== 'schody' && nastroj !== 'lico' && !posunPodkladu && inspector">
                     <div class="p-2 flex items-center gap-2 flex-wrap">
                         {{-- Multi-select indikátor --}}
                         <span x-show="inspector.count > 1" class="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-semibold"
@@ -635,7 +724,86 @@
                             </div>
                         </template>
 
-                        {{-- MÍSTNOST: název, barva z palety, plocha jen pro čtení --}}
+                        {{-- SCHODIŠTĚ --}}
+                        <template x-if="inspector.kind === 'schodiste'">
+                            <div class="flex flex-col gap-1 w-full">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-600 font-medium whitespace-nowrap">Schodiště</span>
+                                    <span class="text-gray-500" x-text="inspector.trasa"></span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <select class="border border-gray-500 rounded px-1 py-0.5 text-xs" title="Přímé schodiště, lomené o 90° (L), nebo o 180° (U)" data-schody-tvar @change="setSchody('tvar', $event.target.value)">
+                                        <option value="prime" :selected="inspector.tvar === 'prime'">Přímé</option>
+                                        <option value="L" :selected="inspector.tvar === 'L'">Do L</option>
+                                        <option value="U" :selected="inspector.tvar === 'U'">Do U</option>
+                                    </select>
+                                    <span class="text-gray-500 ml-1">š:</span>
+                                    <input type="number" min="60" max="250" step="5" title="Šířka schodiště" class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                           :value="Math.round(inspector.sirka * 100)" @change="setSchody('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()">
+                                    <span class="text-gray-500">cm</span>
+                                    <button type="button" @click="setSchody('otoc')" class="border border-gray-500 rounded px-2 py-0.5 text-xs ml-auto hover:bg-orange-50" title="Otočit o 90°">⟳</button>
+                                    <button type="button" x-show="inspector.tvar !== 'prime'" @click="setSchody('strana')" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Zrcadlit stranu lomení">⇄</button>
+                                </div>
+                                <div class="text-gray-500" title="Stupně se počítají z výšky mezi podlažími podle pravidla 2h + b = 630 mm" x-text="inspector.n + ' stupňů · výška ' + Math.round(inspector.v * 1000) + ' mm · šířka stupně ' + Math.round(inspector.b * 1000) + ' mm · délka ' + inspector.delka.toFixed(2).replace('.', ',') + ' m'"></div>
+                                <div class="flex items-center gap-1" title="Prázdné pole vrátí výpočet z výšky mezi podlažími. Skutečná výška se dorovná tak, aby stupně vyšly přesně na podlahu.">
+                                    <span class="text-gray-500">výška stupně:</span>
+                                    <input type="number" min="100" max="250" step="1" data-schody="vyska" :value="Math.round(inspector.v * 1000)" @change="setSchody('vyska', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span class="text-gray-500">mm</span>
+                                    <span class="text-gray-500 ml-2">nášlap:</span>
+                                    <input type="number" min="150" max="500" step="1" data-schody="naslap" :value="Math.round(inspector.b * 1000)" @change="setSchody('naslap', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span class="text-gray-500">mm</span>
+                                </div>
+                                <template x-if="inspector.tvar !== 'prime'">
+                                    <div class="flex items-center gap-1" title="Stupně se dopočítají do ostatních částí. Část s nulou je jen odpočívadlo.">
+                                        <span class="text-gray-500">stupňů v částech:</span>
+                                        <template x-for="(c, i) in inspector.casti" :key="i">
+                                            <input type="number" min="0" step="1" :data-schody-cast="i" :value="c" @change="setSchodyCast(i, parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()">
+                                        </template>
+                                    </div>
+                                </template>
+                                <div data-barva-schodu x-data="vyberBarvy({ hodnota: () => inspector?.barva, nastav: (hex) => setSchody('barva', hex), nahled: (hex) => nahledBarvy3d('schody:' + inspector?.id, hex), pouzite: () => barvyJinde('schody:' + inspector?.id) })" title="Barva nášlapů. Svislé části mají ve 3D tmavší odstín téže barvy.">
+                                    @include('partials.vyber-barvy', ['popisek' => 'Barva'])
+                                </div>
+                                <div class="text-orange-700" x-show="!inspector.pohodlne">Mimo běžný rozsah: výška stupně 150–200 mm, šířka schodiště od 80 cm, 2 × výška + nášlap kolem 630 mm.</div>
+                                <button type="button" @click="smazatSchody()" class="self-end border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400">Smazat</button>
+                            </div>
+                        </template>
+
+                        {{-- ZVÝŠENÁ PODLAHA PŘENESENÁ Z PODLAŽÍ NÍŽ, pod kterou není uzavřená místnost: odkud je, platnost
+                             tady, schody. Jinak ji vypíše panel místnosti (níže). --}}
+                        <template x-if="inspector.kind === 'plocha'">
+                            <div class="flex flex-col gap-1 w-full">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-600 font-medium whitespace-nowrap">Zvýšená podlaha</span>
+                                    <span class="text-gray-500 min-w-0 truncate" x-text="'+' + Math.round(inspector.dh * 100) + ' cm z ' + inspector.domov + (inspector.mistnost ? ' (' + inspector.mistnost + ')' : '')"></span>
+                                    <button type="button" @click="schodkyNaPlochu(inspector.id)" class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Krátké schody na tuto zvýšenou část podlahy">Schody</button>
+                                </div>
+                                <label class="flex items-center gap-1 text-gray-500" title="Zvýšení místnosti níž zvedá i strop, tedy podlahu tady. Odškrtnutím přenos na tomto podlaží vypnete.">
+                                    <input type="checkbox" :checked="inspector.zapnuto" @change="prepniPrenos(engine.dum.aktivni, inspector.id)"> platí i na tomto podlaží
+                                </label>
+                            </div>
+                        </template>
+
+                        {{-- BARVY OTVORŮ: u každého okna a dveří, ale platí pro celý dům. Jen otvor v obvodové stěně má dvě. --}}
+                        <template x-if="(inspector.kind === 'opening' || inspector.kind === 'opening_multi') && barvyOtvoru(inspector.typ) && inspector.obvodovy === true">
+                            <div class="flex flex-col gap-1 w-full pt-1 border-t border-gray-200" data-barvy-otvoru>
+                                <div class="text-gray-500" x-text="{ okno: 'Barvy všech oken v domě', dvere: 'Barvy všech vchodových dveří v domě', vrata: 'Barvy všech vrat v domě' }[barvyOtvoru(inspector.typ)]"></div>
+                                <div data-barva-otvoru="ven" x-data="vyberBarvy({ hodnota: () => barvaDomu(barvyOtvoru(inspector?.typ) + 'Ven'), nastav: (hex) => setBarvaDomu(barvyOtvoru(inspector?.typ) + 'Ven', hex), nahled: (hex) => nahledBarvy3d(barvyOtvoru(inspector?.typ) + 'Ven', hex), pouzite: () => barvyJinde(barvyOtvoru(inspector?.typ) + 'Ven') })">
+                                    @include('partials.vyber-barvy', ['popisek' => 'Venku'])
+                                </div>
+                                <div data-barva-otvoru="dovnitr" x-data="vyberBarvy({ hodnota: () => barvaDomu(barvyOtvoru(inspector?.typ) + 'Dovnitr'), nastav: (hex) => setBarvaDomu(barvyOtvoru(inspector?.typ) + 'Dovnitr', hex), nahled: (hex) => nahledBarvy3d(barvyOtvoru(inspector?.typ) + 'Dovnitr', hex), pouzite: () => barvyJinde(barvyOtvoru(inspector?.typ) + 'Dovnitr') })">
+                                    @include('partials.vyber-barvy', ['popisek' => 'Uvnitř'])
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="(inspector.kind === 'opening' || inspector.kind === 'opening_multi') && barvyOtvoru(inspector.typ) && inspector.obvodovy === false">
+                            <div class="flex flex-col gap-1 w-full pt-1 border-t border-gray-200" data-barvy-otvoru>
+                                <div class="text-gray-500" x-text="{ okno: 'Barva oken uvnitř domu', dvere: 'Barva všech vnitřních dveří v domě', vrata: 'Barva vrat uvnitř domu' }[barvyOtvoru(inspector.typ)]"></div>
+                                <div data-barva-otvoru="jedna" x-data="vyberBarvy({ hodnota: () => barvaDomu(barvaVnitrniho(inspector?.typ)), nastav: (hex) => setBarvaDomu(barvaVnitrniho(inspector?.typ), hex), nahled: (hex) => nahledBarvy3d(barvaVnitrniho(inspector?.typ), hex), pouzite: () => barvyJinde(barvaVnitrniho(inspector?.typ)) })">
+                                    @include('partials.vyber-barvy', ['popisek' => 'Barva'])
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- MÍSTNOST: název, podlaha ve 3D, barva v půdorysu, plocha jen pro čtení --}}
                         <template x-if="inspector.kind === 'mistnost'">
                             <div class="flex flex-col gap-1 w-full">
                                 <div class="flex items-center gap-2">
@@ -647,8 +815,58 @@
                                            @keydown.enter.prevent="$event.target.blur()">
                                     <span class="text-gray-500 whitespace-nowrap" x-text="inspector.plocha !== null ? inspector.plocha.toFixed(1).replace('.', ',') + ' m²' : ''"></span>
                                 </div>
-                                <div class="flex items-center gap-1">
-                                    <span class="text-gray-500 mr-1">barva:</span>
+                                <div class="kk-podlazi-pole" title="Povrch podlahy této místnosti ve 3D"><span class="w-24 shrink-0">Dekor podlahy</span>
+                                    <select class="flex-1 min-w-0 border border-gray-500 rounded px-1" data-dekor-podlahy @change="setMistnostPodlaha({ dekor: $event.target.value })">
+                                        <template x-for="k in dekoryPodlahVolby" :key="k.id">
+                                            <option :value="k.id" :selected="inspector.podlaha.dekor === k.id" x-text="k.nazev"></option>
+                                        </template>
+                                    </select></div>
+                                <div data-barva-podlahy x-data="vyberBarvy({ hodnota: () => inspector?.podlaha?.barva, nastav: (hex) => setMistnostPodlaha({ barva: hex }), nahled: (hex) => nahledBarvy3d('podlaha:' + inspector?.id, hex), pouzite: () => barvyJinde('podlaha:' + inspector?.id) })">
+                                    @include('partials.vyber-barvy', ['popisek' => 'Barva podlahy'])
+                                    <button type="button" x-show="inspector.podlaha.vlastni" @click="setMistnostPodlaha({ barva: null })" class="underline text-gray-500 hover:text-primary" title="Podlaha znovu převezme barvu vybraného dekoru">barva podle dekoru</button>
+                                </div>
+                                {{-- Úroveň podlahy: v úrovni podlaží (nic), zvýšená / snížená o cm, bez podlahy (galerie, otvor pro schody či šachtu).
+                                     Podrobnosti se ukážou až po přepnutí z výchozí volby. --}}
+                                <template x-if="inspector.uroven">
+                                    <div class="flex flex-col gap-1">
+                                        <div class="kk-podlazi-pole" title="Podlaha místnosti vůči podlaží. Bez podlahy = otvor ve stropu pod místností (galerie, schodiště, šachta), plocha se nepočítá."><span class="w-24 shrink-0">Úroveň podlahy</span>
+                                            <select class="flex-1 min-w-0 border border-gray-500 rounded px-1" data-uroven-podlahy @change="setMistnostUroven('typ', $event.target.value)">
+                                                <template x-for="t in typyPlochVolby" :key="t.id">
+                                                    <option :value="t.id" :selected="inspector.uroven.typ === t.id" x-text="t.nazev"></option>
+                                                </template>
+                                            </select>
+                                            <template x-if="inspector.uroven.typ === 'zvysena' || inspector.uroven.typ === 'snizena'">
+                                                <input type="number" min="0" max="300" step="1" class="w-16" title="O kolik je podlaha výš nebo níž než zbytek podlaží"
+                                                       :value="Math.round(Math.abs(inspector.uroven.dh) * 100)" @change="setMistnostUroven('dh', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()">
+                                            </template>
+                                            <span x-show="inspector.uroven.typ === 'zvysena' || inspector.uroven.typ === 'snizena'">cm</span>
+                                            <button type="button" x-show="inspector.uroven.typ === 'zvysena' || inspector.uroven.typ === 'snizena'" @click="schodkyNaPlochu()" class="kk-btn" title="Krátké schody k této podlaze">Schody</button>
+                                        </div>
+                                        {{-- Zvýšení se přenáší nahoru: zvedá se i strop, tedy podlaha nad ním --}}
+                                        <template x-if="inspector.uroven.typ === 'zvysena' && inspector.uroven.vyssi.length > 0">
+                                            <div class="flex items-center gap-1 flex-wrap">
+                                                <label class="flex items-center gap-1 text-gray-500" title="Zvýšení zvedne i strop, tedy podlahu podlaží nad ním. Klepnutím na podlaží přenos vypnete jen tam.">
+                                                    <input type="checkbox" :checked="inspector.uroven.prenos" @change="setMistnostUroven('prenos', $event.target.checked)"> přenést výš:
+                                                </label>
+                                                <template x-for="v in inspector.uroven.vyssi" :key="v.id">
+                                                    <button type="button" class="border rounded px-1.5 text-xs" :disabled="!inspector.uroven.prenos"
+                                                            :class="v.zapnuto && inspector.uroven.prenos ? 'border-orange-500 text-orange-700' : 'border-gray-400 text-gray-500'"
+                                                            @click="prepniPrenos(v.id)" x-text="v.nazev"></button>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        {{-- Zvýšená podlaha přenesená z podlaží níž, která zasahuje do této místnosti --}}
+                                        <template x-for="z in inspector.prenesene" :key="z.id">
+                                            <div class="flex items-center gap-2 text-gray-500">
+                                                <span class="min-w-0 truncate" x-text="'Zvýšená podlaha +' + Math.round(z.dh * 100) + ' cm z ' + z.domov + (z.mistnost ? ' (' + z.mistnost + ')' : '')"></span>
+                                                <button type="button" @click="schodkyNaPlochu(z.id)" class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Krátké schody na zvýšenou část">Schody</button>
+                                                <button type="button" @click="prepniPrenos(engine.dum.aktivni, z.id)" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Na tomto podlaží zvýšení neuplatnit">Nepřenášet sem</button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <div class="flex items-center gap-1" title="Jen pro přehled v půdorysu, do 3D se nepromítá">
+                                    <span class="text-gray-500 mr-1">v půdorysu:</span>
                                     <template x-for="b in inspector.paleta" :key="b">
                                         <button type="button" @click="setMistnostBarva(b)"
                                                 class="rounded border"
@@ -695,13 +913,31 @@
                                            @change="setWallTloustka(parseFloat($event.target.value) / 100, true)"
                                            @keydown.enter.prevent="$event.target.blur()">
                                     <span class="text-gray-500">cm</span>
+                                    {{-- Výška: prázdné = podle podlaží --}}
+                                    <span class="text-gray-500 ml-1">v:</span>
+                                    <input type="number" min="10" max="1200" step="1"
+                                           class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                           :placeholder="Math.round(inspector.vyskaAuto * 100)"
+                                           :value="inspector.vyskaVlastni !== null ? Math.round(inspector.vyskaVlastni * 100) : ''"
+                                           @change="setWallVyska($event.target.value === '' ? 0 : parseFloat($event.target.value) / 100)"
+                                           @keydown.enter.prevent="$event.target.blur()">
+                                    <span class="text-gray-500">cm</span>
                                 </div>
+                            </div>
+                        </template>
+                        {{-- Nosná stěna bez podpory v podlaží pod ní: označit a nabídnout řešení, nic samo nepřesouvat --}}
+                        <template x-if="inspector.kind === 'wall' && inspector.podepreni">
+                            <div class="flex items-center gap-1 flex-wrap w-full border-t border-gray-200 pt-1">
+                                <span style="color: var(--c-error)" title="Pod vyšrafovaným úsekem není v podlaží níž nosná ani obvodová stěna. Nic se nemění samo, je to jen upozornění." x-text="'Nepodepřeno ' + inspector.podepreni.delka.toFixed(1).replace('.', ',') + ' m nad ' + inspector.podepreni.dole"></span>
+                                <button type="button" @click="stenaNaPricku()" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Stěna přestane být nosná a upozornění zmizí">Změnit na příčku</button>
+                                <button type="button" @click="pridatPodperu()" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Přidá stejnou nosnou stěnu do podlaží níž">Přidat podpěru dolů</button>
                             </div>
                         </template>
                     </div>
                 </template>
                 </div>
             </div>
+            <div class="kk-dum-zprava" x-show="dumZprava" x-cloak x-text="dumZprava"></div>
             {{-- Měřítko s pravítkem --}}
             <div style="position:absolute;bottom:8px;right:12px;z-index:10;pointer-events:none;display:flex;align-items:center;gap:0" x-show="!rezim3d">
                 <div style="position:relative;height:10px" :style="'width:' + meritkoPx + 'px'">
@@ -787,6 +1023,178 @@
         </div>
 
         {{-- Parcela (Katastr) --}}
+        {{-- Podlaží a plochy: jediné místo pro přepínání, přidání a úpravu podlaží. Klik na řádek přepne,
+             tužka rozbalí úpravy právě toho řádku, přidání je oddělené a podlaží vzniká až potvrzením. --}}
+        <details class="kk-section" :open="panelOpen.plochy !== false" @toggle="panelOpen.plochy = $el.open; ulozitPanely()">
+            <summary class="kk-section-hlava">
+                <span>Podlaží a plochy</span>
+                <span x-show="seznamPodlazi.length > 1 && panelOpen.plochy === false" class="kk-pocet" x-text="nazevAktivniho"></span>
+                <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <template x-if="panelOpen.plochy !== false">
+                <div id="kk-podlazi-seznam" class="px-2 py-1.5">
+                    {{-- Střecha --}}
+                    <div class="kk-podlazi-radek" :class="[(rezimStrecha && !rezim3d) && 'kk-aktivni', (rezim3d && strechaPopis !== 'nastavit' && !zobrazStrechu3d) && 'kk-skryte', (rezim3d && strechaPopis !== 'nastavit' && zobrazStrechu3d) && 'kk-aktivni']"
+                         data-radek="strecha" @click="prepniStrechu()" :title="strechaPopis === 'nastavit' ? 'Vytvořit střechu' : (rezim3d ? 'Ukázat nebo skrýt střechu' : 'Ukázat střechu v půdorysu')">
+                        <span>Střecha</span>
+                        <span class="ml-auto whitespace-nowrap" x-text="strechaPopis"></span>
+                        <button type="button" class="kk-podlazi-tuzka" :class="podlaziUprava === 'strecha' && 'kk-aktivni'"
+                                title="Upravit střechu" data-upravit="strecha" @click.stop="prepniUpravuStrechy()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                        </button>
+                    </div>
+                    {{-- Nastavení střechy: typ, sklon, přesah, okap, krytina; hrany se přepínají klikem v půdorysu --}}
+                    <template x-if="podlaziUprava === 'strecha' && strechaPanel">
+                        <div class="kk-podlazi-uprava" data-uprava="strecha">
+                            <template x-if="!strechaPanel.st">
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-gray-500">Dům zatím střechu nemá. Vznikne nad obrysem horního podlaží.</span>
+                                    <button type="button" @click="strechaVytvor()" class="kk-btn self-start">Vytvořit střechu</button>
+                                </div>
+                            </template>
+                            <template x-if="strechaPanel.st">
+                                <div class="flex flex-col gap-1">
+                                    <div class="kk-podlazi-pole" title="Předvolba rozdělí hrany na okapy a štíty. Jednotlivé hrany jde pak změnit."><span class="w-24 shrink-0">Typ</span>
+                                        <select class="flex-1 min-w-0" @change="setStrecha('typ', $event.target.value)">
+                                            <template x-for="t in typyStrechVolby" :key="t.id">
+                                                <option :value="t.id" :selected="strechaPanel.st.typ === t.id" x-text="t.nazev"></option>
+                                            </template>
+                                        </select>
+                                        <button type="button" x-show="strechaPanel.st.typ === 'sedlova'" @click="setStrecha('otocHreben')" class="kk-btn" title="Otočit hřeben o 90°">⟳</button>
+                                    </div>
+                                    <div class="kk-podlazi-pole" title="Sklon střešních ploch ve stupních"><span class="w-24 shrink-0">Sklon</span>
+                                        <input type="number" min="1" max="75" step="1" class="w-16" :value="strechaPanel.st.sklon" :disabled="strechaPanel.st.typ === 'plocha'"
+                                               @change="setStrecha('sklon', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>°</span></div>
+                                    <div class="kk-podlazi-pole" title="O kolik okap přesahuje přes líc stěn"><span class="w-24 shrink-0">Přesah okapu</span>
+                                        <input type="number" min="0" max="300" step="5" class="w-16" :value="Math.round((strechaPanel.st.presah || 0) * 100)"
+                                               @change="setStrecha('presah', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                    <div class="kk-podlazi-pole" title="O kolik střecha přesahuje přes štítovou stěnu"><span class="w-24 shrink-0">Přesah štítu</span>
+                                        <input type="number" min="0" max="300" step="5" class="w-16" :value="Math.round((strechaPanel.st.presahStit || 0) * 100)"
+                                               @change="setStrecha('presahStit', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                    <div class="kk-podlazi-pole" title="Výška, kde střecha protne líc stěny, měřená od podlahy horního podlaží"><span class="w-24 shrink-0">Výška okapu</span>
+                                        <input type="number" min="0" max="1200" step="5" class="w-16" :value="Math.round(strechaPanel.zOkap * 100)"
+                                               @change="setStrecha('vyskaOkapu', $event.target.value === '' ? null : parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span>
+                                        <span class="ml-auto whitespace-nowrap" title="Nejvyšší bod střechy nad podlahou horního podlaží" x-show="strechaPanel.zMax !== null" x-text="strechaPanel.zMax !== null ? 'hřeben ' + strechaPanel.zMax.toFixed(2).replace('.', ',') + ' m' : ''"></span></div>
+                                    <div class="kk-podlazi-pole" title="Typ určuje reliéf krytiny ve 3D. Platí pro celou střechu."><span class="w-24 shrink-0">Krytina</span>
+                                        <select class="flex-1 min-w-0" data-krytina @change="setStrecha('krytina', $event.target.value)">
+                                            <template x-for="k in krytinyVolby" :key="k.id">
+                                                <option :value="k.id" :selected="strechaPanel.krytina === k.id" x-text="k.nazev"></option>
+                                            </template>
+                                        </select></div>
+                                    <div x-data="vyberBarvy({ hodnota: () => strechaPanel?.barva, nastav: (hex) => setStrecha('barva', hex), nahled: (hex) => nahledBarvyStrechy(hex), pouzite: () => barvyJinde('strecha') })">
+                                        @include('partials.vyber-barvy', ['popisek' => 'Barva'])
+                                    </div>
+                                    <div class="text-gray-500" x-show="strechaPanel.bezObrysu">Horní podlaží nemá uzavřený obrys, střechu nelze spočítat.</div>
+                                    {{-- Vybraná hrana: co nemá vlastní, bere z celku --}}
+                                    <template x-if="strechaPanel.hrana">
+                                        <div class="flex flex-col gap-1 mt-1 pt-1 border-t border-gray-200" data-hrana-panel>
+                                            <div class="kk-podlazi-pole" title="Okap: od hrany střecha stoupá. Štít: hrana končí svislou stěnou."><span class="w-24 shrink-0 font-semibold">Vybraná hrana</span>
+                                                <select class="flex-1 min-w-0" @change="setHranaStrechy(strechaPanel.hrana.klic, { typ: $event.target.value })">
+                                                    <option value="okap" :selected="strechaPanel.hrana.typ === 'okap'">Okap (střecha stoupá)</option>
+                                                    <option value="stit" :selected="strechaPanel.hrana.typ === 'stit'">Štít (svislá stěna)</option>
+                                                </select></div>
+                                            <template x-if="strechaPanel.hrana.typ === 'okap'">
+                                                <div class="kk-podlazi-pole" title="Sklon této plochy"><span class="w-24 shrink-0">Sklon</span>
+                                                    <input type="number" min="1" max="75" step="1" class="w-16" data-hrana="sklon" :value="strechaPanel.hrana.sklon"
+                                                           @change="setHranaStrechy(strechaPanel.hrana.klic, { sklon: parseFloat($event.target.value) })" @keydown.enter.prevent="$event.target.blur()"><span>°</span></div>
+                                            </template>
+                                            <div class="kk-podlazi-pole" :title="strechaPanel.hrana.typ === 'okap' ? 'O kolik okap této plochy přesahuje přes líc stěny' : 'O kolik střecha přesahuje přes tuto štítovou stěnu'"><span class="w-24 shrink-0" data-hrana-popisek="presah" x-text="strechaPanel.hrana.typ === 'okap' ? 'Přesah okapu' : 'Přesah štítu'"></span>
+                                                <input type="number" min="0" max="300" step="5" class="w-16" data-hrana="presah" :value="Math.round(strechaPanel.hrana.presah * 100)"
+                                                       @change="setHranaStrechy(strechaPanel.hrana.klic, { presah: $event.target.value === '' ? null : parseFloat($event.target.value) / 100 })" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                            <template x-if="strechaPanel.hrana.typ === 'okap'">
+                                                <div class="kk-podlazi-pole" title="Výška, kde tato plocha protne líc stěny"><span class="w-24 shrink-0">Výška okapu</span>
+                                                    <input type="number" min="0" max="1200" step="5" class="w-16" data-hrana="vyskaOkapu" :value="Math.round(strechaPanel.hrana.z * 100)"
+                                                           @change="setHranaStrechy(strechaPanel.hrana.klic, { vyskaOkapu: $event.target.value === '' ? null : parseFloat($event.target.value) / 100 })" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                            </template>
+                                            <template x-if="strechaPanel.hrana.typ === 'okap'">
+                                                <div x-data="vyberBarvy({ hodnota: () => strechaPanel?.hrana?.barva || strechaPanel?.barva, nastav: (hex) => setHranaStrechy(strechaPanel.hrana.klic, { barva: hex }), nahled: (hex) => nahledBarvyStrechy(hex, strechaPanel.hrana.klic), pouzite: () => barvyJinde('hrana:' + strechaPanel?.hrana?.klic) })">
+                                                    @include('partials.vyber-barvy', ['popisek' => 'Barva'])
+                                                    <button type="button" x-show="strechaPanel.hrana.barva" @click="setHranaStrechy(strechaPanel.hrana.klic, { barva: null })" class="underline text-gray-500 hover:text-primary" title="Plocha znovu převezme barvu celé střechy">stejná jako střecha</button>
+                                                </div>
+                                            </template>
+                                            <button type="button" x-show="strechaPanel.hrana.rucne" @click="hranaJakoCelek(strechaPanel.hrana.klic)" class="self-start underline text-gray-500 hover:text-primary" title="Hrana znovu bere všechny hodnoty z nastavení celé střechy">vrátit na nastavení celé střechy</button>
+                                        </div>
+                                    </template>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gray-500" x-show="!strechaPanel.hrana" x-text="rezim3d ? 'Hrany se přepínají ve 2D.' : 'Klepnutím na hranu v půdorysu ji přepnete.'"></span>
+                                        <button type="button" @click="smazatStrechu()" title="Smaže střechu. Stěny a podlaží zůstanou." class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs whitespace-nowrap hover:bg-red-50 hover:border-red-400">Smazat střechu</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    {{-- Podlaží shora dolů --}}
+                    <template x-for="p in radkyPodlazi" :key="p.id">
+                        <div>
+                            <div class="kk-podlazi-radek" :data-radek="p.id"
+                                 :class="[(p.aktivni && !rezimStrecha && !rezim3d) && 'kk-aktivni', (rezim3d && !p.viditelne3d) && 'kk-skryte', (rezim3d && p.viditelne3d) && 'kk-aktivni']"
+                                 @click="naPodlazi(p.id)" :title="rezim3d ? 'Ukázat nebo skrýt ' + p.nazev : 'Přejít na ' + p.nazev">
+                                <span x-text="p.nazev"></span>
+                                <span class="kk-podlazi-pozor" x-show="p.nepodeprene > 0 && !rezim3d" x-text="p.nepodeprene" :title="'Nosné stěny bez podpory v podlaží níž: ' + p.nepodeprene + '. V půdorysu jsou červeně vyšrafované.'"></span>
+                                <span class="ml-auto whitespace-nowrap" :title="'Plocha místností bez stěn. Počet místností: ' + p.pocet" x-text="p.plocha.toFixed(1).replace('.', ',') + ' m²'"></span>
+                                <button type="button" class="kk-podlazi-tuzka" :class="podlaziUprava === p.id && 'kk-aktivni'"
+                                        :title="'Upravit ' + p.nazev" :data-upravit="p.id" @click.stop="prepniUpravuPodlazi(p.id)">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                                </button>
+                            </div>
+                            <div class="text-[11px] text-gray-500 pl-2 pb-0.5" x-show="p.typ === 'podkrovi' && Math.abs(p.plocha - p.zap) >= 0.05"
+                                 x-text="'z toho nad 1,3 m: ' + p.zap.toFixed(1).replace('.', ',') + ' m²'"></div>
+                            {{-- Úpravy tohoto podlaží, ať je jasné, co se mění --}}
+                            <template x-if="podlaziUprava === p.id">
+                                <div class="kk-podlazi-uprava" :data-uprava="p.id">
+                                    <div class="kk-podlazi-pole" title="Vlastní název podlaží. Bez něj se číslují samy."><span class="w-24 shrink-0">Název</span>
+                                        <input type="text" class="flex-1 min-w-0" maxlength="30" :value="p.nazev"
+                                               @change="setPodlazi(p.id, 'nazev', $event.target.value)" @keydown.enter.prevent="$event.target.blur()"></div>
+                                    <div class="kk-podlazi-pole" title="Od podlahy tohoto podlaží po podlahu podlaží nad ním, včetně stropu."><span class="w-24 shrink-0">Konstr. výška</span>
+                                        <input type="number" class="w-16" min="150" max="1200" step="1" :value="Math.round(p.vyska * 100)"
+                                               @change="setPodlazi(p.id, 'vyska', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                    <div class="kk-podlazi-pole" title="Stropní deska nad tímto podlažím. Odečítá se od konstrukční výšky."><span class="w-24 shrink-0">Tloušťka stropu</span>
+                                        <input type="number" class="w-16" min="0" max="150" step="1" :value="Math.round(p.strop * 100)"
+                                               @change="setPodlazi(p.id, 'strop', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                    <div class="kk-podlazi-pole" title="Výška podlahy tohoto podlaží. Změna posune celý dům nahoru nebo dolů, podlaží zůstanou na sobě. Vzdálenost mezi nimi se mění konstrukční výškou."><span class="w-24 shrink-0">Kóta podlahy</span>
+                                        <input type="number" class="w-16" step="1" :value="Math.round(p.kota * 100)" :data-kota="p.id"
+                                               @change="setPodlazi(p.id, 'kota', $event.target.value === '' ? null : parseFloat($event.target.value) / 100); $event.target.value = Math.round(engine.kotaPodlazi(p.id) * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span>
+                                        <button type="button" x-show="posunDomu !== 0" class="underline whitespace-nowrap hover:text-primary" title="Dům se vrátí tak, aby podlaha 1.NP měla kótu 0" data-kota-nula @click="kotaNaNulu()">vrátit 1.NP na 0</button></div>
+                                    <div title="Barva fasády. Platí pro vnější stranu domu, ve všech podlažích stejně, včetně okrajů podlah a stropů. Vnitřní zdi jsou ve 3D bílé." data-barva-fasady
+                                         x-data="vyberBarvy({ hodnota: () => barvaDomu('fasada'), nastav: (hex) => setBarvaDomu('fasada', hex), nahled: (hex) => nahledBarvy3d('fasada', hex), pouzite: () => barvyJinde('fasada') })">
+                                        @include('partials.vyber-barvy', ['popisek' => 'Barva domu'])
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gray-500" title="Od podlahy po spodek stropu: konstrukční výška minus tloušťka stropu. Tak vysoké jsou stěny." x-text="'Světlá výška ' + p.svetla.toFixed(2).replace('.', ',') + ' m'"></span>
+                                        <button type="button" x-show="seznamPodlazi.length > 1" @click="smazatPodlazi(p.id)" title="Smaže podlaží i s jeho kresbou. Vrátit to jde přes Zpět."
+                                                class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400" x-text="'Smazat ' + p.nazev"></button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    <div class="flex items-center gap-2 px-2 py-1 mt-1 border-t border-gray-200 text-xs font-semibold text-gray-700" x-show="prehledPloch && seznamPodlazi.length > 1" title="Součet ploch místností všech podlaží">
+                        <span>Celkem</span>
+                        <span class="ml-auto pr-8" x-text="prehledPloch ? prehledPloch.celkem.toFixed(1).replace('.', ',') + ' m²' : ''"></span>
+                    </div>
+                    <div class="text-[11px] text-gray-500 px-2 pt-1" x-show="rezim3d">Zvýrazněné řádky jsou vidět. Klepnutím je ukážete nebo skryjete.</div>
+                    {{-- Přidání: podlaží vzniká až klepnutím na konkrétní volbu --}}
+                    <div class="mt-1">
+                        <button type="button" id="kk-pridat-podlazi" @click="podlaziPridat = !podlaziPridat; podlaziUprava = null" class="kk-btn w-full text-xs" title="Nabídne, jaké podlaží přidat. Vznikne až po výběru." x-text="podlaziPridat ? 'Zavřít' : '+ Přidat podlaží'"></button>
+                        <template x-if="podlaziPridat">
+                            <div class="flex flex-col gap-1 pt-1.5">
+                                <div class="flex items-center gap-1">
+                                    <button type="button" @click="pridatPodlazi('nahoru')" class="kk-btn flex-1 text-xs" title="Nové běžné podlaží nahoře, případně pod podkrovím">Patro nahoře</button>
+                                    <button type="button" @click="pridatPodlazi('sklep')" class="kk-btn flex-1 text-xs" title="Nové podlaží pod nejnižším podlažím">Sklep</button>
+                                    <button type="button" x-show="!maPodkrovi" @click="pridatPodlazi('podkrovi')" class="kk-btn flex-1 text-xs" title="Podlaží pod střechou: stěny končí pod střechou, plocha pod 1,3 m se nezapočítá">Podkroví</button>
+                                </div>
+                                <label class="kk-podlazi-pole" title="Nové podlaží začne kopií obvodových a nosných stěn sousedního podlaží. Příčky a otvory se nepřenášejí."><input type="checkbox" x-model="podlaziKopie" @change="_ulozNastaveniDumu()"> převzít obvodové a nosné stěny</label>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="flex items-center gap-2 px-1 pt-1.5" x-show="seznamPodlazi.length > 1 && !rezim3d">
+                        <label class="kk-podlazi-pole" x-show="maSpodek" title="Ukáže půdorys podlaží pod tímto jako šedý podklad, abyste na něj mohli navázat stěny. Nic se tím nemění."><input type="checkbox" :checked="zobrazSpodek" @change="prepniSpodek()"> ukázat podlaží níž</label>
+                        <button type="button" @click="posunoutDum()" title="Označí všechny stěny. Tažením pak posunete nebo otočíte celý dům. Samostatné podlaží posunout nejde." class="ml-auto text-xs text-gray-500 hover:text-primary underline">Posunout celý dům</button>
+                    </div>
+                </div>
+            </template>
+        </details>
+
         <details class="kk-section" :open="panelOpen.parcela" @toggle="panelOpen.parcela = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
                 <span>Parcela</span>
@@ -992,6 +1400,11 @@
                         <div class="text-[10px] text-gray-500">
                             změřeno · <span x-text="podklad.sirkaM.toFixed(1) + ' × ' + podklad.vyskaM.toFixed(1) + ' m'"></span>
                         </div>
+                        {{-- Usazení plánku na spodní podlaží a posun samotného plánku --}}
+                        <div class="flex items-center gap-1 flex-wrap">
+                            <button type="button" x-show="maSpodek" @click="licoZacni()" class="kk-btn text-xs">Usadit na spodní podlaží</button>
+                            <button type="button" @click="prepniPosunPodkladu()" class="kk-btn text-xs" :class="posunPodkladu && 'kk-tl-aktivni'">Posunout plánek</button>
+                        </div>
                         {{-- Zobrazení podkladu — oddělené čarou, ať je vidět, že patří k sobě.
                              „Nad“ umožní obkreslovat i tam, kde už stěna leží. --}}
                         <div class="pt-2 mt-1 border-t border-gray-200">
@@ -1018,6 +1431,52 @@
                         <div class="flex gap-1">
                             <button @click="impOtevri()" class="kk-btn flex-1 text-xs">Nový výkres…</button>
                             <button @click="podkladOdeber()" class="kk-btn text-xs text-red-600">Odebrat</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </details>
+
+        {{-- Export a sdílení: obrázky vznikají v prohlížeči, odkaz je hotový stav jen pro čtení (modules/sdileni.md) --}}
+        <details class="kk-section" data-sekce-export :open="panelOpen.export" @toggle="panelOpen.export = $el.open; ulozitPanely(); if ($el.open && !sdileni) nactiSdileni()">
+            <summary class="kk-section-hlava">
+                <span>Export a sdílení</span>
+                <span x-show="sdileni?.aktivni" class="kk-pocet" title="Odkaz je zapnutý">odkaz</span>
+                <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <div class="px-3 py-2 flex flex-col gap-2 text-xs">
+                <template x-if="!exportPovolen">
+                    <div class="text-gray-500">{{ __('tarify.exporty_jen_placene') }}</div>
+                </template>
+                <template x-if="exportPovolen">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex flex-wrap gap-1">
+                            <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="pudorys" title="Aktivní podlaží jako obrázek PNG" @click="exportPudorys(false)">Půdorys PNG</button>
+                            <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="pudorysy" title="Všechna podlaží na jednom obrázku" @click="exportPudorys(true)">Všechna podlaží</button>
+                            <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="3d" title="3D z aktuálního pohledu jako obrázek PNG" @click="export3d()">3D PNG</button>
+                        </div>
+                        <div class="flex flex-col gap-1 pt-2 border-t border-gray-200">
+                            <div class="font-semibold text-gray-700">Odkaz jen pro čtení</div>
+                            <template x-if="!sdileni?.aktivni">
+                                <div class="flex flex-col gap-1">
+                                    <div class="text-gray-500">Kdo má odkaz, uvidí 3D a půdorysy bez přihlášení. Ukazuje stav k okamžiku vytvoření, k editoru se nedostane.</div>
+                                    <button type="button" class="kk-btn text-xs self-start" :disabled="sdileniBezi" data-sdileni="vytvorit" @click="sdileniUloz()" x-text="sdileniBezi ? 'Připravuji…' : 'Vytvořit odkaz'"></button>
+                                </div>
+                            </template>
+                            <template x-if="sdileni?.aktivni">
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-1">
+                                        <input type="text" readonly class="flex-1 min-w-0 border border-gray-500 rounded px-1" x-ref="sdileniAdresa" data-sdileni="adresa" :value="sdileni.url" @focus="$event.target.select()">
+                                        <button type="button" class="kk-btn text-xs" data-sdileni="kopirovat" @click="sdileniKopiruj()" x-text="sdileniZkopirovano ? 'Zkopírováno' : 'Kopírovat'"></button>
+                                    </div>
+                                    <div class="text-gray-500" x-text="'Stav k ' + new Date(sdileni.upraveno).toLocaleString('cs-CZ')"></div>
+                                    <div class="flex flex-wrap gap-1">
+                                        <a class="kk-btn text-xs" :href="sdileni.url" target="_blank" rel="noopener noreferrer" data-sdileni="otevrit">Otevřít</a>
+                                        <button type="button" class="kk-btn text-xs" :disabled="sdileniBezi" data-sdileni="aktualizovat" title="Nahraje aktuální stav projektu, adresa zůstane stejná" @click="sdileniUloz()" x-text="sdileniBezi ? 'Připravuji…' : 'Aktualizovat'"></button>
+                                        <button type="button" class="kk-btn text-xs" :disabled="sdileniBezi" data-sdileni="vypnout" title="Odkaz přestane fungovat" @click="sdileniVypni()">Vypnout odkaz</button>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </template>
@@ -1430,6 +1889,7 @@ if (!{{ $aktivni?->id ?? 'null' }}) {
 <script src="/js/koncept-v3/koncept-k-ui.js?v={{ filemtime(public_path('js/koncept-v3/koncept-k-ui.js')) }}"></script>
 <script src="/js/koncept-v3/import-analyza.js?v={{ filemtime(public_path('js/koncept-v3/import-analyza.js')) }}"></script>
 <script src="/js/koncept-v3/import-prohlizec.js?v={{ filemtime(public_path('js/koncept-v3/import-prohlizec.js')) }}"></script>
+<script src="/js/koncept-v3/dum.js?v={{ filemtime(public_path('js/koncept-v3/dum.js')) }}"></script>
 <script src="/js/koncept-v3/import-pudorysu.js?v={{ filemtime(public_path('js/koncept-v3/import-pudorysu.js')) }}"></script>
 <script src="/js/koncept-v3/limit-tarifu.js?v={{ filemtime(public_path('js/koncept-v3/limit-tarifu.js')) }}"></script>
 <script>
@@ -1450,7 +1910,9 @@ var _kkInitData = {
     historie: @json($aktivni?->historie ?? []),
     historieAktualni: @json($aktivni?->historie_aktualni),
     csrf: '{{ csrf_token() }}',
+    exporty: @json(\App\Support\Tarif::maExporty(auth()->user())),
     routes: {
+        sdileni: '{{ route($trasaV3 . ".sdileni", ":id") }}',
         ulozit: '{{ route($trasaV3 . ".ulozit", ":id") }}',
         aiVytvor: '{{ route($trasaV3 . ".aiVytvor") }}',
         aiUprav: '{{ route($trasaV3 . ".aiUprav", ":id") }}',

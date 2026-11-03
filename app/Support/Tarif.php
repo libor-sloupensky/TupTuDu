@@ -62,6 +62,12 @@ final class Tarif
         return $hodnota === null ? null : (int) $hodnota;
     }
 
+    /** Export obrázků a sdílení odkazem: placené tarify (modules/platby.md). */
+    public static function maExporty(Uzivatel $uzivatel): bool
+    {
+        return (bool) config('tarify.tarify.' . self::uzivatele($uzivatel) . '.exporty', false);
+    }
+
     /** Úpravy v editoru dnes (den podle časové zóny aplikace). */
     public static function upravDnes(Uzivatel $uzivatel): int
     {

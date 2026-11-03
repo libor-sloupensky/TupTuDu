@@ -141,6 +141,7 @@ const TYPY_KRIDEL = {
 const naCm = (m) => Math.round(m * 100) / 100;
 
 /** Jemné pastelové barvy místností (sytost kolem 15 %) — přidělují se dokola. */
+const MAX_ODCHYLKA_ROVNOBEZNE = Math.sin(3 * Math.PI / 180);   // rovnoběžné stěny: do 3°
 const PALETA_MISTNOSTI = ['#fbe9dc', '#e4eefb', '#e5f3e4', '#fbf4d6', '#efe8f8', '#e0f3f1', '#f8e6ea', '#ececec'];
 
 /**
@@ -598,7 +599,12 @@ class StavebniEngine {
         this.prostory = [];        // [{id, typ, podtyp, polygon:[[x,y]..m], plocha_m2, nazev, venkovni}]
         this.vybaveni = [];        // [{id, typ, podtyp, kategorie, polygon, stred:[x,y px], sirka, hloubka, uhel, vyska}] — souřadnice v canvas px
         this.oddelovace = new Map(); // id → {id, a, b, delkaPx}; konec = {x, y, host?: {stena, t, strana}} — viz addOddelovac
-        this.mistnosti = [];         // [{id, nazev, barva, kotva:{x,y px}}] — plochy počítá rastr (mistnosti.js), záznam drží jméno a barvu u kotvy
+        this.mistnosti = [];         // [{id, nazev, barva, podlaha:{dekor, barva}, kotva:{x,y px}}] — plochy počítá rastr (mistnosti.js), záznam drží jméno a barvu u kotvy; barva je pro půdorys, podlaha pro 3D
+        // Dům: podlaží, schody, výškové plochy, střecha. Engine drží v nodes/walls/… vždy
+        // AKTIVNÍ podlaží, ostatní leží v dum.podlazi[].data jako JSON, se kterým se NIKDY
+        // nehýbe na místě (úprava = nový objekt) — snímky Zpět na ně proto jen odkazují.
+        this.dum = StavebniEngine.vychoziDum();
+        this._tmpEnginy = new WeakMap();   // data podlaží → engine jen pro čtení (podklad, kontroly, 3D)
         this.nextId = 1;
         this.MAGNET_DIST = options.magnetDist || 16;
         this.PX_PER_M = options.pxPerM || 80;
@@ -671,7 +677,429 @@ class StavebniEngine {
         if (magnetNode) {
             return { x: magnetNode.x, y: magnetNode.y, magnetNodeId: magnetNode.id };
         }
+        // Rohy a osy nosných a obvodových stěn podlaží pod aktivním — stěny patra mají
+        // navazovat na ty dole (vlastní uzel má vždy přednost)
+        // a stěna tohoto podlaží v dosahu: tam patří okraj nebo střih, ne volný bod.
+        const dole = this.findSnapCandidate(x, y, dosah, null, true) ? null : this.magnetSpodku(x, y, dosah);
+        if (dole) return { x: dole.x, y: dole.y, magnetNodeId: null, magnetSpodek: true };
         return { x: sx, y: sy, magnetNodeId: null };
+    }
+
+    // ─── DŮM: PODLAŽÍ ──────────────────────────────────
+    /** Barvy společné pro celý dům: fasáda a výplně otvorů zvlášť venku a uvnitř. */
+    static vychoziBarvyDomu() {
+        return {
+            fasada: '#6b6b6b',
+            oknoVen: '#f3f4f6', oknoDovnitr: '#f3f4f6',
+            dvereVen: '#6b4226', dvereDovnitr: '#6b4226',   // dveře v obvodové stěně
+            dvereVnitrni: '#6b4226',                        // dveře uvnitř domu mají jednu barvu
+            vrataVen: '#8a8a8a', vrataDovnitr: '#8a8a8a',
+        };
+    }
+
+    static vychoziDum() {
+        return {
+            verze: 1,
+            aktivni: 'P1',
+            // Kóta podlahy prvního nadzemního podlaží (m). Kóty ostatních plynou z konstrukčních
+            // výšek, podlaží proto nejde nasunout do sebe ani od sebe odtrhnout.
+            posunVysky: 0,
+            barvy: StavebniEngine.vychoziBarvyDomu(),
+            // Pořadí zdola nahoru. vyska = konstrukční výška (podlaha až podlaha), strop = tloušťka
+            // stropu nad podlažím. typ: bezne | sklep | podkrovi; data = JSON kresby, u aktivního null.
+            podlazi: [{ id: 'P1', nazev: '1.NP', typ: 'bezne', vyska: 3.05, strop: 0.25, data: null }],
+            schodiste: [],   // [{id, odPodlazi, doPodlazi, plocha? (schody k výškové ploše), tvar: prime|L|U, x, y (m, y nahoru), uhel (rad), sirka, strana, vyskaStupne?, naslap?, casti?, barva?}]
+            plochy: [],      // [{id, podlazi, mistnost, typ: zvysena|snizena|bez_podlahy, dh, body:[[x,y] m] = obrys místnosti z rastru, prenos, vypnuto:[id podlaží]}]
+            strecha: null,   // {typ, sklon, presah, presahStit, vyskaOkapu, krytina, hrany:{klíč:{typ,sklon,presah}}}
+        };
+    }
+
+    static normalizujDum(d) {
+        const v = StavebniEngine.vychoziDum();
+        const podlazi = Array.isArray(d.podlazi) && d.podlazi.length ? d.podlazi : v.podlazi;
+        const dum = {
+            verze: d.verze || 1,
+            aktivni: d.aktivni,
+            // Starší ruční kóty jednotlivých podlaží (kotaRucne) se záměrně nepřebírají
+            posunVysky: typeof d.posunVysky === 'number' ? d.posunVysky : 0,
+            // Starší uložení měla jednu barvu dveří „uvnitř" i pro vnitřní dveře
+            barvy: Object.fromEntries(Object.entries(v.barvy).map(([k, b]) => {
+                const ulozena = d.barvy?.[k] ?? (k === 'dvereVnitrni' ? d.barvy?.dvereDovnitr : null);
+                return [k, /^#[0-9a-fA-F]{6}$/.test(ulozena || '') ? ulozena : b];
+            })),
+            podlazi: podlazi.map(p => ({
+                id: p.id, nazev: p.nazev || p.id, typ: p.typ || 'bezne',
+                vyska: typeof p.vyska === 'number' && p.vyska > 0 ? p.vyska : 3.05,
+                strop: typeof p.strop === 'number' && p.strop >= 0 ? p.strop : 0.25,
+                vlastniNazev: !!p.vlastniNazev,
+                data: p.data || null,
+            })),
+            schodiste: Array.isArray(d.schodiste) ? JSON.parse(JSON.stringify(d.schodiste)) : [],
+            // Výšková plocha patří místnosti (mistnost = id záznamu), obrys si bere z rastru. Starší
+            // „prostup" je totéž co bez podlahy; volně kreslené plochy bez místnosti (do 3. 11. 2026)
+            // se nepřebírají — neměly by ke komu patřit.
+            plochy: (Array.isArray(d.plochy) ? d.plochy : [])
+                .filter(a => a && a.mistnost)
+                .map(a => JSON.parse(JSON.stringify({ ...a, typ: a.typ === 'prostup' ? 'bez_podlahy' : a.typ, body: Array.isArray(a.body) ? a.body : [] }))),
+            strecha: d.strecha ? JSON.parse(JSON.stringify(d.strecha)) : null,
+        };
+        if (!dum.podlazi.some(p => p.id === dum.aktivni)) dum.aktivni = dum.podlazi[0].id;
+        return dum;
+    }
+
+    /** Kopie domu do snímku: data podlaží se jen odkazují (nemění se na místě), zbytek se klonuje. */
+    static kopieDumu(d) {
+        return {
+            verze: d.verze, aktivni: d.aktivni, posunVysky: d.posunVysky || 0, barvy: { ...d.barvy },
+            podlazi: d.podlazi.map(p => ({ ...p })),
+            schodiste: JSON.parse(JSON.stringify(d.schodiste || [])),
+            plochy: JSON.parse(JSON.stringify(d.plochy || [])),
+            strecha: d.strecha ? JSON.parse(JSON.stringify(d.strecha)) : null,
+        };
+    }
+
+    aktivniPodlazi() {
+        return this.dum.podlazi.find(p => p.id === this.dum.aktivni) || this.dum.podlazi[0];
+    }
+
+    podlaziPodleId(id) {
+        return this.dum.podlazi.find(p => p.id === id) || null;
+    }
+
+    /** Podlaží hned pod / nad daným (null = není). */
+    podlaziPod(id) {
+        const i = this.dum.podlazi.findIndex(p => p.id === id);
+        return i > 0 ? this.dum.podlazi[i - 1] : null;
+    }
+
+    podlaziNad(id) {
+        const i = this.dum.podlazi.findIndex(p => p.id === id);
+        return i >= 0 && i < this.dum.podlazi.length - 1 ? this.dum.podlazi[i + 1] : null;
+    }
+
+    /** Nejvyšší podlaží — nad ním je střecha. */
+    horniPodlazi() {
+        return this.dum.podlazi[this.dum.podlazi.length - 1];
+    }
+
+    /**
+     * Kóty podlah v metrech: ±0,000 je podlaha prvního nadzemního podlaží,
+     * ostatní se dopočítají z konstrukčních výšek. Ručně přepsaná kóta platí
+     * a výpočet od ní pokračuje dál.
+     */
+    kotyPodlazi() {
+        const pp = this.dum.podlazi;
+        const kory = new Map();
+        const zaklad = Math.max(0, pp.findIndex(p => p.typ !== 'sklep'));
+        kory.set(pp[zaklad].id, this.dum.posunVysky || 0);
+        for (let i = zaklad + 1; i < pp.length; i++) {
+            kory.set(pp[i].id, kory.get(pp[i - 1].id) + pp[i - 1].vyska);
+        }
+        for (let i = zaklad - 1; i >= 0; i--) {
+            kory.set(pp[i].id, kory.get(pp[i + 1].id) - pp[i].vyska);
+        }
+        return kory;
+    }
+
+    kotaPodlazi(id) {
+        return this.kotyPodlazi().get(id) ?? 0;
+    }
+
+    /** Světlá výška podlaží = konstrukční výška bez stropu. */
+    svetlaVyska(p = this.aktivniPodlazi()) {
+        return Math.max(0.5, (p?.vyska ?? 3.05) - (p?.strop ?? 0.25));
+    }
+
+    /**
+     * Výška stěny v metrech: vlastní, jinak typ (zídka, plot), jinak světlá výška
+     * podlaží. Na tomhle se 3D a strop otvoru shodnou na jednom místě.
+     */
+    vyskaSteny(wall, p = this.aktivniPodlazi()) {
+        if (typeof wall?.vyska === 'number' && wall.vyska > 0) return wall.vyska;
+        return TYPY_STEN[wall?.typ]?.vyska?.default || this.svetlaVyska(p);
+    }
+
+    /** JSON kresby podlaží: aktivní z enginu, ostatní z uloženého. */
+    jsonPodlazi(id) {
+        if (id === this.dum.aktivni) return this._jsonPodlazi();
+        return this.podlaziPodleId(id)?.data || { steny: [], otvory: [] };
+    }
+
+    /** Engine podlaží JEN PRO ČTENÍ. Aktivní je tenhle; ostatní se staví jednou na objekt dat. */
+    enginePodlazi(id) {
+        if (id === this.dum.aktivni) return this;
+        const data = this.podlaziPodleId(id)?.data;
+        if (!data) return null;
+        let eng = this._tmpEnginy.get(data);
+        if (!eng) {
+            eng = new StavebniEngine({ pxPerM: this.PX_PER_M });
+            eng.fromJSON(data, { zachovatDum: true });
+            this._tmpEnginy.set(data, eng);
+        }
+        return eng;
+    }
+
+    /** Přepne aktivní podlaží: kresba se odloží do domu, nová se načte. */
+    prepniPodlazi(id) {
+        const cil = this.podlaziPodleId(id);
+        if (!cil || id === this.dum.aktivni) return false;
+        const data = cil.data || { steny: [], otvory: [] };
+        this.aktivniPodlazi().data = this._jsonPodlazi();
+        cil.data = null;
+        this.dum.aktivni = id;
+        this.fromJSON(data, { zachovatDum: true });
+        return true;
+    }
+
+    /**
+     * Přidá podlaží a přepne na něj.
+     * @param {'nahoru'|'sklep'|'podkrovi'} kam
+     * @param {{kopie?: boolean}} nast  kopie = převzít obvodové a nosné stěny sousedního podlaží
+     */
+    pridejPodlazi(kam, nast = {}) {
+        const pp = this.dum.podlazi;
+        if (kam === 'podkrovi' && pp.some(p => p.typ === 'podkrovi')) return null;
+        let n = 1;
+        while (pp.some(p => p.id === 'P' + n)) n++;
+        const dolu = kam === 'sklep';
+        const indexPodkrovi = pp.findIndex(p => p.typ === 'podkrovi');
+        const index = dolu ? 0 : (kam === 'nahoru' && indexPodkrovi >= 0 ? indexPodkrovi : pp.length);
+        const zdroj = dolu ? pp[0] : pp[index - 1];
+        const vychozi = { sklep: { vyska: 2.7, strop: 0.25 }, podkrovi: { vyska: 3.2, strop: 0.2 }, nahoru: { vyska: zdroj?.vyska ?? 3.05, strop: zdroj?.strop ?? 0.25 } }[kam];
+        const nove = {
+            id: 'P' + n, nazev: '', typ: kam === 'nahoru' ? 'bezne' : kam,
+            vyska: vychozi.vyska, strop: vychozi.strop, vlastniNazev: false,
+            data: nast.kopie === false ? { steny: [], otvory: [] } : this._kopieNosnych(zdroj.id),
+        };
+        pp.splice(index, 0, nove);
+        this.prejmenujPodlazi();
+        this.prepniPodlazi(nove.id);
+        return nove;
+    }
+
+    /** Kopie obvodových a nosných stěn podlaží (bez otvorů a vazeb na vynechané stěny). */
+    _kopieNosnych(id) {
+        const json = this.jsonPodlazi(id);
+        const steny = (json.steny || []).filter(s => s.typ === 'obvodova' || s.typ === 'nosna');
+        const zustava = new Set(steny.map(s => s.id));
+        const vazba = (c) => (c && zustava.has(c.host) ? c : undefined);
+        return {
+            steny: steny.map(s => {
+                const k = { id: s.id, od: s.od, do: s.do, tloustka: s.tloustka, typ: s.typ };
+                const o = vazba(s.od_constraint), d = vazba(s.do_constraint);
+                if (o) k.od_constraint = o;
+                if (d) k.do_constraint = d;
+                return k;
+            }),
+            otvory: [],
+        };
+    }
+
+    smazPodlazi(id) {
+        const pp = this.dum.podlazi;
+        if (pp.length < 2 || !this.podlaziPodleId(id)) return false;
+        if (id === this.dum.aktivni) this.prepniPodlazi((this.podlaziPod(id) || this.podlaziNad(id)).id);
+        this.dum.podlazi = pp.filter(p => p.id !== id);
+        this.dum.schodiste = this.dum.schodiste.filter(s => s.odPodlazi !== id && s.doPodlazi !== id);
+        this.dum.plochy = this.dum.plochy.filter(p => p.podlazi !== id);
+        this.dum.schodiste = this.dum.schodiste.filter(s => !s.plocha || this.dum.plochy.some(p => p.id === s.plocha));
+        this.prejmenujPodlazi();
+        return true;
+    }
+
+    /** Automatické názvy: 1.PP, 1.NP, 2.NP…, Podkroví. Ručně přejmenované se nemění. */
+    prejmenujPodlazi() {
+        const pp = this.dum.podlazi;
+        const zaklad = Math.max(0, pp.findIndex(p => p.typ !== 'sklep'));
+        pp.forEach((p, i) => {
+            if (p.vlastniNazev) return;
+            if (p.typ === 'podkrovi') p.nazev = 'Podkroví';
+            else if (i < zaklad) p.nazev = (zaklad - i) + '.PP';
+            else p.nazev = (i - zaklad + 1) + '.NP';
+        });
+    }
+
+    /**
+     * Přepočítá JSON kresby podlaží bodovou funkcí (px plátna → px plátna). Vrací NOVÝ
+     * objekt — uložená data se nemění na místě, snímky Zpět na ně odkazují.
+     * @param {number} deg  o kolik se dům otáčí (informativní úhel vybavení)
+     */
+    _prevedData(data, f, deg = 0) {
+        const PX = this.PX_PER_M;
+        const m = (p) => { const q = f({ x: p[0] * PX, y: -p[1] * PX }); return [q.x / PX, -q.y / PX]; };
+        const o = { ...data };
+        o.steny = (data.steny || []).map(s => ({ ...s, od: m(s.od), do: m(s.do) }));
+        o.oddelovace = (data.oddelovace || []).map(r => {
+            const k = (e) => { const [x, y] = m([e.x, e.y]); return { ...e, x, y }; };
+            return { ...r, a: k(r.a), b: k(r.b) };
+        });
+        o.mistnosti = (data.mistnosti || []).map(r => ({ ...r, kotva: m(r.kotva) }));
+        o.vybaveni = (data.vybaveni || []).map(v => ({
+            ...v,
+            stred: v.stred ? m(v.stred) : v.stred,
+            polygon: Array.isArray(v.polygon) ? v.polygon.map(m) : v.polygon,
+            uhel: (v.uhel || 0) + deg,
+        }));
+        o.prostory = (data.prostory || []).map(p => ({
+            ...p,
+            vertices: (p.vertices || []).map(v => {
+                const n = { ...v };
+                if (typeof v.x === 'number' && typeof v.y === 'number') { const q = f({ x: v.x, y: v.y }); n.x = q.x; n.y = q.y; }
+                if (typeof v.fallbackX === 'number' && typeof v.fallbackY === 'number') { const q = f({ x: v.fallbackX, y: v.fallbackY }); n.fallbackX = q.x; n.fallbackY = q.y; }
+                return n;
+            }),
+        }));
+        return o;
+    }
+
+    /** Přepočítá uložená podlaží (kromě aktivního) — dům se hýbe jako celek. */
+    transformujOstatniPodlazi(f, deg = 0) {
+        for (const p of this.dum.podlazi) {
+            if (p.id !== this.dum.aktivni && p.data) p.data = this._prevedData(p.data, f, deg);
+        }
+    }
+
+    /** Přepočítá objekty domu ležící přes podlaží (schody, výškové plochy) — souřadnice m, y nahoru. */
+    transformujObjektyDomu(f, rad = 0) {
+        const PX = this.PX_PER_M;
+        const m = (x, y) => { const q = f({ x: x * PX, y: -y * PX }); return [q.x / PX, -q.y / PX]; };
+        for (const s of this.dum.schodiste) {
+            [s.x, s.y] = m(s.x, s.y);
+            s.uhel = (s.uhel || 0) + rad;
+        }
+        for (const p of this.dum.plochy) p.body = p.body.map(b => m(b[0], b[1]));
+    }
+
+    /** Kotvy místností a volné konce oddělovačů aktivního podlaží (stěny hýbe volající). */
+    transformujDoplnkyAktivniho(f) {
+        for (const m of this.mistnosti) m.kotva = f(m.kotva);
+        for (const o of this.oddelovace.values()) {
+            for (const k of [o.a, o.b]) {
+                if (k.host) continue;
+                const q = f({ x: k.x, y: k.y });
+                k.x = q.x; k.y = q.y;
+            }
+        }
+    }
+
+    /** Otisk geometrie aktivního podlaží — přepočty (rastr, kontroly) jen po jeho změně. */
+    geoPodpis() {
+        const c = [];
+        for (const w of this.walls.values()) {
+            const a = this.nodes.get(w.nodeA), b = this.nodes.get(w.nodeB);
+            if (!a || !b) continue;
+            c.push(w.id, a.x.toFixed(1), a.y.toFixed(1), b.x.toFixed(1), b.y.toFixed(1), w.tloustka, w.typ);
+        }
+        for (const o of this.oddelovace.values()) {
+            const a = this.bodKonceOddelovace(o.a), b = this.bodKonceOddelovace(o.b);
+            c.push(a.x.toFixed(1), a.y.toFixed(1), b.x.toFixed(1), b.y.toFixed(1));
+        }
+        return c.join('|');
+    }
+
+    /** Podlaží pod aktivním s engine pro čtení, nebo null. */
+    spodekAktivniho() {
+        const p = this.podlaziPod(this.dum.aktivni);
+        const eng = p ? this.enginePodlazi(p.id) : null;
+        return eng ? { podlazi: p, engine: eng } : null;
+    }
+
+    /** Přichycení na roh, pak na osu stěny spodního podlaží (plot a zídka se nepočítají). */
+    magnetSpodku(x, y, dosah) {
+        const s = this.spodekAktivniho();
+        if (!s || !(dosah > 0)) return null;
+        let nej = null, nejD = dosah;
+        const nosne = [...s.engine.walls.values()].filter(w => TYPY_STEN[w.typ]?.kategorie !== 'exterior');
+        for (const w of nosne) {
+            for (const id of [w.nodeA, w.nodeB]) {
+                const n = s.engine.nodes.get(id);
+                if (!n) continue;
+                const d = Math.hypot(n.x - x, n.y - y);
+                if (d < nejD) { nejD = d; nej = { x: n.x, y: n.y }; }
+            }
+        }
+        if (nej) return nej;
+        nejD = dosah * 0.6;   // na osu slaběji, ať nepřebíjí volné kreslení podél stěny
+        for (const w of nosne) {
+            const a = s.engine.nodes.get(w.nodeA), b = s.engine.nodes.get(w.nodeB);
+            if (!a || !b) continue;
+            const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+            if (!L2) continue;
+            const t = ((x - a.x) * dx + (y - a.y) * dy) / L2;
+            if (t < 0 || t > 1) continue;
+            const px = a.x + dx * t, py = a.y + dy * t;
+            const d = Math.hypot(px - x, py - y);
+            if (d < nejD) { nejD = d; nej = { x: px, y: py, cara: { a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y } } }; }
+        }
+        return nej;
+    }
+
+    /**
+     * Přichycení celé stěny při tažení na stěnu podlaží pod ní: na osu, nebo na líc
+     * (tenčí stěna v patře lícuje s tou dole). Jen rovnoběžné stěny, které se s taženou
+     * podél překrývají. Vrací dorovnání posunu {x, y} kolmo na stěnu a čáru pro náhled.
+     * @param {number} posunX, posunY  posun, který by stěna dostala bez magnetu
+     */
+    magnetSteny(wallId, posunX, posunY, dosah) {
+        const s = this.spodekAktivniho();
+        const w = this.walls.get(wallId);
+        const a = w && this.nodes.get(w.nodeA), b = w && this.nodes.get(w.nodeB);
+        if (!s || !a || !b || !(dosah > 0)) return null;
+        const L = Math.hypot(b.x - a.x, b.y - a.y);
+        if (L < 1) return null;
+        const ux = (b.x - a.x) / L, uy = (b.y - a.y) / L, nx = -uy, ny = ux;
+        const poloha = (a.x + posunX) * nx + (a.y + posunY) * ny;
+        const od = (a.x + posunX) * ux + (a.y + posunY) * uy, po = od + L;
+        const pul = (w.tloustka * this.PX_PER_M) / 2;
+        let nej = null, nejD = dosah;
+        for (const dole of s.engine.walls.values()) {
+            if (TYPY_STEN[dole.typ]?.kategorie === 'exterior') continue;
+            const p = s.engine.nodes.get(dole.nodeA), q = s.engine.nodes.get(dole.nodeB);
+            if (!p || !q) continue;
+            const M = Math.hypot(q.x - p.x, q.y - p.y);
+            if (M < 1 || Math.abs(ux * (q.y - p.y) - uy * (q.x - p.x)) / M > MAX_ODCHYLKA_ROVNOBEZNE) continue;
+            const s0 = p.x * ux + p.y * uy, s1 = q.x * ux + q.y * uy;
+            if (Math.min(po, Math.max(s0, s1)) - Math.max(od, Math.min(s0, s1)) <= 0) continue;
+            const osa = ((p.x + q.x) / 2) * nx + ((p.y + q.y) / 2) * ny;
+            const rozdil = (dole.tloustka * this.PX_PER_M) / 2 - pul;
+            for (const cil of rozdil ? [osa, osa + rozdil, osa - rozdil] : [osa]) {
+                const d = Math.abs(cil - poloha);
+                if (d >= nejD) continue;
+                nejD = d;
+                const k = cil - osa;
+                nej = { x: nx * (cil - poloha), y: ny * (cil - poloha), cara: { a: { x: p.x + nx * k, y: p.y + ny * k }, b: { x: q.x + nx * k, y: q.y + ny * k } } };
+            }
+        }
+        return nej;
+    }
+
+    /** Nosná nebo obvodová stěna spodního podlaží, na jejíž ose stěna leží (nejvýš 2 cm vedle, aspoň půlkou délky). */
+    stenaPodStenou(wallId) {
+        const s = this.spodekAktivniho();
+        const w = this.walls.get(wallId);
+        const a = w && this.nodes.get(w.nodeA), b = w && this.nodes.get(w.nodeB);
+        if (!s || !a || !b) return null;
+        const L = Math.hypot(b.x - a.x, b.y - a.y);
+        if (L < 1) return null;
+        const ux = (b.x - a.x) / L, uy = (b.y - a.y) / L;
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        const tolerance = 0.02 * this.PX_PER_M;
+        const od = a.x * ux + a.y * uy, po = od + L;
+        let pokryto = 0, nej = null, nejDelka = 0;
+        for (const dole of s.engine.walls.values()) {
+            if (dole.typ !== 'obvodova' && dole.typ !== 'nosna') continue;
+            const p = s.engine.nodes.get(dole.nodeA), q = s.engine.nodes.get(dole.nodeB);
+            if (!p || !q) continue;
+            const M = Math.hypot(q.x - p.x, q.y - p.y);
+            if (M < 1 || Math.abs(ux * (q.y - p.y) - uy * (q.x - p.x)) / M > MAX_ODCHYLKA_ROVNOBEZNE) continue;
+            if (Math.abs((p.x - mx) * -uy + (p.y - my) * ux) > tolerance) continue;
+            const s0 = p.x * ux + p.y * uy, s1 = q.x * ux + q.y * uy;
+            const delka = Math.min(po, Math.max(s0, s1)) - Math.max(od, Math.min(s0, s1));
+            if (delka <= 0) continue;
+            pokryto += delka;
+            if (delka > nejDelka) { nejDelka = delka; nej = dole; }
+        }
+        return pokryto >= L / 2 ? nej : null;
     }
 
     // ─── NODES ─────────────────────────────────────────
@@ -1509,6 +1937,7 @@ class StavebniEngine {
             odConstraint: null,  // nodeA je nový (splitNode)
             doConstraint: origDoConstraint,  // nodeB je původní → zachová původní constraint
         };
+        if (typeof wall.vyska === 'number') newWall.vyska = wall.vyska;
         this.walls.set(newId, newWall);
 
         this._premapujOddelovace(wallId, newId, tSplit);
@@ -2397,6 +2826,7 @@ class StavebniEngine {
                         tloustka: wall.tloustka,
                         typ: wall.typ,
                     };
+                    if (typeof wall.vyska === 'number') newWall.vyska = wall.vyska;
                     this.walls.set(newId, newWall);
 
                     // Zkrátit původní stěnu
@@ -2694,6 +3124,13 @@ class StavebniEngine {
 
     // ─── SERIALIZATION ─────────────────────────────────
     toJSON() {
+        const json = this._jsonPodlazi();
+        json.dum = StavebniEngine.kopieDumu(this.dum);
+        return json;
+    }
+
+    /** JSON jen aktivního podlaží (kresba bez domu). */
+    _jsonPodlazi() {
         const steny = [];
         for (const wall of this.walls.values()) {
             const nA = this.nodes.get(wall.nodeA);
@@ -2706,6 +3143,7 @@ class StavebniEngine {
                 tloustka: wall.tloustka,
                 typ: wall.typ,
             };
+            if (typeof wall.vyska === 'number') wallOut.vyska = wall.vyska;
             // Constraint metadata (T-junction) — zachovat při uložení
             if (wall.odConstraint) wallOut.od_constraint = wall.odConstraint;
             if (wall.doConstraint) wallOut.do_constraint = wall.doConstraint;
@@ -2776,7 +3214,7 @@ class StavebniEngine {
 
         // Místnosti: jméno + barva + kotva (metry, y nahoru); plochy se nepersistují, počítá je rastr
         const mistnosti = (this.mistnosti || []).map(m => ({
-            id: m.id, nazev: m.nazev, barva: m.barva,
+            id: m.id, nazev: m.nazev, barva: m.barva, ...(m.podlaha ? { podlaha: { ...m.podlaha } } : {}),
             kotva: [Math.round(m.kotva.x / this.PX_PER_M * 1000) / 1000, Math.round(-m.kotva.y / this.PX_PER_M * 1000) / 1000],
         }));
 
@@ -2790,6 +3228,11 @@ class StavebniEngine {
      *        konceptu a při undu se zachovává přesně to, co uživatel zadal.
      */
     fromJSON(data, nast = {}) {
+        // Dům: uložený se převezme, starý projekt bez něj = jedno podlaží. Import výkresu
+        // a přepnutí podlaží mění jen kresbu aktivního podlaží (zachovatDum).
+        if (data && data.dum) this.dum = StavebniEngine.normalizujDum(data.dum);
+        else if (!nast.zachovatDum) this.dum = StavebniEngine.vychoziDum();
+
         this.nodes.clear();
         this.walls.clear();
         this.openings.clear();
@@ -2849,6 +3292,7 @@ class StavebniEngine {
                 odConstraint: s.od_constraint || null,
                 doConstraint: s.do_constraint || null,
             };
+            if (typeof s.vyska === 'number' && s.vyska > 0) wall.vyska = s.vyska;
             this.walls.set(wall.id, wall);
 
             // Aktualizovat nextId
@@ -2907,6 +3351,7 @@ class StavebniEngine {
                 id: m.id || this._id('M'),
                 nazev: String(m.nazev || ''),
                 barva: /^#[0-9a-fA-F]{6}$/.test(m.barva || '') ? m.barva : PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length],
+                ...(m.podlaha?.dekor ? { podlaha: { ...m.podlaha } } : {}),
                 kotva: { x: m.kotva[0] * this.PX_PER_M, y: -m.kotva[1] * this.PX_PER_M },
             });
             const num = parseInt(String(m.id ?? '').replace(/\D/g, ''));
@@ -3091,6 +3536,9 @@ class StavebniEngine {
                 this.mistnosti.push({ id: this._id('M'), nazev: String(p.nazev || p.typ || ''), barva: PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length], kotva });
             }
         }
+
+        // UI se dozví o změně kresby (Zpět, historie, přepnutí podlaží); dočasné enginy hook nemají
+        if (this.poNacteni) this.poNacteni();
     }
 
     /**

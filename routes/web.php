@@ -135,6 +135,9 @@ Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('mastertea
     Route::delete('koncept-v3/{koncept:id}', [KonceptV3Controller::class, 'smazat'])->name('koncept-v3.smazat');
     Route::post('koncept-v3/{koncept:id}/ai-uprav', [KonceptV3Controller::class, 'aiUprav'])->name('koncept-v3.aiUprav');
     Route::get('koncept-v3/{koncept:id}/export', [KonceptV3Controller::class, 'exportJson'])->name('koncept-v3.export');
+    Route::get('koncept-v3/{koncept:id}/sdileni', [App\Http\Controllers\KonceptV3SdileniController::class, 'stav'])->name('koncept-v3.sdileni');
+    Route::post('koncept-v3/{koncept:id}/sdileni', [App\Http\Controllers\KonceptV3SdileniController::class, 'uloz']);
+    Route::delete('koncept-v3/{koncept:id}/sdileni', [App\Http\Controllers\KonceptV3SdileniController::class, 'vypni']);
     Route::patch('koncept-v3/{koncept:id}/katastr', [KonceptV3Controller::class, 'ulozitKatastr'])->name('koncept-v3.katastr.ulozit');
 
     // Podklad pro import půdorysu (PDF/obrázek → obrázek + vektory pro analýzu v prohlížeči)
@@ -188,6 +191,12 @@ Route::middleware('subdomena:web')->group(function () {
     // 5 zpráv za 10 minut z jedné IP — člověku stačí, spam brzdí
     Route::post('/contact', [App\Http\Controllers\KontaktController::class, 'odeslat'])
         ->middleware('throttle:5,10')->name('kontakt.odeslat');
+    // Odkaz na stav projektu pro čtení, bez přihlášení (modules/sdileni.md)
+    Route::middleware('throttle:120,1')->group(function () {
+        Route::get('/share/{token}', [App\Http\Controllers\KonceptV3SdileniController::class, 'zobraz'])->name('sdileni.zobraz');
+        Route::get('/share/{token}/model', [App\Http\Controllers\KonceptV3SdileniController::class, 'model']);
+        Route::get('/share/{token}/soubor/{soubor}', [App\Http\Controllers\KonceptV3SdileniController::class, 'obrazek']);
+    });
 });
 
 // ───────── Zákaznická aplikace (app.tuptudu.com) ─────────
@@ -228,6 +237,9 @@ Route::middleware(['subdomena:app', 'auth', 'verified'])->name('app.')->group(fu
 
         // Parametrické na konec ({koncept:id} — kontrolu vlastníka dělá controller)
         Route::patch('{koncept:id}/save', [KonceptV3Controller::class, 'ulozit'])->name('ulozit');
+        Route::get('{koncept:id}/share', [App\Http\Controllers\KonceptV3SdileniController::class, 'stav'])->name('sdileni');
+        Route::post('{koncept:id}/share', [App\Http\Controllers\KonceptV3SdileniController::class, 'uloz'])->middleware('throttle:20,1');
+        Route::delete('{koncept:id}/share', [App\Http\Controllers\KonceptV3SdileniController::class, 'vypni']);
         Route::post('{koncept:id}/ai-edit', [KonceptV3Controller::class, 'aiUprav'])->middleware('throttle:10,1')->name('aiUprav');
         Route::delete('{koncept:id}', [KonceptV3Controller::class, 'smazat'])->name('smazat');
     });

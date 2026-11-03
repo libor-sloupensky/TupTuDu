@@ -56,7 +56,7 @@ async function main() {
         await p.vyhodnot(`document.querySelector('input[name=email]').value = ${JSON.stringify(EMAIL)};
             document.querySelector('input[name=password]').value = ${JSON.stringify(HESLO)};
             document.querySelector('form').submit(); true`);
-        await pauza(1500);
+        await pauza(3000);
         await p.jdiNa(ZAKLAD + '/masterteam/koncept-v3');
         await p.cekej(`!!(window.Alpine && ${D})`, 15000, 'Alpine');
         await p.vyhodnot(`(async () => { const r = await fetch(_kkInitData.routes.vytvorit, { method:'POST',
@@ -201,6 +201,7 @@ async function main() {
         kontrola('po oddálení mají tečky konců pořád 3 px na obrazovce', prizoomu.length > 0 && prizoomu.every(r => Math.abs(r - 3) < 0.01), JSON.stringify(prizoomu));
 
         await p.vyhodnot(`(() => { const d = ${D}; d.renderer.clearSelection(); d.renderer.render(); return true; })()`);
+        await pauza(300);   // plátno po změně zoomu a výběru překreslí zásahovou vrstvu až v dalším snímku
         await klik(await naObr(2.5 * PX, 4 * PX));   // znovu vybrat oddělovač (kontrola „Různé" vybírala stěny)
         await klavesa('Delete', 'Delete');
         s = await stav();

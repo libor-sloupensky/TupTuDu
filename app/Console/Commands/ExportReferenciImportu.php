@@ -31,6 +31,14 @@ class ExportReferenciImportu extends Command
             $meta = $this->pole($koncept->metadata);
             $podklad = $meta['podklad'] ?? null;
 
+            // metadata.podklad patří k 1.NP, ostatní podlaží se neměří. Na nejvyšší úrovni
+            // dat je aktivní podlaží, takže když je to jiné, 1.NP leží v dum.podlazi.
+            foreach ($data['dum']['podlazi'] ?? [] as $podlazi) {
+                if (($podlazi['id'] ?? null) === 'P1' && !empty($podlazi['data'])) {
+                    $data = $podlazi['data'];
+                }
+            }
+
             // Reference se poznají podle názvu končícího na "reference" — rozpracované
             // koncepty by jinak měřicí tabulku zaplevelily vlastními výsledky.
             $jeReference = (bool) preg_match('~reference\s*$~iu', (string) $koncept->nazev);

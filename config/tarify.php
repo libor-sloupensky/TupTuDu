@@ -15,10 +15,12 @@ return [
             // nebo otvoru, smazání…). Prohlížení, Zpět/Vpřed a výchozí krok se nepočítá.
             'kroku_denne' => 30,
             'projektu' => 1,
+            'exporty' => false,
         ],
         'stavebnik' => [
             'kroku_denne' => null,
             'projektu' => 5,
+            'exporty' => true,
             'paddle' => [
                 'produkt' => env('PADDLE_PRODUKT_STAVEBNIK'),
                 'mesic' => env('PADDLE_CENA_STAVEBNIK_MESIC'),
@@ -28,6 +30,7 @@ return [
         'profi' => [
             'kroku_denne' => null,
             'projektu' => null,
+            'exporty' => true,
             'paddle' => [
                 'produkt' => env('PADDLE_PRODUKT_PROFI'),
                 'mesic' => env('PADDLE_CENA_PROFI_MESIC'),

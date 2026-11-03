@@ -55,6 +55,7 @@
                     <ul>
                         <li>{{ __('tarify.uprav_neomezene') }}</li>
                         <li>{{ $karta['projektu'] === null ? __('tarify.projektu_neomezene') : __('tarify.projektu_az', ['limit' => $karta['projektu']]) }}</li>
+                        <li>{{ __('tarify.funkce_export') }}</li>
                         @include('partials.tarif-funkce')
                     </ul>
                     @foreach (Tarif::OBDOBI as $obdobi)

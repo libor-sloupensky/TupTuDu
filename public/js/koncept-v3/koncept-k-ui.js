@@ -157,6 +157,7 @@ function konceptKEditor(initialData) {
         _zvyrazNextId: 1,
 
         isDraggingWall: false,
+        kotaEdit: null,               // právě přepisovaná kóta u výběru {k, x, y}
         draggingWallId: null,
         dragWallStart: null,
         isDraggingOpening: false,
@@ -187,9 +188,13 @@ function konceptKEditor(initialData) {
             return this.layoutMode === 0 ? 'Text vlevo, grafika vpravo' : 'Grafika vlevo, text vpravo';
         },
         get seznamObjektu() {
+            // eslint-disable-next-line no-unused-vars
+            const _tick = this._selectionTick;   // engine je mimo reaktivitu, změnu hlásí tick
             return this.engine ? this.engine.getObjectList() : [];
         },
         get vybraneIds() {
+            // eslint-disable-next-line no-unused-vars
+            const _tick = this._selectionTick;
             return this.renderer ? [...this.renderer.selectedWalls, ...this.renderer.selectedNodes, ...this.renderer.selectedOpenings] : [];
         },
 
@@ -206,6 +211,8 @@ function konceptKEditor(initialData) {
             // eslint-disable-next-line no-unused-vars
             const _tick = this._selectionTick;
             if (!this.renderer || !this.engine) return null;
+            const domInspektor = this.inspektorDum?.();
+            if (domInspektor) return domInspektor;
             const sw = this.renderer.selectedWalls;
             const so = this.renderer.selectedOpenings;
             const sn = this.renderer.selectedNodes;
@@ -250,6 +257,7 @@ function konceptKEditor(initialData) {
                 const jdeZrcadlit = openings.some(o => { const k = kridlaOtvoru(o); return k.length > 1 || k.some(x => x.otv !== 'fix'); });
                 return {
                     kind: openings.length > 1 ? 'opening_multi' : 'opening',
+                    obvodovy: this.otvoryObvodove(openings),
                     count: openings.length,
                     typ: sameTyp ? typ0 : null,
                     typLabel: sameTyp && cfg ? cfg.nazev : 'Různé typy',
@@ -275,8 +283,11 @@ function konceptKEditor(initialData) {
             if (sm.size > 0 && so.size === 0 && sw.size === 0) {
                 const m = this.engine.najdiMistnost([...sm][0]);
                 if (!m) return null;
-                return { kind: 'mistnost', count: 1, id: m.id, nazev: m.nazev, barva: m.barva,
-                         plocha: this.renderer.plochaMistnosti(m.id), paleta: window.PALETA_MISTNOSTI || [] };
+                return { kind: 'mistnost', count: 1, id: m.id, nazev: m.nazev, barva: m.barva, podlaha: this.podlahaMistnosti(m),
+                         plocha: this.renderer.plochaMistnosti(m.id), paleta: window.PALETA_MISTNOSTI || [],
+                         // Úroveň podlahy a zvýšení přenesená z podlaží níž (dum.js)
+                         uroven: this.urovenPanelMistnosti ? this.urovenPanelMistnosti(m) : null,
+                         prenesene: this.prenesenePlochyMistnosti ? this.prenesenePlochyMistnosti(m.id) : [] };
             }
             // Jen oddělovače místností
             const sr = this.renderer.selectedOddelovace;
@@ -305,6 +316,10 @@ function konceptKEditor(initialData) {
                     typyVolby,
                     tloustka: sameTl ? walls[0].tloustka : null,
                     tloustky: sameTyp && cfg ? cfg.standardTloustky : [],
+                    // Výška: prázdné pole = podle podlaží (nebo typu), číslo = vlastní výška stěny
+                    vyskaVlastni: walls.every(w => w.vyska === walls[0].vyska) ? (walls[0].vyska ?? null) : null,
+                    vyskaAuto: this.engine.vyskaSteny({ typ: typ0 }),
+                    podepreni: walls.length === 1 ? this.podepreniSteny?.(walls[0].id) : null,
                 };
             }
             return null;
@@ -526,6 +541,17 @@ function konceptKEditor(initialData) {
             m.barva = hex;
             this._poUpraveOtvoru('Barva místnosti');
         },
+        /** Podlaha ve 3D: dekor a barva. Barva v půdorysu (`barva`) je na tom nezávislá. */
+        setMistnostPodlaha(nastav) {
+            const m = this._vybranaMistnost();
+            if (!m) return;
+            const nova = { dekor: 'hladka', ...(m.podlaha || {}), ...nastav };
+            if (!nova.barva) delete nova.barva;
+            if (JSON.stringify(nova) === JSON.stringify(m.podlaha || null)) return;
+            this.engine.pushUndo();
+            m.podlaha = nova;
+            this._poUpraveOtvoru('Podlaha místnosti');
+        },
 
         smazatVybraneOddelovace() {
             const ids = [...this.renderer.selectedOddelovace];
@@ -701,9 +727,7 @@ function konceptKEditor(initialData) {
 
         /** Výška stěny, ve které otvor sedí (strop výšky a parapetu otvoru). */
         _vyskaStenyOtvoru(o) {
-            const w = this.engine.walls.get(o.wallId);
-            const typDef = (w && TYPY_STEN[w.typ]) || {};
-            return typDef.vyska?.default || 2.8;
+            return this.engine.vyskaSteny(this.engine.walls.get(o.wallId));
         },
 
         /** Výška otvoru v m na vybrané otvory; parapet zůstává, výška se vejde pod strop stěny. */
@@ -824,6 +848,23 @@ function konceptKEditor(initialData) {
             }
             this.renderer.render();
             this.autoSave('Typ stěny');
+            this._selectionTick++;
+        },
+
+        /** Vlastní výška vybraných stěn v m; prázdná hodnota vrátí výšku podle podlaží. */
+        setWallVyska(metry) {
+            if (!this.renderer || !this.engine) return;
+            const ids = [...this.renderer.selectedWalls];
+            if (ids.length === 0) return;
+            this.engine.pushUndo();
+            for (const id of ids) {
+                const w = this.engine.walls.get(id);
+                if (!w) continue;
+                if (metry > 0) w.vyska = Math.round(Math.min(12, metry) * 100) / 100;
+                else delete w.vyska;
+            }
+            this.renderer.render();
+            this.autoSave('Výška stěny');
             this._selectionTick++;
         },
 
@@ -1309,14 +1350,18 @@ function konceptKEditor(initialData) {
                 if (!wrap) return;
 
                 // Stage
-                this.stage = new Konva.Stage({
+                // Konva a engine MIMO reaktivitu Alpine: proxy na každém přístupu k vlastnosti
+                // zpomaloval kreslení několikanásobně (zoom, posun, tažení). Šablona se
+                // o změně kresby dozví přes _selectionTick (afterRender).
+                const bezProxy = (o) => { Object.defineProperty(o, '__v_skip', { value: true, enumerable: false }); return o; };
+                this.stage = bezProxy(new Konva.Stage({
                     container: wrap,
                     width: wrap.offsetWidth,
                     height: wrap.offsetHeight,
-                });
+                }));
 
                 // Engine
-                this.engine = new StavebniEngine({ pxPerM: this.PX_PER_M });
+                this.engine = bezProxy(new StavebniEngine({ pxPerM: this.PX_PER_M }));
                 // Čelo taženého konce leží na líci už v náhledu přichycení na okraj
                 this.engine.nahledNapojeni = (nodeId) => {
                     const sp = this._snapPreview;
@@ -1343,18 +1388,19 @@ function konceptKEditor(initialData) {
                 };
 
                 // Renderer
-                this.renderer = new KonvaRenderer(this.stage, this.engine, {
+                this.renderer = bezProxy(new KonvaRenderer(this.stage, this.engine, {
                     showKoty: this.showKoty,
                     showNodes: this.showNodes,
                     showGrid: this.showGrid,
                     showMistnosti: this.showMistnosti,
                     showVybaveni: this.showVybaveni,
-                });
+                }));
                 // Rotate handle + inspector panel se překreslují při každém render()
                 this.renderer.afterRender = () => {
                     this._updateRotateHandle();
                     this._updateSpojMadlo();
                     this._selectionTick++;
+                    this._obnov3dPozdeji?.();
                 };
                 // Značka kurzoru nástroje Stěna — nad vším, nic nechytá
                 this._kurzorLayer = new Konva.Layer({ listening: false });
@@ -1492,6 +1538,8 @@ function konceptKEditor(initialData) {
                 // Context menu
                 wrap.addEventListener('contextmenu', e => e.preventDefault());
 
+                this.dumInit?.();
+
                 // Načíst data
                 if (this.projektData && this.projektData.steny) {
                     this.engine.fromJSON(this.projektData);
@@ -1605,10 +1653,700 @@ function konceptKEditor(initialData) {
         // ═══════════════════════════════════════════════════════
         // MOUSE EVENTS
         // ═══════════════════════════════════════════════════════
+        /** Začátek tažení celé stěny: zachytí výchozí stav, ze kterého počítají limity. */
+        _zacniTahSteny(id, pos) {
+            this.isDraggingWall = true;
+            this.draggingWallId = id;
+            this._tahOdchylka = null;
+            this.dragWallStart = { x: pos.x, y: pos.y };
+            // Zachytit initial actual t constraint endpointů taženého wallu.
+            // LIMIT bude používat upper = max(stored_cap, initial_actual_t)
+            // aby user mohl vrátit stěnu na PŮVODNÍ pozici, i když je
+            // stored t (zaokrouhlený parser) pod skutečnou počáteční t.
+            this._dragInitialT = {};
+            const _w = this.engine.walls.get(id);
+            if (_w) {
+                const computeActualT = (node, constraint) => {
+                    if (!node || !constraint) return null;
+                    const h = this.engine.walls.get(constraint.host);
+                    if (!h) return null;
+                    const ha = this.engine.nodes.get(h.nodeA);
+                    const hb = this.engine.nodes.get(h.nodeB);
+                    if (!ha || !hb) return null;
+                    const hdx = hb.x - ha.x, hdy = hb.y - ha.y;
+                    const hL2 = hdx * hdx + hdy * hdy;
+                    if (hL2 === 0) return null;
+                    return ((node.x - ha.x) * hdx + (node.y - ha.y) * hdy) / hL2;
+                };
+                if (_w.odConstraint) this._dragInitialT.a = computeActualT(this.engine.nodes.get(_w.nodeA), _w.odConstraint);
+                if (_w.doConstraint) this._dragInitialT.b = computeActualT(this.engine.nodes.get(_w.nodeB), _w.doConstraint);
+            }
+            // Snapshot "původních" absolutních pozic otvorů na začátku
+            // drag sekvence. Použije se pro intended pozice (ne current
+            // state), takže otvory se při extensi stěny vrací na původní
+            // pozici, ne zůstávají na pushed místě.
+            this._dragOpeningAbs = new Map();
+            for (const op of this.engine.openings.values()) {
+                const wall = this.engine.walls.get(op.wallId);
+                if (!wall) continue;
+                const nA = this.engine.nodes.get(wall.nodeA);
+                const nB = this.engine.nodes.get(wall.nodeB);
+                if (!nA || !nB) continue;
+                const dx = nB.x - nA.x, dy = nB.y - nA.y;
+                const L = Math.hypot(dx, dy);
+                if (L === 0) continue;
+                const absX = nA.x + (dx / L) * op.pozice * this.engine.PX_PER_M;
+                const absY = nA.y + (dy / L) * op.pozice * this.engine.PX_PER_M;
+                this._dragOpeningAbs.set(op.id, { x: absX, y: absY });
+            }
+        },
+
+        /**
+         * Jeden krok tažení stěny na pozici `pos`: všechna pravidla posunu (osy konců, rohy,
+         * kolize, otvory, příčky). Volá ho myš i přepsání kóty, ať platí totéž.
+         */
+        _krokTazeniSteny(pos) {
+            let dx = pos.x - this.dragWallStart.x;
+            let dy = pos.y - this.dragWallStart.y;
+            // Pokud je vybráno víc stěn (multi-select celého objektu), přeskočit
+            // constraint/collision projekce — uživatel chce volně posouvat celý výběr.
+            const isMultiSelect = this.renderer.selectedWalls.size > 1 && this.renderer.selectedWalls.has(this.draggingWallId);
+            const w = this.engine.walls.get(this.draggingWallId);
+            const engine = this.engine;
+            // Magnet na stěnu podlaží níž. Pravidla níže mají přednost, proto se dorovnává před nimi.
+            // Rozdíl proti myši se nese dál, jinak by se stěna od zachycené polohy nedala odtrhnout.
+            let caraSpodku = null;
+            if (w && !isMultiSelect && !this._tahPresny) {
+                const chciX = dx + (this._tahOdchylka?.x || 0), chciY = dy + (this._tahOdchylka?.y || 0);
+                const m = this._bezMagnetu() ? null : engine.magnetSteny(w.id, chciX, chciY, this._dosahMagnetu(14));
+                dx = chciX + (m ? m.x : 0);
+                dy = chciY + (m ? m.y : 0);
+                this._tahOdchylka = m ? { x: -m.x, y: -m.y } : null;
+                caraSpodku = m ? m.cara : null;
+            }
+            if (initialData.vyvojMode && !isMultiSelect && w) {
+                // RULE #10: endpoint-axis projekce (drag jen ve směru povoleném oběma endpointy)
+                const axisA = this._dragEndpointAxis(w.nodeA, w.odConstraint, this.draggingWallId);
+                const axisB = this._dragEndpointAxis(w.nodeB, w.doConstraint, this.draggingWallId);
+                if (axisA.type === 'frozen' || axisB.type === 'frozen') {
+                    dx = 0; dy = 0;
+                } else {
+                    if (axisA.type === 'axis') { const p = this._dragProject(dx, dy, axisA.dx, axisA.dy); dx = p.dx; dy = p.dy; }
+                    if (axisB.type === 'axis') { const p = this._dragProject(dx, dy, axisB.dx, axisB.dy); dx = p.dx; dy = p.dy; }
+                }
+                // RULE #11: HOST perpendicular — stěna s T-children se hýbe jen kolmo
+                if (this.engine.getTChildren(this.draggingWallId).length > 0) {
+                    const a = this.engine.nodes.get(w.nodeA);
+                    const b = this.engine.nodes.get(w.nodeB);
+                    if (a && b) {
+                        const wdx = b.x - a.x, wdy = b.y - a.y;
+                        if (wdx || wdy) {
+                            const p = this._dragProject(dx, dy, -wdy, wdx);
+                            dx = p.dx; dy = p.dy;
+                        }
+                    }
+                }
+                // RULE #12 + #13: corner cap + initial actual t tolerance
+                if (w.odConstraint || w.doConstraint) {
+                    const initT = this._dragInitialT || {};
+                    // Napojení na čelo se neřídí parametrem t podél hostitele —
+                    // jezdí po jeho čele a dál než na líc nesmí.
+                    const applyCeloLimit = (node, constraint) => {
+                        if (!node || !constraint || !constraint.konec) return;
+                        const celo = this.engine.celoHostitele(constraint.host, constraint.konec, w.tloustka);
+                        if (!celo) return;
+                        const kx = celo.kolmice.x, ky = celo.kolmice.y;
+                        const u0 = (node.x - celo.stred.x) * kx + (node.y - celo.stred.y) * ky;
+                        const u1 = Math.max(-celo.dosah, Math.min(celo.dosah, u0 + dx * kx + dy * ky));
+                        dx = (u1 - u0) * kx;
+                        dy = (u1 - u0) * ky;
+                    };
+                    const applyCornerLimit = (node, constraint, initActualT) => {
+                        if (!node || !constraint || constraint.konec) return;
+                        const ax = this._dragHostAxis(constraint.host);
+                        if (!ax) return;
+                        const along_req = (dx * ax.dx + dy * ax.dy) / ax.L2;
+                        const perp_dx = dx - along_req * ax.dx;
+                        const perp_dy = dy - along_req * ax.dy;
+                        const current_t = this._dragActualT(node.x, node.y, ax);
+                        const new_t = current_t + along_req;
+                        const cap = constraint.t;
+                        let lower = 0, upper = 1;
+                        if (cap > 0.9) {
+                            const initMax = (typeof initActualT === 'number') ? initActualT : cap;
+                            upper = Math.min(1, Math.max(cap, initMax) + 0.003);
+                        } else if (cap < 0.1) {
+                            const initMin = (typeof initActualT === 'number') ? initActualT : cap;
+                            lower = Math.max(0, Math.min(cap, initMin) - 0.003);
+                        }
+                        let target_t;
+                        if (current_t > upper) {
+                            target_t = Math.min(current_t, Math.max(lower, new_t));
+                        } else if (current_t < lower) {
+                            target_t = Math.max(current_t, Math.min(upper, new_t));
+                        } else {
+                            if (new_t >= lower && new_t <= upper) return;
+                            target_t = Math.max(lower, Math.min(upper, new_t));
+                        }
+                        const along_delta = target_t - current_t;
+                        dx = along_delta * ax.dx + perp_dx;
+                        dy = along_delta * ax.dy + perp_dy;
+                    };
+                    applyCeloLimit(this.engine.nodes.get(w.nodeA), w.odConstraint);
+                    applyCeloLimit(this.engine.nodes.get(w.nodeB), w.doConstraint);
+                    applyCornerLimit(this.engine.nodes.get(w.nodeA), w.odConstraint, initT.a);
+                    applyCornerLimit(this.engine.nodes.get(w.nodeB), w.doConstraint, initT.b);
+                }
+                // POZN: constraint.t se BĚHEM drag NEaktualizuje — stored t
+                // představuje PARSER-DANÉ ukotvení (často t=0.98 u rohu).
+                // Uživatel chce, aby ukotvení viselo vizuálně na kraji
+                // hostitele i když se stěna fyzicky posouvá. Physical
+                // slide pozice je dána node.x/y, stored t je jen marker
+                // pro propagateTChildren (když by se hostitel hýbal).
+                // COLLISION: stěna se nesmí srazit s jinou. Kontrolujeme
+                // pouze axis-aligned kolize (běžné v půdorysech). Pro každou
+                // jinou stěnu spočítáme maximální faktor t ∈ [0, 1] pohybu
+                // tak, aby surface nebyly blíž než součet half-thicknesses.
+                if (w && (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01)) {
+                    const nA = this.engine.nodes.get(w.nodeA);
+                    const nB = this.engine.nodes.get(w.nodeB);
+                    if (nA && nB) {
+                        const w1_thk_half = (w.tloustka * engine.PX_PER_M) / 2;
+                        // Is w1 horizontal or vertical?
+                        const w1_horiz = Math.abs(nA.y - nB.y) < 0.5;
+                        const w1_vert = Math.abs(nA.x - nB.x) < 0.5;
+                        if (w1_horiz || w1_vert) {
+                            // Stěny, které se s taženou vezou (její příčky) nebo po
+                            // kterých klouže (její hostitelé), nejsou překážka —
+                            // pohybují se spolu s ní. Dokud se počítaly, stačilo mít
+                            // příčku na doraz u líce a stěna šla posunout jen na jednu
+                            // stranu: na druhé vycházela povolená vůle nula a o
+                            // zablokování rozhodlo zaokrouhlení.
+                            const vezeneSteny = new Set(engine.getTChildren(w.id).map(ch => ch.wall.id));
+                            if (w.odConstraint && w.odConstraint.host) vezeneSteny.add(w.odConstraint.host);
+                            if (w.doConstraint && w.doConstraint.host) vezeneSteny.add(w.doConstraint.host);
+                            let factor = 1.0;
+                            for (const other of this.engine.walls.values()) {
+                                if (other.id === w.id) continue;
+                                if (vezeneSteny.has(other.id)) continue;
+                                // Skip walls sharing a node with w (adjacent L-corners)
+                                if (other.nodeA === w.nodeA || other.nodeA === w.nodeB ||
+                                    other.nodeB === w.nodeA || other.nodeB === w.nodeB) continue;
+                                const oA = this.engine.nodes.get(other.nodeA);
+                                const oB = this.engine.nodes.get(other.nodeB);
+                                if (!oA || !oB) continue;
+                                const o_thk_half = (other.tloustka * engine.PX_PER_M) / 2;
+                                const sep = w1_thk_half + o_thk_half;
+                                const o_horiz = Math.abs(oA.y - oB.y) < 0.5;
+                                const o_vert = Math.abs(oA.x - oB.x) < 0.5;
+                                if (w1_horiz && o_horiz) {
+                                    // Both horizontal → collision when y's meet
+                                    const w1_x_lo = Math.min(nA.x, nB.x);
+                                    const w1_x_hi = Math.max(nA.x, nB.x);
+                                    const o_x_lo = Math.min(oA.x, oB.x);
+                                    const o_x_hi = Math.max(oA.x, oB.x);
+                                    if (Math.min(w1_x_hi, o_x_hi) <= Math.max(w1_x_lo, o_x_lo)) continue;
+                                    const gap = oA.y - nA.y;
+                                    const sign = Math.sign(dy);
+                                    if (sign === 0 || Math.sign(gap) !== sign) continue;
+                                    const allowed = Math.abs(gap) - sep;
+                                    if (allowed <= 0.01) continue;   // na doraz = neomezovat (ne hra zaokrouhlení)
+                                    const f = allowed / Math.abs(dy);
+                                    if (f < factor) factor = Math.max(0, f);
+                                } else if (w1_horiz && o_vert) {
+                                    // Horizontal w1, vertical other
+                                    const w1_x_lo = Math.min(nA.x, nB.x);
+                                    const w1_x_hi = Math.max(nA.x, nB.x);
+                                    if (oA.x < w1_x_lo - sep || oA.x > w1_x_hi + sep) continue;
+                                    const o_y_lo = Math.min(oA.y, oB.y);
+                                    const o_y_hi = Math.max(oA.y, oB.y);
+                                    // Which edge of other to collide with
+                                    const sign = Math.sign(dy);
+                                    if (sign === 0) continue;
+                                    const o_edge = sign > 0 ? o_y_lo : o_y_hi;
+                                    const gap = o_edge - nA.y;
+                                    if (Math.sign(gap) !== sign) continue;
+                                    const allowed = Math.abs(gap) - sep;
+                                    if (allowed <= 0.01) continue;   // na doraz = neomezovat (ne hra zaokrouhlení)
+                                    const f = allowed / Math.abs(dy);
+                                    if (f < factor) factor = Math.max(0, f);
+                                } else if (w1_vert && o_vert) {
+                                    const w1_y_lo = Math.min(nA.y, nB.y);
+                                    const w1_y_hi = Math.max(nA.y, nB.y);
+                                    const o_y_lo = Math.min(oA.y, oB.y);
+                                    const o_y_hi = Math.max(oA.y, oB.y);
+                                    if (Math.min(w1_y_hi, o_y_hi) <= Math.max(w1_y_lo, o_y_lo)) continue;
+                                    const gap = oA.x - nA.x;
+                                    const sign = Math.sign(dx);
+                                    if (sign === 0 || Math.sign(gap) !== sign) continue;
+                                    const allowed = Math.abs(gap) - sep;
+                                    if (allowed <= 0.01) continue;   // na doraz = neomezovat (ne hra zaokrouhlení)
+                                    const f = allowed / Math.abs(dx);
+                                    if (f < factor) factor = Math.max(0, f);
+                                } else if (w1_vert && o_horiz) {
+                                    const w1_y_lo = Math.min(nA.y, nB.y);
+                                    const w1_y_hi = Math.max(nA.y, nB.y);
+                                    if (oA.y < w1_y_lo - sep || oA.y > w1_y_hi + sep) continue;
+                                    const o_x_lo = Math.min(oA.x, oB.x);
+                                    const o_x_hi = Math.max(oA.x, oB.x);
+                                    const sign = Math.sign(dx);
+                                    if (sign === 0) continue;
+                                    const o_edge = sign > 0 ? o_x_lo : o_x_hi;
+                                    const gap = o_edge - nA.x;
+                                    if (Math.sign(gap) !== sign) continue;
+                                    const allowed = Math.abs(gap) - sep;
+                                    if (allowed <= 0.01) continue;   // na doraz = neomezovat (ne hra zaokrouhlení)
+                                    const f = allowed / Math.abs(dx);
+                                    if (f < factor) factor = Math.max(0, f);
+                                }
+                            }
+                            if (factor < 1.0) {
+                                dx *= factor;
+                                dy *= factor;
+                            }
+                        }
+                    }
+                }
+            }
+            // Otvor-squeeze LIMIT: pokud by stěna zkrátila pod součet šířek
+            // otvorů (otvory by se v modelu "vagónků" naskládaly a přetekly
+            // za druhý konec), zkrátíme drag factor. Řeší i sekvenci drag→push.
+            if (initialData.vyvojMode && w && !isMultiSelect && (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01)) {
+                const movingNodeIds = new Set([w.nodeA, w.nodeB]);
+                const PX_PER_M_val = this.engine.PX_PER_M;
+                let opFactor = 1.0;
+                for (const wall of this.engine.walls.values()) {
+                    if (wall.id === this.draggingWallId) continue;
+                    const aMoves = movingNodeIds.has(wall.nodeA);
+                    const bMoves = movingNodeIds.has(wall.nodeB);
+                    if (!aMoves && !bMoves) continue;
+                    let totalSirkaPx = 0;
+                    for (const o of this.engine.openings.values()) {
+                        if (o.wallId === wall.id) totalSirkaPx += o.sirka * PX_PER_M_val;
+                    }
+                    if (totalSirkaPx === 0) continue;
+                    const nA = this.engine.nodes.get(wall.nodeA);
+                    const nB = this.engine.nodes.get(wall.nodeB);
+                    if (!nA || !nB) continue;
+                    const oldLen = Math.hypot(nB.x - nA.x, nB.y - nA.y);
+                    const newAx = nA.x + (aMoves ? dx : 0);
+                    const newAy = nA.y + (aMoves ? dy : 0);
+                    const newBx = nB.x + (bMoves ? dx : 0);
+                    const newBy = nB.y + (bMoves ? dy : 0);
+                    const newLen = Math.hypot(newBx - newAx, newBy - newAy);
+                    if (newLen < totalSirkaPx) {
+                        const maxShrink = oldLen - totalSirkaPx;
+                        const requestedShrink = oldLen - newLen;
+                        if (requestedShrink > 0) {
+                            const f = Math.max(0, maxShrink / requestedShrink);
+                            if (f < opFactor) opFactor = f;
+                        }
+                    }
+                }
+                if (opFactor < 1.0) {
+                    dx *= opFactor;
+                    dy *= opFactor;
+                }
+            }
+            // T-child LIMIT: pokud deformace hostitele (posun endpointu) by
+            // způsobila, že T-child sedí mimo rozsah hostitele (t_actual ∉ [0,1]),
+            // omezit drag. Zachová se vizuální napojení W4-W7 apod.
+            if (initialData.vyvojMode && w && !isMultiSelect && (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01)) {
+                const movingNodeIds = new Set([w.nodeA, w.nodeB]);
+                let tcFactor = 1.0;
+                for (const hostWall of this.engine.walls.values()) {
+                    if (hostWall.id === this.draggingWallId) continue;
+                    const aMoves = movingNodeIds.has(hostWall.nodeA);
+                    const bMoves = movingNodeIds.has(hostWall.nodeB);
+                    if (!aMoves && !bMoves) continue;
+                    // Najít T-children tohoto hosta
+                    const children = this.engine.getTChildren(hostWall.id);
+                    if (children.length === 0) continue;
+                    const nA = this.engine.nodes.get(hostWall.nodeA);
+                    const nB = this.engine.nodes.get(hostWall.nodeB);
+                    if (!nA || !nB) continue;
+                    // Parametrizujeme drag podle faktoru s ∈ [0, 1] a hledáme
+                    // nejvyšší s, kde všechny t_actual zůstávají v [0, 1].
+                    for (const ch of children) {
+                        // Stěna navázaná na ČELO hostitele tenhle limit neřeší:
+                        // drží se end-face, ne délky hostitele, a v rohu leží
+                        // dokonce kousek ZA jeho koncovým uzlem (t < 0). Dokud
+                        // se počítala, jeden takový spoj zmrazil všechny stěny,
+                        // které s hostitelem sdílejí uzel — nešly posunout vůbec.
+                        const vazbaDitete = ch.end === 'a' ? ch.wall.odConstraint : ch.wall.doConstraint;
+                        if (vazbaDitete && vazbaDitete.konec) continue;
+                        const childNodeId = ch.end === 'a' ? ch.wall.nodeA : ch.wall.nodeB;
+                        const childNode = this.engine.nodes.get(childNodeId);
+                        if (!childNode) continue;
+                        // t_actual(s) = ((childNode - newA(s)) · (newB(s) - newA(s))) / |newB-newA|²
+                        // Kvadratická/racionální v s, těžké analytické řešení.
+                        // Bisekce: najít max s ∈ [0, 1] kde t_actual ∈ [0, 1].
+                        const checkS = (s) => {
+                            const nAx = nA.x + (aMoves ? dx * s : 0);
+                            const nAy = nA.y + (aMoves ? dy * s : 0);
+                            const nBx = nB.x + (bMoves ? dx * s : 0);
+                            const nBy = nB.y + (bMoves ? dy * s : 0);
+                            const hdx = nBx - nAx, hdy = nBy - nAy;
+                            const L2 = hdx * hdx + hdy * hdy;
+                            if (L2 === 0) return false;
+                            const t = ((childNode.x - nAx) * hdx + (childNode.y - nAy) * hdy) / L2;
+                            return t >= 0 && t <= 1;
+                        };
+                        if (!checkS(1.0)) {
+                            // Příčka, která je MIMO rozsah už teď, nesmí tah
+                            // zablokovat: bisekce by skončila na nule a stěna
+                            // by ztuhla úplně. Pohybem se nic nezhorší.
+                            if (!checkS(0)) continue;
+                            // Bisekce v [0, 1]
+                            let lo = 0, hi = 1;
+                            for (let k = 0; k < 20; k++) {
+                                const mid = (lo + hi) / 2;
+                                if (checkS(mid)) lo = mid; else hi = mid;
+                            }
+                            if (lo < tcFactor) tcFactor = Math.max(0, lo);
+                        }
+                    }
+                }
+                if (tcFactor < 1.0) {
+                    dx *= tcFactor;
+                    dy *= tcFactor;
+                }
+            }
+            // Magnet volných endpointů při dragu celé stěny — endpoint se
+            // přichytí k uzlu nebo ose jiné stěny, i když user nedrží za konec.
+            // Platí jen pro single-wall drag s alespoň 1 volným endpointem.
+            // Posun na zadanou vzdálenost (kóta) magnet nepoužívá, hodnotu by změnil.
+            if (!isMultiSelect && w && !this._tahPresny) {
+                const a = this.engine.nodes.get(w.nodeA);
+                const b = this.engine.nodes.get(w.nodeB);
+                if (a && b) {
+                    const nAw = this.engine.getNodeWalls(a.id);
+                    const nBw = this.engine.getNodeWalls(b.id);
+                    const aFree = nAw.length === 1 && !w.odConstraint;
+                    const bFree = nBw.length === 1 && !w.doConstraint;
+                    const scale = this.stage ? this.stage.scaleX() : 1;
+                    const tol = this._dosahMagnetu(14);   // jednotný dosah (viz _dosahMagnetu)
+                    const tryMagnet = (nodeId, free) => {
+                        if (!free) return null;
+                        const n = this.engine.nodes.get(nodeId);
+                        const px = n.x + dx, py = n.y + dy;
+                        // 0) napojení „I" na čelo souosé stěny — má přednost před
+                        //    uzlem, protože uzel by stěnu posadil na osu hostitele.
+                        //    Vzdálený konec se veze se stěnou, proto posunutý „odkud".
+                        const druhyId = nodeId === a.id ? b.id : a.id;
+                        const druhy = this.engine.nodes.get(druhyId);
+                        const celo = this._kandidatCela(nodeId, { x: px, y: py },
+                            druhy ? { x: druhy.x + dx, y: druhy.y + dy } : null);
+                        if (celo) return { delta: { x: celo.bod.x - px, y: celo.bod.y - py }, celo };
+                        // 1) node magnet (priority)
+                        let best = null, bestD = tol;
+                        for (const other of this.engine.nodes.values()) {
+                            if (other.id === a.id || other.id === b.id) continue;
+                            const d = Math.hypot(px - other.x, py - other.y);
+                            if (d < bestD) { bestD = d; best = { x: other.x, y: other.y }; }
+                        }
+                        if (best) return { delta: { x: best.x - px, y: best.y - py } };
+                        // 2) kolmé napojení na stěnu — stejné pravidlo jako při tažení
+                        //    za bod: konec sedne na LÍC hostitele, u osy na osu.
+                        //    Dřív tudy končil vždy na ose, takže posun celé stěny
+                        //    dával jiný výsledek než posun jejího konce.
+                        const cand = this.engine.findSnapCandidate(px, py, tol, nodeId, true);
+                        const rez = cand && this._rezimNapojeni(nodeId, cand.wall, { x: px, y: py });
+                        if (rez) {
+                            const bod = {
+                                x: rez.hax.a.x + cand.t * rez.hax.dx + rez.hax.perpUx * rez.perpOff,
+                                y: rez.hax.a.y + cand.t * rez.hax.dy + rez.hax.perpUy * rez.perpOff,
+                            };
+                            return { delta: { x: bod.x - px, y: bod.y - py } };
+                        }
+                        return null;
+                    };
+                    const magA = tryMagnet(a.id, aFree);
+                    const magB = tryMagnet(b.id, bFree);
+                    // Pick stronger magnet (menší delta = blíž)
+                    let pick = null;
+                    if (magA && magB) {
+                        const dA = Math.hypot(magA.delta.x, magA.delta.y);
+                        const dB = Math.hypot(magB.delta.x, magB.delta.y);
+                        pick = dA <= dB ? magA : magB;
+                    } else {
+                        pick = magA || magB;
+                    }
+                    if (pick) { dx += pick.delta.x; dy += pick.delta.y; }
+                    // Náhled napojení „I" se ukáže i při posouvání celé
+                    // stěny — přichytávání je stejné jako při tažení za bod.
+                    this._snapPreview = (pick && pick.celo)
+                        ? { cela: true, line: pick.celo.line, zobrazLine: pick.celo.zobrazLine, point: pick.celo.bod }
+                        : (caraSpodku ? { line: caraSpodku } : null);
+                }
+            }
+            // Snapshot node pozic před pohybem — pro zachování absolutních
+            // pozic otvorů u stěn, jejichž endpoint se posune.
+            const oldNodePos = new Map();
+            for (const node of this.engine.nodes.values()) {
+                oldNodePos.set(node.id, { x: node.x, y: node.y });
+            }
+            if (this.renderer.selectedWalls.size > 1 && this.renderer.selectedWalls.has(this.draggingWallId)) {
+                const movedNodes = new Set();
+                for (const wId of this.renderer.selectedWalls) {
+                    const wall = this.engine.walls.get(wId);
+                    if (!wall) continue;
+                    if (!movedNodes.has(wall.nodeA)) {
+                        movedNodes.add(wall.nodeA);
+                        const n = this.engine.nodes.get(wall.nodeA);
+                        if (n) { n.x += dx; n.y += dy; }
+                    }
+                    if (!movedNodes.has(wall.nodeB)) {
+                        movedNodes.add(wall.nodeB);
+                        const n = this.engine.nodes.get(wall.nodeB);
+                        if (n) { n.x += dx; n.y += dy; }
+                    }
+                }
+                // Rigid translation celého půdorysu (Ctrl+A): pokud uživatel vybral
+                // VŠECHNY stěny, posunout i fixní vrcholy místností a vybavení (nábytek).
+                // Bez toho by zůstávaly na původním místě:
+                //   - vrcholy místnosti s fixními {x,y} (open-plan, balkóny — bez 2 zdí poblíž)
+                //   - fallbackX/Y u wallA+wallB vertices (záloha pro selhání průsečíku)
+                //   - vybavení (engine.vybaveni má polygon+stred v metrech, ne v px)
+                // Pro neúplný multi-select (jen část stěn) tohle NEděláme, jinak by se
+                // místnosti deformovaly při lokálních úpravách.
+                if (this.renderer.selectedWalls.size === this.engine.walls.size) {
+                    const PX_PER_M = this.engine.PX_PER_M;
+                    const dxM = dx / PX_PER_M;
+                    const dyM = dy / PX_PER_M;
+                    this.domPosunZaTahu?.(dx, dy);
+                    // Celý dům = výkres i s podkladem (uloží se po puštění)
+                    if (this.podkladJedeSVyberem?.() && (dx || dy)) {
+                        this.podkladPosun(dx, dy);
+                        this._podkladPohnut = true;
+                    }
+                    for (const prostor of (this.engine.prostory || [])) {
+                        for (const v of (prostor.vertices || [])) {
+                            if (v.refNodeId) continue; // hýbe se s wall nodem
+                            if (v.wallA && v.wallB) {
+                                // pozice se počítá z node průsečíku, ale fallback ano
+                                if (typeof v.fallbackX === 'number') v.fallbackX += dx;
+                                if (typeof v.fallbackY === 'number') v.fallbackY += dy;
+                                continue;
+                            }
+                            if (typeof v.x === 'number') v.x += dx;
+                            if (typeof v.y === 'number') v.y += dy;
+                        }
+                    }
+                    for (const vb of (this.engine.vybaveni || [])) {
+                        if (Array.isArray(vb.stred)) {
+                            vb.stred[0] += dxM;
+                            vb.stred[1] -= dyM; // engine používá invertované Y v px → metr osa "+y nahoru"
+                        }
+                        if (Array.isArray(vb.polygon)) {
+                            for (const p of vb.polygon) {
+                                p[0] += dxM;
+                                p[1] -= dyM;
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Před pohybem: sync t parametrů T-children podle skutečné
+                // pozice (pro případ, že se pozice rozjely od stored t).
+                if (initialData.vyvojMode) {
+                    this.engine.syncTChildrenT(this.draggingWallId);
+                }
+                this.engine.moveWall(this.draggingWallId, dx, dy);
+                if (initialData.vyvojMode) {
+                    // Předat dx/dy — T-children se translatují o stejnou
+                    // hodnotu (zachová perpendikulární offset od osy).
+                    this.engine.propagateTChildren(this.draggingWallId, dx, dy);
+                    this.engine.uklidOddelovace();
+                }
+            }
+            // Aktualizace otvorů: zachovat absolutní pozice, push-sequence (vagónky).
+            // Pro každou stěnu s přesunutým endpointem: 1) spočítat intended pozice
+            // každého otvoru (aby absolutní pozice zůstala), 2) projít seřazené
+            // otvory od nodeA k nodeB — clamp od min=last_end, 3) poslední otvor
+            // (+ sirka) nesmí přetéct za nodeB (bylo by už ošetřeno opFactor limitem,
+            // tohle je safety clamp).
+            // POZN: pro MULTI-SELECT (rigid translation celého objektu) skipnout —
+            // stěny se posouvají společně, otvory se s nimi přirozeně hýbou, žádný
+            // přepočet není potřeba. Jinak by otvory klouzaly po stěnách.
+            if (isMultiSelect) {
+                this.dragWallStart = { x: pos.x, y: pos.y };
+                this.renderer.render();
+                return;
+            }
+            const PX_PER_M = this.engine.PX_PER_M;
+            const wallsWithMovedEndpoint = new Set();
+            for (const wall of this.engine.walls.values()) {
+                const oldA = oldNodePos.get(wall.nodeA);
+                const oldB = oldNodePos.get(wall.nodeB);
+                const newA = this.engine.nodes.get(wall.nodeA);
+                const newB = this.engine.nodes.get(wall.nodeB);
+                if (!oldA || !oldB || !newA || !newB) continue;
+                if (oldA.x !== newA.x || oldA.y !== newA.y || oldB.x !== newB.x || oldB.y !== newB.y) {
+                    wallsWithMovedEndpoint.add(wall.id);
+                }
+            }
+            for (const wallId of wallsWithMovedEndpoint) {
+                const wall = this.engine.walls.get(wallId);
+                if (!wall) continue;
+                const newA = this.engine.nodes.get(wall.nodeA);
+                const newB = this.engine.nodes.get(wall.nodeB);
+                const newDx = newB.x - newA.x, newDy = newB.y - newA.y;
+                const newLen = Math.hypot(newDx, newDy);
+                if (newLen === 0) continue;
+                const newWallLenM = newLen / PX_PER_M;
+                const openingsOnWall = [];
+                for (const o of this.engine.openings.values()) {
+                    if (o.wallId === wallId) openingsOnWall.push(o);
+                }
+                // Spočítat intended pozice — použij "drag-start" absolutní pozici
+                // otvoru (zachycenou při aktivaci drag). Tím se otvor vrací
+                // na původní místo když stěna extenduje zpět, nezůstává pushed.
+                const intended = openingsOnWall.map(o => {
+                    const abs = this._dragOpeningAbs && this._dragOpeningAbs.get(o.id);
+                    if (!abs) return { opening: o, intended: o.pozice };
+                    const relX = abs.x - newA.x, relY = abs.y - newA.y;
+                    const p = (relX * (newDx / newLen) + relY * (newDy / newLen)) / PX_PER_M;
+                    return { opening: o, intended: p };
+                });
+                // Seřadit podle intended ascending (směr od nodeA k nodeB)
+                intended.sort((a, b) => a.intended - b.intended);
+                // Forward pass: push-sequence (každý otvor včetně pouzdra posuvných >= previous.end, >= 0)
+                let lastEnd = 0;
+                for (const x of intended) {
+                    const ext = getOpeningExtent(x.opening);
+                    // pozice - leftExt >= lastEnd → pozice >= lastEnd + leftExt
+                    let p = Math.max(lastEnd + ext.leftExt, x.intended);
+                    if (p - ext.leftExt < 0) p = ext.leftExt; // effStart >= 0
+                    x.opening.pozice = p;
+                    lastEnd = p + ext.rightExt;
+                }
+                // Backward pass: push leftward pokud překročí wall nebo next.effStart
+                let nextStart = newWallLenM;
+                for (let i = intended.length - 1; i >= 0; i--) {
+                    const op = intended[i].opening;
+                    const ext = getOpeningExtent(op);
+                    const maxP = nextStart - ext.rightExt;
+                    if (op.pozice > maxP) op.pozice = Math.max(ext.leftExt, maxP);
+                    nextStart = op.pozice - ext.leftExt;
+                }
+            }
+            this.dragWallStart = { x: pos.x, y: pos.y };
+            this.renderer.render();
+            return;
+        },
+
+        // ─── KÓTY U VÝBĚRU ───────────────────────────────────────
+        _kotaPodKurzorem() {
+            if (this.nastroj !== 'vyber' || !this.stage || !window.KotyVyberu) return null;
+            const p = this.stage.getPointerPosition();
+            return p ? window.KotyVyberu.kotaVBode(this.renderer, p.x, p.y) : null;
+        },
+
+        kotaUpravit(k) {
+            const p = this.stage.getAbsoluteTransform().point(k.stitek);
+            this.kotaEdit = { k: JSON.parse(JSON.stringify(k)), x: p.x, y: p.y };
+            this.$nextTick(() => {
+                const el = this.$refs.kotaInput;
+                if (!el) return;
+                el.value = k.hodnotaCm;
+                el.focus();
+                el.select();
+            });
+        },
+
+        kotaPotvrd(hodnota) {
+            const edit = this.kotaEdit;
+            if (!edit) return;
+            this.kotaEdit = null;
+            const cm = parseFloat(String(hodnota).replace(',', '.'));
+            if (!isFinite(cm) || Math.abs(cm - edit.k.hodnotaCm) < 0.01) return;
+            if (cm < 0) { this._dumHlaska('Vzdálenost nemůže být záporná.'); return; }
+            const px = cm / 100 * this.PX_PER_M;
+            if (edit.k.typ === 'stena') this._kotaPosunSteny(edit.k, px, cm);
+            else this._kotaPosunOtvoru(edit.k, px, cm);
+        },
+
+        /** Posun stěny na zadanou vzdálenost: stejné kroky jako tažení myší, jen bez magnetu. */
+        _kotaPosunSteny(k, cilPx, cm) {
+            const e = this.engine;
+            const w = e.walls.get(k.stena), cil = e.walls.get(k.cil);
+            if (!w || !cil) return;
+            const meri = () => window.KotyVyberu.vzdalenostSten(e, w, cil);
+            // Stěna nesmí přejet jinou rovnoběžnou stěnu, kterou má před sebou v téže místnosti
+            const pred = meri();
+            let zadano = cilPx;
+            const k2 = (this.renderer._kotyVyberu || []).filter(x => x.prekryv && x.cil !== k.cil);
+            const smerKCili = cilPx < pred;
+            const volno = k2.filter(x => (x.strana === k.strana) === smerKCili).map(x => x.d);
+            if (volno.length) {
+                const max = Math.max(0, Math.min(...volno) - 1);
+                if (Math.abs(cilPx - pred) > max) zadano = pred + (smerKCili ? -max : max);
+            }
+            if (cilPx < 1) zadano = Math.max(zadano, 1);
+            e.pushUndo();
+            this._zacniTahSteny(w.id, { x: 0, y: 0 });
+            this.isDraggingWall = true;
+            this.draggingWallId = w.id;
+            this._tahPresny = true;
+            try {
+                for (let i = 0; i < 24; i++) {
+                    const zbyva = meri() - zadano;
+                    if (Math.abs(zbyva) < 0.06) break;
+                    const before = meri();
+                    this._krokTazeniSteny({ x: this.dragWallStart.x + k.ux * zbyva, y: this.dragWallStart.y + k.uy * zbyva });
+                    if (Math.abs(meri() - before) < 0.01) break;   // dál to pravidla nepustí
+                }
+            } finally {
+                this._tahPresny = false;
+                this._snapPreview = null;
+                this.isDraggingWall = false;
+                this.draggingWallId = null;
+            }
+            const po = meri();
+            if (Math.abs(po - pred) < 0.05) {
+                e.undo();
+                this.renderer.render();
+                this._selectionTick++;
+                this._dumHlaska('Tahle stěna se posunout nedá, stejně jako při tažení myší.');
+                return;
+            }
+            this.renderer.render();
+            this.autoSave('Posun stěny');
+            this._selectionTick++;
+            const dosazeno = po / this.PX_PER_M * 100;
+            if (Math.abs(dosazeno - cm) > 0.5) this._dumHlaska('Dál stěna nejde. Vzdálenost je ' + window.KotyVyberu.text(po, this.PX_PER_M) + ' cm místo ' + cm + ' cm.');
+        },
+
+        /** Posun otvoru po stěně: stejné meze jako tažení myší (i s pouzdrem posuvných dveří). */
+        _kotaPosunOtvoru(k, cilPx, cm) {
+            const e = this.engine;
+            const op = e.openings.get(k.otvor);
+            const wall = op && e.walls.get(op.wallId);
+            const nA = wall && e.nodes.get(wall.nodeA), nB = wall && e.nodes.get(wall.nodeB);
+            if (!nA || !nB) return;
+            const zmena = (cilPx - k.d) / this.PX_PER_M;
+            const ext = getOpeningExtent(op);
+            const L = Math.hypot(nB.x - nA.x, nB.y - nA.y) / this.PX_PER_M;
+            const chci = op.pozice + (k.smer < 0 ? zmena : -zmena);
+            const nova = Math.max(ext.leftExt, Math.min(L - ext.rightExt, chci));
+            if (Math.abs(nova - op.pozice) < 0.0005) { this._dumHlaska('Otvor už dál nejde.'); return; }
+            e.pushUndo();
+            op.pozice = nova;
+            this.renderer.render();
+            this.autoSave('Posun otvoru');
+            this._selectionTick++;
+            if (Math.abs(nova - chci) > 0.005) this._dumHlaska('Otvor dál nejde, je na konci stěny. Zadáno ' + cm + ' cm.');
+        },
+
         onMouseMove(e) {
             const pos = this.getPointerPos();
             this.kurzorX = pos.x / this.PX_PER_M;
             this.kurzorY = -pos.y / this.PX_PER_M;
+
+            // Nad číslem kóty ukazuje kurzor, že jde přepsat
+            if (!e.evt.buttons && this._kotaPodKurzorem()) { this.stage.container().style.cursor = 'pointer'; this._kotaKurzor = true; return; }
+            if (this._kotaKurzor) { this._kotaKurzor = false; this.stage.container().style.cursor = ''; }
 
             // Panning
             if (this.isPanning) {
@@ -1618,9 +2356,9 @@ function konceptKEditor(initialData) {
                     x: this.stageStartPos.x + dx,
                     y: this.stageStartPos.y + dy,
                 });
-                // Bump tick aby inspector panel následoval pan
-                this._selectionTick++;
-                this.renderer.renderGrid();
+                if (!this._mrizkaRaf) {
+                    this._mrizkaRaf = requestAnimationFrame(() => { this._mrizkaRaf = null; this.renderer.renderGrid(); });
+                }
                 // Force batchDraw na všech vrstvách — někdy Konva neflushne
                 // některé layery po stage.position a vidí se desync (grid
                 // posunutý, stěny zůstaly).
@@ -1631,6 +2369,8 @@ function konceptKEditor(initialData) {
                 }
                 return;
             }
+
+            if (this.domPohyb?.(pos, e)) return;
 
             // Zvýrazňovač — kreslení tahu
             if (this.nastroj === 'zvyraznovac' && this._zvyrazKresba) {
@@ -1678,6 +2418,7 @@ function konceptKEditor(initialData) {
                         // Otáčí se celý dům → podklad se otáčí s ním (z výchozí polohy)
                         this._rotatePodkladSnap = this.podkladJedeSVyberem?.()
                             ? this.podkladPolohaZachyt() : null;
+                        this._rotateSmery = this._smeryRotace();
                         this._pendingDrag = null;
                     } else if (this._pendingDrag.type === 'node') {
                         this.isDraggingNode = true;
@@ -1725,49 +2466,7 @@ function konceptKEditor(initialData) {
                             }
                         }
                     } else {
-                        this.isDraggingWall = true;
-                        this.draggingWallId = this._pendingDrag.id;
-                        this.dragWallStart = { x: pos.x, y: pos.y };
-                        // Zachytit initial actual t constraint endpointů taženého wallu.
-                        // LIMIT bude používat upper = max(stored_cap, initial_actual_t)
-                        // aby user mohl vrátit stěnu na PŮVODNÍ pozici, i když je
-                        // stored t (zaokrouhlený parser) pod skutečnou počáteční t.
-                        this._dragInitialT = {};
-                        const _w = this.engine.walls.get(this._pendingDrag.id);
-                        if (_w) {
-                            const computeActualT = (node, constraint) => {
-                                if (!node || !constraint) return null;
-                                const h = this.engine.walls.get(constraint.host);
-                                if (!h) return null;
-                                const ha = this.engine.nodes.get(h.nodeA);
-                                const hb = this.engine.nodes.get(h.nodeB);
-                                if (!ha || !hb) return null;
-                                const hdx = hb.x - ha.x, hdy = hb.y - ha.y;
-                                const hL2 = hdx * hdx + hdy * hdy;
-                                if (hL2 === 0) return null;
-                                return ((node.x - ha.x) * hdx + (node.y - ha.y) * hdy) / hL2;
-                            };
-                            if (_w.odConstraint) this._dragInitialT.a = computeActualT(this.engine.nodes.get(_w.nodeA), _w.odConstraint);
-                            if (_w.doConstraint) this._dragInitialT.b = computeActualT(this.engine.nodes.get(_w.nodeB), _w.doConstraint);
-                        }
-                        // Snapshot "původních" absolutních pozic otvorů na začátku
-                        // drag sekvence. Použije se pro intended pozice (ne current
-                        // state), takže otvory se při extensi stěny vrací na původní
-                        // pozici, ne zůstávají na pushed místě.
-                        this._dragOpeningAbs = new Map();
-                        for (const op of this.engine.openings.values()) {
-                            const wall = this.engine.walls.get(op.wallId);
-                            if (!wall) continue;
-                            const nA = this.engine.nodes.get(wall.nodeA);
-                            const nB = this.engine.nodes.get(wall.nodeB);
-                            if (!nA || !nB) continue;
-                            const dx = nB.x - nA.x, dy = nB.y - nA.y;
-                            const L = Math.hypot(dx, dy);
-                            if (L === 0) continue;
-                            const absX = nA.x + (dx / L) * op.pozice * this.engine.PX_PER_M;
-                            const absY = nA.y + (dy / L) * op.pozice * this.engine.PX_PER_M;
-                            this._dragOpeningAbs.set(op.id, { x: absX, y: absY });
-                        }
+                        this._zacniTahSteny(this._pendingDrag.id, pos);
                     }
                     this._pendingDrag = null;
                 }
@@ -1784,6 +2483,15 @@ function konceptKEditor(initialData) {
                 const step = 1 * Math.PI / 180;
                 if (!e.evt.altKey) {
                     delta = Math.round(delta / step) * step;
+                }
+                // Magnet: významný směr stěn na vodorovnou a svislou obrazovky. Přichycení ukáže čára skrz střed.
+                const zachyceno = this._bezMagnetu(e) ? null : this._magnetRotace(delta);
+                if (zachyceno !== null) delta = zachyceno;
+                this._snapPreview = null;
+                if (zachyceno !== null) {
+                    const rho = (this.stage.rotation() || 0) * Math.PI / 180, dosah = 8 * this.PX_PER_M;
+                    const hx = Math.cos(-rho) * dosah, hy = Math.sin(-rho) * dosah;
+                    this._snapPreview = { line: { a: { x: this._rotateCx - hx, y: this._rotateCy - hy }, b: { x: this._rotateCx + hx, y: this._rotateCy + hy } } };
                 }
                 this._rotateDelta = delta;
                 const cos = Math.cos(delta), sin = Math.sin(delta);
@@ -2248,10 +2956,29 @@ function konceptKEditor(initialData) {
                     if (v && (!uhelDrzi || paprsek)) { target = v.bod; voditka = v.voditka; }
                 }
 
+                // Volný konec se chytá i na rohy a osy nosných stěn podlaží pod aktivním:
+                // stěna patra má navázat na tu dole. Zachycený úhel se kvůli tomu nerozbije.
+                let naSpodek = false;
+                if (this._snapPreview?.spodek) this._snapPreview = null;
+                if (!bezMagnetu && volnyUzel && !magnetUhluPreskocit && !uzelKeSlouceni && !voditka) {
+                    // Stěna tohoto podlaží v dosahu má přednost: tam patří okraj nebo střih
+                    const naStene = this.engine.findSnapCandidate(target.x, target.y, this._dosahMagnetu(12), this.draggingNodeId, true);
+                    const dole = naStene ? null : this.engine.magnetSpodku(target.x, target.y, this._dosahMagnetu(12));
+                    if (dole) {
+                        const drziUhel = magnetUhluZabral || this._rightAngleNodeId === this.draggingNodeId;
+                        const odPaprsku = paprsek ? Math.abs((dole.x - paprsek.p.x) * paprsek.d.y - (dole.y - paprsek.p.y) * paprsek.d.x) : 0;
+                        if (!drziUhel || (paprsek && odPaprsku < this._dosahMagnetu(3))) {
+                            target = dole;
+                            naSpodek = true;
+                            if (dole.cara) this._snapPreview = { spodek: true, line: dole.cara };
+                        }
+                    }
+                }
+
                 // Pokud magnetický úhel snap aktivní, obejít grid snap — jinak by
                 // snapToGrid posunul uzel z přesné pozice a zobrazený úhel by ukázal
                 // 44° místo 45° atd. S Altem se mřížka obchází taky (bez magnetu).
-                if (this._rightAngleNodeId === this.draggingNodeId || magnetUhluZabral || magnetUhluPreskocit || bezMagnetu || voditka) {
+                if (this._rightAngleNodeId === this.draggingNodeId || magnetUhluZabral || magnetUhluPreskocit || bezMagnetu || voditka || naSpodek) {
                     const _n = this.engine.nodes.get(this.draggingNodeId);
                     if (_n) { _n.x = target.x; _n.y = target.y; }
                 } else {
@@ -2269,7 +2996,7 @@ function konceptKEditor(initialData) {
                         uhel,
                         reference: uhel ? referenceUhlu : null,
                         stena: sp && sp.wall ? sp.wall.id : null,
-                        uzel: uzelKeSlouceni ? uzelKeSlouceni.id : null,
+                        uzel: uzelKeSlouceni ? uzelKeSlouceni.id : (naSpodek ? 'spodek' : null),
                         voditka: voditka ? voditka.map(g => g.uzel).join(',') : null,
                     }, uzelKeSlouceni ? { x: uzelKeSlouceni.x, y: uzelKeSlouceni.y } : uzel);
                     // Pro šablonu: tečkovaná vodítka od rohů a vodicí osa zachyceného úhlu
@@ -2423,530 +3150,7 @@ function konceptKEditor(initialData) {
 
             // Dragging wall (nebo celý výběr)
             if (this.isDraggingWall && this.draggingWallId) {
-                let dx = pos.x - this.dragWallStart.x;
-                let dy = pos.y - this.dragWallStart.y;
-
-                // Pokud je vybráno víc stěn (multi-select celého objektu), přeskočit
-                // constraint/collision projekce — uživatel chce volně posouvat celý výběr.
-                const isMultiSelect = this.renderer.selectedWalls.size > 1 && this.renderer.selectedWalls.has(this.draggingWallId);
-                const w = this.engine.walls.get(this.draggingWallId);
-                const engine = this.engine;
-                if (initialData.vyvojMode && !isMultiSelect && w) {
-                    // RULE #10: endpoint-axis projekce (drag jen ve směru povoleném oběma endpointy)
-                    const axisA = this._dragEndpointAxis(w.nodeA, w.odConstraint, this.draggingWallId);
-                    const axisB = this._dragEndpointAxis(w.nodeB, w.doConstraint, this.draggingWallId);
-                    if (axisA.type === 'frozen' || axisB.type === 'frozen') {
-                        dx = 0; dy = 0;
-                    } else {
-                        if (axisA.type === 'axis') { const p = this._dragProject(dx, dy, axisA.dx, axisA.dy); dx = p.dx; dy = p.dy; }
-                        if (axisB.type === 'axis') { const p = this._dragProject(dx, dy, axisB.dx, axisB.dy); dx = p.dx; dy = p.dy; }
-                    }
-                    // RULE #11: HOST perpendicular — stěna s T-children se hýbe jen kolmo
-                    if (this.engine.getTChildren(this.draggingWallId).length > 0) {
-                        const a = this.engine.nodes.get(w.nodeA);
-                        const b = this.engine.nodes.get(w.nodeB);
-                        if (a && b) {
-                            const wdx = b.x - a.x, wdy = b.y - a.y;
-                            if (wdx || wdy) {
-                                const p = this._dragProject(dx, dy, -wdy, wdx);
-                                dx = p.dx; dy = p.dy;
-                            }
-                        }
-                    }
-                    // RULE #12 + #13: corner cap + initial actual t tolerance
-                    if (w.odConstraint || w.doConstraint) {
-                        const initT = this._dragInitialT || {};
-                        // Napojení na čelo se neřídí parametrem t podél hostitele —
-                        // jezdí po jeho čele a dál než na líc nesmí.
-                        const applyCeloLimit = (node, constraint) => {
-                            if (!node || !constraint || !constraint.konec) return;
-                            const celo = this.engine.celoHostitele(constraint.host, constraint.konec, w.tloustka);
-                            if (!celo) return;
-                            const kx = celo.kolmice.x, ky = celo.kolmice.y;
-                            const u0 = (node.x - celo.stred.x) * kx + (node.y - celo.stred.y) * ky;
-                            const u1 = Math.max(-celo.dosah, Math.min(celo.dosah, u0 + dx * kx + dy * ky));
-                            dx = (u1 - u0) * kx;
-                            dy = (u1 - u0) * ky;
-                        };
-                        const applyCornerLimit = (node, constraint, initActualT) => {
-                            if (!node || !constraint || constraint.konec) return;
-                            const ax = this._dragHostAxis(constraint.host);
-                            if (!ax) return;
-                            const along_req = (dx * ax.dx + dy * ax.dy) / ax.L2;
-                            const perp_dx = dx - along_req * ax.dx;
-                            const perp_dy = dy - along_req * ax.dy;
-                            const current_t = this._dragActualT(node.x, node.y, ax);
-                            const new_t = current_t + along_req;
-                            const cap = constraint.t;
-                            let lower = 0, upper = 1;
-                            if (cap > 0.9) {
-                                const initMax = (typeof initActualT === 'number') ? initActualT : cap;
-                                upper = Math.min(1, Math.max(cap, initMax) + 0.003);
-                            } else if (cap < 0.1) {
-                                const initMin = (typeof initActualT === 'number') ? initActualT : cap;
-                                lower = Math.max(0, Math.min(cap, initMin) - 0.003);
-                            }
-                            let target_t;
-                            if (current_t > upper) {
-                                target_t = Math.min(current_t, Math.max(lower, new_t));
-                            } else if (current_t < lower) {
-                                target_t = Math.max(current_t, Math.min(upper, new_t));
-                            } else {
-                                if (new_t >= lower && new_t <= upper) return;
-                                target_t = Math.max(lower, Math.min(upper, new_t));
-                            }
-                            const along_delta = target_t - current_t;
-                            dx = along_delta * ax.dx + perp_dx;
-                            dy = along_delta * ax.dy + perp_dy;
-                        };
-                        applyCeloLimit(this.engine.nodes.get(w.nodeA), w.odConstraint);
-                        applyCeloLimit(this.engine.nodes.get(w.nodeB), w.doConstraint);
-                        applyCornerLimit(this.engine.nodes.get(w.nodeA), w.odConstraint, initT.a);
-                        applyCornerLimit(this.engine.nodes.get(w.nodeB), w.doConstraint, initT.b);
-                    }
-                    // POZN: constraint.t se BĚHEM drag NEaktualizuje — stored t
-                    // představuje PARSER-DANÉ ukotvení (často t=0.98 u rohu).
-                    // Uživatel chce, aby ukotvení viselo vizuálně na kraji
-                    // hostitele i když se stěna fyzicky posouvá. Physical
-                    // slide pozice je dána node.x/y, stored t je jen marker
-                    // pro propagateTChildren (když by se hostitel hýbal).
-
-                    // COLLISION: stěna se nesmí srazit s jinou. Kontrolujeme
-                    // pouze axis-aligned kolize (běžné v půdorysech). Pro každou
-                    // jinou stěnu spočítáme maximální faktor t ∈ [0, 1] pohybu
-                    // tak, aby surface nebyly blíž než součet half-thicknesses.
-                    if (w && (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01)) {
-                        const nA = this.engine.nodes.get(w.nodeA);
-                        const nB = this.engine.nodes.get(w.nodeB);
-                        if (nA && nB) {
-                            const w1_thk_half = (w.tloustka * engine.PX_PER_M) / 2;
-                            // Is w1 horizontal or vertical?
-                            const w1_horiz = Math.abs(nA.y - nB.y) < 0.5;
-                            const w1_vert = Math.abs(nA.x - nB.x) < 0.5;
-                            if (w1_horiz || w1_vert) {
-                                // Stěny, které se s taženou vezou (její příčky) nebo po
-                                // kterých klouže (její hostitelé), nejsou překážka —
-                                // pohybují se spolu s ní. Dokud se počítaly, stačilo mít
-                                // příčku na doraz u líce a stěna šla posunout jen na jednu
-                                // stranu: na druhé vycházela povolená vůle nula a o
-                                // zablokování rozhodlo zaokrouhlení.
-                                const vezeneSteny = new Set(engine.getTChildren(w.id).map(ch => ch.wall.id));
-                                if (w.odConstraint && w.odConstraint.host) vezeneSteny.add(w.odConstraint.host);
-                                if (w.doConstraint && w.doConstraint.host) vezeneSteny.add(w.doConstraint.host);
-                                let factor = 1.0;
-                                for (const other of this.engine.walls.values()) {
-                                    if (other.id === w.id) continue;
-                                    if (vezeneSteny.has(other.id)) continue;
-                                    // Skip walls sharing a node with w (adjacent L-corners)
-                                    if (other.nodeA === w.nodeA || other.nodeA === w.nodeB ||
-                                        other.nodeB === w.nodeA || other.nodeB === w.nodeB) continue;
-                                    const oA = this.engine.nodes.get(other.nodeA);
-                                    const oB = this.engine.nodes.get(other.nodeB);
-                                    if (!oA || !oB) continue;
-                                    const o_thk_half = (other.tloustka * engine.PX_PER_M) / 2;
-                                    const sep = w1_thk_half + o_thk_half;
-                                    const o_horiz = Math.abs(oA.y - oB.y) < 0.5;
-                                    const o_vert = Math.abs(oA.x - oB.x) < 0.5;
-                                    if (w1_horiz && o_horiz) {
-                                        // Both horizontal → collision when y's meet
-                                        const w1_x_lo = Math.min(nA.x, nB.x);
-                                        const w1_x_hi = Math.max(nA.x, nB.x);
-                                        const o_x_lo = Math.min(oA.x, oB.x);
-                                        const o_x_hi = Math.max(oA.x, oB.x);
-                                        if (Math.min(w1_x_hi, o_x_hi) <= Math.max(w1_x_lo, o_x_lo)) continue;
-                                        const gap = oA.y - nA.y;
-                                        const sign = Math.sign(dy);
-                                        if (sign === 0 || Math.sign(gap) !== sign) continue;
-                                        const allowed = Math.abs(gap) - sep;
-                                        if (allowed <= 0.01) continue;   // na doraz = neomezovat (ne hra zaokrouhlení)
-                                        const f = allowed / Math.abs(dy);
-                                        if (f < factor) factor = Math.max(0, f);
-                                    } else if (w1_horiz && o_vert) {
-                                        // Horizontal w1, vertical other
-                                        const w1_x_lo = Math.min(nA.x, nB.x);
-                                        const w1_x_hi = Math.max(nA.x, nB.x);
-                                        if (oA.x < w1_x_lo - sep || oA.x > w1_x_hi + sep) continue;
-                                        const o_y_lo = Math.min(oA.y, oB.y);
-                                        const o_y_hi = Math.max(oA.y, oB.y);
-                                        // Which edge of other to collide with
-                                        const sign = Math.sign(dy);
-                                        if (sign === 0) continue;
-                                        const o_edge = sign > 0 ? o_y_lo : o_y_hi;
-                                        const gap = o_edge - nA.y;
-                                        if (Math.sign(gap) !== sign) continue;
-                                        const allowed = Math.abs(gap) - sep;
-                                        if (allowed <= 0.01) continue;   // na doraz = neomezovat (ne hra zaokrouhlení)
-                                        const f = allowed / Math.abs(dy);
-                                        if (f < factor) factor = Math.max(0, f);
-                                    } else if (w1_vert && o_vert) {
-                                        const w1_y_lo = Math.min(nA.y, nB.y);
-                                        const w1_y_hi = Math.max(nA.y, nB.y);
-                                        const o_y_lo = Math.min(oA.y, oB.y);
-                                        const o_y_hi = Math.max(oA.y, oB.y);
-                                        if (Math.min(w1_y_hi, o_y_hi) <= Math.max(w1_y_lo, o_y_lo)) continue;
-                                        const gap = oA.x - nA.x;
-                                        const sign = Math.sign(dx);
-                                        if (sign === 0 || Math.sign(gap) !== sign) continue;
-                                        const allowed = Math.abs(gap) - sep;
-                                        if (allowed <= 0.01) continue;   // na doraz = neomezovat (ne hra zaokrouhlení)
-                                        const f = allowed / Math.abs(dx);
-                                        if (f < factor) factor = Math.max(0, f);
-                                    } else if (w1_vert && o_horiz) {
-                                        const w1_y_lo = Math.min(nA.y, nB.y);
-                                        const w1_y_hi = Math.max(nA.y, nB.y);
-                                        if (oA.y < w1_y_lo - sep || oA.y > w1_y_hi + sep) continue;
-                                        const o_x_lo = Math.min(oA.x, oB.x);
-                                        const o_x_hi = Math.max(oA.x, oB.x);
-                                        const sign = Math.sign(dx);
-                                        if (sign === 0) continue;
-                                        const o_edge = sign > 0 ? o_x_lo : o_x_hi;
-                                        const gap = o_edge - nA.x;
-                                        if (Math.sign(gap) !== sign) continue;
-                                        const allowed = Math.abs(gap) - sep;
-                                        if (allowed <= 0.01) continue;   // na doraz = neomezovat (ne hra zaokrouhlení)
-                                        const f = allowed / Math.abs(dx);
-                                        if (f < factor) factor = Math.max(0, f);
-                                    }
-                                }
-                                if (factor < 1.0) {
-                                    dx *= factor;
-                                    dy *= factor;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Otvor-squeeze LIMIT: pokud by stěna zkrátila pod součet šířek
-                // otvorů (otvory by se v modelu "vagónků" naskládaly a přetekly
-                // za druhý konec), zkrátíme drag factor. Řeší i sekvenci drag→push.
-                if (initialData.vyvojMode && w && !isMultiSelect && (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01)) {
-                    const movingNodeIds = new Set([w.nodeA, w.nodeB]);
-                    const PX_PER_M_val = this.engine.PX_PER_M;
-                    let opFactor = 1.0;
-                    for (const wall of this.engine.walls.values()) {
-                        if (wall.id === this.draggingWallId) continue;
-                        const aMoves = movingNodeIds.has(wall.nodeA);
-                        const bMoves = movingNodeIds.has(wall.nodeB);
-                        if (!aMoves && !bMoves) continue;
-                        let totalSirkaPx = 0;
-                        for (const o of this.engine.openings.values()) {
-                            if (o.wallId === wall.id) totalSirkaPx += o.sirka * PX_PER_M_val;
-                        }
-                        if (totalSirkaPx === 0) continue;
-                        const nA = this.engine.nodes.get(wall.nodeA);
-                        const nB = this.engine.nodes.get(wall.nodeB);
-                        if (!nA || !nB) continue;
-                        const oldLen = Math.hypot(nB.x - nA.x, nB.y - nA.y);
-                        const newAx = nA.x + (aMoves ? dx : 0);
-                        const newAy = nA.y + (aMoves ? dy : 0);
-                        const newBx = nB.x + (bMoves ? dx : 0);
-                        const newBy = nB.y + (bMoves ? dy : 0);
-                        const newLen = Math.hypot(newBx - newAx, newBy - newAy);
-                        if (newLen < totalSirkaPx) {
-                            const maxShrink = oldLen - totalSirkaPx;
-                            const requestedShrink = oldLen - newLen;
-                            if (requestedShrink > 0) {
-                                const f = Math.max(0, maxShrink / requestedShrink);
-                                if (f < opFactor) opFactor = f;
-                            }
-                        }
-                    }
-                    if (opFactor < 1.0) {
-                        dx *= opFactor;
-                        dy *= opFactor;
-                    }
-                }
-
-                // T-child LIMIT: pokud deformace hostitele (posun endpointu) by
-                // způsobila, že T-child sedí mimo rozsah hostitele (t_actual ∉ [0,1]),
-                // omezit drag. Zachová se vizuální napojení W4-W7 apod.
-                if (initialData.vyvojMode && w && !isMultiSelect && (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01)) {
-                    const movingNodeIds = new Set([w.nodeA, w.nodeB]);
-                    let tcFactor = 1.0;
-                    for (const hostWall of this.engine.walls.values()) {
-                        if (hostWall.id === this.draggingWallId) continue;
-                        const aMoves = movingNodeIds.has(hostWall.nodeA);
-                        const bMoves = movingNodeIds.has(hostWall.nodeB);
-                        if (!aMoves && !bMoves) continue;
-                        // Najít T-children tohoto hosta
-                        const children = this.engine.getTChildren(hostWall.id);
-                        if (children.length === 0) continue;
-                        const nA = this.engine.nodes.get(hostWall.nodeA);
-                        const nB = this.engine.nodes.get(hostWall.nodeB);
-                        if (!nA || !nB) continue;
-                        // Parametrizujeme drag podle faktoru s ∈ [0, 1] a hledáme
-                        // nejvyšší s, kde všechny t_actual zůstávají v [0, 1].
-                        for (const ch of children) {
-                            // Stěna navázaná na ČELO hostitele tenhle limit neřeší:
-                            // drží se end-face, ne délky hostitele, a v rohu leží
-                            // dokonce kousek ZA jeho koncovým uzlem (t < 0). Dokud
-                            // se počítala, jeden takový spoj zmrazil všechny stěny,
-                            // které s hostitelem sdílejí uzel — nešly posunout vůbec.
-                            const vazbaDitete = ch.end === 'a' ? ch.wall.odConstraint : ch.wall.doConstraint;
-                            if (vazbaDitete && vazbaDitete.konec) continue;
-                            const childNodeId = ch.end === 'a' ? ch.wall.nodeA : ch.wall.nodeB;
-                            const childNode = this.engine.nodes.get(childNodeId);
-                            if (!childNode) continue;
-                            // t_actual(s) = ((childNode - newA(s)) · (newB(s) - newA(s))) / |newB-newA|²
-                            // Kvadratická/racionální v s, těžké analytické řešení.
-                            // Bisekce: najít max s ∈ [0, 1] kde t_actual ∈ [0, 1].
-                            const checkS = (s) => {
-                                const nAx = nA.x + (aMoves ? dx * s : 0);
-                                const nAy = nA.y + (aMoves ? dy * s : 0);
-                                const nBx = nB.x + (bMoves ? dx * s : 0);
-                                const nBy = nB.y + (bMoves ? dy * s : 0);
-                                const hdx = nBx - nAx, hdy = nBy - nAy;
-                                const L2 = hdx * hdx + hdy * hdy;
-                                if (L2 === 0) return false;
-                                const t = ((childNode.x - nAx) * hdx + (childNode.y - nAy) * hdy) / L2;
-                                return t >= 0 && t <= 1;
-                            };
-                            if (!checkS(1.0)) {
-                                // Příčka, která je MIMO rozsah už teď, nesmí tah
-                                // zablokovat: bisekce by skončila na nule a stěna
-                                // by ztuhla úplně. Pohybem se nic nezhorší.
-                                if (!checkS(0)) continue;
-                                // Bisekce v [0, 1]
-                                let lo = 0, hi = 1;
-                                for (let k = 0; k < 20; k++) {
-                                    const mid = (lo + hi) / 2;
-                                    if (checkS(mid)) lo = mid; else hi = mid;
-                                }
-                                if (lo < tcFactor) tcFactor = Math.max(0, lo);
-                            }
-                        }
-                    }
-                    if (tcFactor < 1.0) {
-                        dx *= tcFactor;
-                        dy *= tcFactor;
-                    }
-                }
-
-                // Magnet volných endpointů při dragu celé stěny — endpoint se
-                // přichytí k uzlu nebo ose jiné stěny, i když user nedrží za konec.
-                // Platí jen pro single-wall drag s alespoň 1 volným endpointem.
-                if (!isMultiSelect && w) {
-                    const a = this.engine.nodes.get(w.nodeA);
-                    const b = this.engine.nodes.get(w.nodeB);
-                    if (a && b) {
-                        const nAw = this.engine.getNodeWalls(a.id);
-                        const nBw = this.engine.getNodeWalls(b.id);
-                        const aFree = nAw.length === 1 && !w.odConstraint;
-                        const bFree = nBw.length === 1 && !w.doConstraint;
-                        const scale = this.stage ? this.stage.scaleX() : 1;
-                        const tol = this._dosahMagnetu(14);   // jednotný dosah (viz _dosahMagnetu)
-                        const tryMagnet = (nodeId, free) => {
-                            if (!free) return null;
-                            const n = this.engine.nodes.get(nodeId);
-                            const px = n.x + dx, py = n.y + dy;
-                            // 0) napojení „I" na čelo souosé stěny — má přednost před
-                            //    uzlem, protože uzel by stěnu posadil na osu hostitele.
-                            //    Vzdálený konec se veze se stěnou, proto posunutý „odkud".
-                            const druhyId = nodeId === a.id ? b.id : a.id;
-                            const druhy = this.engine.nodes.get(druhyId);
-                            const celo = this._kandidatCela(nodeId, { x: px, y: py },
-                                druhy ? { x: druhy.x + dx, y: druhy.y + dy } : null);
-                            if (celo) return { delta: { x: celo.bod.x - px, y: celo.bod.y - py }, celo };
-                            // 1) node magnet (priority)
-                            let best = null, bestD = tol;
-                            for (const other of this.engine.nodes.values()) {
-                                if (other.id === a.id || other.id === b.id) continue;
-                                const d = Math.hypot(px - other.x, py - other.y);
-                                if (d < bestD) { bestD = d; best = { x: other.x, y: other.y }; }
-                            }
-                            if (best) return { delta: { x: best.x - px, y: best.y - py } };
-                            // 2) kolmé napojení na stěnu — stejné pravidlo jako při tažení
-                            //    za bod: konec sedne na LÍC hostitele, u osy na osu.
-                            //    Dřív tudy končil vždy na ose, takže posun celé stěny
-                            //    dával jiný výsledek než posun jejího konce.
-                            const cand = this.engine.findSnapCandidate(px, py, tol, nodeId, true);
-                            const rez = cand && this._rezimNapojeni(nodeId, cand.wall, { x: px, y: py });
-                            if (rez) {
-                                const bod = {
-                                    x: rez.hax.a.x + cand.t * rez.hax.dx + rez.hax.perpUx * rez.perpOff,
-                                    y: rez.hax.a.y + cand.t * rez.hax.dy + rez.hax.perpUy * rez.perpOff,
-                                };
-                                return { delta: { x: bod.x - px, y: bod.y - py } };
-                            }
-                            return null;
-                        };
-                        const magA = tryMagnet(a.id, aFree);
-                        const magB = tryMagnet(b.id, bFree);
-                        // Pick stronger magnet (menší delta = blíž)
-                        let pick = null;
-                        if (magA && magB) {
-                            const dA = Math.hypot(magA.delta.x, magA.delta.y);
-                            const dB = Math.hypot(magB.delta.x, magB.delta.y);
-                            pick = dA <= dB ? magA : magB;
-                        } else {
-                            pick = magA || magB;
-                        }
-                        if (pick) { dx += pick.delta.x; dy += pick.delta.y; }
-                        // Náhled napojení „I" se ukáže i při posouvání celé
-                        // stěny — přichytávání je stejné jako při tažení za bod.
-                        this._snapPreview = (pick && pick.celo)
-                            ? { cela: true, line: pick.celo.line, zobrazLine: pick.celo.zobrazLine, point: pick.celo.bod }
-                            : null;
-                    }
-                }
-
-                // Snapshot node pozic před pohybem — pro zachování absolutních
-                // pozic otvorů u stěn, jejichž endpoint se posune.
-                const oldNodePos = new Map();
-                for (const node of this.engine.nodes.values()) {
-                    oldNodePos.set(node.id, { x: node.x, y: node.y });
-                }
-
-                if (this.renderer.selectedWalls.size > 1 && this.renderer.selectedWalls.has(this.draggingWallId)) {
-                    const movedNodes = new Set();
-                    for (const wId of this.renderer.selectedWalls) {
-                        const wall = this.engine.walls.get(wId);
-                        if (!wall) continue;
-                        if (!movedNodes.has(wall.nodeA)) {
-                            movedNodes.add(wall.nodeA);
-                            const n = this.engine.nodes.get(wall.nodeA);
-                            if (n) { n.x += dx; n.y += dy; }
-                        }
-                        if (!movedNodes.has(wall.nodeB)) {
-                            movedNodes.add(wall.nodeB);
-                            const n = this.engine.nodes.get(wall.nodeB);
-                            if (n) { n.x += dx; n.y += dy; }
-                        }
-                    }
-
-                    // Rigid translation celého půdorysu (Ctrl+A): pokud uživatel vybral
-                    // VŠECHNY stěny, posunout i fixní vrcholy místností a vybavení (nábytek).
-                    // Bez toho by zůstávaly na původním místě:
-                    //   - vrcholy místnosti s fixními {x,y} (open-plan, balkóny — bez 2 zdí poblíž)
-                    //   - fallbackX/Y u wallA+wallB vertices (záloha pro selhání průsečíku)
-                    //   - vybavení (engine.vybaveni má polygon+stred v metrech, ne v px)
-                    // Pro neúplný multi-select (jen část stěn) tohle NEděláme, jinak by se
-                    // místnosti deformovaly při lokálních úpravách.
-                    if (this.renderer.selectedWalls.size === this.engine.walls.size) {
-                        const PX_PER_M = this.engine.PX_PER_M;
-                        const dxM = dx / PX_PER_M;
-                        const dyM = dy / PX_PER_M;
-                        // Celý dům = výkres i s podkladem (uloží se po puštění)
-                        if (this.podkladJedeSVyberem?.() && (dx || dy)) {
-                            this.podkladPosun(dx, dy);
-                            this._podkladPohnut = true;
-                        }
-                        for (const prostor of (this.engine.prostory || [])) {
-                            for (const v of (prostor.vertices || [])) {
-                                if (v.refNodeId) continue; // hýbe se s wall nodem
-                                if (v.wallA && v.wallB) {
-                                    // pozice se počítá z node průsečíku, ale fallback ano
-                                    if (typeof v.fallbackX === 'number') v.fallbackX += dx;
-                                    if (typeof v.fallbackY === 'number') v.fallbackY += dy;
-                                    continue;
-                                }
-                                if (typeof v.x === 'number') v.x += dx;
-                                if (typeof v.y === 'number') v.y += dy;
-                            }
-                        }
-                        for (const vb of (this.engine.vybaveni || [])) {
-                            if (Array.isArray(vb.stred)) {
-                                vb.stred[0] += dxM;
-                                vb.stred[1] -= dyM; // engine používá invertované Y v px → metr osa "+y nahoru"
-                            }
-                            if (Array.isArray(vb.polygon)) {
-                                for (const p of vb.polygon) {
-                                    p[0] += dxM;
-                                    p[1] -= dyM;
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // Před pohybem: sync t parametrů T-children podle skutečné
-                    // pozice (pro případ, že se pozice rozjely od stored t).
-                    if (initialData.vyvojMode) {
-                        this.engine.syncTChildrenT(this.draggingWallId);
-                    }
-                    this.engine.moveWall(this.draggingWallId, dx, dy);
-                    if (initialData.vyvojMode) {
-                        // Předat dx/dy — T-children se translatují o stejnou
-                        // hodnotu (zachová perpendikulární offset od osy).
-                        this.engine.propagateTChildren(this.draggingWallId, dx, dy);
-                        this.engine.uklidOddelovace();
-                    }
-                }
-
-                // Aktualizace otvorů: zachovat absolutní pozice, push-sequence (vagónky).
-                // Pro každou stěnu s přesunutým endpointem: 1) spočítat intended pozice
-                // každého otvoru (aby absolutní pozice zůstala), 2) projít seřazené
-                // otvory od nodeA k nodeB — clamp od min=last_end, 3) poslední otvor
-                // (+ sirka) nesmí přetéct za nodeB (bylo by už ošetřeno opFactor limitem,
-                // tohle je safety clamp).
-                // POZN: pro MULTI-SELECT (rigid translation celého objektu) skipnout —
-                // stěny se posouvají společně, otvory se s nimi přirozeně hýbou, žádný
-                // přepočet není potřeba. Jinak by otvory klouzaly po stěnách.
-                if (isMultiSelect) {
-                    this.dragWallStart = { x: pos.x, y: pos.y };
-                    this.renderer.render();
-                    return;
-                }
-                const PX_PER_M = this.engine.PX_PER_M;
-                const wallsWithMovedEndpoint = new Set();
-                for (const wall of this.engine.walls.values()) {
-                    const oldA = oldNodePos.get(wall.nodeA);
-                    const oldB = oldNodePos.get(wall.nodeB);
-                    const newA = this.engine.nodes.get(wall.nodeA);
-                    const newB = this.engine.nodes.get(wall.nodeB);
-                    if (!oldA || !oldB || !newA || !newB) continue;
-                    if (oldA.x !== newA.x || oldA.y !== newA.y || oldB.x !== newB.x || oldB.y !== newB.y) {
-                        wallsWithMovedEndpoint.add(wall.id);
-                    }
-                }
-                for (const wallId of wallsWithMovedEndpoint) {
-                    const wall = this.engine.walls.get(wallId);
-                    if (!wall) continue;
-                    const newA = this.engine.nodes.get(wall.nodeA);
-                    const newB = this.engine.nodes.get(wall.nodeB);
-                    const newDx = newB.x - newA.x, newDy = newB.y - newA.y;
-                    const newLen = Math.hypot(newDx, newDy);
-                    if (newLen === 0) continue;
-                    const newWallLenM = newLen / PX_PER_M;
-                    const openingsOnWall = [];
-                    for (const o of this.engine.openings.values()) {
-                        if (o.wallId === wallId) openingsOnWall.push(o);
-                    }
-                    // Spočítat intended pozice — použij "drag-start" absolutní pozici
-                    // otvoru (zachycenou při aktivaci drag). Tím se otvor vrací
-                    // na původní místo když stěna extenduje zpět, nezůstává pushed.
-                    const intended = openingsOnWall.map(o => {
-                        const abs = this._dragOpeningAbs && this._dragOpeningAbs.get(o.id);
-                        if (!abs) return { opening: o, intended: o.pozice };
-                        const relX = abs.x - newA.x, relY = abs.y - newA.y;
-                        const p = (relX * (newDx / newLen) + relY * (newDy / newLen)) / PX_PER_M;
-                        return { opening: o, intended: p };
-                    });
-                    // Seřadit podle intended ascending (směr od nodeA k nodeB)
-                    intended.sort((a, b) => a.intended - b.intended);
-                    // Forward pass: push-sequence (každý otvor včetně pouzdra posuvných >= previous.end, >= 0)
-                    let lastEnd = 0;
-                    for (const x of intended) {
-                        const ext = getOpeningExtent(x.opening);
-                        // pozice - leftExt >= lastEnd → pozice >= lastEnd + leftExt
-                        let p = Math.max(lastEnd + ext.leftExt, x.intended);
-                        if (p - ext.leftExt < 0) p = ext.leftExt; // effStart >= 0
-                        x.opening.pozice = p;
-                        lastEnd = p + ext.rightExt;
-                    }
-                    // Backward pass: push leftward pokud překročí wall nebo next.effStart
-                    let nextStart = newWallLenM;
-                    for (let i = intended.length - 1; i >= 0; i--) {
-                        const op = intended[i].opening;
-                        const ext = getOpeningExtent(op);
-                        const maxP = nextStart - ext.rightExt;
-                        if (op.pozice > maxP) op.pozice = Math.max(ext.leftExt, maxP);
-                        nextStart = op.pozice - ext.leftExt;
-                    }
-                }
-
-                this.dragWallStart = { x: pos.x, y: pos.y };
-                this.renderer.render();
+                this._krokTazeniSteny(pos);
                 return;
             }
 
@@ -3067,9 +3271,9 @@ function konceptKEditor(initialData) {
                 const zeStartu = this.kreslimStenu && this.stenaStart
                     && Math.hypot(bod.x - this.stenaStart.x, bod.y - this.stenaStart.y) < 0.5;
                 if (zeStartu) this._nastavMagnet(null, { x: pos.x, y: pos.y });
-                else if (bod.magnetNodeId || bezMagnetu || this.kreslimStenu) {
+                else if (bod.magnetNodeId || bod.magnetSpodek || bezMagnetu || this.kreslimStenu) {
                     this._nahledZacatku(null);
-                    this._nastavMagnet(bod.magnetNodeId ? { uzel: bod.magnetNodeId } : null, bod);
+                    this._nastavMagnet(bod.magnetNodeId ? { uzel: bod.magnetNodeId } : (bod.magnetSpodek ? { uzel: 'spodek' } : null), bod);
                 } else {
                     // Před prvním klikem: začátek se chytá i na stěnu (líc / osa)
                     const napojeni = this._najdiNapojeniZacatku(pos);
@@ -3097,8 +3301,13 @@ function konceptKEditor(initialData) {
 
             if (e.evt.button !== 0) return;
 
+            const kota = this._kotaPodKurzorem();
+            if (kota) { this._kotaKlik = true; this.kotaUpravit(kota); return; }
+
             const pos = this.getPointerPos();
             const hit = this.renderer.hitTest(e.target);
+
+            if (this.domStisk?.(pos, e, hit)) return;
 
             // Zvýrazňovač — začít kresbu
             if (this.nastroj === 'zvyraznovac') {
@@ -3211,6 +3420,8 @@ function konceptKEditor(initialData) {
             // flag by se nikdy neresetoval — objekt by jezdil s kurzorem dál.
             const pos = this.getPointerPos();
 
+            if (this._domTah && this.domPusteni?.()) return;
+
             // Pan konec — flag pro onClick, aby se nezrušil výběr (prohlížeč
             // fires click po mouseup i u pravého tlačítka / Konva.click tap).
             if (this.isPanning) {
@@ -3240,6 +3451,7 @@ function konceptKEditor(initialData) {
             // Rotace konec — commit + cleanup
             if (this.isRotating) {
                 this.isRotating = false;
+                this._snapPreview = null;
                 this._rotateNodeSnap = null;
                 this._rotateVybaveniSnap = null;
                 if (this._rotatePodkladSnap) {
@@ -3249,6 +3461,10 @@ function konceptKEditor(initialData) {
                 // Resync T-children t parametrů pro stěny hostující další stěny ve výběru
                 for (const wId of this.renderer.selectedWalls) {
                     this.engine.syncTChildrenT(wId);
+                }
+                // Otočené všechny stěny = celý dům: ostatní podlaží, schody i plochy s ním
+                if (this.renderer.selectedWalls.size === this.engine.walls.size) {
+                    this.domOtocKonec?.(this._rotateCx, this._rotateCy, this._rotateDelta || 0);
                 }
                 this.renderer.render();
                 if (Math.abs(this._rotateDelta || 0) > 1e-6) {
@@ -3454,6 +3670,7 @@ function konceptKEditor(initialData) {
                 if (this._attachOverlayGroup) { this._attachOverlayGroup.destroy(); this._attachOverlayGroup = null; }
 
                 if (dalsiStart) {
+                    if (!bezMagnetu) this._prevezmiZeSpodku(this._stenaUsekId);
                     this.stenaStart = dalsiStart;
                     this._stenaUsekId = null;
                     this._stenaPreskocKlik = true;   // klik, který úsek dokončil, už bod nepřidává
@@ -3497,6 +3714,7 @@ function konceptKEditor(initialData) {
                 this._dragRealOrigin = null;
                 this.isDraggingWall = false;
                 this.draggingWallId = null;
+                this.domPosunKonec?.();
                 this.renderer.render();
                 if (this._podkladPohnut) {
                     this._podkladPohnut = false;
@@ -3579,9 +3797,12 @@ function konceptKEditor(initialData) {
             // pošle click a bez téhle pojistky by se při kreslení přichytil bod.
             // (Dotyk/tap button nemá → undefined projde.)
             if (e.evt && e.evt.button != null && e.evt.button !== 0) return;
+            if (this._kotaKlik) { this._kotaKlik = false; return; }
 
             const pos = this.getPointerPos();
             const hit = this.renderer.hitTest(e.target);
+
+            if (this.domKlik?.(pos, e, hit)) return;
 
             // Stěna nástroj — klik jen zakládá tah. Vlastní úsek vzniká při pohybu
             // (zacniUsekSteny) a dokončí se puštěním myši, stejně jako tažení uzlu.
@@ -3756,10 +3977,25 @@ function konceptKEditor(initialData) {
                 y: pointer.y - mousePointTo.y * newScale,
             });
             this.zoom = newScale;
-            this._selectionTick++;
-            this.renderer.poZmeneZoomu();   // mřížka, kóty, označení, úhly
-            this._updateSpojMadlo();   // madlo má pevnou velikost na obrazovce
-            this.ulozitNastaveni();
+            this.stage.batchDraw();
+            // Rychlé kolečko = mnoho událostí za snímek. Popisky, mřížka a nastavení
+            // se přepočítají jednou za snímek a nejvýš po 40 ms, ne na každou událost.
+            this._zoomPozdeji();
+        },
+
+        _zoomPozdeji() {
+            if (this._zoomRaf) return;
+            this._zoomRaf = requestAnimationFrame(() => {
+                this._zoomRaf = null;
+                const ted = performance.now();
+                if (ted - (this._zoomCas || 0) < 40) { this._zoomPozdeji(); return; }
+                this._zoomCas = ted;
+                this.renderer.poZmeneZoomu();   // mřížka, kóty, označení, úhly
+                this._updateSpojMadlo();        // madlo má pevnou velikost na obrazovce
+                this._selectionTick++;
+            });
+            clearTimeout(this._zoomUlozCasovac);
+            this._zoomUlozCasovac = setTimeout(() => this.ulozitNastaveni(), 300);
         },
 
         zoomIn() { this.setZoom(this.zoom * 1.3); },
@@ -4559,6 +4795,20 @@ function konceptKEditor(initialData) {
             this.renderer.render();
         },
 
+        /**
+         * Nově nakreslená stěna na ose nosné nebo obvodové stěny podlaží níž převezme její typ a
+         * tloušťku, jinak by líce nenavazovaly (Klemov: nosná 20 cm na obvodové 30 cm dala 5 cm).
+         * Platí jen při kreslení, tenčí stěnu si uživatel může nastavit potom. Příčka zůstává příčkou.
+         */
+        _prevezmiZeSpodku(id) {
+            const w = id && this.engine.walls.get(id);
+            const dole = w && w.typ !== 'pricka' && this.engine.stenaPodStenou(id);
+            if (!dole || (w.typ === dole.typ && Math.abs(w.tloustka - dole.tloustka) < 0.001)) return;
+            w.typ = dole.typ;
+            w.tloustka = dole.tloustka;
+            this._dumHlaska('Stěna převzala typ a tloušťku stěny pod sebou (' + TYPY_STEN[dole.typ].nazev.toLowerCase() + ', ' + Math.round(dole.tloustka * 100) + ' cm). Jinou nastavíte v jejím panelu.');
+        },
+
         /** Zahodí rozkreslený (dosud neukotvený) úsek stěny. */
         zrusRozkreslenyUsek() {
             this._napojeniZacatku = null;
@@ -4623,6 +4873,7 @@ function konceptKEditor(initialData) {
                     this.stenaEsc();
                 }
                 if (this._oddelovacStart) this._oddelovacZrus();
+                this.domEsc?.();
                 if (this._metrMeri) {
                     this.metrEscape();
                 }
@@ -4646,6 +4897,7 @@ function konceptKEditor(initialData) {
                     this.isDraggingOpening = false;
                     this.draggingOpeningId = null;
                     this.isRotating = false;
+                    this._snapPreview = null;
                     this._rotateNodeSnap = null;
                     this._rotateVybaveniSnap = null;
                     // polohu podkladu už vrátil engine.undo() přes undoDoplnek
@@ -4660,6 +4912,7 @@ function konceptKEditor(initialData) {
             }
 
             if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (this.domSmazVybrane?.()) return;
                 if (this.renderer && this.renderer.selectedOddelovace.size > 0) {
                     this.smazatVybraneOddelovace();
                     if (!this.renderer.selectedWalls.size && !this.renderer.selectedOpenings.size && !this.renderer.selectedNodes.size) return;
@@ -4762,6 +5015,7 @@ function konceptKEditor(initialData) {
                     return;
                 }
                 if (e.key === 'y') { e.preventDefault(); this.redo(); return; }
+                if ((e.key === 'f' || e.key === 'F') && !e.shiftKey) { e.preventDefault(); this.prepniFullscreen(); return; }
                 if (e.key === 'c') { e.preventDefault(); this.kopirovat(); return; }
                 if (e.key === 'v') { e.preventDefault(); this.vlozit(); return; }
                 if (e.key === 'd') { e.preventDefault(); this.kopirovat(); this.vlozit(); return; }
@@ -4778,6 +5032,8 @@ function konceptKEditor(initialData) {
             if (e.key === '4') this.nastroj = 'stena';
             if (e.key === '5' || e.key === 'm' || e.key === 'M') this.nastroj = this.nastroj === 'metr' ? 'vyber' : 'metr';
             if (e.key === '6' || e.key === 'o' || e.key === 'O') this.nastroj = this.nastroj === 'otvor' ? 'vyber' : 'otvor';
+            if (e.key === '7') this.zacniSchody?.();
+            if (e.key === 'Enter') this.domEnter?.();
         },
 
         /** Krátká hláška nástroje Otvor — sama zmizí. */
@@ -6107,7 +6363,7 @@ function konceptKEditor(initialData) {
                             }
                         }
                         this.engine.pushUndo();
-                        this.engine.fromJSON(newData);
+                        this.engine.fromJSON(newData, { zachovatDum: true });
                         this.renderer.render();
                         if (newData.steny && newData.steny.length > 0) this.fitView();
                         this.projektData = newData;
@@ -6585,7 +6841,7 @@ function konceptKEditor(initialData) {
             const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(w, h);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.enabled = false;   // stíny zatím vypnuté, kreslily se špatně; uděláme je později pořádně
             container.appendChild(renderer.domElement);
 
             // Controls
@@ -6594,15 +6850,15 @@ function konceptKEditor(initialData) {
             controls.dampingFactor = 0.1;
             controls.maxPolarAngle = Math.PI / 2.1;
 
-            // Lights — méně ambient + silnější sun = výraznější stínování sklonu
-            const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+            // Světla: vodorovná plocha vychází zhruba 1,07× barva, stěny 0,77–0,92×, aby výsledek seděl se vzorkem při volbě barvy. Dřív podlaha 1,46× a stěny 0,42–0,79×.
+            const ambient = new THREE.AmbientLight(0xffffff, 0.72);
             scene.add(ambient);
-            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-            sun.position.set(10, 20, 10);
+            const sun = new THREE.DirectionalLight(0xffffff, 0.4);
+            sun.position.set(10, 14, 10);
             sun.castShadow = true;
             scene.add(sun);
             // Fill light z opačné strany pro jemné vyvážení tmavých stran
-            const fill = new THREE.DirectionalLight(0xffffff, 0.25);
+            const fill = new THREE.DirectionalLight(0xffffff, 0.1);
             fill.position.set(-8, 12, -8);
             scene.add(fill);
 
@@ -7125,44 +7381,17 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
             return heights[Math.min(idx, heights.length - 1)];
         },
 
-        _build3d() {
-            const _3d = window._kk3d;
-            if (!_3d || !_3d.scene || !this.engine) return;
+        /** Uvolní skupinu 3D objektů (geometrie a materiály) rekurzivně. */
+        _zrus3d(o) {
+            for (const c of [...(o.children || [])]) this._zrus3d(c);
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) [].concat(o.material).forEach(m => m.dispose());
+        },
+
+        /** Stěny (rozřezané otvory) a výplně otvorů jednoho podlaží do skupiny `group`. */
+        _build3dPodlazi(eng, podl, group) {
             const THREE = window.THREE;
-            const group = _3d.wallGroup;
-            while (group.children.length > 0) {
-                const child = group.children[0];
-                group.remove(child);
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) child.material.dispose();
-            }
-
             const pxM = this.PX_PER_M;
-            const defaultVyskaSteny = 2.8;
-
-            // Vertikální snap objektů na 70. percentil výšky terénu pod nimi.
-            // Spočteme bbox všech stěn (building footprint) a použijeme jedno y
-            // pro celou skupinu — budova leží na společné úrovni.
-            let buildingY = 0;
-            if (_3d.terrainHeights && this.engine.nodes.size > 0) {
-                let xmin = Infinity, xmax = -Infinity, zmin = Infinity, zmax = -Infinity;
-                for (const n of this.engine.nodes.values()) {
-                    const x = n.x / pxM, z = n.y / pxM; // Z shodně se stěnami a terénem
-                    if (x < xmin) xmin = x; if (x > xmax) xmax = x;
-                    if (z < zmin) zmin = z; if (z > zmax) zmax = z;
-                }
-                if (xmin < xmax && zmin < zmax) {
-                    buildingY = this._terrainP70Under(xmin, xmax, zmin, zmax);
-                }
-            }
-            group.position.y = buildingY;
-
-            console.log('[3D] Build: walls=' + this.engine.walls.size + ', nodes=' + this.engine.nodes.size + ', pxM=' + pxM);
-            if (this.engine.walls.size === 0) {
-                console.warn('[3D] Žádné stěny k zobrazení!');
-                return;
-            }
-
             // Souřadnice scény: X = canvas.x / pxM, Z = canvas.y / pxM — stejně jako terén
             // (_buildTerrain3D). Extruze stěn jde v ose Z tvaru a po rotation.x = -90°
             // se z ní stane výška Y; shape.y = -Z, aby Z vyšlo kladné jako u terénu.
@@ -7184,50 +7413,77 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
             };
 
             // Svislý hranol nad půdorysným polygonem od výšky yOd do yDo
-            const pridejHranol = (poly, yOd, yDo, mat) => {
+            // Stěny horního podlaží končí pod střechou; bez plochy nad bodem platí jejich výška
+            const stropStrechy = this._stropPodlazi?.(podl) || null;
+            let vyskaBezStrechy = null;
+            const stropPodkrovi = stropStrechy ? (x, y) => {
+                const h = stropStrechy(x, y);
+                return h === null ? vyskaBezStrechy : h;
+            } : null;
+            const podStrechou = this._vnejsiStenyPodStrechou?.(podl) || null;
+            const pridejHranol = (poly, yOd, yDo, matUvnitr, matVen, jeVen, plochyVen) => {
                 if (!poly || poly.length < 3 || yDo - yOd < 0.005) return;
-                const shape = new THREE.Shape();
-                shape.moveTo(poly[0].x, -poly[0].z);
-                for (let i = 1; i < poly.length; i++) shape.lineTo(poly[i].x, -poly[i].z);
-                shape.closePath();
-                const geom = new THREE.ExtrudeGeometry(shape, { depth: yDo - yOd, bevelEnabled: false });
-                const mesh = new THREE.Mesh(geom, mat);
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-                mesh.rotation.x = -Math.PI / 2;
-                mesh.position.y = yOd;
-                group.add(mesh);
+                if (stropPodkrovi) this._hranolPodStrechou(group, poly, yOd, yDo, matUvnitr, matVen, jeVen, stropPodkrovi, plochyVen);
+                else this._hranolStrany(group, poly, yOd, yDo, matUvnitr, matVen, jeVen, plochyVen);
             };
 
-            const vyskaSteny = (wall) => {
-                const typDef = (typeof TYPY_STEN !== 'undefined' && TYPY_STEN[wall.typ]) || {};
-                return typDef.vyska?.default || defaultVyskaSteny;
-            };
+            const vyskaSteny = (wall) => eng.vyskaSteny(wall, podl);
+
+            // Rastr místností: podlahy, kam míří otvor a která strana stěny je vně
+            const rastr = this._rastrPodlazi(eng, podl.id);
+            this._podlahyMistnosti(eng, podl, group, rastr);
+
+            // Stěny: co hledí do exteriéru, je fasáda, všechno ostatní bílé (i vnitřní líc obvodové stěny).
+            // Vnitřní barva je zatím pevná, volba může přibýt později. Plot a zídka mají barvu svého typu.
+            const matVnitrni = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, side: THREE.DoubleSide });
+            const matFasada = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, side: THREE.DoubleSide });
+            matFasada.userData.barva = 'fasada';
+            const odstupVen = 0.06;
+            const stitekVedle = (x, z, nx, nz) => (rastr ? window.MistnostiRastr.stitekVBode(rastr, (x + nx * odstupVen) * pxM, (z + nz * odstupVen) * pxM) : 0);
 
             const otvoryPodleSteny = new Map();
-            for (const op of this.engine.openings.values()) {
+            for (const op of eng.openings.values()) {
                 if (!otvoryPodleSteny.has(op.wallId)) otvoryPodleSteny.set(op.wallId, []);
                 otvoryPodleSteny.get(op.wallId).push(op);
             }
 
             // Stěny — extruze z 2D polygonu (mitre join, konzistentní s 2D), rozřezané
             // podél osy na díly: plné úseky, pod otvorem parapet a nad otvorem nadpraží.
-            for (const wall of this.engine.walls.values()) {
-                const polyPx = this.engine.getWallPolygon(wall.id);
+            for (const wall of eng.walls.values()) {
+                const polyPx = eng.getWallPolygon(wall.id);
                 if (!polyPx || polyPx.length < 3) continue;
-                const nA = this.engine.nodes.get(wall.nodeA);
-                const nB = this.engine.nodes.get(wall.nodeB);
+                const nA = eng.nodes.get(wall.nodeA);
+                const nB = eng.nodes.get(wall.nodeB);
                 if (!nA || !nB) continue;
 
                 const typDef = (typeof TYPY_STEN !== 'undefined' && TYPY_STEN[wall.typ]) || {};
-                const H = vyskaSteny(wall);
-                const mat = new THREE.MeshStandardMaterial({ color: typDef.barva3d || 0x8b8b8b, roughness: 0.85 });
+                vyskaBezStrechy = vyskaSteny(wall);
+                const H = podStrechou && podStrechou.steny.has(wall.id) ? Math.max(vyskaBezStrechy, podStrechou.zMax) : vyskaBezStrechy;
+                const venkovni = typDef.kategorie === 'exterior';
+                const matVlastni = venkovni ? new THREE.MeshStandardMaterial({ color: typDef.barva3d || 0x8b8b8b, roughness: 0.85, side: THREE.DoubleSide }) : null;
                 const poly = polyPx.map(doSceny);
                 const A = doSceny(nA), B = doSceny(nB);
                 const L = Math.hypot(B.x - A.x, B.z - A.z);
                 if (L < 0.01) continue;
                 const ux = (B.x - A.x) / L, uz = (B.z - A.z) / L;
                 const tBodu = (p) => (p.x - A.x) * ux + (p.z - A.z) * uz;
+                // Díl stěny po půlkách tloušťky: půlka u exteriéru má i ostění, parapet a korunu v barvě
+                // fasády, půlka u místnosti bílé. Bez rastru je fasáda celá obvodová stěna.
+                const hranol = (dil, yOd, yDo) => {
+                    if (matVlastni) { pridejHranol(dil, yOd, yDo, matVlastni, matVlastni, () => false, false); return; }
+                    for (const zn of [1, -1]) {
+                        const nx = -uz * zn, nz = ux * zn;
+                        const pul = orizni(dil, p => (p.x - A.x) * nx + (p.z - A.z) * nz);
+                        if (pul.length < 3) continue;
+                        const tStred = pul.reduce((s, p) => s + tBodu(p), 0) / pul.length;
+                        const pol = (wall.tloustka || 0) / 2;
+                        const vnejsi = rastr ? stitekVedle(A.x + ux * tStred + nx * pol, A.z + uz * tStred + nz * pol, nx, nz) === 1 : wall.typ === 'obvodova';
+                        pridejHranol(pul, yOd, yDo, matVnitrni, matFasada, (x, z, qx, qz) => {
+                            const s = stitekVedle(x, z, qx, qz);
+                            return s === 1 || (s === 0 && vnejsi);
+                        }, vnejsi);
+                    }
+                };
 
                 // Výřezy podél stěny (m od uzlu A) — po dílech, každý díl může mít jiný parapet;
                 // překrývající se výřezy se sloučí, sousední díly téhož otvoru zůstanou zvlášť
@@ -7258,17 +7514,27 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 // Mitry na koncích přesahují t < 0 a t > L, proto krajní díly bez meze
                 let tPred = -Infinity;
                 for (const v of slouceno) {
-                    if (v.t0 - tPred > 0.001) pridejHranol(orizni(orizni(poly, p => tBodu(p) - tPred), p => v.t0 - tBodu(p)), 0, H, mat);
+                    if (v.t0 - tPred > 0.001) hranol(orizni(orizni(poly, p => tBodu(p) - tPred), p => v.t0 - tBodu(p)), 0, H);
                     const dil = orizni(orizni(poly, p => tBodu(p) - v.t0), p => v.t1 - tBodu(p));
-                    if (v.od > 0.01) pridejHranol(dil, 0, v.od, mat);        // parapet
-                    if (v.do < H - 0.01) pridejHranol(dil, v.do, H, mat);    // nadpraží
+                    if (v.od > 0.01) hranol(dil, 0, v.od);        // parapet
+                    if (v.do < H - 0.01) hranol(dil, v.do, H);    // nadpraží
                     tPred = v.t1;
                 }
-                pridejHranol(orizni(poly, p => tBodu(p) - tPred), 0, H, mat);
+                hranol(orizni(poly, p => tBodu(p) - tPred), 0, H);
             }
 
             // Otvory — rám, křídla (sklo nebo plná výplň) a příčle mezi křídly
-            const matRam = new THREE.MeshStandardMaterial({ color: 0xf3f4f6, roughness: 0.55 });
+            // Barvu dosadí _nastavBarvy3d: rám a plná výplň mají jinou barvu venku a uvnitř
+            const matOtvoru = new Map();
+            const materialOtvoru = (klic, drsnost) => {
+                const k = klic + drsnost;
+                if (!matOtvoru.has(k)) {
+                    const m = new THREE.MeshStandardMaterial({ roughness: drsnost });
+                    m.userData.barva = klic;
+                    matOtvoru.set(k, m);
+                }
+                return matOtvoru.get(k);
+            };
             const matSklo = new Map();
             const skloTypu = (typ) => {
                 if (!matSklo.has(typ)) {
@@ -7280,14 +7546,12 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 }
                 return matSklo.get(typ);
             };
-            const matDvere = new THREE.MeshStandardMaterial({ color: 0x6b4226, roughness: 0.7 });
-            const matVrata = new THREE.MeshStandardMaterial({ color: 0x8a8a8a, roughness: 0.6 });
 
-            for (const op of this.engine.openings.values()) {
-                const wall = this.engine.walls.get(op.wallId);
+            for (const op of eng.openings.values()) {
+                const wall = eng.walls.get(op.wallId);
                 if (!wall) continue;
-                const nA = this.engine.nodes.get(wall.nodeA);
-                const nB = this.engine.nodes.get(wall.nodeB);
+                const nA = eng.nodes.get(wall.nodeA);
+                const nB = eng.nodes.get(wall.nodeB);
                 if (!nA || !nB) continue;
                 const kridla = kridlaOtvoru(op);
                 if (kridla.length === 0) continue; // průchod / otvor bez křídla = jen výřez
@@ -7313,11 +7577,21 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                     m.castShadow = true;
                     g.add(m);
                 };
+                // Rám a plná výplň: půlka tloušťky do exteriéru barvou „venku", zbytek „uvnitř".
+                // Otvor mezi místnostmi má jednu barvu.
+                const skupina = this.barvyOtvoru(op.typ);
+                const ven = this._stranaVen(eng, wall, op, rastr);
+                const dvoubarevny = (w, h, d, x, y, z, drsnost) => {
+                    if (!ven) { kvadr(w, h, d, x, y, z, materialOtvoru(this.barvaVnitrniho(op.typ), drsnost)); return; }
+                    const uvnitr = materialOtvoru(skupina + 'Dovnitr', drsnost);
+                    kvadr(w, h, d / 2, x, y, z + ven * d / 4, materialOtvoru(skupina + 'Ven', drsnost));
+                    kvadr(w, h, d / 2, x, y, z - ven * d / 4, uvnitr);
+                };
+                const ram = (w, h, d, x, y, z) => dvoubarevny(w, h, d, x, y, z, 0.55);
 
                 const RAM = 0.06;                                  // profil rámu
                 const HL = Math.min(wall.tloustka || 0.3, 0.1);    // hloubka rámu v ostění
                 const plne = op.typ === 'dvere' || op.typ === 'garazova_vrata';
-                const matVyplne = op.typ === 'garazova_vrata' ? matVrata : matDvere;
 
                 // Každý díl má vlastní rám (dva sousední svislé rámy tvoří sloupek) — díly
                 // mohou mít různý parapet, horní hrana je společná
@@ -7329,26 +7603,26 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                     const v = vrsek - spodek;
                     // Dveřní křídlo k podlaze práh nemá; okno a prosklené díly mají rám dokola
                     const spodniRam = spodek > 0.01 || op.typ !== 'dvere';
-                    kvadr(RAM, v, HL, x + RAM / 2, spodek + v / 2, 0, matRam);
-                    kvadr(RAM, v, HL, x + w - RAM / 2, spodek + v / 2, 0, matRam);
-                    kvadr(Math.max(0.01, w - 2 * RAM), RAM, HL, x + w / 2, vrsek - RAM / 2, 0, matRam);
-                    if (spodniRam) kvadr(Math.max(0.01, w - 2 * RAM), RAM, HL, x + w / 2, spodek + RAM / 2, 0, matRam);
+                    ram(RAM, v, HL, x + RAM / 2, spodek + v / 2, 0);
+                    ram(RAM, v, HL, x + w - RAM / 2, spodek + v / 2, 0);
+                    ram(Math.max(0.01, w - 2 * RAM), RAM, HL, x + w / 2, vrsek - RAM / 2, 0);
+                    if (spodniRam) ram(Math.max(0.01, w - 2 * RAM), RAM, HL, x + w / 2, spodek + RAM / 2, 0);
 
                     const yOd = spodek + (spodniRam ? RAM : 0);
                     const vnitrniV = vrsek - RAM - yOd;
                     const vnitrniW = w - 2 * RAM;
                     if (vnitrniV > 0.02 && vnitrniW > 0.02) {
                         if (plne) {
-                            kvadr(vnitrniW, vnitrniV, 0.045, x + w / 2, yOd + vnitrniV / 2, 0, matVyplne);
+                            dvoubarevny(vnitrniW, vnitrniV, 0.045, x + w / 2, yOd + vnitrniV / 2, 0, 0.7);
                         } else {
                             kvadr(vnitrniW, vnitrniV, 0.012, x + w / 2, yOd + vnitrniV / 2, 0, skloTypu(op.typ));
                             if ((k.otv !== 'fix' || k.sklopne) && vnitrniW > 3 * RAM && vnitrniV > 3 * RAM) {
                                 // Rám otevíravého křídla kolem skla
                                 const KR = 0.05;
-                                kvadr(KR, vnitrniV, 0.04, x + RAM + KR / 2, yOd + vnitrniV / 2, 0, matRam);
-                                kvadr(KR, vnitrniV, 0.04, x + w - RAM - KR / 2, yOd + vnitrniV / 2, 0, matRam);
-                                kvadr(vnitrniW - 2 * KR, KR, 0.04, x + w / 2, yOd + vnitrniV - KR / 2, 0, matRam);
-                                kvadr(vnitrniW - 2 * KR, KR, 0.04, x + w / 2, yOd + KR / 2, 0, matRam);
+                                ram(KR, vnitrniV, 0.04, x + RAM + KR / 2, yOd + vnitrniV / 2, 0);
+                                ram(KR, vnitrniV, 0.04, x + w - RAM - KR / 2, yOd + vnitrniV / 2, 0);
+                                ram(vnitrniW - 2 * KR, KR, 0.04, x + w / 2, yOd + vnitrniV - KR / 2, 0);
+                                ram(vnitrniW - 2 * KR, KR, 0.04, x + w / 2, yOd + KR / 2, 0);
                             }
                         }
                     }
@@ -7356,91 +7630,67 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 });
                 group.add(g);
             }
+        },
 
-            // Střecha — jednoduchá sedlová/pultová/plochá
-            const streData = this.projektData?.strecha;
-            if (streData && this.engine.walls.size > 0) {
-                let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+        _build3d() {
+            const _3d = window._kk3d;
+            if (!_3d || !_3d.scene || !this.engine) return;
+            const THREE = window.THREE;
+            const group = _3d.wallGroup;
+            const pxM = this.PX_PER_M;
+
+            // Vertikální snap objektů na 70. percentil výšky terénu pod nimi.
+            // Spočteme bbox všech stěn (building footprint) a použijeme jedno y
+            // pro celou skupinu — budova leží na společné úrovni.
+            let buildingY = 0;
+            if (_3d.terrainHeights && this.engine.nodes.size > 0) {
+                let xmin = Infinity, xmax = -Infinity, zmin = Infinity, zmax = -Infinity;
                 for (const n of this.engine.nodes.values()) {
-                    const wx = n.x / pxM, wz = n.y / pxM; // Z shodně se stěnami a terénem
-                    if (wx < minX) minX = wx; if (wx > maxX) maxX = wx;
-                    if (wz < minZ) minZ = wz; if (wz > maxZ) maxZ = wz;
+                    const x = n.x / pxM, z = n.y / pxM; // Z shodně se stěnami a terénem
+                    if (x < xmin) xmin = x; if (x > xmax) xmax = x;
+                    if (z < zmin) zmin = z; if (z > zmax) zmax = z;
                 }
-
-                const presah = streData.presah || 0.5;
-                const rx1 = minX - presah, rx2 = maxX + presah;
-                const rz1 = minZ - presah, rz2 = maxZ + presah;
-                const sirkaDomu = rx2 - rx1;
-                const delkaDomu = rz2 - rz1;
-                const sklon = (streData.sklon || 35) * Math.PI / 180;
-                const typDef = (typeof TYPY_STRECHY !== 'undefined' && TYPY_STRECHY[streData.typ]) || {};
-                const barva = typDef.barva3d || 0xb84c2c;
-
-                const roofMat = new THREE.MeshStandardMaterial({ color: barva, roughness: 0.7, side: THREE.DoubleSide });
-
-                if (streData.typ === 'plocha') {
-                    // Plochá — jednoduchý obdélník
-                    const geom = new THREE.PlaneGeometry(sirkaDomu, delkaDomu);
-                    const mesh = new THREE.Mesh(geom, roofMat);
-                    mesh.rotation.x = -Math.PI / 2;
-                    mesh.position.set((rx1+rx2)/2, defaultVyskaSteny + 0.05, (rz1+rz2)/2);
-                    group.add(mesh);
-                } else if (streData.typ === 'pultova') {
-                    // Pultová — nakloněná plocha
-                    const vyska = Math.tan(sklon) * delkaDomu;
-                    const geom = new THREE.BufferGeometry();
-                    const v = new Float32Array([
-                        rx1, defaultVyskaSteny, rz1, rx2, defaultVyskaSteny, rz1,
-                        rx2, defaultVyskaSteny + vyska, rz2, rx1, defaultVyskaSteny + vyska, rz2,
-                        rx1, defaultVyskaSteny, rz1, rx2, defaultVyskaSteny + vyska, rz2,
-                    ]);
-                    geom.setAttribute('position', new THREE.BufferAttribute(v, 3));
-                    geom.computeVertexNormals();
-                    group.add(new THREE.Mesh(geom, roofMat));
-                } else {
-                    // Sedlová (default), valbová, mansardová — dvě nakloněné plochy s hřebenem
-                    const vyska = Math.tan(sklon) * (delkaDomu / 2);
-                    const hrebenY = defaultVyskaSteny + vyska;
-                    const cz = (rz1 + rz2) / 2;
-
-                    // Přední strana
-                    const g1 = new THREE.BufferGeometry();
-                    const v1 = new Float32Array([
-                        rx1, defaultVyskaSteny, rz1, rx2, defaultVyskaSteny, rz1,
-                        rx2, hrebenY, cz, rx1, defaultVyskaSteny, rz1,
-                        rx2, hrebenY, cz, rx1, hrebenY, cz,
-                    ]);
-                    g1.setAttribute('position', new THREE.BufferAttribute(v1, 3));
-                    g1.computeVertexNormals();
-                    group.add(new THREE.Mesh(g1, roofMat));
-
-                    // Zadní strana
-                    const g2 = new THREE.BufferGeometry();
-                    const v2 = new Float32Array([
-                        rx1, defaultVyskaSteny, rz2, rx2, defaultVyskaSteny, rz2,
-                        rx2, hrebenY, cz, rx1, defaultVyskaSteny, rz2,
-                        rx2, hrebenY, cz, rx1, hrebenY, cz,
-                    ]);
-                    g2.setAttribute('position', new THREE.BufferAttribute(v2, 3));
-                    g2.computeVertexNormals();
-                    group.add(new THREE.Mesh(g2, roofMat));
-
-                    // Štíty (trojúhelníky na bocích)
-                    const gs1 = new THREE.BufferGeometry();
-                    gs1.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-                        rx1, defaultVyskaSteny, rz1, rx1, defaultVyskaSteny, rz2, rx1, hrebenY, cz,
-                    ]), 3));
-                    gs1.computeVertexNormals();
-                    group.add(new THREE.Mesh(gs1, new THREE.MeshStandardMaterial({ color: 0xd0d0d0, roughness: 0.8, side: THREE.DoubleSide })));
-
-                    const gs2 = new THREE.BufferGeometry();
-                    gs2.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-                        rx2, defaultVyskaSteny, rz1, rx2, defaultVyskaSteny, rz2, rx2, hrebenY, cz,
-                    ]), 3));
-                    gs2.computeVertexNormals();
-                    group.add(new THREE.Mesh(gs2, new THREE.MeshStandardMaterial({ color: 0xd0d0d0, roughness: 0.8, side: THREE.DoubleSide })));
+                if (xmin < xmax && zmin < zmax) {
+                    buildingY = this._terrainP70Under(xmin, xmax, zmin, zmax);
                 }
             }
+            group.position.y = buildingY;
+
+            console.log('[3D] Build: walls=' + this.engine.walls.size + ', nodes=' + this.engine.nodes.size + ', pxM=' + pxM);
+            if (this.engine.walls.size === 0) {
+                console.warn('[3D] Žádné stěny k zobrazení!');
+                return;
+            }
+
+            // Podlaží po skupinách: přestaví se jen to, co se změnilo (data podlaží se při změně
+            // vyměňují, aktivní porovná otisk JSONu), kóta a viditelnost se jen nastaví.
+            const dum = this.engine.dum;
+            const kory = this.engine.kotyPodlazi();
+            if (!_3d.podlaziSkupiny) _3d.podlaziSkupiny = new Map();
+            for (const [id, g] of _3d.podlaziSkupiny) {
+                if (!dum.podlazi.some(p => p.id === id)) { group.remove(g); this._zrus3d(g); _3d.podlaziSkupiny.delete(id); }
+            }
+            for (const podl of dum.podlazi) {
+                const eng = this.engine.enginePodlazi(podl.id);
+                let g = _3d.podlaziSkupiny.get(podl.id);
+                const otisk = podl.id === dum.aktivni ? JSON.stringify(this.engine._jsonPodlazi()) : podl.data;
+                // Výřezy v podlaze mění podlahy místností, patří do otisku taky
+                const vyskovy = podl.vyska + '|' + podl.strop + (podl.id === this.engine.horniPodlazi().id ? '|' + this._strechaProSteny() : '') + '|' + JSON.stringify(this._maskyPodlazi(podl.id).vyrezy);
+                if (!g || g.userData.otisk !== otisk || g.userData.vyskovy !== vyskovy) {
+                    if (g) { group.remove(g); this._zrus3d(g); }
+                    g = new THREE.Group();
+                    g.userData.otisk = otisk;
+                    g.userData.vyskovy = vyskovy;
+                    g.userData.podlazi = podl.id;
+                    if (eng) this._build3dPodlazi(eng, podl, g);
+                    _3d.podlaziSkupiny.set(podl.id, g);
+                    group.add(g);
+                }
+                g.position.y = kory.get(podl.id) ?? 0;
+            }
+            this._build3dDum?.(group);
+            this._nastavBarvy3d?.();
+            this._nastavViditelnost3d?.();
 
             // Centrovat kameru na stavbu — jen při prvním vstupu do 3D.
             // Při přepínání 2D→3D zachovat uživatelem natočený pohled (orbit controls).

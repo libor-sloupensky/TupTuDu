@@ -23,7 +23,7 @@ const CHROME = [
 
 const pauza = (ms) => new Promise(r => setTimeout(r, ms));
 
-async function otevriProhlizec({ viditelny = false, port = 9333, sirka = 1600, vyska = 1000, posuvniky = false } = {}) {
+async function otevriProhlizec({ viditelny = false, port = Number(process.env.V3_CDP_PORT) || 9333, sirka = 1600, vyska = 1000, posuvniky = false } = {}) {
     if (!CHROME) throw new Error('Nenalezen Chrome ani Edge.');
 
     const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'v3-test-'));
@@ -118,11 +118,16 @@ async function otevriProhlizec({ viditelny = false, port = 9333, sirka = 1600, v
         vyhodnot,
 
         async jdiNa(url) {
+            const bezLomitka = (u) => String(u || '').replace(/\/$/, '');
+            const start = bezLomitka(await vyhodnot('location.href'));
             await cmd('Page.navigate', { url });
-            // počkat na dokončení načtení
-            for (let i = 0; i < 80; i++) {
-                const stav = await vyhodnot('document.readyState');
-                if (stav === 'complete') break;
+            // Počkat na dokončení načtení NOVÉHO dokumentu: readyState staré stránky je „complete" hned
+            // po Page.navigate, proto se čeká, až se změní adresa (nebo sedí s cílem) a teprve pak na load.
+            for (let i = 0; i < 100; i++) {
+                const stav = await vyhodnot('document.readyState + "|" + location.href');
+                const [ready, href] = String(stav).split('|');
+                const nova = bezLomitka(href) === bezLomitka(url) || bezLomitka(href) !== start;
+                if (nova && ready === 'complete') break;
                 await pauza(150);
             }
             await pauza(400);

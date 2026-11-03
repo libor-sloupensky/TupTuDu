@@ -28,6 +28,7 @@ return [
     'projekt_jeden' => '1 project',
     'projektu_az' => 'Up to :limit projects',
     'projektu_neomezene' => 'Unlimited projects',
+    'funkce_export' => 'PNG image export and sharing projects by link',
     'funkce_katastr' => 'Cadastral information about the plot — parcels, buildings, neighbours',
     'funkce_mapy' => 'Mapy.com base map',
     'funkce_teren' => 'Terrain elevation profile',
@@ -111,4 +112,5 @@ return [
     'limit_uprav_text' => 'In the Free plan you can make :limit edits per day — every new wall, move or opening counts. You can keep viewing and continue editing tomorrow. With a subscription you edit without limits.',
     'limit_projektu_nadpis' => 'Your plan does not allow another project',
     'limit_projektu_text' => 'Number of projects in your plan: :limit. A higher plan allows more projects — or delete a project you no longer need.',
+    'exporty_jen_placene' => 'Export and link sharing are available on paid plans.',
 ];
