@@ -1,0 +1,467 @@
+<title>Srovnání s konkurencí</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Rubik:wght@400..800&display=swap">
+<style>
+/* ───── Tokeny TupTuDu (paleta Noc výchozí, světlý režim přes data-theme nebo systém) ───── */
+:root {
+  --c-primary:#ff8a2b; --c-primary-text:#ffa257; --c-on-primary:#1a1a1a;
+  --c-primary-10:color-mix(in srgb, var(--c-primary) 10%, transparent);
+  --c-primary-20:color-mix(in srgb, var(--c-primary) 18%, transparent);
+  --c-brand-grey:#a9b4c6; --c-brand-ink:#141a24;
+  --c-bg:#141a24; --c-surface:#1c2432; --c-text:#e6ebf2; --c-text-secondary:#8f9bb0;
+  --c-border:#2b374a; --c-border-strong:#44536b; --c-chip:#3c2a1a; --c-link:#5ec8d8;
+  --c-input:#0f141c; --c-input-border:#5a6a85;
+  --c-ok:#2f9e5f; --c-warn:#e9b949; --c-error:#e04e4e;
+  --s-radius:7px; --s-shadow:none;
+  --s-font:'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --s-font-tech:'Rubik', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --c-primary:#ee6f12; --c-primary-text:#c85a0a; --c-on-primary:#fff; --c-brand-grey:#52607a; --c-brand-ink:#fff;
+    --c-bg:#f3f5f9; --c-surface:#fff; --c-text:#1b2330; --c-text-secondary:#5f6b80; --c-border:#d6dde8; --c-border-strong:#a4afc0;
+    --c-chip:#fdeee0; --c-link:#0f8da0; --c-input:#fff; --c-input-border:#8f9bb0;
+    --s-shadow:0 4px 12px rgba(27,35,48,.06), 0 1px 3px rgba(27,35,48,.05); color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --c-primary:#ee6f12; --c-primary-text:#c85a0a; --c-on-primary:#fff; --c-brand-grey:#52607a; --c-brand-ink:#fff;
+  --c-bg:#f3f5f9; --c-surface:#fff; --c-text:#1b2330; --c-text-secondary:#5f6b80; --c-border:#d6dde8; --c-border-strong:#a4afc0;
+  --c-chip:#fdeee0; --c-link:#0f8da0; --c-input:#fff; --c-input-border:#8f9bb0;
+  --s-shadow:0 4px 12px rgba(27,35,48,.06), 0 1px 3px rgba(27,35,48,.05); color-scheme: light;
+}
+
+/* ───── Základ (řada S2) ───── */
+* { box-sizing: border-box; }
+body { margin:0; background:var(--c-bg); color:var(--c-text); font:400 16px/1.65 var(--s-font); }
+body::before { content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top, 0px); background:var(--c-surface); z-index:30; }
+h1, h2, h3, h4 { font-family:var(--s-font-tech); line-height:1.2; margin:0 0 1rem; text-wrap:balance; }
+h1 { font-size:2.44rem; font-weight:800; line-height:1.12; letter-spacing:-.015em; }
+h2 { font-size:1.56rem; font-weight:700; }
+h3 { font-size:1.25rem; font-weight:600; line-height:1.3; }
+p { margin:0 0 1rem; }
+a { color:var(--c-link); text-decoration:none; }
+a:hover { color:var(--c-primary); text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px; }
+strong, b { font-weight:600; }
+.cislo, table { font-variant-numeric: tabular-nums; }
+
+/* ───── Lišta ukázky (není součást stránky) ───── */
+.chrome { position:sticky; top:env(safe-area-inset-top, 0px); z-index:20; background:var(--c-surface); border-bottom:1px solid var(--c-border);
+  padding:8px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px));
+  display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; font:500 .85rem/1.4 var(--s-font-tech); color:var(--c-text-secondary); }
+.chrome .uk { color:var(--c-primary-text); font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-size:.72rem; }
+.chrome .volby { display:flex; gap:6px; flex-wrap:wrap; }
+.chrome button { font:600 .85rem/1.2 var(--s-font-tech); padding:.4rem .8rem; border-radius:var(--s-radius); border:1.5px solid var(--c-border-strong); background:transparent; color:var(--c-text); cursor:pointer; display:inline-flex; align-items:center; gap:.5rem; }
+.chrome button .kod { color:var(--c-primary-text); font-weight:800; }
+.chrome button:hover { border-color:var(--c-primary); }
+.chrome button[aria-pressed="true"] { background:var(--c-primary); border-color:var(--c-primary); color:var(--c-on-primary); }
+.chrome button[aria-pressed="true"] .kod { color:var(--c-on-primary); }
+.chrome .pozn-uk { flex:1 1 20rem; font-size:.78rem; }
+
+/* ───── Hlavička webu ───── */
+.topbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; background:var(--c-surface); border-bottom:1px solid var(--c-border);
+  padding:.7rem max(16px, env(safe-area-inset-right, 0px)) .7rem max(16px, env(safe-area-inset-left, 0px)); }
+.tt-znacka { display:block; height:28px; width:auto; }
+.topbar nav { display:flex; align-items:center; gap:1rem; font:500 .95rem/1.2 var(--s-font-tech); }
+.topbar nav > a:not(.btn) { color:var(--c-text-secondary); }
+.topbar nav > a:not(.btn):hover { color:var(--c-text); text-decoration:none; }
+.topbar nav > a.aktivni { color:var(--c-text); }
+@media (max-width: 640px) { .topbar nav > a:not(.btn) { display:none; } }
+.tt-rezim { display:inline-flex; align-items:center; justify-content:center; width:2.1rem; height:2.1rem; border-radius:var(--s-radius); border:1.5px solid var(--c-border-strong); background:transparent; color:var(--c-text-secondary); cursor:pointer; padding:0; }
+.tt-rezim:hover { color:var(--c-primary); border-color:var(--c-primary); }
+.tt-rezim svg { width:1.1rem; height:1.1rem; }
+.tt-rezim .slunce { display:none; }
+:root[data-theme="light"] .tt-rezim .slunce { display:block; }
+:root[data-theme="light"] .tt-rezim .mesic { display:none; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .tt-rezim .slunce { display:block; }
+  :root:not([data-theme="dark"]) .tt-rezim .mesic { display:none; }
+}
+
+/* ───── Tlačítka, karty, prvky manuálu ───── */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; cursor:pointer; font:600 .95rem/1.2 var(--s-font-tech); padding:.6rem 1.1rem; border-radius:var(--s-radius); border:1.5px solid var(--c-border-strong); background:transparent; color:var(--c-text); text-decoration:none; }
+.btn:hover { text-decoration:none; border-color:var(--c-primary); color:var(--c-primary); }
+.btn-primary { background:var(--c-primary); border-color:var(--c-primary); color:var(--c-on-primary); }
+.btn-primary:hover { background:var(--c-primary-text); border-color:var(--c-primary-text); color:var(--c-on-primary); }
+.btn-sm { padding:.35rem .7rem; font-size:.85rem; }
+.karta { background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--s-radius); box-shadow:var(--s-shadow); padding:1.25rem 1.5rem; min-width:0; }
+.perex { font-size:1.19rem; line-height:1.5; padding-left:16px; position:relative; margin:0 0 1.25rem; max-width:46rem; }
+.perex::before, .meta::before, .upozorneni::before { content:""; position:absolute; left:0; top:.2em; bottom:.2em; width:3px; border-radius:2px; background:var(--c-primary); }
+ul.odrazky { list-style:none; margin:0 0 1rem; padding:0; display:grid; gap:6px; }
+ul.odrazky li { position:relative; padding-left:22px; }
+ul.odrazky li::before { content:""; position:absolute; left:1px; top:.58em; width:9px; height:9px; border-radius:2.5px; background:var(--c-primary); }
+.upozorneni { background:var(--c-surface); border-radius:var(--s-radius); padding:14px 18px 14px 21px; position:relative; display:grid; gap:4px; margin:0 0 1.25rem; }
+.upozorneni::before { left:8px; top:10px; bottom:10px; }
+.upozorneni .titulek { font:600 .9rem/1.4 var(--s-font-tech); color:var(--c-primary-text); }
+.upozorneni p { font-size:.93rem; margin:0; }
+.vyzva { display:grid; gap:10px; padding:22px 24px; border-radius:var(--s-radius); background:var(--c-surface); border:1px solid var(--c-border); margin:2.5rem 0 1rem; }
+.vyzva .titulek { font:700 1.25rem/1.2 var(--s-font-tech); }
+.vyzva p { margin:0; }
+.vyzva .akce { display:flex; flex-wrap:wrap; gap:10px; margin-top:4px; }
+.chip { display:inline-block; font:500 .72rem/1.4 var(--s-font-tech); padding:.1rem .45rem; border-radius:4px; border:1px solid var(--c-border-strong); color:var(--c-text-secondary); vertical-align:middle; white-space:nowrap; }
+.chip.overit { color:var(--c-warn); border-color:var(--c-warn); }
+
+/* ───── Stránka ───── */
+.varianta { display:none; }
+.web[data-v="sr1"] .varianta[data-v="sr1"], .web[data-v="sr2"] .varianta[data-v="sr2"], .web[data-v="sr3"] .varianta[data-v="sr3"] { display:block; }
+.stranka { max-width:64rem; margin:0 auto; padding-block:2rem 3rem; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); min-width:0; }
+.stranka.uzke { max-width:46rem; }
+.drobky { font:500 .8rem/1.4 var(--s-font-tech); color:var(--c-text-secondary); margin:0 0 .75rem; }
+.stranka h2 { position:relative; padding-left:14px; margin:2.75rem 0 1rem; }
+.stranka h2::before { content:""; position:absolute; left:0; top:.08em; bottom:.08em; width:3px; border-radius:2px; background:var(--c-primary); }
+.stranka h3 { margin:1.5rem 0 .75rem; }
+.meta { display:flex; flex-wrap:wrap; gap:.3rem 1.25rem; align-items:center; font:500 .85rem/1.5 var(--s-font-tech); color:var(--c-text-secondary);
+  padding:12px 16px 12px 21px; background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--s-radius); position:relative; margin:1.25rem 0 1.75rem; }
+.meta::before { left:8px; top:10px; bottom:10px; }
+.meta strong { color:var(--c-text); font-weight:600; }
+.fakta { display:grid; grid-template-columns:repeat(auto-fit, minmax(16rem, 1fr)); gap:1rem; margin:0 0 1rem; }
+.fakta h3 { margin:0 0 .75rem; font-size:1.25rem; font-weight:700; }
+.fakta dl { display:grid; grid-template-columns:auto 1fr; gap:.3rem .9rem; margin:0; font-size:.95rem; }
+.fakta dt { color:var(--c-text-secondary); font:500 .75rem/1.9 var(--s-font-tech); text-transform:uppercase; letter-spacing:.05em; }
+.fakta dd { margin:0; min-width:0; }
+.obsah { display:flex; flex-wrap:wrap; gap:.35rem .9rem; font:500 .85rem/1.4 var(--s-font-tech); margin:0 0 1rem; }
+.obsah a { color:var(--c-text-secondary); }
+.obsah a:hover { color:var(--c-primary); }
+.legenda { display:flex; flex-wrap:wrap; gap:.4rem 1.25rem; font-size:.85rem; color:var(--c-text-secondary); margin:.25rem 0 1rem; }
+.dva { display:grid; grid-template-columns:repeat(auto-fit, minmax(18rem, 1fr)); gap:.5rem 2rem; }
+.dva h3 { margin-top:.5rem; }
+.scenare { display:grid; grid-template-columns:repeat(auto-fit, minmax(17rem, 1fr)); gap:1rem; margin:0 0 1rem; }
+.scenar { display:grid; gap:.5rem; align-content:start; }
+.scenar h3 { margin:0; font-size:1.1rem; }
+.scenar p { margin:0; font-size:.95rem; }
+.scenar a { font:500 .82rem/1.4 var(--s-font-tech); }
+.kdo { display:inline-block; background:var(--c-primary); color:var(--c-on-primary); font:700 .85rem/1.6 var(--s-font-tech); padding:.05rem .6rem; border-radius:calc(var(--s-radius) * .6); }
+.kdo.obe { background:var(--c-border-strong); color:var(--c-text); }
+.pozn { font-size:.82rem; color:var(--c-text-secondary); line-height:1.45; margin-top:3px; }
+.zdroj { font:500 .75rem/1.4 var(--s-font-tech); white-space:nowrap; }
+
+/* Tabulka T1 + hodnoty ano / částečně / ne / neověřeno */
+.tab { overflow-x:auto; margin:0 0 1.25rem; }
+table.srovnani { width:100%; border-collapse:collapse; min-width:34rem; }
+.srovnani th, .srovnani td { text-align:left; padding:.65rem .5rem; border-bottom:1px solid var(--c-border); font-size:.95rem; vertical-align:top; }
+.srovnani thead th { color:var(--c-text-secondary); font:600 .78rem/1.3 var(--s-font-tech); letter-spacing:.06em; text-transform:uppercase; border-bottom:2px solid var(--c-border-strong); }
+.srovnani th[scope="row"] { font:600 .95rem/1.4 var(--s-font-tech); color:var(--c-text); width:34%; }
+.srovnani th[scope="row"] small { display:block; font:400 .8rem/1.4 var(--s-font); color:var(--c-text-secondary); }
+.srovnani tr.skupina td { padding:1.6rem .5rem .35rem; border-bottom:2px solid var(--c-border-strong); }
+.srovnani tr.skupina span { position:relative; padding-left:12px; font:600 .8rem/1.3 var(--s-font-tech); letter-spacing:.06em; text-transform:uppercase; color:var(--c-primary-text); }
+.srovnani tr.skupina span::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:2px; background:var(--c-primary); }
+.srovnani td.c { width:33%; }
+.v { display:inline-flex; align-items:center; gap:8px; font:500 .9rem/1.4 var(--s-font-tech); white-space:nowrap; }
+.v i { width:14px; height:14px; border-radius:3.5px; display:inline-block; flex:none; position:relative; }
+.v-ano i { background:var(--c-primary); }
+.v-ano i::after { content:""; position:absolute; left:4.5px; top:1.5px; width:3.5px; height:7px; border:solid var(--c-on-primary); border-width:0 2px 2px 0; transform:rotate(45deg); }
+.v-cast i { border:1.5px solid var(--c-primary); background:linear-gradient(90deg, var(--c-primary) 50%, transparent 50%); }
+.v-ne i { border:1.5px solid var(--c-border-strong); }
+.v-ne { color:var(--c-text-secondary); }
+.v-nez i { border:1.5px dashed var(--c-border-strong); }
+.v-nez { color:var(--c-text-secondary); }
+.ceny td, .ceny th[scope="row"] { width:auto; }
+
+.metodika { font-size:.9rem; color:var(--c-text-secondary); border-top:1px solid var(--c-border); padding-top:1.5rem; margin-top:2.5rem; }
+.metodika h2 { font-size:1.1rem; margin-top:0; }
+.metodika h3 { font-size:.95rem; margin:1.25rem 0 .5rem; }
+.metodika strong { color:var(--c-text); }
+ol.zdroje { margin:0; padding-left:1.2rem; font-size:.82rem; display:grid; gap:4px; }
+ol.zdroje a { word-break:break-all; }
+.paticka { padding:1.5rem max(16px, env(safe-area-inset-right, 0px)) 1.5rem max(16px, env(safe-area-inset-left, 0px)); border-top:1px solid var(--c-border); text-align:center; font-size:.85rem; color:var(--c-text-secondary); }
+.paticka nav { display:flex; justify-content:center; flex-wrap:wrap; gap:.5rem 1.5rem; margin-bottom:.5rem; font:500 .85rem/1.4 var(--s-font-tech); }
+.paticka a { color:var(--c-text-secondary); }
+@media (max-width: 760px) { h1 { font-size:1.85rem; } .stranka h2 { font-size:1.35rem; } }
+</style>
+
+<div class="chrome">
+  <span class="uk">Ukázka</span>
+  <div class="volby" role="group" aria-label="Varianty stránky">
+    <button type="button" data-volba="sr1" aria-pressed="true"><span class="kod">SR1</span> Přehled</button>
+    <button type="button" data-volba="sr2" aria-pressed="false"><span class="kod">SR2</span> Průvodce</button>
+    <button type="button" data-volba="sr3" aria-pressed="false"><span class="kod">SR3</span> Podle potřeby</button>
+  </div>
+  <span class="pozn-uk">Tři rozvržení téže stránky. Údaje o Homestyleru jsou z analýzy 1. 11. 2026 (dokumentace a ceník výrobce), před zveřejněním projdou ověřením se snímky.</span>
+</div>
+
+<div class="web" id="web" data-v="sr1">
+<header class="topbar">
+  <a href="#" aria-label="TupTuDu">{{ZNACKA}}</a>
+  <nav>
+    <a href="#">Funkce</a><a href="#">Ceník</a><a href="#" class="aktivni">Srovnání</a><a href="#">Přihlásit</a>
+    <button type="button" class="tt-rezim" data-rezim title="Přepnout tmavý nebo světlý režim" aria-label="Přepnout tmavý nebo světlý režim">
+      <svg class="slunce" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>
+      <svg class="mesic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+    </button>
+    <a href="#" class="btn btn-primary btn-sm">Začít zdarma</a>
+  </nav>
+</header>
+<main>
+
+<!-- ═══════════════ SR1 Přehled ═══════════════ -->
+<article class="varianta" data-v="sr1">
+<div class="stranka">
+  <p class="drobky">Srovnání nástrojů › Homestyler vs TupTuDu</p>
+  <h1>Homestyler vs TupTuDu</h1>
+  <p class="perex">Homestyler je prohlížečový návrhář interiérů a domů s velkou knihovnou vybavení, rendery a AI nástroji. TupTuDu je český nástroj pro stavebníky, který kreslí půdorys nad skutečným pozemkem z katastru a terénem. Srovnáváme 41 vlastností, ceny a to, komu se která aplikace hodí.</p>
+  <div class="meta">
+    <span><strong>Sestavil tým TupTuDu</strong>, výrobce jednoho ze srovnávaných nástrojů</span>
+    <span>Stav k <strong>1. 11. 2026</strong></span>
+    <span>Homestyler V6.0 s aktualizacemi do 17. 10. 2026, podle dokumentace výrobce</span>
+    <a href="#sr1-oprava">Našli jste nepřesnost?</a>
+  </div>
+
+  <div class="fakta">
+    <div class="karta"><h3>Homestyler</h3>
+      <dl><dt>Běží</dt><dd>v prohlížeči, aplikace iOS a Android</dd><dt>Čeština</dt><dd>ne</dd><dt>Zdarma</dt><dd>ano, tarif Basic</dd><dt>Placené od</dt><dd>6,8 USD měsíčně (≈ 149 Kč)</dd><dt>Zaměření</dt><dd>interiér a vizualizace, designéři i laici</dd><dt>Web</dt><dd><a href="https://www.homestyler.com" target="_blank" rel="noopener">homestyler.com</a></dd></dl></div>
+    <div class="karta"><h3>TupTuDu</h3>
+      <dl><dt>Běží</dt><dd>v prohlížeči</dd><dt>Čeština</dt><dd>ano</dd><dt>Zdarma</dt><dd>ano, 30 úprav denně a 1 projekt</dd><dt>Placené od</dt><dd>249 Kč měsíčně</dd><dt>Zaměření</dt><dd>stavebník v Česku, pozemek a terén, půdorys z PDF</dd><dt>Web</dt><dd><a href="https://tuptudu.com">tuptudu.com</a></dd></dl></div>
+  </div>
+
+  <h2 id="sr1-vlastnosti">Srovnání vlastností</h2>
+  <p>Stejnou sadu 41 vlastností používáme pro všechna srovnání na tomto webu. U Homestyleru vede každý řádek na zdroj v dokumentaci výrobce.</p>
+  <div class="legenda" data-legenda></div>
+  <div class="tab" data-tabulka="vse"></div>
+
+  <h2>Co má jen Homestyler a co jen TupTuDu</h2>
+  <div class="dva">
+    <div><h3>Jen Homestyler</h3><ul class="odrazky">
+      <li>Parametrická střecha, více podlaží a parametrické schody.</li>
+      <li>3D s materiály, procházkou z očí člověka a cloudovými rendery až 12K panorama.</li>
+      <li>Knihovna vybavení přes 100 000 modelů zdarma, parametrické kuchyně, AI návrh interiéru.</li>
+      <li>Výkresová sada do DWG, PDF a JPG, soupis položek, sdílení odkazem a týmová práce.</li>
+      <li>Aplikace pro iOS a Android, zaměření LiDARem, AI generování dispozice.</li>
+    </ul></div>
+    <div><h3>Jen TupTuDu</h3><ul class="odrazky">
+      <li>Pozemek z katastru ČÚZK: hranice parcel, výměra, sousední parcely a budovy.</li>
+      <li>Skutečný terén z výškových dat DMR 5G a dům posazený na terén ve 3D.</li>
+      <li>Mapový podklad Mapy.com pod půdorysem.</li>
+      <li>Stěny v normové řadě tlouštěk a dveře podle ČSN 74 6401.</li>
+      <li>Radon, geologie a inženýrskogeologický rajon pozemku z dat ČGS.</li>
+      <li>Celá aplikace v češtině.</li>
+    </ul></div>
+  </div>
+
+  <h2 id="sr1-ceny">Ceny</h2>
+  <div class="tab" data-ceny></div>
+  <p class="pozn">Ceny podle ceníků výrobců k 1. 11. 2026, u Homestyleru nejnižší uvedená cena. Přepočet kurzem ČNB z 29. 10. 2026, 1 USD = 21,862 Kč. <span class="chip overit">DPH a fakturační období: k ověření</span></p>
+
+  <h2>Pro koho se co hodí</h2>
+  <ul class="odrazky" data-prokoho></ul>
+
+  <div class="vyzva" data-vyzva></div>
+  <section class="metodika" data-metodika="sr1"></section>
+</div>
+</article>
+
+<!-- ═══════════════ SR2 Průvodce ═══════════════ -->
+<article class="varianta" data-v="sr2">
+<div class="stranka uzke">
+  <p class="drobky">Srovnání nástrojů › Homestyler vs TupTuDu</p>
+  <h1>Homestyler vs TupTuDu: podrobné srovnání funkcí, cen a použití</h1>
+  <p class="perex">Oba nástroje nakreslí půdorys domu v prohlížeči a ukážou ho ve 3D. Dál se rozcházejí: Homestyler míří na interiér a vizualizace, TupTuDu na pozemek, terén a přípravu stavby v Česku. Prošli jsme 41 vlastností, ceníky a dokumentaci, abyste si mohli vybrat podle toho, co potřebujete.</p>
+  <div class="meta">
+    <span><strong>Sestavil tým TupTuDu</strong>, výrobce jednoho ze srovnávaných nástrojů</span>
+    <span>Stav k <strong>1. 11. 2026</strong></span>
+    <span>Homestyler V6.0 s aktualizacemi do 17. 10. 2026, podle dokumentace výrobce</span>
+    <a href="#sr2-oprava">Našli jste nepřesnost?</a>
+  </div>
+  <nav class="obsah" aria-label="Obsah">
+    <a href="#s2-co">Co je co</a><a href="#s2-pudorys">Půdorys</a><a href="#s2-dum">Patra, střecha a 3D</a><a href="#s2-interier">Interiér</a><a href="#s2-pozemek">Pozemek a terén</a><a href="#s2-vystupy">Výstupy</a><a href="#s2-platforma">Platforma</a><a href="#s2-ceny">Ceny</a><a href="#s2-prokoho">Pro koho</a><a href="#s2-metodika">Jak jsme srovnávali</a>
+  </nav>
+
+  <h2 id="s2-co">Co je Homestyler a co je TupTuDu</h2>
+  <p><strong>Homestyler</strong> je návrhář interiérů a domů, který běží v prohlížeči a v aplikacích pro iOS a Android. Staví na knihovně přes 100 000 modelů a materiálů, cloudových renderech a AI nástrojích pro návrh dispozice i zařízení. Základní tarif je zdarma, placené začínají na 6,8 USD měsíčně.</p>
+  <p><strong>TupTuDu</strong> je český nástroj pro lidi, kteří se chystají stavět. Půdorys kreslí nad skutečným pozemkem: načte parcely z katastru ČÚZK, výškový profil terénu a mapový podklad, stěny a dveře nabízí v normových rozměrech. Verze zdarma má 30 úprav denně a jeden projekt, placené začínají na 249 Kč měsíčně.</p>
+  <div class="legenda" data-legenda></div>
+
+  <h2 id="s2-pudorys">Kreslení půdorysu</h2>
+  <p>V kreslení stěn, dveří, oken a místností jsou nástroje na stejné úrovni a oba umí podklad z PDF nebo obrázku. Rozdíl je v automatickém převodu výkresu: Homestyler nabízí Auto Generate v beta verzi z obrázku, PDF i DWG, TupTuDu rozpozná stěny jen z vektorového PDF, zato bez AI a s výběrem až ze čtyř variant. Automatické kóty má Homestyler kompletní, TupTuDu ukazuje jen délky stěn. Schodiště a zaměření mobilem s LiDARem má dnes jen Homestyler.</p>
+  <div class="tab" data-tabulka="skupina:a"></div>
+
+  <h2 id="s2-dum">Patra, střecha a 3D</h2>
+  <p>Tady je Homestyler výrazně dál: parametrická střecha se sklony, přesahy a vikýři, více podlaží, 3D s materiály, procházkou a cloudovými rendery. TupTuDu dnes zobrazí jedno podlaží v jednoduchém 3D s dveřmi a okny, bez střechy a materiálů. Podlaží a střechu připravuje.</p>
+  <div class="tab" data-tabulka="skupina:b"></div>
+  <div class="tab" data-tabulka="skupina:c"></div>
+
+  <h2 id="s2-interier">Interiér</h2>
+  <p>Interiér je domácí půda Homestyleru: knihovna vybavení, parametrické kuchyně a AI nástroje pro zařízení a restyling. TupTuDu knihovnu vybavení zatím nemá.</p>
+  <div class="tab" data-tabulka="skupina:d"></div>
+
+  <h2 id="s2-pozemek">Exteriér, pozemek a terén</h2>
+  <p>Tady se role obracejí. Homestyler nemá pozemek, mapu ani terén z výškových dat, venkovní plochy řeší jen jako povrchy s materiálem. TupTuDu načte parcely z katastru i se sousedy a budovami, skutečný terén DMR 5G s převýšením a posadí na něj dům ve 3D. Modelovat terén nebo počítat výkopy ale neumí ani jeden. Ploty, zídky, zahradu a terasy má dnes bohatší Homestyler.</p>
+  <div class="tab" data-tabulka="skupina:e"></div>
+  <div class="tab" data-tabulka="skupina:f"></div>
+
+  <h2 id="s2-vystupy">Výstupy a spolupráce</h2>
+  <p>Homestyler vyexportuje výkresovou sadu do DWG, PDF a JPG (DWG a soupis položek od tarifu Pro+) a sdílí projekt odkazem, týmová práce je v tarifu Team. TupTuDu zatím žádný export ani sdílení nemá, PDF a DXF připravuje.</p>
+  <div class="upozorneni"><div class="titulek">Co jsme neověřili</div><p>Export 3D modelu z Homestyleru jsme v dokumentaci nenašli, v tabulce je proto označen jako neověřeno.</p></div>
+  <div class="tab" data-tabulka="skupina:g"></div>
+
+  <h2 id="s2-platforma">Platforma a jazyk</h2>
+  <p>Oba nástroje běží v prohlížeči a mají trvalou verzi zdarma. Homestyler má navíc aplikace pro iOS a Android, TupTuDu má jako jediný z dvojice češtinu.</p>
+  <div class="tab" data-tabulka="skupina:h"></div>
+
+  <h2 id="s2-ceny">Ceny</h2>
+  <div class="tab" data-ceny></div>
+  <p class="pozn">Ceny podle ceníků výrobců k 1. 11. 2026, u Homestyleru nejnižší uvedená cena. Přepočet kurzem ČNB z 29. 10. 2026, 1 USD = 21,862 Kč. <span class="chip overit">DPH a fakturační období: k ověření</span></p>
+
+  <h2 id="s2-prokoho">Pro koho se co hodí</h2>
+  <ul class="odrazky" data-prokoho></ul>
+
+  <div class="vyzva" data-vyzva></div>
+  <section class="metodika" id="s2-metodika" data-metodika="sr2"></section>
+</div>
+</article>
+
+<!-- ═══════════════ SR3 Podle potřeby ═══════════════ -->
+<article class="varianta" data-v="sr3">
+<div class="stranka">
+  <p class="drobky">Srovnání nástrojů › Homestyler vs TupTuDu</p>
+  <h1>Homestyler, nebo TupTuDu? Záleží, co chcete nakreslit</h1>
+  <p class="perex">Oba nástroje nakreslí půdorys v prohlížeči. Homestyler je silný v interiéru a vizualizacích, TupTuDu v pozemku, terénu a přípravě stavby v Česku. Vyberte si situaci, která je vaše, a podívejte se, co v ní který nástroj umí.</p>
+  <div class="meta">
+    <span><strong>Sestavil tým TupTuDu</strong>, výrobce jednoho ze srovnávaných nástrojů</span>
+    <span>Stav k <strong>1. 11. 2026</strong></span>
+    <span>Homestyler V6.0 s aktualizacemi do 17. 10. 2026, podle dokumentace výrobce</span>
+    <a href="#sr3-oprava">Našli jste nepřesnost?</a>
+  </div>
+
+  <h2>Co chcete udělat?</h2>
+  <div class="scenare">
+    <div class="karta scenar"><h3>Zařídit a vizualizovat interiér</h3><div><span class="kdo">Homestyler</span></div>
+      <p>Knihovna přes 100 000 modelů a materiálů zdarma, cloudové rendery a AI návrh zařízení. TupTuDu knihovnu vybavení ani rendery nemá.</p><a href="#sr3-rozdily">Řádky Interiér a 3D</a></div>
+    <div class="karta scenar"><h3>Posadit dům na vlastní pozemek v Česku</h3><div><span class="kdo">TupTuDu</span></div>
+      <p>Parcely z katastru ČÚZK, skutečný terén z dat DMR 5G a mapový podklad. Homestyler pozemek, mapu ani terén nemá.</p><a href="#sr3-rozdily">Řádky Pozemek a okolí</a></div>
+    <div class="karta scenar"><h3>Nakreslit půdorys podle výkresu od projektanta</h3><div><span class="kdo obe">Obě, každá jinak</span></div>
+      <p>Homestyler převede obrázek, PDF i DWG funkcí Auto Generate (beta). TupTuDu rozpozná stěny z vektorového PDF bez AI, nabídne až 4 varianty a stěny v normových tloušťkách.</p><a href="#sr3-rozdily">Řádky Kreslení půdorysu</a></div>
+    <div class="karta scenar"><h3>Střecha, podlaží a schody</h3><div><span class="kdo">Homestyler</span></div>
+      <p>Parametrická střecha, více podlaží a parametrické schody. TupTuDu má dnes jedno podlaží bez střechy a schodů, podlaží a střechu připravuje.</p><a href="#sr3-rozdily">Řádky Patra a střecha</a></div>
+    <div class="karta scenar"><h3>Předat výkresy projektantovi</h3><div><span class="kdo">Homestyler</span></div>
+      <p>Výkresová sada do DWG, PDF a JPG, DWG od tarifu Pro+. TupTuDu zatím export nemá, PDF a DXF připravuje.</p><a href="#sr3-rozdily">Řádky Výstupy a spolupráce</a></div>
+    <div class="karta scenar"><h3>Čeština a mobil</h3><div><span class="kdo obe">Každý něco</span></div>
+      <p>Češtinu má jen TupTuDu. Aplikace pro iOS a Android má jen Homestyler, TupTuDu běží v prohlížeči.</p><a href="#sr3-rozdily">Řádky Platforma</a></div>
+  </div>
+
+  <h2 id="sr3-rozdily">V čem se liší</h2>
+  <p>Ze 41 sledovaných vlastností se nástroje liší v <strong data-pocet-rozdilu></strong>. Shodně umí nebo neumí: <span data-seznam="shodne"></span>.</p>
+  <div class="legenda" data-legenda></div>
+  <div class="tab" data-tabulka="rozdily"></div>
+
+  <h2 id="sr3-ceny">Ceny</h2>
+  <div class="tab" data-ceny></div>
+  <p class="pozn">Ceny podle ceníků výrobců k 1. 11. 2026, u Homestyleru nejnižší uvedená cena. Přepočet kurzem ČNB z 29. 10. 2026, 1 USD = 21,862 Kč. <span class="chip overit">DPH a fakturační období: k ověření</span></p>
+
+  <div class="vyzva" data-vyzva></div>
+  <section class="metodika" data-metodika="sr3"></section>
+</div>
+</article>
+
+</main>
+<footer class="paticka">
+  <nav><a href="#">Funkce</a><a href="#">Ceník</a><a href="#">Srovnání</a><a href="#">Kontakt</a><a href="#">Podmínky</a><a href="#">Soukromí</a></nav>
+  <div>© 2026 TupTuDu</div>
+</footer>
+</div>
+
+<script type="application/json" id="data">{{DATA}}</script>
+<script>
+(function () {
+  var D = JSON.parse(document.getElementById('data').textContent);
+  var LBL = { ano: 'ano', castecne: 'částečně', ne: 'ne', '?': 'neověřeno' };
+  var CLS = { ano: 'ano', castecne: 'cast', ne: 'ne', '?': 'nez' };
+  var PORADI = { ano: 3, castecne: 2, ne: 1, '?': 0 };
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function norm(c) { c = c || { v: '?' }; var v = c.v === 'skryte' ? 'ne' : (c.v || '?'); return { v: v, p: c.p || '', z: c.z || '', placene: !!c.placene }; }
+  function hodnota(v) { return '<span class="v v-' + CLS[v] + '"><i></i>' + LBL[v] + '</span>'; }
+  function bunka(c, f, jeTT) {
+    c = norm(c); var pozn = c.p;
+    if (jeTT) {
+      pozn = pozn.replace(/\s*\(nasazeno[^)]*\)/, '').replace(/^Three\.js r\d+:\s*/, '');
+      if (c.v === 'ne') pozn = f.plan ? 'připravujeme' : '';
+    }
+    var h = hodnota(c.v);
+    if (c.placene) h += ' <span class="chip">placený tarif</span>';
+    if (pozn) h += '<div class="pozn">' + esc(pozn) + (c.z && !jeTT ? ' <a class="zdroj" href="' + esc(c.z) + '" target="_blank" rel="noopener">zdroj</a>' : '') + '</div>';
+    return h;
+  }
+  function radek(f) {
+    return '<tr><th scope="row">' + esc(f.n) + (f.d ? '<small>' + esc(f.d) + '</small>' : '') + '</th><td class="c">' + bunka(D.H[f.k], f, false) + '</td><td class="c">' + bunka(D.T[f.k], f, true) + '</td></tr>';
+  }
+  function tabulka(funkce, seSkupinami) {
+    var h = '<table class="srovnani"><thead><tr><th>Vlastnost</th><th>Homestyler</th><th>TupTuDu</th></tr></thead><tbody>';
+    var posledni = null;
+    funkce.forEach(function (f) {
+      var sk = f.k.charAt(0);
+      if (seSkupinami && sk !== posledni) { var g = D.G.filter(function (x) { return x.id === sk; })[0]; h += '<tr class="skupina"><td colspan="3"><span>' + esc(g ? g.nazev : sk) + '</span></td></tr>'; posledni = sk; }
+      h += radek(f);
+    });
+    return h + '</tbody></table>';
+  }
+  var rozdily = D.F.filter(function (f) { return norm(D.H[f.k]).v !== norm(D.T[f.k]).v; });
+  var shodne = D.F.filter(function (f) { return norm(D.H[f.k]).v === norm(D.T[f.k]).v; });
+
+  document.querySelectorAll('[data-tabulka]').forEach(function (el) {
+    var co = el.getAttribute('data-tabulka');
+    if (co === 'vse') el.innerHTML = tabulka(D.F, true);
+    else if (co === 'rozdily') el.innerHTML = tabulka(rozdily, true);
+    else if (co.indexOf('skupina:') === 0) { var sk = co.slice(8); el.innerHTML = tabulka(D.F.filter(function (f) { return f.k.charAt(0) === sk; }), false); }
+  });
+  document.querySelectorAll('[data-pocet-rozdilu]').forEach(function (el) { el.textContent = rozdily.length + ' z nich'; });
+  document.querySelectorAll('[data-seznam="shodne"]').forEach(function (el) {
+    el.textContent = shodne.map(function (f) { return f.n.toLowerCase() + ' (' + LBL[norm(D.H[f.k]).v] + ')'; }).join(', ');
+  });
+  document.querySelectorAll('[data-legenda]').forEach(function (el) {
+    el.innerHTML = hodnota('ano') + hodnota('castecne') + hodnota('ne') + hodnota('?') + '<span>neověřeno = v dokumentaci výrobce jsme nenašli</span>';
+  });
+  var ceny = '<table class="srovnani ceny"><thead><tr><th>Tarif</th><th>Homestyler</th><th>TupTuDu</th></tr></thead><tbody>'
+    + '<tr><th scope="row">Zdarma</th><td>Basic: neomezené rendery v 1K, 3 vlastní modely</td><td>30 úprav denně, 1 projekt</td></tr>'
+    + '<tr><th scope="row">Základní placený</th><td>Pro+ od 6,8 USD měsíčně (≈ 149 Kč)</td><td>Stavebník 249 Kč měsíčně nebo 1 490 Kč ročně, 5 projektů</td></tr>'
+    + '<tr><th scope="row">Vyšší</th><td>Master+ od 11,8 USD měsíčně (≈ 258 Kč)</td><td>Profi 990 Kč měsíčně nebo 8 290 Kč ročně</td></tr>'
+    + '<tr><th scope="row">Týmy</th><td>Team od 19,9 USD za uživatele měsíčně (≈ 435 Kč), Enterprise na dotaz, AI kredity zvlášť</td><td>není</td></tr>'
+    + '</tbody></table>';
+  document.querySelectorAll('[data-ceny]').forEach(function (el) { el.innerHTML = ceny; });
+  var prokoho = '<li><strong>Zařizujete interiér a chcete fotorealistické výstupy:</strong> Homestyler.</li>'
+    + '<li><strong>Stavíte dům v Česku a chcete začít od pozemku a terénu, v češtině:</strong> TupTuDu.</li>'
+    + '<li><strong>Potřebujete výkresy předat projektantovi:</strong> dnes Homestyler, TupTuDu export do PDF a DXF připravuje.</li>';
+  document.querySelectorAll('[data-prokoho]').forEach(function (el) { el.innerHTML = prokoho; });
+  var vyzva = '<div class="titulek">Vyzkoušejte TupTuDu na vlastním pozemku</div><p>Zadejte číslo parcely, načtěte terén a nakreslete půdorys. Zdarma, bez instalace, v češtině.</p>'
+    + '<div class="akce"><a class="btn btn-primary" href="#">Začít zdarma</a><a class="btn" href="https://www.homestyler.com" target="_blank" rel="noopener">Web Homestyleru</a></div>';
+  document.querySelectorAll('[data-vyzva]').forEach(function (el) { el.innerHTML = vyzva; });
+  var zdroje = {}; D.F.forEach(function (f) { var c = D.H[f.k]; if (c && c.z) zdroje[c.z] = 1; });
+  var zdrojeHtml = Object.keys(zdroje).sort().map(function (u) { return '<li><a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u.replace(/^https?:\/\//, '')) + '</a></li>'; }).join('');
+  document.querySelectorAll('[data-metodika]').forEach(function (el) {
+    var id = el.getAttribute('data-metodika');
+    el.innerHTML = '<h2>Jak jsme srovnávali</h2>'
+      + '<p>Údaje o Homestyleru pocházejí z veřejné dokumentace, fóra a ceníku výrobce, odkaz je u každé vlastnosti. Posuzovali jsme verzi V6.0 s aktualizacemi do 17. 10. 2026. Co jsme v dokumentaci nenašli, je označeno jako neověřeno. Údaje o TupTuDu odpovídají verzi z téhož dne. Vlastnosti jsme vybrali podle toho, co stavebník a projektant při návrhu domu potřebuje, a stejnou sadu používáme pro všechna srovnání na tomto webu.</p>'
+      + '<p id="' + id + '-oprava"><strong>Našli jste nepřesnost nebo zastupujete Homestyler?</strong> Napište nám přes <a href="#">kontaktní formulář</a>. Údaj ověříme, opravíme a u stránky uvedeme datum opravy.</p>'
+      + '<p>Homestyler je ochranná známka svého vlastníka. TupTuDu s ním není nijak spojené, název používáme jen k označení srovnávaného produktu.</p>'
+      + '<p>Poslední ověření: 1. 11. 2026. Příští plánovaná revize: únor 2027.</p>'
+      + '<h3>Zdroje</h3><ol class="zdroje">' + zdrojeHtml + '</ol>';
+  });
+
+  /* Přepínání variant (ukázka) + hash, volba se pamatuje v prohlížeči */
+  var web = document.getElementById('web');
+  function zvol(v) {
+    if (!/^sr[123]$/.test(v)) v = 'sr1';
+    web.setAttribute('data-v', v);
+    document.querySelectorAll('[data-volba]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-volba') === v)); });
+    try { localStorage.setItem('tt_srovnani_varianta', v); } catch (e) {}
+  }
+  document.querySelectorAll('[data-volba]').forEach(function (b) {
+    b.addEventListener('click', function () { var v = b.getAttribute('data-volba'); zvol(v); try { location.hash = v; } catch (e) {} window.scrollTo(0, 0); });
+  });
+  var start = (location.hash || '').replace('#', '');
+  if (!/^sr[123]$/.test(start)) { try { start = localStorage.getItem('tt_srovnani_varianta') || 'sr1'; } catch (e) { start = 'sr1'; } }
+  zvol(start);
+  window.addEventListener('hashchange', function () { var v = (location.hash || '').replace('#', ''); if (/^sr[123]$/.test(v)) zvol(v); });
+
+  /* Přepínač režimu jako na webu */
+  var html = document.documentElement;
+  function jeSvetly() {
+    var t = html.getAttribute('data-theme');
+    if (t) return t === 'light';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  }
+  document.querySelectorAll('[data-rezim]').forEach(function (b) {
+    b.addEventListener('click', function () { html.setAttribute('data-theme', jeSvetly() ? 'dark' : 'light'); });
+  });
+})();
+</script>
