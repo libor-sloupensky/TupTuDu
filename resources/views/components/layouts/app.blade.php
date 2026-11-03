@@ -1,6 +1,8 @@
 @props(['title' => 'TupTuDu', 'fullWidth' => false])
 <!DOCTYPE html>
-<html lang="cs">
+{{-- Masterteam zatím ve světlém režimu: editor a stránky s Tailwind třídami (bg-white, text-gray-*)
+     nejsou na tmavé pozadí připravené. Tokeny v app.css jsou pro oba režimy, přepne se až po úpravě. --}}
+<html lang="cs" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +10,7 @@
     @include('partials.hlasic-chyb-inline')
     <meta name="robots" content="noindex">
     <title>{{ $title }}</title>
+    @include('partials.hlava-brand')
 
     {{-- Tailwind utility třídy za běhu (bez build kroku) + Alpine. Brand styl viz /css/app.css. --}}
     <script src="https://cdn.tailwindcss.com"></script>

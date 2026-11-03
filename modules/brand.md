@@ -76,12 +76,47 @@ zůstávají i s nevybranými). Společný motiv: **oranžový zaoblený čtvere
 
 Odkazy v textu tyrkysové (`--link`), podtržení 1 px s odsazením 3 px, hover oranžová.
 
-## Co ještě není rozhodnuto
-1. **Velikostní řada písma a odstupy** (type scale, rozestupy sekcí), tloušťky čar ve výkresu.
+## Velikostní řada S2 (rozhodnuto 2. 11. 2026, poměr 1,25)
+Artefakt „Řada písma TupTuDu" https://claude.ai/artifact/DwL8YcoPkFBdph1PdRBKcQ (S1 těsná a S3 volná tam zůstávají).
+
+| stupeň | hodnota |
+|---|---|
+| titulek článku H1 | Rubik 800, 39 px (2,44 rem), řádek 1,12, prostrkání −0,015 em |
+| mezititulek H2 | Rubik 700, 25 px (1,56 rem), pruh vlevo, mezera před 44 px |
+| podtitulek H3 | Rubik 600, 20 px (1,25 rem) |
+| perex | Plex 400, 19 px (1,19 rem), řádek 1,5, pruh vlevo |
+| text | Plex 400, 16 px, řádek 1,65, mezera mezi odstavci 16 px, šířka 66 znaků |
+| menší text (upozornění, poznámky) | 14,5 px |
+| popisek (meta, rubrika, popis obrázku) | 13 px, popisek polí Rubik 500 12,8 px |
+| rozhraní aplikace | 14 px; název panelu Rubik 600 16 px; popisek Rubik 500 12,5 px; kóta ve výkresu Rubik 500 11,5 px |
+
+## Nasazení (1. porce 3. 11. 2026)
+- `public/css/app.css`: tokeny obou palet (`:root` = tmavá Noc, `:root[data-theme="light"]` = světlá),
+  řada S2, prvky z kola 7 jako třídy (`.tt-clanek`, `.tt-perex`, `.tt-upozorneni` + `pozor/chyba/hotovo`,
+  `ol.tt-postup`, `.tt-citace`, `.tt-vyzva`, `ul.tt-odrazky`, `ol.tt-cislovani`, `td.cislo`), tlačítka
+  (`.btn` vedlejší obrysové, `.btn-primary` oranžové), pole I1, tabulky T1, flash jako upozornění.
+  Nové tokeny: `--c-on-primary`, `--c-brand-grey`, `--c-brand-ink`, `--c-border-strong`, `--c-chip`,
+  `--c-link`, `--c-input`, `--c-input-border`, `--c-warn`, `--s-font-tech` (Rubik). `--s-radius` = 7 px.
+- Písma u nás: `public/fonts/*.woff2` (variabilní Rubik 400–800, IBM Plex Sans 100–700 + kurzíva,
+  podmnožiny latin a latin-ext, celkem ~216 kB), `@font-face` v app.css, preload v `partials/hlava-brand`.
+- Značka: `partials/znacka.blade.php` = inline SVG s barvami z proměnných (přebarví se podle režimu);
+  v topbaru webu, hlavičce aplikace a sidebaru masterteamu. Textová `.brand` zůstává v nadpisech (login).
+- Ikony a manifest: `partials/hlava-brand` (SVG + PNG 32, apple-touch 180, `public/site.webmanifest`,
+  `theme-color` podle režimu) ve všech čtyřech layoutech.
+- Přepínač režimu `partials/prepinac-rezimu`: tlačítko slunce/měsíc, cookie `tt_rezim` (rok, doména webu,
+  nešifrovaná — `bootstrap/app.php` encryptCookies except), layouty web a prihlaseni čtou cookie a nastaví
+  `<html data-theme>` (bez bliknutí). Volbu do účtu přihlášeného zatím neukládáme.
+- **Aplikace a masterteam zatím ve světlém režimu** (`data-theme="light"` natvrdo v layoutech app a
+  zakaznik): editor V3 a stránky s Tailwind třídami (`bg-white`, `text-gray-*`) nejsou na tmavé pozadí
+  připravené. Přihlašovací stránka masterteamu sdílí layout prihlaseni, je tedy tmavá.
+
+## Co ještě není rozhodnuto / zbývá
+1. **Tmavý režim v aplikaci:** projít Tailwind třídy editoru a stránek účtu, pak přepínač i do app
+   a uložení volby k účtu.
 2. **Další prvky aplikace:** záložky, přepínače, nabídky, lišta nástrojů, sada ikon (návrh: Lucide, tah 1,75 px).
-3. **Obrazový styl:** screenshoty vs. kresby půdorysů vs. fotky v článcích a na titulce.
-4. **Nasazení:** CSS proměnné pro obě palety, self-hosting písem, značka do layoutů (web, app,
-   masterteam), favicon a manifest, přepínač režimu (uložit do účtu i cookie pro nepřihlášené).
+3. **Obrazový styl:** screenshoty vs. kresby půdorysů vs. fotky v článcích a na titulce; obrázky na titulce
+   jsou dnes bílé výřezy editoru (na tmavém pozadí působí jako papír, záměr).
+4. **Články:** pipeline Markdown → Blade bloky (třídy už existují), `modules/blog.md`.
 
 ## Články (návrh, neschváleno výslovně)
 Tiptap editor z Kalkulia nepřebírat. Články jako Markdown v repozitáři (hlavička: titulek, perex, datum,

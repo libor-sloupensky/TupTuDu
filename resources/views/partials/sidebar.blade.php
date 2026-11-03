@@ -2,7 +2,7 @@
 @auth
 <aside class="tt-sidebar">
     <div class="tt-sidebar-inner">
-        <div class="tt-brand-title"><a href="/masterteam"><span class="brand">TupTuDu</span></a></div>
+        <div class="tt-brand-title"><a href="/masterteam">@include('partials.znacka')</a></div>
 
         <div class="tt-section">
             <div class="tt-section-label">Masterteam</div>

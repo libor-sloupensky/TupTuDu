@@ -2,7 +2,9 @@
 {{-- Layout zákaznické aplikace (app.tuptudu.com). Hlavička místo menu masterteamu;
      Tailwind + Alpine stejně jako layouts.app (editor V3 je potřebuje). --}}
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}">
+{{-- Aplikace zatím ve světlém režimu: editor V3 má Tailwind třídy (bg-white, text-gray-*), které na tmavé
+     pozadí nejsou připravené. Tokeny v app.css jsou pro oba režimy, přepínač přibude po úpravě editoru. --}}
+<html lang="{{ app()->getLocale() }}" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +12,7 @@
     @include('partials.hlasic-chyb-inline')
     <meta name="robots" content="noindex">
     <title>{{ $title }}</title>
+    @include('partials.hlava-brand')
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -26,7 +29,7 @@
 </head>
 <body style="background: var(--c-bg);">
     <header class="topbar tt-zakaznik-hlavicka">
-        <a href="{{ route('app.projekty') }}" class="brand-title"><span class="brand">TupTuDu</span></a>
+        <a href="{{ route('app.projekty') }}" class="brand-title">@include('partials.znacka')</a>
         <div class="topbar-akce">
             @include('partials.prepinac-jazyka')
             @if (auth()->user()->jeMaster())

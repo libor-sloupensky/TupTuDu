@@ -6,4 +6,5 @@ return [
     'prihlaseni' => 'Přihlášení',
     'odhlasit' => 'Odhlásit',
     'zavinac' => 'zavináč',
+    'rezim_prepnout' => 'Přepnout tmavý nebo světlý režim',
 ];

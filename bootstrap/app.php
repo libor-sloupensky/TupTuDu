@@ -40,6 +40,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // pravost ověřuje Cashier podpisem (PADDLE_WEBHOOK_SECRET). Bez klíče by
         // podpis neověřoval vůbec → mimo lokál je odmítne PaddleJenSPodpisem.
         $middleware->validateCsrfTokens(except: ['api/bug', 'paddle/*']);
+        // Volba tmavý/světlý režim (partials/prepinac-rezimu) se zapisuje z JS nešifrovaně;
+        // šifrovaná vrstva by ji jinak při čtení zahodila a layout by nevěděl, co nastavit.
+        $middleware->encryptCookies(except: ['tt_rezim']);
         $middleware->append(\App\Http\Middleware\PaddleJenSPodpisem::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
