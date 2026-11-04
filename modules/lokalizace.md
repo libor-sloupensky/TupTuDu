@@ -9,7 +9,7 @@ Masterteam je interní a **vždy česky** — nepřekládá se.
 
 ## Aktuální stav
 - Aktivní jazyky: **cs** (zdrojový), **en** (výchozí i záložní — chybějící text se ukáže anglicky).
-- Plán první vlny: de, fr, pl, it, es, sk (zatím neaktivní).
+- Pořadí dalších jazyků (potvrdil Libor 4. 11. 2026, zatím neaktivní): nejdřív celý editor v angličtině, pak vlna 1 sk, pl, vlna 2 de s Rakouskem, fr, vlna 3 es, it. Slovenština a polština jdou před němčinu, protože tam jde rychle napojit pozemek. Rozbor po zemích: https://claude.ai/artifact/NCyfAVyDQ1R9aUTMoMKaGo, část Jazyky a země.
 - Přeložené: titulka webu, přihlášení, registrace, hesla, ověření e-mailu, e-maily,
   účet, úvodní obrazovka, hlavička aplikace, právní stránky (celé dokumenty cs/en).
 - Editor V3 zatím **není** přeložený (texty natvrdo česky); katastr v aplikaci hlídá

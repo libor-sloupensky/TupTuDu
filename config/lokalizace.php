@@ -17,8 +17,8 @@ return [
         'en' => 'English',
     ],
 
-    // Plán první vlny (Evropa) — zatím neaktivní, jen pro přehled:
-    // de Deutsch, fr Français, pl Polski, it Italiano, es Español, sk Slovenčina
+    // Pořadí dalších jazyků (Libor 4. 11. 2026, modules/lokalizace.md) — zatím neaktivní, jen pro přehled:
+    // vlna 1: sk Slovenčina, pl Polski; vlna 2: de Deutsch, fr Français; vlna 3: es Español, it Italiano
 
     // Jazyk, ve kterém píšeme texty (vzor pro preklady:kontrola).
     'zdrojovy_jazyk' => 'cs',
