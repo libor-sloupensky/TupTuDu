@@ -711,6 +711,7 @@ class StavebniEngine {
             schodiste: [],   // [{id, odPodlazi, doPodlazi, plocha? (schody k výškové ploše), tvar: prime|L|U, x, y (m, y nahoru), uhel (rad), sirka, strana, vyskaStupne?, naslap?, casti?, barva?}]
             plochy: [],      // [{id, podlazi, mistnost, typ: zvysena|snizena|bez_podlahy, dh, body:[[x,y] m] = obrys místnosti z rastru, prenos, vypnuto:[id podlaží]}]
             strecha: null,   // {typ, sklon, presah, presahStit, vyskaOkapu, krytina, hrany:{klíč:{typ,sklon,presah}}}
+            zaklady: null,   // {odkop, sirkaPasu, spara, skladba, ornice, svah, nakypreni, casti:{id podlaží: pasy|deska|stavajici}}; co chybí, bere se z Zemina.VYCHOZI
         };
     }
 
@@ -742,6 +743,7 @@ class StavebniEngine {
                 .filter(a => a && a.mistnost)
                 .map(a => JSON.parse(JSON.stringify({ ...a, typ: a.typ === 'prostup' ? 'bez_podlahy' : a.typ, body: Array.isArray(a.body) ? a.body : [] }))),
             strecha: d.strecha ? JSON.parse(JSON.stringify(d.strecha)) : null,
+            zaklady: d.zaklady ? JSON.parse(JSON.stringify(d.zaklady)) : null,
         };
         if (!dum.podlazi.some(p => p.id === dum.aktivni)) dum.aktivni = dum.podlazi[0].id;
         return dum;
@@ -755,6 +757,7 @@ class StavebniEngine {
             schodiste: JSON.parse(JSON.stringify(d.schodiste || [])),
             plochy: JSON.parse(JSON.stringify(d.plochy || [])),
             strecha: d.strecha ? JSON.parse(JSON.stringify(d.strecha)) : null,
+            zaklady: d.zaklady ? JSON.parse(JSON.stringify(d.zaklady)) : null,
         };
     }
 
@@ -3198,6 +3201,10 @@ class StavebniEngine {
             vyska: v.vyska ?? null,
             tvar: v.tvar ?? null,
             zadni_strana: v.zadni_strana ?? null,
+            katalog: v.katalog ?? undefined,
+            nazev: v.nazev ?? undefined,
+            uroven: v.uroven ?? undefined,
+            zaklad: v.zaklad ?? undefined,
         }));
 
         // Oddělovače místností — konce v metrech (y nahoru jako u stěn), vazba na líc stěny zvlášť
@@ -3505,6 +3512,10 @@ class StavebniEngine {
                 vyska: rv.vyska ?? null,
                 tvar: rv.tvar ?? null,
                 zadni_strana: rv.zadni_strana ?? null,
+                katalog: rv.katalog ?? null,
+                nazev: rv.nazev ?? null,
+                uroven: rv.uroven ?? 0,
+                zaklad: rv.zaklad ?? null,
             });
             const vnum = parseInt(String(rv.id).replace(/\D/g, ''));
             if (vnum >= this.nextId) this.nextId = vnum + 1;

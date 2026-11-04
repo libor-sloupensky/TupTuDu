@@ -14,4 +14,5 @@ return [
     'plan_cely' => 'Open the floor plan at full size',
     'napoveda_3d' => 'Drag to rotate, use the wheel or two fingers to zoom. Use the buttons to hide floors and the roof.',
     'upozorneni' => 'Indicative concept created with TupTuDu. It does not replace design documentation.',
+    'autori_modelu' => '3D model credits',
 ];

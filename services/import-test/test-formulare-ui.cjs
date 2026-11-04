@@ -29,9 +29,11 @@ const MERENI = `(koren) => {
     const vady = [];
     const pole = [...koren.querySelectorAll(POLE)].filter(viditelne);
     const vysky = new Set();
+    const zaobleni = new Set();
     for (const n of pole) {
         const r = n.getBoundingClientRect(), s = getComputedStyle(n);
         vysky.add(Math.round(r.height));
+        zaobleni.add(s.borderTopLeftRadius);
         if (parseFloat(s.marginTop) || parseFloat(s.marginBottom)) vady.push('okraj ' + popis(n) + ' ' + s.marginTop + '/' + s.marginBottom);
         // Sourozenci na stejné řádce (flex položky rodiče, případně i o patro výš přes obalový span)
         let rodic = n.parentElement;
@@ -60,6 +62,7 @@ const MERENI = `(koren) => {
         }
     }
     if (vysky.size > 1) vady.push('výšky polí ' + [...vysky].join(', '));
+    if (zaobleni.size > 1) vady.push('zaoblení polí ' + [...zaobleni].join(', '));
     return { poli: pole.length, vady: [...new Set(vady)].slice(0, 12) };
 }`;
 
@@ -144,6 +147,16 @@ async function main() {
         await zmer('střecha', '#kk-podlazi-seznam');
         await js(`const v = d._strechaVypocet(); d.strechaHrana = v.hrany.find(x => x.typ === 'okap').klic; d._selectionTick++`);
         await zmer('vybraná hrana střechy', '#kk-podlazi-seznam');
+        await js(`d.rezimStrecha = false; d.strechaHrana = null; d.katastrParcely = [{ cislo: 'test' }]; d.podlaziUprava = 'zaklady'; d._selectionTick++`);
+        await pauza(200);
+        await js(`document.querySelector('[data-zaklady-panel] details').open = true`);
+        await zmer('základy', '[data-zaklady-panel]');
+        await js(`d.katastrParcely = []; d.podlaziUprava = null; d._selectionTick++`);
+
+        await js(`const kus = d._katalogZaznam({ id: 'abo-B07124WMX5', nazev: 'Pohovka dvojsed, šedá', kategorie: 'pohovky', sirka: 2, hloubka: 1, vyska: 0.9 }, [3, -3], 0); d.engine.vybaveni.push(kus); d.renderer.setSelection([], [], [], [kus.id]); d._selectionTick++`);
+        await pauza(200);
+        await zmer('kus z katalogu', PANEL);
+        await js(`d.engine.vybaveni.pop(); d.renderer.clearSelection(); d._selectionTick++`);
 
         console.log('\n4) Ostatní formuláře');
         await js(`d.rezimStrecha = false; d.strechaHrana = null; d.podlaziUprava = null; d.magnetPanel = true`);

@@ -39,14 +39,8 @@
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xe8ecf0);
-        // Stejná světla jako editor, ať barvy odpovídají tomu, co autor viděl
-        scene.add(new THREE.AmbientLight(0xffffff, 0.72));
-        const sun = new THREE.DirectionalLight(0xffffff, 0.4);
-        sun.position.set(10, 14, 10);
-        scene.add(sun);
-        const fill = new THREE.DirectionalLight(0xffffff, 0.1);
-        fill.position.set(-8, 12, -8);
-        scene.add(fill);
+        // Stejné světlo jako editor, ať barvy odpovídají tomu, co autor viděl
+        const slunce = window.Svetlo3d.nastav(renderer, scene);
 
         const textury = new Map();
         const texturaZ = (id) => {
@@ -54,6 +48,7 @@
             if (!src || !String(src).startsWith('data:image/')) return null;
             if (!textury.has(id)) {
                 const t = new THREE.TextureLoader().load(src, () => vykresli());
+                t.encoding = THREE.sRGBEncoding;
                 t.wrapS = t.wrapT = THREE.RepeatWrapping;
                 t.anisotropy = 8;
                 textury.set(id, t);
@@ -86,10 +81,43 @@
         const stred = obal.isEmpty() ? new THREE.Vector3() : obal.getCenter(new THREE.Vector3());
         const rozmer = obal.isEmpty() ? 20 : Math.max(...obal.getSize(new THREE.Vector3()).toArray(), 4);
 
-        const zeme = new THREE.Mesh(new THREE.PlaneGeometry(rozmer * 6, rozmer * 6), new THREE.MeshStandardMaterial({ color: 0xc8d6c0, roughness: 0.95, transparent: true, opacity: 0.85 }));
+        // Země s dírami pro snížené místnosti, jinak by ležela nad jejich podlahou
+        const r = rozmer * 3;
+        const tvarZeme = new THREE.Shape();
+        tvarZeme.moveTo(stred.x - r, -stred.z - r);
+        tvarZeme.lineTo(stred.x + r, -stred.z - r);
+        tvarZeme.lineTo(stred.x + r, -stred.z + r);
+        tvarZeme.lineTo(stred.x - r, -stred.z + r);
+        tvarZeme.closePath();
+        for (const dira of data.diry || []) {
+            const cesta = new THREE.Path();
+            dira.forEach(([x, z], i) => (i ? cesta.lineTo(x, -z) : cesta.moveTo(x, -z)));
+            cesta.closePath();
+            tvarZeme.holes.push(cesta);
+        }
+        const zeme = new THREE.Mesh(new THREE.ShapeGeometry(tvarZeme), new THREE.MeshStandardMaterial({ color: 0xc8d6c0, roughness: 0.95, transparent: true, opacity: 0.85 }));
         zeme.rotation.x = -Math.PI / 2;
-        zeme.position.set(stred.x, (data.zeme ?? 0) - 0.16, stred.z);
+        zeme.position.y = (data.zeme ?? 0) - 0.16;
+        zeme.receiveShadow = true;
         scene.add(zeme);
+
+        // Kusy z katalogu se dotáhnou samy, stín a obraz se překreslí po každém
+        for (const o of data.objekty || []) {
+            const g = skupiny.get(o.skupina);
+            if (!g) continue;
+            window.Katalog3d.vloz(g, o, () => { window.Svetlo3d.prekresliStiny(renderer); vykresli(); });
+        }
+        if ((data.objekty || []).length) {
+            const odkaz = document.createElement('a');
+            odkaz.href = plocha.dataset.autori;
+            odkaz.target = '_blank';
+            odkaz.rel = 'noopener';
+            odkaz.textContent = plocha.dataset.textAutori;
+            plocha.parentElement.querySelector('.tt-sdileni-pata')?.append(' ', odkaz);
+        }
+        skupiny.forEach((g) => window.Svetlo3d.stinyObjektu(g));
+        window.Svetlo3d.usadSlunce(slunce, obal);
+        window.Svetlo3d.prekresliStiny(renderer);
 
         const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -500, 1000);
         camera.position.set(stred.x + rozmer, stred.y + rozmer * 0.9, stred.z + rozmer);
@@ -131,6 +159,7 @@
             b.dataset.skupina = s.id;
             b.addEventListener('click', () => {
                 g.visible = !g.visible;
+                window.Svetlo3d.prekresliStiny(renderer);
                 b.setAttribute('aria-pressed', String(g.visible));
                 vykresli();
             });

@@ -14,4 +14,5 @@ return [
     'plan_cely' => 'Otevřít půdorys v plné velikosti',
     'napoveda_3d' => 'Tažením otáčíte, kolečkem nebo dvěma prsty přibližujete. Tlačítky skryjete podlaží a střechu.',
     'upozorneni' => 'Orientační koncept vytvořený ve službě TupTuDu. Nenahrazuje projektovou dokumentaci.',
+    'autori_modelu' => 'Autoři 3D modelů',
 ];

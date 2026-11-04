@@ -23,13 +23,19 @@ const CHROME = [
 
 const pauza = (ms) => new Promise(r => setTimeout(r, ms));
 
-async function otevriProhlizec({ viditelny = false, port = Number(process.env.V3_CDP_PORT) || 9333, sirka = 1600, vyska = 1000, posuvniky = false } = {}) {
+async function otevriProhlizec({ viditelny = false, port: pevnyPort = Number(process.env.V3_CDP_PORT) || 0, sirka = 1600, vyska = 1000, posuvniky = false } = {}) {
     if (!CHROME) throw new Error('Nenalezen Chrome ani Edge.');
 
+    // Port 0 = volný port přidělí Chrome. Pevný port býval příčinou nesmyslných pádů: Chrome z předchozího
+    // běhu nebo jiného sezení na něm běžel dál, nový se nespustil a test se připojil k cizímu, už přihlášenému.
+    if (pevnyPort) {
+        const obsazeny = await fetch(`http://127.0.0.1:${pevnyPort}/json/version`).then(() => true, () => false);
+        if (obsazeny) throw new Error(`Na portu ${pevnyPort} už běží jiný prohlížeč.`);
+    }
     const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'v3-test-'));
     const proces = spawn(CHROME, [
         viditelny ? '--new-window' : '--headless=new',
-        `--remote-debugging-port=${port}`,
+        `--remote-debugging-port=${pevnyPort}`,
         `--user-data-dir=${profil}`,
         `--window-size=${sirka},${vyska}`,
         '--no-first-run', '--no-default-browser-check', '--disable-gpu',
@@ -41,9 +47,12 @@ async function otevriProhlizec({ viditelny = false, port = Number(process.env.V3
 
     // počkat na ladicí rozhraní
     let verze = null;
-    for (let i = 0; i < 60 && !verze; i++) {
-        try { verze = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json(); }
-        catch { await pauza(250); }
+    const soubor = path.join(profil, 'DevToolsActivePort');
+    for (let i = 0; i < 120 && !verze; i++) {
+        try {
+            const port = pevnyPort || Number(fs.readFileSync(soubor, 'utf8').split('\n')[0]);
+            verze = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
+        } catch { await pauza(250); }
     }
     if (!verze) { proces.kill(); throw new Error('Chrome nenastartoval.'); }
 
@@ -166,10 +175,14 @@ async function otevriProhlizec({ viditelny = false, port = Number(process.env.V3
         },
 
         async zavri() {
-            try { await posli('Target.closeTarget', { targetId }); } catch { /* končíme */ }
+            // Celý prohlížeč: proces.kill() ukončí jen spouštěč a zbytek Chromu by běžel dál
+            try { await Promise.race([posli('Browser.close'), pauza(2000)]); } catch { /* končíme */ }
             ws.close();
             proces.kill();
-            try { fs.rmSync(profil, { recursive: true, force: true }); } catch { /* zbytek profilu */ }
+            // Soubory profilu se uvolní, až Chrome opravdu skončí
+            for (let i = 0; i < 20; i++) {
+                try { fs.rmSync(profil, { recursive: true, force: true }); break; } catch { await pauza(250); }
+            }
         },
     };
 }

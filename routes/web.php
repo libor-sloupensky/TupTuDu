@@ -186,6 +186,7 @@ Route::middleware('subdomena:web')->group(function () {
     Route::get('/terms', [App\Http\Controllers\PravniController::class, 'podminky'])->name('pravni.podminky');
     Route::get('/privacy', [App\Http\Controllers\PravniController::class, 'soukromi'])->name('pravni.soukromi');
     Route::get('/refunds', [App\Http\Controllers\PravniController::class, 'vraceni'])->name('pravni.vraceni');
+    Route::get('/model-credits', [App\Http\Controllers\PravniController::class, 'autoriModelu'])->name('autori-modelu');
     Route::get('/pricing', [App\Http\Controllers\CenikController::class, 'index'])->name('cenik');
     Route::get('/contact', [App\Http\Controllers\KontaktController::class, 'formular'])->name('kontakt');
     // 5 zpráv za 10 minut z jedné IP — člověku stačí, spam brzdí

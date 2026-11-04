@@ -54,7 +54,7 @@
         _kresbyPodlazi(ids) {
             const e = this.engine, r = this.renderer, st = this.stage;
             const puvodne = {
-                aktivni: e.dum.aktivni, scale: st.scaleX(), x: st.x(), y: st.y(),
+                aktivni: e.dum.aktivni, scale: st.scaleX(), x: st.x(), y: st.y(), sirka: st.width(), vyska: st.height(),
                 walls: [...r.selectedWalls], nodes: [...r.selectedNodes], openings: [...r.selectedOpenings], vybaveni: [...r.selectedVybaveni],
                 prostory: [...r.selectedProstory], oddelovace: [...r.selectedOddelovace], mistnosti: [...r.selectedMistnosti],
                 schody: [...r.selectedSchody], plochy: [...r.selectedPlochy],
@@ -94,6 +94,9 @@
                     for (const wall of e.walls.values()) (e.getWallPolygon(wall.id) || []).forEach(bod);
                     if (!isFinite(minX)) { vysledek.push({ id, canvas: null }); continue; }
                     const W = Math.ceil(maxX - minX + 2 * OKRAJ), H = Math.ceil(maxY - minY + 2 * OKRAJ);
+                    // Plátno po dobu snímku v plné velikosti: poloprůhledné tvary se kreslí přes pomocné plátno
+                    // velikosti plátna a mimo něj by se usekly (a skryté plátno ve 3D má velikost 1 px)
+                    st.size({ width: W, height: H });
                     st.position({ x: OKRAJ - minX, y: OKRAJ - minY });
                     vysledek.push({ id, canvas: st.toCanvas({ x: 0, y: 0, width: W, height: H, pixelRatio: ZVETSENI }) });
                     st.position({ x: 0, y: 0 });
@@ -108,6 +111,7 @@
                 if (e.dum.aktivni !== puvodne.aktivni) e.prepniPodlazi(puvodne.aktivni);
                 st.scale({ x: puvodne.scale, y: puvodne.scale });
                 st.position({ x: puvodne.x, y: puvodne.y });
+                st.size({ width: puvodne.sirka, height: puvodne.vyska });
                 r.selectedWalls = new Set(puvodne.walls); r.selectedNodes = new Set(puvodne.nodes); r.selectedOpenings = new Set(puvodne.openings);
                 r.selectedVybaveni = new Set(puvodne.vybaveni); r.selectedProstory = new Set(puvodne.prostory); r.selectedOddelovace = new Set(puvodne.oddelovace);
                 r.selectedMistnosti = new Set(puvodne.mistnosti); r.selectedSchody = new Set(puvodne.schody); r.selectedPlochy = new Set(puvodne.plochy);
@@ -217,7 +221,7 @@
             if (this.exportBezi || !this.exportPovolen) return;
             this.exportBezi = true;
             try {
-                const cv = await this._ve3d(async () => this._snimekScény());
+                const cv = await this._ve3d(async () => { await window.Katalog3d.hotovo(); return this._snimekScény(); });
                 await this._stahni(cv, this._nazevSouboru('3d'));
             } catch (err) {
                 window.chybaUzivateli?.(err, 'Export 3D');
@@ -271,7 +275,19 @@
                     }
                 }
             };
-            for (const [id, g] of _3d.podlaziSkupiny) g.traverse(o => pridej(o, id));
+            // Kusy z katalogu jdou jako odkaz na model, ne jako trojúhelníky: textury modelů by se tudy nepřenesly
+            const objekty = [];
+            const projdi = (o, skupina) => {
+                const k = o.userData?.katalog;
+                if (k) {
+                    o.getWorldPosition(v);
+                    objekty.push({ id: k.id, skupina, x: +v.x.toFixed(3), y: +(v.y - y0).toFixed(3), z: +v.z.toFixed(3), uhel: k.uhel, sirka: k.sirka, hloubka: k.hloubka, vyska: k.vyska });
+                    return;
+                }
+                pridej(o, skupina);
+                for (const c of o.children) projdi(c, skupina);
+            };
+            for (const [id, g] of _3d.podlaziSkupiny) projdi(g, id);
             for (const o of _3d.dumSkupina.children) {
                 const u = o.userData;
                 const skupina = u.strecha ? 'strecha' : (u.podlazi || (u.stropPod ? (e.podlaziNad(u.stropPod)?.id ?? 'strecha') : 'strecha'));
@@ -281,7 +297,9 @@
             return {
                 verze: 1,
                 zeme: e.kotaPodlazi(prvni.id),
+                diry: this._dirySnizeni().map(d => d.poly.map(q => [+q.x.toFixed(3), +q.y.toFixed(3)])),
                 skupiny: [...e.dum.podlazi].reverse().map(p => ({ id: p.id, nazev: p.nazev })),
+                objekty,
                 materialy,
                 textury,
                 meshe: [...kbelik.values()].map(k => ({
@@ -361,7 +379,10 @@
                 }
                 if (!zahrnuta.length) { this._dumHlaska('Není co sdílet, dům nemá stěny.'); return; }
                 fd.append('podlazi', JSON.stringify(zahrnuta));
-                const { model, nahled } = await this._ve3d(async () => ({ model: this._zapecModel(), nahled: this._nahledModelu() }));
+                const { model, nahled } = await this._ve3d(async () => {
+                    await window.Katalog3d.hotovo();
+                    return { model: this._zapecModel(), nahled: this._nahledModelu() };
+                });
                 let telo = new Blob([JSON.stringify(model)], { type: 'application/json' });
                 // Komprese zmenší model zhruba na třetinu; bez ní jde poslat taky
                 if (window.CompressionStream) {

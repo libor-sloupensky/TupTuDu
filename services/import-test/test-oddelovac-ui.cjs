@@ -201,11 +201,13 @@ async function main() {
         kontrola('po oddálení mají tečky konců pořád 3 px na obrazovce', prizoomu.length > 0 && prizoomu.every(r => Math.abs(r - 3) < 0.01), JSON.stringify(prizoomu));
 
         await p.vyhodnot(`(() => { const d = ${D}; d.renderer.clearSelection(); d.renderer.render(); return true; })()`);
-        await pauza(300);   // plátno po změně zoomu a výběru překreslí zásahovou vrstvu až v dalším snímku
+        // Plátno po změně zoomu a výběru překreslí zásahovou vrstvu až v dalším snímku: počkat, až bod opravdu trefí oddělovač
+        await p.cekej(`(() => { const d = ${D}; const n = d.stage.getIntersection(d.stage.getAbsoluteTransform().copy().point({ x: 2.5 * ${PX}, y: 4 * ${PX} })); return n && d.renderer.hitTest(n)?.type === 'oddelovac'; })()`, 5000, 'oddělovač na plátně');
         await klik(await naObr(2.5 * PX, 4 * PX));   // znovu vybrat oddělovač (kontrola „Různé" vybírala stěny)
+        const vyberPredDelete = await p.vyhodnot(`(() => { const r = ${D}.renderer; return { oddelovace: r.selectedOddelovace.size, steny: r.selectedWalls.size, mistnosti: r.selectedMistnosti.size }; })()`);
         await klavesa('Delete', 'Delete');
         s = await stav();
-        kontrola('Delete smaže vybraný oddělovač', s.length === 1 && s[0].b[2] === 'volny', JSON.stringify(s));
+        kontrola('Delete smaže vybraný oddělovač', s.length === 1 && s[0].b[2] === 'volny', JSON.stringify({ s, vyberPredDelete }));
 
         console.log('\n9) Nastavení magnetu');
         const magnet = await p.vyhodnot(`(async () => { const d = ${D}; const e = d.engine; const tl = document.getElementById('kk-magnet-tl'); const panel = document.getElementById('kk-magnet-panel');
@@ -223,6 +225,42 @@ async function main() {
         await p.snimek(path.join(vystup, 'magnet-panel.png'));
         await p.vyhodnot(`(() => { ${D}.magnetPanel = false; return true; })()`);
         kontrola('úhly jdou vypnout; panel s nastavením se otevře z tlačítka v liště, tlačítko je zvýrazněné a nastavení se ukládá', magnet.sUhlem !== null && magnet.bezUhlu === null && magnet.otevreno && magnet.aktivni && magnet.ulozeno === 100, JSON.stringify(magnet));
+
+        console.log('\n10) Magnety společné se stěnou');
+        await klavesa('Escape', 'Escape');
+        await p.vyhodnot(`(() => { const d = ${D}; const e = d.engine; for (const id of [...e.oddelovace.keys()]) e.removeOddelovac(id); d.nastroj = 'stena'; d.stenaTyp = 'oddelovac'; d.renderer.render(); return true; })()`);
+        // První úsek šikmo, ani jeden směr neleží na rastru domu
+        const S = { x: 3 * PX, y: 2 * PX }, uhel = 20 * Math.PI / 180;
+        const K = { x: S.x + 2.5 * PX * Math.cos(uhel), y: S.y + 2.5 * PX * Math.sin(uhel) };
+        await p.vyhodnot(`(() => { const d = ${D}; d.magnetUhly = false; d.magnetVoditka = false; return true; })()`);
+        await klik(await naObr(S.x, S.y));
+        await klik(await naObr(K.x, K.y));
+        await p.vyhodnot(`(() => { const d = ${D}; d.magnetUhly = true; d.magnetVoditka = true; return true; })()`);
+        const retezStart = await p.vyhodnot(`(() => { const o = ${D}._oddelovacStart; return o ? [o.bod.x, o.bod.y] : null; })()`);
+        kontrola('po šikmém úseku řetěz pokračuje z jeho konce', retezStart && Math.hypot(retezStart[0] - K.x, retezStart[1] - K.y) < 6, JSON.stringify(retezStart));
+        const zacatek = { x: retezStart[0], y: retezStart[1] };
+        const prvni = await stav();
+        const dir = Math.atan2(prvni[0].b[1] - prvni[0].a[1], prvni[0].b[0] - prvni[0].a[0]);
+        // O 2° mimo kolmici na předchozí úsek
+        const mimo = dir + (90 + 2) * Math.PI / 180;
+        await pohyb(await naObr(zacatek.x + 1.6 * PX * Math.cos(mimo), zacatek.y + 1.6 * PX * Math.sin(mimo)));
+        const kolmo = await p.vyhodnot(`(() => { const d = ${D}; const b = d._oddelovacNahled.points(); const s = d._oddelovacStitekNode; return { uhel: Math.atan2(b[3] - b[1], b[2] - b[0]) * 180 / Math.PI, stitek: s ? s.getText().text() : null, osa: !!d._osaUhlu, ref: d._magnet && d._magnet.reference, }; })()`);
+        const odKolmice = Math.abs(((kolmo.uhel - dir * 180 / Math.PI + 540) % 360) - 180);
+        kontrola('další úsek se chytí na 90° k předchozímu oddělovači, i když je šikmý', Math.abs(odKolmice - 90) < 0.01 && kolmo.stitek === '90°' && kolmo.osa, JSON.stringify({ odKolmice, ...kolmo }));
+        await klik(await naObr(zacatek.x + 1.6 * PX * Math.cos(mimo), zacatek.y + 1.6 * PX * Math.sin(mimo)));
+        s = await stav();
+        const uhelDruheho = Math.atan2(s[1].b[1] - s[1].a[1], s[1].b[0] - s[1].a[0]);
+        const uhelPrvniho = Math.atan2(s[0].b[1] - s[0].a[1], s[0].b[0] - s[0].a[0]);
+        kontrola('uložený úsek je opravdu kolmý', s.length === 2 && Math.abs(Math.abs(Math.sin(uhelDruheho - uhelPrvniho)) - 1) < 1e-4, JSON.stringify(s));
+        await klavesa('Escape', 'Escape');
+        // Tolerance a seznam úhlů jsou společné se stěnou
+        const stejne = await p.vyhodnot(`(() => { const d = ${D}; const e = d.engine; const X = 80; const opory = [{ bod: { x: 300, y: 300 }, reference: [{ uhel: 10, stena: 'x' }], domu: false }]; const zaTolerance = d._magnetUhluZ(opory, { x: 300 + 100 * Math.cos((10 + 30 + 2.5) * Math.PI / 180), y: 300 + 100 * Math.sin((10 + 30 + 2.5) * Math.PI / 180) }); const mimoTol = d._magnetUhluZ(opory, { x: 300 + 100 * Math.cos((10 + 30 + 4) * Math.PI / 180), y: 300 + 100 * Math.sin((10 + 30 + 4) * Math.PI / 180) }); return { uhel30: zaTolerance && zaTolerance.odReference, mimoTol }; })()`);
+        kontrola('i 30° ze společného seznamu úhlů, tolerance 3°', stejne.uhel30 === 30 && stejne.mimoTol === null, JSON.stringify(stejne));
+        // Vodítko: konec druhého oddělovače dává přímku, další začátek se na ni srovná
+        const vod = await p.vyhodnot(`(() => { const d = ${D}; const e = d.engine; const o = [...e.oddelovace.values()][1]; const b = e.bodKonceOddelovace(o.b); d._oddelovacStart = null; const cary = d._voditka(null).filter(g => g.uzel === o.id + ':b'); const g = cary[1]; const cil = { x: b.x + g.d.x * 60 + g.d.y * 3, y: b.y + g.d.y * 60 - g.d.x * 3 }; const u = d._oddelovacUchyt(cil, { evt: { altKey: false } }); const odCary = Math.abs((u.bod.x - g.p.x) * g.d.y - (u.bod.y - g.p.y) * g.d.x); return { voditka: u.voditka ? u.voditka.length : 0, odCary, zadal: [cil.x, cil.y] }; })()`);
+        kontrola('volný bod se srovná na vodítko od konce jiného oddělovače', vod.voditka > 0 && vod.odCary < 0.01, JSON.stringify(vod));
+        const soubeh = await p.vyhodnot(`(() => { const d = ${D}; const zdroj = d._magnetKonce.toString() + d._oddelovacUchyt.toString(); return { spolecny: /_magnetKonce/.test(d._oddelovacUchyt.toString()), stena: /_magnetUhluZ/.test(d._magnetUhlu.toString()) }; })()`);
+        kontrola('oddělovač jde přes společný výpočet', soubeh.spolecny && soubeh.stena, JSON.stringify(soubeh));
 
         const vazne = p.chybyDetail.filter(c => !/404/.test(c.text));
         kontrola('bez chyb v konzoli (404 jen vypsat)', vazne.length === 0, vazne.slice(0, 3).map(c => c.text).join(' | '));

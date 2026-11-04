@@ -1,0 +1,103 @@
+<!doctype html><meta charset="utf-8"><title>Výroba náhledů katalogu</title>
+<script src="/js/three/three.min.js"></script>
+<script src="/js/three/GLTFLoader.js"></script>
+<script src="/js/three/meshopt_decoder.js"></script>
+<script src="/js/svetlo-3d.js"></script>
+<script src="/js/katalog-3d.js"></script>
+<script>
+// Pro jeden model vrátí rozměry, náhled a půdorysnou značku. Značka je pohled shora v barvě objektu
+// s čarami tam, kde se láme tvar nebo výška, ať je i v půdorysu poznat, co to je.
+const NAHLED = { w: 320, h: 240 };
+const ZNACKA = 384;
+function kamera(box, smer, pomer) {
+    const stred = box.getCenter(new THREE.Vector3());
+    const c = new THREE.OrthographicCamera(-1, 1, 1, -1, -100, 100);
+    c.position.copy(stred).addScaledVector(smer.clone().normalize(), 10);
+    c.lookAt(stred); c.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4().copy(c.matrixWorld).invert();
+    let mx = 0, my = 0;
+    for (const X of [box.min.x, box.max.x]) for (const Y of [box.min.y, box.max.y]) for (const Z of [box.min.z, box.max.z]) {
+        const p = new THREE.Vector3(X, Y, Z).applyMatrix4(inv);
+        mx = Math.max(mx, Math.abs(p.x)); my = Math.max(my, Math.abs(p.y));
+    }
+    const hw = Math.max(mx * 1.08, my * 1.08 * pomer);
+    c.left = -hw; c.right = hw; c.top = hw / pomer; c.bottom = -hw / pomer;
+    c.updateProjectionMatrix();
+    return c;
+}
+async function zpracuj(id) {
+    const model = await window.Katalog3d.nacti(id);
+    const box = model.userData.obal;
+    const s = box.getSize(new THREE.Vector3());
+    const rozmery = { sirka: +s.x.toFixed(3), hloubka: +s.z.toFixed(3), vyska: +s.y.toFixed(3) };
+    let plosek = 0;
+    model.traverse(o => { if (o.isMesh) plosek += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });
+
+    // Náhled na průhledném pozadí
+    const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    r.setSize(NAHLED.w, NAHLED.h); r.setPixelRatio(1);
+    const sc = new THREE.Scene();
+    window.Svetlo3d.nastav(r, sc);
+    r.shadowMap.enabled = false;
+    sc.add(model);
+    const tenky = s.z < s.x * 0.12;
+    r.render(sc, kamera(box, tenky ? new THREE.Vector3(0.5, 0.25, 1) : new THREE.Vector3(1, 0.75, 1.25), NAHLED.w / NAHLED.h));
+    const nahled = r.domElement.toDataURL('image/webp', 0.86);
+
+    // Značka shora: normály a hloubka
+    const rozsah = Math.max(s.x, s.z);
+    const w = Math.max(16, Math.round(ZNACKA * s.x / rozsah)), h = Math.max(16, Math.round(ZNACKA * s.z / rozsah));
+    r.setSize(w, h); r.setClearColor(0x000000, 0);
+    const c2 = new THREE.OrthographicCamera(box.min.x, box.max.x, -box.min.z, -box.max.z, 0.01, s.y + 2);
+    c2.position.set(0, box.max.y + 1, 0); c2.up.set(0, 0, -1); c2.lookAt(0, box.min.y, 0);
+    c2.left = box.min.x; c2.right = box.max.x; c2.top = -box.min.z; c2.bottom = -box.max.z; c2.updateProjectionMatrix();
+    const cti = (material) => {
+        sc.overrideMaterial = material || null;
+        r.render(sc, c2);
+        const gl = r.getContext(), b = new Uint8Array(w * h * 4);
+        gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, b);
+        sc.overrideMaterial = null;
+        return b;
+    };
+    const barvy = cti(null);
+    const normaly = cti(new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }));
+    const hloubka = cti(new THREE.MeshDepthMaterial({ side: THREE.DoubleSide }));
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d'), obr = g.createImageData(w, h);
+    const px = (x, y) => (y * w + x) * 4;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = px(x, y), a = normaly[i + 3] > 10;
+        let hrana = 0;
+        for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
+            const X = x + dx, Y = y + dy;
+            const j = (X < 0 || Y < 0 || X >= w || Y >= h) ? -1 : px(X, Y);
+            const aj = j >= 0 && normaly[j + 3] > 10;
+            if (a !== aj) { hrana = Math.max(hrana, 1); continue; }
+            if (!a) continue;
+            const dn = Math.abs(normaly[i] - normaly[j]) + Math.abs(normaly[i + 1] - normaly[j + 1]) + Math.abs(normaly[i + 2] - normaly[j + 2]);
+            const dh = Math.abs(hloubka[i] - hloubka[j]);
+            hrana = Math.max(hrana, Math.min(1, (dn - 40) / 90), Math.min(1, (dh - 2) / 6));
+        }
+        // readPixels jde zdola nahoru, obrázek shora dolů
+        const o = ((h - 1 - y) * w + x) * 4;
+        if (!a && hrana === 0) { obr.data[o + 3] = 0; continue; }
+        // Skutečná barva objektu shora, přes ni tenká tmavá čára. Výstup je předem vynásobený průhledností.
+        const k = Math.max(0, hrana) * 0.8;
+        const pa = barvy[i + 3] / 255 || 1;
+        for (let c = 0; c < 3; c++) {
+            const zaklad = a ? Math.min(255, barvy[i + c] / pa) : 255;
+            obr.data[o + c] = zaklad + ([55, 65, 81][c] - zaklad) * k;
+        }
+        obr.data[o + 3] = 255;
+    }
+    g.putImageData(obr, 0, 0);
+    const znacka = cv.toDataURL('image/webp', 0.88);
+    sc.remove(model);
+    r.dispose();
+    r.forceContextLoss();
+    return { ...rozmery, plosek: Math.round(plosek), nahled, znacka };
+}
+window.vyrob = async (id) => { window.hotovo = false; window.vysledek = null;
+    try { window.vysledek = await zpracuj(id); } catch (e) { window.vysledek = { chyba: String(e && e.stack || e) }; }
+    window.hotovo = true; };
+</script>

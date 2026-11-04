@@ -6,4 +6,10 @@ return [
     'vraceni_titulek' => 'Refund Policy',
     'podminky_odkaz' => 'Terms of Service',
     'soukromi_odkaz' => 'Privacy Policy',
+    'autori_titulek' => '3D model credits',
+    'autori_uvod' => 'Furniture and fittings in the editor and in shared projects come from these freely licensed sources.',
+    'autori_autor' => 'Author',
+    'autori_licence' => 'Licence',
+    'autori_pocet' => '{1} We use :pocet model.|[2,*] We use :pocet models.',
+    'autori_upravy' => 'We changed the models: we reduced the textures and polygon count so they load quickly in a browser, and added a floor plan symbol and a preview. The authors are not connected with our service and do not endorse it.',
 ];

@@ -10,6 +10,7 @@ use App\Services\Katastr\KatastrService;
 use App\Services\Katastr\Dmr5gService;
 use App\Services\Pravidla\RozhovorService;
 use App\Support\Tarif;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -645,12 +646,16 @@ class KonceptV3Controller extends Controller
         ]);
 
         $katastr = app(KatastrService::class);
-        $parcela = $katastr->nactiParcelu(
-            $request->integer('ku_kod'),
-            $request->input('cislo'),
-            $request->input('typ', 'auto'),
-            $request->boolean('refresh'),
-        );
+        try {
+            $parcela = $katastr->nactiParcelu(
+                $request->integer('ku_kod'),
+                $request->input('cislo'),
+                $request->input('typ', 'auto'),
+                $request->boolean('refresh'),
+            );
+        } catch (ConnectionException $e) {
+            return $this->katastrNedostupny($e);
+        }
 
         if (!$parcela) {
             return response()->json([
@@ -676,7 +681,11 @@ class KonceptV3Controller extends Controller
         ]);
 
         $katastr = app(KatastrService::class);
-        $stavby = $katastr->nactiStavby($request->input('bbox'));
+        try {
+            $stavby = $katastr->nactiStavby($request->input('bbox'));
+        } catch (ConnectionException $e) {
+            return $this->katastrNedostupny($e);
+        }
 
         return response()->json(['ok' => true, 'stavby' => $stavby]);
     }
@@ -899,6 +908,14 @@ class KonceptV3Controller extends Controller
         $chat[] = ['role' => 'ai', 'text' => $aiText, 'cas' => now()->toISOString()];
         $koncept->chat = array_slice($chat, -200);
         $koncept->save();
+    }
+
+    /** Výpadek služby ČÚZK není chyba aplikace: hláška uživateli, do logu jen varování (bez e-mailu o bugu). */
+    private function katastrNedostupny(ConnectionException $e): \Illuminate\Http\JsonResponse
+    {
+        \Illuminate\Support\Facades\Log::warning('Katastr neodpovídá: ' . mb_substr($e->getMessage(), 0, 200));
+
+        return response()->json(['ok' => false, 'error' => __('projekty.katastr_nedostupny')], 503);
     }
 
     private function autorizuj(Koncept $koncept): void

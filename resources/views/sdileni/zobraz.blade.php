@@ -50,6 +50,8 @@
                  data-model="{{ url('/share/' . $sdileni->token . '/model') }}"
                  data-nahled="{{ url('/share/' . $sdileni->token . '/soubor/nahled.png') }}"
                  data-text-strecha="{{ __('sdileni.strecha') }}"
+                 data-text-autori="{{ __('sdileni.autori_modelu') }}"
+                 data-autori="{{ \App\Support\Domeny::url('web', '/model-credits') }}"
                  data-text-chyba="{{ __('sdileni.chyba_modelu') }}"
                  data-text-alt="{{ __('sdileni.nahled_alt', ['nazev' => $sdileni->nazev]) }}">
                 <div class="tt-sdileni-zprava" data-sdileni-zprava>{{ __('sdileni.nacitam') }}</div>
@@ -71,6 +73,10 @@
 @include('partials.error-tracker')
 <script src="/js/three/three.min.js?v=r128"></script>
 <script src="/js/three/OrbitControls.js?v=0.128"></script>
+<script src="/js/three/GLTFLoader.js?v=0.128"></script>
+<script src="/js/three/meshopt_decoder.js?v=0.128"></script>
+<script src="/js/svetlo-3d.js?v={{ filemtime(public_path('js/svetlo-3d.js')) }}"></script>
+<script src="/js/katalog-3d.js?v={{ filemtime(public_path('js/katalog-3d.js')) }}"></script>
 <script src="/js/sdileni-prohlizec.js?v={{ filemtime(public_path('js/sdileni-prohlizec.js')) }}"></script>
 </body>
 </html>

@@ -996,19 +996,23 @@
             const e = this.engine;
             const dole = e.podlaziPod(id);
             const eng = e.enginePodlazi(id);
-            if (!dole || !eng) return new Map();
-            const engDole = e.enginePodlazi(dole.id);
-            if (!engDole) return new Map();
+            const zem = this._dosahNaZem(id);
+            if ((!dole && !zem) || !eng) return new Map();
+            const engDole = dole ? e.enginePodlazi(dole.id) : null;
+            if (dole && !engDole) return new Map();
             if (!this._podepreniCache) this._podepreniCache = new Map();
             const c = this._podepreniCache.get(id);
             // Za tahu celého domu jede aktivní podlaží napřed a ostatní dojedou až po puštění.
             // Výpočet by mezitím hlásil nepodepřené všechny stěny.
             if (this._domPosun || (this.isRotating && this.renderer?.selectedWalls.size === this.engine.walls.size)) return c ? c.vysledek : new Map();
-            const klic = eng.geoPodpis() + '#' + engDole.geoPodpis();
+            const klic = eng.geoPodpis() + '#' + (engDole?.geoPodpis() ?? '') + '#' + (zem?.klic ?? '');
             if (c && c.klic === klic) return c.vysledek;
             const PX = e.PX_PER_M;
             const nosne = (en) => [...en.walls.values()].filter(w => w.typ === 'obvodova' || w.typ === 'nosna');
-            const podpory = nosne(engDole).map(w => ({ a: engDole.nodes.get(w.nodeA), b: engDole.nodes.get(w.nodeB), pul: w.tloustka * PX / 2 })).filter(s => s.a && s.b);
+            const podpory = nosne(engDole || { walls: new Map() }).map(w => ({ a: engDole.nodes.get(w.nodeA), b: engDole.nodes.get(w.nodeB), pul: w.tloustka * PX / 2 })).filter(s => s.a && s.b);
+            // Vedle sklepu stojí stěna na vlastních základech v zemině, podporu potřebuje jen nad sklepem.
+            // Výš to neplatí: přesah patra nad nižším podlažím ve vzduchu opravdu visí.
+            const obrysSklepu = dole?.typ === 'sklep' ? this._obrysPodlazi(dole.id)?.map(h => ({ x: h.a.x * PX, y: h.a.y * PX })) : null;
             const vysledek = new Map();
             const krok = 0.1 * PX;
             const tol = 0.06 * PX;
@@ -1018,17 +1022,22 @@
                 const L = Math.hypot(b.x - a.x, b.y - a.y);
                 if (L < krok) continue;
                 const useky = [];
-                let zacatek = null;
+                let zacatek = null, chybiZaklad = false;
                 const n = Math.ceil(L / krok);
                 for (let i = 0; i <= n; i++) {
                     const t = i / n;
                     const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
-                    const ok = podpory.some(s => {
+                    const naStene = podpory.some(s => {
                         const dx = s.b.x - s.a.x, dy = s.b.y - s.a.y, L2 = dx * dx + dy * dy;
                         if (!L2) return false;
                         const u = omez(((p.x - s.a.x) * dx + (p.y - s.a.y) * dy) / L2, 0, 1);
                         return Math.hypot(p.x - s.a.x - dx * u, p.y - s.a.y - dy * u) <= s.pul + tol;
                     });
+                    // Bez podlaží pod sebou nebo vedle sklepu rozhoduje zem. Bez znalosti terénu se bere, že stěna na zemi stojí.
+                    const naZem = !dole || (obrysSklepu && !window.Zemina.bodVObrysu(p.x, p.y, obrysSklepu));
+                    const naZemi = naZem && (!zem || zem.dosahne(p.x / PX, p.y / PX));
+                    const ok = naStene || naZemi;
+                    if (!ok && naZem) chybiZaklad = true;
                     if (!ok && zacatek === null) zacatek = t;
                     if ((ok || i === n) && zacatek !== null) {
                         const konec = ok ? (i - 1) / n : 1;
@@ -1037,17 +1046,38 @@
                     }
                 }
                 if (useky.length) {
-                    vysledek.set(w.id, { useky, delka: useky.reduce((s, u) => s + (u[1] - u[0]) * L, 0) / PX });
+                    vysledek.set(w.id, { useky, delka: useky.reduce((s, u) => s + (u[1] - u[0]) * L, 0) / PX, chybiZaklad });
                 }
             }
             this._podepreniCache.set(id, { klic, vysledek });
             return vysledek;
         },
 
+        /**
+         * Dosáhne podlaží v bodě na zem? Jen pro sklepy a 1.NP s parcelou, jinak terén neznáme.
+         * @returns {{klic: string, dosahne: Function}|null} dosahne(x, y) v metrech
+         */
+        _dosahNaZem(id) {
+            if (!this.maZaklady) return null;
+            const d = this.engine.dum;
+            const iNp = d.podlazi.indexOf(this._podlazi1NP());
+            const i = d.podlazi.findIndex(p => p.id === id);
+            if (i < 0 || i > iNp) return null;
+            const typ = d.zaklady?.casti?.[id] || 'pasy';
+            const dno = (this.engine.kotyPodlazi().get(id) ?? 0) - this.zakladyHodnota('skladba');
+            const sokl = this.zakladyHodnota('sokl');
+            const teren = this._terenDomu();
+            const tn = teren.fn || (() => 0);
+            return {
+                klic: [typ, dno, sokl, teren.nula].join('|'),
+                dosahne: (x, y) => typ === 'stavajici' || dno - tn(x, y) <= sokl,
+            };
+        },
+
         podepreniSteny(wallId) {
             const dole = this.engine.podlaziPod(this.engine.dum.aktivni);
             const v = this.podepreniPodlazi(this.engine.dum.aktivni).get(wallId);
-            return v ? { delka: v.delka, dole: dole?.nazev || '' } : null;
+            return v ? { delka: v.delka, dole: dole?.nazev || '', chybiZaklad: v.chybiZaklad } : null;
         },
 
         /** Rychlá akce: nepodepřenou stěnu změnit na příčku. */
@@ -1185,6 +1215,49 @@
         _plochaPoly(a) {
             const PX = this.engine.PX_PER_M;
             return a.body.map(b => ({ x: b[0] * PX, y: -b[1] * PX }));
+        },
+
+        /**
+         * Nula otvoru: úroveň podlahy (m proti podlaží), od které se měří jeho parapet a výška.
+         * Rozhoduje místnost po obou stranách stěny, exteriér se nepočítá. Mezi dvěma místnostmi platí
+         * vyšší podlaha, níž by otvor narazil do zvýšené desky. Přenesené zvýšení z podlaží níž platí taky.
+         */
+        /** Výška podlahy místnosti nad úrovní podlaží v bodě půdorysu (px). */
+        _nulaBodu(podlaziId, p) {
+            let dh = 0;
+            for (const q of this.plochyNaPodlazi(podlaziId)) {
+                if (q.dh && (q.typ === 'zvysena' || q.typ === 'snizena') && bodVPolygonu(p, this._plochaPoly(q))) dh = q.dh;
+            }
+            return dh;
+        },
+
+        _nulaOtvoru(eng, podlaziId, wall, op, rastr) {
+            const plochy = this.plochyNaPodlazi(podlaziId).filter(a => a.dh && (a.typ === 'zvysena' || a.typ === 'snizena'));
+            if (!plochy.length) return 0;
+            const a = eng.nodes.get(wall.nodeA), b = eng.nodes.get(wall.nodeB);
+            if (!a || !b) return 0;
+            const L = Math.hypot(b.x - a.x, b.y - a.y);
+            if (L < 1) return 0;
+            const PX = eng.PX_PER_M;
+            const ux = (b.x - a.x) / L, uy = (b.y - a.y) / L;
+            const t = (op.pozice + op.sirka / 2) * PX, odstup = ((wall.tloustka || 0) / 2 + 0.06) * PX;
+            const urovne = [];
+            for (const zn of [1, -1]) {
+                const p = { x: a.x + ux * t - uy * odstup * zn, y: a.y + uy * t + ux * odstup * zn };
+                if (rastr && window.MistnostiRastr.stitekVBode(rastr, p.x, p.y) === 1) continue;   // venku
+                let dh = 0;
+                for (const q of plochy) if (bodVPolygonu(p, this._plochaPoly(q))) dh = q.dh;
+                urovne.push(dh);
+            }
+            return urovne.length ? Math.max(...urovne) : 0;
+        },
+
+        /** Nula vybraného otvoru pro panel. */
+        nulaVybranehoOtvoru(op) {
+            const wall = this.engine.walls.get(op.wallId);
+            if (!wall) return 0;
+            const id = this.engine.dum.aktivni;
+            return this._nulaOtvoru(this.engine, id, wall, op, this.renderer._mistnostiCache || this._rastrPodlazi(this.engine, id));
         },
 
         /** Posun úrovně podlahy v bodě aktivního podlaží (pro popisek místnosti). */
@@ -2054,7 +2127,7 @@
                 if (this.podklad) this._domTah = { typ: 'podklad', last: { ...pos }, start: { ...pos }, posun: false };
                 return true;
             }
-            if (this.nastroj === 'schody' || this.nastroj === 'lico') return true;
+            if (this.nastroj === 'schody' || this.nastroj === 'lico' || this.nastroj === 'katalog') return true;
             if (this.nastroj !== 'vyber') return false;
             if (hit.type === 'schodyOtoc') {
                 const s = this.engine.dum.schodiste.find(x => x.id === hit.id);
@@ -2129,6 +2202,10 @@
                 this._renderDum();
                 return true;
             }
+            if (this.nastroj === 'katalog') {
+                this.katalogPohyb?.(pos, e);
+                return false;
+            }
             if (this.nastroj === 'schody') {
                 this._kurzorDum = this._plochaBodZKurzoru(pos, e);
                 this._renderDum();
@@ -2150,12 +2227,14 @@
 
         domKlik(pos, e) {
             if (this.rezimStrecha || this.posunPodkladu) return true;
+            if (this.nastroj === 'katalog') { this.katalogKlik?.(pos, e); return true; }
             if (this.nastroj === 'schody') { this._schodyKlik(pos, e); return true; }
             if (this.nastroj === 'lico') { this._licoKlik(pos, e); return true; }
             return false;
         },
 
         domEsc() {
+            if (this.katalogEsc?.()) return true;
             if (this.schodyStart || this.licoBody.length || this.posunPodkladu
                     || this.nastroj === 'schody' || this.nastroj === 'lico') {
                 this._zrusRozkreslene();
@@ -2293,12 +2372,17 @@
                     pointerLength: 8 / s, pointerWidth: 7 / s, listening: false,
                 }));
                 const hlava = dole ? `↑ ${g.n} × ${Math.round(g.v * 1000)}/${Math.round(g.b * 1000)}` : '↓ dolů';
-                const sx = g.obrys.reduce((v, p) => v + p.x, 0) / g.obrys.length, sy = g.obrys.reduce((v, p) => v + p.y, 0) / g.obrys.length;
-                // Podklad štítku jen při pohledu shora, kde leží na tmavých stupních
-                if (!dole) {
-                    const sirkaStitku = r.velikostPopisku(44);
-                    r.schodyLayer.add(new Konva.Rect({ x: sx - sirkaStitku / 2, y: sy - r.velikostPopisku(8), width: sirkaStitku, height: r.velikostPopisku(16), fill: '#ffffff', opacity: 0.7, cornerRadius: 3 / s, listening: false }));
-                }
+                // Štítek vedle obrysu (na obrazovce): na stupních by se pral se šipkou, u krátkých schodů je širší
+                // než ony. Pod schody, a když tam leží název místnosti, nad nimi nebo po stranách.
+                const tr = r.stage.getAbsoluteTransform();
+                const naObrazovce = g.obrys.map(p => tr.point(p));
+                const minX = Math.min(...naObrazovce.map(q => q.x)), maxX = Math.max(...naObrazovce.map(q => q.x));
+                const minY = Math.min(...naObrazovce.map(q => q.y)), maxY = Math.max(...naObrazovce.map(q => q.y));
+                const pulS = hlava.length * 3.2 + 2, pulV = 8, stredX = (minX + maxX) / 2, stredY = (minY + maxY) / 2;
+                const obsazene = r.mistnostiLayer.find('Text').map(n => n.getClientRect());
+                const volne = (q) => !obsazene.some(o => q.x + pulS > o.x && q.x - pulS < o.x + o.width && q.y + pulV > o.y && q.y - pulV < o.y + o.height);
+                const kandidati = [{ x: stredX, y: maxY + 11 }, { x: stredX, y: minY - 11 }, { x: maxX + pulS + 4, y: stredY }, { x: minX - pulS - 4, y: stredY }];
+                const { x: sx, y: sy } = tr.copy().invert().point(kandidati.find(volne) || kandidati[0]);
                 popisek(r.schodyLayer, sx, sy, hlava, barva, 10);
                 if (vybrane && !nahled) {
                     const k = new Konva.Circle({ x: g.uchop.x, y: g.uchop.y, radius: 9 / s, fill: '#ffffff', stroke: primary, strokeWidth: 1.5, strokeScaleEnabled: false });
@@ -2467,15 +2551,322 @@
             return this._prehledPosledni;
         },
 
+        // ─── Základy a zemina ──────────────────────────────────
+        /** Základy jsou jen s parcelou. Podmínka je na jednom místě, země bez katastru ji později rozšíří. */
+        get maZaklady() {
+            // eslint-disable-next-line no-unused-vars
+            const _tick = this._selectionTick;
+            return !!this.engine && this.katastrParcely.length > 0 && !!this._obrysPodlazi(this._podlazi1NP().id);
+        },
+
+        /** Podlaží, od kterého se počítá ±0 terénu domu. */
+        _podlazi1NP() {
+            const pp = this.engine.dum.podlazi;
+            return pp.find(p => p.typ !== 'sklep') || pp[0];
+        },
+
+        /**
+         * Terén pro výpočet: výšková data, jinak rovina na stávající ±0.
+         * @returns {{fn: Function|null, nula: number|null}} fn = výška vůči ±0, nula = ±0 v m n.m.
+         */
+        _terenDomu() {
+            const id = this._podlazi1NP().id;
+            const prof = this.vyskovyProfil;
+            const stred = this.renderer?._fixedWgsCenter;
+            // Rozkreslený dům bez obrysu stojí ve 3D podle svých uzlů
+            const eng = [this.engine.enginePodlazi(id), this.engine].find(e => e?.nodes.size);
+            if (!eng || !prof?.body?.length || !stred) return { fn: null, nula: null };
+            const klic = eng.geoPodpis();
+            if (this._terenCache?.prof !== prof || this._terenCache.klic !== klic) {
+                const abs = this._terenCache?.prof === prof ? this._terenCache.abs : window.Zemina.terenZProfilu(prof.body, stred);
+                const PX = this.engine.PX_PER_M;
+                const nula = window.Zemina.nulaTerenu([...eng.nodes.values()].map(n => ({ x: n.x / PX, y: n.y / PX })), abs);
+                const fn = (x, y) => abs(x, y) - nula;
+                fn.odhad = abs.odhad;
+                this._terenCache = { prof, klic, abs, fn, nula };
+            }
+            return this._terenCache;
+        },
+
+        /** Části domu zdola nahoru: sklepy a 1.NP. Přesah vyššího patra se nepodkopává. */
+        _castiZakladu() {
+            const d = this.engine.dum, PX = this.engine.PX_PER_M;
+            const kory = this.engine.kotyPodlazi();
+            const casti = [];
+            for (const p of d.podlazi) {
+                const hrany = this._obrysPodlazi(p.id);
+                if (hrany) {
+                    const eng = this.engine.enginePodlazi(p.id);
+                    const steny = [];
+                    for (const w of eng.walls.values()) {
+                        if (w.typ !== 'obvodova' && w.typ !== 'nosna') continue;
+                        const a = eng.nodes.get(w.nodeA), b = eng.nodes.get(w.nodeB);
+                        if (a && b) steny.push({ a: { x: a.x / PX, y: a.y / PX }, b: { x: b.x / PX, y: b.y / PX } });
+                    }
+                    casti.push({
+                        // Obrys z keše je za proxy Alpine, výpočet se ho ptá statisíckrát
+                        id: p.id, nazev: p.nazev, kota: kory.get(p.id) ?? 0, steny, obrys: hrany.map(h => ({ x: h.a.x, y: h.a.y })),
+                        typ: d.zaklady?.casti?.[p.id] || 'pasy',
+                    });
+                }
+                if (p.typ !== 'sklep') break;
+            }
+            return casti;
+        },
+
+        /** Bilance zeminy. Přepočítá se jen po změně vstupů, za tahu zůstává poslední. */
+        get zemina() {
+            if (!this.maZaklady) return null;
+            if (this.renderer?.jeTah?.() && this._zeminaCache) return this._zeminaCache.vysledek;
+            const casti = this._castiZakladu();
+            const teren = this._terenDomu();
+            const klic = JSON.stringify([
+                casti.map(c => [c.id, c.typ, c.kota, this.engine.enginePodlazi(c.id).geoPodpis()]),
+                this.engine.dum.zaklady, teren.nula,
+            ]);
+            if (this._zeminaCache?.klic !== klic) {
+                this._zeminaCache = { klic, vysledek: window.Zemina.spocitej(casti, teren.fn, this.engine.dum.zaklady) };
+            }
+            return this._zeminaCache.vysledek;
+        },
+
+        get zakladyPopis() {
+            const z = this.zemina;
+            if (!z) return '';
+            const vykop = z.vykopek.vykopano + z.ornice.vykopano;
+            if (z.bezZakladu <= 0.5) return this.m3(vykop) + ' výkop';
+            return vykop >= 0.5 ? 'chybí základ, ' + this.m3(vykop) + ' výkop' : 'chybí základ';
+        },
+
+        /** Upozornění v panelu Základů: které části domu na zem nedosáhnou. */
+        get zakladyChybi() {
+            const casti = (this.zemina?.casti || []).filter(c => c.bezZakladu > 0.5);
+            if (!casti.length) return '';
+            return 'Chybí základ: ' + casti.map(c => c.nazev + ' ' + c.bezZakladu.toFixed(1).replace('.', ',') + ' m²').join(', ')
+                + '. Dům tu nedosahuje na terén, proto se tu nekope.';
+        },
+
+        get terenPopis() {
+            const t = this.maZaklady ? this._terenDomu() : null;
+            if (typeof t?.nula !== 'number') return 'Terén: rovina, výšková data nejsou k dispozici.';
+            return 'Terén pod domem: ' + t.nula.toFixed(2).replace('.', ',') + ' m n.m. (podle výškových dat)';
+        },
+
+        /** Řádky bloku Materiály. Záporný přebytek znamená, že zemina chybí. */
+        get materialyRadky() {
+            const z = this.zemina;
+            if (!z) return [];
+            const radek = (id, nazev, v) => v.prebytek < -0.5
+                ? { id, nazev: nazev + ' chybí', rostly: this.m3(-v.prebytek), nakypreny: '—' }
+                : { id, nazev: nazev + ' navíc', rostly: this.m3(v.prebytek), nakypreny: this.m3(v.prebytekNakypreny) };
+            return [radek('vykopek', 'Výkopek', z.vykopek), radek('ornice', 'Ornice', z.ornice)];
+        },
+
+        m3(v) {
+            return 'cca ' + Math.round(Math.max(0, v)) + ' m³';
+        },
+
+        zakladyHodnota(klic) {
+            // eslint-disable-next-line no-unused-vars
+            const _tick = this._selectionTick;
+            return this.engine?.dum.zaklady?.[klic] ?? window.Zemina.VYCHOZI[klic];
+        },
+
+        /** Záznam vznikne s první parcelou, tehdy dostane dům i výchozí výšku nad terénem. Neukládá se sám. */
+        _zalozZaklady() {
+            const d = this.engine?.dum;
+            if (!d || d.zaklady || !this.katastrParcely.length) return;
+            d.zaklady = {};
+            if (!d.posunVysky) d.posunVysky = window.Zemina.NAD_TERENEM;
+            this._selectionTick++;
+        },
+
+        setZaklady(klic, hodnota) {
+            if (typeof hodnota !== 'number' || isNaN(hodnota) || hodnota < 0) return;
+            this.engine.pushUndo();
+            this.engine.dum.zaklady = { ...(this.engine.dum.zaklady || {}), [klic]: Math.round(hodnota * 1000) / 1000 };
+            this._poZmeneDomu('Základy');
+        },
+
+        setTypZakladu(id, typ) {
+            this.engine.pushUndo();
+            const z = this.engine.dum.zaklady || {};
+            this.engine.dum.zaklady = { ...z, casti: { ...(z.casti || {}), [id]: typ } };
+            this._poZmeneDomu('Základy');
+        },
+
+        /** Výška nad terénem je kóta 1.NP, proto jde stejnou cestou jako její přepsání. */
+        setNadTerenem(hodnota) {
+            this.setPodlazi(this._podlazi1NP().id, 'kota', hodnota);
+        },
+
         // ─── 3D domu ───────────────────────────────────────────
         _viditelne3d(id) {
             return !this.skryte3d.includes(id);
         },
 
+        /** Hodnoty díry v terénu, sdílené materiály terénu a jeho mřížky. Terén se staví znovu, díra zůstává. */
+        _uniformyJamy() {
+            const _3d = window._kk3d, THREE = window.THREE;
+            if (!_3d.jamaUniformy) {
+                _3d.jamaUniformy = {
+                    uJama: { value: new THREE.DataTexture(new Uint8Array(4), 1, 1, THREE.RGBAFormat) },
+                    uJamaMin: { value: new THREE.Vector2() },
+                    uJamaRozmer: { value: new THREE.Vector2(1, 1) },
+                    uJamaOsa: { value: new THREE.Vector2(1, 0) },
+                    uJamaZap: { value: 0 },
+                };
+            }
+            return _3d.jamaUniformy;
+        },
+
+        /** Do shaderu terénu přidá díru: co leží nad výkopem, nekreslí se. */
+        _materialSJamou(shader) {
+            Object.assign(shader.uniforms, this._uniformyJamy());
+            shader.vertexShader = 'varying vec2 vJamaPoloha;\n' + shader.vertexShader.replace(
+                '#include <project_vertex>',
+                '#include <project_vertex>\nvJamaPoloha = (modelMatrix * vec4(transformed, 1.0)).xz;'
+            );
+            shader.fragmentShader = 'uniform sampler2D uJama;\nuniform vec2 uJamaMin;\nuniform vec2 uJamaRozmer;\nuniform vec2 uJamaOsa;\nuniform float uJamaZap;\nvarying vec2 vJamaPoloha;\n'
+                + shader.fragmentShader.replace(
+                    '#include <clipping_planes_fragment>',
+                    `#include <clipping_planes_fragment>
+if (uJamaZap > 0.5) {
+    vec2 jamaUv = (vec2(dot(vJamaPoloha, uJamaOsa), dot(vJamaPoloha, vec2(-uJamaOsa.y, uJamaOsa.x))) - uJamaMin) / uJamaRozmer;
+    if (jamaUv.x >= 0.0 && jamaUv.x <= 1.0 && jamaUv.y >= 0.0 && jamaUv.y <= 1.0 && texture2D(uJama, jamaUv).r > 0.5) discard;
+}`
+                );
+        },
+
+        /** Výška zobrazeného terénu ve scéně, přesně po jeho trojúhelnících: okraj jámy na něj musí sednout. */
+        _vyskaTerenu3d() {
+            const _3d = window._kk3d;
+            if (!_3d.terrain) return () => 0;
+            const poz = _3d.terrain.geometry.attributes.position;
+            const { minX, minZ, bboxW, bboxH } = _3d.terrainMaskRange;
+            const sl = _3d.terrainCols, ra = _3d.terrainRows;
+            const kx = bboxW / (sl - 1), kz = bboxH / (ra - 1);
+            const v = (s, r) => poz.getY(r * sl + s);
+            return (x, z) => {
+                const fs = omez((x - minX) / kx, 0, sl - 1.001), fr = omez((z - minZ) / kz, 0, ra - 1.001);
+                const s = Math.floor(fs), r = Math.floor(fr), a = fs - s, b = fr - r;
+                return a + b <= 1
+                    ? v(s, r) + a * (v(s + 1, r) - v(s, r)) + b * (v(s, r + 1) - v(s, r))
+                    : v(s + 1, r + 1) + (1 - a) * (v(s, r + 1) - v(s + 1, r + 1)) + (1 - b) * (v(s + 1, r) - v(s + 1, r + 1));
+            };
+        },
+
+        /**
+         * Vypočítaný výkop ve 3D pod skrytými podlažími, která jsou v terénu (sklepy a 1.NP). Pod viditelnými
+         * leží terén až na domě, vyšší patra nehrají roli. Síť se přestaví jen po změně výpočtu, výběru nebo terénu.
+         */
+        _jama3d() {
+            const _3d = window._kk3d;
+            if (!_3d?.scene) return;
+            const u = this._uniformyJamy();
+            const vsechny = this.maZaklady ? this._castiZakladu() : [];
+            const casti = vsechny.filter(c => !this._viditelne3d(c.id));
+            const ukazat = casti.length > 0;
+            if (ukazat && this.zemina) {
+                const klic = this._zeminaCache.klic + '|' + casti.map(c => c.id).join() + '|' + (_3d.terrain?.uuid || 'rovina');
+                if (_3d.jama?.userData.klic !== klic) {
+                    if (_3d.jama) {
+                        _3d.scene.remove(_3d.jama);
+                        _3d.jama.geometry.dispose();
+                        _3d.jama = null;
+                    }
+                    const j = window.Zemina.jama(casti, this._terenDomu().fn, this.engine.dum.zaklady, this._uhelSten(vsechny));
+                    if (j) {
+                        _3d.jama = this._sitJamy(j);
+                        _3d.jama.userData.klic = klic;
+                        _3d.scene.add(_3d.jama);
+                        const stara = u.uJama.value;
+                        u.uJama.value = _3d.jama.userData.maska;
+                        stara.dispose();
+                        u.uJamaOsa.value.set(j.cos, j.sin);
+                        u.uJamaMin.value.set(j.u0, j.v0);
+                        u.uJamaRozmer.value.set((j.sloupcu - 1) * j.krok, (j.radku - 1) * j.krok);
+                        window.Svetlo3d.prekresliStiny(_3d.renderer);
+                    }
+                }
+            }
+            const jamaVidet = !!(ukazat && _3d.jama);
+            if (_3d.jama) _3d.jama.visible = jamaVidet;
+            u.uJamaZap.value = jamaVidet ? 1 : 0;
+            if (_3d.grid) _3d.grid.visible = !jamaVidet;
+        },
+
+        /** Převažující směr stěn (radiány, 0–90°): podle něj se natočí mřížka jámy, aby hrany nebyly zubaté. */
+        _uhelSten(casti) {
+            const vahy = new Map();
+            let nej = 0, uhel = 0;
+            for (const c of casti) {
+                for (const w of c.steny) {
+                    const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y;
+                    const k = ((Math.atan2(dy, dx) % (Math.PI / 2)) + Math.PI / 2) % (Math.PI / 2);
+                    const klic = Math.round(k * 180 / Math.PI) % 90;
+                    const v = (vahy.get(klic) || 0) + Math.hypot(dx, dy);
+                    vahy.set(klic, v);
+                    if (v > nej) { nej = v; uhel = k; }
+                }
+            }
+            return uhel;
+        },
+
+        /** Síť jámy z hloubek ve vrcholech a maska buněk, které se v terénu vyříznou. */
+        _sitJamy(j) {
+            const _3d = window._kk3d, THREE = window.THREE;
+            const { u0, v0, krok, cos, sin, sloupcu, radku, hloubky, teren } = j;
+            const nula = this._terenDomu().nula;
+            const yNula = _3d.terrainHeights && typeof nula === 'number' ? nula - _3d.terrainMinH : 0;
+            const orniceDo = this.zakladyHodnota('ornice') + 0.001;
+            const vyska = this._vyskaTerenu3d();
+            const sCel = sloupcu - 1, rCel = radku - 1;
+            const maska = new Uint8Array(sCel * rCel * 4);
+            const cislo = new Int32Array(sloupcu * radku).fill(-1);
+            const pozice = [], trojuhelniky = [];
+            const vrchol = (i, s, r) => {
+                if (cislo[i] >= 0) return cislo[i];
+                const u = u0 + s * krok, v = v0 + r * krok;
+                const x = u * cos - v * sin, z = u * sin + v * cos, h = hloubky[i], nahore = vyska(x, z);
+                // Okraj a ornice jdou s povrchem, hlouběji platí spočtená úroveň, aby dno sedělo pod dům
+                const y = h <= orniceDo ? nahore - h : Math.min(nahore, yNula + teren[i] - h);
+                cislo[i] = pozice.length / 3;
+                pozice.push(x, y, z);
+                return cislo[i];
+            };
+            for (let r = 0; r < rCel; r++) {
+                for (let s = 0; s < sCel; s++) {
+                    const a = r * sloupcu + s, b = a + 1, c = a + sloupcu, d = c + 1;
+                    if (!(hloubky[a] > 0 || hloubky[b] > 0 || hloubky[c] > 0 || hloubky[d] > 0)) continue;
+                    maska[(r * sCel + s) * 4] = 255;
+                    const va = vrchol(a, s, r), vb = vrchol(b, s + 1, r), vc = vrchol(c, s, r + 1), vd = vrchol(d, s + 1, r + 1);
+                    trojuhelniky.push(va, vc, vb, vb, vc, vd);
+                }
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pozice, 3));
+            geo.setIndex(trojuhelniky);
+            geo.computeVertexNormals();
+            if (!_3d.jamaMaterial) _3d.jamaMaterial = new THREE.MeshStandardMaterial({ color: 0x7a5a3c, roughness: 1, flatShading: true });
+            const sit = new THREE.Mesh(geo, _3d.jamaMaterial);
+            sit.receiveShadow = true;
+            sit.castShadow = true;
+            const textura = new THREE.DataTexture(maska, sCel, rCel, THREE.RGBAFormat);
+            textura.magFilter = THREE.NearestFilter;
+            textura.minFilter = THREE.NearestFilter;
+            textura.needsUpdate = true;
+            sit.userData.maska = textura;
+            return sit;
+        },
+
         _nastavViditelnost3d() {
             const _3d = window._kk3d;
             if (!_3d || !_3d.podlaziSkupiny) return;
+            window.Svetlo3d.prekresliStiny(_3d.renderer);
             for (const [id, g] of _3d.podlaziSkupiny) g.visible = this._viditelne3d(id);
+            for (const m of _3d.maskaZeme?.children || []) m.visible = this._viditelne3d(m.userData.podlazi);
+            this._jama3d();
             const dum = _3d.dumSkupina;
             if (!dum) return;
             const strechaVidet = this.zobrazStrechu3d;
@@ -2496,7 +2887,10 @@
         _deska3d(obrys, otvory, yOd, yDo, mat, userData) {
             const THREE = window.THREE;
             const shape = new THREE.Shape();
-            obrys.forEach((p, i) => (i ? shape.lineTo(p.x, -p.y) : shape.moveTo(p.x, -p.y)));
+            // ExtrudeGeometry srovná směr děr jen u obrysu proti směru hodinek. Jinak by boky děr
+            // hleděly dovnitř desky, nekreslily by se a deska by u díry vypadala tenká jako podlaha.
+            const vKruhu = THREE.ShapeUtils.isClockWise(obrys.map(p => new THREE.Vector2(p.x, -p.y))) ? [...obrys].reverse() : obrys;
+            vKruhu.forEach((p, i) => (i ? shape.lineTo(p.x, -p.y) : shape.moveTo(p.x, -p.y)));
             shape.closePath();
             for (const h of (otvory || [])) {
                 const d = new THREE.Path();
@@ -2506,12 +2900,17 @@
             }
             const geom = new THREE.ExtrudeGeometry(shape, { depth: Math.max(0.005, yDo - yOd), bevelEnabled: false });
             // Třetí materiál = vlastní vrch. Plochy jsou v geometrii za sebou: nejdřív spodní, pak horní.
+            // Čtvrtý = boky děr. Boky jsou po čtyřúhelnících (6 vrcholů): nejdřív obrys, za ním díry.
             if (Array.isArray(mat) && mat[2]) {
                 const [plochy, boky] = geom.groups;
                 geom.clearGroups();
                 geom.addGroup(plochy.start, plochy.count / 2, 0);
                 geom.addGroup(plochy.start + plochy.count / 2, plochy.count / 2, 2);
-                geom.addGroup(boky.start, boky.count, 1);
+                const hran = obrys.filter((p, i) => { const q = obrys[(i + 1) % obrys.length]; return p.x !== q.x || p.y !== q.y; }).length;
+                if (mat[3] && otvory?.length && hran * 6 < boky.count) {
+                    geom.addGroup(boky.start, hran * 6, 1);
+                    geom.addGroup(boky.start + hran * 6, boky.count - hran * 6, 3);
+                } else geom.addGroup(boky.start, boky.count, 1);
             }
             const m = new THREE.Mesh(geom, mat);
             m.rotation.x = -Math.PI / 2;
@@ -2530,6 +2929,7 @@
             let t = _3d.texturyDekoru.get(typ);
             if (!t) {
                 t = new THREE.CanvasTexture(kresliDekor(typ));
+                t.encoding = THREE.sRGBEncoding;
                 t.wrapS = t.wrapT = THREE.RepeatWrapping;
                 t.anisotropy = 8;
                 _3d.texturyDekoru.set(typ, t);
@@ -2582,8 +2982,41 @@
                 const s = R.stitekVBode(rastr, m.kotva.x, m.kotva.y);
                 if (s >= 2 && !vlastni.has(s)) vlastni.set(s, m);
             }
+            // Výška podlahy po buňkách. Zvýšená a snížená místnost až po své okraje (štítek i pod stěnami, ať
+            // u nich nezbude spára), přenesené zvýšení podle obrysu z podlaží níž. Kudy vedou schody, tam
+            // zvýšená deska není (_dilyDesky), podlaha tam zůstává dole.
+            const urovne = new Float32Array(w * h);
+            const vykresli = (polygony) => {
+                const cv = document.createElement('canvas');
+                cv.width = w; cv.height = h;
+                const g = cv.getContext('2d', { willReadFrequently: true });
+                for (const poly of polygony) {
+                    g.beginPath();
+                    poly.forEach((p, i) => { const x = (p.x - x0) / krok, y = (p.y - y0) / krok; if (i === 0) g.moveTo(x, y); else g.lineTo(x, y); });
+                    g.closePath();
+                    g.fill();
+                }
+                return g.getImageData(0, 0, w, h).data;
+            };
+            const zvysene = this.plochyNaPodlazi(podl.id).filter(a => a.typ === 'zvysena' && a.dh > 0);
+            for (const a of [...zvysene, ...this._snizenePlochy(podl.id)]) {
+                const m = a.podlazi === podl.id && a.mistnost ? eng.najdiMistnost(a.mistnost) : null;
+                const stitekPlochy = m ? R.stitekVBode(rastr, m.kotva.x, m.kotva.y) : 0;
+                const maska = stitekPlochy >= 2 ? null : vykresli([this._plochaPoly(a)]);
+                for (let i = 0; i < w * h; i++) {
+                    if (st[i] !== 0 && (maska ? maska[i * 4 + 3] > 127 : st[i] === stitekPlochy)) urovne[i] = a.dh;
+                }
+            }
+            if (zvysene.length) {
+                const schody = this.engine.dum.schodiste.filter(s => s.odPodlazi === podl.id || s.doPodlazi === podl.id);
+                if (schody.length) {
+                    const maska = vykresli(schody.map(s => schodyGeo(s, this._vyskaMeziPodlazimi(s), pxM).obrys));
+                    for (let i = 0; i < w * h; i++) if (urovne[i] > 0 && maska[i * 4 + 3] > 127) urovne[i] = 0;
+                }
+            }
+            const vysky = [...new Set(urovne)];
             for (let i = 0; i < w * h; i++) if (st[i] >= 2 && !vlastni.has(st[i])) st[i] = -1;
-            for (const [stitek, m] of [...vlastni, [-1, null]]) {
+            for (const [stitek, m] of [...vlastni, [-1, null]]) for (const uroven of vysky) {
                 // Stejně široké úseky sousedních řádků tvoří jeden obdélník
                 const obdelniky = [];
                 let otevrene = new Map();
@@ -2591,9 +3024,9 @@
                     const nove = new Map();
                     if (y < h) {
                         for (let x = 0; x < w; x++) {
-                            if (st[y * w + x] !== stitek) continue;
+                            if (st[y * w + x] !== stitek || urovne[y * w + x] !== uroven) continue;
                             let x1 = x;
-                            while (x1 + 1 < w && st[y * w + x1 + 1] === stitek) x1++;
+                            while (x1 + 1 < w && st[y * w + x1 + 1] === stitek && urovne[y * w + x1 + 1] === uroven) x1++;
                             const klic = x + ':' + x1;
                             const r = otevrene.get(klic) || { x0: x, x1: x1 + 1, y0: y };
                             otevrene.delete(klic);
@@ -2612,7 +3045,7 @@
                     const ax = (x0 + r.x0 * krok) / pxM, bx = (x0 + r.x1 * krok) / pxM;
                     const az = (y0 + r.y0 * krok) / pxM, bz = (y0 + r.y1 * krok) / pxM;
                     [[ax, az], [ax, bz], [bx, bz], [ax, az], [bx, bz], [bx, az]].forEach(([x, z], j) => {
-                        pozice.set([x, VYSKA, z], i * 18 + j * 3);
+                        pozice.set([x, VYSKA + uroven, z], i * 18 + j * 3);
                         uv.set([x / dekor.metru, z / dekor.metru], i * 12 + j * 2);
                     });
                 });
@@ -2664,6 +3097,7 @@
             let t = _3d.texturyKrytin.get(typ);
             if (!t) {
                 t = new THREE.CanvasTexture(kresliRelief(typ));
+                t.encoding = THREE.sRGBEncoding;
                 t.wrapS = t.wrapT = THREE.RepeatWrapping;
                 t.anisotropy = 8;
                 _3d.texturyKrytin.set(typ, t);
@@ -2712,6 +3146,7 @@
             const kory = e.kotyPodlazi();
             const PX = e.PX_PER_M;
             const naM = (poly) => poly.map(p => ({ x: p.x / PX, y: p.y / PX }));
+            this._maskaZeme3d(group);
             const obrysBody = (hrany) => hrany.map(h => h.a);
             // Boky desek leží v líci domu, proto mají barvu fasády (ExtrudeGeometry: 0 = plochy, 1 = boky)
             const matFasady = () => {
@@ -2727,31 +3162,39 @@
                 m.userData.jas = 0.75;
                 return m;
             };
-            const matDesky = () => [new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.9 }), matFasady(), matVrchu()];
+            // Bok díry v podlaze je bílý jako vnitřní stěny: navazuje na něj zeď nad i pod deskou (nízká zídka místo zábradlí)
+            const matDesky = () => [new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.9 }), matFasady(), matVrchu(), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 })];
             const st = this._strechaVypocet();
+            // Otvor snížené místnosti může sahat přes desku: tam deska ustoupí
+            const podUrovni = this._otvoryPodUrovni();
+            const pridejDesku = (obrys, otvory, yOd, yDo, userData) => {
+                const vyrezy = podUrovni.filter(v => v.od < yDo && v.do > yOd).map(v => v.poly);
+                for (const m of this._deskaSVyrezy(obrys, otvory, vyrezy, yOd, yDo, matDesky(), userData)) dum.add(m);
+            };
 
             d.podlazi.forEach((p, i) => {
                 const hrany = this._obrysPodlazi(p.id);
                 const kota = kory.get(p.id) ?? 0;
                 const nad = d.podlazi[i + 1];
-                const otvory = nad ? this._otvoryPodlahy(nad.id, naM) : [];
+                const otvory = nad ? this._otvoryDesky(nad.id, naM) : [];
                 if (hrany && hrany.length >= 3) {
                     const obrys = obrysBody(hrany);
                     // Podlaha nejnižšího podlaží
-                    if (i === 0) dum.add(this._deska3d(obrys, this._otvoryPodlahy(p.id, naM), kota - 0.15, kota + 0.02, matDesky(), { podlazi: p.id }));
+                    if (i === 0) pridejDesku(obrys, this._otvoryDesky(p.id, naM), kota - 0.15, kota + 0.02, { podlazi: p.id });
                     // Strop: pod dalším podlažím vždy. Pod šikmou střechou žádný: není vidět a v líci
                     // by se pral se stěnami dotaženými pod střechu. Plochá střecha na něm leží.
                     if (nad || (st && st.plocha && p.typ !== 'podkrovi' && st.zOkap >= p.vyska - 0.001)) {
-                        dum.add(this._deska3d(obrys, otvory, kota + e.svetlaVyska(p), kota + p.vyska, matDesky(), { stropPod: p.id }));
+                        pridejDesku(obrys, otvory, kota + e.svetlaVyska(p), kota + p.vyska, { stropPod: p.id });
                     }
                 }
                 // Podlaha patra podle jeho vlastního obrysu: patro může přesahovat přes podlaží pod
                 // ním (krytý vstup, garáž) a strop spodního podlaží by tam nechal díru.
-                // 2 mm navíc, aby se plochy obou desek nepraly.
+                // Dole 2 mm navíc, aby se plochy obou desek nepraly. Nahoře až pod podlahu místností
+                // jako u nejnižší desky, jinak je u díry mezi deskou a podlahou vidět škvíra.
                 const hranyNad = nad ? this._obrysPodlazi(nad.id) : null;
                 if (hranyNad && hranyNad.length >= 3) {
                     const kotaNad = kory.get(nad.id) ?? (kota + p.vyska);
-                    dum.add(this._deska3d(obrysBody(hranyNad), otvory, kotaNad - p.strop - 0.002, kotaNad + 0.002, matDesky(), { stropPod: p.id }));
+                    pridejDesku(obrysBody(hranyNad), otvory, kotaNad - p.strop - 0.002, kotaNad + 0.02, { stropPod: p.id });
                 }
             });
 
@@ -2773,7 +3216,9 @@
             const TL_NASLAPU = 0.04;
             for (const s of d.schodiste) {
                 const g = schodyGeo(s, this._vyskaMeziPodlazimi(s), PX);
-                const kota = kory.get(s.odPodlazi) ?? 0;
+                // Schody ze snížené místnosti stoupají z její podlahy na úroveň podlaží
+                const plochaSchodu = this._plochaSchodu(s);
+                const kota = (kory.get(s.odPodlazi) ?? 0) + (plochaSchodu?.typ === 'snizena' ? plochaSchodu.dh : 0);
                 const klic = 'schody:' + s.id;
                 const barva = new THREE.Color(s.barva || BARVA_SCHODU);
                 const matNaslap = new THREE.MeshStandardMaterial({ color: barva, roughness: 0.8 });
@@ -2832,8 +3277,8 @@
         _dilyDesky(a, idPodlazi) {
             const PX = this.engine.PX_PER_M;
             const obrys = a.body.map(b => ({ x: b[0], y: -b[1] }));
-            if (!(a.dh > 0)) return [obrys];
-            const schody = this.engine.dum.schodiste.filter(s => s.odPodlazi === idPodlazi || s.doPodlazi === idPodlazi);
+            // Zvýšená deska nesmí protékat schody, snížená leží pod nimi a uhne jen těm, co přicházejí zdola
+            const schody = this.engine.dum.schodiste.filter(s => (a.dh > 0 ? s.odPodlazi === idPodlazi || s.doPodlazi === idPodlazi : s.doPodlazi === idPodlazi && s.odPodlazi !== idPodlazi));
             if (!schody.length) return [obrys];
             let dily = window.Strecha.konvexniDily(kladnaOrientace(obrys));
             let zasah = false;
@@ -2855,10 +3300,177 @@
             return zasah ? dily : [obrys];
         },
 
-        /** Díry v podlaze podlaží: plochy bez podlahy a prostupy, schody vedoucí sem zdola (m). */
-        _otvoryPodlahy(id, naM) {
-            const masky = this._maskyPodlazi(id);
-            return masky.vyrezy.map(naM);
+        /**
+         * Díry v deskách podlaží (m): plochy bez podlahy, schody vedoucí sem zdola a snížené místnosti.
+         * Plocha místnosti se nemění, snížená podlaha se do ní počítá. Otvor celý uvnitř snížené místnosti
+         * by se s její dírou překrýval, řeší ho deska snížené podlahy (_dilyDesky).
+         */
+        _otvoryDesky(id, naM) {
+            const snizene = this._snizenePlochy(id);
+            const vyrezy = this._maskyPodlazi(id).vyrezy.filter(v => !snizene.some(a => {
+                const poly = this._plochaPoly(a);
+                return v.every(b => bodVPolygonu(b, poly));
+            }));
+            // O 3 cm přes obrys, pod stěnu: obrys z rastru může ležet kousek před lícem a zbyl by okraj desky
+            return [...vyrezy.map(naM), ...snizene.map(a => this._odsadPolygon(a.body.map(b => ({ x: b[0], y: -b[1] })), 0.03))];
+        },
+
+        _snizenePlochy(id) {
+            return this.plochyNaPodlazi(id).filter(a => a.typ === 'snizena' && a.dh < 0);
+        },
+
+        /**
+         * Otvory ve snížené místnosti, které klesly pod vrch desky podlaží. V m: a, b = konce otvoru na ose
+         * stěny (y dolů), poly = půdorys přes celou tloušťku stěny, od a do = výšky v souřadnicích domu.
+         * Desky i stěny podlaží pod nimi tam musí ustoupit.
+         */
+        _otvoryPodUrovni() {
+            const e = this.engine;
+            const PX = e.PX_PER_M;
+            const vysledek = [];
+            for (const p of e.dum.podlazi) {
+                if (!this._snizenePlochy(p.id).length) continue;
+                const eng = e.enginePodlazi(p.id);
+                if (!eng) continue;
+                const rastr = this._rastrPodlazi(eng, p.id);
+                const kota = e.kotaPodlazi(p.id);
+                for (const op of eng.openings.values()) {
+                    const wall = eng.walls.get(op.wallId);
+                    const A = wall && eng.nodes.get(wall.nodeA), B = wall && eng.nodes.get(wall.nodeB);
+                    if (!A || !B) continue;
+                    const nula = this._nulaOtvoru(eng, p.id, wall, op, rastr);
+                    const od = window.minParapetOtvoru(op) + nula;
+                    if (nula >= 0 || od >= 0.03) continue;
+                    const L = Math.hypot(B.x - A.x, B.y - A.y) / PX;
+                    if (L < 0.01) continue;
+                    const ux = (B.x - A.x) / PX / L, uy = (B.y - A.y) / PX / L;
+                    const bod = (t) => ({ x: A.x / PX + ux * t, y: A.y / PX + uy * t });
+                    const a = bod(op.pozice), b = bod(op.pozice + op.sirka);
+                    const nx = -uy, ny = ux, pol = (wall.tloustka || 0) / 2 + 0.02;
+                    const k = (q, d) => ({ x: q.x + nx * d, y: q.y + ny * d });
+                    vysledek.push({
+                        podlazi: p.id, a, b, od: kota + od, do: kota + window.vrsekOtvoru(op) + nula,
+                        poly: [k(a, -pol), k(b, -pol), k(b, pol), k(a, pol)],
+                    });
+                }
+            }
+            return vysledek;
+        },
+
+        /** Deska s výřezy: bez nich jedna deska s dírami, s nimi konvexní díly, protože výřez může přetnout obrys. */
+        _deskaSVyrezy(obrys, otvory, vyrezy, yOd, yDo, mat, userData) {
+            if (!vyrezy.length) return [this._deska3d(obrys, otvory, yOd, yDo, mat, userData)];
+            let dily = window.Strecha.konvexniDily(kladnaOrientace(obrys));
+            for (const h of [...otvory, ...vyrezy]) {
+                for (const C of window.Strecha.konvexniDily(kladnaOrientace(h))) {
+                    dily = dily.flatMap(P => {
+                        const zbytek = odectiKonvexni(P, C);
+                        return zbytek ? zbytek.filter(q => sirkaKonvexni(q) >= 0.01) : [P];
+                    });
+                }
+            }
+            return dily.map(q => this._deska3d(q, [], yOd, yDo, mat, userData));
+        },
+
+        /** Snížené místnosti nad terénem (sklep leží pod zemí celý): obrysy v m, y dolů, s rezervou pod stěny. */
+        _dirySnizeni() {
+            const vysledek = [];
+            for (const p of this.engine.dum.podlazi) {
+                if (p.typ === 'sklep') continue;
+                for (const a of this._snizenePlochy(p.id)) {
+                    vysledek.push({ podlazi: p.id, poly: this._odsadPolygon(a.body.map(b => ({ x: b[0], y: -b[1] })), 0.03) });
+                }
+            }
+            return vysledek;
+        },
+
+        /**
+         * Země a mřížka leží v úrovni 0, tedy nad sníženou podlahou. Maska do stencil bufferu je nad
+         * těmito místnostmi nevykreslí. Bez snížené místnosti se scéna kreslí jako dřív.
+         */
+        _maskaZeme3d(group) {
+            const THREE = window.THREE;
+            const _3d = window._kk3d;
+            if (_3d.maskaZeme) { _3d.scene.remove(_3d.maskaZeme); this._zrus3d(_3d.maskaZeme); _3d.maskaZeme = null; }
+            const diry = this._dirySnizeni();
+            for (const o of [_3d.ground, _3d.grid, _3d.terrain, _3d.gridLines]) {
+                if (!o) continue;
+                for (const m of [].concat(o.material)) {
+                    m.stencilWrite = diry.length > 0;
+                    m.stencilRef = 1;
+                    m.stencilFunc = THREE.NotEqualStencilFunc;
+                }
+            }
+            if (!diry.length) return;
+            const kory = this.engine.kotyPodlazi();
+            const maska = new THREE.Group();
+            for (const { podlazi, poly } of diry) {
+                const tvar = new THREE.Shape();
+                poly.forEach((q, i) => (i ? tvar.lineTo(q.x, -q.y) : tvar.moveTo(q.x, -q.y)));
+                tvar.closePath();
+                const mesh = new THREE.Mesh(new THREE.ShapeGeometry(tvar), new THREE.MeshBasicMaterial({
+                    colorWrite: false, depthWrite: false, depthTest: false, side: THREE.DoubleSide,
+                    stencilWrite: true, stencilRef: 1, stencilFunc: THREE.AlwaysStencilFunc, stencilZPass: THREE.ReplaceStencilOp,
+                }));
+                mesh.rotation.x = -Math.PI / 2;
+                // Ve výšce země, ať se promítne přesně na ni. U terénu v úrovni podlahy domu.
+                mesh.position.y = _3d.ground ? 0.01 : group.position.y + (kory.get(podlazi) ?? 0);
+                mesh.renderOrder = -1;
+                mesh.userData.podlazi = podlazi;
+                maska.add(mesh);
+            }
+            _3d.maskaZeme = maska;
+            _3d.scene.add(maska);
+        },
+
+        /** Polygon odsazený o d ven, po vrcholech ve směru os obou sousedních hran. */
+        _odsadPolygon(poly, d) {
+            let plocha = 0;
+            poly.forEach((p, i) => { const q = poly[(i + 1) % poly.length]; plocha += p.x * q.y - q.x * p.y; });
+            const zn = plocha > 0 ? 1 : -1;
+            const normala = (a, b) => {
+                const L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+                return { x: (b.y - a.y) / L * zn, y: -(b.x - a.x) / L * zn };
+            };
+            return poly.map((p, i) => {
+                const n1 = normala(poly[(i - 1 + poly.length) % poly.length], p), n2 = normala(p, poly[(i + 1) % poly.length]);
+                let x = n1.x + n2.x, y = n1.y + n2.y;
+                const L = Math.hypot(x, y) || 1;
+                x /= L; y /= L;
+                const k = d / Math.max(0.3, x * n1.x + y * n1.y);
+                return { x: p.x + x * k, y: p.y + y * k };
+            });
+        },
+
+        /**
+         * Úseky stěny podél snížené místnosti: [{t0, t1, dh}] v metrech od uzlu A. Stěna tam musí sahat
+         * až na sníženou podlahu. Krajní úsek je bez meze, aby dosáhl i do pokosu rohu.
+         */
+        _behySnizeni(podlaziId, eng, wall) {
+            const plochy = this._snizenePlochy(podlaziId);
+            const a = eng.nodes.get(wall.nodeA), b = eng.nodes.get(wall.nodeB);
+            if (!plochy.length || !a || !b) return [];
+            const PX = eng.PX_PER_M;
+            const L = Math.hypot(b.x - a.x, b.y - a.y) / PX;
+            if (L < 0.01) return [];
+            const ux = (b.x - a.x) / L / PX, uy = (b.y - a.y) / L / PX;
+            const odstup = ((wall.tloustka || 0) / 2 + 0.06) * PX;
+            const polygony = plochy.map(q => ({ poly: this._plochaPoly(q), dh: q.dh }));
+            const KROK = 0.25, kroku = Math.max(1, Math.ceil(L / KROK));
+            const behy = [];
+            for (let i = 0; i < kroku; i++) {
+                const t = (i + 0.5) * L / kroku;
+                let dh = 0;
+                for (const zn of [1, -1]) {
+                    const p = { x: a.x + ux * t * PX - uy * odstup * zn, y: a.y + uy * t * PX + ux * odstup * zn };
+                    for (const q of polygony) if (q.dh < dh && bodVPolygonu(p, q.poly)) dh = q.dh;
+                }
+                const posledni = behy[behy.length - 1];
+                if (!dh) continue;
+                if (posledni && posledni.dh === dh && posledni.i === i - 1) { posledni.t1 = (i + 1) * L / kroku; posledni.i = i; }
+                else behy.push({ t0: i * L / kroku, t1: (i + 1) * L / kroku, dh, i });
+            }
+            return behy.map(u => ({ t0: u.t0 <= 0 ? -Infinity : u.t0, t1: u.t1 >= L - 1e-6 ? Infinity : u.t1, dh: u.dh }));
         },
 
         /** Pozice trojúhelníků do jedné geometrie: boky do exteriéru mají matVen, zbytek matUvnitr. */
@@ -2884,9 +3496,11 @@
             const THREE = window.THREE;
             const uvnitr = [], ven = [];
             const bod = (cil, p, y) => cil.push(p.x, y, p.z);
+            // Vnější půlka o milimetr výš: konec příčky do ní zasahuje a stejně vysoké plochy se přetahují
+            const vrch = plochyVen ? yDo + 0.001 : yDo;
             for (const t of THREE.ShapeUtils.triangulateShape(poly.map(p => new THREE.Vector2(p.x, p.z)), [])) {
                 const plochy = plochyVen ? ven : uvnitr;
-                for (const i of t) bod(plochy, poly[i], yDo);
+                for (const i of t) bod(plochy, poly[i], vrch);
                 for (const i of [...t].reverse()) bod(plochy, poly[i], yOd);
             }
             let plocha = 0;
@@ -2905,8 +3519,8 @@
                     const p = { x: a.x + (b.x - a.x) * d / dilu, z: a.z + (b.z - a.z) * d / dilu };
                     const q = { x: a.x + (b.x - a.x) * (d + 1) / dilu, z: a.z + (b.z - a.z) * (d + 1) / dilu };
                     const cil = jeVen((p.x + q.x) / 2, (p.z + q.z) / 2, nx, nz) ? ven : uvnitr;
-                    bod(cil, p, yOd); bod(cil, p, yDo); bod(cil, q, yDo);
-                    bod(cil, p, yOd); bod(cil, q, yDo); bod(cil, q, yOd);
+                    bod(cil, p, yOd); bod(cil, p, vrch); bod(cil, q, vrch);
+                    bod(cil, p, yOd); bod(cil, q, vrch); bod(cil, q, yOd);
                 }
             }
             this._meshStran(group, uvnitr, ven, matUvnitr, matVen);

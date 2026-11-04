@@ -618,7 +618,20 @@
         GEARound: 'Kulatý spotřebič',
     };
 
+    // Půdorysné značky kusů z katalogu: obrázek shora, načte se jednou, po načtení se plátno překreslí
+    var znacky = {};
+    function znackaKatalogu(id) {
+        if (!znacky[id]) {
+            var img = new Image();
+            img.onload = function () { Konva.stages.forEach(function (s) { s.batchDraw(); }); };
+            img.src = '/katalog/pudorys/' + id + '.webp';
+            znacky[id] = img;
+        }
+        return znacky[id];
+    }
+
     function furnitureLabelCz(v) {
+        if (v.nazev) return v.nazev;
         if (v.typ === 'ElectricalAppliance' && v.podtyp && ELAPPLIANCE_CZ[v.podtyp]) {
             return ELAPPLIANCE_CZ[v.podtyp];
         }
@@ -664,9 +677,12 @@
             // Fallback pro staré JSONy bez tvar: podle počtu bodů polygonu.
             var tvar = v.tvar || (v.polygon.length !== 4 ? 'polygon' : 'rect');
             var group = new Konva.Group({ listening: true });
-            // Hit rectangle (téměř průhledný) — spolehlivě zachytí hover
-            var hit = new Konva.Rect({
-                x: bb.minX, y: bb.minY, width: bb.w, height: bb.h,
+            // Plocha pro klik a hover (téměř průhledná) má přesný tvar objektu. Obdélník kolem by byl
+            // u otočeného kusu větší než kus a chytal by klik i za jeho hranou.
+            var hitBody = [];
+            v.polygon.forEach(function (pt) { hitBody.push(pt[0] * PX_PER_M, -pt[1] * PX_PER_M); });
+            var hit = new Konva.Line({
+                points: hitBody, closed: true,
                 fill: '#ffffff', opacity: 0.01,
                 listening: true,
             });
@@ -763,6 +779,13 @@
                         ctx.save();
                         ctx.translate(ccx, ccy);
                         ctx.rotate(angRad);
+                        if (v.katalog) {
+                            var znacka = znackaKatalogu(v.katalog);
+                            if (znacka.complete && znacka.naturalWidth) ctx.drawImage(znacka, localBb.minX, localBb.minY, localBb.w, localBb.h);
+                            else { ctx.beginPath(); ctx.rect(localBb.minX, localBb.minY, localBb.w, localBb.h); ctx.stroke(); }
+                            ctx.restore();
+                            return;
+                        }
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(localBb.minX, localBb.minY, localBb.w, localBb.h);
                         if (v.typ === 'Toilet') drawer(ctx, localBb, v.zadni_strana);

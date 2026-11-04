@@ -39,6 +39,28 @@ function podkladSkryty(p) {
     return p.viditelny === false;
 }
 
+/**
+ * Vrstva bez obsahu nedrží plátno přes celou kresbu: má 1×1 px a plnou velikost dostane až s prvním
+ * obsahem. Vrstev je 15 a prázdná jich bývá skoro polovina, každé plátno přitom zabere grafickou
+ * paměť (u integrované grafiky RAM): ve Firefoxu to dělá přes 200 MB. Zpět se plátno nezmenšuje.
+ */
+(function () {
+    const nastavVelikost = Konva.Layer.prototype.setSize;
+    const pridej = Konva.Layer.prototype.add;
+    Konva.Layer.prototype.setSize = function (velikost) {
+        this._plnaVelikost = velikost;
+        return nastavVelikost.call(this, this._maObsah ? velikost : { width: 1, height: 1 });
+    };
+    Konva.Layer.prototype.add = function (...potomci) {
+        const vysledek = pridej.apply(this, potomci);
+        if (!this._maObsah && this.getChildren().length) {
+            this._maObsah = true;
+            if (this._plnaVelikost) nastavVelikost.call(this, this._plnaVelikost);
+        }
+        return vysledek;
+    };
+})();
+
 class KonvaRenderer {
     constructor(stage, engine, options = {}) {
         this.stage = stage;
@@ -160,7 +182,9 @@ class KonvaRenderer {
      */
     renderVybaveni() {
         if (!window.PudorysIcons || typeof window.PudorysIcons.createFurnitureShape !== 'function') return;
-        const seznam = Array.isArray(this.engine.vybaveni) ? this.engine.vybaveni : [];
+        // Větší dospod: stůl na koberci jde chytit, koberec jde chytit vedle stolu
+        const seznam = (Array.isArray(this.engine.vybaveni) ? [...this.engine.vybaveni] : [])
+            .sort((a, b) => (b.sirka || 0) * (b.hloubka || 0) - (a.sirka || 0) * (a.hloubka || 0));
         const scale = this.stage ? this.stage.scaleX() || 1 : 1;
         for (const v of seznam) {
             if (!v.polygon || v.polygon.length < 3) continue;

@@ -121,6 +121,14 @@ async function main() {
         kontrola('stupně a odpočívadlo vyplní přesně obrys U', blizko(kolem, plochaObrysu, 0.01), JSON.stringify({ kolem, plochaObrysu }));
         await p.snimek(path.join(vystup, 'schody-u-casti.png'));
 
+        const stitek = await p.vyhodnot(`(() => { const d = ${D}; const r = d.renderer; const s = d.engine.dum.schodiste[0]; const X = 80;
+            // Název místnosti těsně pod schody: štítek si má najít jiné místo
+            const puvodni = { x: s.x, y: s.y }; const g0 = window.DumGeo.schodyGeo(s, d._vyskaMeziPodlazimi(s), X); const m = r.mistnostiLayer.find('Text')[0].getClientRect(); const tr = d.stage.getAbsoluteTransform(); const body = g0.obrys.map(q => tr.point(q)); const dolu = Math.max(...body.map(q => q.y)); const stredX = (Math.min(...body.map(q => q.x)) + Math.max(...body.map(q => q.x))) / 2; const dx = (m.x + m.width / 2 - stredX) / d.stage.scaleX(), dy = (m.y - 6 - dolu) / d.stage.scaleX(); s.x += dx / X; s.y -= dy / X; r.render();
+            const prekryv = (a, b) => a.x + a.width > b.x && a.x < b.x + b.width && a.y + a.height > b.y && a.y < b.y + b.height;
+            const text = r.schodyLayer.find('Text').find(t => /×/.test(t.text())); const q = text.getClientRect(); const mistnost = r.mistnostiLayer.find('Text').map(t => t.getClientRect()); const bd = window.DumGeo.schodyGeo(s, d._vyskaMeziPodlazimi(s), X).obrys.map(b => tr.point(b)); const obr = { x: Math.min(...bd.map(b => b.x)), y: Math.min(...bd.map(b => b.y)) }; obr.width = Math.max(...bd.map(b => b.x)) - obr.x; obr.height = Math.max(...bd.map(b => b.y)) - obr.y;
+            const out = { naMistnosti: mistnost.some(b => prekryv(q, b)), naSchodech: s.tvar === 'prime' ? prekryv(q, obr) : false }; s.x = puvodni.x; s.y = puvodni.y; r.render(); return out; })()`);
+        kontrola('štítek schodů neleží na názvu místnosti ani na stupních', !stitek.naMistnosti && !stitek.naSchodech, JSON.stringify(stitek));
+
         console.log('\n4) Půdorys z horního podlaží');
         await p.vyhodnot(`(() => { const d = ${D}; d.naPodlazi('P2'); d.fitView(); d.renderer.render(); return true; })()`);
         await pauza(400);

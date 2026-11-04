@@ -25,6 +25,19 @@ class PravniController extends Controller
         return $this->stranka('vraceni', __('pravni.vraceni_titulek'));
     }
 
+    /** Autoři modelů z katalogu podle public/katalog/katalog.json, vyžaduje to licence CC BY. */
+    public function autoriModelu()
+    {
+        $katalog = json_decode((string) @file_get_contents(public_path('katalog/katalog.json')), true) ?: [];
+        $pocty = collect($katalog['polozky'] ?? [])->countBy('zdroj');
+        $zdroje = collect($katalog['zdroje'] ?? [])
+            ->filter(fn ($z, $klic) => $pocty->has($klic))
+            ->map(fn ($z, $klic) => $z + ['pocet' => $pocty[$klic]])
+            ->values();
+
+        return view('pravni.autori-modelu', ['zdroje' => $zdroje]);
+    }
+
     private function stranka(string $dokument, string $titulek)
     {
         $obsah = "pravni.{$dokument}-" . app()->getLocale();

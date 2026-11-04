@@ -26,6 +26,9 @@ final class PlanovaneUlohy
 
         // Lhůty uchovávání údajů (config/uchovavani.php, zásady ochrany osobních údajů)
         'uchovavani:promazat' => 86400,
+
+        // Soubory odkazů po smazání účtu (modules/sdileni.md)
+        'sdileni:uklid' => 86400,
     ];
 
     /** Po neúspěšném běhu dlouhé úlohy to zkusit znovu nejpozději za hodinu, ne až po celém intervalu. */

@@ -213,6 +213,8 @@ function konceptKEditor(initialData) {
             if (!this.renderer || !this.engine) return null;
             const domInspektor = this.inspektorDum?.();
             if (domInspektor) return domInspektor;
+            const kusKatalogu = this.katalogInspektor?.();
+            if (kusKatalogu) return kusKatalogu;
             const sw = this.renderer.selectedWalls;
             const so = this.renderer.selectedOpenings;
             const sn = this.renderer.selectedNodes;
@@ -257,6 +259,7 @@ function konceptKEditor(initialData) {
                 const jdeZrcadlit = openings.some(o => { const k = kridlaOtvoru(o); return k.length > 1 || k.some(x => x.otv !== 'fix'); });
                 return {
                     kind: openings.length > 1 ? 'opening_multi' : 'opening',
+                    nulaOtvoru: openings.length === 1 ? this.nulaVybranehoOtvoru(openings[0]) : 0,
                     obvodovy: this.otvoryObvodove(openings),
                     count: openings.length,
                     typ: sameTyp ? typ0 : null,
@@ -330,6 +333,7 @@ function konceptKEditor(initialData) {
          * i pro vlastnosti výběru — levý horní roh plátna s odsazením 6 px. Kdo chce,
          * přetáhne si ho úchopem jinam; poloha se pamatuje v nastavení (kv3_state).
          * Dřív byl panel vpravo u kompasu a volby nástroje zvlášť v liště.
+         * Výchozí roh má odsazení, tažením jde panel až na samý kraj plátna.
          */
         PANEL_OKRAJ: 6,
         panelOtvoruPoz: _s.panelOtvoruPoz || null,   // {x, y} vůči plátnu, null = výchozí roh
@@ -351,9 +355,9 @@ function konceptKEditor(initialData) {
         _panelOtvoruOmez(x, y) {
             const wrap = this.$refs?.canvasWrap, panel = document.getElementById('kk-panel-otvoru');
             if (!wrap || !panel) return { x, y };
-            const maxX = Math.max(this.PANEL_OKRAJ, wrap.clientWidth - panel.offsetWidth - this.PANEL_OKRAJ);
-            const maxY = Math.max(this.PANEL_OKRAJ, wrap.clientHeight - panel.offsetHeight - this.PANEL_OKRAJ);
-            return { x: Math.round(Math.min(maxX, Math.max(this.PANEL_OKRAJ, x))), y: Math.round(Math.min(maxY, Math.max(this.PANEL_OKRAJ, y))) };
+            const maxX = Math.max(0, wrap.clientWidth - panel.offsetWidth);
+            const maxY = Math.max(0, wrap.clientHeight - panel.offsetHeight);
+            return { x: Math.round(Math.min(maxX, Math.max(0, x))), y: Math.round(Math.min(maxY, Math.max(0, y))) };
         },
 
         /** Začátek tažení za úchop (pointer events = myš i prst). */
@@ -379,6 +383,15 @@ function konceptKEditor(initialData) {
             this._panelTah = null;
             if (tah.posun) this.ulozitNastaveni();
         },
+        /** Křížek na úchopu: ukončí nástroj a zruší výběr, panel tím zmizí. */
+        panelZavri() {
+            this._oddelovacZrus();
+            this.domEsc?.();
+            if (this.posunPodkladu) this.prepniPosunPodkladu();
+            if (this.nastroj !== 'vyber') this.nastroj = 'vyber';
+            this.renderer?.clearSelection();
+            this._selectionTick++;
+        },
         /** Dvojklik na úchop: zpět do výchozího rohu. */
         panelOtvoruReset() {
             this.panelOtvoruPoz = null;
@@ -391,58 +404,92 @@ function konceptKEditor(initialData) {
         _oddelovacNahled: null,    // Konva.Line náhledu
 
         /**
-         * Kam by konec oddělovače padl: konec jiného oddělovače (přesně), jinak líc stěny
-         * nebo volný bod. Od druhého bodu má přednost úhel 90°/45° vůči stěně, na které
-         * oddělovač začíná (natočený dům), jinak vůči osám: na líci bod sklouzne po líci
-         * do průsečíku s paprskem úhlu (Libor 1. 11. 2026: „jinak se špatně ukotvuje").
+         * Kam by konec oddělovače padl: konec jiného oddělovače (přesně), jinak líc stěny,
+         * jinak volný bod. Úhly, vodítka a podlaží pod aktivním počítá společný _magnetKonce,
+         * stejně jako u stěn. Na líci bod sklouzne po líci do průsečíku s paprskem úhlu
+         * (Libor 1. 11. 2026: „jinak se špatně ukotvuje").
          */
         _oddelovacUchyt(pos, e, vynechatId = null) {
-            const bezMagnetu = this._bezMagnetu(e);
-            const uchyt = bezMagnetu ? null : this.engine.najdiUchytOddelovace(pos.x, pos.y, this._dosahMagnetu(15), vynechatId);
-            let bod = uchyt ? uchyt.bod : { x: pos.x, y: pos.y };
-            let host = uchyt ? uchyt.host : null;
-            let uhel = null;
+            const volne = { bod: { x: pos.x, y: pos.y }, host: null, uchyt: null, uhel: null, reference: null, voditka: null, spodekCara: null, naSpodek: false };
+            if (this._bezMagnetu(e)) return volne;
+            const uchyt = this.engine.najdiUchytOddelovace(pos.x, pos.y, this._dosahMagnetu(15), vynechatId);
             const start = this._oddelovacStart;
-            if (start && !bezMagnetu && this.magnetUhly && (!uchyt || uchyt.typ === 'stena')) {
-                let ref = 0;
-                const refW = start.host && this.engine.walls.get(start.host.stena);
-                if (refW) ref = this.engine.getWallAngle(refW.id);
-                const od = start.bod;
-                const dx = bod.x - od.x, dy = bod.y - od.y, L = Math.hypot(dx, dy);
-                if (L > 1) {
-                    const a = Math.atan2(dy, dx) - ref;
-                    const krok = Math.PI / 4;
-                    const z = Math.round(a / krok) * krok;
-                    if (Math.abs(a - z) < 6 * Math.PI / 180) {
-                        const smer = { x: Math.cos(z + ref), y: Math.sin(z + ref) };
-                        if (uchyt && uchyt.typ === 'stena') {
-                            // Průsečík paprsku z počátku s přímkou líce hostitele
-                            const w = this.engine.walls.get(host.stena);
-                            const na = w && this.engine.nodes.get(w.nodeA), nb = w && this.engine.nodes.get(w.nodeB);
-                            if (na && nb) {
-                                const wx = nb.x - na.x, wy = nb.y - na.y;
-                                const jm = smer.x * wy - smer.y * wx;
-                                if (Math.abs(jm) > 1e-6) {
-                                    const fx = bod.x - od.x, fy = bod.y - od.y;
-                                    const s = (fx * wy - fy * wx) / jm;             // podél paprsku
-                                    const P = { x: od.x + smer.x * s, y: od.y + smer.y * s };
-                                    const L2 = wx * wx + wy * wy;
-                                    const t = ((P.x - na.x) * wx + (P.y - na.y) * wy) / L2;
-                                    if (s > 0 && t >= 0.02 && t <= 0.98) {
-                                        bod = P;
-                                        host = { stena: host.stena, t, strana: host.strana };
-                                        uhel = z;
-                                    }
-                                }
-                            }
-                        } else {
-                            const d = dx * smer.x + dy * smer.y;
-                            if (d > 1) { bod = { x: od.x + smer.x * d, y: od.y + smer.y * d }; uhel = z; }
+            const opory = start ? this._oporyOddelovace(start, vynechatId) : [];
+            if (uchyt && uchyt.typ === 'oddelovac') return { ...volne, bod: uchyt.bod, host: uchyt.host, uchyt };
+            if (uchyt) {
+                const vysledek = { ...volne, bod: uchyt.bod, host: uchyt.host, uchyt };
+                const zachyt = this._magnetUhluZ(opory, uchyt.bod);
+                const w = zachyt && this.engine.walls.get(uchyt.host.stena);
+                const na = w && this.engine.nodes.get(w.nodeA), nb = w && this.engine.nodes.get(w.nodeB);
+                if (na && nb) {
+                    // Průsečík paprsku z počátku s přímkou líce hostitele
+                    const smer = zachyt.paprsek.d, od = zachyt.paprsek.p;
+                    const wx = nb.x - na.x, wy = nb.y - na.y;
+                    const jm = smer.x * wy - smer.y * wx;
+                    if (Math.abs(jm) > 1e-6) {
+                        const s = ((uchyt.bod.x - od.x) * wy - (uchyt.bod.y - od.y) * wx) / jm;
+                        const P = { x: od.x + smer.x * s, y: od.y + smer.y * s };
+                        const t = ((P.x - na.x) * wx + (P.y - na.y) * wy) / (wx * wx + wy * wy);
+                        if (s > 0 && t >= 0.02 && t <= 0.98) {
+                            vysledek.bod = P;
+                            vysledek.host = { stena: uchyt.host.stena, t, strana: uchyt.host.strana };
+                            vysledek.uhel = zachyt.odReference * Math.PI / 180;
+                            vysledek.reference = zachyt.reference;
                         }
                     }
                 }
+                return vysledek;
             }
-            return { bod, host, uchyt, uhel, refStena: start && start.host ? start.host.stena : null };
+            const m = this._magnetKonce({ x: pos.x, y: pos.y }, { opory });
+            const zadny = !m.uhelZabral && !m.voditka && !m.naSpodek;
+            return {
+                ...volne,
+                bod: zadny ? { x: this.engine.snapToGrid(pos.x), y: this.engine.snapToGrid(pos.y) } : m.bod,
+                uhel: m.uhelZabral ? m.odReference * Math.PI / 180 : null,
+                reference: m.reference, voditka: m.voditka, spodekCara: m.spodekCara, naSpodek: m.naSpodek,
+            };
+        },
+
+        /** Opora úhlu oddělovače: jeho počátek. Reference: předchozí oddělovač, stěna pod počátkem, rastr domu. */
+        _oporyOddelovace(start, vynechatId = null) {
+            const od = start.bod;
+            const reference = [];
+            for (const o of this.engine.oddelovace.values()) {
+                if (o.id === vynechatId) continue;
+                const a = this.engine.bodKonceOddelovace(o.a), b = this.engine.bodKonceOddelovace(o.b);
+                for (const [tady, druhy] of [[a, b], [b, a]]) {
+                    if (Math.hypot(tady.x - od.x, tady.y - od.y) > 1) continue;
+                    const dx = druhy.x - tady.x, dy = druhy.y - tady.y;
+                    if (Math.hypot(dx, dy) >= 1) reference.push({ uhel: Math.atan2(dy, dx) * 180 / Math.PI, osa: true, oddelovac: true });
+                }
+            }
+            if (start.host && this.engine.walls.get(start.host.stena)) {
+                reference.push({ uhel: this.engine.getWallAngle(start.host.stena) * 180 / Math.PI, stena: start.host.stena });
+            }
+            const smerDomu = this.engine.smerRastru([]);
+            reference.push({ uhel: (smerDomu ?? 0) * 180 / Math.PI, osa: true });
+            return [{ bod: od, reference, domu: smerDomu !== null }];
+        },
+
+        /** Co oddělovač právě drží, pro značku kurzoru. */
+        _oddelovacMagnet(u) {
+            if (!u.uchyt && u.uhel === null && !u.voditka && !u.naSpodek) return null;
+            return {
+                stena: u.uchyt && u.uchyt.typ === 'stena' ? u.host.stena : undefined,
+                uzel: u.uchyt && u.uchyt.typ === 'oddelovac' ? 'oddelovac' : (u.naSpodek ? 'spodek' : undefined),
+                uhel: u.uhel !== null ? true : undefined,
+                reference: u.uhel !== null ? u.reference : undefined,
+                voditka: u.voditka ? u.voditka.map(g => g.uzel).join(',') : undefined,
+            };
+        },
+
+        /** Vodítka, vodicí osa a čára spodního podlaží do šablony, stejně jako při kreslení stěny. */
+        _oddelovacPomocne(od, u) {
+            this._oddelovacStitek(od, u.bod, u.uhel);
+            this._osaUhlu = od && u.uhel !== null ? { od: { x: od.x, y: od.y }, k: { x: u.bod.x, y: u.bod.y } } : null;
+            this._voditkaZobraz = u.voditka ? u.voditka.map(g => ({ od: g.p, k: { x: u.bod.x, y: u.bod.y } })) : null;
+            if (this._snapPreview?.spodek) this._snapPreview = null;
+            if (u.spodekCara) this._snapPreview = { spodek: true, line: u.spodekCara };
         },
 
         /** Štítek úhlu u náhledu oddělovače (jako u stěn): „90°" vůči referenční stěně nebo ose. */
@@ -472,23 +519,19 @@ function konceptKEditor(initialData) {
 
         _oddelovacPohyb(pos, e) {
             const u = this._oddelovacUchyt(pos, e);
-            const magnet = (u.uchyt || u.uhel !== null)
-                ? { stena: u.uchyt && u.uchyt.typ === 'stena' ? u.host.stena : undefined,
-                    uzel: u.uchyt && u.uchyt.typ === 'oddelovac' ? 'oddelovac' : undefined,
-                    uhel: u.uhel !== null ? true : undefined,
-                    reference: u.uhel !== null ? (u.refStena ? { stena: u.refStena } : { osa: { uhel: 0, p: this._oddelovacStart.bod } }) : undefined }
-                : null;
-            this._nastavMagnet(magnet, u.bod);
-            if (!this._oddelovacStart) return;
+            this._nastavMagnet(this._oddelovacMagnet(u), u.bod);
+            if (!this._oddelovacStart) {
+                this._oddelovacPomocne(null, u);
+                if (this.renderer.prekresliPrekryv) this.renderer.prekresliPrekryv();
+                return;
+            }
             const od = this._oddelovacStart.bod;
             if (!this._oddelovacNahled) {
                 this._oddelovacNahled = new Konva.Line({ stroke: '#6b7280', strokeWidth: 1.5, strokeScaleEnabled: false, dash: [6, 4], listening: false });
                 this.renderer.tempLayer.add(this._oddelovacNahled);
             }
             this._oddelovacNahled.points([od.x, od.y, u.bod.x, u.bod.y]);
-            this._oddelovacStitek(od, u.bod, u.uhel);
-            // Vodicí osa zachyceného úhlu — stejná čárkovaná osa jako u kreslení stěny (šablona)
-            this._osaUhlu = u.uhel !== null ? { od: { x: od.x, y: od.y }, k: { x: u.bod.x, y: u.bod.y } } : null;
+            this._oddelovacPomocne(od, u);
             this.renderer.tempLayer.batchDraw();
             if (this.renderer.prekresliPrekryv) this.renderer.prekresliPrekryv();
         },
@@ -516,6 +559,8 @@ function konceptKEditor(initialData) {
         _oddelovacZrus() {
             this._oddelovacStart = null;
             this._osaUhlu = null;
+            this._voditkaZobraz = null;
+            if (this._snapPreview?.spodek) this._snapPreview = null;
             if (this._oddelovacStitekNode) { this._oddelovacStitekNode.destroy(); this._oddelovacStitekNode = null; }
             if (this._oddelovacNahled) { this._oddelovacNahled.destroy(); this._oddelovacNahled = null; this.renderer.tempLayer.batchDraw(); }
         },
@@ -1356,8 +1401,10 @@ function konceptKEditor(initialData) {
                 const bezProxy = (o) => { Object.defineProperty(o, '__v_skip', { value: true, enumerable: false }); return o; };
                 this.stage = bezProxy(new Konva.Stage({
                     container: wrap,
-                    width: wrap.offsetWidth,
-                    height: wrap.offsetHeight,
+                    // Aspoň 1 px: při otevření rovnou ve 3D je plátno skryté a Konva by kreslila
+                    // poloprůhledné tvary přes pomocné plátno nulové velikosti (bug 58).
+                    width: Math.max(1, wrap.offsetWidth),
+                    height: Math.max(1, wrap.offsetHeight),
                 }));
 
                 // Engine
@@ -1556,6 +1603,10 @@ function konceptKEditor(initialData) {
                 }
 
                 // Cleanup při přepnutí nástroje
+                // Panel mění velikost podle obsahu a nesmí přitom vyjet z plátna
+                const panelOtvoru = document.getElementById('kk-panel-otvoru');
+                if (panelOtvoru && window.ResizeObserver) new ResizeObserver(() => { this._rozmerTick++; }).observe(panelOtvoru);
+
                 this.$watch('nastroj', (val, old) => {
                     if (old === 'metr') this.metrEscape();
                     if (old === 'stena') { this.zrusRozkreslenyUsek(); this.kreslimStenu = false; this.stenaStart = null; this.stenaUseky = []; this._stenaPreskocKlik = false; this.renderer.clearTemp(); this._kurzorSkryj(); this._nahledZacatku(null); }
@@ -1567,6 +1618,7 @@ function konceptKEditor(initialData) {
 
                 // Přebudovat 3D terrain při změně výškového profilu
                 this.$watch('vyskovyProfil', () => {
+                    this._zalozZaklady();
                     if (this.rezim3d) {
                         this._buildTerrain3D();
                         this._build3d();  // obnovit i buildingY snap
@@ -1591,7 +1643,7 @@ function konceptKEditor(initialData) {
                     if (this.katastrParcely.length > 0) {
                         // Načíst stavby a okolní parcely (neukládají se do DB)
                         // Vždy znovu načíst stavby a sousedy (neukládají se spolehlivě do DB)
-                        this.katastrParcely.forEach(p => { delete p.stavby; delete p.bbox; });
+                        this.katastrParcely.forEach(p => { delete p.stavby; delete p.bbox; delete p._detailsOpen; });
                         Promise.all([
                             ...this.katastrParcely.map(p => this.katastrNactiStavbyParcely(p)),
                             ...this.katastrParcely.map(p => this.katastrNactiLimityParcely(p)),
@@ -2485,12 +2537,15 @@ function konceptKEditor(initialData) {
                     delta = Math.round(delta / step) * step;
                 }
                 // Magnet: významný směr stěn na vodorovnou a svislou obrazovky. Přichycení ukáže čára skrz střed.
-                const zachyceno = this._bezMagnetu(e) ? null : this._magnetRotace(delta);
+                // Kus z katalogu má vlastní magnet: rovnoběžně nebo kolmo ke zdi, čára pak vede podél té zdi.
+                const kusMagnet = this._bezMagnetu(e) ? undefined : this.katalogMagnetRotace?.(delta);
+                const zachyceno = this._bezMagnetu(e) ? null : (kusMagnet !== undefined ? kusMagnet : this._magnetRotace(delta));
                 if (zachyceno !== null) delta = zachyceno;
                 this._snapPreview = null;
                 if (zachyceno !== null) {
                     const rho = (this.stage.rotation() || 0) * Math.PI / 180, dosah = 8 * this.PX_PER_M;
-                    const hx = Math.cos(-rho) * dosah, hy = Math.sin(-rho) * dosah;
+                    const smerCary = kusMagnet !== undefined ? this._katalogSmerMagnetu : -rho;
+                    const hx = Math.cos(smerCary) * dosah, hy = Math.sin(smerCary) * dosah;
                     this._snapPreview = { line: { a: { x: this._rotateCx - hx, y: this._rotateCy - hy }, b: { x: this._rotateCx + hx, y: this._rotateCy + hy } } };
                 }
                 this._rotateDelta = delta;
@@ -2934,44 +2989,27 @@ function konceptKEditor(initialData) {
                 // typu 90,5°, které vypadají jako pravý úhel, ale nejsou.
                 // Neaplikuje se, když zabral constraint snap — ten má vlastní úhly.
                 let magnetUhluZabral = false;
-                if (!bezMagnetu && !magnetUhluPreskocit && this._rightAngleNodeId !== this.draggingNodeId) {
-                    const snapnuty = this._magnetUhlu(this.draggingNodeId, target);
-                    if (snapnuty) {
-                        target = { x: snapnuty.x, y: snapnuty.y };
-                        paprsek = snapnuty.paprsek;
-                        oporaUhlu = snapnuty.paprsek.p;
-                        referenceUhlu = snapnuty.reference;
-                        magnetUhluZabral = true;
-                    }
-                }
-
-                // Vodítka zarovnání (jen volný konec, nic jiného ho nedrží): konec se
-                // srovná s jiným rohem — v prodloužení jeho stěny nebo napříč. Se
-                // zachyceným úhlem se hledá průsečík paprsku s vodítkem, takže stěna
-                // drží úhel A končí v linii s rohem.
                 let voditka = null;
-                if (!bezMagnetu && volnyUzel && !magnetUhluPreskocit && !uzelKeSlouceni) {
-                    const uhelDrzi = magnetUhluZabral || this._rightAngleNodeId === this.draggingNodeId;
-                    const v = this._prichytNaVoditka(this.draggingNodeId, target, uhelDrzi ? paprsek : null);
-                    if (v && (!uhelDrzi || paprsek)) { target = v.bod; voditka = v.voditka; }
-                }
-
-                // Volný konec se chytá i na rohy a osy nosných stěn podlaží pod aktivním:
-                // stěna patra má navázat na tu dole. Zachycený úhel se kvůli tomu nerozbije.
                 let naSpodek = false;
                 if (this._snapPreview?.spodek) this._snapPreview = null;
-                if (!bezMagnetu && volnyUzel && !magnetUhluPreskocit && !uzelKeSlouceni && !voditka) {
-                    // Stěna tohoto podlaží v dosahu má přednost: tam patří okraj nebo střih
-                    const naStene = this.engine.findSnapCandidate(target.x, target.y, this._dosahMagnetu(12), this.draggingNodeId, true);
-                    const dole = naStene ? null : this.engine.magnetSpodku(target.x, target.y, this._dosahMagnetu(12));
-                    if (dole) {
-                        const drziUhel = magnetUhluZabral || this._rightAngleNodeId === this.draggingNodeId;
-                        const odPaprsku = paprsek ? Math.abs((dole.x - paprsek.p.x) * paprsek.d.y - (dole.y - paprsek.p.y) * paprsek.d.x) : 0;
-                        if (!drziUhel || (paprsek && odPaprsku < this._dosahMagnetu(3))) {
-                            target = dole;
-                            naSpodek = true;
-                            if (dole.cara) this._snapPreview = { spodek: true, line: dole.cara };
-                        }
+                if (!bezMagnetu) {
+                    const pravyUhel = this._rightAngleNodeId === this.draggingNodeId;
+                    const m = this._magnetKonce(target, {
+                        opory: magnetUhluPreskocit || pravyUhel ? [] : this._oporyUzlu(this.draggingNodeId),
+                        uzel: this.draggingNodeId,
+                        drziUhel: pravyUhel,
+                        paprsek,
+                        volny: volnyUzel && !magnetUhluPreskocit && !uzelKeSlouceni,
+                    });
+                    target = m.bod;
+                    paprsek = m.paprsek;
+                    voditka = m.voditka;
+                    naSpodek = m.naSpodek;
+                    if (m.spodekCara) this._snapPreview = { spodek: true, line: m.spodekCara };
+                    if (m.uhelZabral) {
+                        oporaUhlu = m.paprsek.p;
+                        referenceUhlu = m.reference;
+                        magnetUhluZabral = true;
                     }
                 }
 
@@ -3166,12 +3204,8 @@ function konceptKEditor(initialData) {
                     k.x = novy.x; k.y = novy.y;
                     if (novy.host) k.host = novy.host; else delete k.host;
                     odd.delkaPx = this.engine.delkaOddelovace(odd);
-                    const od = this._oddelovacStart ? this._oddelovacStart.bod : null;
-                    if (od) { this._oddelovacStitek(od, u.bod, u.uhel); this._osaUhlu = u.uhel !== null ? { od: { x: od.x, y: od.y }, k: { x: u.bod.x, y: u.bod.y } } : null; }
-                    this._nastavMagnet(u.uchyt || u.uhel !== null
-                        ? { stena: u.uchyt && u.uchyt.typ === 'stena' ? u.host.stena : undefined, uzel: u.uchyt && u.uchyt.typ === 'oddelovac' ? 'oddelovac' : undefined,
-                            uhel: u.uhel !== null ? true : undefined, reference: u.uhel !== null && u.refStena ? { stena: u.refStena } : undefined }
-                        : null, u.bod);
+                    this._oddelovacPomocne(this._oddelovacStart ? this._oddelovacStart.bod : null, u);
+                    this._nastavMagnet(this._oddelovacMagnet(u), u.bod);
                 } else {
                     this.engine.posunOddelovac(odd, pos.x - this.dragOddelovac.last.x, pos.y - this.dragOddelovac.last.y);
                 }
@@ -3191,6 +3225,11 @@ function konceptKEditor(initialData) {
                 const ids = this.renderer.selectedVybaveni.size > 0
                     ? this.renderer.selectedVybaveni
                     : new Set([this.draggingVybaveniId]);
+                if (this.katalogTah?.(ids, dxM, dyM, e)) {
+                    this.dragVybaveniStart = { x: pos.x, y: pos.y };
+                    this.renderer.render();
+                    return;
+                }
                 for (const vb of (this.engine.vybaveni || [])) {
                     if (!ids.has(vb.id)) continue;
                     if (Array.isArray(vb.stred)) {
@@ -3453,6 +3492,7 @@ function konceptKEditor(initialData) {
                 this.isRotating = false;
                 this._snapPreview = null;
                 this._rotateNodeSnap = null;
+                if (this._rotateVybaveniSnap) this.katalogPoOtoceni?.();
                 this._rotateVybaveniSnap = null;
                 if (this._rotatePodkladSnap) {
                     this._rotatePodkladSnap = null;
@@ -3521,6 +3561,7 @@ function konceptKEditor(initialData) {
                 this.isDraggingVybaveni = false;
                 this.draggingVybaveniId = null;
                 this.dragVybaveniStart = null;
+                this.katalogTahKonec?.();
                 this.renderer.render();
                 this.autoSave('Posun nábytku');
                 return;
@@ -3801,6 +3842,10 @@ function konceptKEditor(initialData) {
 
             const pos = this.getPointerPos();
             const hit = this.renderer.hitTest(e.target);
+
+            // Stisk něco vybral a překreslil plátno. Puštění dřív, než je zásahová vrstva hotová, míří
+            // zdánlivě do prázdna nebo na místnost pod tím. Platí stisk, jinak by rychlý klik výběr zrušil.
+            if (this._pendingDrag && (hit.type === 'empty' || hit.type === 'mistnost')) return;
 
             if (this.domKlik?.(pos, e, hit)) return;
 
@@ -4419,22 +4464,20 @@ function konceptKEditor(initialData) {
          *          domu = rastr domu, jinak vodorovná osa obrazovky)
          */
         _magnetUhlu(nodeId, target) {
-            if (!this.magnetUhly) return null;   // úhly vypnuté v nastavení magnetu
+            return this._magnetUhluZ(this._oporyUzlu(nodeId), target);
+        },
+
+        /** Opory úhlu pro konec stěny: druhé konce jeho stěn, každý se směry sousedních stěn a rastrem domu. */
+        _oporyUzlu(nodeId) {
             const steny = this.engine.getNodeWalls(nodeId);
-            if (!steny.length) return null;
-            let nej = null;
+            if (!steny.length) return [];
             const smerDomu = this.engine.smerRastru(steny.map(w => w.id));
             const rastr = (smerDomu ?? 0) * 180 / Math.PI;
-
+            const opory = [];
             for (const stena of steny) {
                 const druhyId = stena.nodeA === nodeId ? stena.nodeB : stena.nodeA;
                 const opora = this.engine.nodes.get(druhyId);
                 if (!opora) continue;
-                const dx = target.x - opora.x, dy = target.y - opora.y;
-                const delka = Math.hypot(dx, dy);
-                if (delka < 1) continue;
-                const uhel = Math.atan2(dy, dx) * 180 / Math.PI;
-
                 // Reference: směry sousedních stěn ve druhém konci, pak rastr domu
                 const reference = [];
                 for (const soused of this.engine.getNodeWalls(druhyId)) {
@@ -4448,7 +4491,20 @@ function konceptKEditor(initialData) {
                     reference.push({ uhel: Math.atan2(sdy, sdx) * 180 / Math.PI, stena: soused.id });
                 }
                 reference.push({ uhel: rastr, osa: true });
+                opory.push({ bod: opora, reference, domu: smerDomu !== null });
+            }
+            return opory;
+        },
 
+        /** Úhlový magnet nad seznamem opor [{bod, reference: [{uhel, stena | osa}], domu}]. Společný pro stěnu i oddělovač. */
+        _magnetUhluZ(opory, target) {
+            if (!this.magnetUhly) return null;   // úhly vypnuté v nastavení magnetu
+            let nej = null;
+            for (const { bod: opora, reference, domu } of opory) {
+                const dx = target.x - opora.x, dy = target.y - opora.y;
+                const delka = Math.hypot(dx, dy);
+                if (delka < 1) continue;
+                const uhel = Math.atan2(dy, dx) * 180 / Math.PI;
                 for (const ref of reference) {
                     for (const u of this.MAGNET_UHLY) {
                         const cil = ref.uhel + u;
@@ -4458,10 +4514,11 @@ function konceptKEditor(initialData) {
                             const rad = cil * Math.PI / 180;
                             nej = {
                                 odchylka,
+                                odReference: u,
                                 bod: { x: opora.x + Math.cos(rad) * delka, y: opora.y + Math.sin(rad) * delka },
                                 paprsek: { p: { x: opora.x, y: opora.y }, d: { x: Math.cos(rad), y: Math.sin(rad) } },
                                 reference: ref.osa
-                                    ? { osa: { p: { x: opora.x, y: opora.y }, uhel: ref.uhel, domu: smerDomu !== null } }
+                                    ? { osa: { p: { x: opora.x, y: opora.y }, uhel: ref.uhel, domu: domu && !ref.oddelovac } }
                                     : { stena: ref.stena },
                             };
                         }
@@ -4470,7 +4527,59 @@ function konceptKEditor(initialData) {
             }
             // paprsek = přímka, na které bod leží (z opory pod zachyceným úhlem) —
             // pro vodicí osu a průsečík s vodítkem zarovnání
-            return nej ? { x: nej.bod.x, y: nej.bod.y, paprsek: nej.paprsek, reference: nej.reference } : null;
+            return nej ? { x: nej.bod.x, y: nej.bod.y, paprsek: nej.paprsek, reference: nej.reference, odReference: nej.odReference } : null;
+        },
+
+        /**
+         * Magnet volného konce, společný pro stěnu a oddělovač, ať se nevyvíjí odděleně
+         * (Libor 4. 11. 2026). Pořadí: úhel, vodítka zarovnání, podlaží pod aktivním.
+         *
+         * @param {{x:number,y:number}} target  kam míří kurzor
+         * @param {object} v
+         * @param {Array} v.opory  opory úhlu (_oporyUzlu, _oporyOddelovace), prázdné = bez úhlu
+         * @param {?string} v.uzel  tažený uzel stěny, jeho stěny se do vodítek nepočítají
+         * @param {boolean} v.drziUhel  úhel už drží něco jiného (pravý úhel na hostiteli)
+         * @param {?object} v.paprsek  paprsek toho, co už úhel drží
+         * @param {boolean} v.volny  konec nic jiného nedrží, smí se chytat na vodítka a spodní podlaží
+         */
+        _magnetKonce(target, { opory, uzel = null, drziUhel = false, paprsek = null, volny = true }) {
+            let bod = target, uhelZabral = false, reference = null, odReference = null;
+            const uhel = this._magnetUhluZ(opory, bod);
+            if (uhel) {
+                bod = { x: uhel.x, y: uhel.y };
+                paprsek = uhel.paprsek;
+                reference = uhel.reference;
+                odReference = uhel.odReference;
+                uhelZabral = true;
+            }
+            const drzi = uhelZabral || drziUhel;
+
+            // Vodítka zarovnání: konec se srovná s jiným rohem, v prodloužení jeho stěny nebo napříč.
+            // Se zachyceným úhlem se hledá průsečík paprsku s vodítkem, takže úhel zůstane
+            // a konec leží v linii s rohem.
+            let voditka = null;
+            if (volny) {
+                const v = this._prichytNaVoditka(uzel, bod, drzi ? paprsek : null);
+                if (v && (!drzi || paprsek)) { bod = v.bod; voditka = v.voditka; }
+            }
+
+            // Rohy a osy nosných stěn podlaží pod aktivním: stěna patra má navázat na tu dole.
+            // Zachycený úhel se kvůli tomu nerozbije.
+            let naSpodek = false, spodekCara = null;
+            if (volny && !voditka) {
+                // Stěna tohoto podlaží v dosahu má přednost: tam patří okraj nebo střih
+                const naStene = this.engine.findSnapCandidate(bod.x, bod.y, this._dosahMagnetu(12), uzel, true);
+                const dole = naStene ? null : this.engine.magnetSpodku(bod.x, bod.y, this._dosahMagnetu(12));
+                if (dole) {
+                    const odPaprsku = paprsek ? Math.abs((dole.x - paprsek.p.x) * paprsek.d.y - (dole.y - paprsek.p.y) * paprsek.d.x) : 0;
+                    if (!drzi || (paprsek && odPaprsku < this._dosahMagnetu(3))) {
+                        bod = dole;
+                        naSpodek = true;
+                        spodekCara = dole.cara || null;
+                    }
+                }
+            }
+            return { bod, paprsek, uhelZabral, reference, odReference, voditka, naSpodek, spodekCara };
         },
 
         /** Kam až magnety dosáhnou ve výkresu — horní mez (viz _dosahMagnetu). */
@@ -4516,6 +4625,18 @@ function konceptKEditor(initialData) {
                         smery.push(s);
                         cary.push({ p: { x: uzel.x, y: uzel.y }, d: s, uzel: uzel.id });
                     }
+                }
+            }
+            // Konce oddělovačů jsou rohy jako každé jiné; ten, který se právě táhne, ne
+            const tazeny = this.isDraggingOddelovac && this.dragOddelovac ? this.dragOddelovac.id : null;
+            for (const o of this.engine.oddelovace.values()) {
+                if (o.id === tazeny) continue;
+                const a = this.engine.bodKonceOddelovace(o.a), b = this.engine.bodKonceOddelovace(o.b);
+                const L = Math.hypot(b.x - a.x, b.y - a.y);
+                if (L < 1) continue;
+                const d = { x: (b.x - a.x) / L, y: (b.y - a.y) / L };
+                for (const [p, klic] of [[a, 'a'], [b, 'b']]) {
+                    for (const s of [d, { x: -d.y, y: d.x }]) cary.push({ p: { x: p.x, y: p.y }, d: s, uzel: o.id + ':' + klic });
                 }
             }
             return cary;
@@ -5033,6 +5154,7 @@ function konceptKEditor(initialData) {
             if (e.key === '5' || e.key === 'm' || e.key === 'M') this.nastroj = this.nastroj === 'metr' ? 'vyber' : 'metr';
             if (e.key === '6' || e.key === 'o' || e.key === 'O') this.nastroj = this.nastroj === 'otvor' ? 'vyber' : 'otvor';
             if (e.key === '7') this.zacniSchody?.();
+            if (e.key === '8') this.prepniKatalog?.();
             if (e.key === 'Enter') this.domEnter?.();
         },
 
@@ -5317,6 +5439,7 @@ function konceptKEditor(initialData) {
                 }
 
                 this.katastrParcely.push(parcela);
+                this._zalozZaklady();
 
                 // Stavby
                 await this.katastrNactiStavbyParcely(parcela);
@@ -6087,6 +6210,7 @@ function konceptKEditor(initialData) {
             this.podkladPolohaObnov?.(krok.podklad);
             this.historiePozice = i;
             this._bliknoutHistorii(smer);
+            this._zalozZaklady();   // krok z doby před parcelou záznam ještě nemá
             this._stavKroku = JSON.stringify(this.engine.toJSON());
             this.renderer.clearSelection();
             this.renderer.render();
@@ -6841,7 +6965,6 @@ function konceptKEditor(initialData) {
             const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(w, h);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = false;   // stíny zatím vypnuté, kreslily se špatně; uděláme je později pořádně
             container.appendChild(renderer.domElement);
 
             // Controls
@@ -6850,17 +6973,15 @@ function konceptKEditor(initialData) {
             controls.dampingFactor = 0.1;
             controls.maxPolarAngle = Math.PI / 2.1;
 
-            // Světla: vodorovná plocha vychází zhruba 1,07× barva, stěny 0,77–0,92×, aby výsledek seděl se vzorkem při volbě barvy. Dřív podlaha 1,46× a stěny 0,42–0,79×.
-            const ambient = new THREE.AmbientLight(0xffffff, 0.72);
-            scene.add(ambient);
-            const sun = new THREE.DirectionalLight(0xffffff, 0.4);
-            sun.position.set(10, 14, 10);
-            sun.castShadow = true;
-            scene.add(sun);
-            // Fill light z opačné strany pro jemné vyvážení tmavých stran
-            const fill = new THREE.DirectionalLight(0xffffff, 0.1);
-            fill.position.set(-8, 12, -8);
-            scene.add(fill);
+            // Plnou rychlostí se kreslí jen při aktivitě, viz _start3dLoop
+            const probud = () => { _3d.kresliDo = performance.now() + 300; };
+            controls.addEventListener('change', probud);
+            for (const udalost of ['pointermove', 'pointerdown', 'wheel', 'keydown']) {
+                window.addEventListener(udalost, probud, { capture: true, passive: true });
+            }
+
+            // Světlo, odrazy, stíny a převod barev jsou společné se sdíleným odkazem
+            _3d.slunce = window.Svetlo3d.nastav(renderer, scene);
 
             // Terrain mesh + grid (buildTerrain3D vytvoří/nahradí _3d.terrain/gridLines
             // při změně vyskovyProfil). Výchozí: plochý plane do doby načtení profilu.
@@ -6870,6 +6991,7 @@ function konceptKEditor(initialData) {
             );
             ground.rotation.x = -Math.PI / 2;
             ground.receiveShadow = true;
+            ground.material.onBeforeCompile = (shader) => this._materialSJamou(shader);
             scene.add(ground);
             _3d.ground = ground;
 
@@ -6903,13 +7025,20 @@ function konceptKEditor(initialData) {
             if (this._3dLoopRunning) return;
             this._3dLoopRunning = true;
             const self = this;
+            // V klidu stačí 4 snímky za sekundu: změny bez aktivity uživatele (dotažený model) se ukážou
+            // do čtvrt sekundy a nehybná scéna nevytěžuje procesor a grafiku jako při 60 snímcích.
+            const KLID_MS = 250;
+            let naposledy = 0;
             const animate = () => {
                 if (!self.rezim3d) { self._3dLoopRunning = false; return; }
                 requestAnimationFrame(animate);
                 const _3d = window._kk3d;
                 if (!_3d) return;
                 if (_3d.controls) _3d.controls.update();
+                const ted = performance.now();
+                if (ted >= (_3d.kresliDo || 0) && ted - naposledy < KLID_MS) return;
                 if (_3d.renderer && _3d.scene && _3d.camera) {
+                    naposledy = ted;
                     _3d.renderer.render(_3d.scene, _3d.camera);
                 }
             };
@@ -7089,13 +7218,13 @@ function konceptKEditor(initialData) {
             _3d.terrainMaskRange = { minX, minZ, bboxW, bboxH };
 
             // MeshStandardMaterial + flatShading → barvy obohacené o lighting
-            // (výraznější slope variance než plochá barva). Terrain nepřijímá
-            // stíny (house shadow nebude na terénu), ale světlo ho ovlivní.
+            // (výraznější slope variance než plochá barva).
             const mat = new THREE.MeshStandardMaterial({
                 roughness: 0.95,
                 flatShading: true,
             });
             mat.onBeforeCompile = (shader) => {
+                this._materialSJamou(shader);
                 shader.uniforms.uMask = { value: _3d.terrainMask };
                 shader.uniforms.uMaskMin = { value: new THREE.Vector2(minX, minZ) };
                 shader.uniforms.uMaskSize = { value: new THREE.Vector2(bboxW, bboxH) };
@@ -7121,18 +7250,20 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
     float t = pow(slope, 0.4);
     vec3 insideCol = mix(vec3(0.663, 0.761, 0.522), vec3(0.435, 0.322, 0.204), t);
     vec3 outsideCol = vec3(0.9, 0.9, 0.9);
-    diffuseColor.rgb = mix(outsideCol, insideCol, mask);
+    diffuseColor.rgb = tuVzorekNaLin(mix(outsideCol, insideCol, mask));
 }`
                     );
             };
             const terrain = new THREE.Mesh(geometry, mat);
-            terrain.receiveShadow = false;  // stíny domu na terénu nevykreslovat
+            terrain.receiveShadow = true;
             _3d.scene.add(terrain);
             _3d.terrain = terrain;
+            window.Svetlo3d.prekresliStiny(_3d.renderer);
 
             // Grid čáry podél terrainu — wireframe z terrain geometry
             const wireframe = new THREE.WireframeGeometry(geometry);
             const gridMat = new THREE.LineBasicMaterial({ color: 0x999999, transparent: true, opacity: 0.4 });
+            gridMat.onBeforeCompile = (shader) => this._materialSJamou(shader);
             const gridLines = new THREE.LineSegments(wireframe, gridMat);
             gridLines.position.y = 0.02;
             _3d.scene.add(gridLines);
@@ -7146,6 +7277,7 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
             _3d.terrainRows = rows;
             _3d.terrainStep = STEP;
             _3d.terrainMinH = minH;
+            this._jama3d();
 
             // Odstranit tube outlines + overlays (nahrazeny shader maskou)
             for (const key of ['parcelOutlines', 'parcelOverlays']) {
@@ -7359,30 +7491,9 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
             return (top * (1 - fr) + bot * fr) - _3d.terrainMinH;
         },
 
-        /**
-         * Vrátit 70. percentil výšky terrainu pod bbox objektu v (xmin, xmax, zmin, zmax).
-         */
-        _terrainP70Under(xmin, xmax, zmin, zmax) {
-            const _3d = window._kk3d;
-            if (!_3d || !_3d.terrainHeights) return 0;
-            const step = _3d.terrainStep;
-            const heights = [];
-            // Sample v kroku step/2 pro rozumnou hustotu
-            const ds = step / 2;
-            for (let x = xmin; x <= xmax; x += ds) {
-                for (let z = zmin; z <= zmax; z += ds) {
-                    const h = this._terrainHeightAt(x, z);
-                    if (h !== null) heights.push(h);
-                }
-            }
-            if (heights.length === 0) return 0;
-            heights.sort((a, b) => a - b);
-            const idx = Math.floor(heights.length * 0.70);
-            return heights[Math.min(idx, heights.length - 1)];
-        },
-
         /** Uvolní skupinu 3D objektů (geometrie a materiály) rekurzivně. */
         _zrus3d(o) {
+            if (o.userData?.katalog) return;   // kopie modelu z katalogu, geometrie je společná
             for (const c of [...(o.children || [])]) this._zrus3d(c);
             if (o.geometry) o.geometry.dispose();
             if (o.material) [].concat(o.material).forEach(m => m.dispose());
@@ -7441,6 +7552,8 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
             const odstupVen = 0.06;
             const stitekVedle = (x, z, nx, nz) => (rastr ? window.MistnostiRastr.stitekVBode(rastr, (x + nx * odstupVen) * pxM, (z + nz * odstupVen) * pxM) : 0);
 
+            const kotaTady = this.engine.kotaPodlazi(podl.id);
+            const otvoryShora = this._otvoryPodUrovni().filter(v => v.podlazi !== podl.id && v.od < kotaTady + vyskaSteny({}));
             const otvoryPodleSteny = new Map();
             for (const op of eng.openings.values()) {
                 if (!otvoryPodleSteny.has(op.wallId)) otvoryPodleSteny.set(op.wallId, []);
@@ -7489,15 +7602,25 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 // překrývající se výřezy se sloučí, sousední díly téhož otvoru zůstanou zvlášť
                 const vyrezy = [];
                 for (const op of (otvoryPodleSteny.get(wall.id) || [])) {
-                    const vrsek = Math.min(H, vrsekOtvoru(op));
+                    // Parapet a výška se měří od podlahy místnosti, ne od podlaží
+                    const nula = this._nulaOtvoru(eng, podl.id, wall, op, rastr);
+                    const vrsek = Math.min(H, vrsekOtvoru(op) + nula);
                     const kr = kridlaOtvoru(op);
-                    if (kr.length === 0) { vyrezy.push({ t0: op.pozice, t1: op.pozice + op.sirka, od: parapetOtvoru(op), do: vrsek }); continue; }
+                    if (kr.length === 0) { vyrezy.push({ t0: op.pozice, t1: op.pozice + op.sirka, od: parapetOtvoru(op) + nula, do: vrsek }); continue; }
                     let t = op.pozice;
                     kr.forEach((k, i) => {
                         const t1 = i === kr.length - 1 ? op.pozice + op.sirka : Math.min(op.pozice + op.sirka, t + k.sirka);
-                        vyrezy.push({ t0: t, t1, od: parapetKridla(op, k), do: vrsek });
+                        vyrezy.push({ t0: t, t1, od: parapetKridla(op, k) + nula, do: vrsek });
                         t = t1;
                     });
+                }
+                // Okno patra nad, které klesá se sníženou místností až sem
+                for (const v of otvoryShora) {
+                    const t0 = tBodu({ x: v.a.x, z: v.a.y }), t1 = tBodu({ x: v.b.x, z: v.b.y });
+                    const nx = -uz, nz = ux;
+                    const bokem = Math.abs((v.a.x - A.x) * nx + (v.a.y - A.z) * nz);
+                    if (bokem > (wall.tloustka || 0) / 2 + 0.02 || Math.abs((v.b.x - v.a.x) * nx + (v.b.y - v.a.y) * nz) > 0.02) continue;
+                    vyrezy.push({ t0: Math.min(t0, t1), t1: Math.max(t0, t1), od: v.od - kotaTady, do: Math.min(H, v.do - kotaTady) });
                 }
                 vyrezy.sort((a, b) => a.t0 - b.t0);
                 const platne = vyrezy.filter(v => v.t1 - v.t0 > 0.01 && v.do - v.od > 0.01);
@@ -7521,6 +7644,20 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                     tPred = v.t1;
                 }
                 hranol(orizni(poly, p => tBodu(p) - tPred), 0, H);
+
+                // Podél snížené místnosti sahá stěna až na její podlahu; kudy vede otvor níž než podlaží, tam ne
+                for (const u of this._behySnizeni(podl.id, eng, wall)) {
+                    let od = u.t0;
+                    const useky = [];
+                    for (const v of slouceno) {
+                        if (v.od >= 0 || v.t1 <= u.t0 || v.t0 >= u.t1) continue;
+                        useky.push([od, v.t0, 0]);
+                        if (v.od > u.dh) useky.push([v.t0, v.t1, v.od]);
+                        od = v.t1;
+                    }
+                    useky.push([od, u.t1, 0]);
+                    for (const [a, b, vrch] of useky) hranol(orizni(orizni(poly, p => tBodu(p) - a), p => b - tBodu(p)), u.dh, vrch);
+                }
             }
 
             // Otvory — rám, křídla (sklo nebo plná výplň) a příčle mezi křídly
@@ -7561,7 +7698,8 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 if (L < 0.01) continue;
                 const ux = (B.x - A.x) / L, uz = (B.z - A.z) / L;
 
-                const H = vyskaSteny(wall);
+                const nula = this._nulaOtvoru(eng, podl.id, wall, op, rastr);
+                const H = vyskaSteny(wall) - nula;              // od podlahy místnosti
                 const vrsek = Math.min(H, vrsekOtvoru(op));   // společná horní hrana dílů
                 const sirka = op.sirka;
                 if (vrsek - minParapetOtvoru(op) < 0.05 || sirka < 0.05) continue;
@@ -7569,7 +7707,7 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 // Lokální soustava otvoru: x podél stěny, y nad podlahou, z napříč tloušťkou
                 const g = new THREE.Group();
                 const tStred = op.pozice + sirka / 2;
-                g.position.set(A.x + ux * tStred, 0, A.z + uz * tStred);
+                g.position.set(A.x + ux * tStred, nula, A.z + uz * tStred);
                 g.rotation.y = Math.atan2(-uz, ux);
                 const kvadr = (w, h, d, x, y, z, mat) => {
                     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -7643,16 +7781,10 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
             // Spočteme bbox všech stěn (building footprint) a použijeme jedno y
             // pro celou skupinu — budova leží na společné úrovni.
             let buildingY = 0;
-            if (_3d.terrainHeights && this.engine.nodes.size > 0) {
-                let xmin = Infinity, xmax = -Infinity, zmin = Infinity, zmax = -Infinity;
-                for (const n of this.engine.nodes.values()) {
-                    const x = n.x / pxM, z = n.y / pxM; // Z shodně se stěnami a terénem
-                    if (x < xmin) xmin = x; if (x > xmax) xmax = x;
-                    if (z < zmin) zmin = z; if (z > zmax) zmax = z;
-                }
-                if (xmin < xmax && zmin < zmax) {
-                    buildingY = this._terrainP70Under(xmin, xmax, zmin, zmax);
-                }
+            if (_3d.terrainHeights) {
+                // Stejná ±0 jako ve výpočtu zeminy, odvozená od 1.NP: přepnutí podlaží s domem nehne
+                const nula = this._terenDomu().nula;
+                if (typeof nula === 'number') buildingY = nula - _3d.terrainMinH;
             }
             group.position.y = buildingY;
 
@@ -7675,14 +7807,19 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
                 let g = _3d.podlaziSkupiny.get(podl.id);
                 const otisk = podl.id === dum.aktivni ? JSON.stringify(this.engine._jsonPodlazi()) : podl.data;
                 // Výřezy v podlaze mění podlahy místností, patří do otisku taky
-                const vyskovy = podl.vyska + '|' + podl.strop + (podl.id === this.engine.horniPodlazi().id ? '|' + this._strechaProSteny() : '') + '|' + JSON.stringify(this._maskyPodlazi(podl.id).vyrezy);
+                const vyskovy = JSON.stringify(this._otvoryPodUrovni().filter(v => v.podlazi !== podl.id).map(v => [v.a, v.b, v.od, v.do])) + '|' + podl.vyska + '|' + podl.strop + (podl.id === this.engine.horniPodlazi().id ? '|' + this._strechaProSteny() : '') + '|' + JSON.stringify(this._maskyPodlazi(podl.id).vyrezy) + '|' + this.plochyNaPodlazi(podl.id).map(a => a.id + ':' + a.typ + ':' + a.dh).join()
+                    // Schody mění tvar zvýšené podlahy, vedou-li přes ni
+                    + (this.plochyNaPodlazi(podl.id).length ? '|' + JSON.stringify(dum.schodiste.filter(s => s.odPodlazi === podl.id || s.doPodlazi === podl.id)) : '');
                 if (!g || g.userData.otisk !== otisk || g.userData.vyskovy !== vyskovy) {
                     if (g) { group.remove(g); this._zrus3d(g); }
                     g = new THREE.Group();
                     g.userData.otisk = otisk;
                     g.userData.vyskovy = vyskovy;
                     g.userData.podlazi = podl.id;
-                    if (eng) this._build3dPodlazi(eng, podl, g);
+                    if (eng) {
+                        this._build3dPodlazi(eng, podl, g);
+                        this._vybaveni3d?.(eng, podl, g);
+                    }
                     _3d.podlaziSkupiny.set(podl.id, g);
                     group.add(g);
                 }
@@ -7691,6 +7828,9 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
             this._build3dDum?.(group);
             this._nastavBarvy3d?.();
             this._nastavViditelnost3d?.();
+            window.Svetlo3d.stinyObjektu(group);
+            window.Svetlo3d.usadSlunce(_3d.slunce, group);
+            window.Svetlo3d.prekresliStiny(_3d.renderer);
 
             // Centrovat kameru na stavbu — jen při prvním vstupu do 3D.
             // Při přepínání 2D→3D zachovat uživatelem natočený pohled (orbit controls).
@@ -7714,13 +7854,7 @@ vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
             }
 
             // Restart animation pokud byl zastavený
-            const animate = () => {
-                if (!this.rezim3d) return;
-                requestAnimationFrame(animate);
-                _3d.controls.update();
-                _3d.renderer.render(_3d.scene, _3d.camera);
-            };
-            animate();
+            this._start3dLoop();
         },
     };
 }
