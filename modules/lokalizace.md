@@ -8,12 +8,15 @@ oddělené**: Kazach může mít ruštinu a Kazachstán, Švýcar němčinu a Š
 Masterteam je interní a **vždy česky** — nepřekládá se.
 
 ## Aktuální stav
-- Aktivní jazyky: **cs** (zdrojový), **en** (výchozí i záložní — chybějící text se ukáže anglicky).
-- Pořadí dalších jazyků (potvrdil Libor 4. 11. 2026, zatím neaktivní): nejdřív celý editor v angličtině, pak vlna 1 sk, pl, vlna 2 de s Rakouskem, fr, vlna 3 es, it. Slovenština a polština jdou před němčinu, protože tam jde rychle napojit pozemek. Rozbor po zemích: https://claude.ai/artifact/NCyfAVyDQ1R9aUTMoMKaGo, část Jazyky a země.
+- Aktivní jazyky: **cs** (zdrojový), **en** (výchozí i záložní — chybějící text se ukáže anglicky), **sk, pl, de, fr, es, it** (od 4. 11. 2026, přeložil Claude, rodilí mluvčí to zatím nekontrolovali).
+- **Oslovení:** tykání všude kromě právních dokumentů (du, tu, ty, tú). Mimo češtinu se tarify jmenují Home a Pro.
+- Pořadí napojení národních služeb (potvrdil Libor 4. 11. 2026): vlna 1 sk, pl, vlna 2 de s Rakouskem, fr, vlna 3 es, it. Rozbor po zemích: https://claude.ai/artifact/NCyfAVyDQ1R9aUTMoMKaGo, část Jazyky a země.
 - Přeložené: titulka webu, přihlášení, registrace, hesla, ověření e-mailu, e-maily,
   účet, úvodní obrazovka, hlavička aplikace, právní stránky (celé dokumenty cs/en).
-- Editor V3 zatím **není** přeložený (texty natvrdo česky); katastr v aplikaci hlídá
-  server (`funkce:katastr`), panel v editoru se zatím neskrývá. Viz `modules/aplikace.md`.
+- SEO články se zatím nepřekládají (Libor 4. 11. 2026).
+- V zemích bez služby editor skrývá hledání parcely a volbu mapového podkladu (`@funkce`), mřížka v panelu zůstává. Ruční pozemek a napojení parcel na Slovensku a v Polsku jsou další kroky.
+- Editor V3 zatím **není** přeložený (texty natvrdo česky a vyká, názvy v katalogu taky), překládá se až po dokončení rozdělané práce v něm. Katastr v aplikaci hlídá
+  i server (`funkce:katastr`). Viz `modules/aplikace.md`.
 
 ## Kde co je
 | Co | Soubor |
@@ -30,11 +33,14 @@ Masterteam je interní a **vždy česky** — nepřekládá se.
 
 ## Jak se určí
 - **Jazyk** (pravidlo od Libora):
-  1. zvolený — účet, jinak přepínač (session),
-  2. jazyk země příchodu — národní doména, jinak poloha podle IP (`jazyk_zeme` v configu; jen aktivní jazyky),
-  3. `en`.
+  1. jazyk v adrese webu (`tuptudu.com/de/pricing`), zároveň se uloží do session,
+  2. zvolený — účet, jinak přepínač (session),
+  3. jazyk země příchodu — národní doména, jinak poloha podle IP (`jazyk_zeme` v configu; jen aktivní jazyky),
+  4. `en`.
   Jazyk prohlížeče se nepoužívá. Země může mít seznam jazyků (`'SK' => ['sk', 'cs']`
   — Slovák dostane češtinu, dokud nebude slovenština).
+- **Adresy webu:** každá stránka má adresu s jazykem kvůli vyhledávačům (hreflang v hlavě i v sitemapě). Adresa bez jazyka (`/`, `/pricing`) jen přesměruje podle volby a polohy. `Domeny::url('web', '/pricing')` jazyk doplní sám, `route()` taky (`URL::defaults`). Bez jazyka zůstávají technické adresy a sdílený odkaz (`Domeny::WEB_BEZ_JAZYKA`). Nová stránka patří do skupiny `{jazyk}` v `routes/web.php` a do `SeoController::STRANKY_WEBU`. Aplikace `app.tuptudu.com` jazyk v adrese nemá a neindexuje se.
+- **Země u jazyka v adrese:** `zeme_jazyka` (`cs` → `CZ`), takže `/cs` ukáže i z ciziny katastr a Kč, jinak by je Google z USA neviděl. Návštěvník ze země s tím jazykem (Slovák na `/cs`) si svou zemi nechá.
 - **Chybějící text** se doplní z angličtiny (`APP_FALLBACK_LOCALE=en`), ne z jazyka země.
 - **Země:** nastavení uživatele → národní doména → poloha podle IP → `CZ` (dokud jsou zákazníci jen z ČR).
 - **Masterteam:** `masterteam_jazyk` = `cs` → jazyk napevno, poloha podle IP se nezjišťuje.
@@ -67,7 +73,7 @@ Route::post(...)->middleware('funkce:katastr');      // jinde 404
 Lokalizace::maFunkci('katastr');
 ```
 - Klíče česky, seskupené podle oblasti (`prihlaseni.*`, `aplikace.*`, `web.*`, `obecne.*`).
-- Nový text vždy rovnou do `lang/cs` **i** `lang/en`, pak `php artisan preklady:kontrola`.
+- Nový text vždy rovnou do `lang/cs` **i** `lang/en`, pak `php artisan preklady:kontrola`. Ostatní jazyky hromadně před každým nasazením, do té doby v nich platí angličtina a kontrola je hlásí.
 - Do `js.php` jen to, co JS opravdu potřebuje — posílá se celé na každou stránku.
 - Chybějící JS klíč se tiše zapíše do bugů (`zalogujChybu`) a zobrazí se klíč.
 
