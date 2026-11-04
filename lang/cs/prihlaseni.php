@@ -14,5 +14,5 @@ return [
     'google_selhalo' => 'Přihlášení přes Google se nezdařilo.',
     'google_ucet_neexistuje' => 'Účet s tímto Google e-mailem neexistuje.',
     'zapomenute_heslo' => 'Zapomenuté heslo?',
-    'registrace' => 'Nemáte účet? Zaregistrujte se',
+    'registrace' => 'Nemáš účet? Zaregistruj se',
 ];

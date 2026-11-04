@@ -235,6 +235,7 @@
             <span class="text-xs text-gray-500 whitespace-nowrap" x-show="seznamPodlazi.length > 1 && !rezim3d" x-cloak x-text="'· ' + nazevAktivniho"></span>
             <div class="flex-1"></div>
             {{-- Mapový podklad --}}
+            @funkce('mapovy_podklad')
             <select x-model="katastrMapaPodklad"
                     @change="if (katastrParcely.length === 0 && katastrMapaPodklad !== 'zadny') { katastrMapaPodklad = 'zadny'; alert('Nejprve načtěte parcelu.'); } else { katastrZmenPodklad(); ulozitNastaveni(); }"
                     class="kk-pole">
@@ -243,6 +244,7 @@
                 <option value="ortofoto">Ortofoto</option>
                 <option value="turisticka">Turistická</option>
             </select>
+            @endfunkce
             {{-- 2D/3D přepínač --}}
             <div class="kk-skupina kk-skupina-dily">
                 <button @click="rezim3d = false; prepni2d()" :class="!rezim3d && 'kk-tl-aktivni'">2D</button>
@@ -1375,7 +1377,7 @@
 
         <details class="kk-section" :open="panelOpen.parcela" @toggle="panelOpen.parcela = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
-                <span>Parcela</span>
+                <span>@funkce('katastr') Parcela @else Mřížka @endfunkce</span>
                 <span x-show="katastrParcely.length > 0" class="kk-pocet" x-text="katastrParcely.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
@@ -1390,6 +1392,7 @@
                     <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="Výškové body DMR 5G (barevná škála)"><input type="checkbox" x-model="katastrZobrazitVysky" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> Výška</label>
                 </div>
                 {{-- KÚ hledání --}}
+                @funkce('katastr')
                 <div class="relative">
                     <label class="text-xs text-gray-500">Katastrální území</label>
                     <input type="text" x-model="katastrKuHledani"
@@ -1477,6 +1480,7 @@
                     </template>
                     <span x-show="katastrNacitaniProfil" class="mt-1 text-xs text-gray-500">Načítám výškový profil...</span>
                 </div>
+                @endfunkce
             </div>
         </details>
 

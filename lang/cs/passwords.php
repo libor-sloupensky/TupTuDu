@@ -9,8 +9,8 @@ return [
     */
 
     'reset' => 'Heslo bylo úspěšně obnoveno.',
-    'sent' => 'Odkaz pro obnovení hesla jsme vám poslali e-mailem.',
-    'throttled' => 'Před dalším pokusem prosím chvíli počkejte.',
+    'sent' => 'Odkaz pro obnovení hesla jsme ti poslali e-mailem.',
+    'throttled' => 'Před dalším pokusem prosím chvíli počkej.',
     'token' => 'Tento odkaz pro obnovení hesla je neplatný nebo už expiroval.',
     'user' => 'Uživatel s tímto e-mailem nebyl nalezen.',
 

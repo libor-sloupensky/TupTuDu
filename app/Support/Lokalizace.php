@@ -26,6 +26,12 @@ final class Lokalizace
         return app()->getLocale();
     }
 
+    /** Datum ve formátu aktuálního jazyka (config lokalizace.format_data). */
+    public static function datum(?\DateTimeInterface $cas): ?string
+    {
+        return $cas?->format(config('lokalizace.format_data.' . self::jazyk(), 'Y-m-d'));
+    }
+
     public static function nastavZemi(?string $zeme): void
     {
         self::$zeme = $zeme ? strtoupper($zeme) : null;

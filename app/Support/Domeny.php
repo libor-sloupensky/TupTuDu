@@ -14,6 +14,9 @@ final class Domeny
     public const APP = 'app';
     public const MASTERTEAM = 'masterteam';
 
+    /** První části cest webu bez jazyka v adrese: soubory pro roboty a technické adresy. Sdílený odkaz si jazyk určí podle návštěvníka. */
+    private const WEB_BEZ_JAZYKA = ['share', 'sitemap.xml', 'robots.txt', 'jazyk', 'api', 'cron', 'up'];
+
     /** Část podle hostu requestu; null = neznámý host (např. holé 127.0.0.1). */
     public static function cast(?Request $request = null): ?string
     {
@@ -79,9 +82,39 @@ final class Domeny
         return 'https://' . ($cast === self::WEB ? 'www.' . $host : $host);
     }
 
-    public static function url(string $cast, string $cesta = '/'): string
+    /** Adresa v dané části. Stránky webu dostanou jazyk: aktuální, nebo zadaný ($jazyk). */
+    public static function url(string $cast, string $cesta = '/', ?string $jazyk = null): string
     {
+        if ($cast === self::WEB) {
+            $cesta = self::cestaSJazykem($cesta, $jazyk ?? app()->getLocale());
+        }
+
         return self::zaklad($cast) . '/' . ltrim($cesta, '/');
+    }
+
+    /** Cesta webu s jazykem: /pricing nebo /de/pricing → /fr/pricing. Technické adresy zůstávají beze změny. */
+    public static function cestaSJazykem(string $cesta, string $jazyk): string
+    {
+        $bezJazyka = self::cestaBezJazyka($cesta);
+        $prvni = strtok($bezJazyka, '/?#');
+        if ($prvni !== false && in_array($prvni, self::WEB_BEZ_JAZYKA, true)) {
+            return '/' . $bezJazyka;
+        }
+
+        return '/' . $jazyk . ($bezJazyka === '' ? '' : '/' . $bezJazyka);
+    }
+
+    /** Cesta bez úvodních lomítek a bez jazyka: /de/pricing → pricing, /de → prázdná. */
+    public static function cestaBezJazyka(string $cesta): string
+    {
+        $cesta = ltrim($cesta, '/');
+        $prvni = strtok($cesta, '/?#');
+
+        if ($prvni !== false && Lokalizace::jeJazyk($prvni)) {
+            return ltrim(substr($cesta, strlen($prvni)), '/');
+        }
+
+        return $cesta;
     }
 
     /** Kam po přihlášení — masterteam do administrace, zákazník na úvod aplikace. */

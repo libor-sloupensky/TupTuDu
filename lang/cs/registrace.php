@@ -10,5 +10,5 @@ return [
     'souhlas' => 'Souhlasím s :podminky a beru na vědomí :soukromi.',
     'tlacitko' => 'Založit účet',
     'mam_ucet' => 'Už mám účet — přihlásit se',
-    'google_souhlas' => 'Pokračováním přes Google souhlasíte s :podminky a berete na vědomí :soukromi.',
+    'google_souhlas' => 'Pokračováním přes Google souhlasíš s :podminky a bereš na vědomí :soukromi.',
 ];

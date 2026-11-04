@@ -160,7 +160,8 @@ table, .tt-cislo { font-variant-numeric: tabular-nums; }
 .tt-prihlaseni .card { max-width: 24rem; width: 100%; }
 .tt-prihlaseni h1 { font-size: 1.35rem; margin-top: 0; }
 .tt-prihlaseni button[type=submit] { width: 100%; }
-.tt-prihlaseni .tt-jazyky { justify-content: center; margin-top: 1.25rem; }
+.tt-prihlaseni .tt-jazyky { text-align: center; margin-top: 1.25rem; }
+.tt-prihlaseni .tt-jazyky nav { left: 50%; right: auto; transform: translateX(-50%); text-align: left; }
 .tt-prihlaseni .tt-rezim { margin: 1rem auto 0; display: flex; }
 /* Odkazy pod formulářem (zapomenuté heslo, registrace…) — každý na vlastním řádku */
 .tt-prihlaseni-odkazy { display: flex; flex-direction: column; align-items: center; gap: .5rem; margin-top: 1rem; font-size: .85rem; }
@@ -252,8 +253,13 @@ ol.tt-postup p { font-size: .93rem; color: var(--c-text-secondary); margin: 0; }
 .tt-prvni-projekt p { color: var(--c-text-secondary); margin: 1rem 0 2rem; }
 
 /* Přepínač jazyka (partials/prepinac-jazyka) */
-.tt-jazyky { display: flex; gap: .75rem; font-size: .85rem; color: var(--c-text-secondary); font-family: var(--s-font-tech); font-weight: 500; }
-.tt-jazyky a { color: inherit; }
+.tt-jazyky { position: relative; font-size: .85rem; color: var(--c-text-secondary); font-family: var(--s-font-tech); font-weight: 500; }
+.tt-jazyky summary { cursor: pointer; list-style: none; }
+.tt-jazyky summary::-webkit-details-marker { display: none; }
+.tt-jazyky summary::after { content: " \25BE"; }
+.tt-jazyky nav { position: absolute; right: 0; top: calc(100% + .4rem); z-index: 50; display: grid; gap: .1rem; min-width: 9rem; padding: .35rem; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 7px; }
+.tt-jazyky nav a, .tt-jazyky nav strong { display: block; padding: .25rem .5rem; color: inherit; text-decoration: none; white-space: nowrap; }
+.tt-jazyky nav a:hover { color: var(--c-text); }
 .tt-jazyky strong { color: var(--c-text); font-weight: 600; }
 
 /* Odkaz na zdroj polohy podle IP (partials/poloha-zdroj) — licence DB-IP */

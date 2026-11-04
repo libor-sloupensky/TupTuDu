@@ -15,10 +15,19 @@ return [
     'jazyky' => [
         'cs' => 'Čeština',
         'en' => 'English',
+        'sk' => 'Slovenčina',
+        'pl' => 'Polski',
+        'de' => 'Deutsch',
+        'fr' => 'Français',
+        'es' => 'Español',
+        'it' => 'Italiano',
     ],
 
-    // Pořadí dalších jazyků (Libor 4. 11. 2026, modules/lokalizace.md) — zatím neaktivní, jen pro přehled:
-    // vlna 1: sk Slovenčina, pl Polski; vlna 2: de Deutsch, fr Français; vlna 3: es Español, it Italiano
+    // Formát data podle jazyku (bez ext-intl). Používá Lokalizace::datum().
+    'format_data' => [
+        'cs' => 'j. n. Y', 'sk' => 'j. n. Y', 'en' => 'j M Y', 'pl' => 'd.m.Y',
+        'de' => 'j.n.Y', 'fr' => 'd/m/Y', 'es' => 'd/m/Y', 'it' => 'd/m/Y',
+    ],
 
     // Jazyk, ve kterém píšeme texty (vzor pro preklady:kontrola).
     'zdrojovy_jazyk' => 'cs',
@@ -44,6 +53,10 @@ return [
         'SK' => ['sk', 'cs'],
         // Vícejazyčné země (CH, BE, LU) záměrně chybí — tam rozhodne volba uživatele.
     ],
+
+    // Domovská země jazyka v adrese webu. Kdo otevře tuptudu.com/cs z ciziny (i Google z USA),
+    // uvidí českou stránku včetně katastru a cen v Kč. Návštěvník ze země s tím jazykem si svou zemi nechá.
+    'zeme_jazyka' => ['cs' => 'CZ'],
 
     // Země, kterou dostane uživatel bez vlastního nastavení. Dokud jsou všichni
     // zákazníci z ČR, je to CZ (jinak by přišli o katastr). Až půjdeme ven,

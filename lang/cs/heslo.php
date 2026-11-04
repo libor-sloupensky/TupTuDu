@@ -4,7 +4,7 @@
 return [
     'zapomenute_titulek' => 'Zapomenuté heslo — TupTuDu',
     'zapomenute_nadpis' => 'Zapomenuté heslo',
-    'zapomenute_popis' => 'Zadejte e-mail, se kterým jste se registrovali. Pošleme vám odkaz pro nastavení nového hesla.',
+    'zapomenute_popis' => 'Zadej e-mail svého účtu. Pošleme ti odkaz pro nastavení nového hesla.',
     'poslat_odkaz' => 'Poslat odkaz',
     'zpet_na_prihlaseni' => '← Zpět na přihlášení',
     'nove_titulek' => 'Nové heslo — TupTuDu',

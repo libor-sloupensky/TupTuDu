@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\Domeny;
+use App\Support\Lokalizace;
 use Illuminate\Http\Response;
 
 /**
@@ -14,8 +15,8 @@ use Illuminate\Http\Response;
  *   masterteam neindexovat
  *
  * Seznam stránek v sitemapě je ruční (`STRANKY_WEBU`) — nová veřejná stránka na
- * tuptudu.com = přidat sem. Jazyk se nepřepíná v URL (session/IP), proto jedna
- * adresa na stránku a žádné hreflang. Dokumentace: modules/marketing.md.
+ * tuptudu.com = přidat sem. Každá stránka má adresu v každém jazyce, hreflang je
+ * v sitemapě i v hlavě stránky. Dokumentace: modules/marketing.md, modules/lokalizace.md.
  */
 class SeoController extends Controller
 {
@@ -54,9 +55,19 @@ class SeoController extends Controller
         }
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
-            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' . "\n";
+        $jazyky = Lokalizace::jazyky();
         foreach (self::STRANKY_WEBU as $cesta => $priorita) {
-            $xml .= '  <url><loc>' . e(Domeny::url('web', $cesta)) . '</loc><priority>' . $priorita . "</priority></url>\n";
+            $alternativy = '';
+            foreach ($jazyky as $jazyk) {
+                $alternativy .= '    <xhtml:link rel="alternate" hreflang="' . $jazyk . '" href="' . e(Domeny::url('web', $cesta, $jazyk)) . '"/>' . "\n";
+            }
+            $alternativy .= '    <xhtml:link rel="alternate" hreflang="x-default" href="' . e(rtrim(Domeny::zaklad('web'), '/') . $cesta) . '"/>' . "\n";
+
+            foreach ($jazyky as $jazyk) {
+                $xml .= '  <url>' . "\n" . '    <loc>' . e(Domeny::url('web', $cesta, $jazyk)) . '</loc>' . "\n"
+                    . $alternativy . '    <priority>' . $priorita . '</priority>' . "\n" . '  </url>' . "\n";
+            }
         }
         $xml .= "</urlset>\n";
 

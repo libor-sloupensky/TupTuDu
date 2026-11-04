@@ -133,7 +133,7 @@ class PredplatneController extends Controller
             'pristePlatba' => isset($nahled['recurring_transaction_details']['totals']['grand_total'])
                 ? $castka($nahled['recurring_transaction_details']['totals']['grand_total']) : null,
             'pristeDatum' => isset($nahled['next_billed_at'])
-                ? Carbon::parse($nahled['next_billed_at'])->timezone(config('app.timezone'))->format('j. n. Y') : null,
+                ? \App\Support\Lokalizace::datum(Carbon::parse($nahled['next_billed_at'])->timezone(config('app.timezone'))) : null,
             'rozdilPriste' => $rezim === 'prorated_next_billing_period',
         ]);
     }
@@ -183,7 +183,7 @@ class PredplatneController extends Controller
         }
 
         return redirect()->route('app.predplatne')
-            ->with('stav', __('tarify.zruseno', ['datum' => $predplatne->ends_at?->timezone(config('app.timezone'))->format('j. n. Y')]));
+            ->with('stav', __('tarify.zruseno', ['datum' => \App\Support\Lokalizace::datum($predplatne->ends_at?->timezone(config('app.timezone')))]));
     }
 
     /** Zrušení si zákazník rozmyslel (ještě v zaplaceném období). */

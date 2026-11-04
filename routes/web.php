@@ -26,6 +26,11 @@ Route::get('/', function () {
         return auth()->check() ? redirect('/projects') : view('vitrina.index');
     }
 
+    // Web: každý jazyk má vlastní adresu. Výchozí stránka jen přesměruje podle volby a polohy.
+    if (Domeny::jeWeb()) {
+        return redirect('/' . app()->getLocale());
+    }
+
     return view('vitrina.index');
 });
 
@@ -181,17 +186,25 @@ Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('mastertea
     Route::delete('seo-404/{seo404}', [Seo404Controller::class, 'smazat'])->name('seo404.smazat');
 });
 
-// ───────── Právní stránky a kontakt (veřejný web) ─────────
+// ───────── Veřejný web: titulka, ceník, právní stránky a kontakt ─────────
 Route::middleware('subdomena:web')->group(function () {
-    Route::get('/terms', [App\Http\Controllers\PravniController::class, 'podminky'])->name('pravni.podminky');
-    Route::get('/privacy', [App\Http\Controllers\PravniController::class, 'soukromi'])->name('pravni.soukromi');
-    Route::get('/refunds', [App\Http\Controllers\PravniController::class, 'vraceni'])->name('pravni.vraceni');
-    Route::get('/model-credits', [App\Http\Controllers\PravniController::class, 'autoriModelu'])->name('autori-modelu');
-    Route::get('/pricing', [App\Http\Controllers\CenikController::class, 'index'])->name('cenik');
-    Route::get('/contact', [App\Http\Controllers\KontaktController::class, 'formular'])->name('kontakt');
-    // 5 zpráv za 10 minut z jedné IP — člověku stačí, spam brzdí
-    Route::post('/contact', [App\Http\Controllers\KontaktController::class, 'odeslat'])
-        ->middleware('throttle:5,10')->name('kontakt.odeslat');
+    // Každá stránka má adresu s jazykem (tuptudu.com/de/pricing), kvůli vyhledávačům (modules/lokalizace.md).
+    // Nová veřejná stránka patří sem a do SeoController::STRANKY_WEBU. route() jazyk doplní sám (URL::defaults).
+    Route::prefix('{jazyk}')->whereIn('jazyk', App\Support\Lokalizace::jazyky())->group(function () {
+        Route::get('/', fn () => view('vitrina.index'))->name('web.uvod');
+        Route::get('/terms', [App\Http\Controllers\PravniController::class, 'podminky'])->name('pravni.podminky');
+        Route::get('/privacy', [App\Http\Controllers\PravniController::class, 'soukromi'])->name('pravni.soukromi');
+        Route::get('/refunds', [App\Http\Controllers\PravniController::class, 'vraceni'])->name('pravni.vraceni');
+        Route::get('/model-credits', [App\Http\Controllers\PravniController::class, 'autoriModelu'])->name('autori-modelu');
+        Route::get('/pricing', [App\Http\Controllers\CenikController::class, 'index'])->name('cenik');
+        Route::get('/contact', [App\Http\Controllers\KontaktController::class, 'formular'])->name('kontakt');
+        // 5 zpráv za 10 minut z jedné IP — člověku stačí, spam brzdí
+        Route::post('/contact', [App\Http\Controllers\KontaktController::class, 'odeslat'])
+            ->middleware('throttle:5,10')->name('kontakt.odeslat');
+    });
+    // Adresy bez jazyka (starší odkazy, Paddle) přesměrují podle volby a polohy
+    Route::get('/{stranka}', fn (Illuminate\Http\Request $request) => redirect('/' . app()->getLocale() . $request->getRequestUri()))
+        ->whereIn('stranka', ['terms', 'privacy', 'refunds', 'model-credits', 'pricing', 'contact']);
     // Odkaz na stav projektu pro čtení, bez přihlášení (modules/sdileni.md)
     Route::middleware('throttle:120,1')->group(function () {
         Route::get('/share/{token}', [App\Http\Controllers\KonceptV3SdileniController::class, 'zobraz'])->name('sdileni.zobraz');

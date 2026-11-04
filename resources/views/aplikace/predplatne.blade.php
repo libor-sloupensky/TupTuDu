@@ -7,7 +7,7 @@
     $limitProjektu = $stav['projektu'];
     $platne = $predplatne?->valid() ? $predplatne : null;
     $lzeMenit = $platne && ! $platne->onGracePeriod();
-    $datum = fn ($cas) => $cas?->timezone(config('app.timezone'))->format('j. n. Y');
+    $datum = fn ($cas) => \App\Support\Lokalizace::datum($cas?->timezone(config('app.timezone')));
     // Ceny karet a úspora ročního placení
     $karty = [];
     foreach (Tarif::PLACENE as $tarif) {

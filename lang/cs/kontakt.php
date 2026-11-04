@@ -3,8 +3,8 @@
 // Kontaktní formulář (tuptudu.com/contact) a odkaz v patičce.
 return [
     'titulek' => 'Kontakt',
-    'nadpis' => 'Napište nám',
-    'uvod' => 'Máte dotaz nebo jste narazili na problém? Napište nám — odpovíme na e-mail, který uvedete.',
+    'nadpis' => 'Napiš nám',
+    'uvod' => 'Máš dotaz nebo něco nefunguje? Napiš nám — odpovíme na e-mail, který uvedeš.',
     'jmeno' => 'Jméno',
     'email' => 'E-mail pro odpověď',
     'tema' => 'Téma',
@@ -19,6 +19,6 @@ return [
     'email_uctu' => 'E-mail, na který je účet registrovaný',
     'zprava' => 'Zpráva',
     'odeslat' => 'Odeslat zprávu',
-    'odeslano' => 'Děkujeme, zpráva odešla. Odpovíme co nejdříve na e-mail, který jste uvedli.',
+    'odeslano' => 'Děkujeme, zpráva odešla. Odpovíme co nejdříve na uvedený e-mail.',
     'osobni_udaje' => 'Údaje ze zprávy použijeme jen k jejímu vyřízení.',
 ];

@@ -36,7 +36,7 @@
     </div>
     <main class="tt-sdileni">
         <h1>{{ $sdileni->nazev }}</h1>
-        <p class="tt-sdileni-stav">{{ __('sdileni.stav_k', ['datum' => $sdileni->upraveno?->format('j. n. Y H:i')]) }}</p>
+        <p class="tt-sdileni-stav">{{ __('sdileni.stav_k', ['datum' => trim(\App\Support\Lokalizace::datum($sdileni->upraveno) . ' ' . $sdileni->upraveno?->format('H:i'))]) }}</p>
 
         <div class="tt-sdileni-vyber" role="group" aria-label="{{ __('sdileni.pohled') }}" data-sdileni-vyber>
             <button type="button" aria-pressed="true" data-pohled="3d">{{ __('sdileni.pohled_3d') }}</button>

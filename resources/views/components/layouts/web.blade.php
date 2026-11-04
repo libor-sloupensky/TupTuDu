@@ -1,6 +1,7 @@
-@props(['title' => 'TupTuDu'])
+@props(['title' => 'TupTuDu', 'jazyky' => null])
 {{-- Layout veřejného webu (tuptudu.com): vitrína, právní stránky, kontakt.
-     Vlastní styly stránky jdou do slotu `hlava`. --}}
+     Vlastní styly stránky jdou do slotu `hlava`. Stránka jen v některých jazycích (článek) předá :jazyky="['cs']"
+     a hreflang ostatní nenabídne. --}}
 <!DOCTYPE html>
 {{-- Tmavý režim je výchozí; světlý podle cookie tt_rezim (partials/prepinac-rezimu) --}}
 <html lang="{{ app()->getLocale() }}" data-theme="{{ request()->cookie('tt_rezim') === 'light' ? 'light' : 'dark' }}">
@@ -11,6 +12,13 @@
          a lokálně — tam noindex, ať Google nemá duplicitu. Kanonická adresa vždy na www. --}}
     @if (\App\Support\Domeny::jeWeb())
     <link rel="canonical" href="{{ \App\Support\Domeny::url('web', request()->path()) }}">
+    @php($jazykyStranky = $jazyky ?? \App\Support\Lokalizace::jazyky())
+    @if (count($jazykyStranky) > 1)
+        @foreach ($jazykyStranky as $kodJazyka)
+    <link rel="alternate" hreflang="{{ $kodJazyka }}" href="{{ \App\Support\Domeny::url('web', request()->path(), $kodJazyka) }}">
+        @endforeach
+    <link rel="alternate" hreflang="x-default" href="{{ \App\Support\Domeny::zaklad('web') . '/' . \App\Support\Domeny::cestaBezJazyka(request()->path()) }}">
+    @endif
     @else
     <meta name="robots" content="noindex">
     @endif

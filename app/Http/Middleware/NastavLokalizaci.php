@@ -8,14 +8,16 @@ use App\Support\PolohaIp;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Určí jazyk a zemi requestu (config/lokalizace.php).
  *
- * Jazyk:  1. zvolený (účet, jinak přepínač v session)
- *         2. jazyk země příchodu (národní doména, jinak poloha podle IP)
- *         3. výchozí (en)
+ * Jazyk:  1. jazyk v adrese webu (tuptudu.com/de/pricing)
+ *         2. zvolený (účet, jinak přepínač v session)
+ *         3. jazyk země příchodu (národní doména, jinak poloha podle IP)
+ *         4. výchozí (en)
  *         Chybějící text doplní záložní jazyk (en).
  * Země:   účet → národní doména → poloha podle IP → výchozí (CZ)
  *
@@ -31,7 +33,14 @@ class NastavLokalizaci
         $pevnyJazyk = Domeny::jeMasterteam($request) ? config('lokalizace.masterteam_jazyk') : null;
         $zemePrichodu = $domena['zeme'] ?? ($pevnyJazyk ? null : $this->zemePodleIp($request));
 
+        // Jazyk v adrese webu: parametr routy (routes/web.php). Controllery ho nepotřebují.
+        $jazykAdresy = $request->route()?->parameter('jazyk');
+        if ($jazykAdresy !== null) {
+            $request->route()->forgetParameter('jazyk');
+        }
+
         $jazyk = $pevnyJazyk ?? collect([
+            $jazykAdresy,
             $uzivatel?->jazyk,
             $request->hasSession() ? $request->session()->get('jazyk') : null,
             $domena['jazyk'] ?? null,
@@ -39,7 +48,18 @@ class NastavLokalizaci
         ])->first(fn ($kod) => Lokalizace::jeJazyk($kod))
             ?? config('lokalizace.vychozi_jazyk');
 
+        if ($jazykAdresy !== null && Lokalizace::jeJazyk($jazykAdresy)) {
+            if ($request->hasSession()) {
+                $request->session()->put('jazyk', $jazykAdresy);
+            }
+            $domov = config('lokalizace.zeme_jazyka.' . $jazykAdresy);
+            if ($domov && ! in_array($jazykAdresy, (array) config('lokalizace.jazyk_zeme.' . $zemePrichodu, []), true)) {
+                $zemePrichodu = $domov;
+            }
+        }
+
         App::setLocale($jazyk);
+        URL::defaults(['jazyk' => $jazyk]);
         Lokalizace::nastavZemi($uzivatel?->zeme ?? $zemePrichodu);
 
         return $next($request);
