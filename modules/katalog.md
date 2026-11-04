@@ -69,11 +69,11 @@ Kus je obyčejný `engine.vybaveni` s polem `katalog` (ID), `nazev` a `uroven` (
 
 ## Hosting
 
-Zatím v `public/katalog`, necommitováno. Při 930 kusech to jsou stovky MB, do repozitáře a přes FTP deploy se to nehodí, před nasazením je potřeba rozhodnout. Libor 4. 11. 2026 navrhuje AWS, účet má. Plán: bucket S3 ve Frankfurtu s veřejným čtením jen pro katalog a CORS, nahrání přes `aws s3 sync`, adresa katalogu z `.env`. U značek do půdorysu je potřeba `crossOrigin`, jinak obrázek z cizí adresy zablokuje export půdorysu do PNG. Zatím nic z toho není zapojené, kód S3 nepoužívá a balík pro S3 tu není. V GitHub Secrets ale `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` a `AWS_BUCKET` jsou (od 14. 8. 2026), deploy je nikam nepředává. **Bucket nezakládat, dokud Libor neověří, že TupTuDu nemíchá data s jiným projektem** (viz paměť `tuptudu-zdroje-objektu`).
+Prvních 120 kusů je v `public/katalog` v repozitáři. Při 930 kusech to jsou stovky MB, do repozitáře a přes FTP deploy se to nehodí, před nasazením zbytku je potřeba úložiště. Libor 4. 11. 2026 navrhuje AWS, účet má. Plán: bucket S3 ve Frankfurtu s veřejným čtením jen pro katalog a CORS, nahrání přes `aws s3 sync`, adresa katalogu z `.env`. U značek do půdorysu je potřeba `crossOrigin`, jinak obrázek z cizí adresy zablokuje export půdorysu do PNG. Zatím nic z toho není zapojené, kód S3 nepoužívá a balík pro S3 tu není. V GitHub Secrets ale `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` a `AWS_BUCKET` jsou (od 14. 8. 2026), deploy je nikam nepředává. **Bucket nezakládat, dokud Libor neověří, že TupTuDu nemíchá data s jiným projektem** (viz paměť `tuptudu-zdroje-objektu`).
 
 ## Stav a známá omezení (4. 11. 2026)
 
-Hotovo lokálně, necommitováno: 120 ručně vybraných kusů ve 14 kategoriích (24 MB) a rozšíření na 930 kusů. Automaticky pojmenované mají v zadání `auto: true`. Ověřuje `test-katalog-ui`, panel kusu je v `test-formulare-ui`.
+Na webu od commitu f7e4697 (4. 11. 2026): 120 ručně vybraných kusů ve 14 kategoriích (24 MB). V `polozky.json` je 930 kusů, automaticky pojmenované mají `auto: true`, lokálně je z nich vyrobeno asi 909 modelů bez náhledů. Do gitu nejdou (`.gitignore`), první balík je přidaný přes `git add -f`. Ověřuje `test-katalog-ui`, panel kusu je v `test-formulare-ui`.
 
 - **Dotyk zatím nevyzkoušený.** Klepnutí má jít cestou kliku, na tabletu to nikdo nezkoušel.
 - **Kusy jdou vkládat a posouvat jen v půdorysu**, ve 3D se jen zobrazí a nejdou tam vybrat.
@@ -83,7 +83,7 @@ Hotovo lokálně, necommitováno: 120 ručně vybraných kusů ve 14 kategoriíc
 
 ## Rozdělaná práce (k 4. 11. 2026)
 
-1. **Výroba 930 kusů nemusela doběhnout.** `services/katalog/polozky.json` už má 930 kusů, `katalog.json` se zapíše až na konci, do té doby editor ukazuje 120. Dokončení: `node services/katalog/sestav.cjs --vlaken=5`, hotové modely přeskočí. Potom prohlédnout náhledy automaticky vybraných kusů (`auto: true`) a špatné vyřadit ze zadání.
+1. **Výroba 930 kusů nedoběhla, zastavena na 909 modelech.** `services/katalog/polozky.json` už má 930 kusů, `katalog.json` se zapíše až na konci, do té doby editor ukazuje 120. Pozor: po doběhnutí bude `katalog.json` lokálně odkazovat na modely, které v gitu nejsou, před commitem musí být vyřešené úložiště. Dokončení: `node services/katalog/sestav.cjs --vlaken=5`, hotové modely přeskočí. Potom prohlédnout náhledy automaticky vybraných kusů (`auto: true`) a špatné vyřadit ze zadání.
 2. **Před nasazením** vyřešit AWS: značky i modely z cizí adresy, `crossOrigin` kvůli exportu PNG.
 3. **Další vrstvy v pořadí:** povrchy (ambientCG, Poly Haven), koupelna (Sweet Home 3D + vlastní materiály, kout), generátor linky.
 4. **Dotyk na tabletu** nikdo nezkoušel.
