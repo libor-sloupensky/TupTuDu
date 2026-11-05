@@ -18,6 +18,7 @@
 ## Commity a nasazení — souběžná sezení
 Vyvíjí se lokálně v jedné složce na větvi `koncept-v3`, souběžně v několika sezeních a bez vlastních větví. Na produkci se dává jen na povel.
 - **Commit je rutina. Uživatele se na něj neptat a nepsat mu o něm.** Každé sezení commituje samo po každém dokončeném a otestovaném kroku. Souhlas dává tento odstavec, další není potřeba.
+- **Nejdřív commit, potom shrnutí.** Závěrečnou zprávu uživateli psát až po commitu, aby popisovala commitnutý stav.
 - **Jen své změny:** `git add <soubory>`, pak hned `git commit -m "…" -- <soubory>`. Nikdy `git add -A` ani `git commit -a`. Je-li v souboru i cizí rozdělaná změna, commitnout jen své řádky (`git apply --cached`).
 - **Sezení se domlouvají mezi sebou.** Když jedno potřebuje commit od jiného, napíše mu a to commitne svou hotovou práci rovnou. Uživatel čísla sezení nevidí a nic si mezi nimi nepřeposílá, proto mu o nich nepsat. Když je zmínka nutná, popsat sezení tématem.
 - **Push jen na přímý pokyn uživatele v daném sezení:** „dej to na web“ = commitnout své a `git push origin koncept-v3:main`. Odejde všechno commitnuté, rozdělaná práce zůstane lokálně.

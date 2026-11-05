@@ -2,8 +2,9 @@
  * Výroba katalogu objektů: stáhne modely podle polozky.json, zmenší je pro web, změří, udělá náhled
  * a půdorysnou značku a zapíše public/katalog/katalog.json. Viz modules/katalog.md.
  *
- * Spuštění: node services/katalog/sestav.cjs [--cache=složka] [--znovu] [--nahledy] [--jen=regex] [--vlaken=4]
- * Hotové modely se přeskakují, --znovu je udělá znovu, --nahledy překreslí jen náhledy a značky. Vyžaduje Chrome a npx.
+ * Spuštění: node services/katalog/sestav.cjs [--cache=složka] [--znovu] [--starsi=datum] [--nahledy] [--jen=regex] [--vlaken=4]
+ * Hotové modely se přeskakují, --znovu je udělá znovu, --nahledy překreslí jen náhledy a značky. --starsi udělá znovu jen
+ * modely starší než datum a náhledy starší než model, takže přerušená výroba naváže. Vyžaduje Chrome a npx.
  */
 const fs = require('fs');
 const os = require('os');
@@ -19,9 +20,13 @@ const VYSTUP = path.join(PUBLIC, 'katalog');
 const CACHE = volby.cache || path.join(os.tmpdir(), 'tuptudu-katalog');
 const TRANSFORM = volby.transform || null;
 const VLAKEN = Number(volby.vlaken) || 4;
+const STARSI = volby.starsi ? new Date(volby.starsi) : null;
 const OBNOVA = 20;
 const MAX_TROJUHELNIKU = 60000;
 const UA = { 'User-Agent': 'TupTuDu-katalog/1.0' };
+
+// Výroba běží hodiny na notebooku, na kterém se dál pracuje. Prioritu zdědí i Chrome a komprese.
+os.setPriority(os.constants.priority.PRIORITY_BELOW_NORMAL);
 const ABO = 'https://amazon-berkeley-objects.s3.amazonaws.com/3dmodels/original';
 
 const ZDROJE = {
@@ -110,7 +115,7 @@ function server() {
     await poVlaknech(vyber, VLAKEN, async (p) => {
         const cil = cesta('modely', p, '.glb');
         try {
-            if (volby.znovu || !fs.existsSync(cil)) await zmensi(await zdrojovySoubor(p), cil);
+            if (volby.znovu || !fs.existsSync(cil) || (STARSI && fs.statSync(cil).mtime < STARSI)) await zmensi(await zdrojovySoubor(p), cil);
             console.log(`  ${++hotovo}/${vyber.length} ${p.id} ${(fs.statSync(cil).size / 1e6).toFixed(2)} MB`);
         } catch (e) { chyby.push(p.id + ': ' + e.message); console.log('  CHYBA', p.id, e.message); }
     });
@@ -130,6 +135,11 @@ function server() {
         fs.writeFileSync(path.join(VYSTUP, 'katalog.json'), JSON.stringify({ verze: 1, zdroje: ZDROJE, kategorie: zadani.kategorie, polozky }, null, 1));
         return polozky;
     };
+    const nahledPlati = (pol) => {
+        const nahled = cesta('nahledy', pol, '.webp'), znacka = cesta('pudorys', pol, '.webp');
+        if (!fs.existsSync(nahled) || !fs.existsSync(znacka)) return false;
+        return !STARSI || fs.statSync(nahled).mtime >= fs.statSync(cesta('modely', pol, '.glb')).mtime;
+    };
     const srv = await server();
     const p = await otevriProhlizec({ sirka: 900, vyska: 700 });
     // Stránka si načtené modely drží (Katalog3d), proto se po pár kusech obnoví, jinak by při stovkách došla paměť.
@@ -145,7 +155,7 @@ function server() {
         await obnovStranku();
         for (const pol of vyber) {
             if (!fs.existsSync(cesta('modely', pol, '.glb'))) continue;
-            if (!volby.znovu && !volby.nahledy && stare.has(pol.id) && fs.existsSync(cesta('nahledy', pol, '.webp')) && fs.existsSync(cesta('pudorys', pol, '.webp'))) continue;
+            if (!volby.znovu && !volby.nahledy && stare.has(pol.id) && nahledPlati(pol)) continue;
             if (odObnovy++ >= OBNOVA) { zapisKatalog(); await obnovStranku(); }
             let v;
             try {

@@ -141,14 +141,14 @@ Viděno při prohlídce, zatím neřešeno:
 
 ## Rozdělaná práce (k 4. 11. 2026)
 
-1. **Nová výroba modelů bez zjednodušení přerušená (Libor 4. 11. 2026).** `sestav.cjs` už nezjednodušuje, jen kusy nad 60 000 trojúhelníků mírně. Hotových je 147 z 921 kusů ABO (včetně ručně vybraných), zbytek má dosud starý přechod, katalog funguje a poškozené soubory nejsou. Dokončení: `node services/katalog/sestav.cjs --znovu --jen=^abo- --vlaken=3`, začne znovu od začátku, ale zdroje jsou v `%TEMP%\tuptudu-katalog`. Stáhne se celkem asi 12 GB. Potom:
+1. **Nová výroba modelů bez zjednodušení přerušená (Libor 4. 11. 2026).** `sestav.cjs` už nezjednodušuje, jen kusy nad 60 000 trojúhelníků mírně. Hotových je 147 z 921 kusů ABO (včetně ručně vybraných), zbytek má dosud starý přechod, katalog funguje a poškozené soubory nejsou. Dokončení od 5. 11. 2026: `node services/katalog/sestav.cjs --starsi=2026-11-04T15:30 --jen=^abo- --vlaken=3`, po přerušení stačí spustit znovu, naváže. Zdroje jsou v `%TEMP%\tuptudu-katalog`, celkem asi 12 GB. Potom:
    - `kontrola.cjs --archy` a prohlédnout hlavně bílé skříně a lampy,
    - porovnat strop lesku v `katalog-3d.js` zapnutý a vypnutý, po opravě normál možná není potřeba nebo stačí mírnější,
    - změřit paměť a plynulost editoru (trojúhelníků je asi 12× víc, velikost modelů odhadem kolem 320 MB místo 170 MB),
    - spustit `test-katalog-ui`, `test-svetlo-3d-ui`, `test-sdileni-ui`,
    - smazat mezipaměť zdrojů.
    Změní se i 120 modelů, značek a náhledů v gitu, půjdou do dalšího nasazení. 927 kusů je jinak prohlédnutých, čeká na úložiště, viz Hosting a upozornění výš.
-2. **Před nasazením** vyřešit AWS: značky i modely z cizí adresy, `crossOrigin` kvůli exportu PNG.
+2. **Před nasazením** vyřešit AWS: značky i modely z cizí adresy, `crossOrigin` kvůli exportu PNG. Plán z 5. 11. 2026: vlastní bucket `tuptudu-katalog` ve Frankfurtu a klíč omezený jen na něj, ne plný přístup k účtu. Přesun na úložiště Libor odložil na později.
 3. **Další vrstvy v pořadí:** povrchy (ambientCG, Poly Haven), koupelna (Sweet Home 3D + vlastní materiály, kout), generátor linky.
 4. **Dotyk na tabletu** nikdo nezkoušel.
 5. **Stránka analýzy** v nákladech ještě uvádí Cloudflare R2, Libor navrhl AWS.
