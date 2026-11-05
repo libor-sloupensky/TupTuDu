@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Koncept;
+use App\Models\KonceptV3 as Koncept;
 use App\Services\ClaudeApi;
 use App\Services\Pravidla\PravidlaService;
 use App\Services\RagEmbedding;

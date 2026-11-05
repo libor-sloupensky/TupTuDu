@@ -2,7 +2,7 @@
 
 namespace App\Services\Pravidla;
 
-use App\Models\Koncept;
+use App\Models\KonceptV3 as Koncept;
 
 class PravidlaService
 {

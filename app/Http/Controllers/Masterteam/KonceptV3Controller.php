@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Masterteam;
 
 use App\Http\Controllers\Controller;
-// Alias: tělo controlleru zůstává 1:1 s KonceptController, pracuje ale s tabulkou koncepty_v3.
+// Alias: tělo controlleru pracuje s Koncept, což je model tabulky koncepty_v3.
 use App\Models\KonceptV3 as Koncept;
 use App\Services\KonceptAiService;
 use App\Services\Katastr\KatastrService;
@@ -17,8 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 /**
- * Koncept V3 — kopie KonceptController pro novou verzi editoru.
- * Původní koncept zůstává beze změny; V3 se upravuje samostatně.
+ * Koncept V3 — editor (masterteam i zákaznická aplikace).
  */
 class KonceptV3Controller extends Controller
 {
@@ -115,7 +114,7 @@ class KonceptV3Controller extends Controller
         }
 
         if ($request->filled('aktualni')) {
-            // mimo $fillable modelu (sdílí ho V2) — nastavit přímo, update() ho uloží s ostatním
+            // mimo $fillable modelu — nastavit přímo, update() ho uloží s ostatním
             $koncept->historie_aktualni = $request->input('aktualni');
         }
 

@@ -3,7 +3,6 @@
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\BugController;
 use App\Http\Controllers\Masterteam\BugyController;
-use App\Http\Controllers\Masterteam\KonceptController;
 use App\Http\Controllers\Masterteam\KonceptTestovaniController;
 use App\Http\Controllers\Masterteam\KonceptV3Controller;
 use App\Http\Controllers\Masterteam\KonceptV3PodkladController;
@@ -95,29 +94,7 @@ Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('mastertea
     Route::patch('uzivatele/{uzivatel}/role', [UzivateleController::class, 'toggleRole'])->name('uzivatele.role');
     Route::delete('uzivatele/{uzivatel}', [UzivateleController::class, 'destroy'])->name('uzivatele.destroy');
 
-    // ───────── Koncept (editor) ─────────
-    Route::get('koncept', [KonceptController::class, 'indexK'])->name('koncept');
-    Route::get('koncept/test-paket-e', [KonceptController::class, 'testPaketE'])->name('koncept.testPaketE');
-    Route::post('koncept/test-paket-e/ai-uprava', [KonceptController::class, 'testPaketEUprava'])->name('koncept.testPaketEUprava');
-    Route::post('koncept/vytvorit', [KonceptController::class, 'vytvorit'])->name('koncept.vytvorit');
-    Route::post('koncept/import-pudorys', [KonceptController::class, 'importZPudorysu'])->name('koncept.import-pudorys');
-    Route::post('koncept/ai-vytvor', [KonceptController::class, 'aiVytvor'])->name('koncept.aiVytvor');
-    Route::post('koncept/import', [KonceptController::class, 'importDxf'])->name('koncept.import');
-    // Katastr — statické routy PŘED parametrickými (jinak {koncept:id} matchne "katastr")
-    Route::post('koncept/katastr/parcela', [KonceptController::class, 'nactiParcelu'])->name('koncept.katastr.parcela');
-    Route::post('koncept/katastr/stavby', [KonceptController::class, 'nactiStavby'])->name('koncept.katastr.stavby');
-    Route::post('koncept/katastr/vyskovy-profil', [KonceptController::class, 'nactiVyskovy'])->name('koncept.katastr.vyskovy');
-    Route::post('koncept/katastr/sousednost', [KonceptController::class, 'overSousednost'])->name('koncept.katastr.sousednost');
-    Route::post('koncept/katastr/okolni', [KonceptController::class, 'nactiOkolniParcely'])->name('koncept.katastr.okolni');
-    Route::post('koncept/vysvetleni', [KonceptController::class, 'vysvetleniPojmu'])->name('koncept.vysvetleni');
-    // Parametrické routy — {koncept:id} na konci
-    Route::patch('koncept/{koncept:id}/ulozit', [KonceptController::class, 'ulozit'])->name('koncept.ulozit');
-    Route::delete('koncept/{koncept:id}', [KonceptController::class, 'smazat'])->name('koncept.smazat');
-    Route::post('koncept/{koncept:id}/ai-uprav', [KonceptController::class, 'aiUprav'])->name('koncept.aiUprav');
-    Route::get('koncept/{koncept:id}/export', [KonceptController::class, 'exportJson'])->name('koncept.export');
-    Route::patch('koncept/{koncept:id}/katastr', [KonceptController::class, 'ulozitKatastr'])->name('koncept.katastr.ulozit');
-
-    // ───────── Koncept V3 (nová verze editoru — samostatná kopie, vlastní tabulka koncepty_v3) ─────────
+    // ───────── Koncept V3 (editor, tabulka koncepty_v3) ─────────
     Route::get('koncept-v3', [KonceptV3Controller::class, 'indexK'])->name('koncept-v3');
     Route::post('koncept-v3/vytvorit', [KonceptV3Controller::class, 'vytvorit'])->name('koncept-v3.vytvorit');
     Route::post('koncept-v3/import-pudorys', [KonceptV3Controller::class, 'importZPudorysu'])->name('koncept-v3.import-pudorys');
