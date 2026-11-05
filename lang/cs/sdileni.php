@@ -12,6 +12,7 @@ return [
     'nahled_alt' => 'Náhled projektu :nazev',
     'plan_alt' => 'Půdorys: :podlazi',
     'plan_cely' => 'Otevřít půdorys v plné velikosti',
+    'napoveda_jama' => 'Po skrytí podlaží v terénu uvidíte výkop.',
     'napoveda_3d' => 'Tažením otáčíte, kolečkem nebo dvěma prsty přibližujete. Tlačítky skryjete podlaží a střechu.',
     'upozorneni' => 'Orientační koncept vytvořený ve službě TupTuDu. Nenahrazuje projektovou dokumentaci.',
     'autori_modelu' => 'Autoři 3D modelů',

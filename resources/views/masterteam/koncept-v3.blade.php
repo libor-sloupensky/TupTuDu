@@ -6,6 +6,11 @@
 @endphp
 <x-dynamic-component :component="$layoutV3" :title="$titulekV3 ?? 'Koncept V3 — TupTuDu'" :fullWidth="true">
 
+{{-- Zákaznický layout texty pro JS načítá sám, masterteamu je dialogy editoru potřebují taky --}}
+@if ($layoutV3 === 'layouts.app')
+    @include('partials.lokalizace-js')
+@endif
+
 {{-- Konva.js + Three.js + StavebníEngine + Renderer — všechno self-hosted,
      aby fungovalo i v zemích, kde jsou unpkg/cdnjs/jsdelivr blokované
      (Čína, Rusko, Írán). --}}
@@ -22,11 +27,13 @@
 <script src="/js/three/LineSegments2.js?v=0.128"></script>
 <script src="/js/three/Line2.js?v=0.128"></script>
 <script src="/js/svetlo-3d.js?v={{ filemtime(public_path('js/svetlo-3d.js')) }}"></script>
+<script src="/js/teren-3d.js?v={{ filemtime(public_path('js/teren-3d.js')) }}"></script>
 <script src="/js/katalog-3d.js?v={{ filemtime(public_path('js/katalog-3d.js')) }}"></script>
 <script src="/js/koncept-v3/stavebni-engine.js?v={{ filemtime(public_path('js/koncept-v3/stavebni-engine.js')) }}"></script>
 <script src="/js/koncept-v3/pudorys-icons.js?v={{ filemtime(public_path('js/koncept-v3/pudorys-icons.js')) }}"></script>
 <script src="/js/koncept-v3/mistnosti.js?v={{ filemtime(public_path('js/koncept-v3/mistnosti.js')) }}"></script>
 <script src="/js/koncept-v3/koty-vyberu.js?v={{ filemtime(public_path('js/koncept-v3/koty-vyberu.js')) }}"></script>
+<script src="/js/koncept-v3/koty-retezce.js?v={{ filemtime(public_path('js/koncept-v3/koty-retezce.js')) }}"></script>
 <script src="/js/koncept-v3/strecha.js?v={{ filemtime(public_path('js/koncept-v3/strecha.js')) }}"></script>
 <script src="/js/koncept-v3/zemina.js?v={{ filemtime(public_path('js/koncept-v3/zemina.js')) }}"></script>
 <script src="/js/koncept-v3/ral.js?v={{ filemtime(public_path('js/koncept-v3/ral.js')) }}"></script>
@@ -1268,15 +1275,12 @@
                                     <details>
                                         <summary class="cursor-pointer text-gray-500">Podrobnosti</summary>
                                         <div class="flex flex-col gap-1 pt-1">
-                                            <div class="kk-podlazi-pole" title="Od podlahy po spodek konstrukce. Běžně 35 až 50 cm."><span class="w-24 shrink-0">Skladba podlahy</span>
+                                            <div class="kk-podlazi-pole" title="Od podlahy po spodek konstrukce: podlaha, izolace, hydroizolace, podkladní deska a podsyp. Běžně 35 až 50 cm. Na tuhle tloušťku se kope a jen tolik dům překlene k terénu."><span class="w-24 shrink-0">Tloušťka základu</span>
                                                 <input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladba" :value="Math.round(zakladyHodnota('skladba') * 100)"
                                                        @change="setZaklady('skladba', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('skladba') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
                                             <div class="kk-podlazi-pole" title="Tloušťka skrývky. Běžně 15 až 30 cm."><span class="w-24 shrink-0">Ornice</span>
                                                 <input type="number" min="0" max="100" step="5" class="w-16" data-zaklad="ornice" :value="Math.round(zakladyHodnota('ornice') * 100)"
                                                        @change="setZaklady('ornice', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('ornice') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
-                                            <div class="kk-podlazi-pole" title="Kolik základ překlene mezi spodkem domu a terénem. Výš se bere, že základ chybí, a nekope se."><span class="w-24 shrink-0">Výška soklu</span>
-                                                <input type="number" min="0" max="300" step="5" class="w-16" data-zaklad="sokl" :value="Math.round(zakladyHodnota('sokl') * 100)"
-                                                       @change="setZaklady('sokl', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('sokl') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
                                             <div class="kk-podlazi-pole" title="Vodorovně na 1 m výšky. Hlína a jíl 0,25 až 0,5, písčité zeminy až 1."><span class="w-24 shrink-0 whitespace-nowrap">Svah výkopu 1 :</span>
                                                 <input type="number" min="0" max="3" step="0.05" class="w-16" data-zaklad="svah" :value="zakladyHodnota('svah')"
                                                        @change="setZaklady('svah', parseFloat($event.target.value)); $event.target.value = zakladyHodnota('svah')" @keydown.enter.prevent="$event.target.blur()"></div>
@@ -1487,34 +1491,15 @@
                 <span x-show="seznamObjektu.length > 0" class="kk-pocet" x-text="seznamObjektu.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
-            <div class="px-3 py-1.5 flex items-center gap-3 border-b border-gray-100">
-                <label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Zobrazit/skrýt stěny a otvory">
-                    <input type="checkbox" x-model="showObjekty" @change="toggleObjekty()" class="rounded text-primary w-3.5 h-3.5">
-                    Objekty
-                </label>
-                <label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Rozměry stěn (délky)">
-                    <input type="checkbox" x-model="showKoty" @change="toggleKoty()" class="rounded text-primary w-3.5 h-3.5">
-                    Kóty
-                </label>
-                <label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Uzlové body stěn (rohy)">
-                    <input type="checkbox" x-model="showNodes" @change="if(renderer){renderer.showNodes=showNodes;renderer.render()};ulozitNastaveni()" class="rounded text-primary w-3.5 h-3.5">
-                    Body
-                </label>
-                <label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Zvýraznění místností (názvy + plocha)">
-                    <input type="checkbox" x-model="showMistnosti" @change="if(renderer){renderer.showMistnosti=showMistnosti;renderer.render()};ulozitNastaveni()" class="rounded text-primary w-3.5 h-3.5">
-                    Místnosti
-                </label>
-                <label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Nábytek a vybavení (kuchyně, koupelna, spotřebiče)">
-                    <input type="checkbox" x-model="showVybaveni" @change="if(renderer){renderer.showVybaveni=showVybaveni;renderer.render()};ulozitNastaveni()" class="rounded text-primary w-3.5 h-3.5">
-                    Vybavení
-                </label>
+            <div class="px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-gray-100">
+                @include('masterteam.partials.prepinace-zobrazeni')
             </div>
             <div class="max-h-48 overflow-y-auto divide-y divide-gray-100">
                 <template x-for="obj in seznamObjektu" :key="obj.id">
-                    <div class="flex items-center justify-between px-3 py-1 text-xs cursor-pointer transition-colors"
+                    <div class="flex items-center justify-between px-3 py-1 text-xs cursor-pointer select-none transition-colors"
                          :style="hoverObjektId === obj.id && !vybraneIds.includes(obj.id) ? 'background-color: #dbeafe' : ''"
                          :class="vybraneIds.includes(obj.id) ? 'bg-blue-50' : 'hover:bg-gray-50'"
-                         @click="vyberObjekt(obj.id)"
+                         @click="vyberObjekt(obj.id, $event)"
                          @dblclick.stop="zacniEditObjekt(obj.id, obj.nazev)"
                          @mouseenter="zvyrazniObjekt(obj.id)"
                          @mouseleave="zvyrazniObjekt(null)">
@@ -1628,6 +1613,12 @@
                 </template>
                 <template x-if="exportPovolen">
                     <div class="flex flex-col gap-2">
+                        <div class="flex flex-col gap-1" data-export-prepinace>
+                            <div class="text-gray-500">Na půdorysu bude:</div>
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                @include('masterteam.partials.prepinace-zobrazeni')
+                            </div>
+                        </div>
                         <div class="flex flex-wrap gap-1">
                             <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="pudorys" title="Aktivní podlaží jako obrázek PNG" @click="exportPudorys(false)">Půdorys PNG</button>
                             <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="pudorysy" title="Všechna podlaží na jednom obrázku" @click="exportPudorys(true)">Všechna podlaží</button>

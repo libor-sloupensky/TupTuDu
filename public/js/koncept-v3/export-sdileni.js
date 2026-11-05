@@ -7,7 +7,7 @@
 (function () {
     const PX_NA_METR = 60;      // půdorys: stage před zvětšením
     const ZVETSENI = 2;         // výsledek 120 px na metr
-    const OKRAJ = 70;           // volno kolem kresby, v px stage
+    const OKRAJ = 100;          // volno kolem kresby a kót, v px stage
 
     const naBase64 = (pole) => {
         const b = new Uint8Array(pole.buffer, pole.byteOffset, pole.byteLength);
@@ -50,6 +50,7 @@
         /**
          * Kresby podlaží jako canvasy se stejným měřítkem. Vše proběhne v jednom běhu, takže se na
          * obrazovce nic nemihne. Aktivní podlaží, výběr i pohled se vrátí, kresba se nemění.
+         * Co na výkresu bude, řídí přepínače zobrazení (panel Objekty, tytéž jsou v sekci Export).
          */
         _kresbyPodlazi(ids) {
             const e = this.engine, r = this.renderer, st = this.stage;
@@ -58,17 +59,15 @@
                 walls: [...r.selectedWalls], nodes: [...r.selectedNodes], openings: [...r.selectedOpenings], vybaveni: [...r.selectedVybaveni],
                 prostory: [...r.selectedProstory], oddelovace: [...r.selectedOddelovace], mistnosti: [...r.selectedMistnosti],
                 schody: [...r.selectedSchody], plochy: [...r.selectedPlochy],
-                showIds: r.showIds, showNodes: r.showNodes, rezimStrecha: this.rezimStrecha, strechaHrana: this.strechaHrana,
+                rezimStrecha: this.rezimStrecha, strechaHrana: this.strechaHrana,
             };
-            const skryte = [r.gridLayer, r.podkladLayer, r.katastrLayer, r.spodekLayer, r.nodeLayer, r.strechaLayer, r.selectionLayer, r.kotyVyberuLayer].filter(Boolean);
+            const skryte = [r.gridLayer, r.podkladLayer, r.katastrLayer, r.spodekLayer, r.strechaLayer, r.selectionLayer, r.kotyVyberuLayer].filter(Boolean);
             const viditelnost = skryte.map(v => v.visible());
             const s = PX_NA_METR / e.PX_PER_M;
             const vysledek = [];
             try {
                 this._kresbaProExport = true;
                 skryte.forEach(v => v.visible(false));
-                r.showIds = false;
-                r.showNodes = false;
                 this.rezimStrecha = false;
                 this.strechaHrana = null;
                 st.scale({ x: s, y: s });
@@ -81,10 +80,6 @@
                     r.render();
                     r.poZmeneZoomu();
                     skryte.forEach(v => v.visible(false));   // render si vrstvy mohl přepnout
-                    // Popisky W3, O12: s vypnutým showIds je render nesmaže, zůstaly by i z jiného podlaží
-                    for (const [klic, tvar] of r._labelShapes) {
-                        if (klic.startsWith('id_')) { tvar.destroy(); r._labelShapes.delete(klic); }
-                    }
                     const t = st.getAbsoluteTransform().copy();
                     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                     const bod = (p) => {
@@ -104,8 +99,6 @@
             } finally {
                 this._kresbaProExport = false;
                 skryte.forEach((v, i) => v.visible(viditelnost[i]));
-                r.showIds = puvodne.showIds;
-                r.showNodes = puvodne.showNodes;
                 this.rezimStrecha = puvodne.rezimStrecha;
                 this.strechaHrana = puvodne.strechaHrana;
                 if (e.dum.aktivni !== puvodne.aktivni) e.prepniPodlazi(puvodne.aktivni);
@@ -160,7 +153,7 @@
             g.stroke();
             g.fillStyle = '#374151';
             g.font = '500 26px ' + pismo;
-            g.fillText('1 m', 52 + metr, zy);
+            g.fillText(this.renderer.showKoty ? '1 m  ·  kóty v cm' : '1 m', 52 + metr, zy);
             g.textAlign = 'right';
             g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--c-primary').trim() || '#374151';
             g.fillText('tuptudu.com', cv.width - 40, zy);
@@ -233,7 +226,7 @@
         // ─── Model pro odkaz ───────────────────────────────────
         /**
          * Scéna jako trojúhelníky po materiálech a skupinách (podlaží, střecha). Souřadnice jsou
-         * ve světě scény, terén se nepřenáší. Z konstrukce nezbude nic než tvar a barva.
+         * ve světě scény. Z konstrukce nezbude nic než tvar a barva, z terénu výšky vůči ±0 domu.
          */
         _zapecModel() {
             const THREE = window.THREE;
@@ -300,6 +293,7 @@
                 diry: this._dirySnizeni().map(d => d.poly.map(q => [+q.x.toFixed(3), +q.y.toFixed(3)])),
                 skupiny: [...e.dum.podlazi].reverse().map(p => ({ id: p.id, nazev: p.nazev })),
                 objekty,
+                teren: this._terenProOdkaz(),
                 materialy,
                 textury,
                 meshe: [...kbelik.values()].map(k => ({
@@ -307,6 +301,50 @@
                     pozice: naBase64(new Float32Array(k.pozice)),
                     uv: k.uv ? naBase64(new Float32Array(k.uv)) : undefined,
                 })),
+            };
+        },
+
+        /**
+         * Výkop pro odkaz podle toho, která podlaží v terénu jsou skrytá. Klíč jsou jejich id. Výšky jsou
+         * v centimetrech a jen u použitých vrcholů, ostatní nuly se zkomprimují.
+         */
+        _jamyProOdkaz() {
+            const vsechny = this._castiZakladu();
+            const uhel = this._uhelSten(vsechny), fn = this._terenDomu().fn, nastaveni = this.engine.dum.zaklady;
+            const vysledek = {};
+            const kombinaci = vsechny.length <= 3 ? (1 << vsechny.length) : 1;
+            for (let k = 1; k < kombinaci + (vsechny.length > 3 ? 1 : 0); k++) {
+                const casti = vsechny.length > 3 ? vsechny : vsechny.filter((_, i) => k & (1 << i));
+                const viditelne = vsechny.filter(c => !casti.includes(c));
+                const j = window.Zemina.jama(casti, fn, nastaveni, uhel);
+                if (!j) continue;
+                const b = this._bunkyJamy(j, viditelne, 0);
+                if (!b.bunky.some(x => x)) continue;
+                const sCel = b.sloupcu - 1;
+                const y = new Int16Array(b.y.length);
+                for (let i = 0; i < b.bunky.length; i++) {
+                    if (!b.bunky[i]) continue;
+                    const s = i % sCel, r = (i - s) / sCel;
+                    for (const v of [r * b.sloupcu + s, r * b.sloupcu + s + 1, (r + 1) * b.sloupcu + s, (r + 1) * b.sloupcu + s + 1]) y[v] = Math.round(b.y[v] * 100);
+                }
+                vysledek[casti.map(c => c.id).join()] = { u0: b.u0, v0: b.v0, krok: b.krok, cos: b.cos, sin: b.sin, sloupcu: b.sloupcu, radku: b.radku, bunky: naBase64(b.bunky), y: naBase64(y) };
+            }
+            return vysledek;
+        },
+
+        /** Terén pro odkaz bez polohy: žádné zeměpisné souřadnice ani nadmořská výška, jen tvar kolem domu. */
+        _terenProOdkaz() {
+            const prof = this.vyskovyProfil, stred = this.renderer?._fixedWgsCenter;
+            const nula = this.maZaklady ? this._terenDomu().nula : null;
+            if (!prof?.body?.length || !stred || typeof nula !== 'number') return null;
+            const m = window.Zemina.mrizkaTerenu(prof.body, stred);
+            const zaokrouhli = (q) => q.map(c => +c.toFixed(3));
+            return {
+                minX: m.minX, minZ: m.minY, sirka: m.sirka, vyska: m.vyska, sloupcu: m.sloupcu, radku: m.radku,
+                vysky: naBase64(Float32Array.from(m.vysky, h => h - nula)),
+                parcely: this._parcelyVeScene().map(p => p.map(zaokrouhli)),
+                jamy: this._jamyProOdkaz(),
+                vnitrek: this._castiZakladu().map(c => ({ skupina: c.id, uroven: +(c.kota - 0.01).toFixed(3), obrys: c.obrys.map(b => [+b.x.toFixed(3), +b.y.toFixed(3)]) })),
             };
         },
 

@@ -8,6 +8,17 @@
 
     const modely = new Map();
 
+    // Mapy lesku z ABO jsou často nesmyslné: stínidla a bílý lak v nich bývají kov a zrcadlo, kus pak vypadá jako z chromu.
+    // Poly Haven má mapy v pořádku a u tenkých kusů (zrcadla, obrazy za sklem) lesk patří k věci.
+    const MAX_KOV = '0.35';
+    const MIN_DRSNOST = '0.5';
+    const TENKY_KUS = 0.16;     // metry
+    const omezLesk = (shader) => {
+        shader.fragmentShader = shader.fragmentShader
+            .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>\nroughnessFactor = max( roughnessFactor, ${MIN_DRSNOST} );`)
+            .replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>\nmetalnessFactor = min( metalnessFactor, ${MAX_KOV} );`);
+    };
+
     window.Katalog3d = {
         adresa: (id) => '/katalog/modely/' + id + '.glb',
 
@@ -31,6 +42,8 @@
                         });
                         model.updateMatrixWorld(true);
                         model.userData.obal = new THREE.Box3().setFromObject(model);
+                        const hloubka = model.userData.obal.max.z - model.userData.obal.min.z;
+                        if (id.startsWith('abo-') && hloubka >= TENKY_KUS) for (const m of videno) m.onBeforeCompile = omezLesk;
                         hotovo(model);
                     }, undefined, chyba);
                 }));

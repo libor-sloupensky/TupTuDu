@@ -27,7 +27,7 @@ class KonceptV3Sdileni extends Model
         return $this->belongsTo(KonceptV3::class, 'koncept_id');
     }
 
-    /** Odkaz platí, jen když má autor tarif s exporty. Po návratu na placený tarif se sám odemkne. */
+    /** Odkaz platí, jen když účet autora existuje a jeho tarif sdílení má. Dnes ho mají všechny. */
     public function jeUzamceny(): bool
     {
         $autor = $this->koncept?->uzivatel;

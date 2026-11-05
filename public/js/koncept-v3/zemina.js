@@ -14,14 +14,14 @@
         odkop: 0.8,        // pracovní prostor kolem domu
         sirkaPasu: 0.5,
         spara: 1.0,        // základová spára pod terénem
-        skladba: 0.45,     // od podlahy po spodek konstrukce
+        skladba: 0.45,     // tloušťka základu: od podlahy po spodek konstrukce
         ornice: 0.25,
         svah: 0.5,         // vodorovně na 1 m výšky
         nakypreni: 1.25,
-        sokl: 0.5,         // kolik základ překlene mezi spodkem domu a terénem, výš už chybí
     };
     const NAD_TERENEM = 0.3;       // výchozí výška podlahy 1.NP nad terénem
     const SVISLE_DO = 0.8;         // do této hloubky se výkop svahovat nemusí
+    const NABEH_SVAHU = 0.4;       // o tolik hlouběji už má svah plnou šířku
     const VYSKA_PASU_POD_SKLEPEM = 0.5;
     const KROK = 0.1;
     const DOSAH_MAX = 40;          // pojistka proti nesmyslně širokému svahu
@@ -51,25 +51,29 @@
         return m;
     }
 
+    let posledniMrizka = null;
+
     /**
-     * Terén z výškových bodů: vážený průměr tří nejbližších, stejně jako mřížka terénu ve 3D.
-     * Body se třídí do přihrádek a výsledek se pamatuje po půl metru, jinak by mřížka výkopu
-     * s tisíci body trvala sekundy.
+     * Mřížka terénu z výškových bodů, jediný terén pro výpočet i 3D: vážený průměr tří nejbližších
+     * bodů ve vrcholech po 2 m. Sdílené trojúhelníky zaručí, že výkop přesně sedí na zobrazený terén.
      * @param {Array} body [[lat, lon, výška]]
      * @param {{lat, lon}} stred
-     * @returns {Function|null} (x, y) => výška m n.m., navíc .odhad(x, y) = bod leží mimo změřená data
+     * @returns {{minX, minY, sirka, vyska, sloupcu, radku, vysky: Float32Array, minH, nejblizsi: Function}}
      */
-    function terenZProfilu(body, stred) {
-        if (!body || !body.length || !stred) return null;
-        const M = 111320, cosLat = Math.cos(stred.lat * Math.PI / 180), P = 4;
+    function mrizkaTerenu(body, stred) {
+        if (posledniMrizka?.body === body && posledniMrizka.lat === stred.lat && posledniMrizka.lon === stred.lon) return posledniMrizka.mrizka;
+        const M = 111320, cosLat = Math.cos(stred.lat * Math.PI / 180), P = 4, OKRAJ = 20, KROK_MRIZKY = 2;
         const prihradky = new Map();
+        const vsechny = [];
+        let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, minH = Infinity;
         for (const b of body) {
-            const x = (b[1] - stred.lon) * M * cosLat, y = -(b[0] - stred.lat) * M;
-            const k = Math.floor(x / P) + ':' + Math.floor(y / P);
+            const q = { x: (b[1] - stred.lon) * M * cosLat, y: -(b[0] - stred.lat) * M, h: b[2] || 0 };
+            const k = Math.floor(q.x / P) + ':' + Math.floor(q.y / P);
             if (!prihradky.has(k)) prihradky.set(k, []);
-            prihradky.get(k).push({ x, y, h: b[2] || 0 });
+            prihradky.get(k).push(q);
+            vsechny.push(q);
+            x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); minH = Math.min(minH, q.h);
         }
-        const vsechny = [...prihradky.values()].flat();
         const nejblizsi = (x, y) => {
             const cx = Math.floor(x / P), cy = Math.floor(y / P);
             for (let r = 1; r <= 4; r++) {
@@ -82,20 +86,47 @@
             }
             return vsechny;   // daleko od parcely
         };
-        const pamet = new Map();
-        const vBode = (x, y) => {
-            const k = Math.round(x * 2) + ':' + Math.round(y * 2);
-            let v = pamet.get(k);
-            if (v) return v;
-            const d = nejblizsi(x, y).map(p => ({ h: p.h, d: Math.hypot(p.x - x, p.y - y) })).sort((a, b) => a.d - b.d).slice(0, 3);
-            let w = 0, s = 0;
-            for (const q of d) { const u = 1 / (q.d * q.d + 0.01); w += u; s += q.h * u; }
-            v = { h: s / w, d: d[0].d };
-            pamet.set(k, v);
-            return v;
+        const minX = x0 - OKRAJ, minY = y0 - OKRAJ, sirka = x1 - x0 + 2 * OKRAJ, vyska = y1 - y0 + 2 * OKRAJ;
+        const sloupcu = Math.max(2, Math.ceil(sirka / KROK_MRIZKY) + 1), radku = Math.max(2, Math.ceil(vyska / KROK_MRIZKY) + 1);
+        const vysky = new Float32Array(sloupcu * radku);
+        for (let r = 0; r < radku; r++) {
+            for (let s = 0; s < sloupcu; s++) {
+                const x = minX + s * sirka / (sloupcu - 1), y = minY + r * vyska / (radku - 1);
+                const d = nejblizsi(x, y).map(p => ({ h: p.h, d: Math.hypot(p.x - x, p.y - y) })).sort((a, b) => a.d - b.d).slice(0, 3);
+                if (d[0].d < 0.5) { vysky[r * sloupcu + s] = d[0].h; continue; }
+                let w = 0, soucet = 0;
+                for (const q of d) { const u = 1 / (q.d * q.d + 0.01); w += u; soucet += q.h * u; }
+                vysky[r * sloupcu + s] = soucet / w;
+            }
+        }
+        const mrizka = { minX, minY, sirka, vyska, sloupcu, radku, vysky, minH, nejblizsi };
+        posledniMrizka = { body, lat: stred.lat, lon: stred.lon, mrizka };
+        return mrizka;
+    }
+
+    /**
+     * Terén jako funkce po trojúhelnících mřížky, stejných jako ve 3D.
+     * @returns {Function|null} (x, y) => výška m n.m., navíc .odhad(x, y) = bod leží mimo změřená data
+     */
+    function terenZProfilu(body, stred) {
+        if (!body || !body.length || !stred) return null;
+        const { minX, minY, sirka, vyska, sloupcu, radku, vysky, nejblizsi } = mrizkaTerenu(body, stred);
+        const kx = sirka / (sloupcu - 1), ky = vyska / (radku - 1);
+        const fn = (x, y) => {
+            const fs = Math.max(0, Math.min(sloupcu - 1.001, (x - minX) / kx)), fr = Math.max(0, Math.min(radku - 1.001, (y - minY) / ky));
+            const s = Math.floor(fs), r = Math.floor(fr), a = fs - s, b = fr - r;
+            const v = (i, j) => vysky[j * sloupcu + i];
+            return a + b <= 1
+                ? v(s, r) + a * (v(s + 1, r) - v(s, r)) + b * (v(s, r + 1) - v(s, r))
+                : v(s + 1, r + 1) + (1 - a) * (v(s, r + 1) - v(s + 1, r + 1)) + (1 - b) * (v(s + 1, r) - v(s + 1, r + 1));
         };
-        const fn = (x, y) => vBode(x, y).h;
-        fn.odhad = (x, y) => vBode(x, y).d > 3;
+        // Vzdálenost k bodům se pamatuje po půl metru, ptá se na ni každá buňka výkopu
+        const pamet = new Map();
+        fn.odhad = (x, y) => {
+            const k = Math.round(x * 2) + ':' + Math.round(y * 2);
+            if (!pamet.has(k)) pamet.set(k, Math.min(...nejblizsi(x, y).map(p => Math.hypot(p.x - x, p.y - y))) > 3);
+            return pamet.get(k);
+        };
         return fn;
     }
 
@@ -119,8 +150,8 @@
             plocha: 0, vykopek: 0, ryhy: 0, delkaPasu: 0, bezZakladu: 0,
         }));
         const kopajici = seznam.filter(c => c.kope);
-        // Část, která tu na zem nedosáhne, nemá základ: nekope se pod ní ani kolem ní
-        const dosahne = (c, t) => c.dno - t <= P.sokl;
+        // Část, jejíž spodek tu na zem nedosáhne, nemá základ: nekope se pod ní ani kolem ní
+        const dosahne = (c, t) => c.dno <= t;
         if (!seznam.length) return { tn, seznam, kopajici, dosahne };
 
         // Dosah výpočtu: obrys, pracovní prostor a nejhlubší svah
@@ -143,7 +174,11 @@
                 const hl = t - c.dno;
                 let h = 0;
                 if (d <= P.odkop) { h = Math.max(0, hl); zona = true; }
-                else if (hl > SVISLE_DO) h = Math.max(0, hl - (d - P.odkop) / Math.max(P.svah, 0.01));
+                else if (hl > SVISLE_DO) {
+                    // Svah se rozbíhá plynule, jinak by se na svažitém terénu hrana výkopu lámala tam, kde hloubka přejde 0,8 m
+                    const sirka = hl * Math.max(P.svah, 0.01) * Math.min(1, (hl - SVISLE_DO) / NABEH_SVAHU);
+                    h = Math.max(0, hl * (1 - (d - P.odkop) / sirka));
+                }
                 if (h > D || (!cast && d === 0)) { D = Math.max(D, h); cast = c; }
             }
             if (zona || D > 0) D = Math.max(D, P.ornice);
@@ -290,7 +325,7 @@
         return vysledek;
     }
 
-    const Zemina = { VYCHOZI, NAD_TERENEM, spocitej, jama, terenZProfilu, nulaTerenu, bodVObrysu };
+    const Zemina = { VYCHOZI, NAD_TERENEM, spocitej, jama, mrizkaTerenu, terenZProfilu, nulaTerenu, bodVObrysu };
     if (typeof window !== 'undefined') window.Zemina = Zemina;
     if (typeof module !== 'undefined' && module.exports) module.exports = Zemina;
 })(this);

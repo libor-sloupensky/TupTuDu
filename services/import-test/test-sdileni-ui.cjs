@@ -61,8 +61,8 @@ async function main() {
         kontrola('půdorys: rozměr podle domu při 120 px na metr, bílé pozadí, není prázdný', pudorys.w > 1200 && pudorys.w < 1800 && pudorys.h > 1000 && pudorys.roh.join() === '255,255,255,255' && pudorys.plne > 0.1, JSON.stringify(pudorys));
         const po = await p.vyhodnot(`(() => { const d = ${D}; return { json: JSON.stringify(d.engine.toJSON()), aktivni: d.engine.dum.aktivni, scale: d.stage.scaleX(), x: d.stage.x(), y: d.stage.y(), vyber: [...d.renderer.selectedWalls], kroku: d.historie.length, ids: d.renderer.showIds, mrizka: d.renderer.gridLayer.visible() }; })()`);
         kontrola('po exportu je editor beze změny: data, pohled, výběr, vrstvy, historie', po.json === pred.json && po.aktivni === pred.aktivni && po.scale === pred.scale && po.x === pred.x && po.y === pred.y && JSON.stringify(po.vyber) === JSON.stringify(pred.vyber) && po.kroku === pred.kroku && po.ids === pred.ids && po.mrizka === pred.mrizka, JSON.stringify({ stejnaData: po.json === pred.json, aktivni: po.aktivni, vyber: po.vyber, kroku: [pred.kroku, po.kroku] }));
-        const popisky = await p.vyhodnot(`(() => { const d = ${D}; const st = d.stage; const puv = st.toCanvas; const nalezene = []; d.naPodlazi('P2'); const srafPred = d.renderer.schodyLayer.getChildren().filter(n => n.getClassName() === 'Group' && n.clipFunc()).length; d.naPodlazi(${JSON.stringify(pred.aktivni)}); st.toCanvas = function (c) { for (const n of d.renderer.labelLayer.find('Text')) { if (/^[WOD]\\d+$/.test(n.text()) && n.isVisible()) nalezene.push(n.text()); } for (const n of d.renderer.schodyLayer.getChildren()) { if (n.getClassName() === 'Group' && n.clipFunc()) nalezene.push('nepodepřená'); } return puv.call(this, c); }; d.renderer.showIds = true; d.renderer.render(); d._kresbyPodlazi([...d.engine.dum.podlazi].map(x => x.id)); st.toCanvas = puv; d.renderer.showIds = ${pred.ids}; d.renderer.render(); return { nalezene, srafPred }; })()`);
-        kontrola('v obrázku nejsou popisky stěn a otvorů ani šrafy nepodepřených stěn (v editoru šrafy jsou)', popisky.nalezene.length === 0 && popisky.srafPred > 0, JSON.stringify(popisky));
+        const popisky = await p.vyhodnot(`(() => { const d = ${D}; const st = d.stage; const puv = st.toCanvas; const nalezene = []; d.naPodlazi('P2'); const srafPred = d.renderer.schodyLayer.getChildren().filter(n => n.getClassName() === 'Group' && n.clipFunc()).length; d.naPodlazi(${JSON.stringify(pred.aktivni)}); st.toCanvas = function (c) { for (const n of d.renderer.labelLayer.find('Text')) { if (/^[WOD]\\d+$/.test(n.text()) && n.isVisible()) nalezene.push(n.text()); } for (const n of d.renderer.schodyLayer.getChildren()) { if (n.getClassName() === 'Group' && n.clipFunc()) nalezene.push('nepodepřená'); } return puv.call(this, c); }; d.renderer.showIds = false; d.renderer.render(); d._kresbyPodlazi([...d.engine.dum.podlazi].map(x => x.id)); st.toCanvas = puv; d.renderer.showIds = ${pred.ids}; d.renderer.render(); return { nalezene, srafPred }; })()`);
+        kontrola('se schovanými značkami v obrázku nejsou popisky stěn a otvorů, šrafy nepodepřených stěn nikdy (v editoru šrafy jsou)', popisky.nalezene.length === 0 && popisky.srafPred > 0, JSON.stringify(popisky));
         const vse = await p.vyhodnot(`(() => { const d = ${D}; window.__k = d._listPudorysu(d._kresbyPodlazi([...d.engine.dum.podlazi].reverse().map(x => x.id))); return (${ROZBOR})(window.__k); })()`);
         await ulozCanvas('window.__k', 'export-vsechna.png');
         kontrola('všechna podlaží na jednom listu vedle sebe', vse.w > pudorys.w * 1.8 && vse.plne > 0.1, JSON.stringify(vse));
@@ -109,13 +109,56 @@ async function main() {
         kontrola('skrytí střechy funguje', skryti.skryta && skryti.stav === 'false', JSON.stringify(skryti));
         await pauza(200);
         await p.snimek(path.join(vystup, 'sdileni-3d-bez-strechy.png'));
-        const plan = await p.vyhodnot(`(async () => { document.querySelector('[data-pohled=plan-P1]').click(); await new Promise(r => setTimeout(r, 600)); const i = document.querySelector('[data-panel=plan-P1] img'); return { videt: i.offsetWidth > 100, sirka: i.naturalWidth, plocha3d: document.querySelector('[data-panel="3d"]').hidden }; })()`);
+        const plan = await p.vyhodnot(`(async () => { document.querySelector('[data-pohled=plan-P1]').click(); const i = document.querySelector('[data-panel=plan-P1] img'); await (i.decode ? i.decode().catch(() => {}) : null); await new Promise(r => setTimeout(r, 300)); return { videt: i.offsetWidth > 100, sirka: i.naturalWidth, plocha3d: document.querySelector('[data-panel="3d"]').hidden }; })()`);
         kontrola('přepnutí na půdorys ukáže obrázek', plan.videt && plan.sirka > 1000 && plan.plocha3d, JSON.stringify(plan));
         await p.snimek(path.join(vystup, 'sdileni-plan.png'));
         const vazneOdkaz = p.chybyDetail.filter(c => !/404/.test(c.text));
         kontrola('stránka odkazu bez chyb v konzoli', vazneOdkaz.length === 0, vazneOdkaz.slice(0, 3).map(c => (c.text || '').slice(0, 200)).join(' | '));
 
-        console.log('\n3b) Uzamčení po ztrátě tarifu');
+        console.log('\n3a) Terén v odkazu');
+        await p.jdiNa(urlEditoru);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        await p.vyhodnot(`(() => { const d = ${D}; d.katastrParcely = [{ cislo: 't', label: 't', centroid_wgs84: { lat: 50.0002, lon: 15.0003 }, polygon_wgs84: [[49.9998, 14.9997], [50.0006, 14.9997], [50.0006, 15.0009], [49.9998, 15.0009]] }]; d.renderer._fixedWgsCenter = { lat: 50, lon: 15 };
+            const o = []; const M = 111320, c = Math.cos(50 * Math.PI / 180);
+            for (let i = -30; i <= 30; i++) for (let j = -30; j <= 30; j++) o.push([50 + j * 2 / M, 15 + i * 2 / (M * c), 400 + i * 0.1]);
+            d.vyskovyProfil = { body: o, vyska_min: 397, vyska_max: 403, vyskovy_rozdil: 6 }; d._zalozZaklady(); d._selectionTick++; return true; })()`);
+        await pauza(800);
+        await p.vyhodnot(`(() => { document.querySelector('[data-sdileni=aktualizovat]').click(); return true; })()`);
+        await pauza(500);
+        await p.cekej(`!${D}.sdileniBezi`, 40000, 'aktualizace s terénem');
+        const sTerenem = await anonym('/share/' + token + '/model');
+        const textSTerenem = Buffer.from(sTerenem.telo).toString('utf8');
+        const modelSTerenem = JSON.parse(textSTerenem);
+        const vyskyOdkazu = new Float32Array(Uint8Array.from(Buffer.from(modelSTerenem.teren.vysky, 'base64')).buffer);
+        kontrola('model nese terén', modelSTerenem.teren.sloupcu > 5 && vyskyOdkazu.length === modelSTerenem.teren.sloupcu * modelSTerenem.teren.radku && modelSTerenem.teren.parcely.length === 1, `${modelSTerenem.teren.sloupcu}×${modelSTerenem.teren.radku}`);
+        kontrola('terén neprozradí polohu: bez souřadnic a nadmořské výšky', !/wgs84|sjtsk|"lat"|"lon"|"cislo"|"label"/.test(textSTerenem) && Math.max(...vyskyOdkazu) < 50, 'max ' + Math.max(...vyskyOdkazu).toFixed(2));
+        await p.jdiNa(adresa);
+        await p.cekej(`!!window.__sdileniScena`, 20000, 'prohlížeč s terénem');
+        await pauza(800);
+        const pohledOdkazu = await p.vyhodnot(`(() => { const sc = window.__sdileniScena; return { teren: !!sc.teren, ve: sc.scene.children.includes(sc.teren?.plocha), vnitrek: sc.teren?.uniformy.uVnitrekZap.value }; })()`);
+        const jamyModelu = Object.keys(modelSTerenem.teren.jamy || {});
+        kontrola('model nese výkop pro skrytá podlaží', jamyModelu.length >= 1 && (textSTerenem.length < 4e6), jamyModelu.join(' | ') + ', ' + Math.round(textSTerenem.length / 1024) + ' kB');
+        const vykopOdkazu = await p.vyhodnot(`(async () => { const sc = window.__sdileniScena; const px = (x, y, z) => { sc.renderer.render(sc.scene, sc.camera); const v = new THREE.Vector3(x, y, z).project(sc.camera); const g = sc.renderer.getContext(); const b = new Uint8Array(4); g.readPixels(Math.round((v.x + 1) / 2 * g.drawingBufferWidth), Math.round((v.y + 1) / 2 * g.drawingBufferHeight), 1, 1, g.RGBA, g.UNSIGNED_BYTE, b); return [b[0], b[1], b[2]]; };
+            const tlacitka = [...document.querySelectorAll('[data-sdileni-ovladani] button')];
+            tlacitka.forEach(b => b.click());
+            await new Promise(r => setTimeout(r, 400));
+            const sit = [...sc.jamy.values()].find(s => s.visible);
+            const stred = sit ? new THREE.Box3().setFromObject(sit).getCenter(new THREE.Vector3()) : null;
+            let barva = null;
+            if (sit) { const q = sit.geometry.attributes.position; let m = -1, nej = Infinity; for (let i = 0; i < q.count; i += 7) { const d = Math.hypot(q.getX(i) - stred.x, q.getZ(i) - stred.z); if (d < nej) { nej = d; m = i; } } barva = px(q.getX(m), q.getY(m), q.getZ(m)); }
+            const r = { vidna: !!sit, zap: sc.teren.uniformyJamy.uJamaZap.value, barva, napoveda: /výkop|excavation/.test(document.querySelector('.tt-sdileni-pata').textContent) };
+            return r; })()`);
+        kontrola('po skrytí podlaží odkaz ukáže výkop v barvě zeminy', vykopOdkazu.vidna && vykopOdkazu.zap === 1 && vykopOdkazu.barva[0] > vykopOdkazu.barva[1] + 8, JSON.stringify(vykopOdkazu));
+        kontrola('odkaz o výkopu napoví', vykopOdkazu.napoveda);
+        await p.snimek(path.join(vystup, 'sdileni-vykop.png'));
+        await p.vyhodnot(`(() => { [...document.querySelectorAll('[data-sdileni-ovladani] button')].forEach(b => b.click()); return true; })()`);
+        await pauza(300);
+        const vykopZpet = await p.vyhodnot(`window.__sdileniScena.teren.uniformyJamy.uJamaZap.value`);
+        kontrola('s viditelnými podlažími se terén v odkazu zavře', vykopZpet === 0);
+        kontrola('prohlížeč terén ukáže a uvnitř domu ho vyřízne', pohledOdkazu.teren && pohledOdkazu.ve && pohledOdkazu.vnitrek === 1, JSON.stringify(pohledOdkazu));
+        await p.snimek(path.join(vystup, 'sdileni-teren.png'));
+
+        console.log('\n3b) Odkaz autora ve verzi zdarma');
         await p.jdiNa(urlEditoru);
         await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
         const projekt = await p.vyhodnot(`${D}.projektId`);
@@ -128,7 +171,7 @@ async function main() {
             majitel(zdarma);
             const [z1, z2, z3] = [await anonym('/share/' + token), await anonym('/share/' + token + '/model'), await anonym('/share/' + token + '/soubor/plan-P1.png')];
             const zamekText = Buffer.from(z1.telo).toString('utf8');
-            kontrola('autor bez tarifu: stránka hlásí uzamčení, model a obrázky nejdou', zdarma > 0 && z1.s === 403 && /uzamčený|locked/i.test(zamekText) && !/sdileni-prohlizec/.test(zamekText) && /noindex/.test(z1.robots) && z2.s === 404 && z3.s === 404, JSON.stringify({ zdarma, s: [z1.s, z2.s, z3.s] }));
+            kontrola('autor ve verzi zdarma: odkaz, model i obrázky fungují', zdarma > 0 && z1.s === 200 && !/uzamčený|locked/i.test(zamekText) && /sdileni-prohlizec/.test(zamekText) && z2.s === 200 && z3.s === 200, JSON.stringify({ zdarma, s: [z1.s, z2.s, z3.s] }));
         } finally {
             majitel(puvodniMajitel);
         }

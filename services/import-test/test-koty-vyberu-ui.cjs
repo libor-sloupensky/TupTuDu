@@ -131,6 +131,7 @@ async function main() {
 
         console.log('\n4) Klemov: reference se jen čte, přepisuje se dočasná kopie');
         const urlTest = await p.vyhodnot('location.href');
+        const upravenoPred = execSync(`php artisan tinker --execute="echo DB::table('koncepty_v3')->where('id',51)->value('upraveno');"`, { encoding: 'utf8' }).trim();
         await p.jdiNa(ZAKLAD + '/masterteam/koncept-v3?id=51');
         await pauza(2500);
         await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine && ${D}.engine.walls.size > 0)`, 20000, 'Klemov');
@@ -161,7 +162,7 @@ async function main() {
         kontrola('W18 s vazbami na hostitele: přesná hodnota k W5, zůstane rovnoběžná', w18Pred.od && w18Pred.do && w18Po.k.some(x => x.cil === 'W5' && blizko(x.cm, cilW5, 0.3)) && w18Po.odchylka < 0.01, JSON.stringify({ w18Pred, cilW5, w18Po }));
         await p.snimek(path.join(vystup, 'koty-kopie-po-prepisu.png'));
         const reference = execSync(`php artisan tinker --execute="echo DB::table('koncepty_v3')->where('id',51)->value('upraveno');"`, { encoding: 'utf8' }).trim();
-        kontrola('reference Klemov se nezměnila', reference === '2026-11-02 19:27:13', reference);
+        kontrola('reference Klemov se nezměnila', reference === upravenoPred, reference);
 
         const vazne = p.chybyDetail.filter(c => !/404/.test(c.text));
         kontrola('bez chyb v konzoli', vazne.length === 0, vazne.slice(0, 3).map(c => (c.text || '').slice(0, 200) + ' @ ' + (c.url || '') + ':' + (c.radek || '')).join(' | '));

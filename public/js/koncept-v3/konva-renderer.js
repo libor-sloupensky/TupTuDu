@@ -118,6 +118,8 @@ class KonvaRenderer {
         this.showKoty = options.showKoty ?? true;
         this.showPopisky = options.showPopisky ?? true;
         this.showNodes = options.showNodes ?? true;
+        this.showSteny = options.showSteny ?? true;
+        this.showOtvory = options.showOtvory ?? true;
         this.showGrid = options.showGrid ?? true;
         this.showIds = options.showIds ?? false;
         this.showMistnosti = options.showMistnosti ?? true;
@@ -170,8 +172,8 @@ class KonvaRenderer {
         for (const s of (this._vybaveniShapes || [])) s.destroy();
         this._vybaveniShapes = [];
         if (this.showVybaveni) this.renderVybaveni();
-        if (this.showKoty) this.renderKoty();
-        if (this.showIds) this.renderIds();
+        this.renderKoty();
+        this.renderIds();
         window.KotyVyberu?.kresli(this);
         if (typeof this.afterRender === 'function') this.afterRender();
     }
@@ -293,8 +295,9 @@ class KonvaRenderer {
                 fontSize: this.velikostPopisku(12), fontFamily: 'Nunito, system-ui, sans-serif', fontStyle: '600',
                 fill: '#374151', align: 'center', lineHeight: 1.25, listening: false, rotation: rot, visible: citelne,
             });
-            text.offsetX(text.width() / 2);
-            text.offsetY(text.height() / 2);
+            text.setAttr('_radky', radky);
+            text.setAttr('_rozmer', this.showKoty ? window.KotyRetezce?.rozmerMistnosti(this, k) : null);
+            this._popisekMistnosti(text);
             this.mistnostiLayer.add(text);
             this._mistnostiShapes.push(text);
             this._mistnostiPopisky.push(text);
@@ -327,11 +330,21 @@ class KonvaRenderer {
         const vel = this.velikostPopisku(12);
         for (const t of (this._mistnostiPopisky || [])) {
             t.fontSize(vel);
-            t.offsetX(t.width() / 2);
-            t.offsetY(t.height() / 2);
+            this._popisekMistnosti(t);
             t.visible(citelne);
         }
         this.mistnostiLayer.batchDraw();
+    }
+
+    /** Text popisku podle přiblížení: rozměr místnosti jen tam, kde se do ní vejde. */
+    _popisekMistnosti(t) {
+        const radky = t.getAttr('_radky') || [];
+        const rozmer = t.getAttr('_rozmer');
+        const vel = t.fontSize();
+        const vejde = rozmer && rozmer.du > rozmer.text.length * vel * 0.55 && rozmer.dv > (radky.length + 1) * vel * 1.25;
+        t.text((vejde ? [...radky, rozmer.text] : radky).join('\n'));
+        t.offsetX(t.width() / 2);
+        t.offsetY(t.height() / 2);
     }
 
     /**
@@ -425,10 +438,11 @@ class KonvaRenderer {
             }
         }
         toDel.forEach(k => this._labelShapes.delete(k));
+        if (!this.showIds) { this.labelLayer.batchDraw(); return; }
         // Velikost podle společného pravidla s kótami a úhly (viz POPISKY)
         const v = (px) => this.velikostPopisku(px);
         // Wall IDs
-        for (const wall of (this.citelnePismo(10) ? this.engine.walls.values() : [])) {
+        for (const wall of (this.showSteny && this.citelnePismo(10) ? this.engine.walls.values() : [])) {
             const nA = this.engine.nodes.get(wall.nodeA);
             const nB = this.engine.nodes.get(wall.nodeB);
             if (!nA || !nB) continue;
@@ -459,7 +473,7 @@ class KonvaRenderer {
             this._labelShapes.set('id_' + wall.id, text);
         }
         // Opening IDs
-        for (const opening of (this.citelnePismo(9) ? this.engine.openings.values() : [])) {
+        for (const opening of (this.showOtvory && this.citelnePismo(9) ? this.engine.openings.values() : [])) {
             const wall = this.engine.walls.get(opening.wallId);
             if (!wall) continue;
             const nA = this.engine.nodes.get(wall.nodeA);
@@ -497,6 +511,8 @@ class KonvaRenderer {
         for (const shape of this._wallShapes.values()) shape.destroy();
         this._wallShapes.clear();
 
+        if (!this.showSteny) { this.wallLayer.batchDraw(); return; }
+
         const scale = this.stage ? this.stage.scaleX() : 1;
         for (const wall of this.engine.walls.values()) {
             const selected = this.selectedWalls.has(wall.id);
@@ -533,6 +549,7 @@ class KonvaRenderer {
     renderOddelovace() {
         for (const s of this._oddelovacShapes) s.destroy();
         this._oddelovacShapes = [];
+        if (!this.showSteny) { this.wallLayer.batchDraw(); return; }
         const scale = this.stage ? this.stage.scaleX() || 1 : 1;
         for (const o of this.engine.oddelovace.values()) {
             const a = this.engine.bodKonceOddelovace(o.a);
@@ -572,13 +589,17 @@ class KonvaRenderer {
 
         // Vlastní vrstva se po smazání uzlů musí překreslit, jinak by na plátně
         // zůstaly viset staré kroužky.
-        if (!this.showNodes) { this.nodeLayer.batchDraw(); return; }
+        if (!this.showSteny) { this.nodeLayer.batchDraw(); return; }
+
+        // Vypnutý přepínač Body: kreslí se jen body u výběru
+        const jenVyber = this.showNodes ? null : this._bodyVyberu();
 
         // Nový režim editoru: barvy podle typu napojení (L/T/X/frozen).
         // Aktivuje se pomocí this.nodeColorByJunctionType = true (option).
         const useJunctionColors = this.nodeColorByJunctionType === true;
 
         for (const node of this.engine.nodes.values()) {
+            if (jenVyber && !jenVyber.has(node.id)) continue;
             const selected = this.selectedNodes.has(node.id);
             let fill, stroke, radius;
 
@@ -614,6 +635,26 @@ class KonvaRenderer {
         this.nodeLayer.batchDraw();
     }
 
+    /**
+     * Body vybrané stěny: její konce a konce stěn napojených na ni. Vybraný bod se počítá
+     * se všemi svými stěnami, jinak by klik na bod ostatní schoval a na další by se nedalo přejít.
+     */
+    _bodyVyberu() {
+        const steny = new Set(this.selectedWalls);
+        for (const id of this.selectedNodes) {
+            for (const w of this.engine.getNodeWalls(id)) steny.add(w.id);
+        }
+        const body = new Set(this.selectedNodes);
+        for (const id of steny) {
+            const w = this.engine.walls.get(id);
+            if (!w) continue;
+            body.add(w.nodeA);
+            body.add(w.nodeB);
+            for (const d of this.engine.getTChildren(id)) body.add(d.end === 'a' ? d.wall.nodeA : d.wall.nodeB);
+        }
+        return body;
+    }
+
     // ═══════════════════════════════════════════════════════
     // OTVORY
     // ═══════════════════════════════════════════════════════
@@ -623,6 +664,12 @@ class KonvaRenderer {
         // Vyčistit všechny dveřní detaily (oblouky, křídla, posuvné čáry) — name="_doorDetail_*"
         this.overlayLayer.find(n => typeof n.name === 'function' && String(n.name()).startsWith('_doorDetail_'))
             .forEach(n => n.destroy());
+
+        if (!this.showOtvory) {
+            this.openingLayer.batchDraw();
+            this.overlayLayer.batchDraw();
+            return;
+        }
 
         for (const opening of this.engine.openings.values()) {
             const wall = this.engine.walls.get(opening.wallId);
@@ -873,11 +920,40 @@ class KonvaRenderer {
             this._labelShapes.delete(key);
         }
 
-        if (!this.showKoty || !this.citelnePismo(11)) { this.labelLayer.batchDraw(); return; }
+        this._kotyRetezce = [];
+        if (!this.showSteny) { this.labelLayer.batchDraw(); return; }
 
         const v = (px) => this.velikostPopisku(px);
+        const tah = !!(this.jeTah && this.jeTah());
 
-        for (const wall of this.engine.walls.values()) {
+        // Řetězce kolem domu; za tahu ne, po puštění se nakreslí znovu
+        if (this.showKoty && !tah && window.KotyRetezce) {
+            const skupina = new Konva.Group({ listening: false });
+            this._kotyRetezce = window.KotyRetezce.kresli(this, skupina);
+            this.labelLayer.add(skupina);
+            this._labelShapes.set('kota_retezce', skupina);
+        }
+
+        if (!this.citelnePismo(11)) { this.labelLayer.batchDraw(); return; }
+
+        // Délka jen u toho, s čím se pracuje. Za tahu i u navazujících stěn, těm se mění.
+        const sDelkou = new Set(this.selectedWalls);
+        for (const id of this.selectedNodes) {
+            for (const w of this.engine.getNodeWalls(id)) sDelkou.add(w.id);
+        }
+        if (tah) {
+            for (const id of [...sDelkou]) {
+                const w = this.engine.walls.get(id);
+                if (!w) continue;
+                for (const n of [w.nodeA, w.nodeB]) {
+                    for (const s of this.engine.getNodeWalls(n)) sDelkou.add(s.id);
+                }
+            }
+        }
+
+        for (const id of sDelkou) {
+            const wall = this.engine.walls.get(id);
+            if (!wall) continue;
             const nA = this.engine.nodes.get(wall.nodeA);
             const nB = this.engine.nodes.get(wall.nodeB);
             if (!nA || !nB) continue;
@@ -900,7 +976,7 @@ class KonvaRenderer {
             const text = new Konva.Text({
                 x: cx + nx * offset,
                 y: cy + ny * offset,
-                text: delka.toFixed(2) + 'm',
+                text: delka.toFixed(2).replace('.', ',') + ' m',
                 fontSize: v(11),
                 fill: '#6b7280',
                 align: 'center',
@@ -942,6 +1018,19 @@ class KonvaRenderer {
         this.wallLayer.batchDraw();
     }
 
+    highlightOpening(openingId) {
+        for (const [id, shape] of this._openingShapes) {
+            const opening = this.engine.openings.get(id);
+            const otvorDef = (typeof TYPY_OTVORU !== 'undefined' && opening && TYPY_OTVORU[opening.typ]) || {};
+            const selected = this.selectedOpenings.has(id);
+            const hovered = id === openingId;
+            shape.fill(hovered ? '#2563eb' : '#ffffff');
+            shape.stroke(selected ? VYBER.obrys : (hovered ? '#1d4ed8' : (otvorDef.barva2d || '#c2410c')));
+            shape.opacity(hovered ? 0.8 : 1);
+        }
+        this.openingLayer.batchDraw();
+    }
+
     /** Velikost popisku ve výkresu pro `px` obrazovkových pixelů (viz POPISKY). */
     velikostPopisku(px) {
         return px / Math.max(this.stage.scaleX() || 1, POPISKY.zoomMez);
@@ -960,7 +1049,7 @@ class KonvaRenderer {
     poZmeneZoomu() {
         this.renderGrid();
         this.renderKoty();
-        if (this.showIds) this.renderIds();
+        this.renderIds();
         this.resizeVysky();
         // Tečky a popisky jen změní velikost — zoom nepřestavuje kresbu ani nepočítá rastr
         this.zoomOddelovace();

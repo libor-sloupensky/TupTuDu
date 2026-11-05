@@ -58,12 +58,19 @@ Když uživatel řekne **„oprav bugy"** (nebo „oprav chyby") bez podrobnost�
 Proxy čte celou DB (i uživatele) — **jen SELECT** pro ladění; zápis (`?write=1`) jen na označení bugů nebo na výslovný pokyn. Žádné DROP/ALTER/TRUNCATE (proxy je stejně blokuje).
 
 ## Překlady — zákaznická část (web, app)
-- Texty, které uvidí zákazník, **nikdy natvrdo česky** — Blade `__('skupina.klic')`, JS `preloz('skupina.klic')`. Nový text rovnou do `lang/cs` i `lang/en`, pak `php artisan preklady:kontrola`.
+- **Uživateli tykáme** všude, kde je to vhodné: web, aplikace, editor, e-maily i SEO články včetně titulků a popisů. V ostatních jazycích stejně (de du, sk a pl ty, es tú, it tu). **Výjimka: francouzsky vykáme (vous)**, tykání by tam působilo nezdvořile. Vykání nebo neosobní styl jen ve francouzštině a v právních dokumentech (podmínky, soukromí, vrácení peněz).
+- Texty, které uvidí zákazník, **nikdy natvrdo česky** — Blade `__('skupina.klic')`, JS `preloz('skupina.klic')`. Nový text rovnou do `lang/cs` i `lang/en`, pak `php artisan preklady:kontrola`. Ostatní jazyky se doplňují hromadně **před každým nasazením**, do té doby v nich platí angličtina; `preklady:kontrola` nesmí před pushem nic hlásit.
 - Národní služby (katastr, výškový profil, mapový podklad) jen přes profil země: `@funkce('katastr')`, middleware `funkce:katastr`, `Lokalizace::maFunkci()`.
 - Masterteam je jen česky, nepřekládá se. Podrobnosti: `modules/lokalizace.md`.
 
 ## Formuláře editoru
 - Zarovnání polí a nápisů řeší jedno pravidlo `.kk-editor` v `koncept-v3.blade.php`, ne okraje u jednotlivých polí. Přidaný nebo změněný panel ověřit `node services/import-test/test-formulare-ui.cjs` a nový panel do toho testu doplnit.
+- **Hodnota pole platí ihned, jednotně ve všech panelech.** Co se napíše, je v modelu bez potvrzování a klik jinam to neztratí. Řeší to jedno místo `_poleIhnedInit` v `koncept-k-ui.js` pro všechna textová a číselná pole v `.kk-editor`.
+  - **Nové pole:** `:value` + `@change` + `@keydown.enter.prevent="$event.target.blur()"`. Žádné vlastní `@blur`, debounce ani tlačítko Uložit.
+  - **Rozepsaná hodnota, která ještě neplatí**, se vyjádří přes `min`, `max` a `pattern`, odevzdá se až s odchodem z pole.
+  - **Setter** musí hodnotu sám omezit a vyrovnat se s prázdným polem (`NaN`), volá se i s mezihodnotami při pomalém psaní.
+  - **Výjimka** jsou jen pole s výslovným potvrzením a Esc (kóta, přejmenování).
+  - Celá úprava pole je jeden krok Zpět a jedna úprava do limitu tarifu. Test prochází každé pole ve všech panelech.
 
 ## Brand
 - Veškerý UI stav projektu se ukládá konzistentně — promyslet stav i invalidaci PŘEDEM

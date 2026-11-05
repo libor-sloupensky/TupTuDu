@@ -7,6 +7,13 @@ return [
         'chyba_spojeni' => 'Chyba připojení. Zkuste to prosím znovu.',
         'ulozeno' => 'Uloženo',
     ],
+    // Stejný koncept uložený jinde (koncept-k-ui.js, _konfliktUlozeni)
+    'koncept' => [
+        'konflikt_nadpis' => 'Projekt se mezitím změnil jinde',
+        'konflikt_text' => 'Tento projekt je novější v jiné kartě nebo na jiném zařízení. Abyste si práci navzájem nepřepsali, ukládání je pozastavené. Načtěte aktuální verzi, nebo ji přepište tím, co vidíte tady.',
+        'konflikt_nacist' => 'Načíst aktuální verzi',
+        'konflikt_prepsat' => 'Přepsat touto verzí',
+    ],
     // Limity tarifu v editoru (public/js/koncept-v3/limit-tarifu.js) — stejné texty jako tarify.php
     'tarify' => [
         'limit_uprav_nadpis' => 'Dnešní limit úprav je vyčerpaný',

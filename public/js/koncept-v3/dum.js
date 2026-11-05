@@ -1065,12 +1065,11 @@
             if (i < 0 || i > iNp) return null;
             const typ = d.zaklady?.casti?.[id] || 'pasy';
             const dno = (this.engine.kotyPodlazi().get(id) ?? 0) - this.zakladyHodnota('skladba');
-            const sokl = this.zakladyHodnota('sokl');
             const teren = this._terenDomu();
             const tn = teren.fn || (() => 0);
             return {
-                klic: [typ, dno, sokl, teren.nula].join('|'),
-                dosahne: (x, y) => typ === 'stavajici' || dno - tn(x, y) <= sokl,
+                klic: [typ, dno, teren.nula].join('|'),
+                dosahne: (x, y) => typ === 'stavajici' || dno <= tn(x, y),
             };
         },
 
@@ -1830,7 +1829,10 @@
             this.engine.pushUndo();
             this._barvaNahled = null;
             const hrana = { ...((st.hrany || {})[klic] || {}), ...nastav };
-            for (const k of Object.keys(hrana)) if (hrana[k] === null || hrana[k] === undefined || hrana[k] === '') delete hrana[k];
+            for (const k of Object.keys(hrana)) if (hrana[k] === null || hrana[k] === undefined || hrana[k] === '' || Number.isNaN(hrana[k])) delete hrana[k];
+            if (hrana.sklon !== undefined) hrana.sklon = omez(hrana.sklon, 1, 75);
+            if (hrana.presah !== undefined) hrana.presah = omez(hrana.presah, 0, 3);
+            if (hrana.vyskaOkapu !== undefined) hrana.vyskaOkapu = omez(hrana.vyskaOkapu, 0, 12);
             st.hrany = { ...(st.hrany || {}), [klic]: hrana };
             if (!Object.keys(hrana).length) { const { [klic]: _pryc, ...zbytek } = st.hrany; st.hrany = zbytek; }
             this._poZmeneDomu('Hrana střechy');
@@ -2705,55 +2707,26 @@
             return !this.skryte3d.includes(id);
         },
 
-        /** Hodnoty díry v terénu, sdílené materiály terénu a jeho mřížky. Terén se staví znovu, díra zůstává. */
+        /** Hodnoty děr v terénu (výkop a vnitřek domu), sdílené materiály terénu a jeho mřížky. Terén se staví znovu, díry zůstávají. */
         _uniformyJamy() {
-            const _3d = window._kk3d, THREE = window.THREE;
-            if (!_3d.jamaUniformy) {
-                _3d.jamaUniformy = {
-                    uJama: { value: new THREE.DataTexture(new Uint8Array(4), 1, 1, THREE.RGBAFormat) },
-                    uJamaMin: { value: new THREE.Vector2() },
-                    uJamaRozmer: { value: new THREE.Vector2(1, 1) },
-                    uJamaOsa: { value: new THREE.Vector2(1, 0) },
-                    uJamaZap: { value: 0 },
-                };
-            }
+            const _3d = window._kk3d;
+            if (!_3d.jamaUniformy) _3d.jamaUniformy = window.Teren3d.uniformyJamy();
+            if (!_3d.vnitrekUniformy) _3d.vnitrekUniformy = window.Teren3d.uniformyVnitrku();
             return _3d.jamaUniformy;
         },
 
-        /** Do shaderu terénu přidá díru: co leží nad výkopem, nekreslí se. */
-        _materialSJamou(shader) {
-            Object.assign(shader.uniforms, this._uniformyJamy());
-            shader.vertexShader = 'varying vec2 vJamaPoloha;\n' + shader.vertexShader.replace(
-                '#include <project_vertex>',
-                '#include <project_vertex>\nvJamaPoloha = (modelMatrix * vec4(transformed, 1.0)).xz;'
-            );
-            shader.fragmentShader = 'uniform sampler2D uJama;\nuniform vec2 uJamaMin;\nuniform vec2 uJamaRozmer;\nuniform vec2 uJamaOsa;\nuniform float uJamaZap;\nvarying vec2 vJamaPoloha;\n'
-                + shader.fragmentShader.replace(
-                    '#include <clipping_planes_fragment>',
-                    `#include <clipping_planes_fragment>
-if (uJamaZap > 0.5) {
-    vec2 jamaUv = (vec2(dot(vJamaPoloha, uJamaOsa), dot(vJamaPoloha, vec2(-uJamaOsa.y, uJamaOsa.x))) - uJamaMin) / uJamaRozmer;
-    if (jamaUv.x >= 0.0 && jamaUv.x <= 1.0 && jamaUv.y >= 0.0 && jamaUv.y <= 1.0 && texture2D(uJama, jamaUv).r > 0.5) discard;
-}`
-                );
+        /** Parcely jako polygony ve scéně: x na východ, z na jih. */
+        _parcelyVeScene() {
+            const stred = this.renderer._fixedWgsCenter, M = 111320, cosLat = Math.cos(stred.lat * Math.PI / 180);
+            return (this.katastrParcely || []).filter(p => p.polygon_wgs84?.length >= 3)
+                .map(p => p.polygon_wgs84.map(([lat, lon]) => [(lon - stred.lon) * M * cosLat, -(lat - stred.lat) * M]));
         },
 
-        /** Výška zobrazeného terénu ve scéně, přesně po jeho trojúhelnících: okraj jámy na něj musí sednout. */
-        _vyskaTerenu3d() {
-            const _3d = window._kk3d;
-            if (!_3d.terrain) return () => 0;
-            const poz = _3d.terrain.geometry.attributes.position;
-            const { minX, minZ, bboxW, bboxH } = _3d.terrainMaskRange;
-            const sl = _3d.terrainCols, ra = _3d.terrainRows;
-            const kx = bboxW / (sl - 1), kz = bboxH / (ra - 1);
-            const v = (s, r) => poz.getY(r * sl + s);
-            return (x, z) => {
-                const fs = omez((x - minX) / kx, 0, sl - 1.001), fr = omez((z - minZ) / kz, 0, ra - 1.001);
-                const s = Math.floor(fs), r = Math.floor(fr), a = fs - s, b = fr - r;
-                return a + b <= 1
-                    ? v(s, r) + a * (v(s + 1, r) - v(s, r)) + b * (v(s, r + 1) - v(s, r))
-                    : v(s + 1, r + 1) + (1 - a) * (v(s, r + 1) - v(s + 1, r + 1)) + (1 - b) * (v(s + 1, r) - v(s + 1, r + 1));
-            };
+        /** Do shaderu terénu přidá díry: nekreslí se nad výkopem ani uvnitř domu nad jeho podlahou. */
+        _materialSJamou(shader) {
+            const u = this._uniformyJamy();
+            window.Teren3d.shaderVnitrku(shader, window._kk3d.vnitrekUniformy);
+            window.Teren3d.shaderJamy(shader, u);
         },
 
         /**
@@ -2766,9 +2739,13 @@ if (uJamaZap > 0.5) {
             const u = this._uniformyJamy();
             const vsechny = this.maZaklady ? this._castiZakladu() : [];
             const casti = vsechny.filter(c => !this._viditelne3d(c.id));
+            const viditelne = vsechny.filter(c => this._viditelne3d(c.id));
+            const nula = this._terenDomu().nula;
+            const yNula = _3d.terrainHeights && typeof nula === 'number' ? nula - _3d.terrainMinH : 0;
+            window.Teren3d.nastavVnitrek(_3d.vnitrekUniformy, viditelne.map(c => ({ obrys: c.obrys, uroven: yNula + c.kota - 0.01 })));
             const ukazat = casti.length > 0;
             if (ukazat && this.zemina) {
-                const klic = this._zeminaCache.klic + '|' + casti.map(c => c.id).join() + '|' + (_3d.terrain?.uuid || 'rovina');
+                const klic = this._zeminaCache.klic + '|' + casti.map(c => c.id).join() + '|' + viditelne.map(c => c.id).join() + '|' + (_3d.terrain?.uuid || 'rovina');
                 if (_3d.jama?.userData.klic !== klic) {
                     if (_3d.jama) {
                         _3d.scene.remove(_3d.jama);
@@ -2777,22 +2754,17 @@ if (uJamaZap > 0.5) {
                     }
                     const j = window.Zemina.jama(casti, this._terenDomu().fn, this.engine.dum.zaklady, this._uhelSten(vsechny));
                     if (j) {
-                        _3d.jama = this._sitJamy(j);
+                        u.uJama.value.dispose();
+                        _3d.jama = window.Teren3d.sitJamy(this._bunkyJamy(j, viditelne, yNula));
                         _3d.jama.userData.klic = klic;
                         _3d.scene.add(_3d.jama);
-                        const stara = u.uJama.value;
-                        u.uJama.value = _3d.jama.userData.maska;
-                        stara.dispose();
-                        u.uJamaOsa.value.set(j.cos, j.sin);
-                        u.uJamaMin.value.set(j.u0, j.v0);
-                        u.uJamaRozmer.value.set((j.sloupcu - 1) * j.krok, (j.radku - 1) * j.krok);
                         window.Svetlo3d.prekresliStiny(_3d.renderer);
                     }
                 }
             }
             const jamaVidet = !!(ukazat && _3d.jama);
             if (_3d.jama) _3d.jama.visible = jamaVidet;
-            u.uJamaZap.value = jamaVidet ? 1 : 0;
+            window.Teren3d.nastavJamu(u, jamaVidet ? _3d.jama : null);
             if (_3d.grid) _3d.grid.visible = !jamaVidet;
         },
 
@@ -2813,51 +2785,26 @@ if (uJamaZap > 0.5) {
             return uhel;
         },
 
-        /** Síť jámy z hloubek ve vrcholech a maska buněk, které se v terénu vyříznou. */
-        _sitJamy(j) {
-            const _3d = window._kk3d, THREE = window.THREE;
+        /** Buňky a výšky výkopu pro síť: kde je co kopat a kde nezasahuje nad podlahu viditelného podlaží. */
+        _bunkyJamy(j, viditelne, yNula) {
             const { u0, v0, krok, cos, sin, sloupcu, radku, hloubky, teren } = j;
-            const nula = this._terenDomu().nula;
-            const yNula = _3d.terrainHeights && typeof nula === 'number' ? nula - _3d.terrainMinH : 0;
-            const orniceDo = this.zakladyHodnota('ornice') + 0.001;
-            const vyska = this._vyskaTerenu3d();
             const sCel = sloupcu - 1, rCel = radku - 1;
-            const maska = new Uint8Array(sCel * rCel * 4);
-            const cislo = new Int32Array(sloupcu * radku).fill(-1);
-            const pozice = [], trojuhelniky = [];
-            const vrchol = (i, s, r) => {
-                if (cislo[i] >= 0) return cislo[i];
-                const u = u0 + s * krok, v = v0 + r * krok;
-                const x = u * cos - v * sin, z = u * sin + v * cos, h = hloubky[i], nahore = vyska(x, z);
-                // Okraj a ornice jdou s povrchem, hlouběji platí spočtená úroveň, aby dno sedělo pod dům
-                const y = h <= orniceDo ? nahore - h : Math.min(nahore, yNula + teren[i] - h);
-                cislo[i] = pozice.length / 3;
-                pozice.push(x, y, z);
-                return cislo[i];
-            };
+            const bunky = new Uint8Array(sCel * rCel);
+            const y = new Float32Array(sloupcu * radku);
+            for (let i = 0; i < y.length; i++) y[i] = yNula + teren[i] - hloubky[i];
             for (let r = 0; r < rCel; r++) {
                 for (let s = 0; s < sCel; s++) {
                     const a = r * sloupcu + s, b = a + 1, c = a + sloupcu, d = c + 1;
                     if (!(hloubky[a] > 0 || hloubky[b] > 0 || hloubky[c] > 0 || hloubky[d] > 0)) continue;
-                    maska[(r * sCel + s) * 4] = 255;
-                    const va = vrchol(a, s, r), vb = vrchol(b, s + 1, r), vc = vrchol(c, s, r + 1), vd = vrchol(d, s + 1, r + 1);
-                    trojuhelniky.push(va, vc, vb, vb, vc, vd);
+                    if (viditelne.length) {
+                        const u = u0 + (s + 0.5) * krok, v = v0 + (r + 0.5) * krok;
+                        const nad = viditelne.find(q => window.Zemina.bodVObrysu(u * cos - v * sin, u * sin + v * cos, q.obrys));
+                        if (nad && y[a] > yNula + nad.kota) continue;
+                    }
+                    bunky[r * sCel + s] = 1;
                 }
             }
-            const geo = new THREE.BufferGeometry();
-            geo.setAttribute('position', new THREE.Float32BufferAttribute(pozice, 3));
-            geo.setIndex(trojuhelniky);
-            geo.computeVertexNormals();
-            if (!_3d.jamaMaterial) _3d.jamaMaterial = new THREE.MeshStandardMaterial({ color: 0x7a5a3c, roughness: 1, flatShading: true });
-            const sit = new THREE.Mesh(geo, _3d.jamaMaterial);
-            sit.receiveShadow = true;
-            sit.castShadow = true;
-            const textura = new THREE.DataTexture(maska, sCel, rCel, THREE.RGBAFormat);
-            textura.magFilter = THREE.NearestFilter;
-            textura.minFilter = THREE.NearestFilter;
-            textura.needsUpdate = true;
-            sit.userData.maska = textura;
-            return sit;
+            return { u0, v0, krok, cos, sin, sloupcu, radku, bunky, y };
         },
 
         _nastavViditelnost3d() {
@@ -3109,8 +3056,10 @@ if (uJamaZap > 0.5) {
          * Trojúhelníky (m, z nahoru) jako mesh scény. S `rovina` (n, d, tg plochy) dostanou
          * souřadnice textury: u podél okapu, v po spádnici, obojí ve skutečných metrech.
          */
-        _troj3d(troj, zPosun, mat, userData, rovina) {
+        _troj3d(trojVypoctu, zPosun, mat, userData, rovina) {
             const THREE = window.THREE;
+            // Výška je ve výpočtu v z, ve scéně v y. Prohození os obrací směr ploch, proto vrcholy odzadu (proč, viz _obrysVen).
+            const troj = trojVypoctu.map(t => [...t].reverse());
             const v = new Float32Array(troj.length * 9);
             troj.forEach((t, i) => t.forEach((b, j) => {
                 v[i * 9 + j * 3] = b.x; v[i * 9 + j * 3 + 1] = b.z + zPosun; v[i * 9 + j * 3 + 2] = b.y;
@@ -3489,31 +3438,39 @@ if (uJamaZap > 0.5) {
         },
 
         /**
+         * Obrys hranolu vždy ve stejném směru, aby normály mířily ven. Oboustranný materiál by obrácenou
+         * normálu ve světle schoval, stín se ale podle ní odsazuje: zajel by do zdi a stěna by si stínila sama.
+         */
+        _obrysVen(poly) {
+            let plocha = 0;
+            for (let i = 0; i < poly.length; i++) {
+                const a = poly[i], b = poly[(i + 1) % poly.length];
+                plocha += a.x * b.z - b.x * a.z;
+            }
+            return plocha > 0 ? poly : [...poly].reverse();
+        },
+
+        /**
          * Svislý hranol stěny. Boky se dělí po ~25 cm a každý kousek se ptá `jeVen`, jestli hledí
          * do exteriéru: jedna stěna tak může být venku fasáda a uvnitř bílá, i jen po části délky.
          */
-        _hranolStrany(group, poly, yOd, yDo, matUvnitr, matVen, jeVen, plochyVen = false) {
+        _hranolStrany(group, obrys, yOd, yDo, matUvnitr, matVen, jeVen, plochyVen = false) {
             const THREE = window.THREE;
+            const poly = this._obrysVen(obrys);
             const uvnitr = [], ven = [];
             const bod = (cil, p, y) => cil.push(p.x, y, p.z);
             // Vnější půlka o milimetr výš: konec příčky do ní zasahuje a stejně vysoké plochy se přetahují
             const vrch = plochyVen ? yDo + 0.001 : yDo;
             for (const t of THREE.ShapeUtils.triangulateShape(poly.map(p => new THREE.Vector2(p.x, p.z)), [])) {
                 const plochy = plochyVen ? ven : uvnitr;
-                for (const i of t) bod(plochy, poly[i], vrch);
-                for (const i of [...t].reverse()) bod(plochy, poly[i], yOd);
+                for (const i of [...t].reverse()) bod(plochy, poly[i], vrch);
+                for (const i of t) bod(plochy, poly[i], yOd);
             }
-            let plocha = 0;
-            for (let i = 0; i < poly.length; i++) {
-                const a = poly[i], b = poly[(i + 1) % poly.length];
-                plocha += a.x * b.z - b.x * a.z;
-            }
-            const zn = plocha > 0 ? 1 : -1;
             for (let i = 0; i < poly.length; i++) {
                 const a = poly[i], b = poly[(i + 1) % poly.length];
                 const L = Math.hypot(b.x - a.x, b.z - a.z);
                 if (L < 1e-4) continue;
-                const nx = (b.z - a.z) / L * zn, nz = -(b.x - a.x) / L * zn;
+                const nx = (b.z - a.z) / L, nz = -(b.x - a.x) / L;
                 const dilu = Math.max(1, Math.ceil(L / 0.25));
                 for (let d = 0; d < dilu; d++) {
                     const p = { x: a.x + (b.x - a.x) * d / dilu, z: a.z + (b.z - a.z) * d / dilu };
@@ -3555,7 +3512,7 @@ if (uJamaZap > 0.5) {
             const poloz = (cil, a, b, c) => cil.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
             for (let s0 = min; s0 < max - 1e-4; s0 += krok) {
                 const s1 = Math.min(max, s0 + krok);
-                const platek = orizni(orizni(poly, p => t(p) - s0), p => s1 - t(p));
+                const platek = this._obrysVen(orizni(orizni(poly, p => t(p) - s0), p => s1 - t(p)));
                 if (platek.length < 3) continue;
                 const hore = platek.map(p => {
                     const h = strop(p.x, p.z);
@@ -3568,16 +3525,10 @@ if (uJamaZap > 0.5) {
                     poloz(plochyVen ? ven : uvnitr, H[0], H[i + 1], H[i]);
                     poloz(plochyVen ? ven : uvnitr, D[0], D[i], D[i + 1]);
                 }
-                let plocha = 0;
-                for (let i = 0; i < platek.length; i++) {
-                    const a = platek[i], b = platek[(i + 1) % platek.length];
-                    plocha += a.x * b.z - b.x * a.z;
-                }
-                const zn = plocha > 0 ? 1 : -1;
                 for (let i = 0; i < platek.length; i++) {
                     const j = (i + 1) % platek.length;
                     const L = Math.hypot(platek[j].x - platek[i].x, platek[j].z - platek[i].z) || 1;
-                    const cil = jeVen((platek[i].x + platek[j].x) / 2, (platek[i].z + platek[j].z) / 2, (platek[j].z - platek[i].z) / L * zn, -(platek[j].x - platek[i].x) / L * zn) ? ven : uvnitr;
+                    const cil = jeVen((platek[i].x + platek[j].x) / 2, (platek[i].z + platek[j].z) / 2, (platek[j].z - platek[i].z) / L, -(platek[j].x - platek[i].x) / L) ? ven : uvnitr;
                     poloz(cil, D[i], H[i], H[j]);
                     poloz(cil, D[i], H[j], D[j]);
                 }

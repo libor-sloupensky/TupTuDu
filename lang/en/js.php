@@ -5,6 +5,12 @@ return [
         'chyba_spojeni' => 'Connection error. Please try again.',
         'ulozeno' => 'Saved',
     ],
+    'koncept' => [
+        'konflikt_nadpis' => 'This project has changed elsewhere',
+        'konflikt_text' => 'A newer version of this project is open in another tab or on another device. Saving is paused so you do not overwrite each other\'s work. Load the current version, or overwrite it with what you see here.',
+        'konflikt_nacist' => 'Load the current version',
+        'konflikt_prepsat' => 'Overwrite with this version',
+    ],
     'tarify' => [
         'limit_uprav_nadpis' => 'Today\'s edit limit has been reached',
         'limit_uprav_text' => 'In the Free plan you can make :limit edits per day — every new wall, move or opening counts. You can keep viewing and continue editing tomorrow. With a subscription you edit without limits.',

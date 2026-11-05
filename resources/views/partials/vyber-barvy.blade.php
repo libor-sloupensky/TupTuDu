@@ -26,7 +26,7 @@
                 <input type="range" min="0" max="100" step="1" data-barva-posuvnik="l" :value="hsl.l" :style="{ background: stopaJas }" @input="posun('l', $event.target.value)" @change="potvrd()"></label>
 
             <div class="kk-podlazi-pole" title="Odstín zvolené barvy, jde zkopírovat. Pro změnu napište čtyřmístný kód, nebo začněte psát název. Barva na obrazovce je orientační."><span class="w-24 shrink-0" x-text="ralPresny ? 'RAL' : 'Nejbližší RAL'"></span>
-                <input type="text" class="flex-1 min-w-0" list="kk-ral-seznam" data-barva-ral :value="ralPole"
+                <input type="text" class="flex-1 min-w-0" list="kk-ral-seznam" pattern=".*\d{4}.*" data-barva-ral :value="ralPole"
                        @focus="$event.target.select()" @change="zadejRal($event.target.value); if (!ralChyba) $event.target.value = ralPole" @keydown.enter.prevent="$event.target.blur()"></div>
             <div x-show="ralChyba" style="color: var(--c-error)" x-text="ralChyba"></div>
 

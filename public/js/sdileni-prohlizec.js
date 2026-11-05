@@ -23,12 +23,13 @@
         plocha.prepend(img);
     };
 
-    const naFloat32 = (b64) => {
+    const naBajty = (b64) => {
         const s = atob(b64);
         const b = new Uint8Array(s.length);
         for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
-        return new Float32Array(b.buffer);
+        return b;
     };
+    const naFloat32 = (b64) => new Float32Array(naBajty(b64).buffer);
 
     function postav(data) {
         const THREE = window.THREE;
@@ -81,7 +82,39 @@
         const stred = obal.isEmpty() ? new THREE.Vector3() : obal.getCenter(new THREE.Vector3());
         const rozmer = obal.isEmpty() ? 20 : Math.max(...obal.getSize(new THREE.Vector3()).toArray(), 4);
 
-        // Země s dírami pro snížené místnosti, jinak by ležela nad jejich podlahou
+        // Terén kolem domu, zemina uvnitř viditelných podlaží se nekreslí
+        const teren = data.teren ? window.Teren3d.postav(data.teren, naFloat32(data.teren.vysky)) : null;
+        const jamy = new Map();
+        // Výkop pod skrytými podlažími v terénu, spočítaný předem pro každou kombinaci
+        const sitVykopu = (klic) => {
+            const j = data.teren?.jamy?.[klic];
+            if (!j) return null;
+            if (!jamy.has(klic)) {
+                const y = new Int16Array(naBajty(j.y).buffer);
+                const sit = window.Teren3d.sitJamy({ ...j, bunky: naBajty(j.bunky), y: Float32Array.from(y, v => v / 100) });
+                sit.visible = false;
+                scene.add(sit);
+                jamy.set(klic, sit);
+            }
+            return jamy.get(klic);
+        };
+        const obnovVnitrek = () => {
+            if (!teren) return;
+            const skryte = (data.teren.vnitrek || []).filter(c => skupiny.get(c.skupina)?.visible === false).map(c => c.skupina);
+            const vykop = skryte.length ? sitVykopu(skryte.join()) : null;
+            jamy.forEach((sit) => { sit.visible = sit === vykop; });
+            window.Teren3d.nastavJamu(teren.uniformyJamy, vykop);
+            window.Teren3d.nastavVnitrek(teren.uniformy, (data.teren.vnitrek || [])
+                .filter(c => skupiny.get(c.skupina)?.visible !== false)
+                .map(c => ({ uroven: c.uroven, obrys: c.obrys.map(([x, y]) => ({ x, y })) })));
+        };
+        if (teren) {
+            scene.add(teren.plocha, teren.mrizka);
+            obnovVnitrek();
+            if (Object.keys(data.teren.jamy || {}).length) plocha.parentElement.querySelector('.tt-sdileni-pata')?.append(' ', plocha.dataset.textJama);
+        }
+
+        // Bez výškových dat rovná země s dírami pro snížené místnosti, jinak by ležela nad jejich podlahou
         const r = rozmer * 3;
         const tvarZeme = new THREE.Shape();
         tvarZeme.moveTo(stred.x - r, -stred.z - r);
@@ -99,7 +132,7 @@
         zeme.rotation.x = -Math.PI / 2;
         zeme.position.y = (data.zeme ?? 0) - 0.16;
         zeme.receiveShadow = true;
-        scene.add(zeme);
+        if (!teren) scene.add(zeme);
 
         // Kusy z katalogu se dotáhnou samy, stín a obraz se překreslí po každém
         for (const o of data.objekty || []) {
@@ -159,13 +192,14 @@
             b.dataset.skupina = s.id;
             b.addEventListener('click', () => {
                 g.visible = !g.visible;
+                obnovVnitrek();
                 window.Svetlo3d.prekresliStiny(renderer);
                 b.setAttribute('aria-pressed', String(g.visible));
                 vykresli();
             });
             ovladani.appendChild(b);
         }
-        window.__sdileniScena = { scene, skupiny, renderer, camera, vykresli };
+        window.__sdileniScena = { scene, skupiny, renderer, camera, vykresli, teren, jamy };
     }
 
     fetch(plocha.dataset.model)

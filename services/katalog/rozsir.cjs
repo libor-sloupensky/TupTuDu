@@ -13,6 +13,13 @@ const B = 'https://amazon-berkeley-objects.s3.amazonaws.com';
 const SOUBOR = path.join(__dirname, 'polozky.json');
 const NASUCHO = process.argv.includes('--nasucho');
 
+// Vyřazené při prohlídce náhledů, další běh je nesmí vrátit
+const VYRAZENE = {
+    B07JC4M6VR: 'rohová pohovka otočená o 90°',
+    B0732HV63N: 'koberec s 323 808 ploškami a 6,7 MB, pro prohlížeč zbytečně těžký',
+    B07B8FHTMV: 'okenice, ne obraz',
+};
+
 // Kolik kusů má mít kategorie celkem i s ručně vybranými
 const CILE = { pohovky: 80, kresla: 110, zidle: 100, stoly: 40, stolky: 110, postele: 50, skrine: 90, police: 40, psaci: 50, svitidla: 70, koberce: 70, obrazy: 50, zrcadla: 30, rostliny: 40 };
 const NIKDY = /\b(kid|kids|child|children|toddler|baby|nursery|outdoor|patio|cover|slipcover|massage|gaming|folding|bean ?bag|replacement|mattress only|sectional|futon)\b/i;
@@ -119,7 +126,7 @@ const radky = async function* (url) {
 (async () => {
     const zadani = JSON.parse(fs.readFileSync(SOUBOR, 'utf8'));
     const rucni = zadani.polozky.filter(p => !p.auto);
-    const uz = new Set(rucni.map(p => p.orig));
+    const uz = new Set([...rucni.map(p => p.orig), ...Object.keys(VYRAZENE)]);
 
     const rozmery = new Map();
     let hlava = null;
