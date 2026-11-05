@@ -20,7 +20,9 @@
     };
 
     window.Katalog3d = {
-        adresa: (id) => '/katalog/modely/' + id + '.glb',
+        /** Adresa souboru katalogu: z úložiště, které určí stránka (config/katalog.php), jinak lokální, to platí pro výrobu náhledů. */
+        soubor: (cesta) => (window.KATALOG_ZAKLAD || '/katalog') + '/' + cesta,
+        adresa: (id) => window.Katalog3d.soubor('modely/' + id + '.glb'),
 
         /** Načtený model s obalem. Barvy z glTF jsou lineární, ve scéně se drží v hodnotách ze vzorku (svetlo-3d.js). */
         nacti(id) {

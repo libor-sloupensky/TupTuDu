@@ -32,7 +32,7 @@ services/import-test/vystup/
 # Cache SVG pro měření importu — dá se kdykoli vyrobit znovu z PDF
 services/import-test/.cache/
 
-# Katalog: do repozitáře jen první balík (přidaný přes git add -f), zbytek čeká na úložiště, viz modules/katalog.md
+# Katalog: modely, náhledy a značky jsou v S3, v repozitáři jen katalog.json, viz modules/katalog.md
 /public/katalog/modely/
 /public/katalog/nahledy/
 /public/katalog/pudorys/

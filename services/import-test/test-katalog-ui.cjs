@@ -228,8 +228,12 @@ const kontrola = (popis, podminka, detail = '') => {
         const r4 = await rozmer();
         kontrola('tlačítko Původní vrátí rozměry', Math.abs(r4.s - r0.s) < 0.001 && Math.abs(r4.h - r0.h) < 0.001 && Math.abs(r4.v - r0.v) < 0.001, JSON.stringify(r4));
         await zadej('vyska', 'cm', 120);
-        const znacka = await p.vyhodnot(`(async () => { const img = new Image(); img.crossOrigin = 'anonymous'; img.src = '/katalog/pudorys/${POHOVKA}.webp'; await img.decode(); const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext('2d'); g.drawImage(img, 0, 0); const b = g.getImageData(0, 0, c.width, c.height).data; let plne = 0, bile = 0; for (let i = 0; i < b.length; i += 4) { if (b[i + 3] < 128) continue; plne++; if (b[i] > 245 && b[i + 1] > 245 && b[i + 2] > 245) bile++; } return { plne, podilBile: +(bile / plne).toFixed(3) }; })()`);
+        const znacka = await p.vyhodnot(`(async () => { const img = new Image(); img.crossOrigin = 'anonymous'; img.src = Katalog3d.soubor('pudorys/${POHOVKA}.webp'); await img.decode(); const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext('2d'); g.drawImage(img, 0, 0); const b = g.getImageData(0, 0, c.width, c.height).data; let plne = 0, bile = 0; for (let i = 0; i < b.length; i += 4) { if (b[i + 3] < 128) continue; plne++; if (b[i] > 245 && b[i + 1] > 245 && b[i + 2] > 245) bile++; } return { plne, podilBile: +(bile / plne).toFixed(3) }; })()`);
         kontrola('značka v půdorysu je barevná, ne bílá', znacka.plne > 100 && znacka.podilBile < 0.2, JSON.stringify(znacka));
+        const uloziste = await p.vyhodnot(`(() => { const d = ${D}; d.renderer.render(); return { model: Katalog3d.adresa('x'), znacek: [...performance.getEntriesByType('resource')].filter(z => z.name.includes('/pudorys/')).map(z => z.name.split('/')[2]) }; })()`);
+        kontrola('modely a značky jdou z úložiště S3', /^https:\/\/tuptudu-katalog\.s3\./.test(uloziste.model) && uloziste.znacek.length > 0 && uloziste.znacek.every(h => h.startsWith('tuptudu-katalog.s3.')), JSON.stringify(uloziste));
+        const png = await p.vyhodnot(`(async () => { const d = ${D}; d.renderer.render(); await new Promise(r => setTimeout(r, 800)); try { return Konva.stages[0].toDataURL().length; } catch (e) { return e.name; } })()`);
+        kontrola('půdorys se značkou z úložiště jde uložit jako obrázek', typeof png === 'number' && png > 1000, String(png));
 
         console.log('\n4) Panel kusu, kopie, Zpět a uložení');
         const uprava = await p.vyhodnot(`(async () => { const d = ${D}; const c = () => new Promise(r => setTimeout(r, 150));

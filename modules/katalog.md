@@ -25,9 +25,11 @@ Kusy z volně licencovaných zdrojů, které si uživatel vloží do půdorysu a
 | `public/js/katalog-3d.js` | načtení modelu a vložení kopie do scény, společné s prohlížečem sdílení |
 | `public/js/svetlo-3d.js` | světlo, odrazy, stíny, převod barev (`modules/dum.md`, část Světlo) |
 | `public/katalog/katalog.json` | hotový katalog: kategorie, zdroje s licencí, kusy s rozměry |
-| `public/katalog/modely/`, `nahledy/`, `pudorys/` | model pro web, náhled do panelu, značka do půdorysu |
+| `public/katalog/modely/`, `nahledy/`, `pudorys/` | model pro web, náhled do panelu, značka do půdorysu: lokální výroba mimo git, web bere kopie z S3 |
+| `config/katalog.php` | adresa úložiště souborů |
 | `services/katalog/polozky.json` | zadání: co v katalogu je, český název, kategorie, výška nad podlahou |
 | `services/katalog/sestav.cjs` | výroba, viz níž |
+| `services/katalog/s3.cjs` | založení a ověření bucketu, nahrání souborů do S3 |
 | `resources/views/pravni/autori-modelu.blade.php` | stránka `/model-credits` s autory a licencemi |
 | `services/import-test/test-katalog-ui.cjs` | test celé cesty v prohlížeči |
 
@@ -116,15 +118,13 @@ Nejsou to alternativy, podoba 2 stojí na podobě 1, potřebuje stejné masky a 
 
 ## Hosting
 
-Prvních 120 kusů je v `public/katalog` v repozitáři. Celý katalog má 185 MB (modely 170, značky 10, náhledy 4), do repozitáře a přes FTP deploy se to nehodí, před nasazením zbytku je potřeba úložiště. Libor 4. 11. 2026 navrhuje AWS, účet má. Plán: bucket S3 ve Frankfurtu s veřejným čtením jen pro katalog a CORS, nahrání přes `services/katalog/s3.cjs`, adresa katalogu z `.env`. U značek do půdorysu je potřeba `crossOrigin`, jinak obrázek z cizí adresy zablokuje export půdorysu do PNG. Zatím nic z toho není zapojené, kód S3 nepoužívá a balík pro S3 tu není. V GitHub Secrets ale `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` a `AWS_BUCKET` jsou (od 14. 8. 2026), deploy je nikam nepředává. **Bucket nezakládat, dokud Libor neověří, že TupTuDu nemíchá data s jiným projektem** (viz paměť `tuptudu-zdroje-objektu`).
+Modely, náhledy a značky jsou v bucketu `tuptudu-katalog` v S3 ve Frankfurtu (5. 11. 2026). Web bere adresu z `config('katalog.zaklad')`, `KATALOG_ZAKLAD=/katalog` v `.env` přepne na lokální soubory. V repozitáři je jen `katalog.json`, ostatní je lokálně mimo git a vyrábí to `sestav.cjs`. Po výrobě `node services/katalog/s3.cjs nahraj`, pošle jen změny. Celý katalog má asi 340 MB, do repozitáře a přes FTP deploy se to nehodí. Značky do půdorysu se načítají s `crossOrigin`, jinak by obrázek z cizí adresy zablokoval export půdorysu do PNG. V GitHub Secrets jsou `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` a `AWS_BUCKET` z 14. 8. 2026, deploy je nikam nepředává a katalog je nepotřebuje.
 
-**Bucket `tuptudu-katalog` ve Frankfurtu je založený a prázdný (5. 11. 2026).** Soubory smí číst každý, seznam souborů veřejný není, CORS pouští jen naše adresy, národní domény se doplní do `ADRESY` v `services/katalog/s3.cjs`. Klíč v `.env` (`KATALOG_AWS_KEY`, `KATALOG_AWS_SECRET`) smí jen do bucketů `tuptudu-katalog*`. Účet je společný s jiným projektem, plný přístup k němu záměrně nemáme. Založení a nastavení: `node services/katalog/s3.cjs zaloz`, ověření: `node services/katalog/s3.cjs over`. AWS CLI tu není, skript je bez knihoven.
+**Nastavení bucketu:** Soubory smí číst každý, seznam souborů veřejný není, CORS pouští jen naše adresy, národní domény se doplní do `ADRESY` v `services/katalog/s3.cjs`. Klíč v `.env` (`KATALOG_AWS_KEY`, `KATALOG_AWS_SECRET`) smí jen do bucketů `tuptudu-katalog*`. Účet je společný s jiným projektem, plný přístup k němu záměrně nemáme. Založení a nastavení: `node services/katalog/s3.cjs zaloz`, ověření: `node services/katalog/s3.cjs over`. AWS CLI tu není, skript je bez knihoven.
 
 ## Stav a známá omezení (4. 11. 2026)
 
-Na webu od commitu f7e4697 (4. 11. 2026): 120 ručně vybraných kusů ve 14 kategoriích (24 MB). Lokálně je hotových a prohlédnutých 927 kusů. Soubory nad první balík do gitu nejdou (`.gitignore`), první balík je přidaný přes `git add -f`. Ověřuje `test-katalog-ui`, panel kusu je v `test-formulare-ui`, výrobu `kontrola.cjs`.
-
-**Pozor: `public/katalog/katalog.json` je v gitu a lokálně má 927 kusů, na webu je jen 120 modelů.** Commit tohoto souboru před vyřešením úložiště by na webu rozbil 807 karet. Při společném nasazení vrátit `git checkout -- public/katalog/katalog.json`, lokálně ho obnoví `node services/katalog/sestav.cjs`.
+Na webu od commitu f7e4697 (4. 11. 2026): 120 ručně vybraných kusů ve 14 kategoriích. Další nasazení přinese všech 927 prohlédnutých kusů z úložiště. Ověřuje `test-katalog-ui`, panel kusu je v `test-formulare-ui`, výrobu `kontrola.cjs`.
 
 **Prohlídka 930 kusů (4. 11. 2026):** vyřazené 3 (`VYRAZENE` v `rozsir.cjs`), 50 kusů dostalo správný typ nebo kategorii, barvu v názvu upravila kontrola u 250 kusů. Výsledek: pohovky 79, křesla 110, židle 101, jídelní stoly 35, stolky 108, postele 53, skříně 98, police 44, psací stoly 41, svítidla 70, koberce 69, obrazy 49, zrcadla 30, rostliny 40.
 
@@ -149,8 +149,8 @@ Viděno při prohlídce, zatím neřešeno:
    - změřit paměť a plynulost editoru (trojúhelníků je asi 12× víc, velikost modelů odhadem kolem 320 MB místo 170 MB),
    - spustit `test-katalog-ui`, `test-svetlo-3d-ui`, `test-sdileni-ui`,
    - smazat mezipaměť zdrojů.
-   Změní se i 120 modelů, značek a náhledů v gitu, půjdou do dalšího nasazení. 927 kusů je jinak prohlédnutých, čeká na úložiště, viz Hosting a upozornění výš.
-2. **Před nasazením** vyřešit AWS: značky i modely z cizí adresy, `crossOrigin` kvůli exportu PNG. Bucket je založený, viz Hosting. Zbývá nahrát soubory a přepnout adresu, Libor to odložil na později.
+   Potom znovu `s3.cjs nahraj` a commitnout `katalog.json`, má nové počty plošek.
+2. **Přesun do S3 je hotový** (5. 11. 2026), viz Hosting. Soubory z prvního balíku z gitu zmizely, hosting je smaže při nasazení.
 3. **Další vrstvy v pořadí:** povrchy (ambientCG, Poly Haven), koupelna (Sweet Home 3D + vlastní materiály, kout), generátor linky.
 4. **Dotyk na tabletu** nikdo nezkoušel.
 5. **Stránka analýzy** v nákladech ještě uvádí Cloudflare R2, Libor navrhl AWS.

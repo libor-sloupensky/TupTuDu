@@ -26,6 +26,7 @@
 <script src="/js/three/Line2.js?v=0.128"></script>
 <script src="/js/svetlo-3d.js?v={{ filemtime(public_path('js/svetlo-3d.js')) }}"></script>
 <script src="/js/teren-3d.js?v={{ filemtime(public_path('js/teren-3d.js')) }}"></script>
+<script>window.KATALOG_ZAKLAD = @json(config('katalog.zaklad'));</script>
 <script src="/js/katalog-3d.js?v={{ filemtime(public_path('js/katalog-3d.js')) }}"></script>
 <script src="/js/koncept-v3/stavebni-engine.js?v={{ filemtime(public_path('js/koncept-v3/stavebni-engine.js')) }}"></script>
 <script src="/js/koncept-v3/pudorys-icons.js?v={{ filemtime(public_path('js/koncept-v3/pudorys-icons.js')) }}"></script>
@@ -1350,7 +1351,7 @@
                         <template x-for="p in katalogPolozky" :key="p.id">
                             <button type="button" @click="katalogVyber(p)" @pointerdown="katalogTazeniStart($event, p)" @dragstart.prevent class="text-left rounded border p-1 flex flex-col gap-0.5 hover:border-gray-500"
                                     :style="(katalogVybrany?.id === p.id ? 'border-color:var(--c-primary);box-shadow:0 0 0 1px var(--c-primary)' : 'border-color:#e5e7eb') + ';touch-action:pan-y;user-select:none;cursor:grab'" :data-katalog-polozka="p.id">
-                                <img :src="'/katalog/nahledy/' + p.id + '.webp'" :alt="p.nazev" loading="lazy" width="320" height="240" style="width:100%;height:auto;display:block;background:#f3f4f6;border-radius:4px">
+                                <img :src="Katalog3d.soubor('nahledy/' + p.id + '.webp')" :alt="p.nazev" loading="lazy" width="320" height="240" style="width:100%;height:auto;display:block;background:#f3f4f6;border-radius:4px">
                                 <span class="text-gray-800 leading-tight" x-text="p.nazev"></span>
                                 <span class="text-gray-500 leading-tight" x-text="katalogRozmery(p)"></span>
                             </button>

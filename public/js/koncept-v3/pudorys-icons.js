@@ -626,8 +626,10 @@
     function znackaKatalogu(id) {
         if (!znacky[id]) {
             var img = new Image();
+            // Značka z úložiště jde na plátno, bez CORS by export půdorysu do PNG selhal
+            img.crossOrigin = 'anonymous';
             img.onload = function () { Konva.stages.forEach(function (s) { s.batchDraw(); }); };
-            img.src = '/katalog/pudorys/' + id + '.webp';
+            img.src = window.Katalog3d.soubor('pudorys/' + id + '.webp');
             znacky[id] = img;
         }
         return znacky[id];

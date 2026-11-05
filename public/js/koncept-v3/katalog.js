@@ -302,7 +302,7 @@
             if (tazenyNahled) { tazenyNahled.remove(); tazenyNahled = null; }
             if (!p) return;
             const img = document.createElement('img');
-            img.src = '/katalog/nahledy/' + p.id + '.webp';
+            img.src = window.Katalog3d.soubor('nahledy/' + p.id + '.webp');
             img.alt = '';
             img.style.cssText = 'position:fixed;width:96px;height:72px;pointer-events:none;z-index:1000;opacity:.9;transform:translate(-50%,-50%)';
             document.body.appendChild(img);

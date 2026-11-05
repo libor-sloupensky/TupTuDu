@@ -4,7 +4,9 @@
  *
  * Spuštění: node services/katalog/s3.cjs zaloz [--bucket=tuptudu-katalog]
  *           node services/katalog/s3.cjs over [--bucket=tuptudu-katalog] [--cizi=bucket]
+ *           node services/katalog/s3.cjs nahraj [--bucket=tuptudu-katalog]
  * zaloz jde pustit znovu, přepíše nastavení. --cizi ověří, že se klíč do jiného bucketu nedostane.
+ * nahraj pošle modely, náhledy a značky z public/katalog, jen ty, které v bucketu chybí nebo se liší.
  */
 const crypto = require('crypto');
 const fs = require('fs');
@@ -21,17 +23,21 @@ const XMLNS = 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/"';
 // Hvězdička smí být v každé adrese jen jedna. Národní domény se doplní sem a zaloz se pustí znovu.
 const ADRESY = ['https://tuptudu.com', 'https://*.tuptudu.com', 'http://tuptudu.localhost:*', 'http://*.tuptudu.localhost:8002', 'http://127.0.0.1:*'];
 const TEST = '/_test/pristup.txt';
+const KATALOG = path.resolve(__dirname, '../../public/katalog');
+const SLOZKY = { modely: 'model/gltf-binary', nahledy: 'image/webp', pudorys: 'image/webp' };
+const VLAKEN = 8;
+const CACHE = 'public, max-age=2592000';   // hotový kus se skoro nemění, přenos se počítá
 
 const sha = (d) => crypto.createHash('sha256').update(d).digest('hex');
 const hmac = (k, d) => crypto.createHmac('sha256', k).update(d).digest();
 const adresa = (bucket, cesta, dotaz) => `https://${bucket}.s3.${REGION}.amazonaws.com${cesta}${dotaz ? '?' + dotaz : ''}`;
 
 /** Podepsaný požadavek (AWS Signature V4). Hodnoty v dotazu musí být bez znaků, které se kódují. */
-async function s3(metoda, cesta, dotaz = '', telo = '', bucket = BUCKET) {
+async function s3(metoda, cesta, dotaz = '', telo = '', bucket = BUCKET, dalsi = {}) {
     const ted = new Date().toISOString().replace(/[-:]|\.\d+/g, '');
     const obor = `${ted.slice(0, 8)}/${REGION}/s3/aws4_request`;
     const hash = sha(telo);
-    const hlavicky = { 'x-amz-content-sha256': hash, 'x-amz-date': ted };
+    const hlavicky = { ...dalsi, 'x-amz-content-sha256': hash, 'x-amz-date': ted };
     if (telo) hlavicky['content-md5'] = crypto.createHash('md5').update(telo).digest('base64');
     const podepsat = { ...hlavicky, host: new URL(adresa(bucket, '/')).host };
     const nazvy = Object.keys(podepsat).sort();
@@ -104,9 +110,56 @@ async function over() {
     if (chyb) process.exit(1);
 }
 
+/** Zopakuje požadavek po výpadku sítě. */
+async function znovu(prace, pokusu = 3) {
+    for (let i = 1; ; i++) {
+        try {
+            return await prace();
+        } catch (e) {
+            if (i >= pokusu) throw e;
+            await new Promise(r => setTimeout(r, 2000 * i));
+        }
+    }
+}
+
+/** Srovná soubory s bucketem. ETag souboru nahraného vcelku je jeho MD5, stejné se neposílají. */
+async function nahraj() {
+    const soubory = Object.keys(SLOZKY).flatMap(s => fs.readdirSync(path.join(KATALOG, s)).map(nazev => ({ slozka: s, nazev })));
+    console.log(`Soubory katalogu: ${soubory.length}`);
+    const chyby = [];
+    let i = 0, hotovo = 0, nahrano = 0, bajtu = 0;
+    await Promise.all(Array.from({ length: VLAKEN }, async () => {
+        while (i < soubory.length) {
+            const { slozka, nazev } = soubory[i++];
+            const cesta = `/${slozka}/${nazev}`;
+            try {
+                const data = fs.readFileSync(path.join(KATALOG, slozka, nazev));
+                const md5 = crypto.createHash('md5').update(data).digest('hex');
+                const hlava = await znovu(() => s3('HEAD', cesta));
+                if (!hlava.ok || (hlava.headers.get('etag') || '').replace(/"/g, '') !== md5) {
+                    const r = await znovu(() => s3('PUT', cesta, '', data, BUCKET, { 'content-type': SLOZKY[slozka], 'cache-control': CACHE }));
+                    if (!r.ok) throw new Error(await chyba(r));
+                    await r.arrayBuffer();
+                    nahrano++;
+                    bajtu += data.length;
+                }
+            } catch (e) {
+                chyby.push(`${cesta}: ${e.message}`);
+            }
+            if (++hotovo % 200 === 0) console.log(`  ${hotovo}/${soubory.length}, nahráno ${nahrano} (${(bajtu / 1e6).toFixed(0)} MB)`);
+        }
+    }));
+    console.log(`Hotovo: nahráno ${nahrano} souborů (${(bajtu / 1e6).toFixed(1)} MB), ${soubory.length - nahrano - chyby.length} beze změny, chyb ${chyby.length}`);
+    if (chyby.length) {
+        console.log(chyby.slice(0, 10).join('\n'));
+        process.exit(1);
+    }
+}
+
 (async () => {
     if (!KLIC || !TAJNY) throw new Error('V .env chybí KATALOG_AWS_KEY nebo KATALOG_AWS_SECRET');
     if (prikaz === 'zaloz') await zaloz();
     else if (prikaz === 'over') await over();
-    else throw new Error('Příkaz: zaloz, nebo over');
+    else if (prikaz === 'nahraj') await nahraj();
+    else throw new Error('Příkaz: zaloz, over, nebo nahraj');
 })().catch((e) => { console.error('CHYBA', e.message); process.exit(1); });

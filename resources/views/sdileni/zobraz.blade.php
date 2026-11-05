@@ -78,6 +78,7 @@
 <script src="/js/three/meshopt_decoder.js?v=0.128"></script>
 <script src="/js/svetlo-3d.js?v={{ filemtime(public_path('js/svetlo-3d.js')) }}"></script>
 <script src="/js/teren-3d.js?v={{ filemtime(public_path('js/teren-3d.js')) }}"></script>
+<script>window.KATALOG_ZAKLAD = @json(config('katalog.zaklad'));</script>
 <script src="/js/katalog-3d.js?v={{ filemtime(public_path('js/katalog-3d.js')) }}"></script>
 <script src="/js/sdileni-prohlizec.js?v={{ filemtime(public_path('js/sdileni-prohlizec.js')) }}"></script>
 </body>
