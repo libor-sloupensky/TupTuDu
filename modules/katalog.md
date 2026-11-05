@@ -149,7 +149,7 @@ Viděno při prohlídce, zatím neřešeno:
    - textury 512 px: 44 fps, 1 248 MB,
    - textury 256 px: 57 fps, 1 050 MB, zblízka už rozmazané,
    - samotný editor s jedním kusem má 833 MB.
-   S vyhlazováním a 1024 px to bylo 3 až 28 fps. Zjednodušení `--simplify-error 0.001` ubere 6× trojúhelníků, ale vrací kovový přechod na bílých skříních, proto jen u kusů, které jsou i po mírném zjednodušení nad 60 000. Po přepracování: `kontrola.cjs --archy`, testy, `s3.cjs nahraj`, commit `katalog.json`, smazat zdroje v `%TEMP%\tuptudu-katalog` (17 GB).
+   S vyhlazováním a 1024 px to bylo 3 až 28 fps. Zjednodušení `--simplify-error 0.001` ubere 6× trojúhelníků, ale vrací kovový přechod na bílých skříních, proto jen u kusů, které jsou i po mírném zjednodušení nad 60 000. Přepracováno a nahráno do S3 5. 11. 2026: 926 kusů, modely 141 MB, medián 13 744 trojúhelníků, nad 60 000 zůstaly 2 kusy. Hotový katalog se 40 kusy: 1 276 MB, 33 fps. Zdroje v `%TEMP%` jsou smazané, další výroba je stáhne znovu (asi 12 GB).
 2. **Přesun do S3 je hotový** (5. 11. 2026), viz Hosting. Soubory z prvního balíku z gitu zmizely, hosting je smaže při nasazení.
 3. **Další vrstvy v pořadí:** povrchy (ambientCG, Poly Haven), koupelna (Sweet Home 3D + vlastní materiály, kout), generátor linky.
 4. **Dotyk na tabletu** nikdo nezkoušel.

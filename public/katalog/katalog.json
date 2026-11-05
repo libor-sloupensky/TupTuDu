@@ -420,10 +420,10 @@
    "zdroj": "abo",
    "orig": "B07B4N29DG",
    "sirka": 2.136,
-   "hloubka": 0.895,
+   "hloubka": 0.894,
    "vyska": 0.793,
    "uroven": 0,
-   "plosek": 92598
+   "plosek": 6492
   },
   {
    "id": "abo-B07BWJCPWV",
@@ -431,11 +431,11 @@
    "kategorie": "pohovky",
    "zdroj": "abo",
    "orig": "B07BWJCPWV",
-   "sirka": 2.438,
-   "hloubka": 1.622,
+   "sirka": 2.435,
+   "hloubka": 1.621,
    "vyska": 0.987,
    "uroven": 0,
-   "plosek": 77058
+   "plosek": 5362
   },
   {
    "id": "abo-B07DB8XGY2",
@@ -551,11 +551,11 @@
    "kategorie": "pohovky",
    "zdroj": "abo",
    "orig": "B07HPJ8S3K",
-   "sirka": 1.94,
-   "hloubka": 0.975,
+   "sirka": 1.937,
+   "hloubka": 0.973,
    "vyska": 0.765,
    "uroven": 0,
-   "plosek": 99603
+   "plosek": 5243
   },
   {
    "id": "abo-B07HPLK9YR",
@@ -599,11 +599,11 @@
    "kategorie": "pohovky",
    "zdroj": "abo",
    "orig": "B07HPQYW7G",
-   "sirka": 1.94,
-   "hloubka": 0.975,
+   "sirka": 1.937,
+   "hloubka": 0.973,
    "vyska": 0.765,
    "uroven": 0,
-   "plosek": 99603
+   "plosek": 5243
   },
   {
    "id": "abo-B07HZ1M12W",
@@ -900,10 +900,10 @@
    "zdroj": "abo",
    "orig": "B07RJFG359",
    "sirka": 1.406,
-   "hloubka": 0.805,
-   "vyska": 0.906,
+   "hloubka": 0.804,
+   "vyska": 0.904,
    "uroven": 0,
-   "plosek": 81386
+   "plosek": 8737
   },
   {
    "id": "abo-B07SSJDRL4",
@@ -971,11 +971,11 @@
    "kategorie": "pohovky",
    "zdroj": "abo",
    "orig": "B082VLYQWX",
-   "sirka": 2.262,
+   "sirka": 2.261,
    "hloubka": 1.07,
-   "vyska": 0.801,
+   "vyska": 0.8,
    "uroven": 0,
-   "plosek": 174816
+   "plosek": 9055
   },
   {
    "id": "abo-B082VMZGDG",
@@ -1151,11 +1151,11 @@
    "kategorie": "kresla",
    "zdroj": "polyhaven",
    "orig": "mid_century_lounge_chair",
-   "sirka": 1.007,
+   "sirka": 1.009,
    "hloubka": 1.19,
-   "vyska": 1.168,
+   "vyska": 1.169,
    "uroven": 0,
-   "plosek": 3544
+   "plosek": 6148
   },
   {
    "id": "ph-modern-arm-chair-01",
@@ -1164,10 +1164,10 @@
    "zdroj": "polyhaven",
    "orig": "modern_arm_chair_01",
    "sirka": 0.82,
-   "hloubka": 0.986,
+   "hloubka": 0.987,
    "vyska": 1.023,
    "uroven": 0,
-   "plosek": 2570
+   "plosek": 8916
   },
   {
    "id": "abo-B016ID2V5O",
@@ -1479,7 +1479,7 @@
    "hloubka": 0.921,
    "vyska": 0.936,
    "uroven": 0,
-   "plosek": 65786
+   "plosek": 11922
   },
   {
    "id": "abo-B07B4MMPSW",
@@ -1643,11 +1643,11 @@
    "kategorie": "kresla",
    "zdroj": "abo",
    "orig": "B07DBGPV4C",
-   "sirka": 0.829,
+   "sirka": 0.828,
    "hloubka": 0.819,
    "vyska": 1.132,
    "uroven": 0,
-   "plosek": 108374
+   "plosek": 12977
   },
   {
    "id": "abo-B07DBHBCXQ",
@@ -1668,10 +1668,10 @@
    "zdroj": "abo",
    "orig": "B07DBHGHRV",
    "sirka": 0.77,
-   "hloubka": 0.754,
+   "hloubka": 0.753,
    "vyska": 0.877,
    "uroven": 0,
-   "plosek": 85787
+   "plosek": 4997
   },
   {
    "id": "abo-B07DBK2NXY",
@@ -2087,11 +2087,11 @@
    "kategorie": "kresla",
    "zdroj": "abo",
    "orig": "B07RGKYS9K",
-   "sirka": 0.654,
+   "sirka": 0.653,
    "hloubka": 0.62,
-   "vyska": 0.995,
+   "vyska": 0.994,
    "uroven": 0,
-   "plosek": 62041
+   "plosek": 16383
   },
   {
    "id": "abo-B082L7ZMZP",
@@ -2112,10 +2112,10 @@
    "zdroj": "abo",
    "orig": "B082Q97M5B",
    "sirka": 1.092,
-   "hloubka": 0.965,
+   "hloubka": 0.964,
    "vyska": 0.961,
    "uroven": 0,
-   "plosek": 84162
+   "plosek": 16817
   },
   {
    "id": "abo-B082QC7YKR",
@@ -2135,11 +2135,11 @@
    "kategorie": "kresla",
    "zdroj": "abo",
    "orig": "B082QCQ71Q",
-   "sirka": 1.151,
-   "hloubka": 0.482,
+   "sirka": 1.149,
+   "hloubka": 0.48,
    "vyska": 0.469,
    "uroven": 0,
-   "plosek": 124121
+   "plosek": 5728
   },
   {
    "id": "abo-B082QCWRTW",
@@ -2159,11 +2159,11 @@
    "kategorie": "kresla",
    "zdroj": "abo",
    "orig": "B082QD7WY8",
-   "sirka": 1.151,
-   "hloubka": 0.482,
+   "sirka": 1.149,
+   "hloubka": 0.48,
    "vyska": 0.469,
    "uroven": 0,
-   "plosek": 124121
+   "plosek": 5728
   },
   {
    "id": "abo-B082QDLG2M",
@@ -2223,7 +2223,7 @@
    "hloubka": 0.876,
    "vyska": 0.779,
    "uroven": 0,
-   "plosek": 70602
+   "plosek": 10712
   },
   {
    "id": "abo-B0831YLF39",
@@ -2283,7 +2283,7 @@
    "hloubka": 0.767,
    "vyska": 0.698,
    "uroven": 0,
-   "plosek": 106600
+   "plosek": 6348
   },
   {
    "id": "abo-B085FH8JFG",
@@ -2295,7 +2295,7 @@
    "hloubka": 0.978,
    "vyska": 1.028,
    "uroven": 0,
-   "plosek": 74212
+   "plosek": 15442
   },
   {
    "id": "abo-B085FHVGWV",
@@ -2304,10 +2304,10 @@
    "zdroj": "abo",
    "orig": "B085FHVGWV",
    "sirka": 0.899,
-   "hloubka": 0.944,
-   "vyska": 1.008,
+   "hloubka": 0.943,
+   "vyska": 1.007,
    "uroven": 0,
-   "plosek": 91497
+   "plosek": 14744
   },
   {
    "id": "abo-B085FJV33J",
@@ -2859,7 +2859,7 @@
    "hloubka": 0.587,
    "vyska": 0.791,
    "uroven": 0,
-   "plosek": 127736
+   "plosek": 3953
   },
   {
    "id": "abo-B07HSBJ5D6",
@@ -3267,7 +3267,7 @@
    "hloubka": 0.3,
    "vyska": 0.561,
    "uroven": 0,
-   "plosek": 159677
+   "plosek": 4475
   },
   {
    "id": "abo-B07TF9MY62",
@@ -3276,10 +3276,10 @@
    "zdroj": "abo",
    "orig": "B07TF9MY62",
    "sirka": 0.564,
-   "hloubka": 0.564,
+   "hloubka": 0.563,
    "vyska": 0.985,
    "uroven": 0,
-   "plosek": 75779
+   "plosek": 13423
   },
   {
    "id": "abo-B07TGC3432",
@@ -3359,11 +3359,11 @@
    "kategorie": "zidle",
    "zdroj": "abo",
    "orig": "B084W24C7S",
-   "sirka": 0.628,
+   "sirka": 0.627,
    "hloubka": 0.635,
    "vyska": 0.967,
    "uroven": 0,
-   "plosek": 98508
+   "plosek": 8564
   },
   {
    "id": "abo-B084W2WJH2",
@@ -3396,10 +3396,10 @@
    "zdroj": "abo",
    "orig": "B084W368M8",
    "sirka": 0.615,
-   "hloubka": 0.597,
+   "hloubka": 0.596,
    "vyska": 0.972,
    "uroven": 0,
-   "plosek": 123514
+   "plosek": 12647
   },
   {
    "id": "abo-B0853KX8NG",
@@ -3483,7 +3483,7 @@
    "hloubka": 0.535,
    "vyska": 1.045,
    "uroven": 0,
-   "plosek": 89380
+   "plosek": 12822
   },
   {
    "id": "abo-B0857JM2NK",
@@ -3495,7 +3495,7 @@
    "hloubka": 0.495,
    "vyska": 0.762,
    "uroven": 0,
-   "plosek": 173818
+   "plosek": 47715
   },
   {
    "id": "abo-B0857JQ3BZ",
@@ -3505,9 +3505,9 @@
    "orig": "B0857JQ3BZ",
    "sirka": 0.495,
    "hloubka": 0.569,
-   "vyska": 0.851,
+   "vyska": 0.85,
    "uroven": 0,
-   "plosek": 159792
+   "plosek": 63552
   },
   {
    "id": "abo-B0857JWWVP",
@@ -3516,10 +3516,10 @@
    "zdroj": "abo",
    "orig": "B0857JWWVP",
    "sirka": 0.495,
-   "hloubka": 0.516,
+   "hloubka": 0.515,
    "vyska": 0.818,
    "uroven": 0,
-   "plosek": 150974
+   "plosek": 38709
   },
   {
    "id": "abo-B0857JZJPR",
@@ -3527,11 +3527,11 @@
    "kategorie": "zidle",
    "zdroj": "abo",
    "orig": "B0857JZJPR",
-   "sirka": 1.198,
-   "hloubka": 0.507,
-   "vyska": 0.457,
+   "sirka": 1.196,
+   "hloubka": 0.505,
+   "vyska": 0.456,
    "uroven": 0,
-   "plosek": 215428
+   "plosek": 33159
   },
   {
    "id": "abo-B0861SRJ8T",
@@ -4116,10 +4116,10 @@
    "zdroj": "polyhaven",
    "orig": "modern_coffee_table_01",
    "sirka": 0.6,
-   "hloubka": 1.2,
+   "hloubka": 1.202,
    "vyska": 0.39,
    "uroven": 0,
-   "plosek": 1146
+   "plosek": 4504
   },
   {
    "id": "abo-B003DQ5B2U",
@@ -5483,11 +5483,11 @@
    "kategorie": "postele",
    "zdroj": "abo",
    "orig": "B075QDTYGK",
-   "sirka": 1.606,
+   "sirka": 1.605,
    "hloubka": 2.493,
    "vyska": 1.268,
    "uroven": 0,
-   "plosek": 60963
+   "plosek": 11019
   },
   {
    "id": "abo-B075QDV397",
@@ -5519,11 +5519,11 @@
    "kategorie": "postele",
    "zdroj": "abo",
    "orig": "B075QFF9FY",
-   "sirka": 1.606,
-   "hloubka": 2.493,
+   "sirka": 1.605,
+   "hloubka": 2.492,
    "vyska": 1.268,
    "uroven": 0,
-   "plosek": 60912
+   "plosek": 11064
   },
   {
    "id": "abo-B075QFCHM9",
@@ -5835,7 +5835,7 @@
    "hloubka": 1.965,
    "vyska": 1.288,
    "uroven": 0,
-   "plosek": 213242
+   "plosek": 143077
   },
   {
    "id": "abo-B0856F2MYW",
@@ -7429,9 +7429,9 @@
    "orig": "B07L96X7MN",
    "sirka": 0.961,
    "hloubka": 0.35,
-   "vyska": 1.026,
+   "vyska": 1.025,
    "uroven": 0,
-   "plosek": 61994
+   "plosek": 19390
   },
   {
    "id": "abo-B07L9BVBCJ",
@@ -7693,9 +7693,9 @@
    "orig": "B0876PDMJR",
    "sirka": 1.016,
    "hloubka": 0.508,
-   "vyska": 0.762,
+   "vyska": 0.761,
    "uroven": 0,
-   "plosek": 63486
+   "plosek": 10279
   },
   {
    "id": "abo-B01FK3FWNG",
@@ -8077,9 +8077,9 @@
    "orig": "B0876NZQ9C",
    "sirka": 1.016,
    "hloubka": 0.508,
-   "vyska": 0.762,
+   "vyska": 0.761,
    "uroven": 0,
-   "plosek": 63486
+   "plosek": 10279
   },
   {
    "id": "abo-B08DJQQS4K",
@@ -8271,7 +8271,7 @@
    "hloubka": 0.368,
    "vyska": 0.56,
    "uroven": 0.75,
-   "plosek": 180614
+   "plosek": 5877
   },
   {
    "id": "abo-B073P3HHFT",
@@ -8439,7 +8439,7 @@
    "hloubka": 0.403,
    "vyska": 0.518,
    "uroven": 0.75,
-   "plosek": 96572
+   "plosek": 1840
   },
   {
    "id": "abo-B07B4YVXC7",
@@ -8811,7 +8811,7 @@
    "hloubka": 0.317,
    "vyska": 0.567,
    "uroven": 0.75,
-   "plosek": 72509
+   "plosek": 7521
   },
   {
    "id": "abo-B0825CXG81",
@@ -10839,7 +10839,7 @@
    "hloubka": 0.185,
    "vyska": 0.267,
    "uroven": 0,
-   "plosek": 7347
+   "plosek": 8929
   },
   {
    "id": "abo-B075HR4ZDB",
