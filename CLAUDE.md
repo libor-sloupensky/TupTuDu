@@ -60,6 +60,7 @@ Proxy čte celou DB (i uživatele) — **jen SELECT** pro ladění; zápis (`?wr
 ## Překlady — zákaznická část (web, app)
 - **Uživateli tykáme** všude, kde je to vhodné: web, aplikace, editor, e-maily i SEO články včetně titulků a popisů. V ostatních jazycích stejně (de du, sk a pl ty, es tú, it tu). **Výjimka: francouzsky vykáme (vous)**, tykání by tam působilo nezdvořile. Vykání nebo neosobní styl jen ve francouzštině a v právních dokumentech (podmínky, soukromí, vrácení peněz).
 - Texty, které uvidí zákazník, **nikdy natvrdo česky** — Blade `__('skupina.klic')`, JS `preloz('skupina.klic')`. Nový text rovnou do `lang/cs` i `lang/en`, pak `php artisan preklady:kontrola`. Ostatní jazyky se doplňují hromadně **před každým nasazením**, do té doby v nich platí angličtina; `preklady:kontrola` nesmí před pushem nic hlásit.
+- **Editor** má vlastní skupiny `ed_*` (`preloz('ed_dum.klic')`, počty `prelozPocet`, moduly s Node testy `tx`). Do bugů a konzole se dál píše česky. Podrobnosti v `modules/lokalizace.md`.
 - Národní služby (katastr, výškový profil, mapový podklad) jen přes profil země: `@funkce('katastr')`, middleware `funkce:katastr`, `Lokalizace::maFunkci()`.
 - Masterteam je jen česky, nepřekládá se. Podrobnosti: `modules/lokalizace.md`.
 

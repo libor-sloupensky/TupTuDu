@@ -73,7 +73,7 @@ Kus je obyčejný `engine.vybaveni` s polem `katalog` (ID), `nazev` a `uroven` (
 - **Kopie modelu sdílejí geometrii a materiály**, `_zrus3d` je proto přeskakuje (`userData.katalog`).
 - **Barvy glTF jsou lineární**, `Katalog3d.nacti` je převede na hodnoty ze vzorku, které čeká shader v `svetlo-3d.js`.
 - **Sdílený odkaz** dostane kusy jako seznam `objekty` (ID, poloha, rozměry), ne jako trojúhelníky. Prohlížeč si model stáhne z `/katalog/modely/`. Dřívější cesta přes `_zapecModel` by textury modelů ztratila, čte jen textury kreslené na plátno.
-- **Editor zatím není přeložený** (`modules/lokalizace.md`), názvy kusů jsou jen česky. Stránka autorů přeložená je.
+- **Názvy kusů** se překládají přes `lang/*/ed_katalog.php` podle českého názvu (`modules/lokalizace.md`). Nové názvy doplnit před nasazením.
 
 ## Přebarvování a dekory (odloženo, Libor 4. 11. 2026)
 

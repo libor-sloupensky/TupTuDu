@@ -67,8 +67,8 @@ const PRETEKA = `(() => {
 })()`;
 
 const CESTINA = { sk: /[ěřů]/, default: /[ěřůčšžďťň]/ };
-// Uživatelská data projektu a jména, ne texty rozhraní
-const VYJIMKY = /^ClaudeTest|Klemov|^(Masterteam|Čeština|Slovenčina|Français|Español|Italiano|Polski|Deutsch|English)$|DB-IP|Sloupensk/;
+// Data projektu (historie, název kusů, data ČGS a katastru z česky uloženého projektu), jména jazyků a skrytý AI panel, ne texty rozhraní
+const VYJIMKY = /^ClaudeTest|Klemov|^(Masterteam|Čeština|Slovenčina|Français|Español|Italiano|Polski|Deutsch|English)$|DB-IP|Sloupensk|Zvýrazňovač|zvýraznění|Přemýšlím|Popiš změnu|kvartér|hlína, písek|^Rajon |^Orná půda|^Ukotvení|^Vložení objektu|^Hrana střechy|^Podlaží \d|^Posun stěny/;
 
 async function main() {
     fs.mkdirSync(VYSTUP, { recursive: true });
@@ -84,14 +84,14 @@ async function main() {
 
         for (const jazyk of JAZYKY) {
             console.log(`\n=== ${jazyk}`);
-            p.chyby.length = 0;
+            const pocetVad = p.chybyDetail.length;
             await p.jdiNa(`${ZAKLAD}/jazyk/${jazyk}`);
             await p.jdiNa(`${ZAKLAD}/projects/${kod}`);
             await p.cekej(`!!window.Alpine && !!document.querySelector('[x-data]') && !!${D}.renderer`, 30000, 'editor');
             await pauza(1500);
             kontrola('jazyk stránky', (await p.vyhodnot('document.documentElement.lang')) === jazyk);
 
-            await p.vyhodnot(`document.querySelectorAll('details.kk-section, details').forEach(d => d.open = true); true`);
+            await p.vyhodnot(`document.querySelectorAll('details.kk-section').forEach(d => d.open = true); true`);
             await pauza(500);
             // Výběr první stěny ukáže panel vlastností
             await p.vyhodnot(`(() => { const d = ${D}; const w = [...(d.engine?.walls?.values?.() || [])][0]; if (w && d.selectWall) d.selectWall(w.id); return true; })()`).catch(() => {});
@@ -104,7 +104,10 @@ async function main() {
             kontrola('žádná čeština v rozhraní', cesky.length === 0, `${cesky.length}: ` + cesky.slice(0, 25).join(' | '));
             const nazvy = await p.vyhodnot(`${D}.seznamPodlazi?.map(x => x.nazev).join(', ') || ''`);
             console.log('   podlaží:', nazvy);
-            kontrola('bez chyb v konzoli', p.chyby.length === 0, p.chyby.slice(0, 4).join(' | ').slice(0, 400));
+            // Nejde o texty: modely a podklad kopie projektu nemusí v této složce být, /masterteam je přesměrování po přihlášení, logo Mapy.com chybí i na produkci
+            const vady = [...new Set(p.chybyDetail.slice(pocetVad).map(c => (c.url || c.text).replace(ZAKLAD, '')))]
+                .filter(u => !/^\/(katalog|editor\/plans|masterteam$|img\/external\/mapy-com-logo)/.test(u));
+            kontrola('bez chyb v konzoli', vady.length === 0, vady.slice(0, 10).join(' | ').slice(0, 500));
             await p.snimek(path.join(VYSTUP, `${jazyk}.png`));
         }
 

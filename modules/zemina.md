@@ -69,4 +69,3 @@ Výkop v barvě zeminy se ukáže pod skrytými podlažími, která jsou v teré
 - Umístění zeminy na pozemek (podle nakypřeného objemu).
 - Snížená podlaha místnosti (`dum.plochy`) výkop neprohlubuje.
 - Nabídka „Stávající", když dům překryje stavbu z katastru.
-- Texty panelu jsou česky natvrdo jako zbytek pravého panelu editoru.

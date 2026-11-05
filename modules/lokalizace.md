@@ -15,8 +15,8 @@ Masterteam je interní a **vždy česky** — nepřekládá se.
   účet, úvodní obrazovka, hlavička aplikace, právní stránky (celé dokumenty cs/en).
 - SEO články se zatím nepřekládají (Libor 4. 11. 2026).
 - V zemích bez služby editor skrývá hledání parcely a volbu mapového podkladu (`@funkce`), mřížka v panelu zůstává. Ruční pozemek a napojení parcel na Slovensku a v Polsku jsou další kroky.
-- Editor V3 zatím **není** přeložený (texty natvrdo česky a vyká, názvy v katalogu taky), překládá se až po dokončení rozdělané práce v něm. Katastr v aplikaci hlídá
-  i server (`funkce:katastr`). Viz `modules/aplikace.md`.
+- **Editor je přeložený** (5. 11. 2026): texty ve skupinách `ed_sablona`, `ed_ui`, `ed_dum`, `ed_kresba`, `ed_ral`, `ed_nastroje`, `ed_katalog`, načítají se jen na stránce editoru. Názvy kusů katalogu přes `ed_katalog` podle českého názvu, nový kus bez překladu zůstane česky. Skrytý AI panel přeložený není, je určený ke smazání. Data z ČÚZK a ČGS a popisy kroků historie zůstávají v jazyce, v němž vznikly. Katastr hlídá i server (`funkce:katastr`).
+- Test: `node services/import-test/test-jazyky-editor-ui.cjs` projde editor ve všech jazycích.
 
 ## Kde co je
 | Co | Soubor |
@@ -76,6 +76,13 @@ Lokalizace::maFunkci('katastr');
 - Nový text vždy rovnou do `lang/cs` **i** `lang/en`, pak `php artisan preklady:kontrola`. Ostatní jazyky hromadně před každým nasazením, do té doby v nich platí angličtina a kontrola je hlásí.
 - Do `js.php` jen to, co JS opravdu potřebuje — posílá se celé na každou stránku.
 - Chybějící JS klíč se tiše zapíše do bugů (`zalogujChybu`) a zobrazí se klíč.
+
+## Editor
+- Blade `{{ __('ed_sablona.klic') }}`, JS a Alpine `preloz('ed_dum.klic', { nazev })`.
+- Počty: `prelozPocet('ed_dum.sten', n)`, text `one=:pocet stěna|few=:pocet stěny|other=:pocet stěn`, kategorie podle jazyka. Čísla ve větách `prelozCislo(x, 2)`.
+- Moduly běžící i v Node testech (`stavebni-engine.js` a další) volají `tx()`, který bez slovníku vrátí klíč.
+- Do bugů (`zalogujChybu`, `chybaUzivateli` jako akce) a do konzole se píše česky.
+- Nesouvislé věty neskládat, jeden text s parametry. Názvy podlaží generuje `autoNazevPodlazi`, ruční `vlastniNazev` se nemění.
 
 ## Jak přidat jazyk
 1. Zkopírovat `lang/en/` do `lang/{kod}/` a přeložit (odborné stavařské termíny nechat zkontrolovat rodilým mluvčím).
