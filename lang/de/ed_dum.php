@@ -1,0 +1,134 @@
+<?php
+
+// Editor V3, dům přes podlaží (public/js/koncept-v3/dum.js). Názvy podlaží (:nazev) generuje stavebni-engine.js.
+return [
+    // Obecné, používá se na víc místech
+    'strecha' => 'Dach',
+    'strecha_nastavit' => 'einstellen',
+    'hrana_strechy' => 'Dachkante',
+    'smazat_podlazi_potvrzeni' => 'Geschoss :nazev samt Zeichnung löschen?',
+    'schody_mezi_urovnemi' => 'zwischen Ebenen, :nazev',
+
+    // Popisky na plátně
+    'plocha_stitek' => ':vyska cm aus :podlazi',
+    'podlazi_niz' => 'Geschoss darunter',
+    'schody_dolu' => '↓ runter',
+    'stit' => 'Giebel',
+
+    // Typ krytiny, kód se ukládá do střechy
+    'krytina' => [
+        'taska' => 'Tondachziegel',
+        'betonova' => 'Betondachstein',
+        'bobrovka' => 'Biberschwanz',
+        'sindel' => 'Bitumenschindel',
+        'bridlice' => 'Schiefer',
+        'falc' => 'Stehfalzblech',
+        'trapez' => 'Trapezblech',
+    ],
+
+    'barva_krytiny' => [
+        'cervena' => 'Ziegelrot',
+        'antracit' => 'Anthrazit',
+        'hneda' => 'Braun',
+        'seda' => 'Grau',
+        'modroseda' => 'Blaugrau',
+    ],
+
+    // Dekor podlahy, kód se ukládá do místnosti
+    'dekor' => [
+        'hladka' => 'Glatt',
+        'prkna' => 'Holzdielen',
+        'parkety' => 'Fischgrätparkett',
+        'dlazba30' => 'Fliesen 30 × 30 cm',
+        'dlazba60' => 'Fliesen 60 × 60 cm',
+        'beton' => 'Betonspachtel',
+        'koberec' => 'Teppich',
+    ],
+
+    'typ_strechy' => [
+        'sedlova' => 'Satteldach',
+        'valbova' => 'Walmdach',
+        'pultova' => 'Pultdach',
+        'plocha' => 'Flachdach',
+    ],
+
+    // Úroveň podlahy místnosti
+    'uroven_podlahy' => [
+        'bezna' => 'Auf Geschossniveau',
+        'zvysena' => 'Erhöht',
+        'snizena' => 'Abgesenkt',
+        'bez_podlahy' => 'Kein Boden',
+    ],
+
+    // Krátké hlášky nad plátnem
+    'hlaska' => [
+        'cely_dum_vybrany' => 'Das ganze Haus ist ausgewählt. Ziehe an einer beliebigen Wand.',
+        'planek_rucne' => 'Richte den Plan vorerst von Hand mit zwei Punkten aus (Panel Vorlage).',
+        'planek_nesrovnan' => 'Der Plan ließ sich nicht automatisch am unteren Geschoss ausrichten. Richte ihn mit zwei Punkten aus (Panel Vorlage).',
+        'planek_srovnan' => 'Plan am unteren Geschoss ausgerichtet (:rohu). Feinjustieren kannst du mit zwei Punkten im Panel Vorlage.',
+        'shodnych_rohu' => 'one=:pocet passende Ecke|other=:pocet passende Ecken',
+        'body_blizko' => 'Die Punkte liegen zu nah beieinander.',
+        'planek_meritko' => 'Plan ausgerichtet, aber die Maßstäbe weichen um :procent % ab. Prüfe die Kalibrierung des Plans.',
+        'planek_usazen' => 'Plan am unteren Geschoss ausgerichtet.',
+        'pribyla_nosna' => 'In :nazev wurde eine tragende Wand ergänzt.',
+        'schody_bez_podlazi' => 'Die Treppe führt ins Geschoss über dem aktiven. Füge zuerst ein höheres Geschoss hinzu.',
+        'schody_odstraneny' => 'Die Treppe zu diesem Boden wurde entfernt.',
+    ],
+
+    // Ruční usazení plánku dvěma body
+    'lico' => [
+        'prvni_bod' => 'Klicke auf den ersten Punkt im Plan (Haus- oder Treppenecke).',
+        'tentyz_bod' => 'Klicke auf dieselbe Stelle im unteren Geschoss.',
+        'druhy_bod' => 'Klicke auf den zweiten Punkt im Plan, möglichst weit vom ersten entfernt.',
+    ],
+
+    // Kroky v historii úprav
+    'krok' => [
+        'nove_podlazi' => 'Neues Geschoss :nazev',
+        'smazani_podlazi' => 'Geschoss :nazev gelöscht',
+        'podlazi' => 'Geschoss :nazev',
+        'vyska_domu' => 'Haushöhe',
+        'usazeni_planku' => 'Plan ausgerichtet',
+        'podpera' => 'Stütze in :nazev',
+        'uroven_podlahy' => 'Bodenhöhe',
+        'prenos_vysky' => 'Höhenübertragung',
+        'schodiste' => 'Treppe',
+        'schody_mezi_urovnemi' => 'Treppe zwischen Ebenen',
+        'smazani_schodiste' => 'Treppe gelöscht',
+        'posun_schodiste' => 'Treppe verschoben',
+        'otoceni_schodiste' => 'Treppe gedreht',
+        'smazani_strechy' => 'Dach gelöscht',
+        'barva_domu' => 'Hausfarbe',
+        'zaklady' => 'Fundament',
+    ],
+
+    // Kde se barva v domě používá (nabídka použitých barev)
+    'barvy' => [
+        'schody' => 'Treppe',
+        'podlaha' => 'Boden, :nazev',
+        'mistnost' => 'Raum',
+        'fasada' => 'Fassade',
+        'okna_venku' => 'Fenster außen',
+        'okna_uvnitr' => 'Fenster innen',
+        'dvere_venku' => 'Haustüren außen',
+        'dvere_uvnitr' => 'Haustüren innen',
+        'dvere_vnitrni' => 'Innentüren',
+        'vrata_venku' => 'Tore außen',
+        'vrata_uvnitr' => 'Tore innen',
+    ],
+
+    // Základy a zemina. :objem u výkopu už obsahuje text s jednotkou (klíč objem).
+    'zaklady' => [
+        'objem' => 'ca. :objem m³',
+        'vykop' => ':objem Aushub',
+        'chybi_vykop' => 'kein Fundament, :objem Aushub',
+        'chybi' => 'kein Fundament',
+        'chybi_upozorneni' => 'Kein Fundament: :seznam. Das Haus reicht hier nicht bis zum Gelände, deshalb wird hier nicht gegraben.',
+        'teren_rovina' => 'Gelände: eben, Höhendaten sind nicht verfügbar.',
+        'teren_vyska' => 'Gelände unter dem Haus: :vyska m ü. M. (laut Höhendaten)',
+        'vykopek_chybi' => 'Aushub fehlt',
+        'vykopek_navic' => 'Aushub übrig',
+        'ornice_chybi' => 'Oberboden fehlt',
+        'ornice_navic' => 'Oberboden übrig',
+    ],
+];

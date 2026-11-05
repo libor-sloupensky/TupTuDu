@@ -73,6 +73,8 @@
                 const data = await r.json();
                 // Názvy kategorií jdou ze slovníku podle id, JSON zůstává česky
                 data.kategorie.forEach(k => { k.nazev = preloz('ed_nastroje.kategorie.' + k.id); });
+                // Názvy kusů přes slovník podle českého názvu, nový kus bez překladu zůstane česky
+                data.polozky.forEach(p => { p.nazev = window.TT_LOKALIZACE.texty['ed_katalog.' + p.nazev] ?? p.nazev; });
                 this.katalog = data;
             } catch (e) {
                 window.chybaUzivateli?.(e, 'Načtení katalogu');
