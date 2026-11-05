@@ -6,7 +6,7 @@
 <footer class="tt-paticka">
     {{-- Ceník, podmínky, zásady a vrácení peněz musí být dostupné bez přihlášení (požadavek Paddlu) --}}
     <nav>
-        <a href="{{ \App\Support\Domeny::url('web', '/pricing') }}">{{ __('web.cenik') }}</a>
+        <a href="{{ \App\Support\Lokalizace::adresaWebu('/pricing') }}">{{ __('web.cenik') }}</a>
         <a href="{{ \App\Support\Domeny::url('web', '/terms') }}">{{ __('pravni.podminky_titulek') }}</a>
         <a href="{{ \App\Support\Domeny::url('web', '/privacy') }}">{{ __('pravni.soukromi_titulek') }}</a>
         <a href="{{ \App\Support\Domeny::url('web', '/refunds') }}">{{ __('pravni.vraceni_titulek') }}</a>

@@ -18,7 +18,7 @@
         ];
     }
 @endphp
-<x-layouts.web :title="__('tarify.cenik_titulek')">
+<x-layouts.web :title="__('tarify.cenik_titulek')" :popis="__('tarify.cenik_popis')" :verze="\App\Support\Lokalizace::verzeStranky('/pricing')">
     <div class="tt-cenik">
         <h1>{{ __('tarify.cenik_nadpis') }}</h1>
         <p class="tt-cenik-uvod">{{ __('tarify.cenik_uvod') }}</p>

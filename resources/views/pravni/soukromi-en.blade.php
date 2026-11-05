@@ -17,6 +17,11 @@
         <td>Performance of a contract (Art. 6(1)(b) GDPR)</td>
     </tr>
     <tr>
+        <td>The article on our website you signed up from</td>
+        <td>Finding out which articles really help people</td>
+        <td>Legitimate interest (Art. 6(1)(f) GDPR)</td>
+    </tr>
+    <tr>
         <td>When signing in with Google: name, email and Google account identifier</td>
         <td>Sign-in without a password</td>
         <td>Performance of a contract</td>

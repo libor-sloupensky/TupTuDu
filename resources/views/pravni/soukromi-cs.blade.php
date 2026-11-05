@@ -17,6 +17,11 @@
         <td>Plnění smlouvy (čl. 6 odst. 1 písm. b GDPR)</td>
     </tr>
     <tr>
+        <td>Článek na našem webu, ze kterého jste se zaregistrovali</td>
+        <td>Zjištění, které články lidem opravdu pomáhají</td>
+        <td>Oprávněný zájem (čl. 6 odst. 1 písm. f GDPR)</td>
+    </tr>
+    <tr>
         <td>Při přihlášení přes Google: jméno, e-mail a identifikátor účtu Google</td>
         <td>Přihlášení bez hesla</td>
         <td>Plnění smlouvy</td>

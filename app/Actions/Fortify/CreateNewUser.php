@@ -38,6 +38,7 @@ class CreateNewUser implements CreatesNewUsers
             'jazyk' => Lokalizace::jazyk(),
             'zeme' => Lokalizace::zeme(),
             'souhlas_podminky_v' => now(),
+            'zdroj_registrace' => session('zdroj_registrace'),
         ]);
     }
 }

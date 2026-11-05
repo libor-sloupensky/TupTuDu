@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'subdomena' => \App\Http\Middleware\NaSubdomene::class,
             // Národní služba dostupná jen v některých zemích — config/lokalizace.php
             'funkce' => \App\Http\Middleware\VyzadujFunkci::class,
+            // Jazyk daný adresou stránky (/cs/…) — modules/blog.md
+            'jazyk' => \App\Http\Middleware\JazykZAdresy::class,
         ]);
         // Přesměrování na správnou subdoménu musí proběhnout DŘÍV než `auth` —
         // jinak by nepřihlášeného poslal na login na špatné subdoméně.

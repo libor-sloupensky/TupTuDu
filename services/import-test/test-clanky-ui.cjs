@@ -1,0 +1,148 @@
+/**
+ * Články na webu v prohlížeči: jazyk v adrese, kalkulačka, výzva podle ovládání, přetékání na telefonu,
+ * zápis článku jako zdroje registrace. Snímky do složky vystup/clanky.
+ *
+ * Spuštění: node services/import-test/test-clanky-ui.cjs
+ *           V3_WEB=http://tuptudu.localhost:8002 V3_APP=http://app.tuptudu.localhost:8002
+ */
+const fs = require('fs');
+const path = require('path');
+const { execFileSync } = require('child_process');
+const { otevriProhlizec, pauza } = require('./prohlizec.cjs');
+
+const WEB = process.env.V3_WEB || 'http://tuptudu.localhost:8002';
+const APP = process.env.V3_APP || 'http://app.tuptudu.localhost:8002';
+const CLANEK = '/cs/clanky/kolik-zeminy-z-vykopu';
+const VYSTUP = path.join(__dirname, 'vystup', 'clanky');
+
+let chyb = 0;
+const kontrola = (popis, ok, detail = '') => {
+    if (!ok) chyb++;
+    console.log(`   ${ok ? 'OK  ' : 'CHYBA'} ${popis}${detail ? ' — ' + detail : ''}`);
+};
+
+/** Celá stránka do jednoho PNG: okno se roztáhne podle výšky obsahu. */
+async function snimekCele(p, soubor) {
+    const vyska = await p.vyhodnot('document.documentElement.scrollHeight');
+    const sirka = await p.vyhodnot('window.innerWidth');
+    await p.cmd('Emulation.setDeviceMetricsOverride', { width: sirka, height: Math.min(vyska, 6000), deviceScaleFactor: 1, mobile: false });
+    await pauza(300);
+    await p.snimek(soubor);
+    await p.cmd('Emulation.clearDeviceMetricsOverride', {});
+}
+
+const hodnoty = (p) => p.vyhodnot(`Object.fromEntries([...document.querySelectorAll('[data-v]')].map(e => [e.dataset.v, e.textContent]))`);
+const nastav = (p, klic, hodnota) => p.vyhodnot(`(() => { const i = document.querySelector('[data-pole="${klic}"]'); i.value = ${JSON.stringify(hodnota)};
+    i.dispatchEvent(new Event(i.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); return true; })()`);
+const videt = (p, selektor) => p.vyhodnot(`(() => { const e = document.querySelector(${JSON.stringify(selektor)}); return !!e && e.getClientRects().length > 0; })()`);
+
+async function main() {
+    fs.mkdirSync(VYSTUP, { recursive: true });
+    const p = await otevriProhlizec({ sirka: 1400, vyska: 950 });
+    try {
+        console.log('1) Článek na počítači');
+        await p.jdiNa(WEB + CLANEK);
+        await p.cekej(`document.querySelector('[data-v="ornice-navic"]')?.textContent !== '–'`, 20000, 'kalkulačka');
+        const hlava = await p.vyhodnot(`({ jazyk: document.documentElement.lang, kan: document.querySelector('link[rel=canonical]')?.href, popis: document.querySelector('meta[name=description]')?.content,
+            ld: JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent).map(x => x['@type']), h1: document.querySelectorAll('h1').length })`);
+        kontrola('česky, kanonická adresa, popis, jeden nadpis', hlava.jazyk === 'cs' && hlava.kan.endsWith(CLANEK) && hlava.popis.length > 80 && hlava.h1 === 1, JSON.stringify(hlava.h1));
+        kontrola('strukturovaná data článku a drobečků', hlava.ld.join() === 'Article,BreadcrumbList', hlava.ld.join());
+
+        console.log('\n2) Kalkulačka');
+        let v = await hodnoty(p);
+        kontrola('hláška o chybějícím základu je skrytá', !(await videt(p, '[data-ukaz="bez-kontaktu"]')));
+        kontrola('výchozí dům: ornice 30, výkopek 8, vykopáno 60, zpět 21, hromada 74',
+            v['ornice-navic'] === '30' && v['vykopek-navic'] === '8' && v['celkem-vykopano'] === '60' && v['celkem-zpet'] === '21' && v.hromada === '74', JSON.stringify(v));
+        await nastav(p, 'typ', 'deska');
+        v = await hodnoty(p);
+        kontrola('nosná deska: výkopek chybí 12', v['vykopek-chybi'] === '12' && await videt(p, '[data-ukaz="vykopek-chybi"]') && !(await videt(p, '[data-ukaz="vykopek-navic"]')), v['vykopek-chybi']);
+        kontrola('u desky se pole pasů schovají', !(await p.vyhodnot(`(() => { document.querySelector('.tt-kalkulacka details').open = true; return document.querySelector('[data-pole="sirkaPasu"]').getClientRects().length > 0; })()`)));
+        await nastav(p, 'typ', 'pasy');
+        await nastav(p, 'sklep', 'ano');
+        v = await hodnoty(p);
+        kontrola('sklep: výkopek 368, hromada 814', v['vykopek-navic'] === '368' && v.hromada === '814', JSON.stringify(v));
+        kontrola('se sklepem je vidět jeho výška', await videt(p, '[data-pole="vyskaSklepu"]'));
+        await nastav(p, 'sklep', 'ne');
+        await nastav(p, 'nadTerenem', '60');
+        kontrola('podlaha moc vysoko: hláška místo výsledku', await videt(p, '[data-ukaz="bez-kontaktu"]') && !(await videt(p, '[data-ukaz="vysledek"]')));
+        await nastav(p, 'nadTerenem', '');
+        v = await hodnoty(p);
+        kontrola('prázdné pole bere výchozí hodnotu', v['ornice-navic'] === '30' && await videt(p, '[data-ukaz="vysledek"]'), v['ornice-navic']);
+        await nastav(p, 'nadTerenem', '30');
+        await nastav(p, 'delka', '1000');
+        v = await hodnoty(p);
+        kontrola('délka mimo rozsah se omezí', v['ornice-navic'] === String(60 * 10 * 0.25), v['ornice-navic']);
+        await nastav(p, 'delka', '12');
+        await p.vyhodnot(`document.querySelector('.tt-kalkulacka details').open = false`);
+
+        console.log('\n3) Výzva a výstup');
+        kontrola('na počítači tlačítko registrace, ne poslání odkazu', await videt(p, '[data-vyzva-klik]') && !(await videt(p, '[data-poslat-odkaz]')));
+        const odkaz = await p.vyhodnot(`document.querySelector('[data-vyzva-klik]').href`);
+        kontrola('registrace nese článek jako zdroj', odkaz === APP + '/register?zdroj=kolik-zeminy-z-vykopu', odkaz);
+        kontrola('obrázek se načte', await p.vyhodnot(`new Promise(r => { const i = document.querySelector('.tt-obrazek img'); i.loading = 'eager'; if (i.complete && i.naturalWidth) r(true); i.onload = () => r(true); i.onerror = () => r(false); setTimeout(() => r(false), 8000); })`));
+        kontrola('stránka nenačítá kód editoru', await p.vyhodnot(`![...document.scripts].some(s => s.src.includes('/koncept-v3/')) && !window.Zemina`));
+        await snimekCele(p, path.join(VYSTUP, 'clanek-pocitac-tmavy.png'));
+        await p.vyhodnot(`document.documentElement.dataset.theme = 'light'`);
+        await pauza(200);
+        await snimekCele(p, path.join(VYSTUP, 'clanek-pocitac-svetly.png'));
+        await p.vyhodnot(`document.documentElement.dataset.theme = 'dark'`);
+
+        console.log('\n4) Přehled a titulka');
+        await p.jdiNa(WEB + '/cs/clanky');
+        kontrola('přehled obsahuje článek', await p.vyhodnot(`!!document.querySelector('a[href$="${CLANEK}"]')`));
+        await p.jdiNa(WEB + '/cs');
+        kontrola('z titulky vede odkaz na články a ceník s jazykem', await p.vyhodnot(`!!document.querySelector('.topbar-akce a[href$="/cs/clanky"]') && !!document.querySelector('.topbar-akce a[href$="/cs/pricing"]')`));
+        const prepnuti = await p.vyhodnot(`document.querySelector('.tt-jazyky a[hreflang=en]').href`);
+        kontrola('přepínač vede přímo na anglickou verzi', prepnuti === WEB + '/en', prepnuti);
+        await p.jdiNa(WEB + '/en');
+        kontrola('/en je anglicky a odkaz na články chybí, anglické zatím nejsou', await p.vyhodnot(`document.documentElement.lang === 'en' && !document.querySelector('.topbar-akce a[href*="articles"]')`));
+        await p.jdiNa(WEB + '/terms');
+        kontrola('stránka bez jazyka v adrese si vybraný jazyk pamatuje', await p.vyhodnot(`document.documentElement.lang === 'en'`));
+
+        console.log('\n5) Zdroj registrace');
+        await p.jdiNa(APP + '/register?zdroj=kolik-zeminy-z-vykopu');
+        const email = 'claudetest-zdroj-' + Date.now() + '@example.com';
+        await p.vyhodnot(`(() => { const f = document.querySelector('form[action*="register"]');
+            f.querySelector('[name=jmeno]').value = 'ClaudeTest'; f.querySelector('[name=email]').value = ${JSON.stringify(email)};
+            f.querySelector('[name=password]').value = 'ClaudeTest-12345'; f.querySelector('[name=password_confirmation]').value = 'ClaudeTest-12345';
+            f.querySelector('[name=souhlas]').checked = true; f.submit(); return true; })()`);
+        await pauza(4000);
+        // Přímo v databázi, testovací účet po sobě smaže (jen tento e-mail)
+        const dotaz = `$u = DB::table('uzivatele')->where('email', '${email}'); echo 'ZDROJ=' . $u->value('zdroj_registrace'); $u->delete();`;
+        const vypis = execFileSync('php', ['artisan', 'tinker', '--execute', dotaz], { cwd: path.join(__dirname, '../..'), encoding: 'utf8' });
+        kontrola('článek se uložil k účtu', vypis.includes('ZDROJ=kolik-zeminy-z-vykopu'), vypis.trim().slice(0, 80));
+    } finally {
+        await p.zavri();
+    }
+
+    console.log('\n6) Telefon (dotyk, 390 px)');
+    const t = await otevriProhlizec({ sirka: 500, vyska: 900 });
+    try {
+        await t.cmd('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+        await t.cmd('Emulation.setTouchEmulationEnabled', { enabled: true });
+        await t.cmd('Emulation.setEmulatedMedia', { features: [{ name: 'hover', value: 'none' }, { name: 'pointer', value: 'coarse' }] });
+        await t.jdiNa(WEB + CLANEK);
+        await t.cekej(`document.querySelector('[data-v="ornice-navic"]')?.textContent !== '–'`, 20000, 'kalkulačka');
+        const preteka = await t.vyhodnot(`document.documentElement.scrollWidth - window.innerWidth`);
+        kontrola('stránka nepřetéká do šířky', preteka <= 0, String(preteka));
+        const siroke = await t.vyhodnot(`[...document.querySelectorAll('.tt-clanek-stranka *')].filter(e => !e.closest('.tt-tabulka') && !e.closest('svg') && e.getBoundingClientRect().right > window.innerWidth + 1).map(e => e.tagName + '.' + e.className).slice(0, 5)`);
+        kontrola('žádný prvek mimo tabulky nesahá za okraj', siroke.length === 0, JSON.stringify(siroke));
+        kontrola('na dotyku poslání odkazu místo registrace', await videt(t, '[data-poslat-odkaz]') && !(await videt(t, '[data-vyzva-klik]')));
+        kontrola('kalkulačka funguje', (await hodnoty(t))['ornice-navic'] === '30');
+        await t.vyhodnot(`window.scrollTo(0, 0)`);
+        await t.snimek(path.join(VYSTUP, 'clanek-telefon-horni.png'));
+        await t.vyhodnot(`document.querySelector('.tt-rez').scrollIntoView()`);
+        await pauza(300);
+        await t.snimek(path.join(VYSTUP, 'clanek-telefon-rez.png'));
+        await t.vyhodnot(`document.querySelector('[data-vyzva]').scrollIntoView({ block: 'center' })`);
+        await pauza(300);
+        await t.snimek(path.join(VYSTUP, 'clanek-telefon-vyzva.png'));
+    } finally {
+        await t.zavri();
+    }
+
+    console.log(chyb ? `\nCHYBY: ${chyb}` : '\nVše v pořádku');
+    process.exit(chyb ? 1 : 0);
+}
+
+main().catch((e) => { console.error(e); process.exit(1); });

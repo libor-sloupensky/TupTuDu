@@ -183,7 +183,20 @@ Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('mastertea
 
 // ───────── Právní stránky a kontakt (veřejný web) ─────────
 Route::middleware('subdomena:web')->group(function () {
-    Route::get('/terms', [App\Http\Controllers\PravniController::class, 'podminky'])->name('pravni.podminky');
+    // Stránky s jazykem v adrese, aby je Google viděl v každém jazyce (modules/blog.md). Adresy bez jazyka
+    // (/, /pricing) zůstávají kvůli schválení v Paddlu, kanonická z nich vede na verzi s jazykem.
+    foreach (App\Support\Lokalizace::jazyky() as $jazyk) {
+        Route::middleware('jazyk:' . $jazyk)->prefix($jazyk)->group(function () use ($jazyk) {
+            Route::get('/', fn () => view('vitrina.index'));
+            Route::get('/pricing', [App\Http\Controllers\CenikController::class, 'index']);
+            Route::prefix(App\Support\Clanky::SEGMENTY[$jazyk])->group(function () {
+                Route::get('/', [App\Http\Controllers\ClankyController::class, 'prehled']);
+                Route::get('/{adresa}', [App\Http\Controllers\ClankyController::class, 'detail'])->where('adresa', '[a-z0-9-]+');
+            });
+        });
+    }
+
+    Route::get('/terms',[App\Http\Controllers\PravniController::class, 'podminky'])->name('pravni.podminky');
     Route::get('/privacy', [App\Http\Controllers\PravniController::class, 'soukromi'])->name('pravni.soukromi');
     Route::get('/refunds', [App\Http\Controllers\PravniController::class, 'vraceni'])->name('pravni.vraceni');
     Route::get('/model-credits', [App\Http\Controllers\PravniController::class, 'autoriModelu'])->name('autori-modelu');

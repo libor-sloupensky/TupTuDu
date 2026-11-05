@@ -35,6 +35,10 @@ Masterteam je interní a **vždy česky** — nepřekládá se.
   3. `en`.
   Jazyk prohlížeče se nepoužívá. Země může mít seznam jazyků (`'SK' => ['sk', 'cs']`
   — Slovák dostane češtinu, dokud nebude slovenština).
+- **Jazyk v adrese má přednost před vším** (`/cs`, `/cs/pricing`, `/cs/clanky/…`, middleware `jazyk:cs`, lokálně od 4. 11. 2026):
+  Googlebot chodí typicky z USA a jazyk podle IP by mu ukázal jen angličtinu. Návštěva takové adresy uloží jazyk i do session,
+  platí pak i na stránkách bez jazyka v adrese. Zemi nemění, měna a národní služby jdou dál podle IP. Odkazy mezi stránkami
+  přes `Lokalizace::adresaWebu('/pricing')`. Podrobnosti `modules/blog.md`.
 - **Chybějící text** se doplní z angličtiny (`APP_FALLBACK_LOCALE=en`), ne z jazyka země.
 - **Země:** nastavení uživatele → národní doména → poloha podle IP → `CZ` (dokud jsou zákazníci jen z ČR).
 - **Masterteam:** `masterteam_jazyk` = `cs` → jazyk napevno, poloha podle IP se nezjišťuje.
