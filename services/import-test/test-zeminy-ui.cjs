@@ -244,8 +244,8 @@ async function main() {
         kontrola('nosná stěna nad vnitřkem sklepu nepodepřená zůstává', nep.po === 1 && nep.delka > 8, JSON.stringify(nep));
         kontrola('přesah vyššího patra nepodepřený zůstává', nep.presah > nep.pred, JSON.stringify(nep));
 
-        console.log('\n8c) Dům zvednutý nad terén');
-        const zvednuty = await js(`const np = d._podlazi1NP().id; d.naPodlazi(np); d.katastrParcely = ${PARCELA}; d.vyskovyProfil = null; d._zalozZaklady(); d.setNadTerenem(2); d._selectionTick++; return true;`).then(() => pauza(500)).then(() => js(`const np = d._podlazi1NP().id; const z = d.zemina; const v = d.podepreniPodlazi(np);
+        console.log('\n8c) Dům zvednutý nad terén, prodloužení základu vypnuté');
+        const zvednuty = await js(`const np = d._podlazi1NP().id; d.naPodlazi(np); d.katastrParcely = ${PARCELA}; d.vyskovyProfil = null; d._zalozZaklady(); d.setVolbuZakladu('prodlouzit', false); d.setNadTerenem(2); d._selectionTick++; return true;`).then(() => pauza(500)).then(() => js(`const np = d._podlazi1NP().id; const z = d.zemina; const v = d.podepreniPodlazi(np);
             return { popis: d.zakladyPopis, chybi: d.zakladyChybi, oznaceno: v.size, zakladChybi: [...v.values()].some(x => x.chybiZaklad), plocha: z.bezZakladu, casti: z.casti.map(c => [c.nazev, Math.round(c.vykopek), Math.round(c.bezZakladu)]) };`));
         kontrola('část vedle sklepu hlásí chybějící základ', /chybí základ/.test(zvednuty.popis) && /1\.NP/.test(zvednuty.chybi) && zvednuty.plocha > 20, JSON.stringify(zvednuty));
         kontrola('její stěny jsou šrafované jako bez základu', zvednuty.oznaceno > 0 && zvednuty.zakladChybi, JSON.stringify(zvednuty));
@@ -257,6 +257,38 @@ async function main() {
         await pauza(500);
         const zpetDolu = await js(`return { popis: d.zakladyPopis, oznaceno: [...d.podepreniPodlazi(d._podlazi1NP().id).values()].filter(x => x.chybiZaklad).length };`);
         kontrola('po snížení základ zase je', !/chybí/.test(zpetDolu.popis) && zpetDolu.oznaceno === 0, JSON.stringify(zpetDolu));
+
+        console.log('\n8d) Základ prodloužený k zemi');
+        await js(`d.setVolbuZakladu('prodlouzit', true); d.setNadTerenem(2); d.podlaziUprava = 'zaklady'; d._selectionTick++; return true;`);
+        await pauza(500);
+        const prodl = await js(`const np = d._podlazi1NP().id; return { popis: d.zakladyPopis, chybi: d.zakladyChybi, sraf: [...d.podepreniPodlazi(np).values()].filter(x => x.chybiZaklad).length,
+            nad: d.zemina.zakladNadTerenem, napis: document.querySelector('[data-zaklad-nad-terenem]')?.innerText, sterk: d.zemina.sterk, material: document.querySelector('[data-material=sterk]')?.innerText,
+            volba: document.querySelector('[data-zaklad-volba=prodlouzit]')?.checked, sklep: d.zemina.casti[0].vykopek };`);
+        kontrola('výchozí je zapnuté: základ nechybí a stěny nejsou šrafované', prodl.volba === true && !/chybí/.test(prodl.popis) && prodl.chybi === '' && prodl.sraf === 0, JSON.stringify(prodl));
+        kontrola('panel říká, o kolik základ vystupuje nad terén', blizko(prodl.nad, 1.55, 0.01) && /1,55 m/.test(prodl.napis || ''), prodl.napis);
+        kontrola('Materiály ukazují štěrk pod dům', prodl.sterk > 10 && /Štěrk/.test(prodl.material || ''), prodl.material);
+        const vykopkem = await js(`const a = d.zemina.vykopek.prebytek, s = d.zemina.sterk; d.setVolbuZakladu('podDum', 'vykopek'); const b = d.zemina; const r = { sterk: b.sterk, rozdil: a - b.vykopek.prebytek, s, vyber: document.querySelector('[data-zaklad-volba=podDum]')?.value }; return r;`);
+        kontrola('volba výkopek: štěrk zmizí a přebytek se o něj zmenší', vykopkem.sterk === 0 && blizko(vykopkem.rozdil, vykopkem.s, 1), JSON.stringify(vykopkem));
+        const zpetVolba = await js(`d.setVolbuZakladu('podDum', 'sterk'); const pred = e.dum.zaklady.podDum; d.undo(); return { pred, po: e.dum.zaklady.podDum };`);
+        kontrola('volba je jeden krok Zpět', zpetVolba.pred === 'sterk' && zpetVolba.po === 'vykopek', JSON.stringify(zpetVolba));
+        await js(`d.setVolbuZakladu('podDum', 'sterk'); return true;`);
+        const deska = await js(`const id = d._podlazi1NP().id; const pred = d.zemina.casti.find(c => c.id === id).vykopek; d.setTypZakladu(id, 'deska'); d._selectionTick++; return { id, pred };`);
+        await pauza(200);
+        const poli = await js(`const n = (k) => { const x = document.querySelector('[data-zaklad=' + k + ']'); return x && x.getBoundingClientRect().width > 0 ? x.value : null; }; document.querySelector('[data-zaklady-panel] details').open = true; return { deska: n('skladbaDeska'), pasy: n('skladba') };`);
+        kontrola('dům s pasy i deskou ukáže obě tloušťky, deska 70 cm', poli.deska === '70' && poli.pasy === '45', JSON.stringify(poli));
+        await js(`d.setTypZakladu(${JSON.stringify(deska.id)}, 'pasy'); return true;`);
+        const z3d = await p.vyhodnot(`(async () => { const d = ${D}; d.rezim3d = true; await d.prepni3d(); await new Promise(r => setTimeout(r, 1200));
+            const m = window._kk3d.dumSkupina.children.filter(o => o.userData.zaklad);
+            const obal = new THREE.Box3(); m.forEach(x => { x.geometry.computeBoundingBox(); obal.union(x.geometry.boundingBox); });
+            const model = d._zapecModel(); const np = d._podlazi1NP().id;
+            return { pocet: m.length, od: obal.min.y, do: obal.max.y, visible: m.every(x => x.visible), vModelu: model.meshe.some(k => k.skupina === np), np }; })()`);
+        kontrola('ve 3D je pás od podlahy až pod terén', z3d.pocet > 0 && blizko(z3d.do, 2, 0.01) && blizko(z3d.od, -0.3, 0.01) && z3d.visible, JSON.stringify(z3d));
+        await pauza(300);
+        await p.snimek(path.join(vystup, 'zemina-zaklad-3d.png'));
+        const vyp3d = await p.vyhodnot(`(async () => { const d = ${D}; d.setVolbuZakladu('prodlouzit', false); await new Promise(r => setTimeout(r, 300)); const n = window._kk3d.dumSkupina.children.filter(o => o.userData.zaklad).length; d.setVolbuZakladu('prodlouzit', true); await new Promise(r => setTimeout(r, 300)); return { vypnuto: n, zapnuto: window._kk3d.dumSkupina.children.filter(o => o.userData.zaklad).length }; })()`);
+        kontrola('vypnutí a zapnutí překreslí 3D', vyp3d.vypnuto === 0 && vyp3d.zapnuto > 0, JSON.stringify(vyp3d));
+        await p.vyhodnot(`(() => { const d = ${D}; d.prepni2d(); d.rezim3d = false; d.setNadTerenem(0.3); d.podlaziUprava = null; d._selectionTick++; return true; })()`);
+        await pauza(300);
 
         console.log('\n9) Skutečný dům s částečným sklepem');
             const data = fs.readFileSync(process.argv[3], 'utf8');

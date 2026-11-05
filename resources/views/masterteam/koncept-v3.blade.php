@@ -1186,7 +1186,7 @@
                                 </button>
                             </div>
                             <div class="text-[11px] text-gray-500 pl-2 pb-0.5" x-show="p.typ === 'podkrovi' && Math.abs(p.plocha - p.zap) >= 0.05"
-                                 x-text="'z toho nad 1,3 m: ' + p.zap.toFixed(1).replace('.', ',') + ' m²'"></div>
+                                 x-text="'z toho nad 1,2 m: ' + p.zap.toFixed(1).replace('.', ',') + ' m²'"></div>
                             {{-- Úpravy tohoto podlaží, ať je jasné, co se mění --}}
                             <template x-if="podlaziUprava === p.id">
                                 <div class="kk-podlazi-uprava" :data-uprava="p.id">
@@ -1249,10 +1249,20 @@
                                     <div class="kk-podlazi-pole" title="Hloubka základové spáry pasů pod terénem. Nezámrzná hloubka je aspoň 80 cm."><span class="w-24 shrink-0">Hloubka spáry</span>
                                         <input type="number" min="40" max="300" step="5" class="w-16" data-zaklad="spara" :value="Math.round(zakladyHodnota('spara') * 100)"
                                                @change="setZaklady('spara', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('spara') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                    <label class="kk-podlazi-pole" title="Kde je dům nad terénem, základ se protáhne až k němu. Na dolní straně svahu tak vyjde vyšší a pod domem se víc dosype. Vypni, když má část domu zůstat ve vzduchu: pak se tam nekope a panel napíše Chybí základ."><input type="checkbox" data-zaklad-volba="prodlouzit" :checked="zakladyHodnota('prodlouzit')" @change="setVolbuZakladu('prodlouzit', $event.target.checked)"><span>Prodloužit základ k zemi</span></label>
+                                    <div x-show="zakladNadTerenemPopis" class="text-gray-500" data-zaklad-nad-terenem x-text="zakladNadTerenemPopis"></div>
                                     <details>
                                         <summary class="cursor-pointer text-gray-500">Podrobnosti</summary>
                                         <div class="flex flex-col gap-1 pt-1">
-                                            <div class="kk-podlazi-pole" title="Od podlahy po spodek konstrukce: podlaha, izolace, hydroizolace, podkladní deska a podsyp. Běžně 35 až 50 cm. Na tuhle tloušťku se kope a jen tolik dům překlene k terénu."><span class="w-24 shrink-0">Tloušťka základu</span>
+                                            <div class="kk-podlazi-pole" title="Čím se dosype pod dům po spodek konstrukce: hutněný štěrk, nebo vhodný výkopek. Ornice se nehodí."><span class="w-24 shrink-0">Pod dům sypat</span>
+                                                <select class="flex-1 min-w-0" data-zaklad-volba="podDum" @change="setVolbuZakladu('podDum', $event.target.value)">
+                                                    <option value="sterk" :selected="zakladyHodnota('podDum') === 'sterk'">Štěrk</option>
+                                                    <option value="vykopek" :selected="zakladyHodnota('podDum') === 'vykopek'">Výkopek</option>
+                                                </select></div>
+                                            <div class="kk-podlazi-pole" x-show="zemina?.casti.some(c => c.typ === 'deska')" title="U nosné desky od podlahy po spodek konstrukce: podlaha, izolace, hydroizolace, deska a podsyp. Běžně 50 až 80 cm. Až na tuhle tloušťku se kope."><span class="w-24 shrink-0">Tloušťka u desky</span>
+                                                <input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladbaDeska" :value="Math.round(zakladyHodnota('skladbaDeska') * 100)"
+                                                       @change="setZaklady('skladbaDeska', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('skladbaDeska') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                            <div class="kk-podlazi-pole" x-show="zemina?.casti.some(c => c.typ === 'pasy')" title="U pasů od podlahy po spodek konstrukce: podlaha, izolace, hydroizolace, podkladní deska a podsyp. Běžně 35 až 50 cm. Až na tuhle tloušťku se kope."><span class="w-24 shrink-0">Tloušťka základu</span>
                                                 <input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladba" :value="Math.round(zakladyHodnota('skladba') * 100)"
                                                        @change="setZaklady('skladba', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('skladba') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
                                             <div class="kk-podlazi-pole" title="Tloušťka skrývky. Běžně 15 až 30 cm."><span class="w-24 shrink-0">Ornice</span>
@@ -1261,7 +1271,7 @@
                                             <div class="kk-podlazi-pole" title="Vodorovně na 1 m výšky. Hlína a jíl 0,25 až 0,5, písčité zeminy až 1."><span class="w-24 shrink-0 whitespace-nowrap">Svah výkopu 1 :</span>
                                                 <input type="number" min="0" max="3" step="0.05" class="w-16" data-zaklad="svah" :value="zakladyHodnota('svah')"
                                                        @change="setZaklady('svah', parseFloat($event.target.value)); $event.target.value = zakladyHodnota('svah')" @keydown.enter.prevent="$event.target.blur()"></div>
-                                            <div class="kk-podlazi-pole" title="Kolikrát větší objem má zemina po vykopání. Písek 1,10, hlinitý písek 1,25, hlína a jíl 1,35."><span class="w-24 shrink-0">Nakypření</span>
+                                            <div class="kk-podlazi-pole" title="Kolikrát větší objem má zemina po vykopání. Štěrkopísek 1,15, ornice 1,20, běžná hlína 1,25, jíl 1,30."><span class="w-24 shrink-0">Nakypření</span>
                                                 <input type="number" min="1" max="2" step="0.05" class="w-16" data-zaklad="nakypreni" :value="zakladyHodnota('nakypreni')"
                                                        @change="setZaklady('nakypreni', parseFloat($event.target.value)); $event.target.value = zakladyHodnota('nakypreni')" @keydown.enter.prevent="$event.target.blur()"></div>
                                         </div>
@@ -1274,6 +1284,7 @@
                                             <template x-for="r in materialyRadky" :key="r.id">
                                                 <div class="flex gap-2" :data-material="r.id"><span class="flex-1" x-text="r.nazev"></span><span class="w-16 text-right font-semibold" x-text="r.rostly"></span><span class="w-16 text-right font-semibold" x-text="r.nakypreny"></span></div>
                                             </template>
+                                            <div x-show="zemina.sterk >= 0.5" class="flex gap-2" data-material="sterk" title="Dováží se a hutní, není to zemina z výkopu."><span class="flex-1">Štěrk pod dům, hutněný</span><span class="font-semibold" x-text="m3(zemina.sterk)"></span></div>
                                             <div x-show="zemina.mimoData > 0.05" class="text-amber-700" data-material-pozor>Část výkopu leží mimo parcelu, výšky jsou tam jen dopočítané.</div>
                                             <details>
                                                 <summary class="cursor-pointer text-gray-500">Jak se to počítá</summary>
@@ -1303,7 +1314,7 @@
                                 <div class="flex items-center gap-1">
                                     <button type="button" @click="pridatPodlazi('nahoru')" class="kk-btn flex-1 text-xs" title="Nové běžné podlaží nahoře, případně pod podkrovím">Patro nahoře</button>
                                     <button type="button" @click="pridatPodlazi('sklep')" class="kk-btn flex-1 text-xs" title="Nové podlaží pod nejnižším podlažím">Sklep</button>
-                                    <button type="button" x-show="!maPodkrovi" @click="pridatPodlazi('podkrovi')" class="kk-btn flex-1 text-xs" title="Podlaží pod střechou: stěny končí pod střechou, plocha pod 1,3 m se nezapočítá">Podkroví</button>
+                                    <button type="button" x-show="!maPodkrovi" @click="pridatPodlazi('podkrovi')" class="kk-btn flex-1 text-xs" title="Podlaží pod střechou: stěny končí pod střechou, plocha pod 1,2 m se nezapočítá">Podkroví</button>
                                 </div>
                                 <label class="kk-podlazi-pole" title="Nové podlaží začne kopií obvodových a nosných stěn sousedního podlaží. Příčky a otvory se nepřenášejí."><input type="checkbox" x-model="podlaziKopie" @change="_ulozNastaveniDumu()"> převzít obvodové a nosné stěny</label>
                             </div>

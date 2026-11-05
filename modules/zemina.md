@@ -21,6 +21,7 @@ Kolik zeminy po stavbě zůstane na pozemku navíc. Rozhodnuto s Liborem 4. 11. 
 - **Do 0,8 m svisle, hlouběji svah.** Svah začíná za pracovním prostorem a mezi 0,8 a 1,2 m hloubky se rozbíhá plynule, aby se na svažitém terénu hrana nelámala.
 - **Rýhy pasů** pod obvodovými a nosnými stěnami části, jen kde výkop na spáru nedosáhne. Beton je vyplní celé, zemina z nich jde do přebytku. Nosná stěna nad stěnou sklepu proto pas nemá. Pas pod sklepem je zjednodušeně 50 cm pod dnem.
 - **Zpět:** kolem domu všechno (ornice navrch), pod domem se dosype po spodek konstrukce. Ornice se pod dům nevrací, její přebytek je jen to, co bylo pod domem. Záporný přebytek = zemina chybí.
+- **Čím se sype pod dům** (`podDum`): výchozí štěrk, ten je mimo bilanci zeminy (`vysledek.sterk`, řádek Štěrk pod dům), nebo výkopek, ten přebytek zmenší. Hlubší výkop pod domem kvůli jámě sousedního sklepu zasype vždy výkopek.
 - **Rostlý a nakypřený objem:** rostlý pro bilanci a zásyp, nakypřený pro hromadu a odvoz. Největší hromada počítá všechno vykopané, i to, co se později vrátí; bude potřeba pro umístění na pozemek.
 - **Výsledek je odhad**, panel píše „cca". Odstupňování pasů u sklepu se nepočítá.
 
@@ -32,25 +33,36 @@ Kolik zeminy po stavbě zůstane na pozemku navíc. Rozhodnuto s Liborem 4. 11. 
 | Odkop kolem domu | 80 cm | ASB: min. 0,8 m, izolace za horka 1,2 m; Atelier DEK: 0,6 m pro drenáž |
 | Šířka pasu | 50 cm | běžně 30–50 cm, výjimečně 60 cm (Estav, České stavby) |
 | Spára pod terénem | 100 cm | min. 0,8 m, soudržné zeminy od 1,0 m, vysoká voda od 1,2 m (Stawebnice) |
-| Tloušťka základu | 45 cm | skladba od podlahy po spodek: podlaha, izolace, hydroizolace, podkladní deska, podsyp; 350–500 mm (Mobetony a další); deska používá totéž, není ověřeno zvlášť |
+| Tloušťka základu u pasů | 45 cm | skladba od podlahy po spodek: podlaha, izolace, hydroizolace, podkladní deska, podsyp; 350–500 mm (Mobetony a další) |
+| Tloušťka u nosné desky | 70 cm | `skladbaDeska`; běžná skladba 49–75 cm bez nášlapu (odborná revize 5. 11. 2026), před článkem Pasy, nebo deska ověřit |
+| Pod dům sypat | štěrk | hutněný štěrk, nebo vhodný výkopek, nikdy ornice (Estav, Mobetony). Výchozí je štěrk, protože výkopek se na to hodí jen někdy |
 | Ornice | 25 cm | běžně 15–30 cm (dodavatelé), úřad v Hrotovicích nařídil 20 cm |
 | Svah | 1 : 0,5 | hlína a jíl 1 : 0,25–0,5, písčité až 1 : 1 (Stawebnice); určuje zhotovitel |
-| Nakypření | 1,25 | písek 1,10, hlinitý písek 1,25, hlína a jíl 1,35 (Stawebnice) |
+| Nakypření | 1,25 | štěrkopísek 1,15, ornice 1,20, běžná hlína 1,25, jíl 1,30, stejně v článku o nakypření; RTS má pro hlínu 1,22 a pro jíl 1,30 |
 | Svislý výkop do | 0,8 m | NV 591/2006 Sb., příloha 3: strojní výkop, kam vstupují osoby |
 
-Všechny hodnoty jdou upravit: čtyři pole hned, čtyři pod „Podrobnosti". Ukládají se do `dum.zaklady`, co chybí, bere se z `Zemina.VYCHOZI`. Typ základů má každá část zvlášť v `dum.zaklady.casti[id]`, výchozí všude `pasy`:
+Všechny hodnoty jdou upravit: čtyři pole a prodloužení základu hned, zbytek pod „Podrobnosti". Tloušťka se ukáže jen pro typ, který dům používá. Ukládají se do `dum.zaklady`, co chybí, bere se z `Zemina.VYCHOZI`. Typ základů má každá část zvlášť v `dum.zaklady.casti[id]`, výchozí všude `pasy`:
 
 - **Pasy s podkladní deskou** (`pasy`): nejčastější řešení, pasy a tenká podkladní deska nad nimi patří k sobě (Estav, České stavby). Počítají se rýhy.
 - **Nosná deska bez pasů** (`deska`): železobetonová deska, méně časté, slabší podloží nebo spodní voda. Rýhy nejsou.
 - **Stávající, bez výkopu** (`stavajici`): nic se nekope.
 
-## Dům bez kontaktu se zemí
+## Základ prodloužený k zemi
 
-Část domu, jejíž spodek (`kóta − tloušťka základu`) je v daném místě nad terénem, na zem nedosáhne: základ tu chybí. Žádná další rezerva není, dům výš přes větší tloušťku základu. Rozhodnuto s Liborem 4. 11. 2026, do budoucna kvůli balkonům a jiným prvkům bez základů.
+Rozhodnuto s Liborem 5. 11. 2026. Kde je spodek domu (`kóta − tloušťka základu`) nad terénem, základ se protáhne až k němu, na dolní straně svahu tak vyjde vyšší. Výchozí zapnuté, `dum.zaklady.prodlouzit`, zaškrtávátko v panelu Základy.
+
+- Rýha jde na spáru pod terénem v daném místě, pas sahá od spáry po spodek domu. Sejme se ornice a dosype se od dna výkopu po spodek konstrukce.
+- Panel píše, o kolik základ nejvýš vystupuje nad terén (`zakladNadTerenem`).
+- **Ve 3D** je to šedý pás po obvodu od podlahy do 30 cm pod terén, 1 cm za lícem, aby se nepral s deskou (`_zaklad3d`). Patří podlaží, skryje se s ním a jde i do sdíleného odkazu.
+- **Zjednodušení:** dno rýhy sleduje terén plynule, stupně se nepočítají. Prostor pod domem se vždy dosype, podlaha na vysokém základu se vzduchem pod ní není. U vysokého základu je množství štěrku proto horní odhad. Dosypání se počítá přes celou plochu domu včetně pasů, u domu 12 × 10 m vyjde 12 m³ místo asi 9,5 m³.
+
+## Vypnuté prodloužení: dům bez kontaktu se zemí
+
+Pro balkony a jiné prvky bez základů, chování z 4. 11. 2026. Část domu, jejíž spodek je v daném místě nad terénem, na zem nedosáhne: základ tu chybí.
 
 - Nekope se tu ani kolem: žádná ornice, rýha ani bilance. Na svahu se to posuzuje bod po bodu, sklep vedle se kope dál.
 - Panel Základů píše „Chybí základ", plocha je v `bezZakladu` u části i celku. Stěny jsou šrafované jako nepodepřené, panel stěny píše „Chybí základ pod …" a nenabízí podpěru dolů (`_dosahNaZem`, `podepreniPodlazi`).
-- Stávající stavba základ má. Bez parcely terén neznáme, platí, že stěna na zemi stojí.
+- Stávající stavba základ má a ve 3D se pod ní pás ukáže vždy. Bez parcely terén neznáme, platí, že stěna na zemi stojí.
 
 ## Jáma ve 3D
 

@@ -350,11 +350,11 @@ async function main() {
         await pauza(400);
         const pk = await p.vyhodnot(`(() => { const d = ${D}; const e = d.engine; const r = d.renderer; const st = d._strechaVypocet(); const mis = [...r._plochyMistnosti.values()]; const zap = [...r._plochyMistnostiZapocet.values()];
             return { nazev: e.aktivniPodlazi().nazev, zOkap: st.zOkap, popisky: r.plochyLayer.find('Text').map(t => t.text()), plocha: mis, zap, koty: [...e.kotyPodlazi().values()] }; })()`);
-        kontrola('podkroví: okap 1,0 m nad podlahou, popisky 1,30 · 1,80 · 2,30 m', pk.nazev === 'Podkroví' && blizko(pk.zOkap, 1, 1e-6) && ['1,30 m', '1,80 m', '2,30 m'].every(t => pk.popisky.includes(t)), JSON.stringify(pk));
-        // Okap 1,0 m na vnějším líci: uvnitř za 40cm stěnou je už přes 1,3 m. Se 40 cm okapem je rozdíl vidět.
+        kontrola('podkroví: okap 1,0 m nad podlahou, popisky 1,20 · 1,80 · 2,30 m', pk.nazev === 'Podkroví' && blizko(pk.zOkap, 1, 1e-6) && ['1,20 m', '1,80 m', '2,30 m'].every(t => pk.popisky.includes(t)), JSON.stringify(pk));
+        // Okap 1,0 m na vnějším líci: uvnitř za 40cm stěnou je už přes 1,2 m. Se 40 cm okapem je rozdíl vidět.
         const pk2 = await p.vyhodnot(`(() => { const d = ${D}; const r = d.renderer; d.setStrecha('vyskaOkapu', 0.4); r._mistnostiCache = null; r.render(); return { plocha: [...r._plochyMistnosti.values()], zap: [...r._plochyMistnostiZapocet.values()] }; })()`);
         const soucetP = pk2.plocha.reduce((a, b) => a + b, 0), soucetZ = pk2.zap.reduce((a, b) => a + (b ?? 0), 0);
-        kontrola('započitatelná plocha (nad 1,3 m) je menší než celková', soucetZ > 0 && soucetZ < soucetP, soucetZ.toFixed(1) + ' z ' + soucetP.toFixed(1));
+        kontrola('započitatelná plocha (nad 1,2 m) je menší než celková', soucetZ > 0 && soucetZ < soucetP, soucetZ.toFixed(1) + ' z ' + soucetP.toFixed(1));
         await p.snimek(path.join(vystup, 'dum-podkrovi.png'));
 
         console.log('\n12) Posun celého domu');

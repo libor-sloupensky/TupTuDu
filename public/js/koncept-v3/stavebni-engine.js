@@ -711,7 +711,7 @@ class StavebniEngine {
             schodiste: [],   // [{id, odPodlazi, doPodlazi, plocha? (schody k výškové ploše), tvar: prime|L|U, x, y (m, y nahoru), uhel (rad), sirka, strana, vyskaStupne?, naslap?, casti?, barva?}]
             plochy: [],      // [{id, podlazi, mistnost, typ: zvysena|snizena|bez_podlahy, dh, body:[[x,y] m] = obrys místnosti z rastru, prenos, vypnuto:[id podlaží]}]
             strecha: null,   // {typ, sklon, presah, presahStit, vyskaOkapu, krytina, hrany:{klíč:{typ,sklon,presah}}}
-            zaklady: null,   // {odkop, sirkaPasu, spara, skladba, ornice, svah, nakypreni, casti:{id podlaží: pasy|deska|stavajici}}; co chybí, bere se z Zemina.VYCHOZI
+            zaklady: null,   // {odkop, sirkaPasu, spara, skladba, skladbaDeska, ornice, svah, nakypreni, podDum, prodlouzit, casti:{id podlaží: pasy|deska|stavajici}}; co chybí, bere se z Zemina.VYCHOZI
         };
     }
 

@@ -15,9 +15,12 @@
         sirkaPasu: 0.5,
         spara: 1.0,        // základová spára pod terénem
         skladba: 0.45,     // tloušťka základu: od podlahy po spodek konstrukce
+        skladbaDeska: 0.7, // totéž u nosné desky, ta má silnější skladbu
         ornice: 0.25,
         svah: 0.5,         // vodorovně na 1 m výšky
         nakypreni: 1.25,
+        podDum: 'sterk',   // čím se dosype pod dům: sterk, vykopek
+        prodlouzit: true,  // základ sahá od země až k domu, i kde je dům nad terénem
     };
     const NAD_TERENEM = 0.3;       // výchozí výška podlahy 1.NP nad terénem
     const SVISLE_DO = 0.8;         // do této hloubky se výkop svahovat nemusí
@@ -142,16 +145,23 @@
         return v[Math.min(v.length - 1, Math.floor(v.length * 0.7))];
     }
 
+    /** Tloušťka základu části domu podle jejího typu. */
+    function tloustkaZakladu(typ, nastaveni) {
+        const P = { ...VYCHOZI, ...(nastaveni || {}) };
+        return typ === 'deska' ? P.skladbaDeska : P.skladba;
+    }
+
     /** Části domu, dosah výpočtu a hloubka výkopu v bodě: společný základ bilance i jámy. */
     function pripravVykop(casti, teren, P) {
         const tn = teren || (() => 0);
         const seznam = casti.filter(c => c.obrys && c.obrys.length >= 3).map(c => ({
-            ...c, dno: c.kota - P.skladba, kope: c.typ !== 'stavajici',
+            ...c, dno: c.kota - tloustkaZakladu(c.typ, P), kope: c.typ !== 'stavajici',
             plocha: 0, vykopek: 0, ryhy: 0, delkaPasu: 0, bezZakladu: 0,
         }));
         const kopajici = seznam.filter(c => c.kope);
-        // Část, jejíž spodek tu na zem nedosáhne, nemá základ: nekope se pod ní ani kolem ní
-        const dosahne = (c, t) => c.dno <= t;
+        // Základ se prodlouží až k domu. S vypnutým prodloužením část, jejíž spodek tu na zem nedosáhne,
+        // základ nemá: nekope se pod ní ani kolem ní.
+        const dosahne = (c, t) => P.prodlouzit || c.dno <= t;
         if (!seznam.length) return { tn, seznam, kopajici, dosahne };
 
         // Dosah výpočtu: obrys, pracovní prostor a nejhlubší svah
@@ -252,12 +262,12 @@
         const vysledek = {
             casti: seznam, ornice: { vykopano: 0, zpet: 0, prebytek: 0, prebytekNakypreny: 0 },
             vykopek: { vykopano: 0, zpet: 0, prebytek: 0, prebytekNakypreny: 0, ryhy: 0 },
-            hromada: 0, mimoData: 0, bezZakladu: 0,
+            sterk: 0, hromada: 0, mimoData: 0, bezZakladu: 0, zakladNadTerenem: 0,
         };
         if (!seznam.length) return vysledek;
 
         const plochaBunky = KROK * KROK;
-        let ornice = 0, vykopek = 0, zpetO = 0, zpetV = 0, mimo = 0, celkem = 0;
+        let ornice = 0, vykopek = 0, zpetO = 0, zpetV = 0, sterk = 0, mimo = 0, celkem = 0;
         for (let x = x0 - dosah + KROK / 2; x < x1 + dosah; x += KROK) {
             for (let y = y0 - dosah + KROK / 2; y < y1 + dosah; y += KROK) {
                 const stojiNa = castVBode(x, y);
@@ -267,6 +277,8 @@
                 if (stojiNa?.kope && !naZemi) {
                     stojiNa.bezZakladu += plochaBunky;
                     vysledek.bezZakladu += plochaBunky;
+                } else if (stojiNa?.kope) {
+                    vysledek.zakladNadTerenem = Math.max(vysledek.zakladNadTerenem, stojiNa.dno - t);
                 }
                 if (!kopajici.length) continue;
                 const { D, cast } = hloubka(x, y, t, stojiNa);
@@ -278,8 +290,12 @@
                 celkem += plochaBunky;
                 if (teren && teren.odhad && teren.odhad(x, y)) mimo += plochaBunky;
                 if (naZemi) {
-                    // Pod domem se dosype po spodek konstrukce, ornice se pod dům nevrací
-                    zpetV += Math.max(0, stojiNa.dno - (t - D)) * plochaBunky;
+                    // Pod domem se dosype po spodek konstrukce, štěrkem nebo výkopkem, a ornice se pod dům nevrací.
+                    // Kde je výkop hlubší kvůli sousední jámě, ten rozdíl zasype výkopek.
+                    const vlastni = Math.max(t - stojiNa.dno, P.ornice);
+                    const dosypani = Math.max(0, stojiNa.dno - (t - vlastni)) * plochaBunky;
+                    zpetV += (D - vlastni) * plochaBunky + (P.podDum === 'vykopek' ? dosypani : 0);
+                    if (P.podDum !== 'vykopek') sterk += dosypani;
                 } else {
                     zpetV += v * plochaBunky;
                     zpetO += o * plochaBunky;
@@ -320,12 +336,13 @@
         zapis(vysledek.ornice, ornice, zpetO);
         zapis(vysledek.vykopek, vykopek, zpetV);
         vysledek.vykopek.ryhy = ryhy;
+        vysledek.sterk = sterk;
         vysledek.hromada = (ornice + vykopek) * P.nakypreni;
         vysledek.mimoData = celkem > 0 ? mimo / celkem : 0;
         return vysledek;
     }
 
-    const Zemina = { VYCHOZI, NAD_TERENEM, spocitej, jama, mrizkaTerenu, terenZProfilu, nulaTerenu, bodVObrysu };
+    const Zemina = { VYCHOZI, NAD_TERENEM, spocitej, jama, mrizkaTerenu, terenZProfilu, nulaTerenu, bodVObrysu, vzdalenostOdObrysu, tloustkaZakladu };
     if (typeof window !== 'undefined') window.Zemina = Zemina;
     if (typeof module !== 'undefined' && module.exports) module.exports = Zemina;
 })(this);
