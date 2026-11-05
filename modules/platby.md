@@ -133,6 +133,7 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
   (Dům jedním tahem). AIkatastr.cz 99 Kč/report, Pro 990 Kč/měs.
 
 ## Nápady na později
+- Profi: vlastní logo firmy na exportech a v odkazu (Libor 5. 11. 2026, odloženo). Zápatí kreslí jedno místo `_kresliZnacku` v `export-sdileni.js`, viz `modules/sdileni.md`.
 - Masterteam: přehled předplatitelů a využití (počty úprav jsou v `denni_upravy`).
 - Interní e-mail o novém předplatném (událost Cashieru `SubscriptionCreated`).
 - Změna e-mailu v účtu se do Paddlu nepropisuje (zákazník tam má původní e-mail na doklady).

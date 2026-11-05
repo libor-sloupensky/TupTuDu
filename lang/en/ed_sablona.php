@@ -434,6 +434,8 @@ return [
         'odkaz_zapnuty' => 'The link is on',
         'odkaz' => 'link',
         'na_pudorysu' => 'The floor plan will show:',
+        'na_pudorysu_parcela' => 'Plot and grid:',
+        'na_pudorysu_mrizka' => 'Grid:',
         'pudorys_tip' => 'Active storey as a PNG image',
         'pudorys' => 'Floor plan PNG',
         'vsechna_tip' => 'All storeys in one image',

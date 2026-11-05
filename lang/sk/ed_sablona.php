@@ -434,6 +434,8 @@ return [
         'odkaz_zapnuty' => 'Odkaz je zapnutý',
         'odkaz' => 'odkaz',
         'na_pudorysu' => 'Na pôdoryse bude:',
+        'na_pudorysu_parcela' => 'Parcela a mriežka:',
+        'na_pudorysu_mrizka' => 'Mriežka:',
         'pudorys_tip' => 'Aktívne podlažie ako obrázok PNG',
         'pudorys' => 'Pôdorys PNG',
         'vsechna_tip' => 'Všetky podlažia na jednom obrázku',

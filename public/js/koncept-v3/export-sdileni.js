@@ -8,6 +8,22 @@
     const PX_NA_METR = 60;      // půdorys: stage před zvětšením
     const ZVETSENI = 2;         // výsledek 120 px na metr
     const OKRAJ = 100;          // volno kolem kresby a kót, v px stage
+    const OKOLI_SOUSEDU = 5;    // se sousedními parcelami kus okolí navíc, v metrech
+    const MAX_STRANA = 4000;    // px stage; větší parcela zmenší měřítko, jinak by obrázek nešel vytvořit
+    const ZAPATI = 90;          // výška zápatí se značkou při základním měřítku listu
+    const ZNACKA = '/brand/znacka-svetle-1200.png';   // papír je vždy bílý
+
+    // Texty listu rostou s obrázkem, ať jsou po zmenšení na obrazovku stejně čitelné
+    const meritkoListu = (sirka) => Math.max(0.6, sirka / 1600);
+
+    let znackaSlib = null;
+    const nactiZnacku = () => znackaSlib || (znackaSlib = new Promise((ok) => {
+        const obr = new Image();
+        obr.onload = () => ok(obr);
+        // Bez obrázku značky zůstane v zápatí adresa a popis, export kvůli tomu nepadá
+        obr.onerror = () => { window.zalogujChybu?.(new Error('Značka se nenačetla'), 'Export: značka', { ZNACKA }); ok(null); };
+        obr.src = ZNACKA;
+    }));
 
     const naBase64 = (pole) => {
         const b = new Uint8Array(pole.buffer, pole.byteOffset, pole.byteLength);
@@ -50,9 +66,10 @@
         /**
          * Kresby podlaží jako canvasy se stejným měřítkem. Vše proběhne v jednom běhu, takže se na
          * obrazovce nic nemihne. Aktivní podlaží, výběr i pohled se vrátí, kresba se nemění.
-         * Co na výkresu bude, řídí přepínače zobrazení (panel Objekty, tytéž jsou v sekci Export).
+         * Co na výkresu bude, řídí přepínače zobrazení (panely Objekty a Parcela, tytéž jsou v sekci Export).
+         * bezCiselParcel: čísla sousedních parcel by prozradila polohu, do odkazu nesmí (modules/sdileni.md).
          */
-        _kresbyPodlazi(ids) {
+        _kresbyPodlazi(ids, { bezCiselParcel = false } = {}) {
             const e = this.engine, r = this.renderer, st = this.stage;
             const puvodne = {
                 aktivni: e.dum.aktivni, scale: st.scaleX(), x: st.x(), y: st.y(), sirka: st.width(), vyska: st.height(),
@@ -61,13 +78,21 @@
                 schody: [...r.selectedSchody], plochy: [...r.selectedPlochy],
                 rezimStrecha: this.rezimStrecha, strechaHrana: this.strechaHrana,
             };
-            const skryte = [r.gridLayer, r.podkladLayer, r.katastrLayer, r.spodekLayer, r.strechaLayer, r.selectionLayer, r.kotyVyberuLayer].filter(Boolean);
+            const skryte = [r.podkladLayer, r.spodekLayer, r.strechaLayer, r.selectionLayer, r.kotyVyberuLayer].filter(Boolean);
             const viditelnost = skryte.map(v => v.visible());
-            const s = PX_NA_METR / e.PX_PER_M;
+            // Z vrstvy katastru jde na výkres jen kresba, mapový podklad nikdy
+            const schovaneKatastr = r.katastrLayer.getChildren(n => n.getAttr('_mapTile') || (bezCiselParcel && n.getClassName() === 'Text'));
+            // Parcela a její stavby jsou celé na výkresu, sousedé a výškové body jen v tomhle výřezu
+            const rozsah = r.katastrLayer.getChildren(n => n.getAttr('_rozsahExportu')).map(n => n.points());
+            const okoli = this.katastrZobrazitSousedy && this.katastrParcely.length && this._katastrOkolni?.length ? OKOLI_SOUSEDU : 0;
+            const pxNaMetr = this._pxNaMetrVykresu(rozsah, MAX_STRANA / (ids.length > 1 ? 2 : 1));
+            const okraj = OKRAJ + okoli * pxNaMetr;
+            const s = pxNaMetr / e.PX_PER_M;
             const vysledek = [];
             try {
                 this._kresbaProExport = true;
                 skryte.forEach(v => v.visible(false));
+                schovaneKatastr.forEach(n => n.visible(false));
                 this.rezimStrecha = false;
                 this.strechaHrana = null;
                 st.scale({ x: s, y: s });
@@ -88,17 +113,22 @@
                     };
                     for (const wall of e.walls.values()) (e.getWallPolygon(wall.id) || []).forEach(bod);
                     if (!isFinite(minX)) { vysledek.push({ id, canvas: null }); continue; }
-                    const W = Math.ceil(maxX - minX + 2 * OKRAJ), H = Math.ceil(maxY - minY + 2 * OKRAJ);
+                    for (const body of rozsah) {
+                        for (let i = 0; i < body.length; i += 2) bod({ x: body[i], y: body[i + 1] });
+                    }
+                    const W = Math.ceil(maxX - minX + 2 * okraj), H = Math.ceil(maxY - minY + 2 * okraj);
                     // Plátno po dobu snímku v plné velikosti: poloprůhledné tvary se kreslí přes pomocné plátno
                     // velikosti plátna a mimo něj by se usekly (a skryté plátno ve 3D má velikost 1 px)
                     st.size({ width: W, height: H });
-                    st.position({ x: OKRAJ - minX, y: OKRAJ - minY });
-                    vysledek.push({ id, canvas: st.toCanvas({ x: 0, y: 0, width: W, height: H, pixelRatio: ZVETSENI }) });
+                    st.position({ x: okraj - minX, y: okraj - minY });
+                    r.renderGrid();   // kreslí se jen v rozsahu plátna
+                    vysledek.push({ id, pxNaMetr, canvas: st.toCanvas({ x: 0, y: 0, width: W, height: H, pixelRatio: ZVETSENI }) });
                     st.position({ x: 0, y: 0 });
                 }
             } finally {
                 this._kresbaProExport = false;
                 skryte.forEach((v, i) => v.visible(viditelnost[i]));
+                schovaneKatastr.forEach(n => n.visible(true));
                 this.rezimStrecha = puvodne.rezimStrecha;
                 this.strechaHrana = puvodne.strechaHrana;
                 if (e.dum.aktivni !== puvodne.aktivni) e.prepniPodlazi(puvodne.aktivni);
@@ -115,6 +145,41 @@
             return vysledek;
         },
 
+        /** Px stage na metr: základ, nebo méně, když by se parcela s výřezem nevešla do obrázku. */
+        _pxNaMetrVykresu(rozsah, limit) {
+            const X = rozsah.flatMap(b => b.filter((_, i) => i % 2 === 0)), Y = rozsah.flatMap(b => b.filter((_, i) => i % 2 === 1));
+            if (!X.length) return PX_NA_METR;
+            // Úhlopříčka, protože výkres může být otočený podle kompasu
+            const metru = Math.hypot(Math.max(...X) - Math.min(...X), Math.max(...Y) - Math.min(...Y)) / this.engine.PX_PER_M;
+            return Math.min(PX_NA_METR, limit / metru);
+        },
+
+        /** Značka, popis služby a adresa v pravé části zápatí, svisle kolem osy zy. */
+        _kresliZnacku(g, sirka, zy, m, pismo) {
+            const prava = sirka - 40 * m;
+            g.save();
+            g.textAlign = 'right';
+            g.textBaseline = 'middle';
+            g.fillStyle = '#374151';
+            g.font = `500 ${22 * m}px ${pismo}`;
+            const popis = preloz('ed_nastroje.export.podtitul');
+            const sirkaTextu = g.measureText(popis).width;
+            g.fillText(popis, prava, zy - 15 * m);
+            g.font = `700 ${24 * m}px ${pismo}`;
+            g.fillText('tuptudu.com', prava, zy + 15 * m);
+            if (this._znackaExportu) {
+                const v = 54 * m, s = v * this._znackaExportu.naturalWidth / this._znackaExportu.naturalHeight;
+                g.imageSmoothingQuality = 'high';
+                g.drawImage(this._znackaExportu, prava - sirkaTextu - 24 * m - s, zy - v / 2, s, v);
+            }
+            g.restore();
+        },
+
+        /** Obrázek značky připravený pro kreslení na plátno, volá se před sestavením listu. */
+        async _pripravZnacku() {
+            this._znackaExportu = await nactiZnacku();
+        },
+
         /** List: bílé pozadí, nadpis, měřítko a značka. */
         _listPudorysu(kresby) {
             const e = this.engine;
@@ -123,41 +188,40 @@
             if (!platne.length) return null;
             const sloupcu = platne.length > 1 ? 2 : 1;
             const radku = Math.ceil(platne.length / sloupcu);
-            const sirkaBunky = Math.max(...platne.map(k => k.canvas.width)), vyskaBunky = Math.max(...platne.map(k => k.canvas.height));
-            const HLAVA = 110, ZAPATI = 90, POPIS = 56;
+            // Aspoň taková šířka, aby se do zápatí vešlo měřítko i značka
+            const sirkaBunky = Math.max(Math.ceil(900 / sloupcu), ...platne.map(k => k.canvas.width)), vyskaBunky = Math.max(...platne.map(k => k.canvas.height));
+            const sirka = sirkaBunky * sloupcu, m = meritkoListu(sirka);
+            const hlava = Math.round(110 * m), zapati = Math.round(ZAPATI * m), popis = Math.round(56 * m), kraj = 40 * m;
             const cv = document.createElement('canvas');
-            cv.width = sirkaBunky * sloupcu;
-            cv.height = HLAVA + (vyskaBunky + POPIS) * radku + ZAPATI;
+            cv.width = sirka;
+            cv.height = hlava + (vyskaBunky + popis) * radku + zapati;
             const g = cv.getContext('2d');
             g.fillStyle = '#ffffff';
             g.fillRect(0, 0, cv.width, cv.height);
             const pismo = getComputedStyle(document.body).fontFamily || 'sans-serif';
             g.fillStyle = '#1f2937';
             g.textBaseline = 'middle';
-            g.font = '700 42px ' + pismo;
-            g.fillText(nazev, 40, HLAVA / 2);
+            g.font = `700 ${42 * m}px ${pismo}`;
+            g.fillText(nazev, kraj, hlava / 2);
             platne.forEach((k, i) => {
-                const x = (i % sloupcu) * sirkaBunky, y = HLAVA + Math.floor(i / sloupcu) * (vyskaBunky + POPIS);
+                const x = (i % sloupcu) * sirkaBunky, y = hlava + Math.floor(i / sloupcu) * (vyskaBunky + popis);
                 g.fillStyle = '#374151';
-                g.font = '600 32px ' + pismo;
-                g.fillText(e.podlaziPodleId(k.id)?.nazev || '', x + 40, y + POPIS / 2);
-                g.drawImage(k.canvas, x + (sirkaBunky - k.canvas.width) / 2, y + POPIS);
+                g.font = `600 ${32 * m}px ${pismo}`;
+                g.fillText(e.podlaziPodleId(k.id)?.nazev || '', x + kraj, y + popis / 2);
+                g.drawImage(k.canvas, x + (sirkaBunky - k.canvas.width) / 2, y + popis);
             });
             // Měřítko 1 m a značka
-            const metr = PX_NA_METR * ZVETSENI;
-            const zy = cv.height - ZAPATI / 2;
+            const metr = platne[0].pxNaMetr * ZVETSENI;
+            const zy = cv.height - zapati / 2;
             g.strokeStyle = '#374151';
-            g.lineWidth = 3;
+            g.lineWidth = 3 * m;
             g.beginPath();
-            g.moveTo(40, zy - 10); g.lineTo(40, zy + 10); g.moveTo(40, zy); g.lineTo(40 + metr, zy); g.moveTo(40 + metr, zy - 10); g.lineTo(40 + metr, zy + 10);
+            g.moveTo(kraj, zy - 10 * m); g.lineTo(kraj, zy + 10 * m); g.moveTo(kraj, zy); g.lineTo(kraj + metr, zy); g.moveTo(kraj + metr, zy - 10 * m); g.lineTo(kraj + metr, zy + 10 * m);
             g.stroke();
             g.fillStyle = '#374151';
-            g.font = '500 26px ' + pismo;
-            g.fillText(this.renderer.showKoty ? preloz('ed_nastroje.export.meritko_koty') : '1 m', 52 + metr, zy);
-            g.textAlign = 'right';
-            g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--c-primary').trim() || '#374151';
-            g.fillText('tuptudu.com', cv.width - 40, zy);
-            g.textAlign = 'left';
+            g.font = `500 ${26 * m}px ${pismo}`;
+            g.fillText(this.renderer.showKoty ? preloz('ed_nastroje.export.meritko_koty') : '1 m', kraj + metr + 12 * m, zy);
+            this._kresliZnacku(g, cv.width, zy, m, pismo);
             return cv;
         },
 
@@ -166,6 +230,7 @@
             this.exportBezi = true;
             try {
                 await this.$nextTick();
+                await this._pripravZnacku();
                 const e = this.engine;
                 const ids = vsechna ? [...e.dum.podlazi].reverse().map(p => p.id) : [e.dum.aktivni];
                 const list = this._listPudorysu(this._kresbyPodlazi(ids));
@@ -210,11 +275,26 @@
             return cv;
         },
 
+        /** Snímek 3D s bílým zápatím se značkou pod obrazem, do záběru nic nekreslí. */
+        _list3d(snimek) {
+            const m = meritkoListu(snimek.width), zapati = Math.round(ZAPATI * m);
+            const cv = document.createElement('canvas');
+            cv.width = snimek.width;
+            cv.height = snimek.height + zapati;
+            const g = cv.getContext('2d');
+            g.fillStyle = '#ffffff';
+            g.fillRect(0, 0, cv.width, cv.height);
+            g.drawImage(snimek, 0, 0);
+            this._kresliZnacku(g, cv.width, cv.height - zapati / 2, m, getComputedStyle(document.body).fontFamily || 'sans-serif');
+            return cv;
+        },
+
         async export3d() {
             if (this.exportBezi || !this.exportPovolen) return;
             this.exportBezi = true;
             try {
-                const cv = await this._ve3d(async () => { await window.Katalog3d.hotovo(); return this._snimekScény(); });
+                await this._pripravZnacku();
+                const cv = await this._ve3d(async () => { await window.Katalog3d.hotovo(); return this._list3d(this._snimekScény()); });
                 await this._stahni(cv, this._nazevSouboru('3d'));
             } catch (err) {
                 window.chybaUzivateli?.(err, 'Export 3D');
@@ -404,9 +484,10 @@
             this.sdileniBezi = true;
             try {
                 await this.$nextTick();
+                await this._pripravZnacku();
                 const e = this.engine;
                 const podlazi = [...e.dum.podlazi].reverse();
-                const kresby = this._kresbyPodlazi(podlazi.map(p => p.id));
+                const kresby = this._kresbyPodlazi(podlazi.map(p => p.id), { bezCiselParcel: true });
                 const fd = new FormData();
                 const zahrnuta = [];
                 for (const k of kresby) {

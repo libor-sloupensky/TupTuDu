@@ -73,6 +73,7 @@ return [
     'export' => [
         'obrazek_selhal' => 'Impossible de créer l’image',
         'meritko_koty' => '1 m  ·  cotes en cm',
+        'podtitul' => 'Outil en ligne pour concevoir maison et rénovation',
         'neni_co_exportovat' => 'Rien à exporter : ce niveau n’a pas de murs.',
         'soubor_projekt' => 'projet',
         'soubor_pudorysy' => 'plans',

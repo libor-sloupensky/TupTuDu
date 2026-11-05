@@ -73,6 +73,7 @@ return [
     'export' => [
         'obrazek_selhal' => 'Das Bild konnte nicht erstellt werden',
         'meritko_koty' => '1 m  ·  Maße in cm',
+        'podtitul' => 'Online-Tool zur Planung von Haus und Umbau',
         'neni_co_exportovat' => 'Nichts zu exportieren, das Geschoss hat keine Wände.',
         'soubor_projekt' => 'projekt',
         'soubor_pudorysy' => 'grundrisse',

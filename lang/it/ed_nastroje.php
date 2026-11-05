@@ -73,6 +73,7 @@ return [
     'export' => [
         'obrazek_selhal' => 'Non è stato possibile creare l’immagine',
         'meritko_koty' => '1 m  ·  quote in cm',
+        'podtitul' => 'Strumento online per progettare casa e ristrutturazione',
         'neni_co_exportovat' => 'Niente da esportare, il piano non ha pareti.',
         'soubor_projekt' => 'progetto',
         'soubor_pudorysy' => 'piante',

@@ -434,6 +434,8 @@ return [
         'odkaz_zapnuty' => 'Der Link ist aktiv',
         'odkaz' => 'Link',
         'na_pudorysu' => 'Auf dem Grundriss erscheint:',
+        'na_pudorysu_parcela' => 'Grundstück und Raster:',
+        'na_pudorysu_mrizka' => 'Raster:',
         'pudorys_tip' => 'Aktives Geschoss als PNG-Bild',
         'pudorys' => 'Grundriss PNG',
         'vsechna_tip' => 'Alle Geschosse in einem Bild',

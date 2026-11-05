@@ -434,6 +434,8 @@ return [
         'odkaz_zapnuty' => 'Il link è attivo',
         'odkaz' => 'link',
         'na_pudorysu' => 'Nella pianta ci sarà:',
+        'na_pudorysu_parcela' => 'Lotto e griglia:',
+        'na_pudorysu_mrizka' => 'Griglia:',
         'pudorys_tip' => 'Piano attivo come immagine PNG',
         'pudorys' => 'Pianta PNG',
         'vsechna_tip' => 'Tutti i piani in un’unica immagine',

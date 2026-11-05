@@ -70,6 +70,7 @@ return [
     'export' => [
         'obrazek_selhal' => 'No se ha podido crear la imagen',
         'meritko_koty' => '1 m  ·  cotas en cm',
+        'podtitul' => 'Herramienta en línea para diseñar casas y reformas',
         'neni_co_exportovat' => 'No hay nada que exportar, la planta no tiene paredes.',
         'soubor_projekt' => 'proyecto',
         'soubor_pudorysy' => 'planos',

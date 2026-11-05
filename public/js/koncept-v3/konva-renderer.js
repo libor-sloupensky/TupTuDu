@@ -1555,6 +1555,7 @@ class KonvaRenderer {
                     fill: highlighted ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 215, 0, 0.08)',
                     stroke: highlighted ? '#FF6600' : '#FFD700',
                     strokeWidth: highlighted ? 6 : 4,
+                    _rozsahExportu: true,
                 }));
             });
         }
@@ -1577,6 +1578,7 @@ class KonvaRenderer {
                         stroke: '#9E9E9E',
                         strokeWidth: 1,
                         dash: [4, 2],
+                        _rozsahExportu: true,
                     }));
                 });
             });

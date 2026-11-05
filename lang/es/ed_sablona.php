@@ -434,6 +434,8 @@ return [
         'odkaz_zapnuty' => 'El enlace está activo',
         'odkaz' => 'enlace',
         'na_pudorysu' => 'En el plano aparecerá:',
+        'na_pudorysu_parcela' => 'Parcela y cuadrícula:',
+        'na_pudorysu_mrizka' => 'Cuadrícula:',
         'pudorys_tip' => 'Planta activa como imagen PNG',
         'pudorys' => 'Plano PNG',
         'vsechna_tip' => 'Todas las plantas en una imagen',

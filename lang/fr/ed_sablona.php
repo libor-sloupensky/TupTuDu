@@ -434,6 +434,8 @@ return [
         'odkaz_zapnuty' => 'Le lien est actif',
         'odkaz' => 'lien',
         'na_pudorysu' => 'Sur le plan figureront :',
+        'na_pudorysu_parcela' => 'Parcelle et grille :',
+        'na_pudorysu_mrizka' => 'Grille :',
         'pudorys_tip' => 'Niveau actif en image PNG',
         'pudorys' => 'Plan PNG',
         'vsechna_tip' => 'Tous les niveaux sur une seule image',

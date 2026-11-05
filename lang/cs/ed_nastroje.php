@@ -73,6 +73,7 @@ return [
     'export' => [
         'obrazek_selhal' => 'Obrázek se nepodařilo vytvořit',
         'meritko_koty' => '1 m  ·  kóty v cm',
+        'podtitul' => 'Online nástroj pro návrh domu a rekonstrukce',
         'neni_co_exportovat' => 'Není co exportovat, podlaží nemá stěny.',
         'soubor_projekt' => 'projekt',
         'soubor_pudorysy' => 'pudorysy',

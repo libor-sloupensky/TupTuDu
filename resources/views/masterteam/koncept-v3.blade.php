@@ -1375,11 +1375,7 @@
                 {{-- Checkboxy: Mřížka + katastr vrstvy (katastr jen s parcelami). Jeden řádek
                      pokud se vejdou, jinak wrap. gap-x menší aby se vešly vedle sebe. --}}
                 <div class="flex items-center gap-x-2 gap-y-1 text-xs text-gray-500 flex-wrap" @click.stop>
-                    <label class="flex items-center gap-0.5 cursor-pointer" data-tip="{{ __('ed_sablona.parcela.mrizka_tip') }}"><input type="checkbox" x-model="showGrid" @change="toggleGrid(); ulozitNastaveni()" class="w-3 h-3"> {{ __('ed_sablona.parcela.mrizka') }}</label>
-                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="{{ __('ed_sablona.parcela.parcely_tip') }}"><input type="checkbox" x-model="katastrZobrazitParcely" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> {{ __('ed_sablona.parcela.parcely') }}</label>
-                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="{{ __('ed_sablona.parcela.stavby_tip') }}"><input type="checkbox" x-model="katastrZobrazitStavby" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> {{ __('ed_sablona.parcela.stavby') }}</label>
-                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="{{ __('ed_sablona.parcela.sousede_tip') }}"><input type="checkbox" x-model="katastrZobrazitSousedy" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> {{ __('ed_sablona.parcela.sousede') }}</label>
-                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="{{ __('ed_sablona.parcela.vysky_tip') }}"><input type="checkbox" x-model="katastrZobrazitVysky" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> {{ __('ed_sablona.parcela.vysky') }}</label>
+                    @include('masterteam.partials.prepinace-parcely', ['kompaktni' => true])
                 </div>
                 {{-- KÚ hledání --}}
                 @funkce('katastr')
@@ -1607,6 +1603,12 @@
                             <div class="text-gray-500">{{ __('ed_sablona.export.na_pudorysu') }}</div>
                             <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                                 @include('masterteam.partials.prepinace-zobrazeni')
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1" data-export-parcela>
+                            <div class="text-gray-500" x-text="katastrParcely.length > 0 ? preloz('ed_sablona.export.na_pudorysu_parcela') : preloz('ed_sablona.export.na_pudorysu_mrizka')"></div>
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                @include('masterteam.partials.prepinace-parcely')
                             </div>
                         </div>
                         <div class="flex flex-wrap gap-1">

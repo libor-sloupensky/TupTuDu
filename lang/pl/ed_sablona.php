@@ -434,6 +434,8 @@ return [
         'odkaz_zapnuty' => 'Link jest włączony',
         'odkaz' => 'link',
         'na_pudorysu' => 'Na rzucie będą:',
+        'na_pudorysu_parcela' => 'Działka i siatka:',
+        'na_pudorysu_mrizka' => 'Siatka:',
         'pudorys_tip' => 'Aktywna kondygnacja jako obraz PNG',
         'pudorys' => 'Rzut PNG',
         'vsechna_tip' => 'Wszystkie kondygnacje na jednym obrazie',
