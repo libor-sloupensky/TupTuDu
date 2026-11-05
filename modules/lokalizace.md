@@ -8,6 +8,7 @@ oddělené**: Kazach může mít ruštinu a Kazachstán, Švýcar němčinu a Š
 Masterteam je interní a **vždy česky** — nepřekládá se.
 
 ## Aktuální stav
+- **Na webu od 5. 11. 2026:** všech osm jazyků včetně editoru, jazyk v adrese, přesměrování podle země, hreflang a sitemapa.
 - Aktivní jazyky: **cs** (zdrojový), **en** (výchozí i záložní — chybějící text se ukáže anglicky), **sk, pl, de, fr, es, it** (od 4. 11. 2026, přeložil Claude, rodilí mluvčí to zatím nekontrolovali).
 - **Oslovení:** tykání všude kromě právních dokumentů (du, tu, ty, tú). Mimo češtinu se tarify jmenují Home a Pro.
 - Pořadí napojení národních služeb (potvrdil Libor 4. 11. 2026): vlna 1 sk, pl, vlna 2 de s Rakouskem, fr, vlna 3 es, it. Rozbor po zemích: https://claude.ai/artifact/NCyfAVyDQ1R9aUTMoMKaGo, část Jazyky a země.
