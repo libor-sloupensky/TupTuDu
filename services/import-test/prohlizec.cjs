@@ -23,7 +23,7 @@ const CHROME = [
 
 const pauza = (ms) => new Promise(r => setTimeout(r, ms));
 
-async function otevriProhlizec({ viditelny = false, port: pevnyPort = Number(process.env.V3_CDP_PORT) || 0, sirka = 1600, vyska = 1000, posuvniky = false } = {}) {
+async function otevriProhlizec({ viditelny = false, port: pevnyPort = Number(process.env.V3_CDP_PORT) || 0, sirka = 1600, vyska = 1000, posuvniky = false, gpu = false } = {}) {
     if (!CHROME) throw new Error('Nenalezen Chrome ani Edge.');
 
     // Port 0 = volný port přidělí Chrome. Pevný port býval příčinou nesmyslných pádů: Chrome z předchozího
@@ -38,7 +38,9 @@ async function otevriProhlizec({ viditelny = false, port: pevnyPort = Number(pro
         `--remote-debugging-port=${pevnyPort}`,
         `--user-data-dir=${profil}`,
         `--window-size=${sirka},${vyska}`,
-        '--no-first-run', '--no-default-browser-check', '--disable-gpu',
+        '--no-first-run', '--no-default-browser-check',
+        // gpu: měření výkonu na skutečné grafice, jinak kreslí procesor
+        ...(gpu ? ['--use-angle=d3d11', '--ignore-gpu-blocklist'] : ['--disable-gpu']),
         // posuvníky se běžně schovávají (kvůli čistým snímkům), při jejich
         // kontrole je ale potřeba nechat je vykreslit
         ...(posuvniky ? [] : ['--hide-scrollbars']),
@@ -120,6 +122,7 @@ async function otevriProhlizec({ viditelny = false, port: pevnyPort = Number(pro
     };
 
     return {
+        profil,
         chyby,
         chybyDetail,
         spatneOdpovedi,

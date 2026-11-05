@@ -7,6 +7,7 @@
  *           node services/katalog/s3.cjs nahraj [--bucket=tuptudu-katalog]
  * zaloz jde pustit znovu, přepíše nastavení. --cizi ověří, že se klíč do jiného bucketu nedostane.
  * nahraj pošle modely, náhledy a značky z public/katalog, jen ty, které v bucketu chybí nebo se liší.
+ * Vyřazený kus: node services/katalog/s3.cjs smaz abo-xxx
  */
 const crypto = require('crypto');
 const fs = require('fs');
@@ -156,10 +157,22 @@ async function nahraj() {
     }
 }
 
+/** Smaže z bucketu všechny soubory jednoho kusu. */
+async function smaz(id) {
+    if (!/^[a-z]+-[\w-]+$/.test(id || '')) throw new Error('Čekám id kusu, například abo-B07C41C1C8');
+    for (const [slozka, typ] of Object.entries(SLOZKY)) {
+        const cesta = `/${slozka}/${id}${typ === 'image/webp' ? '.webp' : '.glb'}`;
+        const r = await s3('DELETE', cesta);
+        if (!r.ok) throw new Error(`${cesta}: ${await chyba(r)}`);
+        console.log('   smazáno', cesta);
+    }
+}
+
 (async () => {
     if (!KLIC || !TAJNY) throw new Error('V .env chybí KATALOG_AWS_KEY nebo KATALOG_AWS_SECRET');
     if (prikaz === 'zaloz') await zaloz();
     else if (prikaz === 'over') await over();
     else if (prikaz === 'nahraj') await nahraj();
-    else throw new Error('Příkaz: zaloz, over, nebo nahraj');
+    else if (prikaz === 'smaz') await smaz(zbytek[0]);
+    else throw new Error('Příkaz: zaloz, over, nahraj, nebo smaz');
 })().catch((e) => { console.error('CHYBA', e.message); process.exit(1); });

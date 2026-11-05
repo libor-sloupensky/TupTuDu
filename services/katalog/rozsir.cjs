@@ -18,6 +18,7 @@ const VYRAZENE = {
     B07JC4M6VR: 'rohová pohovka otočená o 90°',
     B0732HV63N: 'koberec s 323 808 ploškami a 6,7 MB, pro prohlížeč zbytečně těžký',
     B07B8FHTMV: 'okenice, ne obraz',
+    B07C41C1C8: 'skříň s tmavým přechodem přímo v textuře, výroba ho neopraví',
 };
 
 // Kolik kusů má mít kategorie celkem i s ručně vybranými
