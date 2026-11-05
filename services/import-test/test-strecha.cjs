@@ -77,5 +77,37 @@ kontrola('L s vyšší hranou: vnitřek pokrytý, půdorys v mezích', zPlochy(v
 const vnejsi = v.plochy.some(pl => pl.troj.some(t => t.some(b => b.x < 5.4 && b.y > 4.6)));
 kontrola('L: nic nezasahuje do vnějšího rohu', !vnejsi);
 
+console.log('Obrys z rastru: zbytek v rohu natočeného domu není hrana');
+const PX = 80;
+const uhel = 30 * Math.PI / 180;
+const otoc = (x, y) => ({ x: (x * Math.cos(uhel) - y * Math.sin(uhel)) * PX, y: (x * Math.sin(uhel) + y * Math.cos(uhel)) * PX });
+const engineZ = (useky) => {
+    const steny = new Map(useky.map(([a, b], i) => ['W' + i, { id: 'W' + i, a, b }]));
+    return {
+        PX_PER_M: PX,
+        walls: steny,
+        rozsahLice: () => ({ od: 0, do: 1 }),
+        bodNaLici: (id, s, strana) => {
+            if (strana !== 1) return null;
+            const w = steny.get(id);
+            return { x: w.a.x + (w.b.x - w.a.x) * s, y: w.a.y + (w.b.y - w.a.y) * s };
+        },
+    };
+};
+const rohy = [otoc(0, 0), otoc(10, 0), otoc(10, 6), otoc(0, 6)];
+const steny = engineZ(rohy.map((a, i) => [a, rohy[(i + 1) % 4]]));
+// Roh seříznutý tětivou 26 cm, jak ho nechá zjednodušení rastru (případ z domu Klemov)
+const seriznuty = [otoc(0, 0), otoc(10, 0), otoc(9.98, 5.97), otoc(9.72, 6), otoc(0, 6)];
+let hr = Strecha.hranyObrysu(seriznuty, steny);
+kontrola('natočený obdélník má čtyři hrany', hr.length === 4, hr.map(h => h.klic).join(' '));
+kontrola('všechny patří stěnám', hr.every(h => /^W/.test(h.klic)));
+const seznam = hr.map(h => h.a);
+kontrola('roh leží na průsečíku stěn', seznam.some(b => Math.hypot(b.x - rohy[2].x, b.y - rohy[2].y) < 0.1), JSON.stringify(seznam));
+// Skutečný schod 10 cm mezi rovnoběžnými stěnami zůstává
+const schod = [otoc(0, 0), otoc(10, 0), otoc(10, 3), otoc(10.1, 3), otoc(10.1, 6), otoc(0, 6)];
+const stenySchod = engineZ([[schod[0], schod[1]], [schod[1], schod[2]], [schod[3], schod[4]], [schod[4], schod[5]], [schod[5], schod[0]]]);
+hr = Strecha.hranyObrysu(schod, stenySchod);
+kontrola('schod mezi rovnoběžnými stěnami zůstává', hr.length === 6, hr.map(h => h.klic).join(' '));
+
 console.log(chyb ? `\n${chyb} chyb` : '\nVše v pořádku');
 process.exit(chyb ? 1 : 0);

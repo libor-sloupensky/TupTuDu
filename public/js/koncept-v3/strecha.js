@@ -499,11 +499,21 @@
                     }
                 }
             }
-            return nej ? { p: nej.p, dx: nej.dx, dy: nej.dy, klic: nej.klic } : { p: a, dx: ux, dy: uy, klic: null };
+            return nej ? { p: nej.p, dx: nej.dx, dy: nej.dy, klic: nej.klic } : { p: a, q: b, dx: ux, dy: uy, klic: null };
         });
-        // Souosé sousedy spojit (stěna rozdělená T-napojením), krátké odchylky vyhodit
+        // Zbytek rastru v rohu natočeného domu není hrana: celý leží na líci sousední stěny,
+        // jen kvůli schodům rastru pod jiným úhlem. Sousedi se protnou přímo. Krátký schod
+        // mezi rovnoběžnými stěnami je skutečný a zůstává.
+        const naLinii = (s, l) => Math.abs((s.x - l.p.x) * l.dy - (s.y - l.p.y) * l.dx) <= tol;
+        const bezZbytku = linie.filter((l, i) => {
+            if (l.klic) return true;
+            const pred = linie[(i + n - 1) % n], po = linie[(i + 1) % n];
+            if (Math.abs(pred.dx * po.dy - pred.dy * po.dx) < 0.2) return true;
+            return ![pred, po].some(s => s.klic && naLinii(l.p, s) && naLinii(l.q, s));
+        });
+        // Souosé sousedy spojit (stěna rozdělená T-napojením)
         const spojene = [];
-        for (const l of linie) {
+        for (const l of bezZbytku) {
             const u = spojene[spojene.length - 1];
             if (u && Math.abs(u.dx * l.dy - u.dy * l.dx) < 0.03
                 && Math.abs((l.p.x - u.p.x) * u.dy - (l.p.y - u.p.y) * u.dx) < 0.03 * engine.PX_PER_M) {
