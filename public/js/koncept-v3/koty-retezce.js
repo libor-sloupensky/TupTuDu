@@ -10,6 +10,8 @@
  * Kóty vybrané stěny a otvoru řeší koty-vyberu.js, délku rozpracované stěny renderKoty.
  */
 (function () {
+    // V Node slovník není, tam zůstává česká čárka
+    const cislo = (x, d) => (typeof prelozCislo === 'function' ? prelozCislo(x, d) : x.toFixed(d).replace('.', ','));
     const MAX_ODCHYLKA = Math.sin(3 * Math.PI / 180);   // rovnoběžná = do 3°
     const STEJNA_HLOUBKA_M = 0.05;                      // menší odskok fasády není zalomení
     const MIN_USEK_M = 0.08;                            // kratší úsek se přidá k sousednímu
@@ -249,7 +251,7 @@
         if (!isFinite(du) || !isFinite(dv)) return null;
         const plocha = du * dv / (PX * PX);
         if (Math.abs(plocha - komponenta.plocha_m2) > Math.max(0.04 * komponenta.plocha_m2, 0.1)) return null;
-        const m = (d) => (d / PX).toFixed(2).replace('.', ',');
+        const m = (d) => cislo(d / PX, 2);
         // Šířka × výška tak, jak místnost leží na obrazovce
         const naSirku = Math.abs(Math.cos(uhel + (r.stage.rotation() || 0) * Math.PI / 180)) >= Math.SQRT1_2;
         return { text: naSirku ? m(du) + ' × ' + m(dv) + ' m' : m(dv) + ' × ' + m(du) + ' m', du, dv };

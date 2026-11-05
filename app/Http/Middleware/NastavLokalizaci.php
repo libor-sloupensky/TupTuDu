@@ -30,7 +30,9 @@ class NastavLokalizaci
     {
         $uzivatel = $request->user();
         $domena = config('lokalizace.domeny.' . $this->hostBezWww($request), []);
-        $pevnyJazyk = Domeny::jeMasterteam($request) ? config('lokalizace.masterteam_jazyk') : null;
+        // Lokální UI testy běží na holém 127.0.0.1, adresa /masterteam tam taky znamená Masterteam
+        $jeMasterteam = Domeny::jeMasterteam($request) || (Domeny::jeNeutralniLokalne($request) && $request->is('masterteam*'));
+        $pevnyJazyk = $jeMasterteam ? config('lokalizace.masterteam_jazyk') : null;
         $zemePrichodu = $domena['zeme'] ?? ($pevnyJazyk ? null : $this->zemePodleIp($request));
 
         // Jazyk v adrese webu: parametr routy, u článků první část adresy (routes/web.php). Controllery ho nepotřebují.

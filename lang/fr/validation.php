@@ -102,7 +102,7 @@ return [
         'mixed' => 'Le champ :attribute doit contenir au moins une majuscule et une minuscule.',
         'numbers' => 'Le champ :attribute doit contenir au moins un chiffre.',
         'symbols' => 'Le champ :attribute doit contenir au moins un symbole.',
-        'uncompromised' => 'Ce :attribute n’est pas sûr : choisis-en un autre.',
+        'uncompromised' => 'Ce :attribute n’est pas sûr : choisissez-en un autre.',
     ],
     'present' => 'Le champ :attribute doit être présent.',
     'prohibited' => 'Le champ :attribute est interdit.',

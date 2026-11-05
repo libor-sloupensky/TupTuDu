@@ -186,22 +186,22 @@ window.KonceptImport = {
 
     impNazevKroku(krok) {
         return {
-            soubor: 'Výkres',
-            strana: 'Strana',
-            meritko: 'Měřítko',
-            obrys: 'Obvod domu',
-            steny: 'Stěny',
+            soubor: preloz('ed_nastroje.import.krok_soubor'),
+            strana: preloz('ed_nastroje.import.krok_strana'),
+            meritko: preloz('ed_nastroje.import.krok_meritko'),
+            obrys: preloz('ed_nastroje.import.krok_obrys'),
+            steny: preloz('ed_nastroje.import.krok_steny'),
         }[krok] || krok;
     },
 
     /** Pokyn k aktuálnímu kroku — stojí v hlavičce místo názvu okna. */
     impPokyn() {
         return {
-            soubor: 'Vyberte výkres půdorysu, nebo použijte dříve nahraný.',
-            strana: 'Vyberte stranu, na které je půdorys.',
-            meritko: 'Změřte ve výkresu známý rozměr — klikněte na dva body a zadejte jejich skutečnou vzdálenost.',
-            obrys: 'Obkreslete vnější hranu obvodových zdí — klikejte do rohů domu.',
-            steny: 'Vyberte variantu, která nejlépe odpovídá stěnám.',
+            soubor: preloz('ed_nastroje.import.pokyn_soubor'),
+            strana: preloz('ed_nastroje.import.pokyn_strana'),
+            meritko: preloz('ed_nastroje.import.pokyn_meritko'),
+            obrys: preloz('ed_nastroje.import.pokyn_obrys'),
+            steny: preloz('ed_nastroje.import.pokyn_steny'),
         }[this.impKrok] || '';
     },
 
@@ -250,7 +250,7 @@ window.KonceptImport = {
 
         const pripona = (soubor.name.split('.').pop() || '').toLowerCase();
         if (!['pdf', 'png', 'jpg', 'jpeg'].includes(pripona)) {
-            this.impChyba = 'Podporované jsou jen soubory PDF, PNG a JPG.';
+            this.impChyba = preloz('ed_nastroje.import.jen_formaty');
             return;
         }
         await this.impNahraj(soubor);
@@ -272,7 +272,7 @@ window.KonceptImport = {
             });
             const d = await resp.json().catch(() => ({}));
             if (!resp.ok || !d.ok) {
-                this.impChyba = d.error || d.message || 'Soubor se nepodařilo nahrát.';
+                this.impChyba = d.error || d.message || preloz('ed_nastroje.import.nahrani_selhalo');
                 return;
             }
 
@@ -291,7 +291,7 @@ window.KonceptImport = {
                 await this.impVyberStranu(1);
             }
         } catch (e) {
-            this.impChyba = 'Soubor se nepodařilo nahrát: ' + e.message;
+            this.impChyba = preloz('ed_nastroje.import.nahrani_selhalo_chyba', { chyba: e.message });
             window.zalogujChybu?.(e, 'import podkladu — nahrání');
         } finally {
             this.impNacitani = false;
@@ -318,7 +318,7 @@ window.KonceptImport = {
             });
             const d = await resp.json().catch(() => ({}));
             if (!resp.ok || !d.ok) {
-                this.impChyba = d.error || d.message || 'Stranu se nepodařilo připravit.';
+                this.impChyba = d.error || d.message || preloz('ed_nastroje.import.strana_selhala');
                 return;
             }
 
@@ -333,7 +333,7 @@ window.KonceptImport = {
             this.pzNastroj = 'kalibrace';    // v kroku měřítka se jen měří
             this.impKrok = 'meritko';
         } catch (e) {
-            this.impChyba = 'Stranu se nepodařilo připravit: ' + e.message;
+            this.impChyba = preloz('ed_nastroje.import.strana_selhala_chyba', { chyba: e.message });
             window.zalogujChybu?.(e, 'import podkladu — strana');
         } finally {
             this.impNacitani = false;
@@ -477,7 +477,7 @@ window.KonceptImport = {
     /** Přechod na obkreslení obvodu domu. */
     impNaObrys() {
         if (!this.impMeritkoPlatne()) {
-            this.impChyba = 'Nejdřív změřte známý rozměr.';
+            this.impChyba = preloz('ed_nastroje.import.nejdriv_zmer');
             return;
         }
         this.impChyba = '';
@@ -558,11 +558,11 @@ window.KonceptImport = {
     async impRozpoznat() {
         const d = this.impStranaData;
         if (!d?.vektor) {
-            this.impChyba = 'Rozpoznání stěn umí zatím jen vektorová PDF (výkres od architekta).';
+            this.impChyba = preloz('ed_nastroje.import.jen_vektor');
             return;
         }
         if (!this.impMeritkoPlatne()) {
-            this.impChyba = 'Nejdřív nastavte měřítko.';
+            this.impChyba = preloz('ed_nastroje.import.nejdriv_meritko');
             return;
         }
 
@@ -601,23 +601,23 @@ window.KonceptImport = {
             const worker = new Worker('/js/koncept-v3/import-worker.js?v=' + verze);
             const odpoved = await new Promise((hotovo, chyba) => {
                 worker.onmessage = (z) => hotovo(z.data);
-                worker.onerror = (e) => chyba(new Error(e.message || 'worker selhal'));
+                worker.onerror = (e) => chyba(new Error(e.message || preloz('ed_nastroje.import.worker_selhal')));
                 worker.postMessage({ svg, nast });
             });
             worker.terminate();
 
-            if (!odpoved.ok) throw new Error(odpoved.chyba || 'rozpoznání selhalo');
+            if (!odpoved.ok) throw new Error(odpoved.chyba || preloz('ed_nastroje.import.rozpoznani_nevyslo'));
 
             this.impVarianty = odpoved.varianty;
             this.impCas = odpoved.cas;
             this.impStav = this.impVarianty.length ? 'hotovo' : 'chyba';
             if (!this.impVarianty.length) {
-                this.impChyba = 'Ve výkresu se nepodařilo najít stěny. Zkuste jiný výřez, nebo výkres obkreslete ručně.';
+                this.impChyba = preloz('ed_nastroje.import.steny_nenalezeny');
             }
             this.$nextTick(() => this.impNakresliNahledy());
         } catch (e) {
             this.impStav = 'chyba';
-            this.impChyba = 'Rozpoznání selhalo: ' + e.message;
+            this.impChyba = preloz('ed_nastroje.import.rozpoznani_selhalo', { chyba: e.message });
             window.zalogujChybu?.(e, 'import — rozpoznání stěn');
         }
     },
@@ -707,7 +707,7 @@ window.KonceptImport = {
         if (!varianta || !d) return;
 
         if (this.engine.walls.size > 0
-            && !confirm('V konceptu už je kresba. Nahradit ji stěnami z výkresu?')) {
+            && !confirm(preloz('ed_nastroje.import.nahradit_kresbu'))) {
             return;
         }
 
@@ -741,8 +741,9 @@ window.KonceptImport = {
         this.domSrovnejImport?.();
         this.renderer.render();
         this.fitView?.();                       // ukázat rovnou celý výsledek
-        this._posledniAkce = 'Import stěn z výkresu'
-            + (otvory.length ? ' (' + otvory.length + ' otvorů)' : '');
+        this._posledniAkce = otvory.length
+            ? prelozPocet('ed_nastroje.import.akce_steny_otvory', otvory.length)
+            : preloz('ed_nastroje.import.akce_steny');
         this.ulozit?.();
         this.obnovSeznamObjektu?.();
         this.impZavri();

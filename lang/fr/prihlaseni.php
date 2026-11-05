@@ -14,5 +14,5 @@ return [
     'google_selhalo' => 'La connexion avec Google a échoué.',
     'google_ucet_neexistuje' => 'Aucun compte ne correspond à cette adresse e-mail Google.',
     'zapomenute_heslo' => 'Mot de passe oublié ?',
-    'registrace' => 'Pas encore de compte ? Inscris-toi',
+    'registrace' => 'Pas encore de compte ? Inscrivez-vous',
 ];

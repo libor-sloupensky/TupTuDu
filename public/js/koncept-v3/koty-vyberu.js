@@ -9,6 +9,8 @@
  * Číslo a tužtička se kreslí na plátno a kliká se na ně přes kotaVBode.
  */
 (function () {
+    // V Node slovník není, tam zůstává česká čárka
+    const cislo = (x, d) => (typeof prelozCislo === 'function' ? prelozCislo(x, d) : x.toFixed(d).replace('.', ','));
     const MAX_ODCHYLKA = Math.sin(3 * Math.PI / 180);   // rovnoběžná = do 3°
     const STEJNE_PX = 0.4;                               // do 5 mm jde o tutéž hodnotu
 
@@ -180,7 +182,7 @@
         const cm = dPx / PX * 100;
         const cele = Math.round(cm);
         if (Math.abs(cm - cele) < 0.2) return String(cele);
-        return cm.toFixed(1).replace('.', ',');
+        return cislo(cm, 1);
     }
 
     const TUZKA = 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z';

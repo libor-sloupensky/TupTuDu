@@ -9,6 +9,6 @@ return [
     'heslo_znovu' => 'Confirmer le mot de passe',
     'souhlas' => 'J’accepte les :podminky et je prends connaissance de la :soukromi.',
     'tlacitko' => 'Créer mon compte',
-    'mam_ucet' => 'Déjà un compte ? Connecte-toi',
-    'google_souhlas' => 'En continuant avec Google, tu acceptes les :podminky et tu prends connaissance de la :soukromi.',
+    'mam_ucet' => 'Déjà un compte ? Connectez-vous',
+    'google_souhlas' => 'En continuant avec Google, vous acceptez les :podminky et vous prenez connaissance de la :soukromi.',
 ];

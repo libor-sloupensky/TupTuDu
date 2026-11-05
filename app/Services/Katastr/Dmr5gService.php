@@ -27,7 +27,7 @@ class Dmr5gService
     public function nactiVyskovyProfil(array $polygonWgs84): array
     {
         if (count($polygonWgs84) < 3) {
-            throw new \RuntimeException('Polygon musí mít alespoň 3 body.');
+            throw new \RuntimeException(__('ed_nastroje.katastr.polygon_body'));
         }
 
         // Grid přímo ve WGS84 — krok ~2m převedený na stupně
@@ -51,7 +51,7 @@ class Dmr5gService
         }
 
         if (empty($gridWgs)) {
-            throw new \RuntimeException('Žádné body v polygonu parcely.');
+            throw new \RuntimeException(__('ed_nastroje.katastr.polygon_bez_bodu'));
         }
 
         // Limit
@@ -93,7 +93,7 @@ class Dmr5gService
         }
 
         if (empty($body)) {
-            throw new \RuntimeException('Výšková data pro tuto oblast nejsou dostupná.');
+            throw new \RuntimeException(__('ed_nastroje.katastr.vysky_nedostupne'));
         }
 
         // Statistiky (pro sklon/orientaci potřebuji S-JTSK — použiju konverzi)
@@ -162,7 +162,7 @@ class Dmr5gService
     private function wgs84ToSjtsk(float $lat, float $lon): array
     {
         if ($lat < 40 || $lat > 60 || $lon < 5 || $lon > 25) {
-            throw new \RuntimeException("Souřadnice mimo rozsah S-JTSK: {$lat}, {$lon}");
+            throw new \RuntimeException(__('ed_nastroje.katastr.souradnice_mimo', ['lat' => $lat, 'lon' => $lon]));
         }
 
         // 1) WGS84 → Bessel (přes kartézské souřadnice)

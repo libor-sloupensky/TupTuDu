@@ -14,20 +14,20 @@
 (function () {
     // Typ krytiny určuje reliéf, barva je zvlášť (na hraně může být vlastní)
     const TYPY_KRYTIN = [
-        { id: 'taska', nazev: 'Pálená taška', kov: false },
-        { id: 'betonova', nazev: 'Betonová taška', kov: false },
-        { id: 'bobrovka', nazev: 'Bobrovka', kov: false },
-        { id: 'sindel', nazev: 'Asfaltový šindel', kov: false },
-        { id: 'bridlice', nazev: 'Břidlice', kov: false },
-        { id: 'falc', nazev: 'Falcovaný plech', kov: true },
-        { id: 'trapez', nazev: 'Trapézový plech', kov: true },
+        { id: 'taska', nazev: preloz('ed_dum.krytina.taska'), kov: false },
+        { id: 'betonova', nazev: preloz('ed_dum.krytina.betonova'), kov: false },
+        { id: 'bobrovka', nazev: preloz('ed_dum.krytina.bobrovka'), kov: false },
+        { id: 'sindel', nazev: preloz('ed_dum.krytina.sindel'), kov: false },
+        { id: 'bridlice', nazev: preloz('ed_dum.krytina.bridlice'), kov: false },
+        { id: 'falc', nazev: preloz('ed_dum.krytina.falc'), kov: true },
+        { id: 'trapez', nazev: preloz('ed_dum.krytina.trapez'), kov: true },
     ];
     const BARVY_KRYTIN = [
-        { id: 'cervena', nazev: 'Cihlová', barva: '#a8502f' },
-        { id: 'antracit', nazev: 'Antracit', barva: '#3f4347' },
-        { id: 'hneda', nazev: 'Hnědá', barva: '#6d4c3b' },
-        { id: 'seda', nazev: 'Šedá', barva: '#8a8d90' },
-        { id: 'modroseda', nazev: 'Modrošedá', barva: '#5d6d75' },
+        { id: 'cervena', nazev: preloz('ed_dum.barva_krytiny.cervena'), barva: '#a8502f' },
+        { id: 'antracit', nazev: preloz('ed_dum.barva_krytiny.antracit'), barva: '#3f4347' },
+        { id: 'hneda', nazev: preloz('ed_dum.barva_krytiny.hneda'), barva: '#6d4c3b' },
+        { id: 'seda', nazev: preloz('ed_dum.barva_krytiny.seda'), barva: '#8a8d90' },
+        { id: 'modroseda', nazev: preloz('ed_dum.barva_krytiny.modroseda'), barva: '#5d6d75' },
     ];
     // Starší střechy měly v `krytina` barvu i typ dohromady
     const STARE_KRYTINY = { antracit: '#3f4347', hneda: '#6d4c3b', seda: '#8a8d90', plech: '#5d6d75' };
@@ -117,13 +117,13 @@
     // Dekor podlahy místnosti. Barva je zvlášť, `barva` zde platí, dokud si ji uživatel nezmění.
     // `metru` = kolik metrů pokryje jedna dlaždice textury.
     const DEKORY_PODLAH = [
-        { id: 'hladka', nazev: 'Hladká', barva: '#d6d3d1', metru: 2, drsnost: 0.8 },
-        { id: 'prkna', nazev: 'Dřevěná prkna', barva: '#b08a5e', metru: 2, drsnost: 0.6 },
-        { id: 'parkety', nazev: 'Parkety, rybí kost', barva: '#a97c50', metru: 0.8, drsnost: 0.55 },
-        { id: 'dlazba30', nazev: 'Dlažba 30 × 30 cm', barva: '#bdb8ae', metru: 1.2, drsnost: 0.4 },
-        { id: 'dlazba60', nazev: 'Dlažba 60 × 60 cm', barva: '#c9c6bf', metru: 1.2, drsnost: 0.35 },
-        { id: 'beton', nazev: 'Betonová stěrka', barva: '#9a9a96', metru: 2, drsnost: 0.7 },
-        { id: 'koberec', nazev: 'Koberec', barva: '#8c8f94', metru: 1, drsnost: 1 },
+        { id: 'hladka', nazev: preloz('ed_dum.dekor.hladka'), barva: '#d6d3d1', metru: 2, drsnost: 0.8 },
+        { id: 'prkna', nazev: preloz('ed_dum.dekor.prkna'), barva: '#b08a5e', metru: 2, drsnost: 0.6 },
+        { id: 'parkety', nazev: preloz('ed_dum.dekor.parkety'), barva: '#a97c50', metru: 0.8, drsnost: 0.55 },
+        { id: 'dlazba30', nazev: preloz('ed_dum.dekor.dlazba30'), barva: '#bdb8ae', metru: 1.2, drsnost: 0.4 },
+        { id: 'dlazba60', nazev: preloz('ed_dum.dekor.dlazba60'), barva: '#c9c6bf', metru: 1.2, drsnost: 0.35 },
+        { id: 'beton', nazev: preloz('ed_dum.dekor.beton'), barva: '#9a9a96', metru: 2, drsnost: 0.7 },
+        { id: 'koberec', nazev: preloz('ed_dum.dekor.koberec'), barva: '#8c8f94', metru: 1, drsnost: 1 },
     ];
     const dekorPodlahy = (id) => DEKORY_PODLAH.find(k => k.id === id) || DEKORY_PODLAH[0];
     const barvaPodlahy = (p) => p?.barva || dekorPodlahy(p?.dekor).barva;
@@ -202,18 +202,18 @@
     }
 
     const TYPY_STRECH = [
-        { id: 'sedlova', nazev: 'Sedlová', sklon: 38 },
-        { id: 'valbova', nazev: 'Valbová', sklon: 30 },
-        { id: 'pultova', nazev: 'Pultová', sklon: 15 },
-        { id: 'plocha', nazev: 'Plochá', sklon: 2 },
+        { id: 'sedlova', nazev: preloz('ed_dum.typ_strechy.sedlova'), sklon: 38 },
+        { id: 'valbova', nazev: preloz('ed_dum.typ_strechy.valbova'), sklon: 30 },
+        { id: 'pultova', nazev: preloz('ed_dum.typ_strechy.pultova'), sklon: 15 },
+        { id: 'plocha', nazev: preloz('ed_dum.typ_strechy.plocha'), sklon: 2 },
     ];
     // Úroveň podlahy místnosti. „bezna" nemá záznam v dum.plochy, ostatní ano (obrys = místnost).
     // Dřívější „prostup" byl totéž co bez podlahy (otvor ve stropu pod místností), sjednoceno 3. 11. 2026.
     const TYPY_PLOCH = [
-        { id: 'bezna', nazev: 'V úrovni podlaží' },
-        { id: 'zvysena', nazev: 'Zvýšená' },
-        { id: 'snizena', nazev: 'Snížená' },
-        { id: 'bez_podlahy', nazev: 'Bez podlahy' },
+        { id: 'bezna', nazev: preloz('ed_dum.uroven_podlahy.bezna') },
+        { id: 'zvysena', nazev: preloz('ed_dum.uroven_podlahy.zvysena') },
+        { id: 'snizena', nazev: preloz('ed_dum.uroven_podlahy.snizena') },
+        { id: 'bez_podlahy', nazev: preloz('ed_dum.uroven_podlahy.bez_podlahy') },
     ];
 
     const omez = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -593,7 +593,7 @@
 
         /** Co se právě edituje: název podlaží, nebo střecha. Pro lištu a hlavičku panelu. */
         get nazevAktivniho() {
-            if (this.rezimStrecha) return 'Střecha';
+            if (this.rezimStrecha) return preloz('ed_dum.strecha');
             return this.seznamPodlazi.find(p => p.aktivni)?.nazev || '';
         },
 
@@ -606,13 +606,19 @@
             });
         },
 
-        /** Řádek střechy: typ, nebo výzva k nastavení. */
+        /** Řádek střechy: typ, nebo kód 'nastavit' (Blade s ním porovnává, text ukazuje strechaPopisText). */
         get strechaPopis() {
             // eslint-disable-next-line no-unused-vars
             const _tick = this._selectionTick;
             const st = this.engine?.dum.strecha;
             if (!st) return 'nastavit';
             return (TYPY_STRECH.find(t => t.id === st.typ) || TYPY_STRECH[0]).nazev;
+        },
+
+        /** Text řádku střechy: typ, nebo výzva k nastavení. */
+        get strechaPopisText() {
+            const p = this.strechaPopis;
+            return p === 'nastavit' ? preloz('ed_dum.strecha_nastavit') : p;
         },
 
         prepniUpravuPodlazi(id) {
@@ -633,7 +639,7 @@
         },
 
         formatKota(k) {
-            const t = Math.abs(k).toFixed(3).replace('.', ',');
+            const t = prelozCislo(Math.abs(k), 3);
             return (k > 0 ? '+' : k < 0 ? '−' : '±') + t;
         },
 
@@ -689,13 +695,13 @@
             this.renderer._mistnostiCache = null;
             this.podlaziPridat = false;
             this.podlaziUprava = null;
-            this._poZmeneDomu('Nové podlaží ' + p.nazev);
+            this._poZmeneDomu(preloz('ed_dum.krok.nove_podlazi', { nazev: p.nazev }));
         },
 
         smazatPodlazi(id) {
             const p = this.engine.podlaziPodleId(id);
             if (!p || this.engine.dum.podlazi.length < 2) return;
-            if (!confirm('Smazat podlaží ' + p.nazev + ' i s jeho kresbou?')) return;
+            if (!confirm(preloz('ed_dum.smazat_podlazi_potvrzeni', { nazev: p.nazev }))) return;
             this._zrusRozkreslene();
             this.engine.pushUndo();
             this.engine.smazPodlazi(id);
@@ -706,7 +712,7 @@
             this.renderer.clearSelection();
             this.renderer._mistnostiCache = null;
             this.podlaziUprava = null;
-            this._poZmeneDomu('Smazání podlaží ' + p.nazev);
+            this._poZmeneDomu(preloz('ed_dum.krok.smazani_podlazi', { nazev: p.nazev }));
         },
 
         /** Vlastnost podlaží: vyska a strop v m, nazev; kota v m posune celý dům. */
@@ -731,7 +737,7 @@
                 if (!(hodnota >= 0)) return;
                 p.strop = Math.round(omez(hodnota, 0, 1.5) * 100) / 100;
             }
-            this._poZmeneDomu('Podlaží ' + p.nazev);
+            this._poZmeneDomu(preloz('ed_dum.krok.podlazi', { nazev: p.nazev }));
         },
 
         /** Vrátí dům na výchozí výšku: podlaha 1.NP na kótě 0. */
@@ -739,7 +745,7 @@
             if (!this.engine.dum.posunVysky) return;
             this.engine.pushUndo();
             this.engine.dum.posunVysky = 0;
-            this._poZmeneDomu('Výška domu');
+            this._poZmeneDomu(preloz('ed_dum.krok.vyska_domu'));
         },
 
         get posunDomu() {
@@ -761,7 +767,7 @@
             this.nastroj = 'vyber';
             this.rezimStrecha = false;
             this.renderer.setSelection([...this.engine.walls.keys()]);
-            this._dumHlaska('Celý dům je vybraný. Táhněte za kteroukoli stěnu.');
+            this._dumHlaska(preloz('ed_dum.hlaska.cely_dum_vybrany'));
         },
 
         // ─── Posun a otočení celého domu ───────────────────────
@@ -863,7 +869,7 @@
             const stA = nosne(this.engine), stB = nosne(dole.engine);
             const A = body(this.engine, stA), B = body(dole.engine, stB);
             if (A.length < 3 || B.length < 3) {
-                this._dumHlaska('Plánek zatím usaďte ručně dvěma body (panel Podklad).');
+                this._dumHlaska(preloz('ed_dum.hlaska.planek_rucne'));
                 return;
             }
             const smerDomu = (e, st) => {
@@ -916,13 +922,13 @@
                 if (!nej || shod > nej.shod) nej = { shod, u, dx, dy, k };
             }
             if (!nej || nej.shod < 3 || nej.shod < A.length * 0.4) {
-                this._dumHlaska('Plánek se nepodařilo srovnat se spodním podlažím automaticky. Usaďte ho dvěma body (panel Podklad).');
+                this._dumHlaska(preloz('ed_dum.hlaska.planek_nesrovnan'));
                 return;
             }
             const cos = Math.cos(nej.u), sin = Math.sin(nej.u);
             const f = (p) => ({ x: p.x * cos - p.y * sin + nej.dx, y: p.x * sin + p.y * cos + nej.dy });
             this._transformujAktivni(f, nej.u);
-            this._dumHlaska('Plánek srovnán se spodním podlažím (' + nej.shod + ' shodných rohů). Doladit lze dvěma body v panelu Podklad.');
+            this._dumHlaska(preloz('ed_dum.hlaska.planek_srovnan', { rohu: prelozPocet('ed_dum.hlaska.shodnych_rohu', nej.shod) }));
         },
 
         /** Přepočítá kresbu aktivního podlaží a jeho podklad — jen při usazování importu. */
@@ -949,10 +955,10 @@
         },
 
         get licoKrok() {
-            return ['Klepněte na první bod na plánku (roh domu nebo schodiště).',
-                'Klepněte na totéž místo ve spodním podlaží.',
-                'Klepněte na druhý bod na plánku, co nejdál od prvního.',
-                'Klepněte na totéž místo ve spodním podlaží.'][this.licoBody.length] || '';
+            return [preloz('ed_dum.lico.prvni_bod'),
+                preloz('ed_dum.lico.tentyz_bod'),
+                preloz('ed_dum.lico.druhy_bod'),
+                preloz('ed_dum.lico.tentyz_bod')][this.licoBody.length] || '';
         },
 
         _licoKlik(pos, e) {
@@ -968,7 +974,7 @@
             const dP = Math.hypot(p2.x - p1.x, p2.y - p1.y), dQ = Math.hypot(q2.x - q1.x, q2.y - q1.y);
             this.licoBody = [];
             this.nastroj = 'vyber';
-            if (dP < 1 || dQ < 1) { this._dumHlaska('Body jsou příliš blízko sebe.'); this._renderDum(); return; }
+            if (dP < 1 || dQ < 1) { this._dumHlaska(preloz('ed_dum.hlaska.body_blizko')); this._renderDum(); return; }
             const u = Math.atan2(q2.y - q1.y, q2.x - q1.x) - Math.atan2(p2.y - p1.y, p2.x - p1.x);
             const cos = Math.cos(u), sin = Math.sin(u);
             const f = (p) => {
@@ -979,9 +985,9 @@
             this._transformujAktivni(f, u, !(this.licoSeStenami && this.engine.walls.size > 0));
             const pomer = dQ / dP;
             this._dumHlaska(Math.abs(pomer - 1) > 0.01
-                ? 'Plánek usazen, ale měřítka se liší o ' + (Math.abs(pomer - 1) * 100).toFixed(1) + ' %. Zkontrolujte kalibraci výkresu.'
-                : 'Plánek usazen na spodní podlaží.');
-            this._poZmeneDomu('Usazení plánku');
+                ? preloz('ed_dum.hlaska.planek_meritko', { procent: (Math.abs(pomer - 1) * 100).toFixed(1) })
+                : preloz('ed_dum.hlaska.planek_usazen'));
+            this._poZmeneDomu(preloz('ed_dum.krok.usazeni_planku'));
         },
 
         prepniPosunPodkladu() {
@@ -1106,8 +1112,8 @@
                     tloustka: w.tloustka, typ: 'nosna',
                 }],
             };
-            this._dumHlaska('Do podlaží ' + dole.nazev + ' přibyla nosná stěna.');
-            this._poZmeneDomu('Podpěra do ' + dole.nazev);
+            this._dumHlaska(preloz('ed_dum.hlaska.pribyla_nosna', { nazev: dole.nazev }));
+            this._poZmeneDomu(preloz('ed_dum.krok.podpera', { nazev: dole.nazev }));
         },
 
         // ─── Výškové plochy = úroveň podlahy místnosti ─────────
@@ -1384,7 +1390,7 @@
                 this._drzSchodyUPlochy(s);
             }
             this.renderer._mistnostiCache = null;
-            this._poZmeneDomu('Úroveň podlahy');
+            this._poZmeneDomu(preloz('ed_dum.krok.uroven_podlahy'));
         },
 
         /** Obrys místnosti z posledního rastru (m, y nahoru); [] když rastr zrovna není. */
@@ -1416,14 +1422,14 @@
             a.vypnuto = [...v];
             this._uklidSchodyPloch();
             this.renderer._mistnostiCache = null;
-            this._poZmeneDomu('Přenos výšky');
+            this._poZmeneDomu(preloz('ed_dum.krok.prenos_vysky'));
         },
 
         // ─── Schodiště ─────────────────────────────────────────
         zacniSchody() {
             this._zrusRozkreslene();
             if (!this.engine.podlaziNad(this.engine.dum.aktivni)) {
-                this._dumHlaska('Schodiště vede do podlaží nad aktivním. Nejdřív přidejte vyšší podlaží.');
+                this._dumHlaska(preloz('ed_dum.hlaska.schody_bez_podlazi'));
                 return;
             }
             this.nastroj = 'schody';
@@ -1565,7 +1571,7 @@
             this.renderer.setSelection([]);
             this.renderer.selectedSchody.add('S' + n);
             this.renderer._mistnostiCache = null;
-            this._poZmeneDomu('Schodiště');
+            this._poZmeneDomu(preloz('ed_dum.krok.schodiste'));
         },
 
 /** Výšková plocha, ke které schody patří. Starší krátké schody bez vazby si ji najdou podle výšky. */
@@ -1602,7 +1608,7 @@
                 const a = d.plochy.find(x => x.id === s.plocha);
                 return a && (a.typ === 'zvysena' || a.typ === 'snizena') && this._plochaPlati(a, s.odPodlazi);
             });
-            if (d.schodiste.length < pred) this._dumHlaska('Schody k této podlaze byly odstraněny.');
+            if (d.schodiste.length < pred) this._dumHlaska(preloz('ed_dum.hlaska.schody_odstraneny'));
         },
 
         /**
@@ -1649,7 +1655,7 @@
             this._drzSchodyUPlochy(nove);
             this.renderer.setSelection([]);
             this.renderer.selectedSchody.add('S' + n);
-            this._poZmeneDomu('Schody mezi úrovněmi');
+            this._poZmeneDomu(preloz('ed_dum.krok.schody_mezi_urovnemi'));
         },
 
         _vybraneSchody() {
@@ -1671,7 +1677,7 @@
             if (klic === 'otoc') s.uhel = (s.uhel || 0) + Math.PI / 2;
             this._drzSchodyUPlochy(s);
             this.renderer._mistnostiCache = null;
-            this._poZmeneDomu('Schodiště');
+            this._poZmeneDomu(preloz('ed_dum.krok.schodiste'));
         },
 
         /** Počet stupňů v jedné části; zbytek se dopočítá do ostatních, 0 u další části = odpočívadlo. */
@@ -1696,7 +1702,7 @@
             }
             this._drzSchodyUPlochy(s);
             this.renderer._mistnostiCache = null;
-            this._poZmeneDomu('Schodiště');
+            this._poZmeneDomu(preloz('ed_dum.krok.schodiste'));
         },
 
         smazatSchody() {
@@ -1706,7 +1712,7 @@
             this.engine.dum.schodiste = this.engine.dum.schodiste.filter(x => x !== s);
             this.renderer.clearSelection();
             this.renderer._mistnostiCache = null;
-            this._poZmeneDomu('Smazání schodiště');
+            this._poZmeneDomu(preloz('ed_dum.krok.smazani_schodiste'));
         },
 
         // ─── Střecha ───────────────────────────────────────────
@@ -1790,7 +1796,7 @@
             this.engine.pushUndo();
             this.engine.dum.strecha = this._novaStrecha();
             this.zobrazStrechu3d = true;
-            this._poZmeneDomu('Střecha');
+            this._poZmeneDomu(preloz('ed_dum.strecha'));
         },
 
         setStrecha(klic, hodnota) {
@@ -1820,7 +1826,7 @@
             } else if (klic === 'barva') {
                 st.barva = hodnota;
             }
-            this._poZmeneDomu('Střecha');
+            this._poZmeneDomu(preloz('ed_dum.strecha'));
         },
 
         setHranaStrechy(klic, nastav) {
@@ -1835,7 +1841,7 @@
             if (hrana.vyskaOkapu !== undefined) hrana.vyskaOkapu = omez(hrana.vyskaOkapu, 0, 12);
             st.hrany = { ...(st.hrany || {}), [klic]: hrana };
             if (!Object.keys(hrana).length) { const { [klic]: _pryc, ...zbytek } = st.hrany; st.hrany = zbytek; }
-            this._poZmeneDomu('Hrana střechy');
+            this._poZmeneDomu(preloz('ed_dum.hrana_strechy'));
         },
 
         // ─── Barvy ─────────────────────────────────────────────
@@ -1853,10 +1859,10 @@
                 if (!mapa.has(k)) mapa.set(k, new Set());
                 mapa.get(k).add(kde);
             };
-            for (const s of d.schodiste) pridej('schody:' + s.id, s.barva || BARVA_SCHODU, 'Schody');
+            for (const s of d.schodiste) pridej('schody:' + s.id, s.barva || BARVA_SCHODU, preloz('ed_dum.barvy.schody'));
             if (d.strecha) {
-                pridej('strecha', barvaKrytiny(d.strecha), 'Střecha');
-                for (const [k, h] of Object.entries(d.strecha.hrany || {})) pridej('hrana:' + k, h.barva, 'Hrana střechy');
+                pridej('strecha', barvaKrytiny(d.strecha), preloz('ed_dum.strecha'));
+                for (const [k, h] of Object.entries(d.strecha.hrany || {})) pridej('hrana:' + k, h.barva, preloz('ed_dum.hrana_strechy'));
             }
             // Fasáda a otvory se počítají, jen když na domě opravdu jsou
             let steny = false;
@@ -1871,16 +1877,20 @@
                     if (!s || !wall) continue;
                     skupiny.add(this._stranaVen(eng, wall, o, this._rastrPodlazi(eng, p.id)) ? s : this.barvaVnitrniho(o.typ));
                 }
-                for (const m of eng.mistnosti || []) if (m.podlaha) pridej('podlaha:' + m.id, barvaPodlahy(m.podlaha), 'Podlaha, ' + (m.nazev || 'místnost'));
+                for (const m of eng.mistnosti || []) if (m.podlaha) pridej('podlaha:' + m.id, barvaPodlahy(m.podlaha), preloz('ed_dum.barvy.podlaha', { nazev: m.nazev || preloz('ed_dum.barvy.mistnost') }));
             }
-            if (steny) pridej('fasada', d.barvy.fasada, 'Fasáda');
-            const NAZVY = { okno: 'Okna', dvere: 'Vchodové dveře', vrata: 'Vrata' };
+            if (steny) pridej('fasada', d.barvy.fasada, preloz('ed_dum.barvy.fasada'));
+            const NAZVY = {
+                okno: ['ed_dum.barvy.okna_venku', 'ed_dum.barvy.okna_uvnitr'],
+                dvere: ['ed_dum.barvy.dvere_venku', 'ed_dum.barvy.dvere_uvnitr'],
+                vrata: ['ed_dum.barvy.vrata_venku', 'ed_dum.barvy.vrata_uvnitr'],
+            };
             for (const s of skupiny) {
                 if (NAZVY[s]) {
-                    pridej(s + 'Ven', d.barvy[s + 'Ven'], NAZVY[s] + ' venku');
-                    pridej(s + 'Dovnitr', d.barvy[s + 'Dovnitr'], NAZVY[s] + ' uvnitř');
+                    pridej(s + 'Ven', d.barvy[s + 'Ven'], preloz(NAZVY[s][0]));
+                    pridej(s + 'Dovnitr', d.barvy[s + 'Dovnitr'], preloz(NAZVY[s][1]));
                 } else {
-                    pridej(s, d.barvy[s], s === 'dvereVnitrni' ? 'Vnitřní dveře' : (s === 'oknoDovnitr' ? 'Okna uvnitř' : 'Vrata uvnitř'));
+                    pridej(s, d.barvy[s], preloz(s === 'dvereVnitrni' ? 'ed_dum.barvy.dvere_vnitrni' : (s === 'oknoDovnitr' ? 'ed_dum.barvy.okna_uvnitr' : 'ed_dum.barvy.vrata_uvnitr')));
                 }
             }
             return [...mapa].map(([hex, kde]) => ({ hex, kde: [...kde].join(', ') }));
@@ -1931,7 +1941,7 @@
             if (!/^#[0-9a-fA-F]{6}$/.test(hex) || d.barvy[klic] === hex) return;
             this.engine.pushUndo();
             d.barvy[klic] = hex;
-            this._poZmeneDomu('Barva domu');
+            this._poZmeneDomu(preloz('ed_dum.krok.barva_domu'));
         },
 
         /** Podlaha místnosti pro panel: bez nastavení vypadá jako hladká deska. */
@@ -1977,14 +1987,14 @@
             this.engine.pushUndo();
             const { [klic]: _pryc, ...zbytek } = st.hrany;
             st.hrany = zbytek;
-            this._poZmeneDomu('Hrana střechy');
+            this._poZmeneDomu(preloz('ed_dum.hrana_strechy'));
         },
 
         smazatStrechu() {
             this.engine.pushUndo();
             this.engine.dum.strecha = null;
             this.strechaHrana = null;
-            this._poZmeneDomu('Smazání střechy');
+            this._poZmeneDomu(preloz('ed_dum.krok.smazani_strechy'));
         },
 
         /** Výška průsečíku střešní roviny s lícem stěny, nad podlahou horního podlaží (m). */
@@ -2093,7 +2103,7 @@
                     kind: 'schodiste', count: 1, id: s.id, tvar: s.tvar || 'prime', sirka: s.sirka, casti: g.casti,
                     barva: s.barva || BARVA_SCHODU, vyskaRucne: !!s.vyskaStupne, naslapRucne: !!s.naslap,
                     n: g.n, v: g.v, b: g.b, delka: g.delka, pohodlne: g.pohodlne,
-                    trasa: s.odPodlazi === s.doPodlazi ? 'mezi úrovněmi, ' + (od?.nazev || '') : (od?.nazev || '?') + ' → ' + (kam?.nazev || '?'),
+                    trasa: s.odPodlazi === s.doPodlazi ? preloz('ed_dum.schody_mezi_urovnemi', { nazev: od?.nazev || '' }) : (od?.nazev || '?') + ' → ' + (kam?.nazev || '?'),
                 };
             }
             // Přenesená zvýšená plocha bez uzavřené místnosti pod ní (jinak ji vypíše panel místnosti)
@@ -2223,7 +2233,7 @@
             if (!t.posun) return true;
             if (t.typ === 'podklad') { this.podkladUloz?.(); return true; }
             this.renderer._mistnostiCache = null;
-            this._poZmeneDomu(t.typ === 'schody' ? 'Posun schodiště' : 'Otočení schodiště');
+            this._poZmeneDomu(preloz(t.typ === 'schody' ? 'ed_dum.krok.posun_schodiste' : 'ed_dum.krok.otoceni_schodiste'));
             return true;
         },
 
@@ -2301,7 +2311,7 @@
                             for (const poly of pod) srafa(c, poly, 10 / s, 'rgba(107,114,128,.45)', 1 / s);
                         },
                     }));
-                    const rady = [{ z: 1.3, t: '1,30 m', dash: [] }, { z: 1.8, t: '1,80 m', dash: [6, 4] }, { z: 2.3, t: '2,30 m', dash: [2, 4] }];
+                    const rady = [{ z: 1.3, t: prelozCislo(1.3, 2) + ' m', dash: [] }, { z: 1.8, t: prelozCislo(1.8, 2) + ' m', dash: [6, 4] }, { z: 2.3, t: prelozCislo(2.3, 2) + ' m', dash: [2, 4] }];
                     for (const ra of rady) {
                         const usecky = window.Strecha.izocara(st.plochy, ra.z);
                         let nej = null;
@@ -2341,7 +2351,7 @@
                         strokeScaleEnabled: false, dash: [6, 4], listening: false,
                     }));
                     const sx = poly.reduce((v, p) => v + p.x, 0) / poly.length, sy = poly.reduce((v, p) => v + p.y, 0) / poly.length;
-                    const stitek = (a.dh > 0 ? '+' : '') + Math.round((a.dh || 0) * 100) + ' cm z ' + (this.engine.podlaziPodleId(a.podlazi)?.nazev || 'podlaží níž');
+                    const stitek = preloz('ed_dum.plocha_stitek', { vyska: (a.dh > 0 ? '+' : '') + Math.round((a.dh || 0) * 100), podlazi: this.engine.podlaziPodleId(a.podlazi)?.nazev || preloz('ed_dum.podlazi_niz') });
                     popisek(r.plochyLayer, sx, sy + r.velikostPopisku(24), stitek, vybrana ? primary : textBarva, 10);
                 }
             }
@@ -2373,7 +2383,7 @@
                     points: body(sipka), stroke: barva, fill: barva, strokeWidth: 1.5, strokeScaleEnabled: false,
                     pointerLength: 8 / s, pointerWidth: 7 / s, listening: false,
                 }));
-                const hlava = dole ? `↑ ${g.n} × ${Math.round(g.v * 1000)}/${Math.round(g.b * 1000)}` : '↓ dolů';
+                const hlava = dole ? `↑ ${g.n} × ${Math.round(g.v * 1000)}/${Math.round(g.b * 1000)}` : preloz('ed_dum.schody_dolu');
                 // Štítek vedle obrysu (na obrazovce): na stupních by se pral se šipkou, u krátkých schodů je širší
                 // než ony. Pod schody, a když tam leží název místnosti, nad nimi nebo po stranách.
                 const tr = r.stage.getAbsoluteTransform();
@@ -2507,7 +2517,7 @@
                 cara.setAttr('_hranaStrechy', h.klic);
                 r.strechaLayer.add(cara);
                 popisek(r.strechaLayer, (h.a.x + h.b.x) / 2 * PX, (h.a.y + h.b.y) / 2 * PX,
-                    h.typ === 'okap' ? h.sklon + '°' : 'štít', '#1d4ed8', 11);
+                    h.typ === 'okap' ? h.sklon + '°' : preloz('ed_dum.stit'), '#1d4ed8', 11);
             }
         },
 
@@ -2636,36 +2646,38 @@
             const z = this.zemina;
             if (!z) return '';
             const vykop = z.vykopek.vykopano + z.ornice.vykopano;
-            if (z.bezZakladu <= 0.5) return this.m3(vykop) + ' výkop';
-            return vykop >= 0.5 ? 'chybí základ, ' + this.m3(vykop) + ' výkop' : 'chybí základ';
+            if (z.bezZakladu <= 0.5) return preloz('ed_dum.zaklady.vykop', { objem: this.m3(vykop) });
+            return vykop >= 0.5 ? preloz('ed_dum.zaklady.chybi_vykop', { objem: this.m3(vykop) }) : preloz('ed_dum.zaklady.chybi');
         },
 
         /** Upozornění v panelu Základů: které části domu na zem nedosáhnou. */
         get zakladyChybi() {
             const casti = (this.zemina?.casti || []).filter(c => c.bezZakladu > 0.5);
             if (!casti.length) return '';
-            return 'Chybí základ: ' + casti.map(c => c.nazev + ' ' + c.bezZakladu.toFixed(1).replace('.', ',') + ' m²').join(', ')
-                + '. Dům tu nedosahuje na terén, proto se tu nekope.';
+            return preloz('ed_dum.zaklady.chybi_upozorneni', { seznam: casti.map(c => c.nazev + ' ' + prelozCislo(c.bezZakladu, 1) + ' m²').join(', ') });
         },
 
         get terenPopis() {
             const t = this.maZaklady ? this._terenDomu() : null;
-            if (typeof t?.nula !== 'number') return 'Terén: rovina, výšková data nejsou k dispozici.';
-            return 'Terén pod domem: ' + t.nula.toFixed(2).replace('.', ',') + ' m n.m. (podle výškových dat)';
+            if (typeof t?.nula !== 'number') return preloz('ed_dum.zaklady.teren_rovina');
+            return preloz('ed_dum.zaklady.teren_vyska', { vyska: prelozCislo(t.nula, 2) });
         },
 
         /** Řádky bloku Materiály. Záporný přebytek znamená, že zemina chybí. */
         get materialyRadky() {
             const z = this.zemina;
             if (!z) return [];
-            const radek = (id, nazev, v) => v.prebytek < -0.5
-                ? { id, nazev: nazev + ' chybí', rostly: this.m3(-v.prebytek), nakypreny: '—' }
-                : { id, nazev: nazev + ' navíc', rostly: this.m3(v.prebytek), nakypreny: this.m3(v.prebytekNakypreny) };
-            return [radek('vykopek', 'Výkopek', z.vykopek), radek('ornice', 'Ornice', z.ornice)];
+            const radek = (id, klicChybi, klicNavic, v) => v.prebytek < -0.5
+                ? { id, nazev: preloz(klicChybi), rostly: this.m3(-v.prebytek), nakypreny: '—' }
+                : { id, nazev: preloz(klicNavic), rostly: this.m3(v.prebytek), nakypreny: this.m3(v.prebytekNakypreny) };
+            return [
+                radek('vykopek', 'ed_dum.zaklady.vykopek_chybi', 'ed_dum.zaklady.vykopek_navic', z.vykopek),
+                radek('ornice', 'ed_dum.zaklady.ornice_chybi', 'ed_dum.zaklady.ornice_navic', z.ornice),
+            ];
         },
 
         m3(v) {
-            return 'cca ' + Math.round(Math.max(0, v)) + ' m³';
+            return preloz('ed_dum.zaklady.objem', { objem: Math.round(Math.max(0, v)) });
         },
 
         zakladyHodnota(klic) {
@@ -2687,14 +2699,14 @@
             if (typeof hodnota !== 'number' || isNaN(hodnota) || hodnota < 0) return;
             this.engine.pushUndo();
             this.engine.dum.zaklady = { ...(this.engine.dum.zaklady || {}), [klic]: Math.round(hodnota * 1000) / 1000 };
-            this._poZmeneDomu('Základy');
+            this._poZmeneDomu(preloz('ed_dum.krok.zaklady'));
         },
 
         setTypZakladu(id, typ) {
             this.engine.pushUndo();
             const z = this.engine.dum.zaklady || {};
             this.engine.dum.zaklady = { ...z, casti: { ...(z.casti || {}), [id]: typ } };
-            this._poZmeneDomu('Základy');
+            this._poZmeneDomu(preloz('ed_dum.krok.zaklady'));
         },
 
         /** Výška nad terénem je kóta 1.NP, proto jde stejnou cestou jako její přepsání. */

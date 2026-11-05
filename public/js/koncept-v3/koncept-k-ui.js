@@ -148,9 +148,9 @@ function konceptKEditor(initialData) {
         _katastrData: null,
         _katastrOkolni: null,
         _katastrDruhCz: {
-            'ArableGround': 'Orná půda', 'Grassland': 'Trvalý travní porost', 'Garden': 'Zahrada',
-            'Orchard': 'Ovocný sad', 'Forest': 'Lesní pozemek', 'WaterArea': 'Vodní plocha',
-            'BuiltUpArea': 'Zastavěná plocha', 'OtherArea': 'Ostatní plocha',
+            'ArableGround': preloz('ed_ui.druh_orna_puda'), 'Grassland': preloz('ed_ui.druh_travni_porost'), 'Garden': preloz('ed_ui.druh_zahrada'),
+            'Orchard': preloz('ed_ui.druh_sad'), 'Forest': preloz('ed_ui.druh_les'), 'WaterArea': preloz('ed_ui.druh_voda'),
+            'BuiltUpArea': preloz('ed_ui.druh_zastavena'), 'OtherArea': preloz('ed_ui.druh_ostatni'),
         },
 
         // ─── Zvýrazňovač ──────────────────────────────────────
@@ -188,7 +188,7 @@ function konceptKEditor(initialData) {
             return 'display:grid;grid-template-columns:' + first + 'fr 10px ' + third + 'fr;grid-template-rows:1fr';
         },
         get layoutTip() {
-            return this.layoutMode === 0 ? 'Text vlevo, grafika vpravo' : 'Grafika vlevo, text vpravo';
+            return this.layoutMode === 0 ? preloz('ed_ui.rozlozeni_text_vlevo') : preloz('ed_ui.rozlozeni_grafika_vlevo');
         },
         get seznamObjektu() {
             // eslint-disable-next-line no-unused-vars
@@ -249,10 +249,10 @@ function konceptKEditor(initialData) {
                 // a parapet dílu mají jen okno a francouzské okno.
                 const jeDvere = sameTyp && (typ0 === 'dvere' || typ0 === 'garazova_vrata' || typ0 === 'pruchod');
                 const dvereVolby = typ0 === 'garazova_vrata'
-                    ? [{ key: 'posuvne', label: 'Sekční / posuvná' }, { key: 'dvoukridle', label: 'Dvoukřídlá' }]
+                    ? [{ key: 'posuvne', label: preloz('ed_ui.vrata_sekcni') }, { key: 'dvoukridle', label: preloz('ed_ui.vrata_dvoukridla') }]
                     : typ0 === 'dvere'
-                        ? [{ key: 'pravy', label: 'Pravé' }, { key: 'levy', label: 'Levé' }, { key: 'dvoukridle', label: 'Dvoukřídlé' },
-                           { key: 'posuvne', label: 'Posuvné do pouzdra' }, { key: 'otvor', label: 'Otvor bez křídla' }]
+                        ? [{ key: 'pravy', label: preloz('ed_ui.dvere_prave') }, { key: 'levy', label: preloz('ed_ui.dvere_leve') }, { key: 'dvoukridle', label: preloz('ed_ui.dvere_dvoukridle') },
+                           { key: 'posuvne', label: preloz('ed_ui.dvere_posuvne') }, { key: 'otvor', label: preloz('ed_ui.dvere_bez_kridla') }]
                         : [];
                 const dvereSmer0 = this._dvereSmer(openings[0]);
                 const sameDvereSmer = openings.every(o => this._dvereSmer(o) === dvereSmer0);
@@ -266,7 +266,7 @@ function konceptKEditor(initialData) {
                     obvodovy: this.otvoryObvodove(openings),
                     count: openings.length,
                     typ: sameTyp ? typ0 : null,
-                    typLabel: sameTyp && cfg ? cfg.nazev : 'Různé typy',
+                    typLabel: sameTyp && cfg ? cfg.nazev : preloz('ed_ui.ruzne_typy'),
                     sirka: sameSirka ? openings[0].sirka : null,
                     sirky: sameTyp && cfg ? cfg.standardSirky : [],
                     vyska: sameVyska ? vyska0 : null,
@@ -301,7 +301,7 @@ function konceptKEditor(initialData) {
                 const odd = [...sr].map(id => this.engine.oddelovace.get(id)).filter(Boolean);
                 if (odd.length === 0) return null;
                 const delka = odd.length === 1 ? this.engine.delkaOddelovace(odd[0]) / this.PX_PER_M : null;
-                const konce = odd.length === 1 ? [odd[0].a, odd[0].b].map(k => k.host ? 'na stěně ' + k.host.stena : 'volný') : null;
+                const konce = odd.length === 1 ? [odd[0].a, odd[0].b].map(k => k.host ? preloz('ed_ui.konec_na_stene', { stena: k.host.stena }) : preloz('ed_ui.konec_volny')) : null;
                 return { kind: 'oddelovac', count: odd.length, delka, konce };
             }
             // Jen stěny
@@ -318,7 +318,7 @@ function konceptKEditor(initialData) {
                     kind: walls.length > 1 ? 'wall_multi' : 'wall',
                     count: walls.length,
                     typ: sameTyp ? typ0 : null,
-                    typLabel: sameTyp && cfg ? cfg.nazev : 'Různé typy',
+                    typLabel: sameTyp && cfg ? cfg.nazev : preloz('ed_ui.ruzne_typy'),
                     typyVolby,
                     tloustka: sameTl ? walls[0].tloustka : null,
                     tloustky: sameTyp && cfg ? cfg.standardTloustky : [],
@@ -547,7 +547,7 @@ function konceptKEditor(initialData) {
             }
             const od = this._oddelovacStart;
             if (Math.hypot(u.bod.x - od.bod.x, u.bod.y - od.bod.y) < 0.1 * this.PX_PER_M) {
-                this.otvorHlaska('Oddělovač by byl kratší než 10 cm.');
+                this.otvorHlaska(preloz('ed_ui.oddelovac_kratky'));
                 return;
             }
             this.engine.pushUndo();
@@ -556,7 +556,7 @@ function konceptKEditor(initialData) {
             // Řetězení: další oddělovač hned navazuje na konec tohoto
             this._oddelovacStart = { bod: this.engine.bodKonceOddelovace(odd.b), host: odd.b.host ? { ...odd.b.host } : null };
             this.renderer.render();
-            this.autoSave('Oddělovač místnosti');
+            this.autoSave(preloz('ed_ui.krok_oddelovac'));
         },
 
         _oddelovacZrus() {
@@ -580,14 +580,14 @@ function konceptKEditor(initialData) {
             if (n === m.nazev) return;
             this.engine.pushUndo();
             m.nazev = n;
-            this._poUpraveOtvoru('Název místnosti');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_nazev_mistnosti'));
         },
         setMistnostBarva(hex) {
             const m = this._vybranaMistnost();
             if (!m || !/^#[0-9a-fA-F]{6}$/.test(hex) || hex === m.barva) return;
             this.engine.pushUndo();
             m.barva = hex;
-            this._poUpraveOtvoru('Barva místnosti');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_barva_mistnosti'));
         },
         /** Podlaha ve 3D: dekor a barva. Barva v půdorysu (`barva`) je na tom nezávislá. */
         setMistnostPodlaha(nastav) {
@@ -598,7 +598,7 @@ function konceptKEditor(initialData) {
             if (JSON.stringify(nova) === JSON.stringify(m.podlaha || null)) return;
             this.engine.pushUndo();
             m.podlaha = nova;
-            this._poUpraveOtvoru('Podlaha místnosti');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_podlaha_mistnosti'));
         },
 
         smazatVybraneOddelovace() {
@@ -608,7 +608,7 @@ function konceptKEditor(initialData) {
             for (const id of ids) this.engine.removeOddelovac(id);
             this.renderer.selectedOddelovace.clear();
             this.renderer.render();
-            this.autoSave('Smazání oddělovače');
+            this.autoSave(preloz('ed_ui.krok_smazani_oddelovace'));
             this._selectionTick++;
         },
 
@@ -695,7 +695,7 @@ function konceptKEditor(initialData) {
                 else continue;
                 o.smer = smerZKridel(o);
             }
-            this._poUpraveOtvoru('Směr otvírání');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_smer_otvirani'));
         },
 
         /** Počet dílů (křídel) na vybrané otvory; typ dílů zůstává, šířky se rozdělí rovnoměrně. */
@@ -709,7 +709,7 @@ function konceptKEditor(initialData) {
                 if (!o || !pocetKridelVolby(o.typ).includes(pocet)) continue;
                 nastavPocetKridel(o, pocet);
             }
-            this._poUpraveOtvoru('Počet dílů otvoru');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_pocet_dilu'));
         },
 
         /** Vybraný otvor (jen jeden) s uloženými křídly — odvozená se před úpravou zkopírují. */
@@ -730,7 +730,7 @@ function konceptKEditor(initialData) {
             this.engine.pushUndo();
             o.kridla[i].otv = otv;
             o.smer = smerZKridel(o);
-            this._poUpraveOtvoru('Typ křídla');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_typ_kridla'));
         },
 
         /**
@@ -743,7 +743,7 @@ function konceptKEditor(initialData) {
             const strop = vrsekOtvoru(o) - 0.3;
             this.engine.pushUndo();
             nastavParapetKridla(o, o.kridla[i], Math.min(strop, novyParapet));
-            this._poUpraveOtvoru('Parapet dílu');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_parapet_dilu'));
         },
 
         /** Příznak sklopné u jednoho křídla (doplněk k typu). */
@@ -752,7 +752,7 @@ function konceptKEditor(initialData) {
             if (!o || !o.kridla[i]) return;
             this.engine.pushUndo();
             if (sklopne) o.kridla[i].sklopne = true; else delete o.kridla[i].sklopne;
-            this._poUpraveOtvoru('Sklopné křídlo');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_sklopne_kridlo'));
         },
 
         /**
@@ -770,7 +770,7 @@ function konceptKEditor(initialData) {
             this.engine.pushUndo();
             o.kridla[i].sirka = s;
             o.kridla[j].sirka = Math.round((spolecne - s) * 100) / 100;
-            this._poUpraveOtvoru('Šířka křídla');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_sirka_kridla'));
         },
 
         /** Výška stěny, ve které otvor sedí (strop výšky a parapetu otvoru). */
@@ -790,7 +790,7 @@ function konceptKEditor(initialData) {
                 const strop = this._vyskaStenyOtvoru(o) - parapetOtvoru(o);
                 o.vyska = Math.round(Math.min(strop, Math.max(0.3, novaVyska)) * 100) / 100;
             }
-            this._poUpraveOtvoru('Výška otvoru');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_vyska_otvoru'));
         },
 
         /** Parapet celého otvoru v m: otvor se posune, výška zůstane (i díly s vlastním parapetem jedou s ním). */
@@ -805,7 +805,7 @@ function konceptKEditor(initialData) {
                 const strop = this._vyskaStenyOtvoru(o) - vyskaOtvoru(o);
                 posunParapetOtvoru(o, Math.min(strop, novyParapet));
             }
-            this._poUpraveOtvoru('Parapet otvoru');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_parapet_otvoru'));
         },
 
         /** Zrcadlí sestavu křídel zleva doprava (pořadí křídel i strana pantů). */
@@ -818,7 +818,7 @@ function konceptKEditor(initialData) {
                 const o = this.engine.openings.get(id);
                 if (o) zrcadliKridla(o);
             }
-            this._poUpraveOtvoru('Zrcadlit otvor');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_zrcadlit_otvor'));
         },
 
         /**
@@ -836,7 +836,7 @@ function konceptKEditor(initialData) {
                 if (!kridlaOtvoru(o).some(k => k.otv !== 'fix')) continue;
                 o.strana = (o.strana === 'out') ? 'in' : 'out';
             }
-            this._poUpraveOtvoru('Otočit křídla');
+            this._poUpraveOtvoru(preloz('ed_ui.krok_otocit_kridla'));
         },
 
         /**
@@ -875,7 +875,7 @@ function konceptKEditor(initialData) {
                 }
             }
             this.renderer.render();
-            this.autoSave('Šířka otvoru');
+            this.autoSave(preloz('ed_ui.krok_sirka_otvoru'));
             this._selectionTick++;
         },
 
@@ -895,7 +895,7 @@ function konceptKEditor(initialData) {
                 w.tloustka = snapWallTloustka(w.tloustka, novyTyp);
             }
             this.renderer.render();
-            this.autoSave('Typ stěny');
+            this.autoSave(preloz('ed_ui.krok_typ_steny'));
             this._selectionTick++;
         },
 
@@ -912,7 +912,7 @@ function konceptKEditor(initialData) {
                 else delete w.vyska;
             }
             this.renderer.render();
-            this.autoSave('Výška stěny');
+            this.autoSave(preloz('ed_ui.krok_vyska_steny'));
             this._selectionTick++;
         },
 
@@ -936,7 +936,7 @@ function konceptKEditor(initialData) {
                     : snapWallTloustka(novaTloustka, w.typ);
             }
             this.renderer.render();
-            this.autoSave('Tloušťka stěny');
+            this.autoSave(preloz('ed_ui.krok_tloustka_steny'));
             this._selectionTick++;
         },
 
@@ -1300,10 +1300,10 @@ function konceptKEditor(initialData) {
                 const w = this.engine.walls.get(wId);
                 if (!w) continue;
                 if (w.odConstraint && !selWalls.has(w.odConstraint.host)) {
-                    return 'Napojení na stěnu ' + w.odConstraint.host + ' mimo výběr';
+                    return preloz('ed_ui.otoceni_napojeni', { stena: w.odConstraint.host });
                 }
                 if (w.doConstraint && !selWalls.has(w.doConstraint.host)) {
-                    return 'Napojení na stěnu ' + w.doConstraint.host + ' mimo výběr';
+                    return preloz('ed_ui.otoceni_napojeni', { stena: w.doConstraint.host });
                 }
             }
             // B) nevybraná stěna sdílí uzel s výběrem (roh)
@@ -1311,13 +1311,13 @@ function konceptKEditor(initialData) {
             for (const w of this.engine.walls.values()) {
                 if (selWalls.has(w.id)) continue;
                 if (nodeIds.has(w.nodeA) || nodeIds.has(w.nodeB)) {
-                    return 'Sdílený roh se stěnou ' + w.id + ' mimo výběr';
+                    return preloz('ed_ui.otoceni_roh', { stena: w.id });
                 }
                 if (w.odConstraint && selWalls.has(w.odConstraint.host)) {
-                    return 'Stěna ' + w.id + ' je napojena na výběr';
+                    return preloz('ed_ui.otoceni_napojena', { stena: w.id });
                 }
                 if (w.doConstraint && selWalls.has(w.doConstraint.host)) {
-                    return 'Stěna ' + w.id + ' je napojena na výběr';
+                    return preloz('ed_ui.otoceni_napojena', { stena: w.id });
                 }
             }
             return null;
@@ -1386,7 +1386,7 @@ function konceptKEditor(initialData) {
 
             this.renderer.setSelection([stena.id], []);
             this.renderer.render();
-            this.autoSave('Sloučení stěn');
+            this.autoSave(preloz('ed_ui.krok_slouceni_sten'));
         },
 
         // ═══════════════════════════════════════════════════════
@@ -2310,7 +2310,7 @@ function konceptKEditor(initialData) {
             this.kotaEdit = null;
             const cm = parseFloat(String(hodnota).replace(',', '.'));
             if (!isFinite(cm) || Math.abs(cm - edit.k.hodnotaCm) < 0.01) return;
-            if (cm < 0) { this._dumHlaska('Vzdálenost nemůže být záporná.'); return; }
+            if (cm < 0) { this._dumHlaska(preloz('ed_ui.vzdalenost_zaporna')); return; }
             const px = cm / 100 * this.PX_PER_M;
             if (edit.k.typ === 'stena') this._kotaPosunSteny(edit.k, px, cm);
             else this._kotaPosunOtvoru(edit.k, px, cm);
@@ -2357,14 +2357,14 @@ function konceptKEditor(initialData) {
                 e.undo();
                 this.renderer.render();
                 this._selectionTick++;
-                this._dumHlaska('Tahle stěna se posunout nedá, stejně jako při tažení myší.');
+                this._dumHlaska(preloz('ed_ui.stena_neposunout'));
                 return;
             }
             this.renderer.render();
-            this.autoSave('Posun stěny');
+            this.autoSave(preloz('ed_ui.krok_posun_steny'));
             this._selectionTick++;
             const dosazeno = po / this.PX_PER_M * 100;
-            if (Math.abs(dosazeno - cm) > 0.5) this._dumHlaska('Dál stěna nejde. Vzdálenost je ' + window.KotyVyberu.text(po, this.PX_PER_M) + ' cm místo ' + cm + ' cm.');
+            if (Math.abs(dosazeno - cm) > 0.5) this._dumHlaska(preloz('ed_ui.stena_dal_nejde', { vzdalenost: window.KotyVyberu.text(po, this.PX_PER_M), zadano: cm }));
         },
 
         /** Posun otvoru po stěně: stejné meze jako tažení myší (i s pouzdrem posuvných dveří). */
@@ -2379,13 +2379,13 @@ function konceptKEditor(initialData) {
             const L = Math.hypot(nB.x - nA.x, nB.y - nA.y) / this.PX_PER_M;
             const chci = op.pozice + (k.smer < 0 ? zmena : -zmena);
             const nova = Math.max(ext.leftExt, Math.min(L - ext.rightExt, chci));
-            if (Math.abs(nova - op.pozice) < 0.0005) { this._dumHlaska('Otvor už dál nejde.'); return; }
+            if (Math.abs(nova - op.pozice) < 0.0005) { this._dumHlaska(preloz('ed_ui.otvor_dal_nejde')); return; }
             e.pushUndo();
             op.pozice = nova;
             this.renderer.render();
-            this.autoSave('Posun otvoru');
+            this.autoSave(preloz('ed_ui.krok_posun_otvoru'));
             this._selectionTick++;
-            if (Math.abs(nova - chci) > 0.005) this._dumHlaska('Otvor dál nejde, je na konci stěny. Zadáno ' + cm + ' cm.');
+            if (Math.abs(nova - chci) > 0.005) this._dumHlaska(preloz('ed_ui.otvor_na_konci', { zadano: cm }));
         },
 
         onMouseMove(e) {
@@ -3506,7 +3506,7 @@ function konceptKEditor(initialData) {
                 this.renderer.render();
                 if (Math.abs(this._rotateDelta || 0) > 1e-6) {
                     const deg = (this._rotateDelta * 180 / Math.PI).toFixed(1);
-                    this.autoSave('Rotace ' + deg + '°');
+                    this.autoSave(preloz('ed_ui.krok_rotace', { stupne: deg }));
                 }
                 this._rotateDelta = 0;
                 return;
@@ -3525,7 +3525,7 @@ function konceptKEditor(initialData) {
                 this.isDraggingOpening = false;
                 this.draggingOpeningId = null;
                 this.renderer.render();
-                this.autoSave('Posun otvoru');
+                this.autoSave(preloz('ed_ui.krok_posun_otvoru'));
                 return;
             }
 
@@ -3542,7 +3542,7 @@ function konceptKEditor(initialData) {
                 if (odd) odd.delkaPx = this.engine.delkaOddelovace(odd);
                 this.engine.uklidOddelovace();
                 this.renderer.render();
-                this.autoSave('Posun oddělovače');
+                this.autoSave(preloz('ed_ui.krok_posun_oddelovace'));
                 return;
             }
 
@@ -3560,7 +3560,7 @@ function konceptKEditor(initialData) {
                 this.dragVybaveniStart = null;
                 this.katalogTahKonec?.();
                 this.renderer.render();
-                this.autoSave('Posun nábytku');
+                this.autoSave(preloz('ed_ui.krok_posun_nabytku'));
                 return;
             }
 
@@ -3611,7 +3611,7 @@ function konceptKEditor(initialData) {
                         }
                         this._dokonciStrihZacatku();
                         this.renderer.render();
-                        this.autoSave('Napojení na čelo stěny');
+                        this.autoSave(preloz('ed_ui.krok_napojeni_na_celo'));
                         return;
                     }
 
@@ -3721,7 +3721,7 @@ function konceptKEditor(initialData) {
                 }
 
                 this.renderer.render();
-                this.autoSave(dalsiStart ? 'Nová stěna' : 'Posun bodu');
+                this.autoSave(dalsiStart ? preloz('ed_ui.krok_nova_stena') : preloz('ed_ui.krok_posun_bodu'));
                 return;
             }
 
@@ -3758,7 +3758,7 @@ function konceptKEditor(initialData) {
                     this._podkladPohnut = false;
                     this.podkladUloz?.();
                 }
-                this.autoSave('Posun stěny');
+                this.autoSave(preloz('ed_ui.krok_posun_steny'));
                 return;
             }
 
@@ -3882,7 +3882,7 @@ function konceptKEditor(initialData) {
             if (this.nastroj === 'otvor') {
                 const wall = this.engine.findWallAt(pos.x, pos.y);
                 if (!wall) {
-                    this.otvorHlaska('Klikněte na stěnu, do které má otvor přijít.');
+                    this.otvorHlaska(preloz('ed_ui.klikni_na_stenu'));
                     return;
                 }
                 const nA = this.engine.nodes.get(wall.nodeA);
@@ -3899,7 +3899,7 @@ function konceptKEditor(initialData) {
                 let pozice = Math.max(0, Math.min(1, t)) * delkaM;
 
                 if (delkaM < this.otvorSirka) {
-                    this.otvorHlaska('Stěna je kratší než otvor — měří jen ' + delkaM.toFixed(2) + ' m.');
+                    this.otvorHlaska(preloz('ed_ui.stena_kratsi', { delka: delkaM.toFixed(2) }));
                     return;
                 }
 
@@ -3915,7 +3915,7 @@ function konceptKEditor(initialData) {
                     // zapíná znovu (jedno kliknutí = jeden otvor).
                     this.nastroj = 'vyber';
                     this.renderer.setSelection([], [], [otvor.id !== undefined ? otvor.id : otvor]);
-                    this.autoSave('Nový otvor');
+                    this.autoSave(preloz('ed_ui.krok_novy_otvor'));
                 }
                 return;
             }
@@ -4914,7 +4914,7 @@ function konceptKEditor(initialData) {
             if (!dole || (w.typ === dole.typ && Math.abs(w.tloustka - dole.tloustka) < 0.001)) return;
             w.typ = dole.typ;
             w.tloustka = dole.tloustka;
-            this._dumHlaska('Stěna převzala typ a tloušťku stěny pod sebou (' + TYPY_STEN[dole.typ].nazev.toLowerCase() + ', ' + Math.round(dole.tloustka * 100) + ' cm). Jinou nastavíte v jejím panelu.');
+            this._dumHlaska(preloz('ed_ui.stena_prevzala', { typ: TYPY_STEN[dole.typ].nazev.toLowerCase(), tloustka: Math.round(dole.tloustka * 100) }));
         },
 
         /** Zahodí rozkreslený (dosud neukotvený) úsek stěny. */
@@ -4963,7 +4963,7 @@ function konceptKEditor(initialData) {
             this.engine.pushUndo();
             this.engine.removeWall(posledni.id);
             this.renderer.render();
-            this.autoSave('Zpět po bodech');
+            this.autoSave(preloz('ed_ui.krok_zpet_po_bodech'));
         },
 
         // ═══════════════════════════════════════════════════════
@@ -5033,7 +5033,7 @@ function konceptKEditor(initialData) {
                     this.draggingWallId = null;
                     this.renderer.clearSelection();
                     this.renderer.render();
-                    this.autoSave("Smazání stěny");
+                    this.autoSave(preloz('ed_ui.krok_smazani_steny'));
                     return;
                 }
                 if (this.isDraggingNode && this.draggingNodeId) {
@@ -5048,7 +5048,7 @@ function konceptKEditor(initialData) {
                     this._attachSlideInfo = null;
                     this.renderer.clearSelection();
                     this.renderer.render();
-                    this.autoSave("Smazání bodu");
+                    this.autoSave(preloz('ed_ui.krok_smazani_bodu'));
                     return;
                 }
                 if (this.isDraggingOpening && this.draggingOpeningId) {
@@ -5058,7 +5058,7 @@ function konceptKEditor(initialData) {
                     this.draggingOpeningId = null;
                     this.renderer.clearSelection();
                     this.renderer.render();
-                    this.autoSave("Smazání otvoru");
+                    this.autoSave(preloz('ed_ui.krok_smazani_otvoru'));
                     return;
                 }
                 if (this.isDraggingVybaveni && this.draggingVybaveniId) {
@@ -5068,7 +5068,7 @@ function konceptKEditor(initialData) {
                     this.draggingVybaveniId = null;
                     this.renderer.clearSelection();
                     this.renderer.render();
-                    this.autoSave("Smazání nábytku");
+                    this.autoSave(preloz('ed_ui.krok_smazani_nabytku'));
                     return;
                 }
                 // Jinak smazat vybrané — stěny + otvory + volné uzly + vybavení + místnosti
@@ -5103,7 +5103,7 @@ function konceptKEditor(initialData) {
                     this.engine.cleanupOrphanProstory();
                     this.renderer.clearSelection();
                     this.renderer.render();
-                    this.autoSave("Smazání objektu");
+                    this.autoSave(preloz('ed_ui.krok_smazani_objektu'));
                 }
                 return;
             }
@@ -5381,7 +5381,7 @@ function konceptKEditor(initialData) {
                 const d = await resp.json();
                 if (d.error || !d.parcela) {
                     // Chyba serveru (500) vrací jen {message} — bez parcely nepokračovat
-                    this.katastrChyba = d.error || d.message || 'Parcelu se nepodařilo načíst.';
+                    this.katastrChyba = d.error || d.message || preloz('ed_ui.parcela_nenactena');
                     this.katastrNacitani = false;
                     return;
                 }
@@ -5396,7 +5396,7 @@ function konceptKEditor(initialData) {
                     && (p.ku_kod || '') === (parcela.ku_kod || '')
                 );
                 if (jeDuplicita) {
-                    this.katastrChyba = 'Tato parcela už je přidaná.';
+                    this.katastrChyba = preloz('ed_ui.parcela_duplicita');
                     this.katastrNacitani = false;
                     return;
                 }
@@ -5415,7 +5415,7 @@ function konceptKEditor(initialData) {
                         const sD = await sResp.json();
                         parcela._sousedi = sD.sousedi;
                         if (!sD.sousedi || sD.sousedi === false) {
-                            this.katastrChyba = 'Parcela nesousedí s žádnou z načtených parcel. Lze přidat pouze sousedící parcely.';
+                            this.katastrChyba = preloz('ed_ui.parcela_nesousedi');
                             this.katastrNacitani = false;
                             return;
                         }
@@ -5446,7 +5446,7 @@ function konceptKEditor(initialData) {
                 this._katastrAutosave();
 
             } catch (e) {
-                this.katastrChyba = 'Chyba: ' + e.message;
+                this.katastrChyba = preloz('ed_ui.chyba_zprava', { zprava: e.message });
                 window.zalogujChybu?.(e, 'Koncept V3: načtení parcely', {
                     projektId: this.projektId, ku: this.katastrVybraneKu, cislo: this.katastrCislo, typ: this.katastrTyp,
                 });
@@ -5515,7 +5515,7 @@ function konceptKEditor(initialData) {
                 'returnGeometry=false',
                 'f=pjson',
             ].join('&');
-            const RADON_IDX = { '1': 'nízký', '2': 'přechodný', '3': 'střední', '4': 'vysoký' };
+            const RADON_IDX = { '1': preloz('ed_ui.radon_nizky'), '2': preloz('ed_ui.radon_prechodny'), '3': preloz('ed_ui.radon_stredni'), '4': preloz('ed_ui.radon_vysoky') };
             // Radon + geologie (layer 1). layers=all:1 = prohledat layer 1 bez ohledu
             // na scale visibility (visible:1 občas selže pokud scale mimo layer range).
             try {
@@ -5629,7 +5629,7 @@ function konceptKEditor(initialData) {
             };
             const res = await this.vysvetliPojem(text, kontextMap[pole]);
             const current = this.katastrParcely[parcelaIdx];
-            const val = res.ok ? { loading: false, popis: res.popis } : { loading: false, error: res.error || 'Chyba' };
+            const val = res.ok ? { loading: false, popis: res.popis } : { loading: false, error: res.error || preloz('ed_ui.chyba') };
             this.katastrParcely[parcelaIdx] = {
                 ...current,
                 _vysvetleni: { ...(current._vysvetleni || {}), [pole]: val },
@@ -5639,7 +5639,7 @@ function konceptKEditor(initialData) {
         async katastrOdeberParcelu(index) {
             // Varování při odebírání poslední parcely
             if (this.katastrParcely.length === 1) {
-                if (!confirm('Opravdu odebrat poslední parcelu? Ukotvení objektů k pozemku se tím ztratí.')) return;
+                if (!confirm(preloz('ed_ui.parcela_odebrat_posledni'))) return;
             }
             this.katastrParcely.splice(index, 1);
             this.katastrProfil = null;
@@ -6025,7 +6025,7 @@ function konceptKEditor(initialData) {
 
             // Vybrat nové objekty
             this.renderer.setSelection(newWallIds);
-            this.autoSave("Ctrl+V vložení");
+            this.autoSave(preloz('ed_ui.krok_vlozeni'));
         },
 
         // ═══════════════════════════════════════════════════════
@@ -6060,7 +6060,7 @@ function konceptKEditor(initialData) {
                 opening.nazev = this.editObjektNazev.trim();
             }
             this.editObjektId = null;
-            this.autoSave("Přejmenování objektu");
+            this.autoSave(preloz('ed_ui.krok_prejmenovani_objektu'));
         },
 
         smazatObjekt(id) {
@@ -6072,7 +6072,7 @@ function konceptKEditor(initialData) {
             }
             this.renderer.clearSelection();
             this.renderer.render();
-            this.autoSave("Smazání objektu");
+            this.autoSave(preloz('ed_ui.krok_smazani_objektu'));
         },
 
         /** Výběr stěny nebo otvoru — společná cesta pro klik na plánku i v seznamu objektů. */
@@ -6212,7 +6212,7 @@ function konceptKEditor(initialData) {
             // Bez historie (nový koncept, data ze serveru) — výchozí krok, ať se
             // dá vrátit i úplně první úprava. Odešle se s první uloženou změnou.
             if (!this.historie.length && this.engine) {
-                const krok = this._novyKrok('Začátek', JSON.parse(this._stavKroku));
+                const krok = this._novyKrok(preloz('ed_ui.krok_zacatek'), JSON.parse(this._stavKroku));
                 this.historie = [krok];
                 this.historiePozice = 0;
                 this._neodeslaneKroky.push(krok.id);
@@ -6222,7 +6222,7 @@ function konceptKEditor(initialData) {
         _novyKrok(popis, data) {
             return {
                 id: 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-                popis: popis || 'Úprava',
+                popis: popis || preloz('ed_ui.krok_uprava'),
                 data,
                 cas: new Date().toISOString(),
                 podklad: this.podkladPolohaZachyt?.() ?? null,
@@ -6323,7 +6323,7 @@ function konceptKEditor(initialData) {
             this._zakladamKoncept = true;
             try {
                 const nazev = this.projektNazev
-                    || ('Koncept ' + new Date().toLocaleString('cs-CZ', { dateStyle: 'short', timeStyle: 'short' }));
+                    || (preloz('ed_ui.koncept_s_datem', { datum: new Date().toLocaleString(window.TT_LOKALIZACE.jazyk, { dateStyle: 'short', timeStyle: 'short' }) }));
                 const resp = await fetch(initialData.routes.vytvorit, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': initialData.csrf, 'Accept': 'application/json' },
@@ -6390,7 +6390,7 @@ function konceptKEditor(initialData) {
             if (!this.projektId) await this._zalozKoncept();
             if (!this.projektId) return;
             // Změna, která prošla bez autoSave (import, AI), dostane krok tady.
-            this._zapisKrok(this._posledniAkce || 'Úprava');
+            this._zapisKrok(this._posledniAkce || preloz('ed_ui.krok_uprava'));
             this._posledniAkce = null;
 
             // Neodeslané kroky jsou vždy souvislý konec osy — server je připojí
@@ -6931,7 +6931,7 @@ function konceptKEditor(initialData) {
 
         async smazatKoncept() {
             if (!this.projektId) return;
-            if (!confirm('Smazat koncept "' + (this.projektNazev || 'Nový koncept') + '"?')) return;
+            if (!confirm(preloz('ed_ui.koncept_smazat', { nazev: this.projektNazev || preloz('ed_ui.novy_koncept') }))) return;
             try {
                 await fetch(initialData.routes.smazat.replace(':id', this.projektId), {
                     method: 'DELETE',
@@ -6946,7 +6946,7 @@ function konceptKEditor(initialData) {
                 const resp = await fetch(initialData.routes.vytvorit, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': initialData.csrf, 'Accept': 'application/json' },
-                    body: JSON.stringify({ nazev: 'Nový koncept' }),
+                    body: JSON.stringify({ nazev: preloz('ed_ui.novy_koncept') }),
                 });
                 const d = await resp.json();
                 // tarif nedovolí další projekt — vrátit výběr a nabídnout předplatné (ne chyba)
@@ -6971,7 +6971,7 @@ function konceptKEditor(initialData) {
         _zrusVytvoreni(chyba, detaily) {
             this.projektId = initialData.projektId || '';
             window.zalogujChybu?.(chyba, 'Koncept V3: vytvoření konceptu', detaily);
-            alert('Nový koncept se nepodařilo vytvořit. Zkuste to prosím znovu.');
+            alert(preloz('ed_ui.novy_koncept_chyba'));
         },
 
         /** Klik v panelu Historie = skok na krok (jako několikrát Zpět/Vpřed). */

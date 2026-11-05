@@ -235,19 +235,19 @@
          :style="'order:' + (obracene ? 2 : 0) + ';min-width:0;min-height:0'">
         {{-- Toolbar — řádek 1: název, 2D/3D, zoom, layout, fullscreen --}}
         <div class="kk-lista flex items-center px-3 py-1.5 border-b border-gray-200 gap-1.5">
-            <span class="text-sm font-medium text-gray-700 truncate max-w-[200px]" x-text="projektNazev || 'Nový koncept'"></span>
+            <span class="text-sm font-medium text-gray-700 truncate max-w-[200px]" x-text="projektNazev || preloz('ed_sablona.lista.novy_nazev')"></span>
             {{-- Na jakém podlaží se kreslí, když je panel vpravo sbalený --}}
             <span class="text-xs text-gray-500 whitespace-nowrap" x-show="seznamPodlazi.length > 1 && !rezim3d" x-cloak x-text="'· ' + nazevAktivniho"></span>
             <div class="flex-1"></div>
             {{-- Mapový podklad --}}
             @funkce('mapovy_podklad')
             <select x-model="katastrMapaPodklad"
-                    @change="if (katastrParcely.length === 0 && katastrMapaPodklad !== 'zadny') { katastrMapaPodklad = 'zadny'; alert('Nejprve načtěte parcelu.'); } else { katastrZmenPodklad(); ulozitNastaveni(); }"
+                    @change="if (katastrParcely.length === 0 && katastrMapaPodklad !== 'zadny') { katastrMapaPodklad = 'zadny'; alert(preloz('ed_sablona.lista.nejprve_parcela')); } else { katastrZmenPodklad(); ulozitNastaveni(); }"
                     class="kk-pole">
-                <option value="zadny">Bez podkladu</option>
-                <option value="zakladni">Základní mapa</option>
-                <option value="ortofoto">Ortofoto</option>
-                <option value="turisticka">Turistická</option>
+                <option value="zadny">{{ __('ed_sablona.lista.podklad_zadny') }}</option>
+                <option value="zakladni">{{ __('ed_sablona.lista.podklad_zakladni') }}</option>
+                <option value="ortofoto">{{ __('ed_sablona.lista.podklad_ortofoto') }}</option>
+                <option value="turisticka">{{ __('ed_sablona.lista.podklad_turisticka') }}</option>
             </select>
             @endfunkce
             {{-- 2D/3D přepínač --}}
@@ -255,12 +255,12 @@
                 <button @click="rezim3d = false; prepni2d()" :class="!rezim3d && 'kk-tl-aktivni'">2D</button>
                 <button @click="rezim3d = true; prepni3d()" :class="rezim3d && 'kk-tl-aktivni'">3D</button>
             </div>
-            <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="kk-tl text-base" data-tip-below="Zpět (Ctrl+Z)">&#8630;</button>
-            <button @click="redo()" data-historie-vpred :disabled="historiePozice >= historie.length - 1" class="kk-tl text-base" data-tip-below="Vpřed (Ctrl+Shift+Z)">&#8631;</button>
+            <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="kk-tl text-base" data-tip-below="{{ __('ed_sablona.lista.zpet') }}">&#8630;</button>
+            <button @click="redo()" data-historie-vpred :disabled="historiePozice >= historie.length - 1" class="kk-tl text-base" data-tip-below="{{ __('ed_sablona.lista.vpred') }}">&#8631;</button>
             <div class="kk-skupina">
-                <button @click="zoomOut()" data-tip-below="Oddálit (kolečko)">&minus;</button>
+                <button @click="zoomOut()" data-tip-below="{{ __('ed_sablona.lista.oddalit') }}">&minus;</button>
                 <span x-text="Math.round(zoom * 100) + ' %'"></span>
-                <button @click="zoomIn()" data-tip-below="Přiblížit (kolečko)">+</button>
+                <button @click="zoomIn()" data-tip-below="{{ __('ed_sablona.lista.priblizit') }}">+</button>
             </div>
             <span class="kk-oddelovac"></span>
             {{-- Layout --}}
@@ -277,7 +277,7 @@
                 </svg>
             </button>
             {{-- Fullscreen --}}
-            <button @click="prepniFullscreen()" class="kk-tl" :data-tip-below="celaObrazovka ? 'Zmenšit (Ctrl+F)' : 'Celá obrazovka (Ctrl+F)'">
+            <button @click="prepniFullscreen()" class="kk-tl" :data-tip-below="celaObrazovka ? preloz('ed_sablona.lista.zmensit') : preloz('ed_sablona.lista.cela_obrazovka')">
                 <svg x-show="!celaObrazovka" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="1,5 1,1 5,1"/><polyline points="11,1 15,1 15,5"/><polyline points="15,11 15,15 11,15"/><polyline points="5,15 1,15 1,11"/>
                 </svg>
@@ -291,14 +291,14 @@
             <div class="flex items-center gap-1.5">
                 {{-- Výběr --}}
                 <button @click="nastroj = 'vyber'" class="kk-tl" :class="nastroj === 'vyber' && 'kk-tl-aktivni'"
-                        data-tip="Výběr (1)">
+                        data-tip="{{ __('ed_sablona.lista.vyber') }}">
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="1" y="1" width="14" height="14" rx="1" stroke-dasharray="3 2"/>
                     </svg>
                 </button>
                 {{-- Posun (ruka) --}}
                 <button @click="nastroj = 'posun'" class="kk-tl" :class="nastroj === 'posun' && 'kk-tl-aktivni'"
-                        data-tip="Posun (2 / pravé myšítko)">
+                        data-tip="{{ __('ed_sablona.lista.posun') }}">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6 9V3.5a1 1 0 012 0V8.5"/>
                         <path d="M8 7.5V2.5a1 1 0 012 0V8"/>
@@ -329,7 +329,7 @@
                 </div>
                 {{-- Stěna --}}
                 <button @click="nastroj = 'stena'" class="kk-tl" :class="nastroj === 'stena' && 'kk-tl-aktivni'"
-                        data-tip="Kreslit stěnu (4) · držet Alt = bez magnetu">
+                        data-tip="{{ __('ed_sablona.lista.stena') }}">
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="2" y1="14" x2="14" y2="2"/>
                         <line x1="1" y1="13" x2="13" y2="1"/>
@@ -337,7 +337,7 @@
                 </button>
                 {{-- Metr --}}
                 <button @click="nastroj = nastroj === 'metr' ? 'vyber' : 'metr'" class="kk-tl" :class="nastroj === 'metr' && 'kk-tl-aktivni'"
-                        data-tip="Měřit vzdálenost (5 / M)">
+                        data-tip="{{ __('ed_sablona.lista.metr') }}">
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="1" y1="15" x2="15" y2="15"/><line x1="1" y1="13" x2="1" y2="15"/><line x1="15" y1="13" x2="15" y2="15"/>
                         <line x1="4" y1="14" x2="4" y2="15"/><line x1="7" y1="14" x2="7" y2="15"/><line x1="10" y1="14" x2="10" y2="15"/><line x1="13" y1="14" x2="13" y2="15"/>
@@ -346,7 +346,7 @@
                 </button>
                 {{-- Otvor --}}
                 <button @click="nastroj = nastroj === 'otvor' ? 'vyber' : 'otvor'" class="kk-tl" :class="nastroj === 'otvor' && 'kk-tl-aktivni'"
-                        data-tip="Vložit otvor do stěny (6 / O)">
+                        data-tip="{{ __('ed_sablona.lista.otvor') }}">
                     {{-- zeď v řezu s proraženým otvorem --}}
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
                         <line x1="1" y1="5" x2="5" y2="5"/><line x1="1" y1="11" x2="5" y2="11"/>
@@ -355,12 +355,12 @@
                     </svg>
                 </button>
                 {{-- Schodiště --}}
-                <button @click="nastroj === 'schody' ? (nastroj = 'vyber') : zacniSchody()" class="kk-tl" :class="nastroj === 'schody' && 'kk-tl-aktivni'" data-tip="Schodiště do vyššího podlaží (7)">
+                <button @click="nastroj === 'schody' ? (nastroj = 'vyber') : zacniSchody()" class="kk-tl" :class="nastroj === 'schody' && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.schody') }}">
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M2 14h3v-3h3V8h3V5h3V2"/>
                     </svg>
                 </button>
-                <button @click="prepniKatalog()" class="kk-tl" :class="panelOpen.katalog && 'kk-tl-aktivni'" data-tip="Nábytek a vybavení (8)" data-katalog-tlacitko>
+                <button @click="prepniKatalog()" class="kk-tl" :class="panelOpen.katalog && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.katalog') }}" data-katalog-tlacitko>
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3.5 7.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v2"/><path d="M1.5 9a1.5 1.5 0 0 1 3 0v1.5h7V9a1.5 1.5 0 0 1 3 0v3.5h-13z"/><path d="M3.5 12.5V14M12.5 12.5V14"/>
                     </svg>
@@ -373,7 +373,7 @@
             <div class="relative ml-1" @click.outside="magnetPanel = false">
                 <button type="button" id="kk-magnet-tl" @click="magnetPanel = !magnetPanel"
                         class="kk-tl relative" :class="[(magnetPanel || magnetSila > 0) && 'kk-tl-aktivni', magnetPuls && 'kk-magnet-puls']"
-                        data-tip="Magnet — přichytávání k bodům, stěnám a úhlům (klik = nastavení · Alt = dočasně bez magnetu)">
+                        data-tip="{{ __('ed_sablona.lista.magnet') }}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m6 15-4-4 6.75-6.77a7.79 7.79 0 0 1 11 11L13 22l-4-4 6.39-6.36a2.14 2.14 0 0 0-3-3L6 15"/><path d="m5 8 4 4"/><path d="m12 15 4 4"/>
                     </svg>
@@ -381,23 +381,23 @@
                 <div x-show="magnetPanel" x-cloak id="kk-magnet-panel"
                      class="absolute left-0 top-full z-40 mt-1 w-64 rounded-lg border border-gray-300 bg-white p-3 text-xs shadow-lg">
                     <label class="mb-2 block">
-                        <span class="flex justify-between text-gray-600"><span>Síla přichytávání</span><span class="tabular-nums" x-text="magnetSila === 0 ? 'vypnuto' : magnetSila + ' %'"></span></span>
+                        <span class="flex justify-between text-gray-600"><span>{{ __('ed_sablona.lista.magnet_sila') }}</span><span class="tabular-nums" x-text="magnetSila === 0 ? preloz('ed_sablona.lista.vypnuto') : magnetSila + ' %'"></span></span>
                         <input type="range" min="0" max="100" step="10" x-model.number="magnetSila" @input="ulozitNastaveni()"
                                class="h-1 w-full cursor-pointer" style="accent-color: var(--c-primary);">
                     </label>
                     <label class="flex items-center gap-2 text-gray-600 mb-1">
                         <input type="checkbox" x-model="magnetUhly" @change="ulozitNastaveni()" style="accent-color: var(--c-primary);">
-                        Úhly 90° a 45° vůči rastru domu
+                        {{ __('ed_sablona.lista.magnet_uhly') }}
                     </label>
                     <label class="flex items-center gap-2 text-gray-600 mb-1">
                         <input type="checkbox" x-model="magnetVoditka" @change="ulozitNastaveni()" style="accent-color: var(--c-primary);">
-                        Vodítka zarovnání s rohy
+                        {{ __('ed_sablona.lista.magnet_voditka') }}
                     </label>
                     <label class="flex items-center gap-2 text-gray-600">
                         <input type="checkbox" x-model="magnetBlik" @change="ulozitNastaveni()" style="accent-color: var(--c-primary);">
-                        Bliknout při zachycení
+                        {{ __('ed_sablona.lista.magnet_blik') }}
                     </label>
-                    <p class="mt-2 text-gray-500">Alt při kreslení = dočasně bez magnetu.</p>
+                    <p class="mt-2 text-gray-500">{{ __('ed_sablona.lista.magnet_alt') }}</p>
                 </div>
             </div>
             {{-- Volby stěny nejsou v liště — jsou v panelu na plátně jako volby otvoru (Libor 1. 11. 2026). --}}
@@ -410,7 +410,7 @@
                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                Nápověda
+                {{ __('ed_sablona.lista.napoveda') }}
                 <svg class="h-3 w-3 transition-transform" :class="napovedaOtevrena && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
@@ -422,43 +422,43 @@
         <div x-show="napovedaOtevrena" x-collapse class="px-3 pb-2 text-xs text-gray-500 border-b border-gray-100 overflow-x-auto">
             <div class="flex gap-4 mt-1 flex-wrap min-w-0">
                 <div>
-                    <div class="font-semibold text-gray-600 mb-1">Navigace</div>
+                    <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.navigace') }}</div>
                     <table class="napoveda-tabulka" style="border-collapse:collapse">
-                        <tr><td><strong>Kolečko / + / &minus;</strong></td><td>zoom</td></tr>
-                        <tr><td><strong>6 / O</strong></td><td>otvor do stěny</td></tr>
-                        <tr><td><strong>Pravé tl. + tah</strong></td><td>posun plátna</td></tr>
-                        <tr><td><strong>Kompas</strong></td><td>tažením otáčí mapu</td></tr>
-                        <tr><td><strong>Dvojklik na kompas</strong></td><td>reset pozice</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.napoveda.kolecko') }}</strong></td><td>{{ __('ed_sablona.napoveda.zoom') }}</td></tr>
+                        <tr><td><strong>6 / O</strong></td><td>{{ __('ed_sablona.napoveda.otvor_do_steny') }}</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.napoveda.prave_tah') }}</strong></td><td>{{ __('ed_sablona.napoveda.posun_platna') }}</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.napoveda.kompas') }}</strong></td><td>{{ __('ed_sablona.napoveda.kompas_tah') }}</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.napoveda.kompas_dvojklik') }}</strong></td><td>{{ __('ed_sablona.napoveda.reset_pozice') }}</td></tr>
                     </table>
                 </div>
                 <div>
-                    <div class="font-semibold text-gray-600 mb-1">Výběr</div>
+                    <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.vyber') }}</div>
                     <table class="napoveda-tabulka" style="border-collapse:collapse">
-                        <tr><td><strong>Klik</strong></td><td>vybrat prvek</td></tr>
-                        <tr><td><strong>Ctrl/Shift + klik</strong></td><td>přidat/odebrat z výběru</td></tr>
-                        <tr><td><strong>Tah na prázdno</strong></td><td>výběr oblasti</td></tr>
-                        <tr><td><strong>Ctrl+A</strong></td><td>vybrat vše</td></tr>
-                        <tr><td><strong>Escape</strong></td><td>zrušit výběr</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.napoveda.klik') }}</strong></td><td>{{ __('ed_sablona.napoveda.vybrat_prvek') }}</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.napoveda.ctrl_klik') }}</strong></td><td>{{ __('ed_sablona.napoveda.pridat_odebrat') }}</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.napoveda.tah_prazdno') }}</strong></td><td>{{ __('ed_sablona.napoveda.vyber_oblasti') }}</td></tr>
+                        <tr><td><strong>Ctrl+A</strong></td><td>{{ __('ed_sablona.napoveda.vybrat_vse') }}</td></tr>
+                        <tr><td><strong>Escape</strong></td><td>{{ __('ed_sablona.napoveda.zrusit_vyber') }}</td></tr>
                     </table>
                 </div>
                 <div>
-                    <div class="font-semibold text-gray-600 mb-1">Úpravy</div>
+                    <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.upravy') }}</div>
                     <table class="napoveda-tabulka" style="border-collapse:collapse">
-                        <tr><td><strong>R</strong></td><td>otočit 90°</td></tr>
-                        <tr><td><strong>Alt + tah</strong></td><td>bez magnetu (bod, stěna, otáčení)</td></tr>
-                        <tr><td><strong>Delete</strong></td><td>smazat vybrané</td></tr>
-                        <tr><td><strong>Ctrl+Z</strong></td><td>zpět</td></tr>
+                        <tr><td><strong>R</strong></td><td>{{ __('ed_sablona.napoveda.otocit_90') }}</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.napoveda.alt_tah') }}</strong></td><td>{{ __('ed_sablona.napoveda.bez_magnetu') }}</td></tr>
+                        <tr><td><strong>Delete</strong></td><td>{{ __('ed_sablona.napoveda.smazat_vybrane') }}</td></tr>
+                        <tr><td><strong>Ctrl+Z</strong></td><td>{{ __('ed_sablona.napoveda.zpet') }}</td></tr>
                     </table>
                 </div>
                 <div>
-                    <div class="font-semibold text-gray-600 mb-1">Kreslení a nástroje</div>
+                    <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.kresleni') }}</div>
                     <table class="napoveda-tabulka" style="border-collapse:collapse">
-                        <tr><td><strong>1 / 2 / 3 / 4</strong></td><td>výběr / posun / zvýrazňovač / stěna</td></tr>
-                        <tr><td><strong>Alt</strong></td><td>kreslit stěnu bez magnetu</td></tr>
-                        <tr><td><strong>B</strong></td><td>zvýrazňovač zap/vyp</td></tr>
-                        <tr><td><strong>Shift + klik</strong></td><td>rovná čára zvýrazňovačem</td></tr>
-                        <tr><td><strong>Ctrl+C / V / D</strong></td><td>kopírovat / vložit / duplikovat</td></tr>
-                        <tr><td><strong>Ctrl+F</strong></td><td>celá obrazovka</td></tr>
+                        <tr><td><strong>1 / 2 / 3 / 4</strong></td><td>{{ __('ed_sablona.napoveda.nastroje') }}</td></tr>
+                        <tr><td><strong>Alt</strong></td><td>{{ __('ed_sablona.napoveda.alt_stena') }}</td></tr>
+                        <tr><td><strong>B</strong></td><td>{{ __('ed_sablona.napoveda.zvyraznovac') }}</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.napoveda.shift_klik') }}</strong></td><td>{{ __('ed_sablona.napoveda.rovna_cara') }}</td></tr>
+                        <tr><td><strong>Ctrl+C / V / D</strong></td><td>{{ __('ed_sablona.napoveda.kopirovat') }}</td></tr>
+                        <tr><td><strong>Ctrl+F</strong></td><td>{{ __('ed_sablona.napoveda.cela_obrazovka') }}</td></tr>
                     </table>
                 </div>
             </div>
@@ -470,11 +470,11 @@
             <div id="kk-3d-container" x-ref="threeContainer" style="position:absolute;inset:0;" x-show="rezim3d" x-cloak></div>
             {{-- Přepsání kóty u vybrané stěny nebo otvoru: pole na místě čísla --}}
             <div class="kk-kota-pole" x-show="kotaEdit && !rezim3d" x-cloak :style="kotaEdit ? { left: kotaEdit.x + 'px', top: kotaEdit.y + 'px' } : {}" data-kota-pole>
-                <input type="number" min="0" step="1" x-ref="kotaInput" title="Vzdálenost v cm. Enter potvrdí, Esc zruší." @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="kotaEdit = null" @blur="kotaPotvrd($event.target.value)"><span>cm</span>
+                <input type="number" min="0" step="1" x-ref="kotaInput" title="{{ __('ed_sablona.platno.kota_tip') }}" @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="kotaEdit = null" @blur="kotaPotvrd($event.target.value)"><span>cm</span>
             </div>
             <div class="kk-status-row">
                 <div class="kk-coords" x-text="'X: ' + kurzorX.toFixed(2) + ' Y: ' + kurzorY.toFixed(2)"></div>
-                <div class="kk-3d-help" x-show="rezim3d" x-cloak>Levé tl. = rotace · Pravé tl. = posun · Kolečko = zoom</div>
+                <div class="kk-3d-help" x-show="rezim3d" x-cloak>{{ __('ed_sablona.platno.napoveda_3d') }}</div>
             </div>
 
             {{-- Povinná atribuce Mapy.com — viditelná pokud je aktivní mapové podloží --}}
@@ -491,7 +491,7 @@
                  class="bg-white rounded-lg shadow-md text-xs flex items-stretch"
                  :style="panelOtvoruStyl"
                  style="position:absolute;z-index:15;width:max-content;min-width:250px;max-width:min(420px,100%);border:1.5px solid var(--c-primary)">
-                <div class="kk-panel-uchop" data-tip-below="Tažením přesunout panel · Dvojklik = vrátit na místo"
+                <div class="kk-panel-uchop" data-tip-below="{{ __('ed_sablona.platno.uchop') }}"
                      @pointerdown.prevent="panelOtvoruTahniStart($event)"
                      @pointermove="panelOtvoruTahni($event)"
                      @pointerup="panelOtvoruTahniKonec($event)"
@@ -512,49 +512,49 @@
                 <template x-if="nastroj === 'schody'">
                     <div class="p-2 flex flex-col gap-1">
                         <div class="flex items-center gap-2">
-                            <span class="text-gray-600 font-medium whitespace-nowrap">Nové schodiště</span>
+                            <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.schody.nove') }}</span>
                             <select x-model="schodyTvar" class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto">
-                                <option value="prime">Přímé</option>
-                                <option value="L">Do L</option>
-                                <option value="U">Do U</option>
+                                <option value="prime">{{ __('ed_sablona.schody.tvar_prime') }}</option>
+                                <option value="L">{{ __('ed_sablona.schody.tvar_l') }}</option>
+                                <option value="U">{{ __('ed_sablona.schody.tvar_u') }}</option>
                             </select>
                         </div>
-                        <div class="text-gray-500" x-text="schodyStart ? 'Klepněte ve směru výstupu.' : 'Klepněte na začátek schodiště (první stupeň).'"></div>
+                        <div class="text-gray-500" x-text="schodyStart ? preloz('ed_sablona.schody.klepni_smer') : preloz('ed_sablona.schody.klepni_zacatek')"></div>
                     </div>
                 </template>
                 <template x-if="nastroj === 'lico'">
                     <div class="p-2 flex flex-col gap-1">
-                        <span class="text-gray-600 font-medium">Usazení plánku na spodní podlaží</span>
+                        <span class="text-gray-600 font-medium">{{ __('ed_sablona.plan.usazeni') }}</span>
                         <div class="text-gray-500" x-text="licoKrok"></div>
                         <label class="flex items-center gap-1 text-gray-500" x-show="engine && engine.walls.size > 0">
-                            <input type="checkbox" x-model="licoSeStenami"> i se stěnami tohoto podlaží
+                            <input type="checkbox" x-model="licoSeStenami"> {{ __('ed_sablona.plan.se_stenami') }}
                         </label>
                     </div>
                 </template>
                 <template x-if="posunPodkladu">
                     <div class="p-2 flex items-center gap-2">
-                        <span class="text-gray-600">Táhněte plánek. Kresba stojí.</span>
-                        <button type="button" @click="prepniPosunPodkladu()" class="border border-gray-500 rounded px-2 py-0.5 text-xs ml-auto hover:bg-orange-50">Hotovo</button>
+                        <span class="text-gray-600">{{ __('ed_sablona.plan.tahni') }}</span>
+                        <button type="button" @click="prepniPosunPodkladu()" class="border border-gray-500 rounded px-2 py-0.5 text-xs ml-auto hover:bg-orange-50">{{ __('ed_sablona.spolecne.hotovo') }}</button>
                     </div>
                 </template>
                 {{-- Nová stěna / oddělovač: typ a tloušťka (dřív v liště nástrojů) --}}
                 <template x-if="nastroj === 'stena'">
                     <div class="p-2 flex flex-col gap-1">
                         <div class="flex items-center gap-2">
-                            <span class="text-gray-600 font-medium whitespace-nowrap" x-text="stenaTyp === 'oddelovac' ? 'Oddělovač místnosti' : 'Nová stěna'"></span>
+                            <span class="text-gray-600 font-medium whitespace-nowrap" x-text="stenaTyp === 'oddelovac' ? preloz('ed_sablona.stena.oddelovac') : preloz('ed_sablona.stena.nova')"></span>
                             <select x-model="stenaTyp" @change="tloustkaSteny = vychoziTloustka(stenaTyp); ulozitNastaveni()"
                                     class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto">
-                                <option value="obvodova">Obvodová</option>
-                                <option value="nosna">Nosná</option>
-                                <option value="pricka">Příčka</option>
-                                <option value="zidka">Zídka</option>
-                                <option value="plot">Plot</option>
+                                <option value="obvodova">{{ __('ed_sablona.stena.typ_obvodova') }}</option>
+                                <option value="nosna">{{ __('ed_sablona.stena.typ_nosna') }}</option>
+                                <option value="pricka">{{ __('ed_sablona.stena.typ_pricka') }}</option>
+                                <option value="zidka">{{ __('ed_sablona.stena.typ_zidka') }}</option>
+                                <option value="plot">{{ __('ed_sablona.stena.typ_plot') }}</option>
                                 {{-- Oddělovač místnosti: čára nulové tloušťky, chytá se jen na líc stěn (Libor 1. 11. 2026) --}}
-                                <option value="oddelovac">Oddělovač místnosti</option>
+                                <option value="oddelovac">{{ __('ed_sablona.stena.oddelovac') }}</option>
                             </select>
                             <template x-if="stenaTyp !== 'oddelovac'">
                                 <span class="flex items-center gap-1">
-                                    <span class="text-gray-500">tl:</span>
+                                    <span class="text-gray-500">{{ __('ed_sablona.spolecne.tloustka_zkr') }}</span>
                                     {{-- Tloušťka v cm (v enginu zůstávají metry) --}}
                                     <input type="number" min="5" max="60" step="1"
                                            :value="Math.round(tloustkaSteny * 100)"
@@ -565,20 +565,20 @@
                                 </span>
                             </template>
                         </div>
-                        <div class="text-gray-500" x-text="stenaTyp === 'oddelovac' ? 'Klepněte na líc stěny, pak na druhý. Esc ukončí.' : 'Klepněte na začátek stěny, táhněte a pusťte na konci.'"></div>
+                        <div class="text-gray-500" x-text="stenaTyp === 'oddelovac' ? preloz('ed_sablona.stena.klepni_oddelovac') : preloz('ed_sablona.stena.klepni_stena')"></div>
                     </div>
                 </template>
                 <template x-if="nastroj === 'otvor'">
                     <div class="p-2 flex flex-col gap-1">
                         <div class="flex items-center gap-2">
-                            <span class="text-gray-600 font-medium whitespace-nowrap">Nový otvor</span>
+                            <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.otvor.novy') }}</span>
                             <select x-model="otvorTyp" @change="otvorSirka = { dvere: 0.9, okno: 1.2, pruchod: 0.9 }[otvorTyp] || otvorSirka; ulozitNastaveni()"
                                     class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto">
                                 {{-- Průchod tu není schválně — je mezi typy dveří v panelu vlastností --}}
-                                <option value="dvere">Dveře</option>
-                                <option value="okno">Okno</option>
+                                <option value="dvere">{{ __('ed_sablona.otvor.dvere') }}</option>
+                                <option value="okno">{{ __('ed_sablona.otvor.okno') }}</option>
                             </select>
-                            <span class="text-gray-500">š:</span>
+                            <span class="text-gray-500">{{ __('ed_sablona.spolecne.sirka_zkr') }}</span>
                             {{-- Šířka v cm (v enginu zůstávají metry) --}}
                             <input type="number" min="40" max="300" step="5"
                                    :value="Math.round(otvorSirka * 100)"
@@ -587,7 +587,7 @@
                                    class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs">
                             <span class="text-gray-500">cm</span>
                         </div>
-                        <div class="text-gray-500" x-show="!otvorZprava">Klepněte na stěnu, kam otvor patří.</div>
+                        <div class="text-gray-500" x-show="!otvorZprava">{{ __('ed_sablona.otvor.klepni') }}</div>
                         <div class="text-orange-700" x-show="otvorZprava" x-cloak x-text="otvorZprava"></div>
                     </div>
                 </template>
@@ -602,10 +602,10 @@
                             <div class="flex flex-col gap-1 w-full">
                                 <div class="text-gray-700 font-medium" x-text="inspector.nazev"></div>
                                 <div class="flex items-center gap-1">
-                                    <span class="text-gray-600">Rozměry</span>
+                                    <span class="text-gray-600">{{ __('ed_sablona.katalog.rozmery') }}</span>
                                     <button type="button" @click="katalogRetez = !katalogRetez" data-katalog-retez :aria-pressed="katalogRetez" class="border border-gray-500 rounded px-1 hover:bg-gray-100"
                                             :style="katalogRetez ? 'color:var(--c-primary);border-color:var(--c-primary)' : ''"
-                                            :data-tip-below="katalogRetez ? 'Rozměry se mění společně, klepnutím rozpojíte' : 'Rozměry se mění každý zvlášť, klepnutím spojíte'">
+                                            :data-tip-below="katalogRetez ? preloz('ed_sablona.katalog.retez_spojeno') : preloz('ed_sablona.katalog.retez_rozpojeno')">
                                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                             <path d="M6.5 9.5l3-3"/>
                                             <path d="M7 4.5l1-1a3 3 0 0 1 4.5 4.5l-1 1"/>
@@ -613,25 +613,25 @@
                                             <path x-show="!katalogRetez" d="M2 2l12 12" stroke-width="1.7"/>
                                         </svg>
                                     </button>
-                                    <button type="button" x-show="inspector.zmeneno" @click="katalogPuvodni()" data-katalog-puvodni class="border border-gray-500 rounded px-2 hover:bg-gray-100 ml-auto">Původní</button>
+                                    <button type="button" x-show="inspector.zmeneno" @click="katalogPuvodni()" data-katalog-puvodni class="border border-gray-500 rounded px-2 hover:bg-gray-100 ml-auto">{{ __('ed_sablona.spolecne.puvodni') }}</button>
                                 </div>
                                 <template x-for="r in inspector.rozmery" :key="r.osa">
                                     <div class="flex items-center gap-1 text-gray-600" :data-katalog-rozmer="r.osa">
                                         <span style="width:52px" x-text="r.nazev"></span>
-                                        <input type="number" min="1" step="1" :aria-label="r.nazev + ' v centimetrech'" class="border border-gray-500 rounded px-1 py-0.5 text-xs" style="width:56px" data-jednotka="cm"
+                                        <input type="number" min="1" step="1" :aria-label="preloz('ed_sablona.katalog.v_cm', { nazev: r.nazev })" class="border border-gray-500 rounded px-1 py-0.5 text-xs" style="width:56px" data-jednotka="cm"
                                                :value="r.cm" @change="katalogRozmer(r.osa, $event.target.value, 'cm')" @keydown.enter.prevent="$event.target.blur()"> cm
-                                        <input type="number" min="1" step="1" :aria-label="r.nazev + ' v procentech původní velikosti'" class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-1" style="width:56px" data-jednotka="procenta"
+                                        <input type="number" min="1" step="1" :aria-label="preloz('ed_sablona.katalog.v_procentech', { nazev: r.nazev })" class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-1" style="width:56px" data-jednotka="procenta"
                                                :value="r.procenta" @change="katalogRozmer(r.osa, $event.target.value, '%')" @keydown.enter.prevent="$event.target.blur()"> %
                                     </div>
                                 </template>
-                                <label class="flex items-center gap-1 text-gray-600" for="kk-katalog-uroven">Nad podlahou
+                                <label class="flex items-center gap-1 text-gray-600" for="kk-katalog-uroven">{{ __('ed_sablona.katalog.nad_podlahou') }}
                                     <input id="kk-katalog-uroven" type="number" min="0" max="300" step="5" class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto" style="width:56px"
                                            :value="inspector.urovenCm" @change="katalogUroven($event.target.value)" @keydown.enter.prevent="$event.target.blur()"> cm
                                 </label>
                                 <div class="flex items-center gap-1">
-                                    <button type="button" @click="katalogOtoc()" class="border border-gray-500 rounded px-2 hover:bg-gray-100" data-katalog-otoc>Otočit o 90°</button>
-                                    <button type="button" @click="katalogKopie()" class="border border-gray-500 rounded px-2 hover:bg-gray-100" data-katalog-kopie>Kopie</button>
-                                    <button type="button" @click="katalogSmaz()" class="border border-gray-500 rounded px-2 hover:bg-gray-100 ml-auto" data-katalog-smaz>Smazat</button>
+                                    <button type="button" @click="katalogOtoc()" class="border border-gray-500 rounded px-2 hover:bg-gray-100" data-katalog-otoc>{{ __('ed_sablona.spolecne.otocit_90') }}</button>
+                                    <button type="button" @click="katalogKopie()" class="border border-gray-500 rounded px-2 hover:bg-gray-100" data-katalog-kopie>{{ __('ed_sablona.katalog.kopie') }}</button>
+                                    <button type="button" @click="katalogSmaz()" class="border border-gray-500 rounded px-2 hover:bg-gray-100 ml-auto" data-katalog-smaz>{{ __('ed_sablona.spolecne.smazat') }}</button>
                                 </div>
                             </div>
                         </template>
@@ -644,7 +644,7 @@
                                     {{-- Okna mají spoustu atypických rozměrů (230, 175…), proto
                                          číslo. Dveře se vyrábějí v normové řadě, tam stačí výběr. --}}
                                     <div class="flex items-center gap-1 ml-auto">
-                                        <span class="text-gray-500">š:</span>
+                                        <span class="text-gray-500">{{ __('ed_sablona.spolecne.sirka_zkr') }}</span>
                                         <template x-if="inspector.typ === 'okno'">
                                             <span class="flex items-center gap-1">
                                                 <input type="number" min="10" max="600" step="1"
@@ -669,7 +669,7 @@
                                         </template>
                                         {{-- Výška a parapet otvoru hned vedle šířky — Libor 1. 11. 2026.
                                              Parapet posune celý otvor (výška zůstane); díl zvlášť jen v řádcích dílů. --}}
-                                        <span class="text-gray-500 ml-1">v:</span>
+                                        <span class="text-gray-500 ml-1">{{ __('ed_sablona.spolecne.vyska_zkr') }}</span>
                                         <input type="number" min="30" max="400" step="1"
                                                class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                :value="inspector.vyska !== null ? Math.round(inspector.vyska * 100) : ''"
@@ -679,7 +679,7 @@
                                         {{-- Parapet jen u oken; dveře, vrata a průchod ho nemají --}}
                                         <template x-if="!inspector.jeDvere">
                                             <span class="flex items-center gap-1">
-                                                <span class="text-gray-500 ml-1">par:</span>
+                                                <span class="text-gray-500 ml-1">{{ __('ed_sablona.spolecne.parapet_zkr') }}</span>
                                                 <input type="number" min="0" max="300" step="1"
                                                        class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                        :value="inspector.parapet !== null ? Math.round(inspector.parapet * 100) : ''"
@@ -704,7 +704,7 @@
                                                 x-show="inspector.canFlipStrana"
                                                 @click="flipOpeningStrana()"
                                                 class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50 hover:border-orange-400"
-                                                title="Otevírat na druhou stranu zdi (dovnitř ↔ ven)">
+                                                title="{{ __('ed_sablona.otvor.druha_strana') }}">
                                             ⇵
                                         </button>
                                     </div>
@@ -714,14 +714,14 @@
                                 <template x-if="inspector.maKridla && !inspector.jeDvere">
                                     <div class="flex flex-col gap-1">
                                         <div class="flex items-center gap-2">
-                                            <span class="text-gray-500">dílů:</span>
+                                            <span class="text-gray-500">{{ __('ed_sablona.otvor.dilu') }}</span>
                                             <select class="border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                     @change="setPocetKridel(parseInt($event.target.value, 10))">
                                                 <template x-if="inspector.pocetKridel === null"><option value="" disabled selected>—</option></template>
                                                 <template x-for="n in inspector.pocetVolby" :key="n">
                                                     <option :value="n"
                                                             :selected="inspector.pocetKridel === n"
-                                                            x-text="n === 0 ? 'jen otvor' : n"></option>
+                                                            x-text="n === 0 ? preloz('ed_sablona.otvor.jen_otvor') : n"></option>
                                                 </template>
                                             </select>
                                             <span class="flex-1"></span>
@@ -731,14 +731,14 @@
                                                     x-show="inspector.canZrcadlit"
                                                     @click="zrcadlitOtvor()"
                                                     class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50 hover:border-orange-400"
-                                                    title="Zrcadlit (levé ↔ pravé)">
+                                                    title="{{ __('ed_sablona.otvor.zrcadlit') }}">
                                                 ⇄
                                             </button>
                                             <button type="button"
                                                     x-show="inspector.canFlipStrana"
                                                     @click="flipOpeningStrana()"
                                                     class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50 hover:border-orange-400"
-                                                    title="Otevírat na druhou stranu zdi (dovnitř ↔ ven)">
+                                                    title="{{ __('ed_sablona.otvor.druha_strana') }}">
                                                 ⇵
                                             </button>
                                         </div>
@@ -762,8 +762,8 @@
                                                             </template>
                                                         </select>
                                                         {{-- Sklopné je doplněk k typu (otevíravě-sklopné, posuvně-sklopné, pevné + sklopné = větračka) --}}
-                                                        <label class="flex items-center gap-1 text-gray-500 whitespace-nowrap cursor-pointer" title="Křídlo jde navíc sklopit">
-                                                            <input type="checkbox" :checked="k.sklopne" @change="setKridloSklopne(i, $event.target.checked)"> skl.
+                                                        <label class="flex items-center gap-1 text-gray-500 whitespace-nowrap cursor-pointer" title="{{ __('ed_sablona.otvor.sklopne_tip') }}">
+                                                            <input type="checkbox" :checked="k.sklopne" @change="setKridloSklopne(i, $event.target.checked)"> {{ __('ed_sablona.otvor.sklopne') }}
                                                         </label>
                                                         {{-- Parapet dílu jen u více dílů (dvojokno s nižším parapetem, boční díl
                                                              u francouzského okna); předvyplněný parapetem otvoru, zadává se až rozdíl --}}
@@ -773,11 +773,11 @@
                                                                        class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                                        :class="Math.abs(k.parapet - inspector.parapet) > 0.001 && 'border-orange-500 bg-orange-50'"
                                                                        :value="Math.round(k.parapet * 100)"
-                                                                       title="Parapet tohoto dílu v cm"
+                                                                       title="{{ __('ed_sablona.otvor.parapet_dilu_cm') }}"
                                                                        @change="setKridloParapet(i, parseFloat($event.target.value) / 100)"
                                                                        @keydown.enter.prevent="$event.target.blur()">
                                                                 {{-- Popisek až za polem, jako „skl." za zaškrtávátkem (Libor) --}}
-                                                                <span class="text-gray-500" title="Parapet tohoto dílu">par.</span>
+                                                                <span class="text-gray-500" title="{{ __('ed_sablona.otvor.parapet_dilu') }}">{{ __('ed_sablona.otvor.parapet_kratce') }}</span>
                                                             </span>
                                                         </template>
                                                     </div>
@@ -793,42 +793,42 @@
                         <template x-if="inspector.kind === 'schodiste'">
                             <div class="flex flex-col gap-1 w-full">
                                 <div class="flex items-center gap-2">
-                                    <span class="text-gray-600 font-medium whitespace-nowrap">Schodiště</span>
+                                    <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.schody.nazev') }}</span>
                                     <span class="text-gray-500" x-text="inspector.trasa"></span>
                                 </div>
                                 <div class="flex items-center gap-1">
-                                    <select class="border border-gray-500 rounded px-1 py-0.5 text-xs" title="Přímé schodiště, lomené o 90° (L), nebo o 180° (U)" data-schody-tvar @change="setSchody('tvar', $event.target.value)">
-                                        <option value="prime" :selected="inspector.tvar === 'prime'">Přímé</option>
-                                        <option value="L" :selected="inspector.tvar === 'L'">Do L</option>
-                                        <option value="U" :selected="inspector.tvar === 'U'">Do U</option>
+                                    <select class="border border-gray-500 rounded px-1 py-0.5 text-xs" title="{{ __('ed_sablona.schody.tvar_tip') }}" data-schody-tvar @change="setSchody('tvar', $event.target.value)">
+                                        <option value="prime" :selected="inspector.tvar === 'prime'">{{ __('ed_sablona.schody.tvar_prime') }}</option>
+                                        <option value="L" :selected="inspector.tvar === 'L'">{{ __('ed_sablona.schody.tvar_l') }}</option>
+                                        <option value="U" :selected="inspector.tvar === 'U'">{{ __('ed_sablona.schody.tvar_u') }}</option>
                                     </select>
-                                    <span class="text-gray-500 ml-1">š:</span>
-                                    <input type="number" min="60" max="250" step="5" title="Šířka schodiště" class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                    <span class="text-gray-500 ml-1">{{ __('ed_sablona.spolecne.sirka_zkr') }}</span>
+                                    <input type="number" min="60" max="250" step="5" title="{{ __('ed_sablona.schody.sirka_tip') }}" class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                            :value="Math.round(inspector.sirka * 100)" @change="setSchody('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()">
                                     <span class="text-gray-500">cm</span>
-                                    <button type="button" @click="setSchody('otoc')" class="border border-gray-500 rounded px-2 py-0.5 text-xs ml-auto hover:bg-orange-50" title="Otočit o 90°">⟳</button>
-                                    <button type="button" x-show="inspector.tvar !== 'prime'" @click="setSchody('strana')" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Zrcadlit stranu lomení">⇄</button>
+                                    <button type="button" @click="setSchody('otoc')" class="border border-gray-500 rounded px-2 py-0.5 text-xs ml-auto hover:bg-orange-50" title="{{ __('ed_sablona.spolecne.otocit_90') }}">⟳</button>
+                                    <button type="button" x-show="inspector.tvar !== 'prime'" @click="setSchody('strana')" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.schody.zrcadlit') }}">⇄</button>
                                 </div>
-                                <div class="text-gray-500" title="Stupně se počítají z výšky mezi podlažími podle pravidla 2h + b = 630 mm" x-text="inspector.n + ' stupňů · výška ' + Math.round(inspector.v * 1000) + ' mm · šířka stupně ' + Math.round(inspector.b * 1000) + ' mm · délka ' + inspector.delka.toFixed(2).replace('.', ',') + ' m'"></div>
-                                <div class="flex items-center gap-1" title="Prázdné pole vrátí výpočet z výšky mezi podlažími. Skutečná výška se dorovná tak, aby stupně vyšly přesně na podlahu.">
-                                    <span class="text-gray-500">výška stupně:</span>
+                                <div class="text-gray-500" title="{{ __('ed_sablona.schody.vypocet_tip') }}" x-text="preloz('ed_sablona.schody.souhrn', { stupnu: prelozPocet('ed_sablona.schody.stupnu', inspector.n), vyska: Math.round(inspector.v * 1000), sirka: Math.round(inspector.b * 1000), delka: prelozCislo(inspector.delka, 2) })"></div>
+                                <div class="flex items-center gap-1" title="{{ __('ed_sablona.schody.rucne_tip') }}">
+                                    <span class="text-gray-500">{{ __('ed_sablona.schody.vyska_stupne') }}</span>
                                     <input type="number" min="100" max="250" step="1" data-schody="vyska" :value="Math.round(inspector.v * 1000)" @change="setSchody('vyska', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span class="text-gray-500">mm</span>
-                                    <span class="text-gray-500 ml-2">nášlap:</span>
+                                    <span class="text-gray-500 ml-2">{{ __('ed_sablona.schody.naslap') }}</span>
                                     <input type="number" min="150" max="500" step="1" data-schody="naslap" :value="Math.round(inspector.b * 1000)" @change="setSchody('naslap', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span class="text-gray-500">mm</span>
                                 </div>
                                 <template x-if="inspector.tvar !== 'prime'">
-                                    <div class="flex items-center gap-1" title="Stupně se dopočítají do ostatních částí. Část s nulou je jen odpočívadlo.">
-                                        <span class="text-gray-500">stupňů v částech:</span>
+                                    <div class="flex items-center gap-1" title="{{ __('ed_sablona.schody.casti_tip') }}">
+                                        <span class="text-gray-500">{{ __('ed_sablona.schody.casti') }}</span>
                                         <template x-for="(c, i) in inspector.casti" :key="i">
                                             <input type="number" min="0" step="1" :data-schody-cast="i" :value="c" @change="setSchodyCast(i, parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()">
                                         </template>
                                     </div>
                                 </template>
-                                <div data-barva-schodu x-data="vyberBarvy({ hodnota: () => inspector?.barva, nastav: (hex) => setSchody('barva', hex), nahled: (hex) => nahledBarvy3d('schody:' + inspector?.id, hex), pouzite: () => barvyJinde('schody:' + inspector?.id) })" title="Barva nášlapů. Svislé části mají ve 3D tmavší odstín téže barvy.">
-                                    @include('partials.vyber-barvy', ['popisek' => 'Barva'])
+                                <div data-barva-schodu x-data="vyberBarvy({ hodnota: () => inspector?.barva, nastav: (hex) => setSchody('barva', hex), nahled: (hex) => nahledBarvy3d('schody:' + inspector?.id, hex), pouzite: () => barvyJinde('schody:' + inspector?.id) })" title="{{ __('ed_sablona.schody.barva_tip') }}">
+                                    @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
                                 </div>
-                                <div class="text-orange-700" x-show="!inspector.pohodlne">Mimo běžný rozsah: výška stupně 150–200 mm, šířka schodiště od 80 cm, 2 × výška + nášlap kolem 630 mm.</div>
-                                <button type="button" @click="smazatSchody()" class="self-end border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400">Smazat</button>
+                                <div class="text-orange-700" x-show="!inspector.pohodlne">{{ __('ed_sablona.schody.mimo_rozsah') }}</div>
+                                <button type="button" @click="smazatSchody()" class="self-end border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400">{{ __('ed_sablona.spolecne.smazat') }}</button>
                             </div>
                         </template>
 
@@ -837,39 +837,39 @@
                         <template x-if="inspector.kind === 'plocha'">
                             <div class="flex flex-col gap-1 w-full">
                                 <div class="flex items-center gap-2">
-                                    <span class="text-gray-600 font-medium whitespace-nowrap">Zvýšená podlaha</span>
-                                    <span class="text-gray-500 min-w-0 truncate" x-text="'+' + Math.round(inspector.dh * 100) + ' cm z ' + inspector.domov + (inspector.mistnost ? ' (' + inspector.mistnost + ')' : '')"></span>
-                                    <button type="button" @click="schodkyNaPlochu(inspector.id)" class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Krátké schody na tuto zvýšenou část podlahy">Schody</button>
+                                    <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.plocha.zvysena') }}</span>
+                                    <span class="text-gray-500 min-w-0 truncate" x-text="preloz('ed_sablona.plocha.z_podlazi', { dh: Math.round(inspector.dh * 100), domov: inspector.domov }) + (inspector.mistnost ? ' (' + inspector.mistnost + ')' : '')"></span>
+                                    <button type="button" @click="schodkyNaPlochu(inspector.id)" class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.plocha.schody_tip') }}">{{ __('ed_sablona.spolecne.schody') }}</button>
                                 </div>
-                                <label class="flex items-center gap-1 text-gray-500" title="Zvýšení místnosti níž zvedá i strop, tedy podlahu tady. Odškrtnutím přenos na tomto podlaží vypnete.">
-                                    <input type="checkbox" :checked="inspector.zapnuto" @change="prepniPrenos(engine.dum.aktivni, inspector.id)"> platí i na tomto podlaží
+                                <label class="flex items-center gap-1 text-gray-500" title="{{ __('ed_sablona.plocha.prenos_tip') }}">
+                                    <input type="checkbox" :checked="inspector.zapnuto" @change="prepniPrenos(engine.dum.aktivni, inspector.id)"> {{ __('ed_sablona.plocha.plati') }}
                                 </label>
                             </div>
                         </template>
 
                         {{-- Nula otvoru: parapet a výška se měří od podlahy místnosti --}}
                         <template x-if="inspector.kind === 'opening' && inspector.nulaOtvoru">
-                            <div class="text-gray-500 w-full" data-nula-otvoru title="Parapet a výška se měří od podlahy místnosti. U otvoru mezi dvěma místnostmi od vyšší z nich."
-                                 x-text="'Měřeno od podlahy místnosti (' + (inspector.nulaOtvoru > 0 ? '+' : '') + Math.round(inspector.nulaOtvoru * 100) + ' cm od podlaží)'"></div>
+                            <div class="text-gray-500 w-full" data-nula-otvoru title="{{ __('ed_sablona.otvor.nula_tip') }}"
+                                 x-text="preloz('ed_sablona.otvor.nula', { rozdil: (inspector.nulaOtvoru > 0 ? '+' : '') + Math.round(inspector.nulaOtvoru * 100) })"></div>
                         </template>
 
                         {{-- BARVY OTVORŮ: u každého okna a dveří, ale platí pro celý dům. Jen otvor v obvodové stěně má dvě. --}}
                         <template x-if="(inspector.kind === 'opening' || inspector.kind === 'opening_multi') && barvyOtvoru(inspector.typ) && inspector.obvodovy === true">
                             <div class="flex flex-col gap-1 w-full pt-1 border-t border-gray-200" data-barvy-otvoru>
-                                <div class="text-gray-500" x-text="{ okno: 'Barvy všech oken v domě', dvere: 'Barvy všech vchodových dveří v domě', vrata: 'Barvy všech vrat v domě' }[barvyOtvoru(inspector.typ)]"></div>
+                                <div class="text-gray-500" x-text="{ okno: preloz('ed_sablona.otvor.barvy_okna'), dvere: preloz('ed_sablona.otvor.barvy_dvere'), vrata: preloz('ed_sablona.otvor.barvy_vrata') }[barvyOtvoru(inspector.typ)]"></div>
                                 <div data-barva-otvoru="ven" x-data="vyberBarvy({ hodnota: () => barvaDomu(barvyOtvoru(inspector?.typ) + 'Ven'), nastav: (hex) => setBarvaDomu(barvyOtvoru(inspector?.typ) + 'Ven', hex), nahled: (hex) => nahledBarvy3d(barvyOtvoru(inspector?.typ) + 'Ven', hex), pouzite: () => barvyJinde(barvyOtvoru(inspector?.typ) + 'Ven') })">
-                                    @include('partials.vyber-barvy', ['popisek' => 'Venku'])
+                                    @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.otvor.venku')])
                                 </div>
                                 <div data-barva-otvoru="dovnitr" x-data="vyberBarvy({ hodnota: () => barvaDomu(barvyOtvoru(inspector?.typ) + 'Dovnitr'), nastav: (hex) => setBarvaDomu(barvyOtvoru(inspector?.typ) + 'Dovnitr', hex), nahled: (hex) => nahledBarvy3d(barvyOtvoru(inspector?.typ) + 'Dovnitr', hex), pouzite: () => barvyJinde(barvyOtvoru(inspector?.typ) + 'Dovnitr') })">
-                                    @include('partials.vyber-barvy', ['popisek' => 'Uvnitř'])
+                                    @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.otvor.uvnitr')])
                                 </div>
                             </div>
                         </template>
                         <template x-if="(inspector.kind === 'opening' || inspector.kind === 'opening_multi') && barvyOtvoru(inspector.typ) && inspector.obvodovy === false">
                             <div class="flex flex-col gap-1 w-full pt-1 border-t border-gray-200" data-barvy-otvoru>
-                                <div class="text-gray-500" x-text="{ okno: 'Barva oken uvnitř domu', dvere: 'Barva všech vnitřních dveří v domě', vrata: 'Barva vrat uvnitř domu' }[barvyOtvoru(inspector.typ)]"></div>
+                                <div class="text-gray-500" x-text="{ okno: preloz('ed_sablona.otvor.barva_okna_uvnitr'), dvere: preloz('ed_sablona.otvor.barva_dvere_vnitrni'), vrata: preloz('ed_sablona.otvor.barva_vrata_uvnitr') }[barvyOtvoru(inspector.typ)]"></div>
                                 <div data-barva-otvoru="jedna" x-data="vyberBarvy({ hodnota: () => barvaDomu(barvaVnitrniho(inspector?.typ)), nastav: (hex) => setBarvaDomu(barvaVnitrniho(inspector?.typ), hex), nahled: (hex) => nahledBarvy3d(barvaVnitrniho(inspector?.typ), hex), pouzite: () => barvyJinde(barvaVnitrniho(inspector?.typ)) })">
-                                    @include('partials.vyber-barvy', ['popisek' => 'Barva'])
+                                    @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
                                 </div>
                             </div>
                         </template>
@@ -878,46 +878,46 @@
                         <template x-if="inspector.kind === 'mistnost'">
                             <div class="flex flex-col gap-1 w-full">
                                 <div class="flex items-center gap-2">
-                                    <span class="text-gray-600 font-medium whitespace-nowrap">Místnost</span>
-                                    <input type="text" maxlength="40" placeholder="Název"
+                                    <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.mistnost.nazev') }}</span>
+                                    <input type="text" maxlength="40" placeholder="{{ __('ed_sablona.spolecne.nazev') }}"
                                            class="flex-1 min-w-0 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                            :value="inspector.nazev"
                                            @change="setMistnostNazev($event.target.value)"
                                            @keydown.enter.prevent="$event.target.blur()">
-                                    <span class="text-gray-500 whitespace-nowrap" x-text="inspector.plocha !== null ? inspector.plocha.toFixed(1).replace('.', ',') + ' m²' : ''"></span>
+                                    <span class="text-gray-500 whitespace-nowrap" x-text="inspector.plocha !== null ? prelozCislo(inspector.plocha, 1) + ' m²' : ''"></span>
                                 </div>
-                                <div class="kk-podlazi-pole" title="Povrch podlahy této místnosti ve 3D"><span class="w-24 shrink-0">Dekor podlahy</span>
+                                <div class="kk-podlazi-pole" title="{{ __('ed_sablona.mistnost.dekor_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.mistnost.dekor') }}</span>
                                     <select class="flex-1 min-w-0 border border-gray-500 rounded px-1" data-dekor-podlahy @change="setMistnostPodlaha({ dekor: $event.target.value })">
                                         <template x-for="k in dekoryPodlahVolby" :key="k.id">
                                             <option :value="k.id" :selected="inspector.podlaha.dekor === k.id" x-text="k.nazev"></option>
                                         </template>
                                     </select></div>
                                 <div data-barva-podlahy x-data="vyberBarvy({ hodnota: () => inspector?.podlaha?.barva, nastav: (hex) => setMistnostPodlaha({ barva: hex }), nahled: (hex) => nahledBarvy3d('podlaha:' + inspector?.id, hex), pouzite: () => barvyJinde('podlaha:' + inspector?.id) })">
-                                    @include('partials.vyber-barvy', ['popisek' => 'Barva podlahy'])
-                                    <button type="button" x-show="inspector.podlaha.vlastni" @click="setMistnostPodlaha({ barva: null })" class="underline text-gray-500 hover:text-primary" title="Podlaha znovu převezme barvu vybraného dekoru">barva podle dekoru</button>
+                                    @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.mistnost.barva_podlahy')])
+                                    <button type="button" x-show="inspector.podlaha.vlastni" @click="setMistnostPodlaha({ barva: null })" class="underline text-gray-500 hover:text-primary" title="{{ __('ed_sablona.mistnost.podle_dekoru_tip') }}">{{ __('ed_sablona.mistnost.podle_dekoru') }}</button>
                                 </div>
                                 {{-- Úroveň podlahy: v úrovni podlaží (nic), zvýšená / snížená o cm, bez podlahy (galerie, otvor pro schody či šachtu).
                                      Podrobnosti se ukážou až po přepnutí z výchozí volby. --}}
                                 <template x-if="inspector.uroven">
                                     <div class="flex flex-col gap-1">
-                                        <div class="kk-podlazi-pole" title="Podlaha místnosti vůči podlaží. Bez podlahy = otvor ve stropu pod místností (galerie, schodiště, šachta), plocha se nepočítá."><span class="w-24 shrink-0">Úroveň podlahy</span>
+                                        <div class="kk-podlazi-pole" title="{{ __('ed_sablona.mistnost.uroven_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.mistnost.uroven') }}</span>
                                             <select class="flex-1 min-w-0 border border-gray-500 rounded px-1" data-uroven-podlahy @change="setMistnostUroven('typ', $event.target.value)">
                                                 <template x-for="t in typyPlochVolby" :key="t.id">
                                                     <option :value="t.id" :selected="inspector.uroven.typ === t.id" x-text="t.nazev"></option>
                                                 </template>
                                             </select>
                                             <template x-if="inspector.uroven.typ === 'zvysena' || inspector.uroven.typ === 'snizena'">
-                                                <input type="number" min="0" max="300" step="1" class="w-16" title="O kolik je podlaha výš nebo níž než zbytek podlaží"
+                                                <input type="number" min="0" max="300" step="1" class="w-16" title="{{ __('ed_sablona.mistnost.rozdil_tip') }}"
                                                        :value="Math.round(Math.abs(inspector.uroven.dh) * 100)" @change="setMistnostUroven('dh', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()">
                                             </template>
                                             <span x-show="inspector.uroven.typ === 'zvysena' || inspector.uroven.typ === 'snizena'">cm</span>
-                                            <button type="button" x-show="inspector.uroven.typ === 'zvysena' || inspector.uroven.typ === 'snizena'" @click="schodkyNaPlochu()" class="kk-btn" title="Krátké schody k této podlaze">Schody</button>
+                                            <button type="button" x-show="inspector.uroven.typ === 'zvysena' || inspector.uroven.typ === 'snizena'" @click="schodkyNaPlochu()" class="kk-btn" title="{{ __('ed_sablona.mistnost.schodky_tip') }}">{{ __('ed_sablona.spolecne.schody') }}</button>
                                         </div>
                                         {{-- Zvýšení se přenáší nahoru: zvedá se i strop, tedy podlaha nad ním --}}
                                         <template x-if="inspector.uroven.typ === 'zvysena' && inspector.uroven.vyssi.length > 0">
                                             <div class="flex items-center gap-1 flex-wrap">
-                                                <label class="flex items-center gap-1 text-gray-500" title="Zvýšení zvedne i strop, tedy podlahu podlaží nad ním. Klepnutím na podlaží přenos vypnete jen tam.">
-                                                    <input type="checkbox" :checked="inspector.uroven.prenos" @change="setMistnostUroven('prenos', $event.target.checked)"> přenést výš:
+                                                <label class="flex items-center gap-1 text-gray-500" title="{{ __('ed_sablona.mistnost.prenos_tip') }}">
+                                                    <input type="checkbox" :checked="inspector.uroven.prenos" @change="setMistnostUroven('prenos', $event.target.checked)"> {{ __('ed_sablona.mistnost.prenest') }}
                                                 </label>
                                                 <template x-for="v in inspector.uroven.vyssi" :key="v.id">
                                                     <button type="button" class="border rounded px-1.5 text-xs" :disabled="!inspector.uroven.prenos"
@@ -929,15 +929,15 @@
                                         {{-- Zvýšená podlaha přenesená z podlaží níž, která zasahuje do této místnosti --}}
                                         <template x-for="z in inspector.prenesene" :key="z.id">
                                             <div class="flex items-center gap-2 text-gray-500">
-                                                <span class="min-w-0 truncate" x-text="'Zvýšená podlaha +' + Math.round(z.dh * 100) + ' cm z ' + z.domov + (z.mistnost ? ' (' + z.mistnost + ')' : '')"></span>
-                                                <button type="button" @click="schodkyNaPlochu(z.id)" class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Krátké schody na zvýšenou část">Schody</button>
-                                                <button type="button" @click="prepniPrenos(engine.dum.aktivni, z.id)" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Na tomto podlaží zvýšení neuplatnit">Nepřenášet sem</button>
+                                                <span class="min-w-0 truncate" x-text="preloz('ed_sablona.mistnost.prenesena', { dh: Math.round(z.dh * 100), domov: z.domov }) + (z.mistnost ? ' (' + z.mistnost + ')' : '')"></span>
+                                                <button type="button" @click="schodkyNaPlochu(z.id)" class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.mistnost.schody_cast_tip') }}">{{ __('ed_sablona.spolecne.schody') }}</button>
+                                                <button type="button" @click="prepniPrenos(engine.dum.aktivni, z.id)" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.mistnost.neprenaset_tip') }}">{{ __('ed_sablona.mistnost.neprenaset') }}</button>
                                             </div>
                                         </template>
                                     </div>
                                 </template>
-                                <div class="flex items-center gap-1" title="Jen pro přehled v půdorysu, do 3D se nepromítá">
-                                    <span class="text-gray-500 mr-1">v půdorysu:</span>
+                                <div class="flex items-center gap-1" title="{{ __('ed_sablona.mistnost.pudorys_tip') }}">
+                                    <span class="text-gray-500 mr-1">{{ __('ed_sablona.mistnost.pudorys') }}</span>
                                     <template x-for="b in inspector.paleta" :key="b">
                                         <button type="button" @click="setMistnostBarva(b)"
                                                 class="rounded border"
@@ -952,11 +952,11 @@
                         {{-- ODDĚLOVAČ MÍSTNOSTI: jen informace a smazání --}}
                         <template x-if="inspector.kind === 'oddelovac'">
                             <div class="flex items-center gap-2 w-full">
-                                <span class="text-gray-600 font-medium whitespace-nowrap" x-text="inspector.count > 1 ? 'Oddělovače místností' : 'Oddělovač místnosti'"></span>
+                                <span class="text-gray-600 font-medium whitespace-nowrap" x-text="inspector.count > 1 ? preloz('ed_sablona.stena.oddelovace') : preloz('ed_sablona.stena.oddelovac')"></span>
                                 <span class="text-gray-500" x-show="inspector.delka !== null" x-text="inspector.delka !== null ? inspector.delka.toFixed(2) + ' m' : ''"></span>
                                 <button type="button" @click="smazatVybraneOddelovace()"
                                         class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400"
-                                        title="Smazat (Delete)">Smazat</button>
+                                        title="{{ __('ed_sablona.stena.smazat_tip') }}">{{ __('ed_sablona.spolecne.smazat') }}</button>
                             </div>
                         </template>
 
@@ -966,7 +966,7 @@
                                 <select class="border border-gray-500 rounded px-1 py-0.5 text-xs font-medium"
                                         @change="setWallTyp($event.target.value)">
                                     {{-- „Různé" jen při výběru stěn různých typů, jinak v nabídce zbytečně straší --}}
-                                    <template x-if="inspector.typ === null"><option value="" disabled selected>Různé</option></template>
+                                    <template x-if="inspector.typ === null"><option value="" disabled selected>{{ __('ed_sablona.stena.ruzne') }}</option></template>
                                     <template x-for="tv in inspector.typyVolby" :key="tv.key">
                                         <option :value="tv.key"
                                                 :selected="inspector.typ === tv.key"
@@ -974,7 +974,7 @@
                                     </template>
                                 </select>
                                 <div class="flex items-center gap-1 ml-auto">
-                                    <span class="text-gray-500">tl:</span>
+                                    <span class="text-gray-500">{{ __('ed_sablona.spolecne.tloustka_zkr') }}</span>
                                     {{-- Volně psaná tloušťka v cm (jako šířka okna) — stěny bývají
                                          i atypické, přichytávání na normovou řadu tu překáželo. --}}
                                     <input type="number" min="2" max="100" step="1"
@@ -985,7 +985,7 @@
                                            @keydown.enter.prevent="$event.target.blur()">
                                     <span class="text-gray-500">cm</span>
                                     {{-- Výška: prázdné = podle podlaží --}}
-                                    <span class="text-gray-500 ml-1">v:</span>
+                                    <span class="text-gray-500 ml-1">{{ __('ed_sablona.spolecne.vyska_zkr') }}</span>
                                     <input type="number" min="10" max="1200" step="1"
                                            class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                            :placeholder="Math.round(inspector.vyskaAuto * 100)"
@@ -999,9 +999,9 @@
                         {{-- Nosná stěna bez podpory v podlaží pod ní: označit a nabídnout řešení, nic samo nepřesouvat --}}
                         <template x-if="inspector.kind === 'wall' && inspector.podepreni">
                             <div class="flex items-center gap-1 flex-wrap w-full border-t border-gray-200 pt-1">
-                                <span style="color: var(--c-error)" title="Pod vyšrafovaným úsekem není v podlaží níž nosná ani obvodová stěna. Nic se nemění samo, je to jen upozornění." x-text="inspector.podepreni.chybiZaklad ? 'Chybí základ pod ' + inspector.podepreni.delka.toFixed(1).replace('.', ',') + ' m' : 'Nepodepřeno ' + inspector.podepreni.delka.toFixed(1).replace('.', ',') + ' m nad ' + inspector.podepreni.dole"></span>
-                                <button type="button" @click="stenaNaPricku()" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Stěna přestane být nosná a upozornění zmizí">Změnit na příčku</button>
-                                <button type="button" x-show="!inspector.podepreni.chybiZaklad" @click="pridatPodperu()" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="Přidá stejnou nosnou stěnu do podlaží níž">Přidat podpěru dolů</button>
+                                <span style="color: var(--c-error)" title="{{ __('ed_sablona.stena.podepreni_tip') }}" x-text="inspector.podepreni.chybiZaklad ? preloz('ed_sablona.stena.chybi_zaklad', { delka: prelozCislo(inspector.podepreni.delka, 1) }) : preloz('ed_sablona.stena.nepodepreno', { delka: prelozCislo(inspector.podepreni.delka, 1), dole: inspector.podepreni.dole })"></span>
+                                <button type="button" @click="stenaNaPricku()" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.stena.na_pricku_tip') }}">{{ __('ed_sablona.stena.na_pricku') }}</button>
+                                <button type="button" x-show="!inspector.podepreni.chybiZaklad" @click="pridatPodperu()" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.stena.podpera_tip') }}">{{ __('ed_sablona.stena.podpera') }}</button>
                             </div>
                         </template>
                     </div>
@@ -1023,13 +1023,13 @@
             <div style="position:absolute;top:12px;right:12px;z-index:10;cursor:grab;user-select:none;width:56px;height:56px"
                  @mousedown.prevent="kompasStart($event)"
                  @dblclick.prevent="kompasUhel = 0; aplikujRotaci(); fitView(); _katastrAutosave(); ulozitNastaveni()"
-                 data-tip-below="Tažením otočit · Dvojklik = reset pozice">
+                 data-tip-below="{{ __('ed_sablona.platno.kompas') }}">
                 <svg width="52" height="52" viewBox="0 0 52 52" style="margin:2px"
                      :style="'transform: rotate(' + kompasUhel + 'deg)'">
-                    <text x="26" y="10" font-size="9" fill="#e53e3e" font-weight="700" text-anchor="middle">S</text>
-                    <text x="26" y="49" font-size="9" fill="#718096" text-anchor="middle">J</text>
-                    <text x="48" y="29.5" font-size="9" fill="#718096" text-anchor="middle">V</text>
-                    <text x="4" y="29.5" font-size="9" fill="#718096" text-anchor="middle">Z</text>
+                    <text x="26" y="10" font-size="9" fill="#e53e3e" font-weight="700" text-anchor="middle">{{ __('ed_sablona.platno.kompas_sever') }}</text>
+                    <text x="26" y="49" font-size="9" fill="#718096" text-anchor="middle">{{ __('ed_sablona.platno.kompas_jih') }}</text>
+                    <text x="48" y="29.5" font-size="9" fill="#718096" text-anchor="middle">{{ __('ed_sablona.platno.kompas_vychod') }}</text>
+                    <text x="4" y="29.5" font-size="9" fill="#718096" text-anchor="middle">{{ __('ed_sablona.platno.kompas_zapad') }}</text>
                     <polygon points="26,12 23,23 26,21 29,23" fill="#e53e3e"/>
                     <polygon points="26,40 23,29 26,31 29,29" fill="#a0aec0"/>
                     <polygon points="40,26 29,23 31,26 29,29" fill="#a0aec0"/>
@@ -1061,7 +1061,7 @@
             <template x-if="!_prejmenovaniKonceptu">
                 <div class="flex items-center gap-1 flex-1 min-w-0 group">
                     <select x-model="projektId" @change="prepniProjekt()" class="kk-btn flex-1 truncate text-sm">
-                        <option value="">— Vytvořit nový koncept —</option>
+                        <option value="">{{ __('ed_sablona.projekt.novy_volba') }}</option>
                         <template x-for="k in koncepty" :key="k.id">
                             <option :value="k.id" x-text="k.nazev"></option>
                         </template>
@@ -1069,13 +1069,13 @@
                     {{-- Přejmenování double-click --}}
                     <button x-show="projektId" @click="zahajPreimenovaniKonceptu()"
                             class="p-0.5 text-gray-500 hover:text-gray-600"
-                            title="Přejmenovat">
+                            title="{{ __('ed_sablona.projekt.prejmenovat') }}">
                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 1.5l3.5 3.5L5 14.5H1.5V11z"/></svg>
                     </button>
                     {{-- Smazat --}}
                     <button x-show="projektId" @click="smazatKoncept()"
                             class="p-0.5 text-gray-500 hover:text-red-500"
-                            title="Smazat koncept">
+                            title="{{ __('ed_sablona.projekt.smazat') }}">
                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>
                     </button>
                 </div>
@@ -1090,7 +1090,7 @@
                     <button @click="potvrdPreimenovaniKonceptu()" class="text-xs text-primary">✓</button>
                 </div>
             </template>
-            <button @click="novyProjekt()" class="kk-btn" title="Vytvořit nový koncept">+</button>
+            <button @click="novyProjekt()" class="kk-btn" title="{{ __('ed_sablona.projekt.novy') }}">+</button>
         </div>
 
         {{-- Parcela (Katastr) --}}
@@ -1098,7 +1098,7 @@
              tužka rozbalí úpravy právě toho řádku, přidání je oddělené a podlaží vzniká až potvrzením. --}}
         <details class="kk-section" :open="panelOpen.plochy !== false" @toggle="panelOpen.plochy = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
-                <span>Podlaží a plochy</span>
+                <span>{{ __('ed_sablona.podlazi.nadpis') }}</span>
                 <span x-show="seznamPodlazi.length > 1 && panelOpen.plochy === false" class="kk-pocet" x-text="nazevAktivniho"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
@@ -1106,11 +1106,11 @@
                 <div id="kk-podlazi-seznam" class="px-2 py-1.5">
                     {{-- Střecha --}}
                     <div class="kk-podlazi-radek" :class="[(rezimStrecha && !rezim3d) && 'kk-aktivni', (rezim3d && strechaPopis !== 'nastavit' && !zobrazStrechu3d) && 'kk-skryte', (rezim3d && strechaPopis !== 'nastavit' && zobrazStrechu3d) && 'kk-aktivni']"
-                         data-radek="strecha" @click="prepniStrechu()" :title="strechaPopis === 'nastavit' ? 'Vytvořit střechu' : (rezim3d ? 'Ukázat nebo skrýt střechu' : 'Ukázat střechu v půdorysu')">
-                        <span>Střecha</span>
-                        <span class="ml-auto whitespace-nowrap" x-text="strechaPopis"></span>
+                         data-radek="strecha" @click="prepniStrechu()" :title="strechaPopis === 'nastavit' ? preloz('ed_sablona.strecha.vytvorit') : (rezim3d ? preloz('ed_sablona.strecha.ukazat_skryt') : preloz('ed_sablona.strecha.ukazat_pudorys'))">
+                        <span>{{ __('ed_sablona.strecha.nazev') }}</span>
+                        <span class="ml-auto whitespace-nowrap" x-text="strechaPopisText"></span>
                         <button type="button" class="kk-podlazi-tuzka" :class="podlaziUprava === 'strecha' && 'kk-aktivni'"
-                                title="Upravit střechu" data-upravit="strecha" @click.stop="prepniUpravuStrechy()">
+                                title="{{ __('ed_sablona.strecha.upravit') }}" data-upravit="strecha" @click.stop="prepniUpravuStrechy()">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
                         </button>
                     </div>
@@ -1119,76 +1119,76 @@
                         <div class="kk-podlazi-uprava" data-uprava="strecha">
                             <template x-if="!strechaPanel.st">
                                 <div class="flex flex-col gap-1">
-                                    <span class="text-gray-500">Dům zatím střechu nemá. Vznikne nad obrysem horního podlaží.</span>
-                                    <button type="button" @click="strechaVytvor()" class="kk-btn self-start">Vytvořit střechu</button>
+                                    <span class="text-gray-500">{{ __('ed_sablona.strecha.zatim_nema') }}</span>
+                                    <button type="button" @click="strechaVytvor()" class="kk-btn self-start">{{ __('ed_sablona.strecha.vytvorit') }}</button>
                                 </div>
                             </template>
                             <template x-if="strechaPanel.st">
                                 <div class="flex flex-col gap-1">
-                                    <div class="kk-podlazi-pole" title="Předvolba rozdělí hrany na okapy a štíty. Jednotlivé hrany jde pak změnit."><span class="w-24 shrink-0">Typ</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.typ_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.typ') }}</span>
                                         <select class="flex-1 min-w-0" @change="setStrecha('typ', $event.target.value)">
                                             <template x-for="t in typyStrechVolby" :key="t.id">
                                                 <option :value="t.id" :selected="strechaPanel.st.typ === t.id" x-text="t.nazev"></option>
                                             </template>
                                         </select>
-                                        <button type="button" x-show="strechaPanel.st.typ === 'sedlova'" @click="setStrecha('otocHreben')" class="kk-btn" title="Otočit hřeben o 90°">⟳</button>
+                                        <button type="button" x-show="strechaPanel.st.typ === 'sedlova'" @click="setStrecha('otocHreben')" class="kk-btn" title="{{ __('ed_sablona.strecha.otocit_hreben') }}">⟳</button>
                                     </div>
-                                    <div class="kk-podlazi-pole" title="Sklon střešních ploch ve stupních"><span class="w-24 shrink-0">Sklon</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.sklon_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.sklon') }}</span>
                                         <input type="number" min="1" max="75" step="1" class="w-16" :value="strechaPanel.st.sklon" :disabled="strechaPanel.st.typ === 'plocha'"
                                                @change="setStrecha('sklon', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>°</span></div>
-                                    <div class="kk-podlazi-pole" title="O kolik okap přesahuje přes líc stěn"><span class="w-24 shrink-0">Přesah okapu</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.presah_okapu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.presah_okapu') }}</span>
                                         <input type="number" min="0" max="300" step="5" class="w-16" :value="Math.round((strechaPanel.st.presah || 0) * 100)"
                                                @change="setStrecha('presah', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
-                                    <div class="kk-podlazi-pole" title="O kolik střecha přesahuje přes štítovou stěnu"><span class="w-24 shrink-0">Přesah štítu</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.presah_stitu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.presah_stitu') }}</span>
                                         <input type="number" min="0" max="300" step="5" class="w-16" :value="Math.round((strechaPanel.st.presahStit || 0) * 100)"
                                                @change="setStrecha('presahStit', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
-                                    <div class="kk-podlazi-pole" title="Výška, kde střecha protne líc stěny, měřená od podlahy horního podlaží"><span class="w-24 shrink-0">Výška okapu</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.vyska_okapu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.vyska_okapu') }}</span>
                                         <input type="number" min="0" max="1200" step="5" class="w-16" :value="Math.round(strechaPanel.zOkap * 100)"
                                                @change="setStrecha('vyskaOkapu', $event.target.value === '' ? null : parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span>
-                                        <span class="ml-auto whitespace-nowrap" title="Nejvyšší bod střechy nad podlahou horního podlaží" x-show="strechaPanel.zMax !== null" x-text="strechaPanel.zMax !== null ? 'hřeben ' + strechaPanel.zMax.toFixed(2).replace('.', ',') + ' m' : ''"></span></div>
-                                    <div class="kk-podlazi-pole" title="Typ určuje reliéf krytiny ve 3D. Platí pro celou střechu."><span class="w-24 shrink-0">Krytina</span>
+                                        <span class="ml-auto whitespace-nowrap" title="{{ __('ed_sablona.strecha.hreben_tip') }}" x-show="strechaPanel.zMax !== null" x-text="strechaPanel.zMax !== null ? preloz('ed_sablona.strecha.hreben', { vyska: prelozCislo(strechaPanel.zMax, 2) }) : ''"></span></div>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.krytina_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.krytina') }}</span>
                                         <select class="flex-1 min-w-0" data-krytina @change="setStrecha('krytina', $event.target.value)">
                                             <template x-for="k in krytinyVolby" :key="k.id">
                                                 <option :value="k.id" :selected="strechaPanel.krytina === k.id" x-text="k.nazev"></option>
                                             </template>
                                         </select></div>
                                     <div x-data="vyberBarvy({ hodnota: () => strechaPanel?.barva, nastav: (hex) => setStrecha('barva', hex), nahled: (hex) => nahledBarvyStrechy(hex), pouzite: () => barvyJinde('strecha') })">
-                                        @include('partials.vyber-barvy', ['popisek' => 'Barva'])
+                                        @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
                                     </div>
-                                    <div class="text-gray-500" x-show="strechaPanel.bezObrysu">Horní podlaží nemá uzavřený obrys, střechu nelze spočítat.</div>
+                                    <div class="text-gray-500" x-show="strechaPanel.bezObrysu">{{ __('ed_sablona.strecha.bez_obrysu') }}</div>
                                     {{-- Vybraná hrana: co nemá vlastní, bere z celku --}}
                                     <template x-if="strechaPanel.hrana">
                                         <div class="flex flex-col gap-1 mt-1 pt-1 border-t border-gray-200" data-hrana-panel>
-                                            <div class="kk-podlazi-pole" title="Okap: od hrany střecha stoupá. Štít: hrana končí svislou stěnou."><span class="w-24 shrink-0 font-semibold">Vybraná hrana</span>
+                                            <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.hrana_tip') }}"><span class="w-24 shrink-0 font-semibold">{{ __('ed_sablona.strecha.hrana') }}</span>
                                                 <select class="flex-1 min-w-0" @change="setHranaStrechy(strechaPanel.hrana.klic, { typ: $event.target.value })">
-                                                    <option value="okap" :selected="strechaPanel.hrana.typ === 'okap'">Okap (střecha stoupá)</option>
-                                                    <option value="stit" :selected="strechaPanel.hrana.typ === 'stit'">Štít (svislá stěna)</option>
+                                                    <option value="okap" :selected="strechaPanel.hrana.typ === 'okap'">{{ __('ed_sablona.strecha.okap_volba') }}</option>
+                                                    <option value="stit" :selected="strechaPanel.hrana.typ === 'stit'">{{ __('ed_sablona.strecha.stit_volba') }}</option>
                                                 </select></div>
                                             <template x-if="strechaPanel.hrana.typ === 'okap'">
-                                                <div class="kk-podlazi-pole" title="Sklon této plochy"><span class="w-24 shrink-0">Sklon</span>
+                                                <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.sklon_plochy_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.sklon') }}</span>
                                                     <input type="number" min="1" max="75" step="1" class="w-16" data-hrana="sklon" :value="strechaPanel.hrana.sklon"
                                                            @change="setHranaStrechy(strechaPanel.hrana.klic, { sklon: parseFloat($event.target.value) })" @keydown.enter.prevent="$event.target.blur()"><span>°</span></div>
                                             </template>
-                                            <div class="kk-podlazi-pole" :title="strechaPanel.hrana.typ === 'okap' ? 'O kolik okap této plochy přesahuje přes líc stěny' : 'O kolik střecha přesahuje přes tuto štítovou stěnu'"><span class="w-24 shrink-0" data-hrana-popisek="presah" x-text="strechaPanel.hrana.typ === 'okap' ? 'Přesah okapu' : 'Přesah štítu'"></span>
+                                            <div class="kk-podlazi-pole" :title="strechaPanel.hrana.typ === 'okap' ? preloz('ed_sablona.strecha.hrana_presah_okap_tip') : preloz('ed_sablona.strecha.hrana_presah_stit_tip')"><span class="w-24 shrink-0" data-hrana-popisek="presah" x-text="strechaPanel.hrana.typ === 'okap' ? preloz('ed_sablona.strecha.presah_okapu') : preloz('ed_sablona.strecha.presah_stitu')"></span>
                                                 <input type="number" min="0" max="300" step="5" class="w-16" data-hrana="presah" :value="Math.round(strechaPanel.hrana.presah * 100)"
                                                        @change="setHranaStrechy(strechaPanel.hrana.klic, { presah: $event.target.value === '' ? null : parseFloat($event.target.value) / 100 })" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
                                             <template x-if="strechaPanel.hrana.typ === 'okap'">
-                                                <div class="kk-podlazi-pole" title="Výška, kde tato plocha protne líc stěny"><span class="w-24 shrink-0">Výška okapu</span>
+                                                <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.hrana_vyska_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.vyska_okapu') }}</span>
                                                     <input type="number" min="0" max="1200" step="5" class="w-16" data-hrana="vyskaOkapu" :value="Math.round(strechaPanel.hrana.z * 100)"
                                                            @change="setHranaStrechy(strechaPanel.hrana.klic, { vyskaOkapu: $event.target.value === '' ? null : parseFloat($event.target.value) / 100 })" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
                                             </template>
                                             <template x-if="strechaPanel.hrana.typ === 'okap'">
                                                 <div x-data="vyberBarvy({ hodnota: () => strechaPanel?.hrana?.barva || strechaPanel?.barva, nastav: (hex) => setHranaStrechy(strechaPanel.hrana.klic, { barva: hex }), nahled: (hex) => nahledBarvyStrechy(hex, strechaPanel.hrana.klic), pouzite: () => barvyJinde('hrana:' + strechaPanel?.hrana?.klic) })">
-                                                    @include('partials.vyber-barvy', ['popisek' => 'Barva'])
-                                                    <button type="button" x-show="strechaPanel.hrana.barva" @click="setHranaStrechy(strechaPanel.hrana.klic, { barva: null })" class="underline text-gray-500 hover:text-primary" title="Plocha znovu převezme barvu celé střechy">stejná jako střecha</button>
+                                                    @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
+                                                    <button type="button" x-show="strechaPanel.hrana.barva" @click="setHranaStrechy(strechaPanel.hrana.klic, { barva: null })" class="underline text-gray-500 hover:text-primary" title="{{ __('ed_sablona.strecha.jako_strecha_tip') }}">{{ __('ed_sablona.strecha.jako_strecha') }}</button>
                                                 </div>
                                             </template>
-                                            <button type="button" x-show="strechaPanel.hrana.rucne" @click="hranaJakoCelek(strechaPanel.hrana.klic)" class="self-start underline text-gray-500 hover:text-primary" title="Hrana znovu bere všechny hodnoty z nastavení celé střechy">vrátit na nastavení celé střechy</button>
+                                            <button type="button" x-show="strechaPanel.hrana.rucne" @click="hranaJakoCelek(strechaPanel.hrana.klic)" class="self-start underline text-gray-500 hover:text-primary" title="{{ __('ed_sablona.strecha.vratit_tip') }}">{{ __('ed_sablona.strecha.vratit') }}</button>
                                         </div>
                                     </template>
                                     <div class="flex items-center gap-2">
-                                        <span class="text-gray-500" x-show="!strechaPanel.hrana" x-text="rezim3d ? 'Hrany se přepínají ve 2D.' : 'Klepnutím na hranu v půdorysu ji přepnete.'"></span>
-                                        <button type="button" @click="smazatStrechu()" title="Smaže střechu. Stěny a podlaží zůstanou." class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs whitespace-nowrap hover:bg-red-50 hover:border-red-400">Smazat střechu</button>
+                                        <span class="text-gray-500" x-show="!strechaPanel.hrana" x-text="rezim3d ? preloz('ed_sablona.strecha.hrany_ve_2d') : preloz('ed_sablona.strecha.klepni_hrana')"></span>
+                                        <button type="button" @click="smazatStrechu()" title="{{ __('ed_sablona.strecha.smazat_tip') }}" class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs whitespace-nowrap hover:bg-red-50 hover:border-red-400">{{ __('ed_sablona.strecha.smazat') }}</button>
                                     </div>
                                 </div>
                             </template>
@@ -1199,41 +1199,41 @@
                         <div>
                             <div class="kk-podlazi-radek" :data-radek="p.id"
                                  :class="[(p.aktivni && !rezimStrecha && !rezim3d) && 'kk-aktivni', (rezim3d && !p.viditelne3d) && 'kk-skryte', (rezim3d && p.viditelne3d) && 'kk-aktivni']"
-                                 @click="naPodlazi(p.id)" :title="rezim3d ? 'Ukázat nebo skrýt ' + p.nazev : 'Přejít na ' + p.nazev">
+                                 @click="naPodlazi(p.id)" :title="rezim3d ? preloz('ed_sablona.podlazi.ukazat_skryt', { nazev: p.nazev }) : preloz('ed_sablona.podlazi.prejit', { nazev: p.nazev })">
                                 <span x-text="p.nazev"></span>
-                                <span class="kk-podlazi-pozor" x-show="p.nepodeprene > 0 && !rezim3d" x-text="p.nepodeprene" :title="'Nosné stěny bez podpory v podlaží níž nebo bez základu: ' + p.nepodeprene + '. V půdorysu jsou červeně vyšrafované.'"></span>
-                                <span class="ml-auto whitespace-nowrap" :title="'Plocha místností bez stěn. Počet místností: ' + p.pocet" x-text="p.plocha.toFixed(1).replace('.', ',') + ' m²'"></span>
+                                <span class="kk-podlazi-pozor" x-show="p.nepodeprene > 0 && !rezim3d" x-text="p.nepodeprene" :title="preloz('ed_sablona.podlazi.nepodeprene_tip', { pocet: p.nepodeprene })"></span>
+                                <span class="ml-auto whitespace-nowrap" :title="preloz('ed_sablona.podlazi.plocha_tip', { pocet: p.pocet })" x-text="prelozCislo(p.plocha, 1) + ' m²'"></span>
                                 <button type="button" class="kk-podlazi-tuzka" :class="podlaziUprava === p.id && 'kk-aktivni'"
-                                        :title="'Upravit ' + p.nazev" :data-upravit="p.id" @click.stop="prepniUpravuPodlazi(p.id)">
+                                        :title="preloz('ed_sablona.podlazi.upravit', { nazev: p.nazev })" :data-upravit="p.id" @click.stop="prepniUpravuPodlazi(p.id)">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
                                 </button>
                             </div>
                             <div class="text-[11px] text-gray-500 pl-2 pb-0.5" x-show="p.typ === 'podkrovi' && Math.abs(p.plocha - p.zap) >= 0.05"
-                                 x-text="'z toho nad 1,3 m: ' + p.zap.toFixed(1).replace('.', ',') + ' m²'"></div>
+                                 x-text="preloz('ed_sablona.podlazi.z_toho_nad', { plocha: prelozCislo(p.zap, 1) })"></div>
                             {{-- Úpravy tohoto podlaží, ať je jasné, co se mění --}}
                             <template x-if="podlaziUprava === p.id">
                                 <div class="kk-podlazi-uprava" :data-uprava="p.id">
-                                    <div class="kk-podlazi-pole" title="Vlastní název podlaží. Bez něj se číslují samy."><span class="w-24 shrink-0">Název</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.podlazi.nazev_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.spolecne.nazev') }}</span>
                                         <input type="text" class="flex-1 min-w-0" maxlength="30" :value="p.nazev"
                                                @change="setPodlazi(p.id, 'nazev', $event.target.value)" @keydown.enter.prevent="$event.target.blur()"></div>
-                                    <div class="kk-podlazi-pole" title="Od podlahy tohoto podlaží po podlahu podlaží nad ním, včetně stropu."><span class="w-24 shrink-0">Konstr. výška</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.podlazi.konstr_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.podlazi.konstr') }}</span>
                                         <input type="number" class="w-16" min="150" max="1200" step="1" :value="Math.round(p.vyska * 100)"
                                                @change="setPodlazi(p.id, 'vyska', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
-                                    <div class="kk-podlazi-pole" title="Stropní deska nad tímto podlažím. Odečítá se od konstrukční výšky."><span class="w-24 shrink-0">Tloušťka stropu</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.podlazi.strop_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.podlazi.strop') }}</span>
                                         <input type="number" class="w-16" min="0" max="150" step="1" :value="Math.round(p.strop * 100)"
                                                @change="setPodlazi(p.id, 'strop', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
-                                    <div class="kk-podlazi-pole" title="Výška podlahy tohoto podlaží. Změna posune celý dům nahoru nebo dolů, podlaží zůstanou na sobě. Vzdálenost mezi nimi se mění konstrukční výškou."><span class="w-24 shrink-0">Kóta podlahy</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.podlazi.kota_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.podlazi.kota') }}</span>
                                         <input type="number" class="w-16" step="1" :value="Math.round(p.kota * 100)" :data-kota="p.id"
                                                @change="setPodlazi(p.id, 'kota', $event.target.value === '' ? null : parseFloat($event.target.value) / 100); $event.target.value = Math.round(engine.kotaPodlazi(p.id) * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span>
-                                        <button type="button" x-show="posunDomu !== 0" class="underline whitespace-nowrap hover:text-primary" title="Dům se vrátí tak, aby podlaha 1.NP měla kótu 0" data-kota-nula @click="kotaNaNulu()">vrátit 1.NP na 0</button></div>
-                                    <div title="Barva fasády. Platí pro vnější stranu domu, ve všech podlažích stejně, včetně okrajů podlah a stropů. Vnitřní zdi jsou ve 3D bílé." data-barva-fasady
+                                        <button type="button" x-show="posunDomu !== 0" class="underline whitespace-nowrap hover:text-primary" title="{{ __('ed_sablona.podlazi.kota_nula_tip') }}" data-kota-nula @click="kotaNaNulu()">{{ __('ed_sablona.podlazi.kota_nula') }}</button></div>
+                                    <div title="{{ __('ed_sablona.podlazi.fasada_tip') }}" data-barva-fasady
                                          x-data="vyberBarvy({ hodnota: () => barvaDomu('fasada'), nastav: (hex) => setBarvaDomu('fasada', hex), nahled: (hex) => nahledBarvy3d('fasada', hex), pouzite: () => barvyJinde('fasada') })">
-                                        @include('partials.vyber-barvy', ['popisek' => 'Barva domu'])
+                                        @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.podlazi.barva_domu')])
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="text-gray-500" title="Od podlahy po spodek stropu: konstrukční výška minus tloušťka stropu. Tak vysoké jsou stěny." x-text="'Světlá výška ' + p.svetla.toFixed(2).replace('.', ',') + ' m'"></span>
-                                        <button type="button" x-show="seznamPodlazi.length > 1" @click="smazatPodlazi(p.id)" title="Smaže podlaží i s jeho kresbou. Vrátit to jde přes Zpět."
-                                                class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400" x-text="'Smazat ' + p.nazev"></button>
+                                        <span class="text-gray-500" title="{{ __('ed_sablona.podlazi.svetla_tip') }}" x-text="preloz('ed_sablona.podlazi.svetla', { vyska: prelozCislo(p.svetla, 2) })"></span>
+                                        <button type="button" x-show="seznamPodlazi.length > 1" @click="smazatPodlazi(p.id)" title="{{ __('ed_sablona.podlazi.smazat_tip') }}"
+                                                class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400" x-text="preloz('ed_sablona.podlazi.smazat', { nazev: p.nazev })"></button>
                                     </div>
                                 </div>
                             </template>
@@ -1242,10 +1242,10 @@
                     {{-- Základy: jen s parcelou, patří pod nejnižší podlaží. Nejsou to podlaží, odvozují se ze stěn. --}}
                     <template x-if="maZaklady">
                         <div>
-                            <div class="kk-podlazi-radek" data-radek="zaklady" @click="prepniUpravuPodlazi('zaklady')" title="Základy a výkop pod domem">
-                                <span>Základy</span>
+                            <div class="kk-podlazi-radek" data-radek="zaklady" @click="prepniUpravuPodlazi('zaklady')" title="{{ __('ed_sablona.zaklady.radek_tip') }}">
+                                <span>{{ __('ed_sablona.zaklady.nazev') }}</span>
                                 <span class="ml-auto whitespace-nowrap" x-text="zakladyPopis"></span>
-                                <button type="button" class="kk-podlazi-tuzka" :class="podlaziUprava === 'zaklady' && 'kk-aktivni'" title="Upravit základy" data-upravit="zaklady" @click.stop="prepniUpravuPodlazi('zaklady')">
+                                <button type="button" class="kk-podlazi-tuzka" :class="podlaziUprava === 'zaklady' && 'kk-aktivni'" title="{{ __('ed_sablona.zaklady.upravit') }}" data-upravit="zaklady" @click.stop="prepniUpravuPodlazi('zaklady')">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                                 </button>
                             </div>
@@ -1253,38 +1253,38 @@
                                 <div class="flex flex-col gap-1 px-2 py-1.5 text-xs" data-zaklady-panel>
                                     <div x-show="zakladyChybi" style="color: var(--c-error)" data-zaklady-chybi x-text="zakladyChybi"></div>
                                     <template x-for="c in zemina?.casti || []" :key="c.id">
-                                        <div class="kk-podlazi-pole" :title="'Část domu pod ' + c.nazev + ': ' + c.plocha.toFixed(1).replace('.', ',') + ' m²'"><span class="w-24 shrink-0" x-text="'Pod ' + c.nazev"></span>
+                                        <div class="kk-podlazi-pole" :title="preloz('ed_sablona.zaklady.cast_tip', { nazev: c.nazev, plocha: prelozCislo(c.plocha, 1) })"><span class="w-24 shrink-0" x-text="preloz('ed_sablona.zaklady.pod', { nazev: c.nazev })"></span>
                                             <select class="flex-1 min-w-0" :data-zaklad-typ="c.id" @change="setTypZakladu(c.id, $event.target.value)">
-                                                <option value="pasy" :selected="c.typ === 'pasy'">Pasy s podkladní deskou</option>
-                                                <option value="deska" :selected="c.typ === 'deska'">Nosná deska bez pasů</option>
-                                                <option value="stavajici" :selected="c.typ === 'stavajici'">Stávající, bez výkopu</option>
+                                                <option value="pasy" :selected="c.typ === 'pasy'">{{ __('ed_sablona.zaklady.pasy') }}</option>
+                                                <option value="deska" :selected="c.typ === 'deska'">{{ __('ed_sablona.zaklady.deska') }}</option>
+                                                <option value="stavajici" :selected="c.typ === 'stavajici'">{{ __('ed_sablona.zaklady.stavajici') }}</option>
                                             </select></div>
                                     </template>
-                                    <div class="kk-podlazi-pole" title="Totéž číslo jako kóta 1.NP. Změna posune celý dům."><span class="w-24 shrink-0">Nad terénem</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.nad_terenem_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.nad_terenem') }}</span>
                                         <input type="number" min="-500" max="500" step="5" class="w-16" data-zaklad="nadTerenem" :value="Math.round(posunDomu * 100)"
                                                @change="setNadTerenem(parseFloat($event.target.value) / 100); $event.target.value = Math.round(posunDomu * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
-                                    <div class="kk-podlazi-pole" title="Pracovní prostor od líce domu. Běžně 60 až 120 cm."><span class="w-24 shrink-0">Odkop kolem</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.odkop_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.odkop') }}</span>
                                         <input type="number" min="0" max="300" step="10" class="w-16" data-zaklad="odkop" :value="Math.round(zakladyHodnota('odkop') * 100)"
                                                @change="setZaklady('odkop', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('odkop') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
-                                    <div class="kk-podlazi-pole" title="Běžně 30 až 60 cm."><span class="w-24 shrink-0">Šířka pasu</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.sirka_pasu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.sirka_pasu') }}</span>
                                         <input type="number" min="20" max="200" step="5" class="w-16" data-zaklad="sirkaPasu" :value="Math.round(zakladyHodnota('sirkaPasu') * 100)"
                                                @change="setZaklady('sirkaPasu', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('sirkaPasu') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
-                                    <div class="kk-podlazi-pole" title="Hloubka základové spáry pasů pod terénem. Nezámrzná hloubka je aspoň 80 cm."><span class="w-24 shrink-0">Hloubka spáry</span>
+                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.spara_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.spara') }}</span>
                                         <input type="number" min="40" max="300" step="5" class="w-16" data-zaklad="spara" :value="Math.round(zakladyHodnota('spara') * 100)"
                                                @change="setZaklady('spara', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('spara') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
                                     <details>
-                                        <summary class="cursor-pointer text-gray-500">Podrobnosti</summary>
+                                        <summary class="cursor-pointer text-gray-500">{{ __('ed_sablona.zaklady.podrobnosti') }}</summary>
                                         <div class="flex flex-col gap-1 pt-1">
-                                            <div class="kk-podlazi-pole" title="Od podlahy po spodek konstrukce: podlaha, izolace, hydroizolace, podkladní deska a podsyp. Běžně 35 až 50 cm. Na tuhle tloušťku se kope a jen tolik dům překlene k terénu."><span class="w-24 shrink-0">Tloušťka základu</span>
+                                            <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.skladba_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.skladba') }}</span>
                                                 <input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladba" :value="Math.round(zakladyHodnota('skladba') * 100)"
                                                        @change="setZaklady('skladba', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('skladba') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
-                                            <div class="kk-podlazi-pole" title="Tloušťka skrývky. Běžně 15 až 30 cm."><span class="w-24 shrink-0">Ornice</span>
+                                            <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.ornice_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.ornice') }}</span>
                                                 <input type="number" min="0" max="100" step="5" class="w-16" data-zaklad="ornice" :value="Math.round(zakladyHodnota('ornice') * 100)"
                                                        @change="setZaklady('ornice', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('ornice') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
-                                            <div class="kk-podlazi-pole" title="Vodorovně na 1 m výšky. Hlína a jíl 0,25 až 0,5, písčité zeminy až 1."><span class="w-24 shrink-0 whitespace-nowrap">Svah výkopu 1 :</span>
+                                            <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.svah_tip') }}"><span class="w-24 shrink-0 whitespace-nowrap">{{ __('ed_sablona.zaklady.svah') }}</span>
                                                 <input type="number" min="0" max="3" step="0.05" class="w-16" data-zaklad="svah" :value="zakladyHodnota('svah')"
                                                        @change="setZaklady('svah', parseFloat($event.target.value)); $event.target.value = zakladyHodnota('svah')" @keydown.enter.prevent="$event.target.blur()"></div>
-                                            <div class="kk-podlazi-pole" title="Kolikrát větší objem má zemina po vykopání. Písek 1,10, hlinitý písek 1,25, hlína a jíl 1,35."><span class="w-24 shrink-0">Nakypření</span>
+                                            <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.nakypreni_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.nakypreni') }}</span>
                                                 <input type="number" min="1" max="2" step="0.05" class="w-16" data-zaklad="nakypreni" :value="zakladyHodnota('nakypreni')"
                                                        @change="setZaklady('nakypreni', parseFloat($event.target.value)); $event.target.value = zakladyHodnota('nakypreni')" @keydown.enter.prevent="$event.target.blur()"></div>
                                         </div>
@@ -1292,18 +1292,18 @@
                                     {{-- Materiály: co po stavbě zůstane na pozemku navíc. Rostlý objem pro bilanci, nakypřený pro hromadu. --}}
                                     <template x-if="zemina">
                                         <div class="text-xs text-gray-600 border-t border-gray-100 pt-1.5 flex flex-col gap-0.5" data-materialy>
-                                            <div class="font-semibold text-gray-700">Materiály (odhad)</div>
-                                            <div class="flex gap-2 text-gray-500"><span class="flex-1"></span><span class="w-16 text-right">rostlý</span><span class="w-16 text-right">nakypřený</span></div>
+                                            <div class="font-semibold text-gray-700">{{ __('ed_sablona.zaklady.materialy') }}</div>
+                                            <div class="flex gap-2 text-gray-500"><span class="flex-1"></span><span class="w-16 text-right">{{ __('ed_sablona.zaklady.rostly') }}</span><span class="w-16 text-right">{{ __('ed_sablona.zaklady.nakypreny') }}</span></div>
                                             <template x-for="r in materialyRadky" :key="r.id">
                                                 <div class="flex gap-2" :data-material="r.id"><span class="flex-1" x-text="r.nazev"></span><span class="w-16 text-right font-semibold" x-text="r.rostly"></span><span class="w-16 text-right font-semibold" x-text="r.nakypreny"></span></div>
                                             </template>
-                                            <div x-show="zemina.mimoData > 0.05" class="text-amber-700" data-material-pozor>Část výkopu leží mimo parcelu, výšky jsou tam jen dopočítané.</div>
+                                            <div x-show="zemina.mimoData > 0.05" class="text-amber-700" data-material-pozor>{{ __('ed_sablona.zaklady.mimo') }}</div>
                                             <details>
-                                                <summary class="cursor-pointer text-gray-500">Jak se to počítá</summary>
+                                                <summary class="cursor-pointer text-gray-500">{{ __('ed_sablona.zaklady.jak') }}</summary>
                                                 <div class="flex flex-col gap-0.5 pt-1">
-                                                    <div x-text="'Výkopek: vykopáno ' + m3(zemina.vykopek.vykopano) + ', zpět do zásypu ' + m3(zemina.vykopek.zpet)"></div>
-                                                    <div x-text="'Ornice: sejmuto ' + m3(zemina.ornice.vykopano) + ', zpět kolem domu ' + m3(zemina.ornice.zpet)"></div>
-                                                    <div x-text="'Největší hromada během stavby: ' + m3(zemina.hromada) + ' nakypřené'"></div>
+                                                    <div x-text="preloz('ed_sablona.zaklady.vykopek', { vykopano: m3(zemina.vykopek.vykopano), zpet: m3(zemina.vykopek.zpet) })"></div>
+                                                    <div x-text="preloz('ed_sablona.zaklady.ornice_bilance', { vykopano: m3(zemina.ornice.vykopano), zpet: m3(zemina.ornice.zpet) })"></div>
+                                                    <div x-text="preloz('ed_sablona.zaklady.hromada', { objem: m3(zemina.hromada) })"></div>
                                                     <div x-text="terenPopis"></div>
                                                 </div>
                                             </details>
@@ -1313,28 +1313,28 @@
                             </template>
                         </div>
                     </template>
-                    <div class="flex items-center gap-2 px-2 py-1 mt-1 border-t border-gray-200 text-xs font-semibold text-gray-700" x-show="prehledPloch && seznamPodlazi.length > 1" title="Součet ploch místností všech podlaží">
-                        <span>Celkem</span>
-                        <span class="ml-auto pr-8" x-text="prehledPloch ? prehledPloch.celkem.toFixed(1).replace('.', ',') + ' m²' : ''"></span>
+                    <div class="flex items-center gap-2 px-2 py-1 mt-1 border-t border-gray-200 text-xs font-semibold text-gray-700" x-show="prehledPloch && seznamPodlazi.length > 1" title="{{ __('ed_sablona.podlazi.celkem_tip') }}">
+                        <span>{{ __('ed_sablona.podlazi.celkem') }}</span>
+                        <span class="ml-auto pr-8" x-text="prehledPloch ? prelozCislo(prehledPloch.celkem, 1) + ' m²' : ''"></span>
                     </div>
-                    <div class="text-[11px] text-gray-500 px-2 pt-1" x-show="rezim3d">Zvýrazněné řádky jsou vidět. Klepnutím je ukážete nebo skryjete.<span x-show="maZaklady"> Po skrytí podlaží v terénu uvidíte pod nimi výkop.</span></div>
+                    <div class="text-[11px] text-gray-500 px-2 pt-1" x-show="rezim3d">{{ __('ed_sablona.podlazi.radky_3d') }}<span x-show="maZaklady"> {{ __('ed_sablona.podlazi.vykop_3d') }}</span></div>
                     {{-- Přidání: podlaží vzniká až klepnutím na konkrétní volbu --}}
                     <div class="mt-1">
-                        <button type="button" id="kk-pridat-podlazi" @click="podlaziPridat = !podlaziPridat; podlaziUprava = null" class="kk-btn w-full text-xs" title="Nabídne, jaké podlaží přidat. Vznikne až po výběru." x-text="podlaziPridat ? 'Zavřít' : '+ Přidat podlaží'"></button>
+                        <button type="button" id="kk-pridat-podlazi" @click="podlaziPridat = !podlaziPridat; podlaziUprava = null" class="kk-btn w-full text-xs" title="{{ __('ed_sablona.podlazi.pridat_tip') }}" x-text="podlaziPridat ? preloz('ed_sablona.podlazi.zavrit') : preloz('ed_sablona.podlazi.pridat')"></button>
                         <template x-if="podlaziPridat">
                             <div class="flex flex-col gap-1 pt-1.5">
                                 <div class="flex items-center gap-1">
-                                    <button type="button" @click="pridatPodlazi('nahoru')" class="kk-btn flex-1 text-xs" title="Nové běžné podlaží nahoře, případně pod podkrovím">Patro nahoře</button>
-                                    <button type="button" @click="pridatPodlazi('sklep')" class="kk-btn flex-1 text-xs" title="Nové podlaží pod nejnižším podlažím">Sklep</button>
-                                    <button type="button" x-show="!maPodkrovi" @click="pridatPodlazi('podkrovi')" class="kk-btn flex-1 text-xs" title="Podlaží pod střechou: stěny končí pod střechou, plocha pod 1,3 m se nezapočítá">Podkroví</button>
+                                    <button type="button" @click="pridatPodlazi('nahoru')" class="kk-btn flex-1 text-xs" title="{{ __('ed_sablona.podlazi.patro_tip') }}">{{ __('ed_sablona.podlazi.patro') }}</button>
+                                    <button type="button" @click="pridatPodlazi('sklep')" class="kk-btn flex-1 text-xs" title="{{ __('ed_sablona.podlazi.sklep_tip') }}">{{ __('ed_sablona.podlazi.sklep') }}</button>
+                                    <button type="button" x-show="!maPodkrovi" @click="pridatPodlazi('podkrovi')" class="kk-btn flex-1 text-xs" title="{{ __('ed_sablona.podlazi.podkrovi_tip') }}">{{ __('ed_sablona.podlazi.podkrovi') }}</button>
                                 </div>
-                                <label class="kk-podlazi-pole" title="Nové podlaží začne kopií obvodových a nosných stěn sousedního podlaží. Příčky a otvory se nepřenášejí."><input type="checkbox" x-model="podlaziKopie" @change="_ulozNastaveniDumu()"> převzít obvodové a nosné stěny</label>
+                                <label class="kk-podlazi-pole" title="{{ __('ed_sablona.podlazi.kopie_tip') }}"><input type="checkbox" x-model="podlaziKopie" @change="_ulozNastaveniDumu()"> {{ __('ed_sablona.podlazi.kopie') }}</label>
                             </div>
                         </template>
                     </div>
                     <div class="flex items-center gap-2 px-1 pt-1.5" x-show="seznamPodlazi.length > 1 && !rezim3d">
-                        <label class="kk-podlazi-pole" x-show="maSpodek" title="Ukáže půdorys podlaží pod tímto jako šedý podklad, abyste na něj mohli navázat stěny. Nic se tím nemění."><input type="checkbox" :checked="zobrazSpodek" @change="prepniSpodek()"> ukázat podlaží níž</label>
-                        <button type="button" @click="posunoutDum()" title="Označí všechny stěny. Tažením pak posunete nebo otočíte celý dům. Samostatné podlaží posunout nejde." class="ml-auto text-xs text-gray-500 hover:text-primary underline">Posunout celý dům</button>
+                        <label class="kk-podlazi-pole" x-show="maSpodek" title="{{ __('ed_sablona.podlazi.spodek_tip') }}"><input type="checkbox" :checked="zobrazSpodek" @change="prepniSpodek()"> {{ __('ed_sablona.podlazi.spodek') }}</label>
+                        <button type="button" @click="posunoutDum()" title="{{ __('ed_sablona.podlazi.posun_tip') }}" class="ml-auto text-xs text-gray-500 hover:text-primary underline">{{ __('ed_sablona.podlazi.posun') }}</button>
                     </div>
                 </div>
             </template>
@@ -1343,22 +1343,22 @@
         {{-- Katalog nábytku a vybavení, modules/katalog.md --}}
         <details id="kk-sekce-katalog" class="kk-section" :open="panelOpen.katalog" @toggle="panelOpen.katalog = $el.open; ulozitPanely(); if ($el.open) _katalogNacti(); else _katalogZrusVyber()">
             <summary class="kk-section-hlava">
-                <span>Nábytek a vybavení</span>
+                <span>{{ __('ed_sablona.katalog.nadpis') }}</span>
                 <span x-show="katalog" class="kk-pocet" x-text="katalog?.polozky.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <template x-if="panelOpen.katalog">
                 <div class="px-2 pb-2 flex flex-col gap-2 text-xs">
                     <div class="flex items-center gap-1">
-                        <select id="kk-katalog-kategorie" x-model="katalogKategorie" :disabled="katalogHledat.trim() !== ''" aria-label="Kategorie" class="border border-gray-400 rounded px-1 py-1 text-xs flex-1 min-w-0">
+                        <select id="kk-katalog-kategorie" x-model="katalogKategorie" :disabled="katalogHledat.trim() !== ''" aria-label="{{ __('ed_sablona.katalog.kategorie') }}" class="border border-gray-400 rounded px-1 py-1 text-xs flex-1 min-w-0">
                             <template x-for="k in katalog?.kategorie || []" :key="k.id">
                                 <option :value="k.id" x-text="k.nazev" :selected="k.id === katalogKategorie"></option>
                             </template>
                         </select>
-                        <input id="kk-katalog-hledat" type="search" x-model="katalogHledat" placeholder="Hledat…" aria-label="Hledat v katalogu" class="border border-gray-400 rounded px-1 py-1 text-xs" style="width:110px">
+                        <input id="kk-katalog-hledat" type="search" x-model="katalogHledat" placeholder="{{ __('ed_sablona.katalog.hledat') }}" aria-label="{{ __('ed_sablona.katalog.hledat_aria') }}" class="border border-gray-400 rounded px-1 py-1 text-xs" style="width:110px">
                     </div>
-                    <div x-show="!katalog" class="text-gray-500">Načítám katalog…</div>
-                    <div x-show="katalog && !katalogPolozky.length" class="text-gray-500">Nic jsem nenašel.</div>
+                    <div x-show="!katalog" class="text-gray-500">{{ __('ed_sablona.katalog.nacitam') }}</div>
+                    <div x-show="katalog && !katalogPolozky.length" class="text-gray-500">{{ __('ed_sablona.katalog.nic') }}</div>
                     <div class="overflow-y-auto" style="max-height:340px;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px">
                         <template x-for="p in katalogPolozky" :key="p.id">
                             <button type="button" @click="katalogVyber(p)" @pointerdown="katalogTazeniStart($event, p)" @dragstart.prevent class="text-left rounded border p-1 flex flex-col gap-0.5 hover:border-gray-500"
@@ -1370,8 +1370,8 @@
                         </template>
                     </div>
                     <div class="text-gray-500 leading-snug">
-                        <span x-show="katalogVybrany">Klepněte do půdorysu. O zeď se kus zastaví, Alt zarážku vypne. Esc výběr zruší.</span>
-                        <span x-show="!katalogVybrany">Přetáhněte kus do půdorysu, nebo ho vyberte a klepněte. <a href="{{ \App\Support\Domeny::url('web', '/model-credits') }}" target="_blank" rel="noopener" class="underline">Autoři modelů</a></span>
+                        <span x-show="katalogVybrany">{{ __('ed_sablona.katalog.klepni') }}</span>
+                        <span x-show="!katalogVybrany">{{ __('ed_sablona.katalog.pretahni') }} <a href="{{ \App\Support\Domeny::url('web', '/model-credits') }}" target="_blank" rel="noopener" class="underline">{{ __('ed_sablona.katalog.autori') }}</a></span>
                     </div>
                 </div>
             </template>
@@ -1379,7 +1379,7 @@
 
         <details class="kk-section" :open="panelOpen.parcela" @toggle="panelOpen.parcela = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
-                <span>@funkce('katastr') Parcela @else Mřížka @endfunkce</span>
+                <span>@funkce('katastr') {{ __('ed_sablona.parcela.nadpis') }} @else {{ __('ed_sablona.parcela.mrizka') }} @endfunkce</span>
                 <span x-show="katastrParcely.length > 0" class="kk-pocet" x-text="katastrParcely.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
@@ -1387,21 +1387,21 @@
                 {{-- Checkboxy: Mřížka + katastr vrstvy (katastr jen s parcelami). Jeden řádek
                      pokud se vejdou, jinak wrap. gap-x menší aby se vešly vedle sebe. --}}
                 <div class="flex items-center gap-x-2 gap-y-1 text-xs text-gray-500 flex-wrap" @click.stop>
-                    <label class="flex items-center gap-0.5 cursor-pointer" data-tip="Zobrazit/skrýt podkladovou mřížku"><input type="checkbox" x-model="showGrid" @change="toggleGrid(); ulozitNastaveni()" class="w-3 h-3"> Mřížka</label>
-                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="Zobrazit/skrýt polygony parcel"><input type="checkbox" x-model="katastrZobrazitParcely" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> Parcely</label>
-                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="Zobrazit/skrýt budovy na parcelách"><input type="checkbox" x-model="katastrZobrazitStavby" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> Stavby</label>
-                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="Zobrazit/skrýt sousední parcely"><input type="checkbox" x-model="katastrZobrazitSousedy" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> Sousedé</label>
-                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="Výškové body DMR 5G (barevná škála)"><input type="checkbox" x-model="katastrZobrazitVysky" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> Výška</label>
+                    <label class="flex items-center gap-0.5 cursor-pointer" data-tip="{{ __('ed_sablona.parcela.mrizka_tip') }}"><input type="checkbox" x-model="showGrid" @change="toggleGrid(); ulozitNastaveni()" class="w-3 h-3"> {{ __('ed_sablona.parcela.mrizka') }}</label>
+                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="{{ __('ed_sablona.parcela.parcely_tip') }}"><input type="checkbox" x-model="katastrZobrazitParcely" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> {{ __('ed_sablona.parcela.parcely') }}</label>
+                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="{{ __('ed_sablona.parcela.stavby_tip') }}"><input type="checkbox" x-model="katastrZobrazitStavby" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> {{ __('ed_sablona.parcela.stavby') }}</label>
+                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="{{ __('ed_sablona.parcela.sousede_tip') }}"><input type="checkbox" x-model="katastrZobrazitSousedy" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> {{ __('ed_sablona.parcela.sousede') }}</label>
+                    <label x-show="katastrParcely.length > 0" class="flex items-center gap-0.5 cursor-pointer" data-tip="{{ __('ed_sablona.parcela.vysky_tip') }}"><input type="checkbox" x-model="katastrZobrazitVysky" @change="katastrPrekreslitCanvas(); ulozitNastaveni()" class="w-3 h-3"> {{ __('ed_sablona.parcela.vysky') }}</label>
                 </div>
                 {{-- KÚ hledání --}}
                 @funkce('katastr')
                 <div class="relative">
-                    <label class="text-xs text-gray-500">Katastrální území</label>
+                    <label class="text-xs text-gray-500">{{ __('ed_sablona.parcela.ku') }}</label>
                     <input type="text" x-model="katastrKuHledani"
                            @input.debounce.200ms="katastrHledejKu()"
                            @focus="katastrKuNabidk = katastrKuVysledky.length > 0"
                            @click.outside="katastrKuNabidk = false"
-                           placeholder="Začněte psát název..."
+                           placeholder="{{ __('ed_sablona.parcela.ku_hledat') }}"
                            class="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-primary">
                     <div x-show="katastrKuNabidk && katastrKuVysledky.length > 0"
                          class="absolute left-0 right-0 top-full z-30 bg-white border border-gray-200 rounded shadow-lg max-h-40 overflow-y-auto">
@@ -1415,19 +1415,19 @@
                 </div>
                 {{-- Číslo + typ + tlačítko --}}
                 <div class="flex gap-1 items-center">
-                    <input type="text" x-model="katastrCislo" placeholder="Číslo parcely"
+                    <input type="text" x-model="katastrCislo" placeholder="{{ __('ed_sablona.parcela.cislo') }}"
                            @keydown.enter="katastrNactiParcelu()"
                            class="flex-1 min-w-0 text-xs border border-gray-200 rounded px-1 h-7 focus:outline-none focus:border-primary">
                     <select x-model="katastrTyp" class="text-xs border border-gray-200 rounded px-1 h-7">
-                        <option value="auto">Auto</option>
-                        <option value="pozemkova">Pozemková</option>
-                        <option value="stavebni">Stavební</option>
+                        <option value="auto">{{ __('ed_sablona.parcela.typ_auto') }}</option>
+                        <option value="pozemkova">{{ __('ed_sablona.parcela.typ_pozemkova') }}</option>
+                        <option value="stavebni">{{ __('ed_sablona.parcela.typ_stavebni') }}</option>
                     </select>
                     <button @click="katastrNactiParcelu()"
                             :disabled="!katastrVybraneKu || !katastrCislo.trim() || katastrNacitani"
                             class="px-2 h-7 text-xs rounded text-white disabled:opacity-40"
                             style="background: var(--c-primary);">
-                        <span x-show="!katastrNacitani">Načíst</span>
+                        <span x-show="!katastrNacitani">{{ __('ed_sablona.parcela.nacist') }}</span>
                         <span x-show="katastrNacitani">...</span>
                     </button>
                 </div>
@@ -1446,41 +1446,41 @@
                                     <span class="font-medium select-text" style="user-select:text"
                                           @click.stop.prevent
                                           @mousedown.stop
-                                          x-text="p.cislo + ' (' + (p.typ === 'stavebni' ? 'st.' : 'p.č.') + ')'"></span>
+                                          x-text="p.cislo + ' (' + (p.typ === 'stavebni' ? preloz('ed_sablona.parcela.zkratka_stavebni') : preloz('ed_sablona.parcela.zkratka_pozemkova')) + ')'"></span>
                                 </span>
                                 <button @click.stop.prevent="katastrOdeberParcelu(i)" class="text-gray-500 hover:text-red-500">&times;</button>
                             </summary>
-                            <div class="text-gray-600 mt-0.5"><span class="text-gray-500">Druh:</span> <span x-text="(p.druh_pozemku_cz || '—') + ', ' + (p.vymera || '?') + ' m²'"></span></div>
-                            <template x-for="field in [{k:'radon', lbl:'Radon'}, {k:'geologie', lbl:'Geologie'}, {k:'ig_rajon', lbl:'Základy'}]" :key="field.k">
+                            <div class="text-gray-600 mt-0.5"><span class="text-gray-500">{{ __('ed_sablona.parcela.druh') }}</span> <span x-text="(p.druh_pozemku_cz || '—') + ', ' + (p.vymera || '?') + ' m²'"></span></div>
+                            <template x-for="field in [{k:'radon', lbl:preloz('ed_sablona.parcela.radon')}, {k:'geologie', lbl:preloz('ed_sablona.parcela.geologie')}, {k:'ig_rajon', lbl:preloz('ed_sablona.zaklady.nazev')}]" :key="field.k">
                                 <div x-show="p[field.k]">
                                     <div class="text-gray-600 mt-0.5 flex items-start gap-1">
                                         <div class="flex-1"><span class="text-gray-500" x-text="field.lbl + ':'"></span> <span x-text="p[field.k]"></span></div>
                                         <button @click.stop="otevriVysvetleni(i, field.k)"
                                                 class="text-gray-300 hover:text-orange-600 border border-current rounded-full w-4 h-4 text-[9px] leading-none flex items-center justify-center flex-shrink-0"
-                                                title="Vysvětlit AI">?</button>
+                                                title="{{ __('ed_sablona.parcela.vysvetlit') }}">?</button>
                                     </div>
                                     <div x-show="p._vysvetleni_open === field.k && p._vysvetleni && p._vysvetleni[field.k]"
                                          class="bg-orange-50 border-l-2 border-orange-300 px-2 py-1 mt-0.5 text-gray-700 italic text-xs leading-snug">
-                                        <span x-show="p._vysvetleni?.[field.k]?.loading">Načítám…</span>
+                                        <span x-show="p._vysvetleni?.[field.k]?.loading">{{ __('ed_sablona.parcela.nacitam') }}</span>
                                         <span x-show="p._vysvetleni?.[field.k]?.popis" x-text="p._vysvetleni?.[field.k]?.popis"></span>
                                         <span x-show="p._vysvetleni?.[field.k]?.error" class="text-red-600" x-text="p._vysvetleni?.[field.k]?.error"></span>
                                     </div>
                                 </div>
                             </template>
                         </details>
-                        <div x-show="p._sousedi === false" class="text-red-600 font-medium mt-0.5">Nesousedí</div>
+                        <div x-show="p._sousedi === false" class="text-red-600 font-medium mt-0.5">{{ __('ed_sablona.parcela.nesousedi') }}</div>
                     </div>
                 </template>
                 {{-- Souhrn --}}
                 <div x-show="katastrParcely.length > 0" class="text-xs text-gray-600 border-t border-gray-100 pt-1.5">
-                    <div>Celkem: <strong x-text="katastrCelkovaVymera() + ' m²'"></strong></div>
+                    <div>{{ __('ed_sablona.parcela.celkem') }} <strong x-text="katastrCelkovaVymera() + ' m²'"></strong></div>
                     <template x-if="vyskovyProfil">
                         <div>
-                            <span>Výška: <strong x-text="vyskovyProfil.vyska_min + ' – ' + vyskovyProfil.vyska_max + ' m n.m.'"></strong></span>
-                            <span class="ml-2">Převýšení: <strong x-text="vyskovyProfil.vyskovy_rozdil + ' m'"></strong></span>
+                            <span>{{ __('ed_sablona.parcela.vyska') }} <strong x-text="preloz('ed_sablona.parcela.vyska_rozsah', { min: vyskovyProfil.vyska_min, max: vyskovyProfil.vyska_max })"></strong></span>
+                            <span class="ml-2">{{ __('ed_sablona.parcela.prevyseni') }} <strong x-text="vyskovyProfil.vyskovy_rozdil + ' m'"></strong></span>
                         </div>
                     </template>
-                    <span x-show="katastrNacitaniProfil" class="mt-1 text-xs text-gray-500">Načítám výškový profil...</span>
+                    <span x-show="katastrNacitaniProfil" class="mt-1 text-xs text-gray-500">{{ __('ed_sablona.parcela.nacitam_profil') }}</span>
                 </div>
                 @endfunkce
             </div>
@@ -1489,7 +1489,7 @@
         {{-- Objekty --}}
         <details class="kk-section" :open="panelOpen.objekty" @toggle="panelOpen.objekty = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
-                <span>Objekty</span>
+                <span>{{ __('ed_sablona.objekty.nadpis') }}</span>
                 <span x-show="seznamObjektu.length > 0" class="kk-pocet" x-text="seznamObjektu.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
@@ -1529,7 +1529,7 @@
                         </div>
                         <div class="flex items-center gap-1 shrink-0 ml-1">
                             <span class="text-gray-500 text-[10px]" x-text="obj.info"></span>
-                            <button @click.stop="smazatObjekt(obj.id)" class="text-gray-300 hover:text-red-500 transition" title="Smazat">
+                            <button @click.stop="smazatObjekt(obj.id)" class="text-gray-300 hover:text-red-500 transition" title="{{ __('ed_sablona.spolecne.smazat') }}">
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <path d="M18 6L6 18M6 6l12 12"/>
                                 </svg>
@@ -1538,7 +1538,7 @@
                     </div>
                 </template>
                 <div x-show="seznamObjektu.length === 0" class="px-3 py-2 text-xs text-gray-500">
-                    Žádné objekty
+                    {{ __('ed_sablona.objekty.zadne') }}
                 </div>
             </div>
         </details>
@@ -1546,7 +1546,7 @@
         {{-- Podklad (import půdorysu z výkresu) --}}
         <details class="kk-section" :open="panelOpen.podklad" @toggle="panelOpen.podklad = $el.open; ulozitPanely(); if ($el.open) impNactiDrive()">
             <summary class="kk-section-hlava">
-                <span>Podklad</span>
+                <span>{{ __('ed_sablona.podklad.nadpis') }}</span>
                 <span x-show="podklad" class="kk-pocet">1</span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
@@ -1555,27 +1555,27 @@
             <div class="px-3 py-2 space-y-2">
                 <template x-if="!podklad">
                     <div>
-                        <button @click="impOtevri()" class="kk-btn w-full text-xs">Nový výkres…</button>
-                        <div class="text-[10px] text-gray-500 mt-1">PDF od architekta, sken nebo obrázek půdorysu.</div>
+                        <button @click="impOtevri()" class="kk-btn w-full text-xs">{{ __('ed_sablona.podklad.novy') }}</button>
+                        <div class="text-[10px] text-gray-500 mt-1">{{ __('ed_sablona.podklad.popis') }}</div>
                     </div>
                 </template>
                 <template x-if="podklad">
                     <div class="space-y-1.5">
-                        <div class="text-xs text-gray-600 truncate" x-text="podklad.nazev || 'Výkres'"></div>
+                        <div class="text-xs text-gray-600 truncate" x-text="podklad.nazev || preloz('ed_sablona.podklad.vykres')"></div>
                         <div class="text-[10px] text-gray-500">
-                            změřeno · <span x-text="podklad.sirkaM.toFixed(1) + ' × ' + podklad.vyskaM.toFixed(1) + ' m'"></span>
+                            {{ __('ed_sablona.podklad.zmereno') }} · <span x-text="podklad.sirkaM.toFixed(1) + ' × ' + podklad.vyskaM.toFixed(1) + ' m'"></span>
                         </div>
                         {{-- Usazení plánku na spodní podlaží a posun samotného plánku --}}
                         <div class="flex items-center gap-1 flex-wrap">
-                            <button type="button" x-show="maSpodek" @click="licoZacni()" class="kk-btn text-xs">Usadit na spodní podlaží</button>
-                            <button type="button" @click="prepniPosunPodkladu()" class="kk-btn text-xs" :class="posunPodkladu && 'kk-tl-aktivni'">Posunout plánek</button>
+                            <button type="button" x-show="maSpodek" @click="licoZacni()" class="kk-btn text-xs">{{ __('ed_sablona.podklad.usadit') }}</button>
+                            <button type="button" @click="prepniPosunPodkladu()" class="kk-btn text-xs" :class="posunPodkladu && 'kk-tl-aktivni'">{{ __('ed_sablona.podklad.posunout') }}</button>
                         </div>
                         {{-- Zobrazení podkladu — oddělené čarou, ať je vidět, že patří k sobě.
                              „Nad“ umožní obkreslovat i tam, kde už stěna leží. --}}
                         <div class="pt-2 mt-1 border-t border-gray-200">
-                            <div class="text-[10px] text-gray-500 mb-1">Zobrazení podkladu</div>
+                            <div class="text-[10px] text-gray-500 mb-1">{{ __('ed_sablona.podklad.zobrazeni') }}</div>
                             <div class="flex items-center rounded overflow-hidden border border-gray-200 w-full">
-                                <template x-for="v in [{ k: 'pod', t: 'Pod' }, { k: 'nad', t: 'Nad' }, { k: 'skryt', t: 'Skrýt' }]" :key="v.k">
+                                <template x-for="v in [{ k: 'pod', t: preloz('ed_sablona.podklad.pod') }, { k: 'nad', t: preloz('ed_sablona.podklad.nad') }, { k: 'skryt', t: preloz('ed_sablona.podklad.skryt') }]" :key="v.k">
                                     <button @click="podkladZmena({ zobrazeni: v.k })"
                                             class="flex-1 px-1 py-0.5 text-[11px] transition border-l border-gray-200 first:border-l-0"
                                             :class="podkladZobrazeni() === v.k ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-100'"
@@ -1584,7 +1584,7 @@
                             </div>
                             {{-- vlevo bledý, vpravo sytý; x-model, ať jezdec drží polohu i po překreslení --}}
                             <div class="flex items-center gap-2 mt-1.5" x-show="podkladZobrazeni() !== 'skryt'">
-                                <span class="text-[10px] text-gray-500 shrink-0">Sytost</span>
+                                <span class="text-[10px] text-gray-500 shrink-0">{{ __('ed_sablona.podklad.sytost') }}</span>
                                 <input type="range" min="0.1" max="1" step="0.05"
                                        x-model.number="podklad.pruhlednost"
                                        @input="podkladZmena({ pruhlednost: parseFloat($event.target.value) })"
@@ -1594,8 +1594,8 @@
                             </div>
                         </div>
                         <div class="flex gap-1">
-                            <button @click="impOtevri()" class="kk-btn flex-1 text-xs">Nový výkres…</button>
-                            <button @click="podkladOdeber()" class="kk-btn text-xs text-red-600">Odebrat</button>
+                            <button @click="impOtevri()" class="kk-btn flex-1 text-xs">{{ __('ed_sablona.podklad.novy') }}</button>
+                            <button @click="podkladOdeber()" class="kk-btn text-xs text-red-600">{{ __('ed_sablona.podklad.odebrat') }}</button>
                         </div>
                     </div>
                 </template>
@@ -1605,8 +1605,8 @@
         {{-- Export a sdílení: obrázky vznikají v prohlížeči, odkaz je hotový stav jen pro čtení (modules/sdileni.md) --}}
         <details class="kk-section" data-sekce-export :open="panelOpen.export" @toggle="panelOpen.export = $el.open; ulozitPanely(); if ($el.open && !sdileni) nactiSdileni()">
             <summary class="kk-section-hlava">
-                <span>Export a sdílení</span>
-                <span x-show="sdileni?.aktivni" class="kk-pocet" title="Odkaz je zapnutý">odkaz</span>
+                <span>{{ __('ed_sablona.export.nadpis') }}</span>
+                <span x-show="sdileni?.aktivni" class="kk-pocet" title="{{ __('ed_sablona.export.odkaz_zapnuty') }}">{{ __('ed_sablona.export.odkaz') }}</span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <div class="px-3 py-2 flex flex-col gap-2 text-xs">
@@ -1616,35 +1616,35 @@
                 <template x-if="exportPovolen">
                     <div class="flex flex-col gap-2">
                         <div class="flex flex-col gap-1" data-export-prepinace>
-                            <div class="text-gray-500">Na půdorysu bude:</div>
+                            <div class="text-gray-500">{{ __('ed_sablona.export.na_pudorysu') }}</div>
                             <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                                 @include('masterteam.partials.prepinace-zobrazeni')
                             </div>
                         </div>
                         <div class="flex flex-wrap gap-1">
-                            <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="pudorys" title="Aktivní podlaží jako obrázek PNG" @click="exportPudorys(false)">Půdorys PNG</button>
-                            <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="pudorysy" title="Všechna podlaží na jednom obrázku" @click="exportPudorys(true)">Všechna podlaží</button>
-                            <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="3d" title="3D z aktuálního pohledu jako obrázek PNG" @click="export3d()">3D PNG</button>
+                            <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="pudorys" title="{{ __('ed_sablona.export.pudorys_tip') }}" @click="exportPudorys(false)">{{ __('ed_sablona.export.pudorys') }}</button>
+                            <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="pudorysy" title="{{ __('ed_sablona.export.vsechna_tip') }}" @click="exportPudorys(true)">{{ __('ed_sablona.export.vsechna') }}</button>
+                            <button type="button" class="kk-btn text-xs" :disabled="exportBezi" data-export="3d" title="{{ __('ed_sablona.export.obraz_3d_tip') }}" @click="export3d()">3D PNG</button>
                         </div>
                         <div class="flex flex-col gap-1 pt-2 border-t border-gray-200">
-                            <div class="font-semibold text-gray-700">Odkaz jen pro čtení</div>
+                            <div class="font-semibold text-gray-700">{{ __('ed_sablona.export.odkaz_nadpis') }}</div>
                             <template x-if="!sdileni?.aktivni">
                                 <div class="flex flex-col gap-1">
-                                    <div class="text-gray-500">Kdo má odkaz, uvidí 3D a půdorysy bez přihlášení. Ukazuje stav k okamžiku vytvoření, k editoru se nedostane.</div>
-                                    <button type="button" class="kk-btn text-xs self-start" :disabled="sdileniBezi" data-sdileni="vytvorit" @click="sdileniUloz()" x-text="sdileniBezi ? 'Připravuji…' : 'Vytvořit odkaz'"></button>
+                                    <div class="text-gray-500">{{ __('ed_sablona.export.odkaz_popis') }}</div>
+                                    <button type="button" class="kk-btn text-xs self-start" :disabled="sdileniBezi" data-sdileni="vytvorit" @click="sdileniUloz()" x-text="sdileniBezi ? preloz('ed_sablona.export.pripravuji') : preloz('ed_sablona.export.vytvorit')"></button>
                                 </div>
                             </template>
                             <template x-if="sdileni?.aktivni">
                                 <div class="flex flex-col gap-1">
                                     <div class="flex items-center gap-1">
                                         <input type="text" readonly class="flex-1 min-w-0 border border-gray-500 rounded px-1" x-ref="sdileniAdresa" data-sdileni="adresa" :value="sdileni.url" @focus="$event.target.select()">
-                                        <button type="button" class="kk-btn text-xs" data-sdileni="kopirovat" @click="sdileniKopiruj()" x-text="sdileniZkopirovano ? 'Zkopírováno' : 'Kopírovat'"></button>
+                                        <button type="button" class="kk-btn text-xs" data-sdileni="kopirovat" @click="sdileniKopiruj()" x-text="sdileniZkopirovano ? preloz('ed_sablona.export.zkopirovano') : preloz('ed_sablona.export.kopirovat')"></button>
                                     </div>
-                                    <div class="text-gray-500" x-text="'Stav k ' + new Date(sdileni.upraveno).toLocaleString('cs-CZ')"></div>
+                                    <div class="text-gray-500" x-text="preloz('ed_sablona.export.stav', { datum: new Date(sdileni.upraveno).toLocaleString(TT_LOKALIZACE.jazyk) })"></div>
                                     <div class="flex flex-wrap gap-1">
-                                        <a class="kk-btn text-xs" :href="sdileni.url" target="_blank" rel="noopener noreferrer" data-sdileni="otevrit">Otevřít</a>
-                                        <button type="button" class="kk-btn text-xs" :disabled="sdileniBezi" data-sdileni="aktualizovat" title="Nahraje aktuální stav projektu, adresa zůstane stejná" @click="sdileniUloz()" x-text="sdileniBezi ? 'Připravuji…' : 'Aktualizovat'"></button>
-                                        <button type="button" class="kk-btn text-xs" :disabled="sdileniBezi" data-sdileni="vypnout" title="Odkaz přestane fungovat" @click="sdileniVypni()">Vypnout odkaz</button>
+                                        <a class="kk-btn text-xs" :href="sdileni.url" target="_blank" rel="noopener noreferrer" data-sdileni="otevrit">{{ __('ed_sablona.export.otevrit') }}</a>
+                                        <button type="button" class="kk-btn text-xs" :disabled="sdileniBezi" data-sdileni="aktualizovat" title="{{ __('ed_sablona.export.aktualizovat_tip') }}" @click="sdileniUloz()" x-text="sdileniBezi ? preloz('ed_sablona.export.pripravuji') : preloz('ed_sablona.export.aktualizovat')"></button>
+                                        <button type="button" class="kk-btn text-xs" :disabled="sdileniBezi" data-sdileni="vypnout" title="{{ __('ed_sablona.export.vypnout_tip') }}" @click="sdileniVypni()">{{ __('ed_sablona.export.vypnout') }}</button>
                                     </div>
                                 </div>
                             </template>
@@ -1657,11 +1657,11 @@
         {{-- Historie --}}
         <details class="kk-section" :open="panelOpen.historie" @toggle="panelOpen.historie = $el.open; ulozitPanely()">
             <summary data-historie-souhrn class="kk-section-hlava">
-                <span>Historie</span>
+                <span>{{ __('ed_sablona.historie.nadpis') }}</span>
                 {{-- Po Zpět je vidět i u sbaleného panelu, na kterém kroku se stojí --}}
                 <span x-show="historie.length > 0" class="kk-pocet"
                       x-text="historiePozice < historie.length - 1
-                          ? 'krok ' + (historiePozice + 1) + ' z ' + historie.length
+                          ? preloz('ed_sablona.historie.krok', { krok: historiePozice + 1, celkem: historie.length })
                           : historie.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
@@ -1754,29 +1754,29 @@
 
                 <div class="flex items-center gap-3 shrink-0">
                     <div x-show="['meritko', 'obrys'].includes(impKrok)" class="flex items-center gap-3 text-[11px] text-gray-500">
-                        <span class="flex items-center gap-1" title="Posun výkresu">
+                        <span class="flex items-center gap-1" title="{{ __('ed_sablona.import.posun_tip') }}">
                             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3">
                                 <rect x="4" y="1" width="8" height="14" rx="4"/><path d="M12 1.5v5H8" fill="currentColor" opacity=".35"/>
                             </svg>
-                            pravé = posun
+                            {{ __('ed_sablona.import.posun') }}
                         </span>
-                        <span class="flex items-center gap-1" title="Přiblížení ke kurzoru">
+                        <span class="flex items-center gap-1" title="{{ __('ed_sablona.import.priblizeni_tip') }}">
                             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3">
                                 <rect x="4" y="1" width="8" height="14" rx="4"/><line x1="8" y1="4" x2="8" y2="6.5"/>
                             </svg>
-                            kolečko = zoom
+                            {{ __('ed_sablona.import.priblizeni') }}
                         </span>
-                        <span class="flex items-center gap-1" title="Celý výkres">
+                        <span class="flex items-center gap-1" title="{{ __('ed_sablona.import.cely_tip') }}">
                             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
                                 <path d="M6 1H1v5M10 1h5v5M10 15h5v-5M6 15H1v-5"/>
                             </svg>
-                            dvojklik = celý výkres
+                            {{ __('ed_sablona.import.cely') }}
                         </span>
-                        <span class="flex items-center gap-1" title="Zrušit poslední akci">
+                        <span class="flex items-center gap-1" title="{{ __('ed_sablona.import.zrusit_tip') }}">
                             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
                                 <rect x="1.5" y="4" width="13" height="8" rx="1.5"/><path d="M4.5 8h3"/>
                             </svg>
-                            Esc = zpět
+                            {{ __('ed_sablona.import.zrusit') }}
                         </span>
                     </div>
                     <button @click="impZavri()" class="text-gray-500 hover:text-gray-600 text-xl leading-none">&times;</button>
@@ -1798,7 +1798,7 @@
 
                 <button x-show="impZmereno() && impKrok !== 'soubor'" @click="impVloz()"
                         class="ml-auto rounded border border-gray-200 px-2 py-1 text-gray-600 hover:bg-gray-50">
-                    Jen vložit podklad
+                    {{ __('ed_sablona.import.jen_vlozit') }}
                 </button>
             </div>
 
@@ -1810,17 +1810,17 @@
                     {{-- Dříve nahrané výkresy — ať se stejný soubor nenahrává pořád dokola --}}
                     <template x-if="impDrive.length > 0">
                         <div class="mb-4">
-                            <div class="text-xs font-medium text-gray-500 mb-1.5">Dříve nahrané výkresy</div>
+                            <div class="text-xs font-medium text-gray-500 mb-1.5">{{ __('ed_sablona.import.drive') }}</div>
                             <div class="divide-y divide-gray-100 border border-gray-100 rounded max-h-56 overflow-y-auto kk-posuvnik">
                                 <template x-for="(v, i) in impDrive" :key="v.otisk">
                                     <button @click="impPouzijDrive(v)"
                                             class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs hover:bg-orange-50">
                                         <span class="truncate">
                                             <span class="font-medium" x-text="v.nazev"></span>
-                                            <span class="text-gray-500" x-show="v.stran > 1" x-text="' · ' + v.stran + ' stran'"></span>
+                                            <span class="text-gray-500" x-show="v.stran > 1" x-text="' · ' + prelozPocet('ed_sablona.import.stran', v.stran)"></span>
                                             {{-- výkres si pamatuje měřítko i obvod → kroky se přeskočí --}}
                                             <span x-show="Object.keys(v.strany || {}).length"
-                                                  class="ml-1 rounded bg-green-50 px-1.5 py-0.5 text-[10px] text-green-700">měřítko i obvod hotové</span>
+                                                  class="ml-1 rounded bg-green-50 px-1.5 py-0.5 text-[10px] text-green-700">{{ __('ed_sablona.import.hotove') }}</span>
                                         </span>
                                         <span class="shrink-0 text-gray-500"
                                               x-text="(v.velikost ? Math.round(v.velikost / 1024) + ' kB' : '')
@@ -1838,26 +1838,26 @@
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/>
                         </svg>
-                        <span>Klikni nebo přetáhni výkres půdorysu (PDF, PNG nebo JPG, max 25 MB)</span>
-                        <span class="text-xs text-gray-500">Nejlépe vektorové PDF od architekta — z něj jdou rozpoznat stěny.</span>
+                        <span>{{ __('ed_sablona.import.nahraj') }}</span>
+                        <span class="text-xs text-gray-500">{{ __('ed_sablona.import.nejlepe') }}</span>
                         <input type="file" accept=".pdf,.png,.jpg,.jpeg" class="hidden" @change="impNahrajSoubor($event)">
                     </label>
-                    <p x-show="impNacitani" x-cloak class="mt-2 text-xs text-gray-500">Nahrávám…</p>
+                    <p x-show="impNacitani" x-cloak class="mt-2 text-xs text-gray-500">{{ __('ed_sablona.import.nahravam') }}</p>
 
                 </div>
 
                 {{-- Krok 2: výběr strany --}}
                 <div x-show="impKrok === 'strana'">
-                    <div class="text-xs text-gray-500 mb-2">Vyberte stranu s půdorysem (<span x-text="impStran"></span> stran):</div>
+                    <div class="text-xs text-gray-500 mb-2" x-text="preloz('ed_sablona.import.vyber_stranu', { stran: prelozPocet('ed_sablona.import.stran', impStran) })"></div>
                     <div class="grid grid-cols-4 gap-2 max-h-[55vh] overflow-y-auto">
                         <template x-for="s in impStran" :key="s">
                             <button @click="impVyberStranu(s)" class="border border-gray-200 rounded hover:border-orange-400 p-1 text-left">
                                 <img :src="impNahledUrl(s)" loading="lazy" class="w-full bg-gray-50" alt="">
-                                <div class="text-[10px] text-gray-500 text-center mt-0.5" x-text="'strana ' + s"></div>
+                                <div class="text-[10px] text-gray-500 text-center mt-0.5" x-text="preloz('ed_sablona.import.strana', { n: s })"></div>
                             </button>
                         </template>
                     </div>
-                    <div x-show="impNacitani" class="text-xs text-gray-500 mt-2">Připravuji stranu…</div>
+                    <div x-show="impNacitani" class="text-xs text-gray-500 mt-2">{{ __('ed_sablona.import.pripravuji') }}</div>
                 </div>
 
                 {{-- Krok 3 a 4: měřítko s výřezem, pak obkreslení obvodu — stejný prohlížeč --}}
@@ -1872,9 +1872,9 @@
                                 <span class="flex items-center gap-1">
                                     <button x-show="pzObrys.length > 0" @click="pzObrysZpet()"
                                             class="rounded px-2.5 py-1 text-base text-gray-600 hover:bg-gray-200"
-                                            data-tip-below="Zpět (Esc)">&#8630;</button>
+                                            data-tip-below="{{ __('ed_sablona.import.zpet_esc') }}">&#8630;</button>
                                     <button x-show="pzObrys.length > 0" @click="pzObrysZnovu()"
-                                            class="rounded px-2 py-1 text-gray-600 hover:bg-gray-200">Začít znovu</button>
+                                            class="rounded px-2 py-1 text-gray-600 hover:bg-gray-200">{{ __('ed_sablona.import.znovu') }}</button>
                                 </span>
                             </template>
 
@@ -1886,7 +1886,7 @@
                             <button @click="pzMagnetySila = pzMagnetySila > 0 ? 0 : 100"
                                     class="rounded p-1 transition hover:bg-gray-200"
                                     :class="pzMagnetySila > 0 ? 'text-primary' : 'text-gray-500'"
-                                    data-tip-below="Přichytávání ke koncům a čarám výkresu">
+                                    data-tip-below="{{ __('ed_sablona.import.magnet_tip') }}">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"
                                      stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M2.2 14V8a5.8 5.8 0 0 1 11.6 0v6"/>
@@ -1895,7 +1895,7 @@
                                     <line x1="10.2" y1="11.4" x2="13.8" y2="11.4"/>
                                 </svg>
                             </button>
-                            <span class="text-gray-500" x-show="pzNacitamMagnety">načítám…</span>
+                            <span class="text-gray-500" x-show="pzNacitamMagnety">{{ __('ed_sablona.import.nacitam') }}</span>
                         </div>
                     </div>
 
@@ -1931,29 +1931,26 @@
                     {{-- Obkreslení obvodu --}}
                     <div x-show="impKrok === 'obrys'" class="flex items-center gap-2 text-xs flex-wrap">
                         <span x-show="!pzObrysUzavren" class="text-gray-500">
-                            Obrys uzavřete kliknutím na první bod nebo dvojklikem.
+                            {{ __('ed_sablona.import.obrys_uzavri') }}
                         </span>
-                        <span x-show="pzObrysUzavren" class="text-gray-600">
-                            Obvod hotov: <strong x-text="pzObrys.length"></strong>
-                            <span x-text="pzObrys.length === 1 ? 'roh' : (pzObrys.length < 5 ? 'rohy' : 'rohů')"></span>,
-                            zastavěná plocha <strong x-text="pzObrysPlocha().toFixed(1) + ' m²'"></strong>.
-                        </span>
+                        <span x-show="pzObrysUzavren" class="text-gray-600"
+                              x-html="preloz('ed_sablona.import.obvod_hotov', { rohy: prelozPocet('ed_sablona.import.rohy', pzObrys.length, { pocet: '<strong>' + pzObrys.length + '</strong>' }), plocha: '<strong>' + pzObrysPlocha().toFixed(1) + ' m²</strong>' })"></span>
                     </div>
 
                     {{-- Měření (ukáže se až po kliknutí na metr) --}}
                     <div x-show="impKrok === 'meritko' && (pzNastroj === 'kalibrace' || impZmereno())" class="flex items-center gap-2 text-xs flex-wrap">
                         <span x-show="impKalibBody.length < 2" class="text-orange-700">
-                            Klikněte ve výkresu na dva body, jejichž skutečnou vzdálenost znáte (např. konce kóty).
+                            {{ __('ed_sablona.import.klikni_body') }}
                         </span>
                         <template x-if="impKalibBody.length === 2">
                             <span class="flex items-center gap-1">
-                                <span :class="impChybiRozmer() && 'text-orange-700 font-medium'">Skutečná vzdálenost mezi body:</span>
-                                <input type="number" x-model.number="impKalibMm" min="10" step="10" placeholder="např. 3000"
+                                <span :class="impChybiRozmer() && 'text-orange-700 font-medium'">{{ __('ed_sablona.import.vzdalenost') }}</span>
+                                <input type="number" x-model.number="impKalibMm" min="10" step="10" placeholder="{{ __('ed_sablona.import.priklad_mm') }}"
                                        class="w-28 rounded px-1 py-0.5 border"
                                        :class="impChybiRozmer() ? 'border-orange-500 bg-orange-50' : 'border-gray-200'">
                                 <span>mm</span>
-                                <button @click="impKalibZnovu()" class="text-gray-500 hover:text-gray-600 underline">změřit znovu</button>
-                                <span x-show="impChybiRozmer()" class="text-orange-700">← doplňte, jinak neznáme měřítko</span>
+                                <button @click="impKalibZnovu()" class="text-gray-500 hover:text-gray-600 underline">{{ __('ed_sablona.import.zmerit_znovu') }}</button>
+                                <span x-show="impChybiRozmer()" class="text-orange-700">{{ __('ed_sablona.import.dopln') }}</span>
                             </span>
                         </template>
                     </div>
@@ -1961,27 +1958,26 @@
                     <div class="flex items-center justify-between">
                         <div class="text-xs" :class="impMeritkoPlatne() ? 'text-gray-500' : 'text-orange-700'">
                             <template x-if="impKrok === 'meritko' && impRozmerM() && impMeritko()">
-                                <span>Zadaný rozměr odpovídá měřítku <strong x-text="'1:' + impMeritko().jmenovatel"></strong>.
-                                    <span x-show="!impMeritko().standard" class="text-orange-700">Není to běžné měřítko — překontrolujte zadanou vzdálenost.</span>
+                                <span><span x-html="preloz('ed_sablona.import.meritko', { meritko: '<strong>1:' + impMeritko().jmenovatel + '</strong>' })"></span>
+                                    <span x-show="!impMeritko().standard" class="text-orange-700">{{ __('ed_sablona.import.nebezne') }}</span>
                                 </span>
                             </template>
                             {{-- Sken/printscreen: rozměr papíru neznáme, měřítko spočítat nejde --}}
                             <template x-if="impKrok === 'meritko' && impRozmerM() && !impMeritko()">
-                                <span>Celý výkres by byl <strong x-text="impRozmerM().sirka.toFixed(1)"></strong> ×
-                                      <strong x-text="impRozmerM().vyska.toFixed(1)"></strong> m ve skutečnosti.</span>
+                                <span x-html="preloz('ed_sablona.import.cely_vykres', { sirka: '<strong>' + impRozmerM().sirka.toFixed(1) + '</strong>', vyska: '<strong>' + impRozmerM().vyska.toFixed(1) + '</strong>' })"></span>
                             </template>
                         </div>
                         <div class="flex gap-2">
                             <button x-show="impKrok === 'meritko'" @click="impNaObrys()" :disabled="!impMeritkoPlatne()"
                                     class="px-3 py-1.5 rounded text-white text-xs font-medium disabled:opacity-40"
                                     style="background: var(--c-primary);">
-                                Obkreslit obvod domu
+                                {{ __('ed_sablona.import.obkreslit') }}
                             </button>
                             <button x-show="impKrok === 'obrys'" @click="impRozpoznat()"
                                     :disabled="!pzObrysUzavren || !impStranaData?.vektor"
                                     class="px-3 py-1.5 rounded text-white text-xs font-medium disabled:opacity-40"
                                     style="background: var(--c-primary);">
-                                Rozpoznat vnitřní stěny
+                                {{ __('ed_sablona.import.rozpoznat') }}
                             </button>
                         </div>
                     </div>
@@ -1990,7 +1986,7 @@
                 {{-- Krok 4: varianty rozpoznaných stěn --}}
                 <div x-show="impKrok === 'steny'" class="space-y-3">
                     <div x-show="impStav === 'pocitam'" class="py-10 text-center text-sm text-gray-500">
-                        Hledám stěny ve výkresu…
+                        {{ __('ed_sablona.import.hledam') }}
                     </div>
 
                     <template x-if="impStav === 'hotovo'">
@@ -2002,15 +1998,15 @@
                                             :class="impVybrana === i ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-500'">
                                         <div class="flex items-center justify-between text-xs mb-1.5">
                                             <span class="font-medium"
-                                                  x-text="(i + 1) + '. ' + v.osy.length + ' stěn · ' + v.delka.toFixed(0) + ' m'"></span>
+                                                  x-text="(i + 1) + '. ' + prelozPocet('ed_sablona.spolecne.sten', v.osy.length) + ' · ' + v.delka.toFixed(0) + ' m'"></span>
                                             <span class="flex items-center gap-3">
-                                                <span class="text-gray-500" x-text="v.plocha ? v.plocha.toFixed(0) + ' m² plocha' : ''"></span>
+                                                <span class="text-gray-500" x-text="v.plocha ? preloz('ed_sablona.import.plocha', { plocha: v.plocha.toFixed(0) }) : ''"></span>
                                                 {{-- potvrzení u vybrané varianty, ne až dole pod seznamem --}}
                                                 <span x-show="impVybrana === i"
                                                       @click.stop="impPrevezmiSteny()"
                                                       class="px-3 py-1.5 rounded text-white text-xs font-medium cursor-pointer"
                                                       style="background: var(--c-primary);">
-                                                    Převzít tuto variantu
+                                                    {{ __('ed_sablona.import.prevzit') }}
                                                 </span>
                                             </span>
                                         </div>
@@ -2022,10 +2018,7 @@
                                 </template>
                             </div>
                             <div class="flex items-center justify-between">
-                                <div class="text-[11px] text-gray-500">
-                                    Rozpoznání trvalo <span x-text="impCas.toFixed(1)"></span> s.
-                                    Výsledek je podklad k doúpravě — stěny pak opravíte v editoru nad výkresem.
-                                </div>
+                                <div class="text-[11px] text-gray-500" x-text="preloz('ed_sablona.import.vysledek', { cas: impCas.toFixed(1) })"></div>
                                 <div class="flex gap-2">
 
                                 </div>
@@ -2034,10 +2027,10 @@
                     </template>
 
                     <div x-show="impStav === 'chyba'" class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500">Zkuste jiný výřez, nebo výkres vložte jen jako podklad a obkreslete ho.</span>
+                        <span class="text-xs text-gray-500">{{ __('ed_sablona.import.zkus') }}</span>
                         <div class="flex gap-2">
-                            <button @click="impKrok = 'meritko'" class="kk-btn text-xs">Zpět</button>
-                            <button @click="impVloz()" class="kk-btn text-xs">Jen vložit podklad</button>
+                            <button @click="impKrok = 'meritko'" class="kk-btn text-xs">{{ __('ed_sablona.spolecne.zpet') }}</button>
+                            <button @click="impVloz()" class="kk-btn text-xs">{{ __('ed_sablona.import.jen_vlozit') }}</button>
                         </div>
                     </div>
                 </div>
@@ -2619,7 +2612,7 @@ var _kkInitData = {
                     { p: { x: osa.p.x, y: osa.p.y }, d: { x: Math.cos(smerOsy), y: Math.sin(smerOsy) } },
                     { p: { x: osa.p.x, y: osa.p.y }, d: { x: wdx, y: wdy } },
                     0, ((tazenaSt && tazenaSt.tloustka) || 0.1) * ctx.engine.PX_PER_M / 2,
-                    osa.p, true, osa.domu ? ' k osám domu' : ' k vodorovné');
+                    osa.p, true, ' ' + (osa.domu ? preloz('ed_sablona.platno.uhel_k_osam') : preloz('ed_sablona.platno.uhel_k_vodorovne')));
             }
 
             dofLayer.listening(anyNodeSel);

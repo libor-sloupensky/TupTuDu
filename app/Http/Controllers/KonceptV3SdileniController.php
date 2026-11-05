@@ -61,10 +61,10 @@ class KonceptV3SdileniController extends Controller
             ->values();
         $plany = $request->file('plan');
         if ($podlazi->isEmpty() || $podlazi->contains(fn ($p) => ! isset($plany[$p['id']]))) {
-            return response()->json(['ok' => false, 'error' => 'Chybí půdorys některého podlaží.'], 422);
+            return response()->json(['ok' => false, 'error' => __('ed_nastroje.sdileni.chybi_plan')], 422);
         }
         if (! $this->jePlatnyModel($request->file('model')->getPathname())) {
-            return response()->json(['ok' => false, 'error' => 'Neplatný 3D model.'], 422);
+            return response()->json(['ok' => false, 'error' => __('ed_nastroje.sdileni.neplatny_model')], 422);
         }
 
         $sdileni = KonceptV3Sdileni::firstOrNew(['koncept_id' => $koncept->id]);

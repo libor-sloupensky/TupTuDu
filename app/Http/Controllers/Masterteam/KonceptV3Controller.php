@@ -105,7 +105,7 @@ class KonceptV3Controller extends Controller
             foreach ($request->input('kroky') as $k) {
                 $kroky[] = [
                     'id' => $k['id'],
-                    'popis' => Str::limit($k['popis'] ?? 'Úprava', 120),
+                    'popis' => Str::limit($k['popis'] ?? __('ed_nastroje.historie.uprava'), 120),
                     'data' => $k['data'] ?? null,
                     'cas' => $k['cas'] ?? now()->toISOString(),
                     'podklad' => $k['podklad'] ?? null,
@@ -685,7 +685,7 @@ class KonceptV3Controller extends Controller
         if (!$parcela) {
             return response()->json([
                 'ok' => false,
-                'error' => 'Parcela nenalezena. Zkontrolujte číslo parcely a katastrální území.',
+                'error' => __('ed_nastroje.katastr.parcela_nenalezena'),
             ], 404);
         }
 
@@ -753,7 +753,7 @@ class KonceptV3Controller extends Controller
         $kontext = $request->input('kontext');
         $force = $request->boolean('force');
         if (mb_strlen($termin) < 2) {
-            return response()->json(['ok' => false, 'error' => 'Pojem příliš krátký'], 422);
+            return response()->json(['ok' => false, 'error' => __('ed_nastroje.katastr.pojem_kratky')], 422);
         }
 
         // DB cache lookup (přeskočit při force=true)
@@ -766,7 +766,7 @@ class KonceptV3Controller extends Controller
 
         // AI call — Haiku
         if (! config('services.anthropic.key')) {
-            return response()->json(['ok' => false, 'error' => 'AI není k dispozici'], 503);
+            return response()->json(['ok' => false, 'error' => __('ed_nastroje.katastr.ai_nedostupna')], 503);
         }
 
         $kontextHint = match ($kontext) {
@@ -800,17 +800,17 @@ class KonceptV3Controller extends Controller
                 );
             } catch (\RuntimeException $e) {
                 \Illuminate\Support\Facades\Log::warning('Vysvetleni AI failed: ' . $e->getMessage());
-                return response()->json(['ok' => false, 'error' => 'AI odpověď selhala'], 502);
+                return response()->json(['ok' => false, 'error' => __('ed_nastroje.katastr.ai_selhala')], 502);
             }
 
             if ($popis === null) {
                 \Illuminate\Support\Facades\Log::warning('Vysvetleni AI failed: null response');
-                return response()->json(['ok' => false, 'error' => 'AI odpověď selhala'], 502);
+                return response()->json(['ok' => false, 'error' => __('ed_nastroje.katastr.ai_selhala')], 502);
             }
 
             $popis = trim($popis);
             if (! $popis) {
-                return response()->json(['ok' => false, 'error' => 'Prázdná odpověď AI'], 502);
+                return response()->json(['ok' => false, 'error' => __('ed_nastroje.katastr.ai_prazdna')], 502);
             }
 
             // Suffix dle kontextu — fixní připomínka že přesná data zjistí odborné posouzení.
@@ -834,7 +834,7 @@ class KonceptV3Controller extends Controller
             return response()->json(['ok' => true, 'popis' => $popis, 'cached' => false]);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Vysvetleni exception: ' . $e->getMessage());
-            return response()->json(['ok' => false, 'error' => 'Neočekávaná chyba'], 500);
+            return response()->json(['ok' => false, 'error' => __('ed_nastroje.katastr.neocekavana_chyba')], 500);
         }
     }
 
@@ -848,7 +848,7 @@ class KonceptV3Controller extends Controller
         $polygony = array_filter($polygony, fn($p) => is_array($p) && count($p) >= 3);
 
         if (empty($polygony)) {
-            return response()->json(['ok' => false, 'error' => 'Žádný platný polygon.']);
+            return response()->json(['ok' => false, 'error' => __('ed_nastroje.katastr.zadny_polygon')]);
         }
 
         try {
@@ -918,7 +918,7 @@ class KonceptV3Controller extends Controller
         $id = 'z' . $koncept->id . '-' . $koncept->verze;
         $koncept->historie = [[
             'id' => $id,
-            'popis' => 'Začátek',
+            'popis' => __('ed_nastroje.historie.zacatek'),
             'data' => $koncept->data,
             'cas' => now()->toISOString(),
         ]];

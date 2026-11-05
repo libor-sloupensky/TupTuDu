@@ -11,7 +11,7 @@
     const NA_ZED = new Set(['obrazy', 'zrcadla']);
     const DOSAH_ZDI = 0.35;
     const TOLERANCE_PX = 0.01;
-    const ROZMERY = [['sirka', 'Šířka'], ['hloubka', 'Hloubka'], ['vyska', 'Výška']];
+    const ROZMERY = [['sirka', 'ed_nastroje.katalog.sirka'], ['hloubka', 'ed_nastroje.katalog.hloubka'], ['vyska', 'ed_nastroje.katalog.vyska']];
 
     // Duch kusu pod kurzorem a náhled při tažení z panelu, mimo reaktivní data (Konva nesnese proxy)
     let duch = null;
@@ -69,8 +69,11 @@
             if (this.katalog) return;
             try {
                 const r = await fetch('/katalog/katalog.json');
-                if (!r.ok) throw new Error('Katalog: HTTP ' + r.status);
-                this.katalog = await r.json();
+                if (!r.ok) throw new Error(preloz('ed_nastroje.katalog.chyba_http', { status: r.status }));
+                const data = await r.json();
+                // Názvy kategorií jdou ze slovníku podle id, JSON zůstává česky
+                data.kategorie.forEach(k => { k.nazev = preloz('ed_nastroje.kategorie.' + k.id); });
+                this.katalog = data;
             } catch (e) {
                 window.chybaUzivateli?.(e, 'Načtení katalogu');
             }
@@ -238,7 +241,7 @@
             this.engine.vybaveni.push(v);
             this._katalogZrusVyber();
             this.renderer.setSelection([], [], [], [v.id]);
-            this._poZmeneDomu('Vložení objektu: ' + p.nazev);
+            this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_vlozeni', { nazev: p.nazev }));
         },
 
         _katalogZaznam(p, stred, uhel) {
@@ -425,7 +428,7 @@
             return {
                 kind: 'katalog', count: 1, id: v.id, nazev: v.nazev,
                 urovenCm: Math.round((v.uroven || 0) * 100),
-                rozmery: ROZMERY.map(([osa, nazev]) => ({ osa, nazev, cm: Math.round(v[osa] * 100), procenta: Math.round(v[osa] / z[osa] * 100) })),
+                rozmery: ROZMERY.map(([osa, klic]) => ({ osa, nazev: preloz(klic), cm: Math.round(v[osa] * 100), procenta: Math.round(v[osa] / z[osa] * 100) })),
                 zmeneno: ROZMERY.some(([osa]) => Math.abs(v[osa] - z[osa]) > 0.0005),
             };
         },
@@ -446,7 +449,7 @@
             }
             this._katalogVytlac(v);
             this.renderer.setSelection([], [], [], [v.id]);
-            this._poZmeneDomu('Změna rozměru objektu');
+            this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_rozmer'));
         },
 
         katalogPuvodni() {
@@ -456,7 +459,7 @@
             for (const [o] of ROZMERY) v[o] = z[o];
             this._katalogVytlac(v);
             this.renderer.setSelection([], [], [], [v.id]);
-            this._poZmeneDomu('Původní rozměr objektu');
+            this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_puvodni'));
         },
 
         katalogOtoc() {
@@ -465,7 +468,7 @@
             v.uhel = (((v.uhel || 0) + 90) % 360);
             this._katalogVytlac(v);
             this.renderer.setSelection([], [], [], [v.id]);
-            this._poZmeneDomu('Otočení objektu');
+            this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_otoceni'));
         },
 
         katalogKopie() {
@@ -478,7 +481,7 @@
             this._katalogVytlac(nova);
             this.engine.vybaveni.push(nova);
             this.renderer.setSelection([], [], [], [nova.id]);
-            this._poZmeneDomu('Kopie objektu');
+            this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_kopie'));
         },
 
         katalogSmaz() {
@@ -486,7 +489,7 @@
             if (!v) return;
             this.engine.removeVybaveni(v.id);
             this.renderer.clearSelection?.();
-            this._poZmeneDomu('Smazání objektu');
+            this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_smazani'));
         },
 
         katalogUroven(cm) {
@@ -494,7 +497,7 @@
             const hodnota = Number(cm);
             if (!v || !Number.isFinite(hodnota)) return;
             v.uroven = Math.max(0, Math.min(300, hodnota)) / 100;
-            this._poZmeneDomu('Výška objektu nad podlahou');
+            this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_vyska'));
         },
 
         // ─── 3D ────────────────────────────────────────────────

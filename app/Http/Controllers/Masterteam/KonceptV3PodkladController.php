@@ -30,9 +30,9 @@ class KonceptV3PodkladController extends Controller
         $request->validate([
             'soubor' => "required|file|max:$maxKb|mimes:pdf,png,jpg,jpeg",
         ], [
-            'soubor.required' => 'Vyberte výkres.',
-            'soubor.mimes' => 'Nahrát jde jen PDF, PNG nebo JPG.',
-            'soubor.max' => "Soubor je větší než $maxMb MB.",
+            'soubor.required' => __('ed_nastroje.podklad.vyber_vykres'),
+            'soubor.mimes' => __('ed_nastroje.podklad.jen_formaty'),
+            'soubor.max' => __('ed_nastroje.podklad.soubor_velky', ['mb' => $maxMb]),
         ]);
 
         $soubor = $request->file('soubor');
@@ -42,7 +42,7 @@ class KonceptV3PodkladController extends Controller
         if ($jePdf && !$this->pdf->dostupny()) {
             return response()->json([
                 'ok' => false,
-                'error' => 'Na serveru chybí nástroje pro čtení PDF (poppler). Nahrajte obrázek, nebo doplňte poppler.',
+                'error' => __('ed_nastroje.podklad.chybi_poppler'),
             ], 422);
         }
 
@@ -156,7 +156,7 @@ class KonceptV3PodkladController extends Controller
 
         $cesta = PdfPodkladService::SLOZKA . '/' . Auth::id() . "/$otisk.json";
         if (!Storage::exists($cesta)) {
-            return response()->json(['ok' => false, 'error' => 'Výkres neexistuje.'], 404);
+            return response()->json(['ok' => false, 'error' => __('ed_nastroje.podklad.vykres_neexistuje')], 404);
         }
 
         $popis = json_decode(Storage::get($cesta), true) ?: [];
@@ -334,7 +334,7 @@ class KonceptV3PodkladController extends Controller
             }
         }
 
-        abort(404, 'Podklad nenalezen.');
+        abort(404, __('ed_nastroje.podklad.nenalezen'));
     }
 
     private function posliSoubor(string $rel, string $typ)

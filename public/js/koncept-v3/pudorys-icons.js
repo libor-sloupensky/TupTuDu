@@ -1,5 +1,5 @@
 /**
- * Ikony pro Půdorys vybavení a české názvy místností.
+ * Ikony pro Půdorys vybavení a názvy místností podle jazyka.
  * Používá se v /masterteam/vyvoj/pudorys a /vyvoj/koncept detail view.
  *
  * Každá ikona = Konva.Shape se sceneFunc, který kreslí canonical tvar
@@ -8,32 +8,35 @@
 (function () {
     'use strict';
 
-    // ─── Překlad typů místností do češtiny ──────────────────
+    // Texty jsou v lang/*/ed_kresba.php. V Node slovník není a tx vrací klíč.
+    const tx = (k, p) => (typeof preloz === 'function' ? preloz(k, p) : k);
+
+    // ─── Názvy typů místností podle jazyka ──────────────────
     var ROOM_CZ = {
         // Hlavní typy
-        Bedroom: 'Ložnice',
-        LivingRoom: 'Obývák',
-        Kitchen: 'Kuchyně',
-        Bath: 'Koupelna',
-        Dining: 'Jídelna',
-        Entry: 'Vstup',
-        Hall: 'Hala',
-        Storage: 'Sklad',
-        Closet: 'Šatna',
-        Utility: 'Technická',
-        Sauna: 'Sauna',
-        Den: 'Pracovna',
-        DressingRoom: 'Šatna',
-        TechnicalRoom: 'Techn. místnost',
-        Room: 'Pokoj',
-        Basement: 'Suterén',
-        Library: 'Knihovna',
-        Alcove: 'Výklenek',
-        DraughtLobby: 'Zádveří',
+        Bedroom: tx('ed_kresba.prostor_loznice'),
+        LivingRoom: tx('ed_kresba.prostor_obyvak'),
+        Kitchen: tx('ed_kresba.prostor_kuchyne'),
+        Bath: tx('ed_kresba.prostor_koupelna'),
+        Dining: tx('ed_kresba.prostor_jidelna'),
+        Entry: tx('ed_kresba.prostor_vstup'),
+        Hall: tx('ed_kresba.prostor_hala'),
+        Storage: tx('ed_kresba.prostor_sklad'),
+        Closet: tx('ed_kresba.prostor_satna'),
+        Utility: tx('ed_kresba.prostor_technicka'),
+        Sauna: tx('ed_kresba.prostor_sauna'),
+        Den: tx('ed_kresba.prostor_pracovna'),
+        DressingRoom: tx('ed_kresba.prostor_satna'),
+        TechnicalRoom: tx('ed_kresba.prostor_technicka_mistnost'),
+        Room: tx('ed_kresba.prostor_pokoj'),
+        Basement: tx('ed_kresba.prostor_suteren'),
+        Library: tx('ed_kresba.prostor_knihovna'),
+        Alcove: tx('ed_kresba.prostor_vyklenek'),
+        DraughtLobby: tx('ed_kresba.prostor_zadveri'),
         // Venkovní
-        Outdoor: 'Venkovní',
-        CarPort: 'Přístřešek',
-        Garage: 'Garáž',
+        Outdoor: tx('ed_kresba.prostor_venkovni'),
+        CarPort: tx('ed_kresba.prostor_pristresek'),
+        Garage: tx('ed_kresba.prostor_garaz'),
         // Ostatní
         Undefined: '—',
         UserDefined: '—',
@@ -41,41 +44,41 @@
 
     // Podtypy — upřesnění názvu
     var SUBTYPE_CZ = {
-        Terrace: 'Terasa',
-        Balcony: 'Balkon',
-        Porch: 'Veranda',
-        Garden: 'Zahrada',
-        CoveredArea: 'Přístřešek',
-        Patio: 'Patio',
-        Glazed: '(zasklené)',
-        Shower: 'Sprcha',
-        WalkIn: 'Šatna',
-        Lobby: 'Vestibul',
-        Corridor: 'Chodba',
-        Laundry: 'Prádelna',
-        Kitchenette: 'Kuch. kout',
-        Scullery: 'Spíž',
-        Open: '(otevřená)',
-        Fireplace: 's krbem',
-        Boiler: 'Kotelna',
-        Oil: '(olej)',
+        Terrace: tx('ed_kresba.typ_plocha_terasa'),
+        Balcony: tx('ed_kresba.prostor_balkon'),
+        Porch: tx('ed_kresba.prostor_veranda'),
+        Garden: tx('ed_kresba.prostor_zahrada'),
+        CoveredArea: tx('ed_kresba.prostor_kryta_plocha'),
+        Patio: tx('ed_kresba.prostor_patio'),
+        Glazed: tx('ed_kresba.podtyp_zasklene'),
+        Shower: tx('ed_kresba.prostor_sprcha'),
+        WalkIn: tx('ed_kresba.prostor_satna'),
+        Lobby: tx('ed_kresba.prostor_vestibul'),
+        Corridor: tx('ed_kresba.prostor_chodba'),
+        Laundry: tx('ed_kresba.prostor_pradelna'),
+        Kitchenette: tx('ed_kresba.prostor_kuchynsky_kout'),
+        Scullery: tx('ed_kresba.prostor_spiz'),
+        Open: tx('ed_kresba.podtyp_otevrena'),
+        Fireplace: tx('ed_kresba.podtyp_s_krbem'),
+        Boiler: tx('ed_kresba.prostor_kotelna'),
+        Oil: tx('ed_kresba.podtyp_olej'),
     };
 
     function roomLabelCz(prostor) {
         var p = prostor.podtyp;
         var t = prostor.typ;
         // Speciální kombinace
-        if (p === 'Terrace') return 'Terasa';
-        if (p === 'Balcony') return 'Balkon';
-        if (p === 'Porch') return 'Veranda';
-        if (p === 'Garden') return 'Zahrada';
-        if (p === 'Patio') return 'Patio';
-        if (p === 'Shower') return 'Sprcha';
-        if (p === 'WalkIn') return 'Šatna';
-        if (p === 'Lobby') return 'Vestibul';
-        if (p === 'Corridor') return 'Chodba';
-        if (p === 'Laundry') return 'Prádelna';
-        if (p === 'Kitchenette') return 'Kuch. kout';
+        if (p === 'Terrace') return SUBTYPE_CZ.Terrace;
+        if (p === 'Balcony') return SUBTYPE_CZ.Balcony;
+        if (p === 'Porch') return SUBTYPE_CZ.Porch;
+        if (p === 'Garden') return SUBTYPE_CZ.Garden;
+        if (p === 'Patio') return SUBTYPE_CZ.Patio;
+        if (p === 'Shower') return SUBTYPE_CZ.Shower;
+        if (p === 'WalkIn') return SUBTYPE_CZ.WalkIn;
+        if (p === 'Lobby') return SUBTYPE_CZ.Lobby;
+        if (p === 'Corridor') return SUBTYPE_CZ.Corridor;
+        if (p === 'Laundry') return SUBTYPE_CZ.Laundry;
+        if (p === 'Kitchenette') return SUBTYPE_CZ.Kitchenette;
         // Fallback — primární typ + případný podtyp v závorkách
         var base = ROOM_CZ[t] || t || '—';
         if (p && SUBTYPE_CZ[p]) return base + ' ' + SUBTYPE_CZ[p];
@@ -593,29 +596,29 @@
         sauna: '#fed7aa', ostatni: '#f3f4f6',
     };
 
-    // ─── Český popis typu vybavení (pro tooltip) ─────────────
+    // ─── Popis typu vybavení podle jazyka (pro tooltip) ──────
     var FURNITURE_CZ = {
-        Toilet: 'WC', Sink: 'Umyvadlo / dřez', RoundSink: 'Kulaté umyvadlo',
-        DoubleSink: 'Dvojitý dřez', DoubleSinkRight: 'Dvojitý dřez (P)',
-        Bathtub: 'Vana', Shower: 'Sprcha', ShowerCab: 'Sprchový kout',
-        ShowerScreen: 'Sprchová zástěna', WaterTap: 'Vodovodní kohout',
-        BaseCabinet: 'Spodní skříňka', WallCabinet: 'Horní skříňka',
-        BaseCabinetTriangle: 'Rohová skříňka',
-        Closet: 'Skříň', CoatCloset: 'Šatní skříň', CoatRack: 'Věšák',
-        Fireplace: 'Krb', FireplaceCorner: 'Rohový krb',
-        FireplaceRound: 'Kulatý krb', WoodStove: 'Krbová kamna',
-        Chimney: 'Komín', PlaceForFireplace: 'Místo pro krb',
-        SaunaBench: 'Saunová lavice', SaunaBenchMid: 'Saun. lavice střed',
-        SaunaBenchHigh: 'Saun. lavice horní', SaunaBenchLow: 'Saun. lavice dolní',
-        Housing: 'Skříň (zabudovaná)', Misc: 'Ostatní',
-        ElectricalAppliance: 'Spotřebič',
+        Toilet: tx('ed_kresba.vybaveni_wc'), Sink: tx('ed_kresba.vybaveni_umyvadlo'), RoundSink: tx('ed_kresba.vybaveni_kulate_umyvadlo'),
+        DoubleSink: tx('ed_kresba.vybaveni_dvojity_drez'), DoubleSinkRight: tx('ed_kresba.vybaveni_dvojity_drez_p'),
+        Bathtub: tx('ed_kresba.vybaveni_vana'), Shower: tx('ed_kresba.prostor_sprcha'), ShowerCab: tx('ed_kresba.vybaveni_sprchovy_kout'),
+        ShowerScreen: tx('ed_kresba.vybaveni_sprchova_zastena'), WaterTap: tx('ed_kresba.vybaveni_kohout'),
+        BaseCabinet: tx('ed_kresba.vybaveni_spodni_skrinka'), WallCabinet: tx('ed_kresba.vybaveni_horni_skrinka'),
+        BaseCabinetTriangle: tx('ed_kresba.vybaveni_rohova_skrinka'),
+        Closet: tx('ed_kresba.vybaveni_skrin'), CoatCloset: tx('ed_kresba.vybaveni_satni_skrin'), CoatRack: tx('ed_kresba.vybaveni_vesak'),
+        Fireplace: tx('ed_kresba.vybaveni_krb'), FireplaceCorner: tx('ed_kresba.vybaveni_rohovy_krb'),
+        FireplaceRound: tx('ed_kresba.vybaveni_kulaty_krb'), WoodStove: tx('ed_kresba.vybaveni_krbova_kamna'),
+        Chimney: tx('ed_kresba.typ_prisl_komin'), PlaceForFireplace: tx('ed_kresba.vybaveni_misto_pro_krb'),
+        SaunaBench: tx('ed_kresba.vybaveni_saunova_lavice'), SaunaBenchMid: tx('ed_kresba.vybaveni_lavice_stred'),
+        SaunaBenchHigh: tx('ed_kresba.vybaveni_lavice_horni'), SaunaBenchLow: tx('ed_kresba.vybaveni_lavice_dolni'),
+        Housing: tx('ed_kresba.vybaveni_skrin_zabudovana'), Misc: tx('ed_kresba.vybaveni_ostatni'),
+        ElectricalAppliance: tx('ed_kresba.vybaveni_spotrebic'),
     };
     var ELAPPLIANCE_CZ = {
-        Refrigerator: 'Lednice', IntegratedStove: 'Sporák',
-        SaunaStove: 'Kamna do sauny', WashingMachine: 'Pračka',
-        Dishwasher: 'Myčka', TumbleDryer: 'Sušička', Heater: 'Topení',
-        SpaceForAppliance: 'Místo na spotřebič', SpaceForAppliance2: 'Místo na spotřebič',
-        GEARound: 'Kulatý spotřebič',
+        Refrigerator: tx('ed_kresba.vybaveni_lednice'), IntegratedStove: tx('ed_kresba.vybaveni_sporak'),
+        SaunaStove: tx('ed_kresba.vybaveni_kamna_do_sauny'), WashingMachine: tx('ed_kresba.vybaveni_pracka'),
+        Dishwasher: tx('ed_kresba.vybaveni_mycka'), TumbleDryer: tx('ed_kresba.vybaveni_susicka'), Heater: tx('ed_kresba.vybaveni_topeni'),
+        SpaceForAppliance: tx('ed_kresba.vybaveni_misto_na_spotrebic'), SpaceForAppliance2: tx('ed_kresba.vybaveni_misto_na_spotrebic'),
+        GEARound: tx('ed_kresba.vybaveni_kulaty_spotrebic'),
     };
 
     // Půdorysné značky kusů z katalogu: obrázek shora, načte se jednou, po načtení se plátno překreslí
@@ -800,7 +803,7 @@
         },
 
         /**
-         * Vytvořit Konva.Text s názvem místnosti v češtině.
+         * Vytvořit Konva.Text s názvem místnosti.
          */
         createRoomLabel: function (p, PX_PER_M) {
             var bb = bboxFromPolygon(p.polygon, PX_PER_M);

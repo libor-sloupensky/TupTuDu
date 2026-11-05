@@ -127,7 +127,7 @@
                 const kod = (String(text).match(/\d{4}/) || [])[0];
                 if (!String(text).trim()) { this.ralChyba = ''; return; }
                 const r = kod && (window.RAL_KLASIK || []).find(x => x.kod === kod);
-                if (!r) { this.ralChyba = 'Takový odstín RAL Classic nemáme.'; return; }
+                if (!r) { this.ralChyba = preloz('ed_kresba.ral_neznamy'); return; }
                 this.vyber(r.hex);
             },
 

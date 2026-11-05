@@ -4,13 +4,13 @@
 return [
     'pozdrav' => 'Bonjour,',
     'podpis' => 'L’équipe TupTuDu',
-    'overeni_predmet' => 'Confirme ton adresse e-mail — TupTuDu',
-    'overeni_text' => 'Merci pour ton inscription à TupTuDu. Pour la finaliser, confirme ton adresse e-mail.',
+    'overeni_predmet' => 'Confirmez votre adresse e-mail — TupTuDu',
+    'overeni_text' => 'Merci pour votre inscription à TupTuDu. Pour la finaliser, confirmez votre adresse e-mail.',
     'overeni_tlacitko' => 'Confirmer mon adresse e-mail',
-    'overeni_nezadal' => 'Si tu n’es pas à l’origine de cette inscription, ignore simplement cet e-mail.',
+    'overeni_nezadal' => 'Si vous n’êtes pas à l’origine de cette inscription, ignorez simplement cet e-mail.',
     'heslo_predmet' => 'Nouveau mot de passe — TupTuDu',
-    'heslo_text' => 'Nous avons reçu une demande de nouveau mot de passe pour ton compte.',
+    'heslo_text' => 'Nous avons reçu une demande de nouveau mot de passe pour votre compte.',
     'heslo_tlacitko' => 'Définir un nouveau mot de passe',
     'heslo_platnost' => 'Ce lien est valable :minut minutes.',
-    'heslo_nezadal' => 'Si tu n’es pas à l’origine de cette demande, tu n’as rien à faire.',
+    'heslo_nezadal' => 'Si vous n’êtes pas à l’origine de cette demande, vous n’avez rien à faire.',
 ];

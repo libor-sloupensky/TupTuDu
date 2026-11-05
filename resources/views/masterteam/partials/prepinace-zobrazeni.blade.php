@@ -1,29 +1,29 @@
 {{-- Přepínače zobrazení půdorysu. Jedno nastavení na dvou místech: panel Objekty a sekce Export (výkres se jím řídí). --}}
-<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Zobrazit/skrýt stěny">
+<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="{{ __('ed_sablona.objekty.steny_tip') }}">
     <input type="checkbox" x-model="showSteny" @change="toggleSteny()" class="rounded text-primary w-3.5 h-3.5">
-    Stěny
+    {{ __('ed_sablona.objekty.steny') }}
 </label>
-<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Zobrazit/skrýt okna a dveře">
+<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="{{ __('ed_sablona.objekty.otvory_tip') }}">
     <input type="checkbox" x-model="showOtvory" @change="toggleOtvory()" class="rounded text-primary w-3.5 h-3.5">
-    Otvory
+    {{ __('ed_sablona.objekty.otvory') }}
 </label>
-<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Rozměry kolem domu a v místnostech. U vybrané stěny a otvoru jsou vidět vždy">
+<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="{{ __('ed_sablona.objekty.koty_tip') }}">
     <input type="checkbox" x-model="showKoty" @change="toggleKoty()" class="rounded text-primary w-3.5 h-3.5">
-    Kóty
+    {{ __('ed_sablona.objekty.koty') }}
 </label>
-<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Označení stěn a otvorů ve výkresu (W38, O41)">
+<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="{{ __('ed_sablona.objekty.znacky_tip') }}">
     <input type="checkbox" x-model="showZnacky" @change="toggleZnacky()" class="rounded text-primary w-3.5 h-3.5">
-    Značky
+    {{ __('ed_sablona.objekty.znacky') }}
 </label>
-<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Uzlové body všech stěn. Vypnuto: jen u vybrané stěny">
+<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="{{ __('ed_sablona.objekty.body_tip') }}">
     <input type="checkbox" x-model="showNodes" @change="if(renderer){renderer.showNodes=showNodes;renderer.render()};ulozitNastaveni()" class="rounded text-primary w-3.5 h-3.5">
-    Body
+    {{ __('ed_sablona.objekty.body') }}
 </label>
-<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Zvýraznění místností (názvy + plocha)">
+<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="{{ __('ed_sablona.objekty.mistnosti_tip') }}">
     <input type="checkbox" x-model="showMistnosti" @change="if(renderer){renderer.showMistnosti=showMistnosti;renderer.render()};ulozitNastaveni()" class="rounded text-primary w-3.5 h-3.5">
-    Místnosti
+    {{ __('ed_sablona.objekty.mistnosti') }}
 </label>
-<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="Nábytek a vybavení (kuchyně, koupelna, spotřebiče)">
+<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" data-tip="{{ __('ed_sablona.objekty.vybaveni_tip') }}">
     <input type="checkbox" x-model="showVybaveni" @change="if(renderer){renderer.showVybaveni=showVybaveni;renderer.render()};ulozitNastaveni()" class="rounded text-primary w-3.5 h-3.5">
-    Vybavení
+    {{ __('ed_sablona.objekty.vybaveni') }}
 </label>

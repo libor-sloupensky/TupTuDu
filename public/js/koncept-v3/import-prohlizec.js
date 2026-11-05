@@ -450,8 +450,8 @@ window.KonceptImportProhlizec = {
             popisekBod: { x: a.x + (b.x - a.x) * 0.75, y: a.y + (b.y - a.y) * 0.75 },
             uhel,
             popis: this.impKalibBody.length === 2
-                ? (mm > 0 ? (mm / 1000).toFixed(2) + ' m' : 'zadejte rozměr')
-                : 'klikněte na druhý bod',
+                ? (mm > 0 ? (mm / 1000).toFixed(2) + ' m' : preloz('ed_nastroje.import.zadej_rozmer'))
+                : preloz('ed_nastroje.import.klikni_druhy_bod'),
             hotovo: this.impKalibBody.length === 2,
         };
     },

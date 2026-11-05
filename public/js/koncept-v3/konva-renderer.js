@@ -282,13 +282,13 @@ class KonvaRenderer {
             // Vlastní úroveň podlahy místnosti (dum.js); přenesené zvýšení má štítek na své ploše
             const u = this.urovenMistnosti ? this.urovenMistnosti(m.id) : null;
             const radky = [m.nazev || ''];
-            let plocha = k.plocha_m2.toFixed(1).replace('.', ',') + ' m²';
+            let plocha = prelozCislo(k.plocha_m2, 1) + ' m²';
             if (k.zapocitatelna_m2 != null && Math.abs(k.zapocitatelna_m2 - k.plocha_m2) >= 0.05) {
-                plocha = k.zapocitatelna_m2.toFixed(1).replace('.', ',') + ' / ' + plocha;
+                plocha = prelozCislo(k.zapocitatelna_m2, 1) + ' / ' + plocha;
             }
-            if (u && u.typ === 'bez_podlahy') plocha = 'bez podlahy';
+            if (u && u.typ === 'bez_podlahy') plocha = preloz('ed_kresba.bez_podlahy');
             radky.push(plocha);
-            if (u && u.dh) radky.push((u.dh > 0 ? '+' : '') + u.dh.toFixed(2).replace('.', ',') + ' m');
+            if (u && u.dh) radky.push((u.dh > 0 ? '+' : '') + prelozCislo(u.dh, 2) + ' m');
             const text = new Konva.Text({
                 x: k.stred.x, y: k.stred.y,
                 text: radky.join('\n'),
@@ -976,7 +976,7 @@ class KonvaRenderer {
             const text = new Konva.Text({
                 x: cx + nx * offset,
                 y: cy + ny * offset,
-                text: delka.toFixed(2).replace('.', ',') + ' m',
+                text: prelozCislo(delka, 2) + ' m',
                 fontSize: v(11),
                 fill: '#6b7280',
                 align: 'center',
@@ -1664,7 +1664,7 @@ class KonvaRenderer {
                 circle.on('mouseenter', () => {
                     const tip = document.getElementById('kk-tooltip');
                     if (!tip) return;
-                    tip.textContent = '+' + rozdilM + ' m (' + z.toFixed(1) + ' m n.m.)';
+                    tip.textContent = preloz('ed_kresba.tip_vyska_bodu', { rozdil: rozdilM, vyska: z.toFixed(1) });
                     tip.classList.add('visible');
                     // Pozice tipu — nad kurzorem
                     const stage = this.stage;

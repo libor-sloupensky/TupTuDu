@@ -15,7 +15,7 @@
         for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
         return btoa(s);
     };
-    const naBlob = (canvas) => new Promise((ok, chyba) => canvas.toBlob(b => (b ? ok(b) : chyba(new Error('Obrázek se nepodařilo vytvořit'))), 'image/png'));
+    const naBlob = (canvas) => new Promise((ok, chyba) => canvas.toBlob(b => (b ? ok(b) : chyba(new Error(preloz('ed_nastroje.export.obrazek_selhal')))), 'image/png'));
     const pockej = (ms) => new Promise(r => setTimeout(r, ms));
 
     window.KonceptExport = {
@@ -32,7 +32,7 @@
         _nazevSouboru(pripona) {
             const k = this.koncepty?.find(x => String(x.id) === String(this.projektId));
             const cisty = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
-            return (cisty(k?.nazev || '') || 'projekt') + '-' + cisty(pripona) + '.png';
+            return (cisty(k?.nazev || '') || preloz('ed_nastroje.export.soubor_projekt')) + '-' + cisty(pripona) + '.png';
         },
 
         async _stahni(canvas, nazev) {
@@ -153,7 +153,7 @@
             g.stroke();
             g.fillStyle = '#374151';
             g.font = '500 26px ' + pismo;
-            g.fillText(this.renderer.showKoty ? '1 m  ·  kóty v cm' : '1 m', 52 + metr, zy);
+            g.fillText(this.renderer.showKoty ? preloz('ed_nastroje.export.meritko_koty') : '1 m', 52 + metr, zy);
             g.textAlign = 'right';
             g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--c-primary').trim() || '#374151';
             g.fillText('tuptudu.com', cv.width - 40, zy);
@@ -169,8 +169,8 @@
                 const e = this.engine;
                 const ids = vsechna ? [...e.dum.podlazi].reverse().map(p => p.id) : [e.dum.aktivni];
                 const list = this._listPudorysu(this._kresbyPodlazi(ids));
-                if (!list) { this._dumHlaska('Není co exportovat, podlaží nemá stěny.'); return; }
-                await this._stahni(list, this._nazevSouboru(vsechna ? 'pudorysy' : 'pudorys-' + (e.podlaziPodleId(ids[0])?.nazev || ids[0])));
+                if (!list) { this._dumHlaska(preloz('ed_nastroje.export.neni_co_exportovat')); return; }
+                await this._stahni(list, this._nazevSouboru(vsechna ? preloz('ed_nastroje.export.soubor_pudorysy') : preloz('ed_nastroje.export.soubor_pudorys', { podlazi: e.podlaziPodleId(ids[0])?.nazev || ids[0] })));
             } catch (err) {
                 window.chybaUzivateli?.(err, 'Export půdorysu');
             } finally {
@@ -415,7 +415,7 @@
                     fd.append(`plan[${k.id}]`, await naBlob(list), 'plan.png');
                     zahrnuta.push({ id: k.id, nazev: e.podlaziPodleId(k.id)?.nazev || k.id });
                 }
-                if (!zahrnuta.length) { this._dumHlaska('Není co sdílet, dům nemá stěny.'); return; }
+                if (!zahrnuta.length) { this._dumHlaska(preloz('ed_nastroje.sdileni.neni_co_sdilet')); return; }
                 fd.append('podlazi', JSON.stringify(zahrnuta));
                 const { model, nahled } = await this._ve3d(async () => {
                     await window.Katalog3d.hotovo();
@@ -435,12 +435,12 @@
                 });
                 const d = await r.json().catch(() => null);
                 if (!r.ok || !d?.ok) {
-                    this._dumHlaska(d?.error || d?.message || 'Odkaz se nepodařilo uložit.');
+                    this._dumHlaska(d?.error || d?.message || preloz('ed_nastroje.sdileni.odkaz_neulozen'));
                     window.zalogujChybu?.(new Error('Sdílení: HTTP ' + r.status), 'Sdílení: uložení', { projekt: this.projektId, zprava: d?.message });
                     return;
                 }
                 this.sdileni = d;
-                this._dumHlaska('Odkaz ukazuje aktuální stav.');
+                this._dumHlaska(preloz('ed_nastroje.sdileni.odkaz_aktualni'));
             } catch (err) {
                 window.chybaUzivateli?.(err, 'Sdílení: uložení', { projekt: this.projektId });
             } finally {
@@ -450,14 +450,14 @@
 
         async sdileniVypni() {
             if (this.sdileniBezi) return;
-            if (!confirm('Vypnout odkaz? Kdo ho má, už projekt neuvidí. Další sdílení dostane novou adresu.')) return;
+            if (!confirm(preloz('ed_nastroje.sdileni.vypnout_potvrzeni'))) return;
             this.sdileniBezi = true;
             try {
                 const r = await fetch(this._adresaSdileni(), {
                     method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': window._kkInitData.csrf, Accept: 'application/json' },
                 });
-                if (!r.ok) throw new Error('Vypnutí odkazu: HTTP ' + r.status);
+                if (!r.ok) throw new Error(preloz('ed_nastroje.sdileni.vypnuti_http', { status: r.status }));
                 this.sdileni = await r.json();
             } catch (err) {
                 window.chybaUzivateli?.(err, 'Sdílení: vypnutí', { projekt: this.projektId });

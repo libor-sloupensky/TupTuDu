@@ -5,12 +5,15 @@
  * Node = sdílený bod, Wall = stěna mezi dvěma body, Opening = otvor ve stěně.
  * Rohy řešeny mitre join (úhel řezu = polovina úhlu mezi stěnami).
  */
+// Texty jsou v lang/*/ed_kresba.php. V Node testech slovník není a tx vrací klíč.
+const tx = (k, p) => (typeof preloz === 'function' ? preloz(k, p) : k);
+
 // ═══════════════════════════════════════════════════════
 // TYPOVÉ DEFINICE OBJEKTŮ
 // ═══════════════════════════════════════════════════════
 const TYPY_STEN = {
     obvodova: {
-        nazev: 'Obvodová stěna',
+        nazev: tx('ed_kresba.typ_stena_obvodova'),
         kategorie: 'konstrukcni',
         tloušťka: { min: 0.20, max: 0.60, default: 0.30 },
         barva2d: '#4b5563',
@@ -19,7 +22,7 @@ const TYPY_STEN = {
         standardTloustky: [0.20, 0.25, 0.30, 0.36, 0.40, 0.44, 0.50, 0.60],
     },
     nosna: {
-        nazev: 'Nosná stěna',
+        nazev: tx('ed_kresba.typ_stena_nosna'),
         kategorie: 'konstrukcni',
         tloušťka: { min: 0.20, max: 0.45, default: 0.25 },
         barva2d: '#374151',
@@ -28,7 +31,7 @@ const TYPY_STEN = {
         standardTloustky: [0.20, 0.25, 0.30, 0.365, 0.40, 0.45],
     },
     pricka: {
-        nazev: 'Příčka',
+        nazev: tx('ed_kresba.typ_stena_pricka'),
         kategorie: 'konstrukcni',
         tloušťka: { min: 0.05, max: 0.19, default: 0.10 },
         barva2d: '#9ca3af',
@@ -37,7 +40,7 @@ const TYPY_STEN = {
         standardTloustky: [0.05, 0.08, 0.10, 0.115, 0.14, 0.175, 0.19],
     },
     plot: {
-        nazev: 'Plot',
+        nazev: tx('ed_kresba.typ_stena_plot'),
         kategorie: 'exterior',
         tloušťka: { min: 0.05, max: 0.40, default: 0.15 },
         vyska: { min: 0.5, max: 2.5, default: 1.8 },
@@ -47,7 +50,7 @@ const TYPY_STEN = {
         standardTloustky: [0.05, 0.10, 0.15, 0.20, 0.30, 0.40],
     },
     zidka: {
-        nazev: 'Zídka',
+        nazev: tx('ed_kresba.typ_stena_zidka'),
         kategorie: 'exterior',
         tloušťka: { min: 0.15, max: 0.50, default: 0.25 },
         vyska: { min: 0.3, max: 1.5, default: 0.8 },
@@ -60,7 +63,7 @@ const TYPY_STEN = {
 
 const TYPY_OTVORU = {
     dvere: {
-        nazev: 'Dveře',
+        nazev: tx('ed_kresba.typ_otvor_dvere'),
         sirka: { min: 0.6, max: 2.4, default: 0.9 },
         vyska: { min: 1.8, max: 2.4, default: 2.1 },
         parapet: 0,
@@ -70,7 +73,7 @@ const TYPY_OTVORU = {
         standardSirky: [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.4, 1.6, 1.8],
     },
     okno: {
-        nazev: 'Okno',
+        nazev: tx('ed_kresba.typ_otvor_okno'),
         sirka: { min: 0.4, max: 3.0, default: 1.2 },
         vyska: { min: 0.4, max: 2.0, default: 1.2 },
         parapet: 0.9,
@@ -79,7 +82,7 @@ const TYPY_OTVORU = {
         standardSirky: [0.4, 0.6, 0.8, 0.9, 1.0, 1.2, 1.5, 1.8, 2.0, 2.5, 3.0],
     },
     garazova_vrata: {
-        nazev: 'Garážová vrata',
+        nazev: tx('ed_kresba.typ_otvor_garazova_vrata'),
         sirka: { min: 2.0, max: 6.0, default: 2.7 },
         vyska: { min: 2.0, max: 3.0, default: 2.2 },
         parapet: 0,
@@ -88,7 +91,7 @@ const TYPY_OTVORU = {
         standardSirky: [2.0, 2.25, 2.5, 2.7, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0],
     },
     francouzske_okno: {
-        nazev: 'Francouzské okno',
+        nazev: tx('ed_kresba.typ_otvor_francouzske_okno'),
         sirka: { min: 0.6, max: 3.0, default: 1.5 },
         vyska: { min: 2.0, max: 2.8, default: 2.2 },
         parapet: 0,
@@ -97,7 +100,7 @@ const TYPY_OTVORU = {
         standardSirky: [0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.0, 2.5, 3.0],
     },
     pruchod: {
-        nazev: 'Průchod',
+        nazev: tx('ed_kresba.typ_otvor_pruchod'),
         sirka: { min: 0.6, max: 4.0, default: 1.2 },
         vyska: { min: 1.8, max: 3.0, default: 2.1 },
         parapet: 0,
@@ -132,13 +135,25 @@ const TYPY_OTVORU = {
  * Starší hodnoty otv (sklopne, levy_sklopne, pravy_sklopne) převádí normalizujKridlo().
  */
 const TYPY_KRIDEL = {
-    fix: { nazev: 'Pevné' },
-    pravy: { nazev: 'Otevíravé pravé' },
-    levy: { nazev: 'Otevíravé levé' },
-    posuvne: { nazev: 'Posuvné' },
+    fix: { nazev: tx('ed_kresba.kridlo_fix') },
+    pravy: { nazev: tx('ed_kresba.kridlo_pravy') },
+    levy: { nazev: tx('ed_kresba.kridlo_levy') },
+    posuvne: { nazev: tx('ed_kresba.kridlo_posuvne') },
 };
 
 const naCm = (m) => Math.round(m * 100) / 100;
+
+/**
+ * Automatický název podlaží podle jazyka. n = kolikáté od země: 0 přízemí, 1 první patro, u sklepu 1 první pod zemí.
+ * Node testy slovník nemají a s českými zkratkami počítají.
+ */
+function autoNazevPodlazi(typ, n) {
+    const bezSlovniku = typeof preloz !== 'function';
+    if (typ === 'podkrovi') return bezSlovniku ? 'Podkroví' : tx('ed_kresba.podkrovi');
+    if (typ === 'sklep') return bezSlovniku ? n + '.PP' : tx('ed_kresba.podlazi_sklep', { n });
+    if (n === 0) return bezSlovniku ? '1.NP' : tx('ed_kresba.podlazi_prizemi');
+    return bezSlovniku ? (n + 1) + '.NP' : tx('ed_kresba.podlazi_patro', { n, np: n + 1 });
+}
 
 /** Jemné pastelové barvy místností (sytost kolem 15 %) — přidělují se dokola. */
 const MAX_ODCHYLKA_ROVNOBEZNE = Math.sin(3 * Math.PI / 180);   // rovnoběžné stěny: do 3°
@@ -413,7 +428,7 @@ function snapWallTloustka(tloustka, typ) {
 
 const TYPY_PLOCH = {
     terasa: {
-        nazev: 'Terasa',
+        nazev: tx('ed_kresba.typ_plocha_terasa'),
         kategorie: 'exterior',
         vyska: 0.15, // výška nad terénem
         barva2d: '#d4a574',
@@ -422,7 +437,7 @@ const TYPY_PLOCH = {
         pattern: 'dlazba',
     },
     chodnik: {
-        nazev: 'Chodník',
+        nazev: tx('ed_kresba.typ_plocha_chodnik'),
         kategorie: 'exterior',
         vyska: 0.05,
         barva2d: '#d1d5db',
@@ -431,7 +446,7 @@ const TYPY_PLOCH = {
         pattern: 'dlazba',
     },
     cesta: {
-        nazev: 'Příjezdová cesta',
+        nazev: tx('ed_kresba.typ_plocha_cesta'),
         kategorie: 'exterior',
         vyska: 0.05,
         barva2d: '#a8a29e',
@@ -440,7 +455,7 @@ const TYPY_PLOCH = {
         pattern: 'asfalt',
     },
     travnik: {
-        nazev: 'Trávník',
+        nazev: tx('ed_kresba.typ_plocha_travnik'),
         kategorie: 'exterior',
         vyska: 0,
         barva2d: '#86efac',
@@ -449,7 +464,7 @@ const TYPY_PLOCH = {
         pattern: 'trava',
     },
     zahon: {
-        nazev: 'Záhon',
+        nazev: tx('ed_kresba.typ_plocha_zahon'),
         kategorie: 'exterior',
         vyska: 0.1,
         barva2d: '#a3734c',
@@ -458,7 +473,7 @@ const TYPY_PLOCH = {
         pattern: 'zemina',
     },
     parkoviste: {
-        nazev: 'Parkoviště',
+        nazev: tx('ed_kresba.typ_plocha_parkoviste'),
         kategorie: 'exterior',
         vyska: 0.05,
         barva2d: '#94a3b8',
@@ -467,7 +482,7 @@ const TYPY_PLOCH = {
         pattern: 'asfalt',
     },
     bazén: {
-        nazev: 'Bazén',
+        nazev: tx('ed_kresba.typ_plocha_bazen'),
         kategorie: 'exterior',
         vyska: -1.5, // zapuštěný
         barva2d: '#38bdf8',
@@ -476,7 +491,7 @@ const TYPY_PLOCH = {
         pattern: null,
     },
     piskoviste: {
-        nazev: 'Pískoviště',
+        nazev: tx('ed_kresba.typ_plocha_piskoviste'),
         kategorie: 'exterior',
         vyska: 0,
         barva2d: '#fde68a',
@@ -488,31 +503,31 @@ const TYPY_PLOCH = {
 
 const TYPY_STRECHY = {
     sedlova: {
-        nazev: 'Sedlová střecha',
+        nazev: tx('ed_kresba.typ_strecha_sedlova'),
         sklon: { min: 15, max: 55, default: 35 },
         presah: { min: 0.2, max: 1.5, default: 0.5 },
         barva3d: 0xb84c2c,
     },
     pultova: {
-        nazev: 'Pultová střecha',
+        nazev: tx('ed_kresba.typ_strecha_pultova'),
         sklon: { min: 5, max: 25, default: 10 },
         presah: { min: 0.2, max: 1.0, default: 0.4 },
         barva3d: 0xa04828,
     },
     plocha: {
-        nazev: 'Plochá střecha',
+        nazev: tx('ed_kresba.typ_strecha_plocha'),
         sklon: { min: 1, max: 5, default: 2 },
         presah: { min: 0, max: 0.5, default: 0.1 },
         barva3d: 0x808080,
     },
     valbova: {
-        nazev: 'Valbová střecha',
+        nazev: tx('ed_kresba.typ_strecha_valbova'),
         sklon: { min: 20, max: 45, default: 30 },
         presah: { min: 0.3, max: 1.5, default: 0.5 },
         barva3d: 0xc05030,
     },
     mansardova: {
-        nazev: 'Mansardová střecha',
+        nazev: tx('ed_kresba.typ_strecha_mansardova'),
         sklon: { min: 30, max: 70, default: 55 },
         presah: { min: 0.3, max: 1.0, default: 0.5 },
         barva3d: 0x985030,
@@ -521,7 +536,7 @@ const TYPY_STRECHY = {
 
 const TYPY_PRISLUSENSTVI = {
     pergola: {
-        nazev: 'Pergola',
+        nazev: tx('ed_kresba.typ_prisl_pergola'),
         kategorie: 'exterior',
         vyska: { min: 2.2, max: 3.5, default: 2.5 },
         barva2d: '#a16207',
@@ -529,7 +544,7 @@ const TYPY_PRISLUSENSTVI = {
         barva3d: 0x8b6914,
     },
     pristresek: {
-        nazev: 'Přístřešek',
+        nazev: tx('ed_kresba.typ_prisl_pristresek'),
         kategorie: 'exterior',
         vyska: { min: 2.2, max: 4.0, default: 2.5 },
         barva2d: '#737373',
@@ -537,7 +552,7 @@ const TYPY_PRISLUSENSTVI = {
         barva3d: 0x707070,
     },
     komin: {
-        nazev: 'Komín',
+        nazev: tx('ed_kresba.typ_prisl_komin'),
         kategorie: 'konstrukcni',
         rozmer: { min: 0.3, max: 0.6, default: 0.4 },
         barva2d: '#dc2626',
@@ -545,7 +560,7 @@ const TYPY_PRISLUSENSTVI = {
         barva3d: 0xc03030,
     },
     sloup: {
-        nazev: 'Sloup',
+        nazev: tx('ed_kresba.typ_prisl_sloup'),
         kategorie: 'konstrukcni',
         rozmer: { min: 0.2, max: 0.5, default: 0.3 },
         barva2d: '#374151',
@@ -553,7 +568,7 @@ const TYPY_PRISLUSENSTVI = {
         barva3d: 0x606060,
     },
     schody: {
-        nazev: 'Schody',
+        nazev: tx('ed_kresba.typ_prisl_schody'),
         kategorie: 'konstrukcni',
         sirka: { min: 0.8, max: 2.0, default: 1.0 },
         barva2d: '#6b7280',
@@ -561,7 +576,7 @@ const TYPY_PRISLUSENSTVI = {
         barva3d: 0x909090,
     },
     branka: {
-        nazev: 'Branka',
+        nazev: tx('ed_kresba.typ_prisl_branka'),
         kategorie: 'exterior',
         sirka: { min: 0.8, max: 1.5, default: 1.0 },
         vyska: { min: 1.0, max: 2.2, default: 1.5 },
@@ -570,7 +585,7 @@ const TYPY_PRISLUSENSTVI = {
         barva3d: 0xa06020,
     },
     brana: {
-        nazev: 'Brána',
+        nazev: tx('ed_kresba.typ_prisl_brana'),
         kategorie: 'exterior',
         sirka: { min: 2.5, max: 6.0, default: 3.5 },
         vyska: { min: 1.5, max: 2.5, default: 1.8 },
@@ -707,7 +722,7 @@ class StavebniEngine {
             barvy: StavebniEngine.vychoziBarvyDomu(),
             // Pořadí zdola nahoru. vyska = konstrukční výška (podlaha až podlaha), strop = tloušťka
             // stropu nad podlažím. typ: bezne | sklep | podkrovi; data = JSON kresby, u aktivního null.
-            podlazi: [{ id: 'P1', nazev: '1.NP', typ: 'bezne', vyska: 3.05, strop: 0.25, data: null }],
+            podlazi: [{ id: 'P1', nazev: autoNazevPodlazi('bezne', 0), typ: 'bezne', vyska: 3.05, strop: 0.25, data: null }],
             schodiste: [],   // [{id, odPodlazi, doPodlazi, plocha? (schody k výškové ploše), tvar: prime|L|U, x, y (m, y nahoru), uhel (rad), sirka, strana, vyskaStupne?, naslap?, casti?, barva?}]
             plochy: [],      // [{id, podlazi, mistnost, typ: zvysena|snizena|bez_podlahy, dh, body:[[x,y] m] = obrys místnosti z rastru, prenos, vypnuto:[id podlaží]}]
             strecha: null,   // {typ, sklon, presah, presahStit, vyskaOkapu, krytina, hrany:{klíč:{typ,sklon,presah}}}
@@ -910,15 +925,15 @@ class StavebniEngine {
         return true;
     }
 
-    /** Automatické názvy: 1.PP, 1.NP, 2.NP…, Podkroví. Ručně přejmenované se nemění. */
+    /** Automatické názvy podle jazyka: 1.PP, 1.NP, 2.NP…, Podkroví. Ručně přejmenované se nemění. */
     prejmenujPodlazi() {
         const pp = this.dum.podlazi;
         const zaklad = Math.max(0, pp.findIndex(p => p.typ !== 'sklep'));
         pp.forEach((p, i) => {
             if (p.vlastniNazev) return;
-            if (p.typ === 'podkrovi') p.nazev = 'Podkroví';
-            else if (i < zaklad) p.nazev = (zaklad - i) + '.PP';
-            else p.nazev = (i - zaklad + 1) + '.NP';
+            if (p.typ === 'podkrovi') p.nazev = autoNazevPodlazi('podkrovi');
+            else if (i < zaklad) p.nazev = autoNazevPodlazi('sklep', zaklad - i);
+            else p.nazev = autoNazevPodlazi('bezne', i - zaklad);
         });
     }
 
@@ -2725,12 +2740,14 @@ class StavebniEngine {
         return mapa;
     }
 
-    /** „Místnost N" — první volné číslo. */
+    /** Výchozí název místnosti s prvním volným číslem. */
     dalsiNazevMistnosti() {
+        // Text bez čísla (Node bez slovníku, překlad bez :n) by smyčku nikdy neukončil
+        const nazev = (n) => (typeof preloz === 'function' ? tx('ed_kresba.mistnost_n', { n }) : 'Místnost ' + n);
         let n = 1;
         const obsazena = new Set(this.mistnosti.map(m => m.nazev));
-        while (obsazena.has('Místnost ' + n)) n++;
-        return 'Místnost ' + n;
+        while (n < 10000 && obsazena.has(nazev(n))) n++;
+        return nazev(n);
     }
 
     najdiMistnost(id) {
@@ -3237,7 +3254,12 @@ class StavebniEngine {
     fromJSON(data, nast = {}) {
         // Dům: uložený se převezme, starý projekt bez něj = jedno podlaží. Import výkresu
         // a přepnutí podlaží mění jen kresbu aktivního podlaží (zachovatDum).
-        if (data && data.dum) this.dum = StavebniEngine.normalizujDum(data.dum);
+        if (data && data.dum) {
+            this.dum = StavebniEngine.normalizujDum(data.dum);
+            // Automatické názvy podle jazyka toho, kdo projekt otevřel. Ve stejném jazyce se nic nezmění,
+            // jinak se _stavKroku bere až po načtení, takže nevznikne krok historie ani úprava do limitu.
+            this.prejmenujPodlazi();
+        }
         else if (!nast.zachovatDum) this.dum = StavebniEngine.vychoziDum();
 
         this.nodes.clear();
