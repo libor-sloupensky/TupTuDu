@@ -50,12 +50,11 @@ async function main() {
 
         console.log('\n2) Kalkulačka');
         let v = await hodnoty(p);
-        kontrola('výchozí dům: ornice 30, výkopek 20, štěrk 12, vykopáno 60, zpět 9, zbude 50, hromada 74',
-            v['ornice-navic'] === '30' && v['vykopek-navic'] === '20' && v.sterk === '12' && v['celkem-vykopano'] === '60' && v['celkem-zpet'] === '9' && v['celkem-zbude'] === '50' && v.hromada === '74', JSON.stringify(v));
-        await nastav(p, 'podDum', 'vykopek');
-        v = await hodnoty(p);
-        kontrola('dosypání výkopkem: výkopek 8, zbude 38, řádek se štěrkem zmizí', v['vykopek-navic'] === '8' && v['celkem-zbude'] === '38' && !(await videt(p, '[data-ukaz="sterk"]')), JSON.stringify([v['vykopek-navic'], v['celkem-zbude']]));
+        kontrola('výchozí dům: ornice 30, výkopek 8, bez štěrku, vykopáno 60, zpět 21, zbude 38, hromada 74',
+            v['ornice-navic'] === '30' && v['vykopek-navic'] === '8' && !(await videt(p, '[data-ukaz="sterk"]')) && v['celkem-vykopano'] === '60' && v['celkem-zpet'] === '21' && v['celkem-zbude'] === '38' && v.hromada === '74', JSON.stringify(v));
         await nastav(p, 'podDum', 'sterk');
+        v = await hodnoty(p);
+        kontrola('dosypání štěrkem: štěrk 12, výkopek 20, zbude 50', v.sterk === '12' && v['vykopek-navic'] === '20' && v['celkem-zbude'] === '50' && await videt(p, '[data-ukaz="sterk"]'), JSON.stringify([v.sterk, v['vykopek-navic'], v['celkem-zbude']]));
         await nastav(p, 'typ', 'deska');
         v = await hodnoty(p);
         const skladbaDesky = await p.vyhodnot(`document.querySelector('[data-pole="skladba"]').value`);

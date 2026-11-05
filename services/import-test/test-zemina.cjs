@@ -31,9 +31,9 @@ const plochaZony = 12 * 10 + 2 * 0.8 * (12 + 10) + Math.PI * 0.64;
 kontrola('ornice = obrys + 0,8 m × 0,25 m', blizko(A.ornice.vykopano, plochaZony * 0.25, 0.5), A.ornice.vykopano.toFixed(1));
 kontrola('přebytek ornice = jen pod domem', blizko(A.ornice.prebytek, 120 * 0.25, 0.5), A.ornice.prebytek.toFixed(1));
 kontrola('rýhy = 54 m × 0,5 × 0,75', blizko(A.vykopek.ryhy, 54 * 0.5 * 0.75, 0.5), A.vykopek.ryhy.toFixed(1));
-kontrola('pod domem se dosype 10 cm štěrku, výkopek se nevrací', blizko(A.sterk, 120 * 0.1, 0.5) && A.vykopek.zpet < 0.5, A.sterk.toFixed(1));
-const AV = Zemina.spocitej(A.casti, null, { podDum: 'vykopek' });
-kontrola('s dosypáním výkopkem štěrk není a přebytek je o tolik menší', AV.sterk === 0 && blizko(AV.vykopek.zpet, 12, 0.5) && blizko(AV.vykopek.prebytek, A.vykopek.prebytek - 12, 0.5), AV.vykopek.prebytek.toFixed(1));
+kontrola('pod domem se dosype 10 cm výkopku, štěrk žádný', blizko(A.vykopek.zpet, 120 * 0.1, 0.5) && A.sterk === 0, A.vykopek.zpet.toFixed(1));
+const AS = Zemina.spocitej(A.casti, null, { podDum: 'sterk' });
+kontrola('se štěrkem se výkopek nevrací a přebytek je o tolik větší', blizko(AS.sterk, 12, 0.5) && AS.vykopek.zpet < 0.5 && blizko(AS.vykopek.prebytek, A.vykopek.prebytek + 12, 0.5), AS.vykopek.prebytek.toFixed(1));
 kontrola('nakypřený = rostlý × 1,25', blizko(A.vykopek.prebytekNakypreny, A.vykopek.prebytek * 1.25, 1e-6));
 kontrola('plocha části', blizko(A.casti[0].plocha, 120, 0.5), A.casti[0].plocha.toFixed(1));
 
@@ -62,7 +62,7 @@ kontrola('nosná stěna na stěně sklepu pas nemá', C.casti[1].delkaPasu < 20,
 console.log('4) Svah a násyp');
 const svah = (x) => (x - 6) * 0.2;   // 20 % přes dům
 const S = Zemina.spocitej([{ id: 'P1', nazev: '1.NP', obrys: O, kota, typ: 'deska', steny: [] }], (x) => svah(x));
-kontrola('na svahu se dosype pod spodní stranu', S.sterk > A.sterk, S.sterk.toFixed(1));
+kontrola('na svahu se dosype pod spodní stranu', S.vykopek.zpet > A.vykopek.zpet, S.vykopek.zpet.toFixed(1));
 const V = Zemina.spocitej([{ id: 'P1', nazev: '1.NP', obrys: O, kota: 0.45, typ: 'deska', steny: [] }], null, { skladbaDeska: 0.45, podDum: 'vykopek' });
 kontrola('spodek na úrovni terénu: pod dům se dosype za ornici, zemina chybí (záporný přebytek)', V.vykopek.prebytek < 0, V.vykopek.prebytek.toFixed(1));
 
@@ -124,15 +124,15 @@ console.log('8b) Základ prodloužený od země až k domu (výchozí)');
 const PV = Zemina.spocitej(vysoko, null);
 kontrola('dům 2 m nad terénem základ má a vystupuje o 1,55 m', PV.bezZakladu === 0 && blizko(PV.zakladNadTerenem, 1.55, 0.01), PV.zakladNadTerenem.toFixed(2));
 kontrola('sejme se ornice a rýha jde na spáru pod terénem', blizko(PV.ornice.vykopano, plochaZony * 0.25, 0.5) && blizko(PV.vykopek.ryhy, 44 * 0.5 * 0.75, 0.5), [PV.ornice.vykopano, PV.vykopek.ryhy].map(x => x.toFixed(1)).join(' / '));
-kontrola('pod dům se dosype od dna výkopu po spodek konstrukce', blizko(PV.sterk, 120 * (1.55 + 0.25), 1), PV.sterk.toFixed(1));
-const PVV = Zemina.spocitej(vysoko, null, { podDum: 'vykopek' });
-kontrola('dosypání výkopkem: přebytek je záporný, zemina chybí', PVV.sterk === 0 && blizko(PVV.vykopek.prebytek, PV.vykopek.prebytek - PV.sterk, 1) && PVV.vykopek.prebytek < 0, PVV.vykopek.prebytek.toFixed(1));
+const PVS = Zemina.spocitej(vysoko, null, { podDum: 'sterk' });
+kontrola('pod dům se dosype od dna výkopu po spodek konstrukce', blizko(PVS.sterk, 120 * (1.55 + 0.25), 1), PVS.sterk.toFixed(1));
+kontrola('dosypání výkopkem: přebytek je záporný, zemina chybí', PV.sterk === 0 && blizko(PV.vykopek.prebytek, PVS.vykopek.prebytek - PVS.sterk, 1) && PV.vykopek.prebytek < 0, PV.vykopek.prebytek.toFixed(1));
 const PJ = Zemina.jama(vysoko, null);
 kontrola('jáma má ornici pod domem a rýhu pod stěnou', blizko(hl(PJ, O[0].x + 3, O[0].y + 3), 0.25, 0.01) && blizko(hl(PJ, O[0].x + 3, O[0].y), 1, 0.01), [hl(PJ, O[0].x + 3, O[0].y + 3), hl(PJ, O[0].x + 3, O[0].y)].join(' / '));
 const PS = Zemina.spocitej([{ ...vysoko[0], kota: 0.3 }], (x) => (x - O[0].x - 6) * 0.1);
 kontrola('svah 10 %: nikde nechybí, rýhy jsou po celé délce a stejně hluboké', PS.bezZakladu === 0 && blizko(PS.casti[0].delkaPasu, 44, 0.3), [PS.bezZakladu, PS.casti[0].delkaPasu.toFixed(1), PS.vykopek.ryhy.toFixed(1)].join(' / '));
 kontrola('svah 10 %: základ na dolní straně vystupuje', blizko(PS.zakladNadTerenem, 0.6 - 0.15, 0.02), PS.zakladNadTerenem.toFixed(2));
-const PK = Zemina.spocitej([{ id: 'S', nazev: '1.PP', obrys: obd(6, 10), kota: -0.8, typ: 'pasy', steny: stenyObrysu(obd(6, 10)) }, { id: 'P1', nazev: '1.NP', obrys: O, kota: 2, typ: 'pasy', steny: stenyObrysu(O) }], null);
+const PK = Zemina.spocitej([{ id: 'S', nazev: '1.PP', obrys: obd(6, 10), kota: -0.8, typ: 'pasy', steny: stenyObrysu(obd(6, 10)) }, { id: 'P1', nazev: '1.NP', obrys: O, kota: 2, typ: 'pasy', steny: stenyObrysu(O) }], null, { podDum: 'sterk' });
 kontrola('vedle sklepu: štěrk je jen pod spodkem konstrukce, svah jámy zasype výkopek', PK.bezZakladu === 0 && blizko(PK.sterk, 60 * 1.8, 1), PK.sterk.toFixed(1));
 kontrola('vedle sklepu: přebytek výkopku je objem sklepu pod ornicí a rýhy', blizko(PK.vykopek.prebytek, 60 * 1 + PK.vykopek.ryhy, 2), [PK.vykopek.prebytek, PK.vykopek.ryhy].map(x => x.toFixed(1)).join(' / '));
 const PD = Zemina.spocitej([{ ...vysoko[0], kota: 0.3, typ: 'deska', steny: [] }], null);

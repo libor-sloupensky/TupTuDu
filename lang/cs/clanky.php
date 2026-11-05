@@ -59,7 +59,7 @@ return [
     'rez_popis' => 'Schéma výkopu pro dům na pasech, bez měřítka',
     'rez_1' => 'Ornice se sejme z plochy domu i pracovního prostoru. Kolem domu se vrátí, pod domem zbude.',
     'rez_2' => 'Rýhu pro pas obvykle celou vyplní beton, proto zemina z ní zbude. Jen v sypké zemině se kope šířeji a kolem bednění se zasype.',
-    'rez_3' => 'Pod dům se dosype po spodek konstrukce, štěrkem nebo vhodným výkopkem.',
+    'rez_3' => 'Pod dům se dosype po spodek konstrukce, obvykle hutněným výkopkem.',
     'rez_4' => 'Pracovní prostor kolem domu se po stavbě zasype.',
     'rez_sklep_popis' => 'Schéma výkopu pro dům se sklepem v měřítku',
     'rez_sklep' => 'U sklepu se kope celá jáma. Řez je v měřítku pro dům široký 12 m se svahem výkopu 1 : 0,5. V písčité zemině bývá svah mírnější a odkop větší, se strmějším svahem nebo pažením menší. Přebytek je pokaždé stejný: světle hnědá zemina se vrátí kolem stěn, objem sklepu zbude. Když se výkopek na zásyp nehodí, třeba jíl, odjede víc.',

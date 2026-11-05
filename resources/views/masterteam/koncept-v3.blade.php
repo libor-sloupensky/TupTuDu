@@ -1255,8 +1255,8 @@
                                         <div class="flex flex-col gap-1 pt-1">
                                             <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.pod_dum_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.pod_dum') }}</span>
                                                 <select class="flex-1 min-w-0" data-zaklad-volba="podDum" @change="setVolbuZakladu('podDum', $event.target.value)">
-                                                    <option value="sterk" :selected="zakladyHodnota('podDum') === 'sterk'">{{ __('ed_sablona.zaklady.pod_dum_sterk') }}</option>
                                                     <option value="vykopek" :selected="zakladyHodnota('podDum') === 'vykopek'">{{ __('ed_sablona.zaklady.pod_dum_vykopek') }}</option>
+                                                    <option value="sterk" :selected="zakladyHodnota('podDum') === 'sterk'">{{ __('ed_sablona.zaklady.pod_dum_sterk') }}</option>
                                                 </select></div>
                                             <div class="kk-podlazi-pole" x-show="zemina?.casti.some(c => c.typ === 'deska')" title="{{ __('ed_sablona.zaklady.skladba_deska_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.skladba_deska') }}</span>
                                                 <input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladbaDeska" :value="Math.round(zakladyHodnota('skladbaDeska') * 100)"

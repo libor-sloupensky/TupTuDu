@@ -338,7 +338,7 @@ return [
         'skladba_deska' => 'Tloušťka u desky',
         'prodlouzit_tip' => 'Kde je dům nad terénem, základ se protáhne až k němu. Na dolní straně svahu tak vyjde vyšší a pod domem se víc dosype. Vypni, když má část domu zůstat ve vzduchu: pak se tam nekope a panel napíše Chybí základ.',
         'prodlouzit' => 'Prodloužit základ k zemi',
-        'pod_dum_tip' => 'Čím se dosype pod dům po spodek konstrukce: hutněný štěrk, nebo vhodný výkopek. Ornice se nehodí.',
+        'pod_dum_tip' => 'Čím se dosype pod dům po spodek konstrukce. Obvykle hutněný výkopek, jíl a plastickou hlínu nahradí štěrk. Ornice se nehodí.',
         'pod_dum' => 'Pod dům sypat',
         'pod_dum_sterk' => 'Štěrk',
         'pod_dum_vykopek' => 'Výkopek',

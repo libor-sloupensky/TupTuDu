@@ -10,7 +10,7 @@
 (function (koren) {
     const VYCHOZI = {
         delka: 12, sirka: 10, typ: 'pasy', sklep: false,
-        podDum: 'sterk',    // čím se dosype pod dům: sterk, vykopek
+        podDum: 'vykopek',  // čím se dosype pod dům: vykopek, sterk
         nadTerenem: 0.3,    // podlaha 1.NP nad terénem
         vnitrni: 10,        // délka vnitřních nosných stěn
         spara: 1.0,         // základová spára pod terénem
@@ -60,7 +60,7 @@
         const orniceVykop = v.ornice * plocha(v.odkop + sirkaSvahu);
         const orniceZpet = v.ornice * (plocha(v.odkop + sirkaSvahu) - plochaDomu);
         const vykopekVykop = vykopekZona * plocha(v.odkop) + vykopekSvah + ryhy;
-        // Kolem domu se vrací všechno. Pod domem se dosype po spodek konstrukce, štěrkem nebo vhodným výkopkem.
+        // Kolem domu se vrací všechno. Pod domem se dosype po spodek konstrukce, hutněným výkopkem nebo štěrkem.
         const dosypani = Math.max(0, dno + D) * plochaDomu;
         const vykopekZpet = vykopekZona * (plocha(v.odkop) - plochaDomu) + vykopekSvah + (v.podDum === 'vykopek' ? dosypani : 0);
 

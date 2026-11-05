@@ -58,7 +58,7 @@ return [
     'rez_popis' => 'Excavation diagram for a house on strip footings, not to scale',
     'rez_1' => 'Topsoil is stripped from the house area and the working space. It goes back around the house, the part under the house is left over.',
     'rez_2' => 'Concrete usually fills the whole strip trench, so the soil from it is left over. Only in loose soil is the trench dug wider and backfilled around the formwork.',
-    'rez_3' => 'Fill goes under the house up to the bottom of the structure, gravel or suitable excavated soil.',
+    'rez_3' => 'Fill goes under the house up to the bottom of the structure, usually compacted excavated soil.',
     'rez_4' => 'The working space around the house is backfilled after construction.',
     'rez_sklep_popis' => 'Excavation diagram for a house with a basement, to scale',
     'rez_sklep' => 'A basement needs a whole pit. The section is to scale for a house 12 m wide with a 1 : 0.5 excavation slope. Sandy soil usually needs a gentler slope and a bigger dig, a steeper slope or shoring means a smaller one. The surplus stays the same: the light brown soil goes back around the walls, the volume of the basement is left over. If the excavated soil is unsuitable for backfill, such as clay, more has to go.',

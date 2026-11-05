@@ -259,7 +259,8 @@ async function main() {
         kontrola('po snížení základ zase je', !/chybí/.test(zpetDolu.popis) && zpetDolu.oznaceno === 0, JSON.stringify(zpetDolu));
 
         console.log('\n8d) Základ prodloužený k zemi');
-        await js(`d.setVolbuZakladu('prodlouzit', true); d.setNadTerenem(2); d.podlaziUprava = 'zaklady'; d._selectionTick++; return true;`);
+        kontrola('pod dům je výchozí výkopek', await js(`return d.zakladyHodnota('podDum') === 'vykopek';`));
+        await js(`d.setVolbuZakladu('podDum', 'sterk'); d.setVolbuZakladu('prodlouzit', true); d.setNadTerenem(2); d.podlaziUprava = 'zaklady'; d._selectionTick++; return true;`);
         await pauza(500);
         const prodl = await js(`const np = d._podlazi1NP().id; return { popis: d.zakladyPopis, chybi: d.zakladyChybi, sraf: [...d.podepreniPodlazi(np).values()].filter(x => x.chybiZaklad).length,
             nad: d.zemina.zakladNadTerenem, napis: document.querySelector('[data-zaklad-nad-terenem]')?.innerText, sterk: d.zemina.sterk, material: document.querySelector('[data-material=sterk]')?.innerText,

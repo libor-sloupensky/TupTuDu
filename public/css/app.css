@@ -297,7 +297,6 @@ ol.tt-postup p { font-size: .93rem; color: var(--c-text-secondary); margin: 0; }
 .tt-rez-zemina { fill: color-mix(in srgb, var(--c-primary) 16%, var(--c-surface)); }
 .tt-rez-ornice { fill: color-mix(in srgb, var(--c-ok) 45%, var(--c-surface)); }
 .tt-rez-zasyp { fill: color-mix(in srgb, var(--c-primary) 42%, var(--c-surface)); }
-.tt-rez-sterk { fill: color-mix(in srgb, var(--c-brand-grey) 50%, var(--c-surface)); }
 .tt-rez-beton { fill: var(--c-border-strong); }
 .tt-rez-vnitrek { fill: var(--c-surface); }
 .tt-rez-dum { fill: var(--c-brand-grey); }

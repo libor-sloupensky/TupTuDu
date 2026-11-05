@@ -338,7 +338,7 @@ return [
         'skladba_deska' => 'Slab thickness',
         'prodlouzit_tip' => 'Where the house is above the ground, the foundation extends up to it. On the lower side of a slope it comes out taller and more fill goes under the house. Turn this off if part of the house should stay in the air: nothing is dug there and the panel reports a missing foundation.',
         'prodlouzit' => 'Extend foundation to ground',
-        'pod_dum_tip' => 'What fills the space under the house up to the base of the structure: compacted gravel or suitable excavated soil. Topsoil is not suitable.',
+        'pod_dum_tip' => 'What fills the space under the house up to the bottom of the structure. Usually compacted excavated soil, gravel replaces clay and plastic loam. Topsoil is not suitable.',
         'pod_dum' => 'Fill under house',
         'pod_dum_sterk' => 'Gravel',
         'pod_dum_vykopek' => 'Excavated soil',

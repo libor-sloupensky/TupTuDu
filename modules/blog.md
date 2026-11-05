@@ -167,8 +167,8 @@ Dům 12 × 10 m ze `Zemina.spocitej` při výchozím nastavení (pracovní prost
 
 | Případ | Vykopáno | Ornice navíc | Výkopek navíc | Největší hromada |
 |---|---:|---:|---:|---:|
-| Rovina, pasy, pod dům štěrk (12 m³) | 60 | 30 | 20 | 74 |
 | Rovina, pasy, pod dům výkopek | 60 | 30 | 8 | 74 |
+| Rovina, pasy, pod dům štěrk (12 m³) | 60 | 30 | 20 | 74 |
 | Rovina, nosná deska, skladba 70 cm | 63 | 30 | 18 | 79 |
 | Rovina, celý sklep 3,05 m, pasy | 652 | 30 | 368 | 814 |
 

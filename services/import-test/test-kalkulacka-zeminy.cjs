@@ -86,19 +86,18 @@ const kontrola = (popis, ok, detail = '') => {
 const blizko = (a, b, tol = 0.6) => Math.abs(a - b) <= tol;
 const pasy = Kalkulacka.spocitej({ vnitrni: 10 });
 kontrola('pasy: ornice navíc 30', blizko(pasy.ornice.prebytek, 30), pasy.ornice.prebytek.toFixed(1));
-kontrola('pasy: výkopek navíc 20', blizko(pasy.vykopek.prebytek, 20.25), pasy.vykopek.prebytek.toFixed(1));
-kontrola('pasy: štěrk pod dům 12', blizko(pasy.sterk, 12), pasy.sterk.toFixed(1));
+kontrola('pasy: výkopek navíc 8, štěrk žádný', blizko(pasy.vykopek.prebytek, 8.25) && pasy.sterk === 0, pasy.vykopek.prebytek.toFixed(1));
 kontrola('pasy: vykopáno celkem 60', blizko(pasy.ornice.vykopano + pasy.vykopek.vykopano, 59.6), (pasy.ornice.vykopano + pasy.vykopek.vykopano).toFixed(1));
-kontrola('pasy: zbude celkem 50', blizko(pasy.ornice.prebytek + pasy.vykopek.prebytek, 50.25), (pasy.ornice.prebytek + pasy.vykopek.prebytek).toFixed(1));
-const vykopkem = Kalkulacka.spocitej({ vnitrni: 10, podDum: 'vykopek' });
-kontrola('dosypání výkopkem: výkopek navíc 8, štěrk žádný', blizko(vykopkem.vykopek.prebytek, 8.25) && vykopkem.sterk === 0, vykopkem.vykopek.prebytek.toFixed(1));
+kontrola('pasy: vrátí se 21, zbude celkem 38', blizko(pasy.ornice.zpet + pasy.vykopek.zpet, 21.3) && blizko(pasy.ornice.prebytek + pasy.vykopek.prebytek, 38.25), (pasy.ornice.prebytek + pasy.vykopek.prebytek).toFixed(1));
+const sterkem = Kalkulacka.spocitej({ vnitrni: 10, podDum: 'sterk' });
+kontrola('dosypání štěrkem: štěrk 12, výkopek navíc 20, zbude 50', blizko(sterkem.sterk, 12) && blizko(sterkem.vykopek.prebytek, 20.25) && blizko(sterkem.ornice.prebytek + sterkem.vykopek.prebytek, 50.25), sterkem.vykopek.prebytek.toFixed(1));
 const sklep = Kalkulacka.spocitej({ vnitrni: 10, sklep: true });
 kontrola('sklep: výkopek 368, vykopáno 652, hromada 814', blizko(sklep.vykopek.prebytek, 367.5) && blizko(sklep.ornice.vykopano + sklep.vykopek.vykopano, 651.5) && blizko(sklep.hromada, 814.4), sklep.vykopek.prebytek.toFixed(1));
 const deska = Kalkulacka.spocitej({ typ: 'deska', skladba: 0.7 });
 kontrola('deska se skladbou 70 cm: výkopek navíc 18', blizko(deska.vykopek.prebytek, 18), deska.vykopek.prebytek.toFixed(1));
-const deskaVykopkem = Kalkulacka.spocitej({ typ: 'deska', podDum: 'vykopek' });
+const deskaVykopkem = Kalkulacka.spocitej({ typ: 'deska' });
 kontrola('tenká deska dosypaná výkopkem: chybí 12', blizko(deskaVykopkem.vykopek.prebytek, -12), deskaVykopkem.vykopek.prebytek.toFixed(1));
-const vysoko = Kalkulacka.spocitej({ nadTerenem: 0.6 });
+const vysoko = Kalkulacka.spocitej({ nadTerenem: 0.6, podDum: 'sterk' });
 kontrola('spodek nad terénem: základ se prodlouží, sejme se ornice, rýhy i víc štěrku', blizko(vysoko.sterk, 120 * 0.4) && blizko(vysoko.vykopek.ryhy, 20.25) && blizko(vysoko.ornice.prebytek, 30), vysoko.sterk.toFixed(1));
 
 console.log(chyb ? `\nCHYBY: ${chyb}` : '\nVše v pořádku');

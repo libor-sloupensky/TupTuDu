@@ -19,7 +19,7 @@
         ornice: 0.25,
         svah: 0.5,         // vodorovně na 1 m výšky
         nakypreni: 1.25,
-        podDum: 'sterk',   // čím se dosype pod dům: sterk, vykopek
+        podDum: 'vykopek', // čím se dosype pod dům: vykopek, sterk
         prodlouzit: true,  // základ sahá od země až k domu, i kde je dům nad terénem
     };
     const NAD_TERENEM = 0.3;       // výchozí výška podlahy 1.NP nad terénem
@@ -290,7 +290,7 @@
                 celkem += plochaBunky;
                 if (teren && teren.odhad && teren.odhad(x, y)) mimo += plochaBunky;
                 if (naZemi) {
-                    // Pod domem se dosype po spodek konstrukce, štěrkem nebo výkopkem, a ornice se pod dům nevrací.
+                    // Pod domem se dosype po spodek konstrukce, výkopkem nebo štěrkem, a ornice se pod dům nevrací.
                     // Kde je výkop hlubší kvůli sousední jámě, ten rozdíl zasype výkopek.
                     const vlastni = Math.max(t - stojiNa.dno, P.ornice);
                     const dosypani = Math.max(0, stojiNa.dno - (t - vlastni)) * plochaBunky;

@@ -42,8 +42,8 @@
                 <div>
                     <label for="kalk-podDum">{{ __('clanky.kalk_pod_dum') }}</label>
                     <select id="kalk-podDum" data-pole="podDum">
-                        <option value="sterk">{{ __('clanky.kalk_pod_dum_sterk') }}</option>
                         <option value="vykopek">{{ __('clanky.kalk_pod_dum_vykopek') }}</option>
+                        <option value="sterk">{{ __('clanky.kalk_pod_dum_sterk') }}</option>
                     </select>
                 </div>
                 <div>
