@@ -74,7 +74,7 @@
                 // Názvy kategorií jdou ze slovníku podle id, JSON zůstává česky
                 data.kategorie.forEach(k => { k.nazev = preloz('ed_nastroje.kategorie.' + k.id); });
                 // Názvy kusů přes slovník podle českého názvu, nový kus bez překladu zůstane česky
-                data.polozky.forEach(p => { p.nazev = window.TT_LOKALIZACE.texty['ed_katalog.' + p.nazev] ?? p.nazev; });
+                data.polozky.forEach(p => { p.nazevZdroj = p.nazev; p.nazev = window.TT_LOKALIZACE.texty['ed_katalog.' + p.nazev] ?? p.nazev; });
                 this.katalog = data;
             } catch (e) {
                 window.chybaUzivateli?.(e, 'Načtení katalogu');
@@ -249,7 +249,7 @@
         _katalogZaznam(p, stred, uhel) {
             return {
                 id: 'vb' + (this.engine.nextId++),
-                typ: 'Katalog', podtyp: null, kategorie: p.kategorie, katalog: p.id, nazev: p.nazev, tvar: 'rect', zadni_strana: null,
+                typ: 'Katalog', podtyp: null, kategorie: p.kategorie, katalog: p.id, nazev: p.nazev, nazevZdroj: p.nazevZdroj, tvar: 'rect', zadni_strana: null,
                 stred: [stred[0], stred[1]], uhel, sirka: p.sirka, hloubka: p.hloubka, vyska: p.vyska, uroven: p.uroven || 0,
                 zaklad: { sirka: p.sirka, hloubka: p.hloubka, vyska: p.vyska },
                 polygon: this._katalogPolygon(stred, p.sirka, p.hloubka, uhel),

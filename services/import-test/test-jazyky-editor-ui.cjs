@@ -102,6 +102,40 @@ async function main() {
             const vzor = CESTINA[jazyk] || CESTINA.default;
             const cesky = (await p.vyhodnot(TEXTY)).filter(t => vzor.test(t) && !VYJIMKY.test(t));
             kontrola('žádná čeština v rozhraní', cesky.length === 0, `${cesky.length}: ` + cesky.slice(0, 25).join(' | '));
+            // Výchozí názvy se přepínají s jazykem, ruční zůstávají. Na samostatném enginu, projekt se nemění.
+            const n = await p.vyhodnot(`(() => {
+                const t = new StavebniEngine();
+                const j = t.toJSON();
+                j.mistnosti = [
+                    { id: 'M91', nazev: 'Místnost 7', auto: { k: 'mistnost_n', n: 7 }, barva: '#ffffff', kotva: [0, 0] },
+                    { id: 'M92', nazev: 'Obývák', auto: { k: 'prostor_obyvak' }, barva: '#ffffff', kotva: [1, 1] },
+                    { id: 'M93', nazev: 'Moje dílna', barva: '#ffffff', kotva: [2, 2] },
+                ];
+                j.vybaveni = [
+                    { id: 'vb91', typ: 'Katalog', katalog: 'abo-x', nazev: 'Pohovka dvojsed, šedá', tvar: 'rect', sirka: 1, hloubka: 1 },
+                    { id: 'vb92', typ: 'Katalog', katalog: 'abo-y', nazev: 'Můj kus', tvar: 'rect', sirka: 1, hloubka: 1 },
+                ];
+                t.fromJSON(j);
+                const zpet = t.toJSON();
+                return {
+                    m: t.mistnosti.map(x => x.nazev), v: t.vybaveni.map(x => x.nazev),
+                    cekam: [preloz('ed_kresba.mistnost_n', { n: 7 }), preloz('ed_kresba.prostor_obyvak'), TT_LOKALIZACE.texty['ed_katalog.Pohovka dvojsed, šedá']],
+                    auto: zpet.mistnosti.map(x => !!x.auto).join(), zdroj: zpet.vybaveni[0].nazevZdroj,
+                };
+            })()`);
+            kontrola('výchozí názvy podle jazyka, ruční beze změny',
+                n.m[0] === n.cekam[0] && n.m[1] === n.cekam[1] && n.m[2] === 'Moje dílna' && n.v[0] === n.cekam[2] && n.v[1] === 'Můj kus'
+                && n.auto === 'true,true,false' && n.zdroj === 'Pohovka dvojsed, šedá', JSON.stringify(n));
+            // Přejmenování z výchozího názvu udělá text uživatele
+            const prejm = await p.vyhodnot(`(() => {
+                const d = ${D}, e = d.engine;
+                const m = e.mistnosti.find(x => x.auto) || (e.mistnosti[0] && Object.assign(e.mistnosti[0], { auto: { k: 'mistnost_n', n: 1 } }));
+                if (!m) return null;
+                d.renderer.selectedMistnosti = new Set([m.id]);
+                d.setMistnostNazev('ClaudeTest ruční ${jazyk}');
+                return { nazev: m.nazev, auto: m.auto ?? null };
+            })()`);
+            kontrola('přejmenování zruší automatický název', prejm && prejm.nazev === 'ClaudeTest ruční ' + jazyk && prejm.auto === null, JSON.stringify(prejm));
             const nazvy = await p.vyhodnot(`${D}.seznamPodlazi?.map(x => x.nazev).join(', ') || ''`);
             console.log('   podlaží:', nazvy);
             // Nejde o texty: modely a podklad kopie projektu nemusí v této složce být, /masterteam je přesměrování po přihlášení

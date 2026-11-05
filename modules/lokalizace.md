@@ -82,6 +82,8 @@ Lokalizace::maFunkci('katastr');
 - Počty: `prelozPocet('ed_dum.sten', n)`, text `one=:pocet stěna|few=:pocet stěny|other=:pocet stěn`, kategorie podle jazyka. Čísla ve větách `prelozCislo(x, 2)`.
 - Moduly běžící i v Node testech (`stavebni-engine.js` a další) volají `tx()`, který bez slovníku vrátí klíč.
 - Do bugů (`zalogujChybu`, `chybaUzivateli` jako akce) a do konzole se píše česky.
+- **Názvy v datech projektu:** uživatelský text se nikdy nepřekládá. Výchozí názvy se generují ze slovníku při načtení projektu: podlaží podle typu a pořadí (`vlastniNazev` = ruční), místnosti z `auto` (`{ k: 'mistnost_n', n: 3 }` nebo `{ k: 'prostor_obyvak' }`, přejmenováním zmizí), kusy katalogu podle českého `nazevZdroj` přes `ed_katalog`. Místnosti ze starších projektů `auto` nemají a zůstávají, jak jsou.
+- **Vzorový koncept pro obrázky do článků:** u jeho místností nastavit `auto` podle `ed_kresba.prostor_*`, pak se přepíná celý. Popisy kroků historie a data z katastru zůstávají.
 - Nesouvislé věty neskládat, jeden text s parametry. Názvy podlaží generuje `autoNazevPodlazi`, ruční `vlastniNazev` se nemění.
 
 ## Jak přidat jazyk

@@ -569,6 +569,7 @@ function konceptKEditor(initialData) {
             if (n === m.nazev) return;
             this.engine.pushUndo();
             m.nazev = n;
+            delete m.auto;    // od teď je to text uživatele, s jazykem se nemění
             this._poUpraveOtvoru(preloz('ed_ui.krok_nazev_mistnosti'));
         },
         setMistnostBarva(hex) {

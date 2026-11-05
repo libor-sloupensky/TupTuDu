@@ -155,6 +155,22 @@ function autoNazevPodlazi(typ, n) {
     return bezSlovniku ? (n + 1) + '.NP' : tx('ed_kresba.podlazi_patro', { n, np: n + 1 });
 }
 
+/**
+ * Výchozí název místnosti ze slovníku. Ukládá se jako auto = { k: 'mistnost_n', n: 3 } nebo { k: 'prostor_obyvak' }:
+ * přepíná se s jazykem, přejmenováním auto zmizí a název je dál text uživatele. Bez slovníku (Node) česky.
+ */
+function autoNazevMistnosti(auto) {
+    if (typeof preloz !== 'function') return 'Místnost ' + (auto.n ?? '');
+    return tx('ed_kresba.' + auto.k, auto.n ? { n: auto.n } : undefined);
+}
+
+/** Název kusu z katalogu: slovník podle českého názvu, ten je zdroj a ukládá se vedle. Neznámý kus zůstane, jak je. */
+function nazevKusuKatalogu(rv) {
+    const zdroj = rv.nazevZdroj || rv.nazev;
+    const preklad = rv.katalog ? globalThis.TT_LOKALIZACE?.texty?.['ed_katalog.' + zdroj] : undefined;
+    return preklad ? { nazev: preklad, nazevZdroj: zdroj } : { nazev: rv.nazev ?? null, nazevZdroj: rv.nazevZdroj ?? null };
+}
+
 /** Jemné pastelové barvy místností (sytost kolem 15 %) — přidělují se dokola. */
 const MAX_ODCHYLKA_ROVNOBEZNE = Math.sin(3 * Math.PI / 180);   // rovnoběžné stěny: do 3°
 const PALETA_MISTNOSTI = ['#fbe9dc', '#e4eefb', '#e5f3e4', '#fbf4d6', '#efe8f8', '#e0f3f1', '#f8e6ea', '#ececec'];
@@ -2728,9 +2744,11 @@ class StavebniEngine {
         }
         for (const k of komponenty) {
             if (mapa.has(k.stitek)) continue;
+            const auto = this.dalsiAutoMistnosti();
             const m = {
                 id: this._id('M'),
-                nazev: this.dalsiNazevMistnosti(),
+                nazev: autoNazevMistnosti(auto),
+                auto,
                 barva: PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length],
                 kotva: { x: k.stred.x, y: k.stred.y },
             };
@@ -2741,13 +2759,12 @@ class StavebniEngine {
     }
 
     /** Výchozí název místnosti s prvním volným číslem. */
-    dalsiNazevMistnosti() {
-        // Text bez čísla (Node bez slovníku, překlad bez :n) by smyčku nikdy neukončil
-        const nazev = (n) => (typeof preloz === 'function' ? tx('ed_kresba.mistnost_n', { n }) : 'Místnost ' + n);
-        let n = 1;
+    dalsiAutoMistnosti() {
         const obsazena = new Set(this.mistnosti.map(m => m.nazev));
-        while (n < 10000 && obsazena.has(nazev(n))) n++;
-        return nazev(n);
+        // Strop: text bez čísla (překlad bez :n) by smyčku nikdy neukončil
+        let n = 1;
+        while (n < 10000 && obsazena.has(autoNazevMistnosti({ k: 'mistnost_n', n }))) n++;
+        return { k: 'mistnost_n', n };
     }
 
     najdiMistnost(id) {
@@ -3220,6 +3237,7 @@ class StavebniEngine {
             zadni_strana: v.zadni_strana ?? null,
             katalog: v.katalog ?? undefined,
             nazev: v.nazev ?? undefined,
+            nazevZdroj: v.nazevZdroj ?? undefined,
             uroven: v.uroven ?? undefined,
             zaklad: v.zaklad ?? undefined,
         }));
@@ -3238,7 +3256,7 @@ class StavebniEngine {
 
         // Místnosti: jméno + barva + kotva (metry, y nahoru); plochy se nepersistují, počítá je rastr
         const mistnosti = (this.mistnosti || []).map(m => ({
-            id: m.id, nazev: m.nazev, barva: m.barva, ...(m.podlaha ? { podlaha: { ...m.podlaha } } : {}),
+            id: m.id, nazev: m.nazev, ...(m.auto ? { auto: { ...m.auto } } : {}), barva: m.barva, ...(m.podlaha ? { podlaha: { ...m.podlaha } } : {}),
             kotva: [Math.round(m.kotva.x / this.PX_PER_M * 1000) / 1000, Math.round(-m.kotva.y / this.PX_PER_M * 1000) / 1000],
         }));
 
@@ -3378,7 +3396,8 @@ class StavebniEngine {
             if (!m || !Array.isArray(m.kotva)) return;
             this.mistnosti.push({
                 id: m.id || this._id('M'),
-                nazev: String(m.nazev || ''),
+                nazev: m.auto?.k && typeof preloz === 'function' ? autoNazevMistnosti(m.auto) : String(m.nazev || ''),
+                ...(m.auto?.k ? { auto: { ...m.auto } } : {}),
                 barva: /^#[0-9a-fA-F]{6}$/.test(m.barva || '') ? m.barva : PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length],
                 ...(m.podlaha?.dekor ? { podlaha: { ...m.podlaha } } : {}),
                 kotva: { x: m.kotva[0] * this.PX_PER_M, y: -m.kotva[1] * this.PX_PER_M },
@@ -3535,7 +3554,7 @@ class StavebniEngine {
                 tvar: rv.tvar ?? null,
                 zadni_strana: rv.zadni_strana ?? null,
                 katalog: rv.katalog ?? null,
-                nazev: rv.nazev ?? null,
+                ...nazevKusuKatalogu(rv),
                 uroven: rv.uroven ?? 0,
                 zaklad: rv.zaklad ?? null,
             });
