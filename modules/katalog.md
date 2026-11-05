@@ -141,15 +141,14 @@ Viděno při prohlídce, zatím neřešeno:
 - **Vybavení z importu výkresu** zůstává jen 2D ikona, do 3D nejde.
 - **Stolní lampa a obraz** mají výchozí výšku nad podlahou, na stůl se ale nepřichytí, výška se nastavuje v panelu kusu.
 
-## Rozdělaná práce (k 4. 11. 2026)
+## Rozdělaná práce (k 5. 11. 2026)
 
-1. **Nová výroba modelů bez zjednodušení přerušená (Libor 4. 11. 2026).** `sestav.cjs` už nezjednodušuje, jen kusy nad 60 000 trojúhelníků mírně. Hotových je 147 z 921 kusů ABO (včetně ručně vybraných), zbytek má dosud starý přechod, katalog funguje a poškozené soubory nejsou. Dokončení od 5. 11. 2026: `node services/katalog/sestav.cjs --starsi=2026-11-04T15:30 --jen=^abo- --vlaken=3`, po přerušení stačí spustit znovu, naváže. Zdroje jsou v `%TEMP%\tuptudu-katalog`, celkem asi 12 GB. Potom:
-   - `kontrola.cjs --archy` a prohlédnout hlavně bílé skříně a lampy,
-   - porovnat strop lesku v `katalog-3d.js` zapnutý a vypnutý, po opravě normál možná není potřeba nebo stačí mírnější,
-   - změřit paměť a plynulost editoru (trojúhelníků je asi 12× víc, velikost modelů odhadem kolem 320 MB místo 170 MB),
-   - spustit `test-katalog-ui`, `test-svetlo-3d-ui`, `test-sdileni-ui`,
-   - smazat mezipaměť zdrojů.
-   Potom znovu `s3.cjs nahraj` a commitnout `katalog.json`, má nové počty plošek.
+1. **Nová výroba modelů bez zjednodušení je hotová, otevřené je vyhlazování hran.** 926 kusů, modely 264 MB, medián 14 744 trojúhelníků místo 2 382. Bílé skříně a lampy přechod nemají, strop lesku v `katalog-3d.js` skoro nic nemění a zůstává. Vyřazená skříň B07C41C1C8 má přechod přímo v textuře.
+   Měření v editoru na Radeon 7520U, okno 1500 × 950, poměr 1 (`prohlizec.cjs` s `gpu: true`), hodnoty hodně kolísají:
+   - staré modely, 40 kusů, 107 tis. trojúhelníků: 40 a 44 fps,
+   - nové modely, 40 kusů, 629 tis. trojúhelníků: s vyhlazováním 3, 12 a 28 fps, bez něj 46 fps (jedno měření),
+   - nové modely, 12 kusů, 219 tis. trojúhelníků: 56 fps.
+   Paměť ani doba načtení se neliší. Strop na jeden kus moc nepomůže: 30 000 trojúhelníků sníží 40 kusů o 6 %, běžné kusy mají 15 až 40 tisíc. Libor porovnává vzhled a plynulost na konceptu Test plynulosti (lokálně `?id=1165`) s přepínačem `?aa=0` v adrese. Podle výsledku zvolit vyhlazování a přepínač nahradit. Zdroje v `%TEMP%\tuptudu-katalog` (17 GB) smazat, až bude rozhodnuto.
 2. **Přesun do S3 je hotový** (5. 11. 2026), viz Hosting. Soubory z prvního balíku z gitu zmizely, hosting je smaže při nasazení.
 3. **Další vrstvy v pořadí:** povrchy (ambientCG, Poly Haven), koupelna (Sweet Home 3D + vlastní materiály, kout), generátor linky.
 4. **Dotyk na tabletu** nikdo nezkoušel.

@@ -6733,7 +6733,8 @@ function konceptKEditor(initialData) {
             camera.lookAt(0, 0, 0);
 
             // Renderer
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            // ?aa=0 vypne vyhlazování hran: srovnání plynulosti se 40 kusy nábytku, modules/katalog.md
+            const renderer = new THREE.WebGLRenderer({ antialias: new URLSearchParams(location.search).get('aa') !== '0' });
             renderer.setSize(w, h);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
