@@ -64,6 +64,7 @@ async function main() {
         // Dům 10 × 7 m s příčkou a dveřmi, vše označené
         await p.vyhodnot(`(() => { const d = ${D}; const e = d.engine;
             const b = [[0,0],[800,0],[800,560],[0,560]];
+            d.renderer.showIds = true;   // test měří i značky stěn a otvorů, výchozí jsou skryté
             const steny = b.map((a, i) => e.addWall(a[0], a[1], b[(i+1)%4][0], b[(i+1)%4][1], 0.3));
             steny.forEach((w, i) => { const dalsi = steny[(i+1)%4]; dalsi.nodeA = w.nodeB; });
             e._cleanOrphanNodes();

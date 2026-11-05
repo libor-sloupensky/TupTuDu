@@ -74,7 +74,7 @@ async function main() {
             const b = e.addWall(500, 600, 500, ${licDole}, 0.10);
             b.doConstraint = { host: host.id, t: 0.5 };
             const a = e.addWall(500, 150, 500, 360, 0.10);
-            d.nastroj = 'vyber'; d.renderer.render(); d.fitView(); d.renderer.render();
+            d.nastroj = 'vyber'; d.renderer.showNodes = true; d.renderer.render(); d.fitView(); d.renderer.render();
             return { host: host.id, a: a.id, b: b.id }; })()`);
 
         await tahni(500, 360, 500, licNahore);

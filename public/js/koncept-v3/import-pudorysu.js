@@ -895,14 +895,18 @@ window.KonceptImport = {
 
     /** Uloží stav podkladu do metadat konceptu (bez verzování kresby). */
     async podkladUloz() {
-        if (!this.projektId) return;
+        if (!this.projektId || this._konfliktVerze != null) return;
         this._podkladZapis(this.podklad);
         try {
-            await fetch(_kkInitData.routes.ulozit.replace(':id', this.projektId), {
+            // Až po běžícím uložení kresby: verzi zvyšuje ono a podklad patří ke kresbě
+            await this._ukladaniBezi;
+            if (this._konfliktVerze != null) return;
+            const resp = await fetch(_kkInitData.routes.ulozit.replace(':id', this.projektId), {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': _kkInitData.csrf, 'Accept': 'application/json' },
-                body: JSON.stringify({ metadata: this.metadata }),
+                body: JSON.stringify({ metadata: this.metadata, verze: this.verze }),
             });
+            if (resp.status === 409) this._konfliktUlozeni((await resp.json().catch(() => ({}))).verze);
         } catch (e) {
             window.zalogujChybu?.(e, 'import podkladu — uložení');
         }

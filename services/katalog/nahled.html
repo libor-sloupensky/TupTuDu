@@ -44,6 +44,12 @@ async function zpracuj(id) {
     r.render(sc, kamera(box, tenky ? new THREE.Vector3(0.5, 0.25, 1) : new THREE.Vector3(1, 0.75, 1.25), NAHLED.w / NAHLED.h));
     const nahled = r.domElement.toDataURL('image/webp', 0.86);
 
+    // Značka ukazuje barvu objektu, lesk by na ní udělal skvrnu od slunce. Model je potom na zahození, každý se tu dělá jednou.
+    model.traverse(o => {
+        if (!o.isMesh) return;
+        for (const m of [].concat(o.material)) { m.metalness = 0; m.roughness = 1; m.metalnessMap = null; m.roughnessMap = null; m.needsUpdate = true; }
+    });
+
     // Značka shora: normály a hloubka
     const rozsah = Math.max(s.x, s.z);
     const w = Math.max(16, Math.round(ZNACKA * s.x / rozsah)), h = Math.max(16, Math.round(ZNACKA * s.z / rozsah));

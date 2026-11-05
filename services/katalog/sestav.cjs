@@ -19,6 +19,8 @@ const VYSTUP = path.join(PUBLIC, 'katalog');
 const CACHE = volby.cache || path.join(os.tmpdir(), 'tuptudu-katalog');
 const TRANSFORM = volby.transform || null;
 const VLAKEN = Number(volby.vlaken) || 4;
+const OBNOVA = 20;
+const MAX_TROJUHELNIKU = 60000;
 const UA = { 'User-Agent': 'TupTuDu-katalog/1.0' };
 const ABO = 'https://amazon-berkeley-objects.s3.amazonaws.com/3dmodels/original';
 
@@ -53,11 +55,25 @@ const spust = (prikaz, argumenty) => new Promise((ok, chyba) => {
     execFile(prikaz, argumenty, { maxBuffer: 1 << 24, shell: process.platform === 'win32' }, (e, _o, err) => (e ? chyba(new Error(String(err || e.message).slice(0, 400))) : ok()));
 });
 
-function zmensi(vstup, vystup) {
+const trojuhelniku = (soubor) => {
+    const b = fs.readFileSync(soubor);
+    const j = JSON.parse(b.slice(20, 20 + b.readUInt32LE(12)).toString('utf8'));
+    let n = 0;
+    for (const m of j.meshes || []) for (const p of m.primitives) n += j.accessors[p.indices ?? p.attributes.POSITION].count / 3;
+    return n;
+};
+
+// Bez zjednodušení: bere modelům zkosené hrany a stínování se pak rozlévá přes celou plochu, bílá skříň vypadá jako z chromu.
+// Velikost souboru dělá hlavně textura. Jen extrémně husté kusy se zjednoduší mírně.
+async function zmensi(vstup, vystup) {
     fs.mkdirSync(path.dirname(vystup), { recursive: true });
     const q = (s) => (process.platform === 'win32' ? `"${s}"` : s);
-    const a = ['optimize', q(vstup), q(vystup), '--compress', 'meshopt', '--texture-compress', 'webp', '--texture-size', '1024', '--instance', 'false', '--simplify', 'true', '--simplify-error', '0.001'];
-    return TRANSFORM ? spust(q(TRANSFORM), a) : spust('npx', ['--yes', '@gltf-transform/cli@4', ...a]);
+    const optimalizuj = (zjednoduseni) => {
+        const a = ['optimize', q(vstup), q(vystup), '--compress', 'meshopt', '--texture-compress', 'webp', '--texture-size', '1024', '--instance', 'false', ...zjednoduseni];
+        return TRANSFORM ? spust(q(TRANSFORM), a) : spust('npx', ['--yes', '@gltf-transform/cli@4', ...a]);
+    };
+    await optimalizuj(['--simplify', 'false']);
+    if (trojuhelniku(vystup) > MAX_TROJUHELNIKU) await optimalizuj(['--simplify', 'true', '--simplify-error', '0.0001']);
 }
 
 async function poVlaknech(polozky, n, prace) {
@@ -101,17 +117,42 @@ function server() {
 
     const predchozi = fs.existsSync(path.join(VYSTUP, 'katalog.json')) ? JSON.parse(fs.readFileSync(path.join(VYSTUP, 'katalog.json'), 'utf8')) : { polozky: [] };
     const stare = new Map(predchozi.polozky.map(p => [p.id, p]));
+    const vysledky = new Map();
+    // Do katalogu jde všechno, co má hotové soubory, pořadí podle zadání
+    const zapisKatalog = () => {
+        const polozky = [];
+        for (const pol of zadani.polozky) {
+            if (!fs.existsSync(cesta('modely', pol, '.glb'))) continue;
+            const r = vysledky.get(pol.id) || stare.get(pol.id);
+            if (!r) continue;
+            polozky.push({ id: pol.id, nazev: pol.nazev, kategorie: pol.kategorie, zdroj: pol.zdroj, orig: pol.orig, sirka: r.sirka, hloubka: r.hloubka, vyska: r.vyska, uroven: pol.uroven ?? 0, plosek: r.plosek });
+        }
+        fs.writeFileSync(path.join(VYSTUP, 'katalog.json'), JSON.stringify({ verze: 1, zdroje: ZDROJE, kategorie: zadani.kategorie, polozky }, null, 1));
+        return polozky;
+    };
     const srv = await server();
     const p = await otevriProhlizec({ sirka: 900, vyska: 700 });
-    const vysledky = new Map();
+    // Stránka si načtené modely drží (Katalog3d), proto se po pár kusech obnoví, jinak by při stovkách došla paměť.
+    // Průběžný zápis katalogu: po pádu se hotové náhledy nepočítají znovu.
+    let obnov = 0, odObnovy = 0;
+    const obnovStranku = async () => {
+        odObnovy = 0;
+        await p.jdiNa(`http://127.0.0.1:${srv.address().port}/nahled.html?obnova=${++obnov}`);
+        await p.cekej('typeof window.vyrob==="function"', 30000, 'stránka náhledů');
+    };
+    let polozky = [];
     try {
-        await p.jdiNa(`http://127.0.0.1:${srv.address().port}/nahled.html`);
+        await obnovStranku();
         for (const pol of vyber) {
             if (!fs.existsSync(cesta('modely', pol, '.glb'))) continue;
             if (!volby.znovu && !volby.nahledy && stare.has(pol.id) && fs.existsSync(cesta('nahledy', pol, '.webp')) && fs.existsSync(cesta('pudorys', pol, '.webp'))) continue;
-            await p.vyhodnot(`(window.vyrob(${JSON.stringify(pol.id)}), 1)`);
-            await p.cekej('window.hotovo===true', 120000, pol.id);
-            const v = JSON.parse(await p.vyhodnot('JSON.stringify(window.vysledek)'));
+            if (odObnovy++ >= OBNOVA) { zapisKatalog(); await obnovStranku(); }
+            let v;
+            try {
+                await p.vyhodnot(`(window.vyrob(${JSON.stringify(pol.id)}), 1)`);
+                await p.cekej('window.hotovo===true', 120000, pol.id);
+                v = JSON.parse(await p.vyhodnot('JSON.stringify(window.vysledek)'));
+            } catch (e) { v = { chyba: e.message }; await obnovStranku(); }
             if (v.chyba) { chyby.push(pol.id + ': ' + v.chyba.slice(0, 300)); console.log('  CHYBA', pol.id, v.chyba.slice(0, 200)); continue; }
             for (const [slozka, data, pripona] of [['nahledy', v.nahled, '.webp'], ['pudorys', v.znacka, '.webp']]) {
                 fs.mkdirSync(path.join(VYSTUP, slozka), { recursive: true });
@@ -121,19 +162,11 @@ function server() {
             console.log(`  náhled ${pol.id} ${v.sirka}×${v.hloubka}×${v.vyska} m, ${v.plosek} plošek`);
         }
     } finally {
+        polozky = zapisKatalog();
         await p.zavri();
         srv.close();
     }
 
-    // Do katalogu jde všechno, co má hotové soubory, pořadí podle zadání
-    const polozky = [];
-    for (const pol of zadani.polozky) {
-        if (!fs.existsSync(cesta('modely', pol, '.glb'))) continue;
-        const r = vysledky.get(pol.id) || stare.get(pol.id);
-        if (!r) continue;
-        polozky.push({ id: pol.id, nazev: pol.nazev, kategorie: pol.kategorie, zdroj: pol.zdroj, orig: pol.orig, sirka: r.sirka, hloubka: r.hloubka, vyska: r.vyska, uroven: pol.uroven ?? 0, plosek: r.plosek });
-    }
-    fs.writeFileSync(path.join(VYSTUP, 'katalog.json'), JSON.stringify({ verze: 1, zdroje: ZDROJE, kategorie: zadani.kategorie, polozky }, null, 1));
     const velikost = polozky.reduce((s, x) => s + fs.statSync(cesta('modely', x, '.glb')).size, 0);
     console.log(`\nKatalog: ${polozky.length} kusů, modely ${(velikost / 1e6).toFixed(1)} MB`);
     if (chyby.length) { console.log('Chyby:\n' + chyby.join('\n')); process.exit(1); }

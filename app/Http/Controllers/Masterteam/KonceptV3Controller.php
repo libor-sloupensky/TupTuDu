@@ -10,6 +10,7 @@ use App\Services\Katastr\KatastrService;
 use App\Services\Katastr\Dmr5gService;
 use App\Services\Pravidla\RozhovorService;
 use App\Support\Tarif;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -55,7 +56,16 @@ class KonceptV3Controller extends Controller
             'kroky.*.podklad' => 'nullable|array',
             'po' => 'nullable|string|max:40',
             'aktualni' => 'nullable|string|max:40',
+            // Verze, ze které klient vychází. Bez ní (přejmenování) se neporovnává.
+            'verze' => 'sometimes|integer',
         ]);
+
+        // Starší karta nebo jiný počítač nesmí bez varování přepsat novější práci
+        $konfliktVerze = fn ($aktualni) => $request->filled('verze') && (int) $request->input('verze') !== (int) $aktualni;
+        $odpovedKonflikt = fn ($aktualni) => response()->json(['ok' => false, 'konflikt' => true, 'verze' => (int) $aktualni], 409);
+        if ($konfliktVerze($koncept->verze)) {
+            return $odpovedKonflikt($koncept->verze);
+        }
 
         // Denní limit úprav tarifu (App\Support\Tarif). Úprava = nový krok historie;
         // výchozí krok nové historie (bez `po`) je stav před první úpravou, nepočítá se.
@@ -117,7 +127,22 @@ class KonceptV3Controller extends Controller
             $updateData['metadata'] = $request->input('metadata');
         }
 
-        $koncept->update($updateData);
+        // Zámek řádku: dvě souběžná uložení ze stejné verze nesmí projít obě
+        $konflikt = DB::transaction(function () use ($koncept, &$updateData, $konfliktVerze) {
+            $aktualni = (int) Koncept::whereKey($koncept->id)->lockForUpdate()->value('verze');
+            if ($konfliktVerze($aktualni)) {
+                return $aktualni;
+            }
+            if (isset($updateData['verze'])) {
+                $updateData['verze'] = $aktualni + 1;
+            }
+            $koncept->update($updateData);
+
+            return null;
+        });
+        if ($konflikt !== null) {
+            return $odpovedKonflikt($konflikt);
+        }
         Tarif::zapocitejUpravy($uzivatel, $novychUprav);
 
         return response()->json([

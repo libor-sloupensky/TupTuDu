@@ -69,6 +69,7 @@ async function main() {
             const vodorovna = e.addWall(150, 400, 600, 400, 0.15);
             vodorovna.doConstraint = { host: svisla.id, t: (400 - 150) / 600 };
             e.addOpening(vodorovna.id, 3.3, 1.2, 'dvere', { smer: 'posuvne', strana: 'out' });
+            d.renderer.showNodes = true;   // test míří přímo na bod, bez předchozího výběru stěny
             d.renderer.render(); d.fitView(); d.renderer.render()`);
 
         kontrola('na bodu spoje je navrchu uzel', (await navrchu(600, 400)) === 'node',
@@ -92,13 +93,13 @@ async function main() {
         const vybrano2 = await stav(`[...d.renderer.selectedNodes]`);
         kontrola('klik přes nábytek vybral uzel', vybrano2.length === 1, JSON.stringify(vybrano2));
 
-        console.log('\n3) Vypnutí objektů skryje i body spojů');
-        await proved(`d.showObjekty = false; d.toggleObjekty()`);
+        console.log('\n3) Vypnutí stěn skryje i body spojů');
+        await proved(`d.showSteny = false; d.toggleSteny()`);
         await pauza(200);
-        kontrola('vrstva uzlů je skrytá', (await stav('d.renderer.nodeLayer.visible()')) === false);
-        await proved(`d.showObjekty = true; d.toggleObjekty()`);
+        kontrola('body jsou skryté', (await stav('d.renderer._nodeShapes.size')) === 0);
+        await proved(`d.showSteny = true; d.toggleSteny()`);
         await pauza(200);
-        kontrola('po zapnutí je zase vidět', (await stav('d.renderer.nodeLayer.visible()')) === true);
+        kontrola('po zapnutí jsou zase vidět', (await stav('d.renderer._nodeShapes.size')) > 0);
 
         await p.snimek(path.join(vystup, 'uzly-nad-otvory.png'));
 

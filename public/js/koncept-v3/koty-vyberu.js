@@ -282,5 +282,5 @@
         return null;
     }
 
-    window.KotyVyberu = { proStenu, proOtvor, kresli, kotaVBode, vzdalenostSten, text: textKoty };
+    window.KotyVyberu = { proStenu, proOtvor, kresli, kotaVBode, vzdalenostSten, paprsekPolygon, text: textKoty };
 })();

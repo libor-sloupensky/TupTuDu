@@ -52,6 +52,7 @@
                  data-text-strecha="{{ __('sdileni.strecha') }}"
                  data-text-autori="{{ __('sdileni.autori_modelu') }}"
                  data-autori="{{ \App\Support\Domeny::url('web', '/model-credits') }}"
+                 data-text-jama="{{ __('sdileni.napoveda_jama') }}"
                  data-text-chyba="{{ __('sdileni.chyba_modelu') }}"
                  data-text-alt="{{ __('sdileni.nahled_alt', ['nazev' => $sdileni->nazev]) }}">
                 <div class="tt-sdileni-zprava" data-sdileni-zprava>{{ __('sdileni.nacitam') }}</div>
@@ -76,6 +77,7 @@
 <script src="/js/three/GLTFLoader.js?v=0.128"></script>
 <script src="/js/three/meshopt_decoder.js?v=0.128"></script>
 <script src="/js/svetlo-3d.js?v={{ filemtime(public_path('js/svetlo-3d.js')) }}"></script>
+<script src="/js/teren-3d.js?v={{ filemtime(public_path('js/teren-3d.js')) }}"></script>
 <script src="/js/katalog-3d.js?v={{ filemtime(public_path('js/katalog-3d.js')) }}"></script>
 <script src="/js/sdileni-prohlizec.js?v={{ filemtime(public_path('js/sdileni-prohlizec.js')) }}"></script>
 </body>

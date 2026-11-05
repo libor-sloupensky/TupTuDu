@@ -154,7 +154,7 @@ async function main() {
         const jamaVidet = await js(`const _3d = window._kk3d; const u = _3d.jamaUniformy; const m = _3d.jama; let min = Infinity;
             if (m) { const q = m.geometry.attributes.position; for (let i = 0; i < q.count; i++) min = Math.min(min, q.getY(i)); } ${pixel}
             const dno = _3d.wallGroup.position.y + e.kotyPodlazi().get(e.dum.podlazi.find(x => x.typ === 'sklep').id) - 0.45;
-            const sx = 6, sz = 5; const yKolem = d._vyskaTerenu3d()(10, -14);
+            const sx = 6, sz = 5; const yKolem = _3d.wallGroup.position.y + d._terenDomu().fn(10, -14);
             _3d.camera.position.set(sx + 8, 30, sz + 8); _3d.controls.target.set(sx, 0, sz); _3d.camera.zoom = 0.25; _3d.camera.updateProjectionMatrix(); _3d.controls.update();
             return { vidna: m.visible, zap: u.uJamaZap.value, min, dno, trojuhelniku: m.geometry.index.count / 3, mimoScenuDomu: m.parent === _3d.scene,
                 barvaJamy: pixel(sx, dno, sz), barvaTerenu: pixel(10, yKolem, -14) };`);
@@ -165,6 +165,8 @@ async function main() {
         kontrola('terén kolem zůstal zelený', tg >= tr && tg > tb + 20, JSON.stringify(jamaVidet.barvaTerenu));
         await pauza(400);
         await p.snimek(path.join(vystup, 'zemina-jama.png'));
+        const vykopPng = await js(`const cv = d._snimekScény(); const g = cv.getContext('2d'); const b = g.getImageData(Math.floor(cv.width / 2), Math.floor(cv.height / 2), 1, 1).data; return [b[0], b[1], b[2]];`);
+        kontrola('3D PNG se skrytým domem zachytí výkop', vykopPng[0] > vykopPng[1] + 8 && vykopPng[1] > vykopPng[2], JSON.stringify(vykopPng));
         const jamaOdkop = await js(`const m0 = window._kk3d.jama.geometry.index.count; d.setZaklady('odkop', 2); return m0;`);
         await pauza(800);
         const jamaPoOdkopu = await js(`return window._kk3d.jama.geometry.index.count;`);
@@ -184,7 +186,26 @@ async function main() {
         kontrola('skryté jen 1.NP: má vlastní menší výkop', jen1NP.zap === 1 && jen1NP.troj > 1000 && jen1NP.troj !== jenSklep.troj, JSON.stringify(jen1NP));
         const zadnePodzemni = await viditelne([idPodlazi.sklep, idPodlazi.np]);
         kontrola('skryté jen patro nad terénem: terén je celý', zadnePodzemni.zap === 0 && !zadnePodzemni.vidna, JSON.stringify(zadnePodzemni));
-        await js(`d.skryte3d = []; d._nastavViditelnost3d(); d._selectionTick++; return true;`);
+        // Zemina uvnitř domu: 1.NP nízko, terén na vyšší straně je nad jeho podlahou, díváme se shora dovnitř
+        await js(`d.setNadTerenem(0.1); d._selectionTick++; return true;`);
+        await pauza(600);
+        await js(`d.skryte3d = e.dum.podlazi.map(x => x.id).filter(id => id === ${JSON.stringify(idPodlazi.np)} || id === ${JSON.stringify(idPodlazi.sklep)}); d.skryte3d = e.dum.podlazi.map(x => x.id).filter(id => !d.skryte3d.includes(id)); d._nastavViditelnost3d(); d._selectionTick++; return true;`);
+        await pauza(800);
+        const vnitrek = await js(`const _3d = window._kk3d; ${pixel}
+            const fn = d._terenDomu().fn, y0 = _3d.wallGroup.position.y, kota = e.kotaPodlazi(d._podlazi1NP().id);
+            const body = []; for (let x = 0.6; x < 11.5; x += 0.7) for (let z = 0.6; z < 9.5; z += 0.7) if (fn(x, z) > kota + 0.05) body.push([x, z]);
+            _3d.camera.position.set(6, 40, 5.01); _3d.controls.target.set(6, 0, 5); _3d.camera.zoom = 0.3; _3d.camera.updateProjectionMatrix(); _3d.controls.update();
+            const zelenych = body.filter(([x, z]) => { const [r, g, b] = pixel(x, y0 + fn(x, z), z); return g > r + 3 && g > b + 20; }).length;
+            const vne = pixel(-3, y0 + fn(-3, -4), -4);
+            const [r2, g2, b2] = pixel(13.5, y0 + fn(13.5, -6), -6);
+            return { nadPodlahou: body.length, zelenych, venku: [r2, g2, b2], zap: _3d.vnitrekUniformy.uVnitrekZap.value };`);
+        kontrola('terén je místy nad podlahou 1.NP, jinak by test nic neříkal', vnitrek.nadPodlahou > 3, String(vnitrek.nadPodlahou));
+        kontrola('uvnitř domu zemina není', vnitrek.zap === 1 && vnitrek.zelenych === 0, JSON.stringify(vnitrek));
+        const [vr, vg, vb] = vnitrek.venku;
+        kontrola('vně domu zemina zůstává', vg >= vr && vg > vb + 20, JSON.stringify(vnitrek.venku));
+        await pauza(300);
+        await p.snimek(path.join(vystup, 'zemina-vnitrek.png'));
+        await js(`d.undo?.(); d.skryte3d = []; d._nastavViditelnost3d(); d._selectionTick++; return true;`);
         await pauza(300);
         const jamaZpet = await js(`const _3d = window._kk3d; return { zap: _3d.jamaUniformy.uJamaZap.value, vidna: _3d.jama.visible };`);
         kontrola('s viditelnými podlažími se terén zase zavře', jamaZpet.zap === 0 && !jamaZpet.vidna, JSON.stringify(jamaZpet));

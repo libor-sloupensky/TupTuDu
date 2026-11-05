@@ -35,7 +35,7 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
   Měna podle země: CZ → Kč (pevná cena pro Česko), ostatní → eura.
 - Úprava = krok historie editoru (nová stěna, posun stěny/otvoru, smazání…). Prohlížení,
   Zpět/Vpřed a výchozí krok „Začátek" se nepočítají. Den podle časové zóny aplikace.
-- Budoucí funkce (exporty atd.) jen v placených tarifech. Master tým má vždy Profi.
+- Budoucí funkce jen v placených tarifech, kromě obrázků PNG a sdílení odkazem, ty jsou i ve verzi zdarma (Libor 4. 11. 2026). SVG, PDF a formáty s parametry objektů neposkytujeme. Master tým má vždy Profi.
 - Typický stavebník aplikaci používá 3–12 měsíců → roční předplatné se vyplatí od 6 měsíců.
 - Limity a ceny jen v `config/tarify.php` (ceník i `paddle:katalog` z nich berou).
 

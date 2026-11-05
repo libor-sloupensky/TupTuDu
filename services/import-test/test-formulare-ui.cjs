@@ -1,8 +1,10 @@
 /**
- * Zarovnání formulářů editoru: v každém řádku panelu stejná výška polí a jedna svislá osa
- * polí i nápisů. Prochází všechny panely, které editor umí ukázat.
+ * Formuláře editoru. Zarovnání: v každém řádku panelu stejná výška polí a jedna svislá osa polí i nápisů.
+ * Hodnota ihned: co se do pole napíše, je v modelu bez potvrzování a klik jinam ji neztratí.
+ * Prochází všechny panely, které editor umí ukázat.
  *
  * Spuštění: node services/import-test/test-formulare-ui.cjs [složka snímků]
+ * V3_JEN_IHNED=1 přeskočí průchod panely a pustí jen scénáře z části 5.
  */
 const path = require('path');
 const fs = require('fs');
@@ -13,6 +15,8 @@ const EMAIL = process.env.V3_EMAIL || 'libor.sloupensky@seznam.cz';
 const HESLO = process.env.V3_HESLO || '12345';
 const D = `Alpine.$data(document.querySelector('[x-data]'))`;
 const TOL = 1.01;   // px
+const JEN_IHNED = !!process.env.V3_JEN_IHNED;
+const PO_PAUZE = 550;   // ms, déle než odevzdání rozepsané hodnoty v _poleIhnedInit
 
 let chyb = 0;
 const kontrola = (popis, podminka, detail = '') => {
@@ -70,11 +74,51 @@ async function main() {
     const vystup = process.argv[2] || path.join(__dirname, 'vystup');
     fs.mkdirSync(vystup, { recursive: true });
     const p = await otevriProhlizec({ sirka: 1500, vyska: 950 });
+    await p.cmd('Emulation.setFocusEmulationEnabled', { enabled: true });
+    const napis = async (text) => {
+        for (const z of String(text)) {
+            await p.cmd('Input.dispatchKeyEvent', { type: 'keyDown', text: z, key: z, unmodifiedText: z });
+            await p.cmd('Input.dispatchKeyEvent', { type: 'keyUp', key: z });
+        }
+    };
+    // Každé pole panelu: napsat platnou hodnotu a nic dalšího. Musí se odevzdat právě jednou, kurzor zůstane v poli
+    // a text se nesmí změnit pod rukama. Odchod z pole už nic neodevzdá znovu a Zpět je jeden krok.
+    const hodnotaIhned = async (nazev, selektor) => {
+        const seznam = `[...document.querySelector(${JSON.stringify(selektor)}).querySelectorAll('input[type=number], input[type=text]')].filter(n => { const r = n.getBoundingClientRect();
+            return r.width > 0 && r.height > 0 && !n.disabled && !n.readOnly && !n.pattern && n.hasAttribute('@change'); })`;
+        const pocet = await p.vyhodnot(`${seznam}.length`);
+        const vady = [];
+        for (let i = 0; i < pocet; i++) {
+            const cil = await p.vyhodnot(`(() => { const n = ${seznam}[${i}]; if (!n) return null;
+                window.__pole = n; window.__zmen = 0; window.__pocitej ??= () => { window.__zmen++; }; n.addEventListener('change', window.__pocitej);
+                window.__zpet = ${D}.historie[${D}.historiePozice].id;
+                const krok = parseFloat(n.step) || 1, max = n.max === '' ? Infinity : +n.max, ted = parseFloat(n.value);
+                let v = n.type === 'text' ? (n.value + 'x').slice(-(n.maxLength > 0 ? n.maxLength : 99)) : (isNaN(ted) ? Math.max(+n.min || 0, 0) : ted) + krok;
+                if (v > max) v = ted - krok;
+                n.focus(); n.select();
+                return { popis: n.getAttribute('data-hrana') || n.getAttribute('data-schody') || n.getAttribute('data-zaklad') || n.title || n.placeholder || ('pole ' + n.min + '–' + n.max), v: String(v) }; })()`);
+            if (!cil) continue;
+            await napis(cil.v);
+            await pauza(PO_PAUZE);
+            const a = await p.vyhodnot(`({ zmen: window.__zmen, kurzor: document.activeElement === window.__pole, text: window.__pole.value })`);
+            const b = await p.vyhodnot(`(() => { window.__pole.blur(); return { zmen: window.__zmen, zpet: ${D}.historiePozice - ${D}.historie.findIndex(k => k.id === window.__zpet) }; })()`);
+            await p.vyhodnot(`(window.__pole.removeEventListener('change', window.__pocitej), 1)`);
+            await pauza(60);
+            if (a.zmen !== 1) vady.push(`${cil.popis}: při psaní ${a.zmen}× odevzdáno`);
+            if (!a.kurzor) vady.push(`${cil.popis}: pole přišlo o kurzor`);
+            if (a.text !== cil.v) vady.push(`${cil.popis}: text se změnil pod rukama ${cil.v} → ${a.text}`);
+            if (b.zmen !== a.zmen) vady.push(`${cil.popis}: odchod odevzdal znovu`);
+            if (b.zpet > 1) vady.push(`${cil.popis}: ${b.zpet} kroků Zpět`);
+        }
+        if (pocet) kontrola('hodnota ihned: ' + nazev, vady.length === 0, `${pocet} polí${vady.length ? ': ' + vady.join(' | ') : ''}`);
+    };
     const zmer = async (nazev, selektor, bezPoli = false) => {
+        if (JEN_IHNED) return;
         await pauza(350);
         const v = await p.vyhodnot(`(${MERENI})(document.querySelector(${JSON.stringify(selektor)}))`);
         kontrola(nazev, (v.poli > 0 || bezPoli) && v.vady.length === 0, `${v.poli} polí${v.vady.length ? ': ' + v.vady.join(' | ') : ''}`);
         if (v.vady.length) await p.snimek(path.join(vystup, 'formular-' + nazev.replace(/[^a-z0-9]+/gi, '-') + '.png'));
+        await hodnotaIhned(nazev, selektor);
     };
     const js = (kod) => p.vyhodnot(`(() => { const d = ${D}; const e = d.engine; const X = e.PX_PER_M; ${kod}; return true; })()`);
     const PANEL = '#kk-panel-otvoru';
@@ -166,6 +210,95 @@ async function main() {
         await p.vyhodnot(`(() => { document.querySelector('[x-model=katastrCislo]').closest('details').setAttribute('data-parcela', ''); return true; })()`);
         await zmer('parcela', '[data-parcela]');
         await p.snimek(path.join(vystup, 'formular-parcela.png'));
+
+        console.log('\n5) Hodnota ihned');
+        const naObr = (x, y) => p.vyhodnot(`(() => { const d = ${D}; const X = d.engine.PX_PER_M; const t = d.stage.getAbsoluteTransform().copy().point({ x: ${x} * X, y: ${y} * X });
+            const r = d.stage.container().getBoundingClientRect(); return { x: r.left + t.x, y: r.top + t.y }; })()`);
+        const klikNa = async (b) => {
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: b.x, y: b.y });
+            await pauza(40);
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mousePressed', x: b.x, y: b.y, button: 'left', clickCount: 1, buttons: 1 });
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mouseReleased', x: b.x, y: b.y, button: 'left', clickCount: 1 });
+            await pauza(150);
+        };
+        const doPole = (sel) => p.vyhodnot(`(() => { const n = document.querySelector(${JSON.stringify(sel)}); window.__pole = n; n.focus(); n.select(); return document.activeElement === n; })()`);
+        const sklonHrany = (klic) => p.vyhodnot(`${D}._strechaVypocet().hrany.find(x => x.klic === ${JSON.stringify(klic)}).sklon`);
+        await js(`d.rezimStrecha = false; d.strechaHrana = null; d.podlaziUprava = null; d.prepniUpravuStrechy(); d.fitView(); d.renderer.render(); d._selectionTick++`);
+        await pauza(400);
+        const hrany = await p.vyhodnot(`${D}._strechaVypocet().hrany.filter(x => x.typ === 'okap').slice(0, 2).map(h => ({ klic: h.klic, x: (h.a.x + h.b.x) / 2, y: (h.a.y + h.b.y) / 2 }))`);
+        const [A, B] = hrany;
+        const POLE_SKLON = '[data-hrana=sklon]';
+
+        await klikNa(await naObr(A.x, A.y));
+        const puvodniB = await sklonHrany(B.klic);
+        const novyA = puvodniB === 33 ? 34 : 33;
+        await doPole(POLE_SKLON);
+        await napis(novyA);
+        await klikNa(await naObr(B.x, B.y));   // bez čekání, přesně jak to dělá uživatel
+        const po = await p.vyhodnot(`(() => { const d = ${D}; return { vybrana: d.strechaHrana, pole: document.querySelector(${JSON.stringify(POLE_SKLON)})?.value }; })()`);
+        kontrola('klik na jinou hranu uloží hodnotu té předchozí', await sklonHrany(A.klic) === novyA, `hrana A ${await sklonHrany(A.klic)}°, čekáno ${novyA}°`);
+        kontrola('nová hrana hodnotu nepřevzala a panel ukazuje její', po.vybrana === B.klic && await sklonHrany(B.klic) === puvodniB && po.pole === String(puvodniB), JSON.stringify(po));
+
+        await doPole(POLE_SKLON);
+        await napis(41);
+        await pauza(PO_PAUZE);
+        kontrola('hodnota je v modelu bez opuštění pole', await sklonHrany(B.klic) === 41 && await p.vyhodnot('document.activeElement === window.__pole'), `${await sklonHrany(B.klic)}°`);
+        await p.vyhodnot('(window.__pole.blur(), 1)');
+        await pauza(100);
+
+        const zpetPred = await p.vyhodnot(`${D}.historie[${D}.historiePozice].id`);
+        await doPole(POLE_SKLON);
+        await napis(5);
+        await pauza(PO_PAUZE);
+        await napis(2);
+        await pauza(PO_PAUZE);
+        await p.vyhodnot('(window.__pole.blur(), 1)');
+        await pauza(100);
+        const kroku = await p.vyhodnot(`${D}.historiePozice - ${D}.historie.findIndex(k => k.id === ${JSON.stringify(zpetPred)})`);
+        kontrola('pomalé psaní dá správnou hodnotu', await sklonHrany(B.klic) === 52, `${await sklonHrany(B.klic)}°`);
+        kontrola('celá úprava pole je jeden krok Zpět', kroku === 1, `${kroku} kroků`);
+        await p.vyhodnot(`(${D}.undo(), 1)`);
+        await pauza(300);
+        kontrola('Zpět vrátí hodnotu před úpravou', await sklonHrany(B.klic) === 41, `${await sklonHrany(B.klic)}°`);
+
+        await js(`d.strechaHrana = ${JSON.stringify(B.klic)}; d._selectionTick++`);
+        await pauza(200);
+        await doPole(POLE_SKLON);
+        await napis(99);
+        await pauza(PO_PAUZE);
+        kontrola('hodnota mimo rozsah při psaní nic nezmění', await sklonHrany(B.klic) === 41, `${await sklonHrany(B.klic)}°`);
+        await p.vyhodnot('(window.__pole.blur(), 1)');
+        await pauza(200);
+        kontrola('po odchodu se omezí a pole ukáže výsledek', await sklonHrany(B.klic) === 75 && await p.vyhodnot(`document.querySelector(${JSON.stringify(POLE_SKLON)}).value`) === '75', `${await sklonHrany(B.klic)}°`);
+
+        await js(`d.rezimStrecha = false; d.strechaHrana = null; d.naPodlazi('P1'); d.podlaziUprava = 'P1'; d._selectionTick++`);
+        await pauza(300);
+        const POLE_KOTA = '#kk-podlazi-seznam input[min="150"]';
+        await doPole(POLE_KOTA);
+        await napis('250.6');
+        await pauza(PO_PAUZE);
+        const psano = await p.vyhodnot('window.__pole.value');
+        await p.vyhodnot('(window.__pole.blur(), 1)');
+        await pauza(200);
+        const poOdchodu = await p.vyhodnot(`document.querySelector(${JSON.stringify(POLE_KOTA)}).value`);
+        kontrola('upravená hodnota se ukáže až po odchodu', psano === '250.6' && poOdchodu === '251', `${psano} → ${poOdchodu}`);
+        await js(`d.podlaziUprava = null; d._selectionTick++`);
+
+        await js(`d.renderer.setSelection([], [], [[...e.openings.values()].find(o => o.typ === 'okno').id]); d._selectionTick++`);
+        await pauza(300);
+        await p.vyhodnot(`(document.querySelector('[data-barva-otvoru=ven] [data-barva-symbol]').click(), 1)`);
+        await pauza(250);
+        const POLE_RAL = '[data-barva-otvoru=ven] [data-barva-ral]';
+        await doPole(POLE_RAL);
+        await napis('70');
+        await pauza(PO_PAUZE);
+        const rozepsany = await p.vyhodnot(`Alpine.$data(window.__pole).ralChyba`);
+        await napis('16');
+        await pauza(PO_PAUZE);
+        const ral = await p.vyhodnot(`(() => { const a = Alpine.$data(window.__pole); return { hex: a.hex, cil: window.RAL_KLASIK.find(r => r.kod === '7016').hex }; })()`);
+        kontrola('RAL: rozepsaný kód nehlásí chybu', !rozepsany, rozepsany);
+        kontrola('RAL: dopsaný kód platí hned', ral.hex === ral.cil, JSON.stringify(ral));
+        await p.vyhodnot('(window.__pole.blur(), 1)');
 
         const vazne = p.chybyDetail.filter(c => !/404/.test(c.text));
         kontrola('bez chyb v konzoli', vazne.length === 0, vazne.slice(0, 3).map(c => (c.text || '').slice(0, 200)).join(' | '));

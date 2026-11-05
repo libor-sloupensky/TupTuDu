@@ -38,6 +38,7 @@
                 <ul>
                     <li>{{ __('tarify.uprav_denne', ['limit' => $limity['zdarma']['kroku_denne']]) }}</li>
                     <li>{{ __('tarify.projekt_jeden') }}</li>
+                    <li>{{ __('tarify.funkce_export') }}</li>
                     @include('partials.tarif-funkce')
                 </ul>
                 <a class="btn" href="{{ Domeny::url('app', '/register') }}">{{ __('tarify.zacit_zdarma') }}</a>

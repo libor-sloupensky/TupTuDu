@@ -15,7 +15,9 @@ return [
             // nebo otvoru, smazání…). Prohlížení, Zpět/Vpřed a výchozí krok se nepočítá.
             'kroku_denne' => 30,
             'projektu' => 1,
-            'exporty' => false,
+            // Obrázky PNG a sdílení odkazem. Jen grafické výstupy: SVG, PDF a formáty
+            // s parametry objektů neposkytujeme (Libor 4. 11. 2026, modules/sdileni.md).
+            'exporty' => true,
         ],
         'stavebnik' => [
             'kroku_denne' => null,

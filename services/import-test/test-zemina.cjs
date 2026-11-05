@@ -61,8 +61,8 @@ console.log('4) Svah a násyp');
 const svah = (x) => (x - 6) * 0.2;   // 20 % přes dům
 const S = Zemina.spocitej([{ id: 'P1', nazev: '1.NP', obrys: O, kota, typ: 'deska', steny: [] }], (x) => svah(x));
 kontrola('na svahu se dosype pod spodní stranu', S.vykopek.zpet > A.vykopek.zpet, S.vykopek.zpet.toFixed(1));
-const V = Zemina.spocitej([{ id: 'P1', nazev: '1.NP', obrys: O, kota: 1.5, typ: 'deska', steny: [] }], null, { sokl: 2 });
-kontrola('vysoko nad terénem v dosahu soklu chybí zemina (záporný přebytek)', V.vykopek.prebytek < 0, V.vykopek.prebytek.toFixed(1));
+const V = Zemina.spocitej([{ id: 'P1', nazev: '1.NP', obrys: O, kota: 0.45, typ: 'deska', steny: [] }], null);
+kontrola('spodek na úrovni terénu: pod dům se dosype za ornici, zemina chybí (záporný přebytek)', V.vykopek.prebytek < 0, V.vykopek.prebytek.toFixed(1));
 
 console.log('5) Stávající stavba a nastavení');
 const E = Zemina.spocitej([{ id: 'P1', nazev: '1.NP', obrys: O, kota, typ: 'stavajici', steny: stenyObrysu(O) }], null);
@@ -106,16 +106,56 @@ const ZV = Zemina.spocitej(vysoko, null);
 kontrola('dům 2 m nad terénem se nekope a chybí mu základ', ZV.vykopek.vykopano === 0 && ZV.ornice.vykopano === 0 && ZV.casti[0].delkaPasu === 0 && blizko(ZV.bezZakladu, 120, 1), JSON.stringify([ZV.vykopek.vykopano, ZV.ornice.vykopano, ZV.bezZakladu]));
 const JV = Zemina.jama(vysoko, null);
 kontrola('takový dům nemá ani jámu', objem(JV) === 0);
-const naHrane = Zemina.spocitej([{ ...vysoko[0], kota: 0.95 }], null), pres = Zemina.spocitej([{ ...vysoko[0], kota: 0.96 }], null);
-kontrola('sokl 50 cm překlene mezeru, o kousek výš už ne', naHrane.bezZakladu === 0 && naHrane.vykopek.vykopano > 0 && pres.vykopek.vykopano === 0 && pres.bezZakladu > 100, [naHrane.bezZakladu, pres.bezZakladu].join(' / '));
-const soklNula = Zemina.spocitej([{ ...vysoko[0], kota: 0.5 }], null, { sokl: 0 });
-kontrola('sokl jde nastavit', soklNula.bezZakladu > 100 && soklNula.vykopek.vykopano === 0);
+const naHrane = Zemina.spocitej([{ ...vysoko[0], kota: 0.45 }], null), pres = Zemina.spocitej([{ ...vysoko[0], kota: 0.46 }], null);
+kontrola('základ dosáhne, jen když jeho tloušťka sahá na terén', naHrane.bezZakladu === 0 && naHrane.vykopek.vykopano > 0 && pres.vykopek.vykopano === 0 && pres.bezZakladu > 100, [naHrane.bezZakladu, pres.bezZakladu].join(' / '));
+const tlusty = Zemina.spocitej([{ ...vysoko[0], kota: 0.6 }], null, { skladba: 0.7 });
+kontrola('větší tloušťka základu dosáhne výš', tlusty.bezZakladu === 0 && tlusty.ornice.vykopano > 0);
 const SvV = Zemina.spocitej(vysoko, (x) => (x - O[0].x) * 0.3);
 kontrola('na svahu se kope jen tam, kde dům na zem dosáhne', SvV.vykopek.vykopano > 0 && SvV.bezZakladu > 10 && SvV.bezZakladu < 110, SvV.bezZakladu.toFixed(1) + ' m²');
 const KV = Zemina.spocitej([{ id: 'S', nazev: '1.PP', obrys: obd(6, 10), kota: -0.8, typ: 'pasy', steny: stenyObrysu(obd(6, 10)) }, { id: 'P1', nazev: '1.NP', obrys: O, kota: 2, typ: 'pasy', steny: stenyObrysu(O) }], null);
 kontrola('zvednutý dům se sklepem: sklep se kope, zbytek chybí', KV.casti[0].vykopek > 5 && KV.casti[1].vykopek === 0 && KV.casti[1].bezZakladu > 50, JSON.stringify(KV.casti.map(c => [c.nazev, Math.round(c.vykopek), Math.round(c.bezZakladu)])));
 const EV = Zemina.spocitej([{ ...vysoko[0], typ: 'stavajici' }], null);
 kontrola('stávající stavba základ má', EV.bezZakladu === 0);
+
+console.log('9) Plynulý terén a souvislý výkop');
+const pStred = { lat: 49.44, lon: 16.62 };
+let sem = 7;
+const nahoda = () => (sem = (sem * 16807) % 2147483647) / 2147483647;
+const pBody = [];
+for (let i = -16; i <= 16; i++) for (let j = -16; j <= 16; j++) {
+    pBody.push([pStred.lat + (j * 2.5 + nahoda()) / 111320, pStred.lon + (i * 2.5 + nahoda()) / (111320 * Math.cos(pStred.lat * Math.PI / 180)), 300 + i * 0.25 + (nahoda() - 0.5) * 0.3]);
+}
+const tv = Zemina.terenZProfilu(pBody, pStred);
+let skok = 0;
+for (let x = -15; x < 15; x += 0.05) skok = Math.max(skok, Math.abs(tv(x + 0.05, 3.3) - tv(x, 3.3)));
+kontrola('terén nemá schody', skok < 0.05, skok.toFixed(3) + ' m na 5 cm');
+const m0 = Zemina.mrizkaTerenu(pBody, pStred);
+const vrchol = tv(m0.minX + 5 * m0.sirka / (m0.sloupcu - 1), m0.minY + 7 * m0.vyska / (m0.radku - 1));
+kontrola('terén výpočtu prochází vrcholy mřížky 3D', blizko(vrchol, m0.vysky[7 * m0.sloupcu + 5], 1e-3), vrchol.toFixed(3));
+const nula0 = Zemina.nulaTerenu(obd(10, 10), tv);
+const rel = (x, y) => tv(x, y) - nula0;
+const svahCasti = [{ id: 'S', nazev: '1.PP', obrys: obd(6, 10), kota: -2.4, typ: 'pasy', steny: stenyObrysu(obd(6, 10)) }, { id: 'P1', nazev: '1.NP', obrys: O, kota: 0.3, typ: 'pasy', steny: stenyObrysu(O) }];
+const JT = Zemina.jama(svahCasti, rel, null, 0.3);
+const navstiveno = new Uint8Array(JT.hloubky.length);
+let ostrovu = 0, nejvetsi = 0, malych = 0;
+for (let i = 0; i < JT.hloubky.length; i++) {
+    if (navstiveno[i] || JT.hloubky[i] <= 0) continue;
+    ostrovu++;
+    let vel = 0;
+    const zas = [i];
+    navstiveno[i] = 1;
+    while (zas.length) {
+        const k = zas.pop();
+        vel++;
+        const s = k % JT.sloupcu;
+        for (const n of [s > 0 ? k - 1 : -1, s < JT.sloupcu - 1 ? k + 1 : -1, k - JT.sloupcu, k + JT.sloupcu]) {
+            if (n >= 0 && n < JT.hloubky.length && !navstiveno[n] && JT.hloubky[n] > 0) { navstiveno[n] = 1; zas.push(n); }
+        }
+    }
+    nejvetsi = Math.max(nejvetsi, vel);
+    if (vel < 100) malych++;
+}
+kontrola('výkop na svahu nemá odtržené kousky', malych === 0, `${ostrovu} souvislých částí, malých ${malych}`);
 
 console.log('\nBilance pro přehled (rostlý / nakypřený přebytek výkopku, ornice):');
 for (const [n, v] of [['A pasy', A], ['B sklep', B], ['C Klemov', C]]) {

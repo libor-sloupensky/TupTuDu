@@ -33,10 +33,18 @@ Kusy z volně licencovaných zdrojů, které si uživatel vloží do půdorysu a
 
 ## Přidání kusu
 
-Hromadně: `node services/katalog/rozsir.cjs` doplní kusy z ABO podle pravidel (české názvy z typu, barvy a materiálu, cílové počty `CILE`), ručně vybrané zůstanou první. Jednotlivě:
+Hromadně: `node services/katalog/rozsir.cjs` doplní kusy z ABO podle pravidel (české názvy z typu, barvy a materiálu, cílové počty `CILE`), ručně vybrané zůstanou první. Nové kusy mají `auto: true` a další běh je celé přepíše.
+
+Postup hromadné dávky:
+1. `rozsir.cjs`, potom `sestav.cjs`. Stránka náhledů se po 20 kusech obnoví (`Katalog3d` si modely drží) a `katalog.json` se zapisuje průběžně, po pádu stačí spustit znovu.
+2. `node services/katalog/kontrola.cjs --archy --barvy`: měření, nálezy a archy náhledů. Barvu z dat ověří proti obrázku. Co obrázek nepodpoří, zmizí, nová barva se doplní jen při jasné převaze. Pod světlem hněď, šeď a béžovou spolehlivě odhadnout nejde, proto je chybné slovo horší než žádné.
+3. Archy prohlédnout očima. Typ výrobku v datech ABO často nesedí. Opravit `nazev` a `kategorie` v `polozky.json`, špatné kusy přidat do `VYRAZENE` v `rozsir.cjs` a smazat ze zadání.
+4. U prohlédnutých smazat `auto`, tím jsou pro další běh `rozsir.cjs` chráněné. Znovu `sestav.cjs`, který přepíše `katalog.json`.
+
+Jednotlivě:
 
 1. Doplnit řádek do `services/katalog/polozky.json`: `id` (`abo-…`, `ph-…`), `zdroj`, `orig` (ID ve zdroji), `nazev`, `kategorie`, případně `uroven` (výška nad podlahou v metrech, u obrazů a stolních lamp).
-2. `node services/katalog/sestav.cjs` stáhne jen chybějící, zmenší na textury 1024 px a WebP, geometrii komprimuje meshoptem, změří, udělá náhled a značku. `--jen=regex` omezí výběr, `--znovu` udělá znovu.
+2. `node services/katalog/sestav.cjs` stáhne jen chybějící, zmenší na textury 1024 px a WebP, geometrii nezjednodušuje a komprimuje meshoptem, změří, udělá náhled a značku. `--jen=regex` omezí výběr, `--znovu` udělá znovu.
 3. Názvy značek do katalogu nepsat (Rivet, Stone & Beam…), jen obecný popis. Licence ABO kryje model, ne ochranné známky.
 
 Nový zdroj vyžaduje doplnit `ZDROJE` v `sestav.cjs` včetně autora a licence. Stránka autorů se z toho sestaví sama. Licence **CC BY** dovoluje splnit uvedení autora odkazem na stránku s údaji (čl. 3(a)(2)), proto stačí odkaz v panelu katalogu a na sdílené stránce, na každém kusu být nemusí.
@@ -67,13 +75,63 @@ Kus je obyčejný `engine.vybaveni` s polem `katalog` (ID), `nazev` a `uroven` (
 - **Sdílený odkaz** dostane kusy jako seznam `objekty` (ID, poloha, rozměry), ne jako trojúhelníky. Prohlížeč si model stáhne z `/katalog/modely/`. Dřívější cesta přes `_zapecModel` by textury modelů ztratila, čte jen textury kreslené na plátno.
 - **Editor zatím není přeložený** (`modules/lokalizace.md`), názvy kusů jsou jen česky. Stránka autorů přeložená je.
 
+## Přebarvování a dekory (odloženo, Libor 4. 11. 2026)
+
+Nápad Libora: měnit barvu kusu z katalogu, u stolů a skříní i dekor. **Nedělat bez výzvy.** Odklad nic nezkazí: `barva` bude nové volitelné pole kusu a masky se dají doplnit k hotovým modelům.
+
+**Licence to dovolují.** CC BY 4.0 u ABO výslovně dovoluje upravovat a upravené šířit, i komerčně (čl. 2(a)(1)), CC0 u Poly Haven je bez podmínek. Při zavedení doplnit změnu barvy do výčtu úprav `autori_upravy` v `lang/*/pravni.php`. Přebarvený kus nevydávat za skutečný výrobek, taková varianta nemusí existovat. To by vadilo, až kdyby se kusy nabízely jako zboží nebo s odkazem do obchodu.
+
+**Proč maska.** 926 z 930 modelů má jeden materiál a jednu texturu na celý kus, potah i nožičky jsou na jednom obrázku. Násobení barvou (`material.color`) umí jen ztmavit, z hnědé bílou neudělá. Každý kus proto potřebuje masku, co se přebarví, a nahrazení barvy se zachováním jasu.
+
+**Zkouška 4. 11. 2026, mimo projekt, nic z ní není v kódu.** Vzorek byl 8 pohovek a 8 stolů rovnoměrně z pořadí v katalogu, textury 1024 px, Chrome bez grafické karty.
+
+| Co | Výsledek |
+|---|---|
+| Pohovky, nalezení potahu | 8 z 8, nožičky zůstaly původní |
+| Látka na bílou, antracit, zelenou | přirozené, záhyby i struktura zůstaly |
+| Tmavá kůže na bílou | flekaté jako mramor, doladit nebo nenabízet |
+| Stoly, nalezení plochy | 7 z 8, u kulatého stolu s pestrou paprskovitou deskou vyhrála černá podnož |
+| Stoly na černou | dobré |
+| Tmavé dřevo na bílou | spíš oprýskaný nátěr než čistá bílá |
+| Dekor dřeva | použitelný, zkoušeno jen s generovanou kresbou. Přes UV modelu kresba většinou sedí, ale bez masky přebarví i kovovou podnož. Promítnutý shora a z boku drží masku, prosvítá stará kresba |
+
+Maska 512 px ve WebP měla 1–14 KB, průměr 2,6 KB, na 930 kusů asi 2,4 MB. Přebarvení na procesoru trvalo většinou kolem 300 ms (143–813 ms), ostrá verze ve shaderu by měla být rychlejší, neměřeno. Křesla, židle, postele a skříně nezkoušeno. U koberců, obrazů a rostlin to nedává smysl.
+
+**Postup ze zkoušky:**
+- **Maska:** 20 000 vzorků po povrchu úměrně skutečné ploše, k-means se 4 shluky v Lab (váha jasu 0,35). Patří do ní největší shluk a shluky s rozdílem barvy pod 9 a jasu pod 28. Každý texel jde k nejbližšímu shluku, nakonec rozmazání 1 px.
+- **Přebarvení:** cílový jas × (jas / medián masky)^0,8, zbytková barva s váhou 0,4.
+
+**Dvě podoby výběru (Libor):**
+1. **Přebarvení po vložení:** paleta u kusu při výběru a v panelu vloženého kusu.
+2. **Barva předem:** volitelně se nejdřív určí barva a katalog ukáže kusy v ní, původní i přebarvené.
+
+Nejsou to alternativy, podoba 2 stojí na podobě 1, potřebuje stejné masky a navíc přebarvené náhledy. Rozhodnutí až při zavedení, doporučení je začít podobou 1. Levnější půlka podoby 2 je filtr podle původní barvy, medián masky ji určí u každého kusu a nic se přitom nepřebarvuje.
+
+**Až na to dojde:**
+- **Pořadí:** automatické kusy jsou od 4. 11. 2026 vyčištěné, masky se dají vyrábět. Začít čalouněnými kusy (pohovky, křesla, židle, postele), potom stoly a skříně se skutečnými CC0 texturami.
+- **Výroba:** masky v `sestav.cjs` a automatická kontrola masky. Kus, který neprojde, nabídku barev nedostane. Kontrola zatím není navržená.
+- **Materiály:** kopie modelu je dnes sdílejí, každá barva potřebuje vlastní materiál s mezipamětí podle kusu a barvy.
+- **Uložení:** `barva` u kusu, v Zpět a v seznamu `objekty` sdíleného odkazu.
+- **Půdorys:** značka je hotový obrázek v původní barvě a musí se přebarvit taky, jinak bude kus v půdorysu hnědý a ve 3D bílý.
+
 ## Hosting
 
-Prvních 120 kusů je v `public/katalog` v repozitáři. Při 930 kusech to jsou stovky MB, do repozitáře a přes FTP deploy se to nehodí, před nasazením zbytku je potřeba úložiště. Libor 4. 11. 2026 navrhuje AWS, účet má. Plán: bucket S3 ve Frankfurtu s veřejným čtením jen pro katalog a CORS, nahrání přes `aws s3 sync`, adresa katalogu z `.env`. U značek do půdorysu je potřeba `crossOrigin`, jinak obrázek z cizí adresy zablokuje export půdorysu do PNG. Zatím nic z toho není zapojené, kód S3 nepoužívá a balík pro S3 tu není. V GitHub Secrets ale `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` a `AWS_BUCKET` jsou (od 14. 8. 2026), deploy je nikam nepředává. **Bucket nezakládat, dokud Libor neověří, že TupTuDu nemíchá data s jiným projektem** (viz paměť `tuptudu-zdroje-objektu`).
+Prvních 120 kusů je v `public/katalog` v repozitáři. Celý katalog má 185 MB (modely 170, značky 10, náhledy 4), do repozitáře a přes FTP deploy se to nehodí, před nasazením zbytku je potřeba úložiště. Libor 4. 11. 2026 navrhuje AWS, účet má. Plán: bucket S3 ve Frankfurtu s veřejným čtením jen pro katalog a CORS, nahrání přes `aws s3 sync`, adresa katalogu z `.env`. U značek do půdorysu je potřeba `crossOrigin`, jinak obrázek z cizí adresy zablokuje export půdorysu do PNG. Zatím nic z toho není zapojené, kód S3 nepoužívá a balík pro S3 tu není. V GitHub Secrets ale `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` a `AWS_BUCKET` jsou (od 14. 8. 2026), deploy je nikam nepředává. **Bucket nezakládat, dokud Libor neověří, že TupTuDu nemíchá data s jiným projektem** (viz paměť `tuptudu-zdroje-objektu`).
 
 ## Stav a známá omezení (4. 11. 2026)
 
-Na webu od commitu f7e4697 (4. 11. 2026): 120 ručně vybraných kusů ve 14 kategoriích (24 MB). V `polozky.json` je 930 kusů, automaticky pojmenované mají `auto: true`, lokálně je z nich vyrobeno asi 909 modelů bez náhledů. Do gitu nejdou (`.gitignore`), první balík je přidaný přes `git add -f`. Ověřuje `test-katalog-ui`, panel kusu je v `test-formulare-ui`.
+Na webu od commitu f7e4697 (4. 11. 2026): 120 ručně vybraných kusů ve 14 kategoriích (24 MB). Lokálně je hotových a prohlédnutých 927 kusů. Soubory nad první balík do gitu nejdou (`.gitignore`), první balík je přidaný přes `git add -f`. Ověřuje `test-katalog-ui`, panel kusu je v `test-formulare-ui`, výrobu `kontrola.cjs`.
+
+**Pozor: `public/katalog/katalog.json` je v gitu a lokálně má 927 kusů, na webu je jen 120 modelů.** Commit tohoto souboru před vyřešením úložiště by na webu rozbil 807 karet. Při společném nasazení vrátit `git checkout -- public/katalog/katalog.json`, lokálně ho obnoví `node services/katalog/sestav.cjs`.
+
+**Prohlídka 930 kusů (4. 11. 2026):** vyřazené 3 (`VYRAZENE` v `rozsir.cjs`), 50 kusů dostalo správný typ nebo kategorii, barvu v názvu upravila kontrola u 250 kusů. Výsledek: pohovky 79, křesla 110, židle 101, jídelní stoly 35, stolky 108, postele 53, skříně 98, police 44, psací stoly 41, svítidla 70, koberce 69, obrazy 49, zrcadla 30, rostliny 40.
+
+Viděno při prohlídce, zatím neřešeno:
+- **Rostliny:** skutečné rostliny jsou jen 3 z 40, zbytek jsou vázy a květináče. ABO rostliny skoro nemá, patří to do vrstvy zahrada.
+- **Lesklé kusy (rozdělané, viz Rozdělaná práce):** kovový přechod na bílých skříních a stínidlech nezpůsobuje lesk, ale naše někdejší `--simplify` ve výrobě. Bral modelům zkosené hrany a stínování se rozlévalo přes plochu, zdrojové modely ABO to nemají. Značka je už matná (`nahled.html`) a `katalog-3d.js` omezuje kov a lesk u ABO kromě tenkých kusů.
+- **Baked přechod:** část textur má přechod přímo v obrázku (např. skříň `abo-` č. 534 na archu), tu výroba neopraví. Po dokončení nové výroby posoudit, případně vyřadit.
+- **Výplety:** značka sedáku z výpletu je tmavá, hustý vzor se celý vyhodnotí jako hrana (4 židle a lavice).
+- **Barvy v názvech** nejsou dokonalé, např. béžovošedé křeslo jako šedé. Hlavní vodítko je náhled.
 
 - **Dotyk zatím nevyzkoušený.** Klepnutí má jít cestou kliku, na tabletu to nikdo nezkoušel.
 - **Kusy jdou vkládat a posouvat jen v půdorysu**, ve 3D se jen zobrazí a nejdou tam vybrat.
@@ -83,7 +141,13 @@ Na webu od commitu f7e4697 (4. 11. 2026): 120 ručně vybraných kusů ve 14 kat
 
 ## Rozdělaná práce (k 4. 11. 2026)
 
-1. **Výroba 930 kusů nedoběhla, zastavena na 909 modelech.** `services/katalog/polozky.json` už má 930 kusů, `katalog.json` se zapíše až na konci, do té doby editor ukazuje 120. Pozor: po doběhnutí bude `katalog.json` lokálně odkazovat na modely, které v gitu nejsou, před commitem musí být vyřešené úložiště. Dokončení: `node services/katalog/sestav.cjs --vlaken=5`, hotové modely přeskočí. Potom prohlédnout náhledy automaticky vybraných kusů (`auto: true`) a špatné vyřadit ze zadání.
+1. **Nová výroba modelů bez zjednodušení přerušená (Libor 4. 11. 2026).** `sestav.cjs` už nezjednodušuje, jen kusy nad 60 000 trojúhelníků mírně. Hotových je 147 z 921 kusů ABO (včetně ručně vybraných), zbytek má dosud starý přechod, katalog funguje a poškozené soubory nejsou. Dokončení: `node services/katalog/sestav.cjs --znovu --jen=^abo- --vlaken=3`, začne znovu od začátku, ale zdroje jsou v `%TEMP%\tuptudu-katalog`. Stáhne se celkem asi 12 GB. Potom:
+   - `kontrola.cjs --archy` a prohlédnout hlavně bílé skříně a lampy,
+   - porovnat strop lesku v `katalog-3d.js` zapnutý a vypnutý, po opravě normál možná není potřeba nebo stačí mírnější,
+   - změřit paměť a plynulost editoru (trojúhelníků je asi 12× víc, velikost modelů odhadem kolem 320 MB místo 170 MB),
+   - spustit `test-katalog-ui`, `test-svetlo-3d-ui`, `test-sdileni-ui`,
+   - smazat mezipaměť zdrojů.
+   Změní se i 120 modelů, značek a náhledů v gitu, půjdou do dalšího nasazení. 927 kusů je jinak prohlédnutých, čeká na úložiště, viz Hosting a upozornění výš.
 2. **Před nasazením** vyřešit AWS: značky i modely z cizí adresy, `crossOrigin` kvůli exportu PNG.
 3. **Další vrstvy v pořadí:** povrchy (ambientCG, Poly Haven), koupelna (Sweet Home 3D + vlastní materiály, kout), generátor linky.
 4. **Dotyk na tabletu** nikdo nezkoušel.

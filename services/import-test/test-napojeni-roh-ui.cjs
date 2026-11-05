@@ -61,6 +61,7 @@ async function main() {
             const soused = e.addWall(0, 0, 0, -400, 0.3);
             soused.nodeA = host.nodeA; e._cleanOrphanNodes();
             const dite = e.addWall(250, 380, 400, 60, 0.3);
+            d.renderer.showNodes = true;   // test tahá přímo za bod, bez předchozího výběru stěny
             d.renderer.render(); const st = d.stage; const s = 1.6; st.scale({ x: s, y: s });
             st.position({ x: st.width() / 2 - 180 * s, y: st.height() / 2 - 90 * s }); d.zoom = s;
             d.renderer.renderGrid(); d.renderer.render();

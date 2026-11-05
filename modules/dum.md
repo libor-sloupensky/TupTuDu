@@ -32,6 +32,7 @@ dum = {
 | `public/js/koncept-v3/strecha.js` | čistá geometrie střechy, bez kresby; test `services/import-test/test-strecha.cjs` |
 | `public/js/koncept-v3/mistnosti.js` | rastr místností, výřezy a plocha pod 1,3 m |
 | `public/js/koncept-v3/koty-vyberu.js` | kóty u vybrané stěny a otvoru |
+| `public/js/koncept-v3/koty-retezce.js` | kótovací řetězce kolem domu a rozměry místností; test `test-zobrazeni-objektu-ui` |
 | `services/import-test/test-dum-ui.cjs` | test celého domu v prohlížeči (57 kontrol); `test-barvy-domu-ui`, `test-koty-vyberu-ui` a `test-magnet-patro-ui` a `test-schody-ui` pro barvy, kóty, magnet a schody; `test-dum-import-ui.cjs` ověřuje import skutečného výkresu na patro |
 
 ## Pravidla
@@ -101,6 +102,10 @@ Půdorys: ze spodního podlaží stupně, šipka a „↑ počet × výška/ná�
 
 Magnet: při založení i otáčení (kolečko ↻ u vybraných schodů) na směry stěn aktivního a spodního podlaží, i vzdálených, na osy domu a na vodorovnou a svislou obrazovky (`_magnetSmeru`). Při tažení hrana schodů na rovnoběžný líc stěny (`_magnetSchodu`). Alt vypíná.
 
+## Ukládání ze dvou míst
+
+Klient posílá `verze`, ze které vychází. Když je na serveru jiná, `ulozit` vrátí 409 a nic nezapíše (zámek řádku hlídá i souběh). Editor přestane ukládat a dialog nabídne načíst aktuální verzi, nebo ji přepsat tou svou (`_konfliktUlozeni`). Uložení běží jedno po druhém (`ulozit` a `_ulozitTed`), jinak by se editor předbíhal sám se sebou. Podklad čeká na běžící uložení kresby. Přejmenování a katastr se neporovnávají. Test `test-konflikt-ulozeni-ui.cjs`.
+
 ## Rotace domu
 
 Při otáčení výběru se významný směr stěn (aspoň pětina jejich délky) přitáhne na vodorovnou a svislou obrazovky, ne kompasu (`_magnetRotace`, dosah 3°). Přichycení ukáže čára skrz střed. Alt vypíná.
@@ -112,6 +117,24 @@ Při otáčení výběru se významný směr stěn (aspoň pětina jejich délky
 - **Stěna:** světlá vzdálenost k rovnoběžným stěnám (do 3°) téhož prostoru. Oddělovač prostor nedělí. Díly stěny v jedné přímce se slévají.
 - **Otvor:** od ostění k první stěně podél líce, na každé straně stěny zvlášť; za lícem exteriéru se sleduje zdivo po vnější roh. Měří se po polygonech, ne po rastru. Stejná hodnota z obou stran se ukáže jednou.
 - **Přepsání:** číslo nebo tužtička otevře pole v cm. Stěna jde přes `_krokTazeniSteny`, tedy stejná pravidla jako tažení myší, jen bez magnetu. Stěna s konci pevně ve střihu se proto nepohne ani takhle. Navíc nesmí přejet jinou rovnoběžnou stěnu před sebou. Otvor má stejné meze jako při tažení.
+
+## Kóty v půdorysu
+
+Přepínač Kóty v panelu Objekty, výchozí vypnutý (Libor 4. 11. 2026, uloženo jako `kotyVzdy`, staré `showKoty` se záměrně nečte). Cíl: kóty mají být, ale plán nesmí být přeplácaný, proto čísla leží mimo dům jako na stavebním výkresu. `public/js/koncept-v3/koty-retezce.js`, kreslí `renderKoty`, za tahu se řetězce nekreslí.
+
+- **Osy** = převažující směr stěn, takže natočený dům má stejná čísla. Šikmé stěny řetězce nedělí, jen zvětšují celkový rozměr.
+- **Řetězce v cm, celá čísla.** Z každé strany se bere stěna nejblíž pozorovateli. Řada otvorů a pilířů jen na fasádě s otvorem, řada úseků jen u zalomené fasády (odskok pod 5 cm a úsek pod 8 cm se nepočítá), celkový rozměr jednou na směr, na obrazovce nahoře a vlevo.
+- **Písmo má stálou velikost na obrazovce** a co se nevejde, nekreslí se. Řada zmizí, když se do ní nevejde aspoň půlka čísel, celkový rozměr zůstává nejdéle.
+- **Místnost:** řádek „šířka × výška m" v popisku, světlé rozměry paprsky od středu k nejbližší stěně nebo oddělovači. Jen když součin sedí na plochu (do 4 %, jinak by číslo u místnosti do L lhalo) a text se do místnosti vejde. Bez zapnutých Místností se nekreslí.
+- **Délka stěny** bez ohledu na přepínač, ale jen u vybrané stěny a stěn vybraného bodu, za tahu i u navazujících, těm se délka mění. Dřív byla na každé stěně, to dělalo nepořádek.
+- **Kóty u výběru** a pole pro přepsání zůstávají vždy, jsou nástrojem, ne popisem plánu.
+- **Export a odkaz** se řídí přepínačem jako všechno ostatní (Libor 4. 11. 2026), viz `modules/sdileni.md`.
+
+## Přepínače zobrazení
+
+`resources/views/masterteam/partials/prepinace-zobrazeni.blade.php`, jedno nastavení na dvou místech: panel Objekty a sekce Export. Stěny (i oddělovače, jejich body a kóty), Otvory, Kóty, Značky (W38, O41), Body, Místnosti, Vybavení; řádek se zalamuje. Stěny a Otvory nahradily společné „Objekty". Kóty, Značky a Body jsou výchozí vypnuté (`kotyVzdy`, `znackyVzdy`, `bodyVzdy`, staré uložené klíče se záměrně nečtou, jinak by změna u nikoho, kdo editor otevřel, neplatila). Klik na stěnu ukáže její konce a konce stěn napojených na ni, klik mimo je skryje. Schované se nedá vybrat: přepínač výběr zruší, nástroj Stěna a Otvor si svou vrstvu sám zapne, stejně tak klik na objekt v seznamu.
+
+Klik v seznamu objektů = klik na plánku v nástroji Výběr (`_vyberObjektKlikem`), včetně Ctrl/Shift, přepnutí z kreslení na výběr a nevybírání v režimu střechy a posunu podkladu.
 
 ## Výkon
 
@@ -147,4 +170,5 @@ Editor i sdílený odkaz používají `public/js/svetlo-3d.js` (Libor 4. 11. 202
 - **Tónování je vlastní:** do 0,85 lineárně beze změny, výš měkce stlačuje, ať se bílá nepřepálí. ACES by byl hezčí, ale posouvá odstíny a barva by neseděla se vzorkem.
 - **Matné nekovy skoro neodrážejí prostředí** (`tuOdraz`), jinak barva vybledne. Lesklé povrchy a kovy odráží plně, takže keramika a chrom fungují.
 - **Stíny jen po změně:** `autoUpdate = false`, přepočet si vyžádá `Svetlo3d.prekresliStiny` po přestavbě, změně viditelnosti a dotažení modelu. Stín vrhá jen neprůhledný `MeshStandardMaterial` (`stinyObjektu`), mapa 4096, na dotykových zařízeních 2048.
+- **Normály musí mířit ven i u oboustranných materiálů.** `DoubleSide` obrácenou normálu ve světle schová, stín se ale podle ní odsazuje: zajede do plochy a ta si stíní sama. Plocha na slunci pak zůstane skoro tak tmavá jako ve stínu a má šikmý vzor, proto boky desek svítily proti stěnám a na stinné straně rozdíl vidět nebyl (opraveno 4. 11. 2026: `_obrysVen` u stěn, `_troj3d` u střechy a štítů). Nová geometrie s oboustranným materiálem si tohle musí ohlídat, měření na skutečném domě je v `test-svetlo-3d-ui`, bod 6.
 - **Stránka sdílení nesmí načítat nic z `/js/koncept-v3/`**, proto `svetlo-3d.js` a `katalog-3d.js` leží přímo v `public/js/`.

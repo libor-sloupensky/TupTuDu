@@ -154,15 +154,93 @@ const zHexu = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
         kontrola('změna viditelnosti si vyžádá nové stíny', smycka.poViditelnosti === true);
         kontrola('po třech přestavbách se kreslí jednou za snímek', smycka.kresleni <= smycka.snimku + 2, `${smycka.kresleni} kreslení na ${smycka.snimku} snímků`);
 
-        const chybyStranky = (p.chyby || []).filter(c => !/favicon|404/.test(String(c)));
-        kontrola('žádná chyba shaderu ani stránky', chybyStranky.length === 0, chybyStranky.slice(0, 3).join(' | ').slice(0, 300));
-
         await pauza(500);
         await p.vyhodnot(`(() => { const d = ${D}; d.zoom = 0.5; const k = window._kk3d.camera; k.zoom = 0.5; k.updateProjectionMatrix(); return true; })()`);
         await pauza(500);
         await p.snimek(path.join(vystup, 'dum-3d.png'));
         await p.vyhodnot(`(async () => { const d = ${D}; d.pridatPodlazi('nahoru'); d.strechaVytvor(); d.naPodlazi('P1'); d._build3d(); await new Promise(r => setTimeout(r, 800)); return true; })()`);
         await p.snimek(path.join(vystup, 'dum-3d-strecha.png'));
+
+        console.log('\n6) Skutečný dům: stěna, bok desky a střecha si nesmí stínit samy');
+        // Oboustranný materiál obrácenou normálu ve světle schová, stín se ale podle ní odsadí do zdi.
+        // Sonda z bodu 2 to nezachytí, proto se tu měří opravdové stěny na všech stranách.
+        const dum = await p.vyhodnot(`(() => { const d = ${D}, _3d = window._kk3d, T = window.THREE, r = _3d.renderer, gl = r.getContext();
+            d.skryte3d = []; d._nastavViditelnost3d();
+            for (const m of (() => { const a = []; _3d.scene.traverse(o => { if (o.isMesh) a.push(...[].concat(o.material)); }); return a; })()) if (m.userData?.barva === 'fasada') m.color.set('#e8cfa8');
+            const obal = new T.Box3(); for (const g of _3d.podlaziSkupiny.values()) obal.expandByObject(g);
+            const st = obal.getCenter(new T.Vector3());
+            const deska = _3d.dumSkupina.children.find(o => o.userData.stropPod);
+            const pas = new T.Box3().setFromObject(deska);
+            const kota = d.engine.kotaPodlazi(d.engine.dum.podlazi[d.engine.dum.podlazi.length - 1].id);
+            const okap = kota + d._strechaVypocet().zOkapMin;
+            r.shadowMap.needsUpdate = true;
+            const vys = {};
+            // Stranou od otvorů: dveře a okno jsou v jižní a severní stěně u x = 2–3 m
+            for (const [nazev, n, x, z] of [['jih', [0, 0, 1], 2.5, 0], ['zapad', [-1, 0, 0], 0, -1], ['sever', [0, 0, -1], 2.5, 0], ['vychod', [1, 0, 0], 0, 1]]) {
+                const k = new T.OrthographicCamera(-10, 10, 10, -10, 0.1, 200);
+                k.position.set(st.x + n[0] * 40, st.y, st.z + n[2] * 40); k.up.set(0, 1, 0); k.lookAt(st); k.updateMatrixWorld(); k.updateProjectionMatrix();
+                r.render(_3d.scene, k);
+                const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
+                const blok = (y0, y1) => {
+                    const a = new T.Vector3(st.x + x, y0, st.z + z).project(k), b = new T.Vector3(st.x + x, y1, st.z + z).project(k);
+                    const py = Math.round((a.y + 1) / 2 * H), vyska = Math.max(1, Math.round((b.y + 1) / 2 * H) - py), sirka = 40;
+                    const px = Math.round((a.x + 1) / 2 * W - sirka / 2), buf = new Uint8Array(sirka * vyska * 4);
+                    gl.readPixels(px, py, sirka, vyska, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+                    let s = 0, s2 = 0; const m = sirka * vyska;
+                    for (let i = 0; i < m; i++) { s += buf[i * 4]; s2 += buf[i * 4] * buf[i * 4]; }
+                    const prum = s / m;
+                    return { R: +prum.toFixed(1), std: +Math.sqrt(Math.max(0, s2 / m - prum * prum)).toFixed(2) };
+                };
+                vys[nazev] = { dole: blok(obal.min.y + 1, obal.min.y + 2), pas: blok(pas.min.y + 0.04, pas.max.y - 0.04), nahore: blok(pas.max.y + 0.5, pas.max.y + 1.2), podOkapem: blok(okap - 0.8, okap - 0.6) };
+            }
+            return vys; })()`);
+        for (const [n, x] of Object.entries(dum)) {
+            kontrola(`${n}: stěna má barvu boku desky`, Math.abs(x.dole.R - x.pas.R) <= 2 && Math.abs(x.nahore.R - x.pas.R) <= 2, `dole ${x.dole.R}, pás ${x.pas.R}, nahoře ${x.nahore.R}`);
+            kontrola(`${n}: stěna bez šikmého vzoru z vlastního stínu`, x.dole.std <= 1 && x.nahore.std <= 1, `odchylka ${x.dole.std}, ${x.nahore.std}`);
+        }
+        kontrola('stěny na slunci jsou světlejší než ve stínu', dum.jih.dole.R > dum.sever.dole.R * 1.1 && dum.zapad.dole.R > dum.vychod.dole.R * 1.05, `jih ${dum.jih.dole.R}, sever ${dum.sever.dole.R}, západ ${dum.zapad.dole.R}, východ ${dum.vychod.dole.R}`);
+        kontrola('okap dál vrhá stín na jižní stěnu, tmavý jako stěna ve stínu', Math.abs(dum.jih.podOkapem.R - dum.sever.dole.R) <= 3 && dum.jih.podOkapem.std <= 1, `pod okapem ${dum.jih.podOkapem.R}, ve stínu ${dum.sever.dole.R}, na slunci ${dum.jih.dole.R}`);
+
+        const normaly = await p.vyhodnot(`(() => { const d = ${D}, T = window.THREE, mat = new T.MeshStandardMaterial();
+            const dlouhy = [{ x: 0, z: 0 }, { x: 4, z: 0 }, { x: 4, z: 0.2 }, { x: 0, z: 0.2 }];
+            const platek = [{ x: 0, z: 0 }, { x: 0.2, z: 0 }, { x: 0.2, z: 0.2 }, { x: 0, z: 0.2 }];
+            const zkus = (stavba, poly) => { const g = new T.Group(); stavba(g, poly);
+                const P = g.children[0].geometry.attributes.position, N = g.children[0].geometry.attributes.normal, c = new T.Vector3();
+                for (let i = 0; i < P.count; i++) c.add(new T.Vector3().fromBufferAttribute(P, i));
+                c.divideScalar(P.count);
+                let dovnitr = 0;
+                for (let j = 0; j < P.count; j += 3) {
+                    const t = new T.Vector3().fromBufferAttribute(P, j).add(new T.Vector3().fromBufferAttribute(P, j + 1)).add(new T.Vector3().fromBufferAttribute(P, j + 2)).divideScalar(3);
+                    if (t.sub(c).dot(new T.Vector3().fromBufferAttribute(N, j)) <= 0) dovnitr++;
+                }
+                return dovnitr; };
+            const strany = (g, poly) => d._hranolStrany(g, poly, 0, 2.5, mat, mat, () => true);
+            const podStrechou = (g, poly) => d._hranolPodStrechou(g, poly, 0, 2.5, mat, mat, () => true, () => 2);
+            return [zkus(strany, dlouhy), zkus(strany, [...dlouhy].reverse()), zkus(podStrechou, platek), zkus(podStrechou, [...platek].reverse())]; })()`);
+        kontrola('hranol stěny má normály ven při obou směrech obrysu', normaly.every(n => n === 0), 'dovnitř ' + normaly.join(', '));
+
+        for (const typ of ['sedlova', 'valbova', 'pultova']) {
+            const krytina = await p.vyhodnot(`(async () => { const d = ${D}, _3d = window._kk3d, T = window.THREE, r = _3d.renderer, gl = r.getContext();
+                d.engine.dum.strecha.typ = ${JSON.stringify(typ)}; d._build3d(); await new Promise(q => setTimeout(q, 300));
+                const obal = new T.Box3(); for (const g of _3d.podlaziSkupiny.values()) obal.expandByObject(g);
+                const st = obal.getCenter(new T.Vector3());
+                const k = new T.OrthographicCamera(-12, 12, 12, -12, 0.1, 200);
+                k.position.set(st.x, 60, st.z + 0.01); k.up.set(0, 0, -1); k.lookAt(st); k.updateMatrixWorld(); k.updateProjectionMatrix();
+                const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
+                const plochy = []; let nahoru = 0, dolu = 0;
+                _3d.dumSkupina.traverse(o => { if (!o.isMesh || !o.userData.krytina) return; plochy.push(o);
+                    const N = o.geometry.attributes.normal; for (let j = 0; j < N.count; j += 3) { if (N.getY(j) > 0) nahoru++; else dolu++; } });
+                const kresli = () => { r.shadowMap.needsUpdate = true; r.render(_3d.scene, k); const b = new Uint8Array(W * H * 4); gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, b); return b; };
+                const prepni = (ano) => { for (const o of plochy) { o.receiveShadow = ano; for (const m of [].concat(o.material)) m.needsUpdate = true; } };
+                const se = kresli(); prepni(false); const bez = kresli(); prepni(true);
+                let n = 0, tmavsi = 0;
+                for (let i = 0; i < W * H; i++) { const R = bez[i * 4]; if (R < bez[i * 4 + 1] * 1.3 || R < bez[i * 4 + 2] * 1.3) continue; n++; if (se[i * 4] < R - 4) tmavsi++; }
+                return { nahoru, dolu, n, podil: +(tmavsi / Math.max(1, n)).toFixed(3) }; })()`);
+            kontrola(`${typ}: střecha hledí nahoru a nestíní si sama`, krytina.dolu === 0 && krytina.n > 1000 && krytina.podil <= 0.05, JSON.stringify(krytina));
+        }
+
+        const chybyStranky = (p.chyby || []).filter(c => !/favicon|404/.test(String(c)));
+        kontrola('žádná chyba shaderu ani stránky', chybyStranky.length === 0, chybyStranky.slice(0, 3).join(' | ').slice(0, 300));
     } catch (e) {
         chyb++;
         console.log('   CHYBA běhu:', e.message);

@@ -68,10 +68,13 @@ function konceptKEditor(initialData) {
             const best = nice.reduce((a, b) => Math.abs(b - realM) < Math.abs(a - realM) ? b : a);
             return Math.round(best / mPerPx);
         },
-        showObjekty: _s.showObjekty ?? true,
+        showSteny: _s.showSteny ?? _s.showObjekty ?? true,
+        showOtvory: _s.showOtvory ?? true,
         // spaceDown odstraněn — mezerník se nepoužívá pro posun
-        showKoty: _s.showKoty ?? true,
-        showNodes: _s.showNodes ?? true,
+        // Kóty, body a značky jsou výchozí vypnuté. Nové klíče: staré hodnoty true má uložené každý, kdo editor otevřel
+        showKoty: _s.kotyVzdy ?? false,
+        showNodes: _s.bodyVzdy ?? false,
+        showZnacky: _s.znackyVzdy ?? false,
         showGrid: _s.showGrid ?? true,
         showMistnosti: _s.showMistnosti ?? true,
         // Magnet (podle výkazu výměr): jedno tlačítko s panelem — síla 0–100 % (0 = vypnuto),
@@ -1438,6 +1441,8 @@ function konceptKEditor(initialData) {
                 this.renderer = bezProxy(new KonvaRenderer(this.stage, this.engine, {
                     showKoty: this.showKoty,
                     showNodes: this.showNodes,
+                    showSteny: this.showSteny,
+                    showOtvory: this.showOtvory,
                     showGrid: this.showGrid,
                     showMistnosti: this.showMistnosti,
                     showVybaveni: this.showVybaveni,
@@ -1458,7 +1463,7 @@ function konceptKEditor(initialData) {
                 // + zobrazit technické ID u stěn a otvorů
                 if (initialData.vyvojMode) {
                     this.renderer.nodeColorByJunctionType = true;
-                    this.renderer.showIds = true;
+                    this.renderer.showIds = this.showZnacky;
                     this.engine.SNAP_STEP = 0.1; // sub-pixel — prakticky žádný snap
                 }
 
@@ -1522,18 +1527,7 @@ function konceptKEditor(initialData) {
                 };
                 window.addEventListener('mouseup', this._globalMouseUpHandler);
 
-                // Rozepsaná hodnota v panelu otvoru se odevzdává až s odchodem z pole
-                // (change). Klik na plátno ale nejdřív změnil výběr, panel se překreslil
-                // a pole zmizelo dřív, než hodnotu odevzdalo — změna se ztratila (i šířka
-                // nového otvoru při kliknutí na stěnu). Proto při stisku mimo panel pole
-                // opustit ještě před zpracováním kliknutí (zachycení před Konvou).
-                this._panelOdevzdejHandler = (e) => {
-                    const aktivni = document.activeElement;
-                    if (!aktivni || !aktivni.closest || !aktivni.closest('#kk-panel-otvoru')) return;
-                    if (e.target && e.target.closest && e.target.closest('#kk-panel-otvoru')) return;
-                    aktivni.blur();
-                };
-                document.addEventListener('pointerdown', this._panelOdevzdejHandler, true);
+                this._poleIhnedInit();
 
                 // Alt = kreslit a táhnout bez magnetu. Stav se drží i bez pohybu
                 // myši (stisk Altu hned přepne značku kurzoru). Puštěný Alt by
@@ -1614,6 +1608,9 @@ function konceptKEditor(initialData) {
                     // panel s vlastnostmi objektu, který se právě needituje.
                     // Výběr a posun (ruka) selekci nechávají — tam dává smysl.
                     if (val !== 'vyber' && val !== 'posun') this.renderer.clearSelection();
+                    // Kreslení do schované vrstvy by vypadalo jako chyba: nástroj si ji sám zapne
+                    if ((val === 'stena' || val === 'otvor') && !this.showSteny) { this.showSteny = true; this.toggleSteny(); }
+                    if (val === 'otvor' && !this.showOtvory) { this.showOtvory = true; this.toggleOtvory(); }
                 });
 
                 // Přebudovat 3D terrain při změně výškového profilu
@@ -3934,18 +3931,8 @@ function konceptKEditor(initialData) {
             if (this.nastroj === 'vyber') {
                 const multiSelect = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
 
-                if (hit.type === 'wall') {
-                    if (multiSelect) {
-                        this.renderer.toggleWallSelection(hit.id);
-                    } else {
-                        this.renderer.setSelection([hit.id]);
-                    }
-                } else if (hit.type === 'opening') {
-                    if (multiSelect) {
-                        this.renderer.toggleOpeningSelection(hit.id);
-                    } else {
-                        this.renderer.setSelection([], [], [hit.id]);
-                    }
+                if (hit.type === 'wall' || hit.type === 'opening') {
+                    this._vyberObjektKlikem(hit.type, hit.id, multiSelect);
                 } else if (hit.type === 'oddelovac') {
                     if (multiSelect) {
                         if (this.renderer.selectedOddelovace.has(hit.id)) this.renderer.selectedOddelovace.delete(hit.id);
@@ -5685,10 +5672,11 @@ function konceptKEditor(initialData) {
             this.katastrPrekreslitCanvas();
         },
 
-        zvyrazniObjekt(wallId) {
-            this.hoverObjektId = wallId;
+        zvyrazniObjekt(id) {
+            this.hoverObjektId = id;
             if (this.renderer) {
-                this.renderer.highlightWall(wallId);
+                this.renderer.highlightWall(id);
+                this.renderer.highlightOpening(id);
             }
         },
 
@@ -5847,6 +5835,7 @@ function konceptKEditor(initialData) {
                 this.stage.rotation(this.kompasUhel);
             }
             this.stage.batchDraw();
+            this.renderer?.renderKoty();   // čísla kót zůstávají vzpřímená
             // Překreslit katastr labely (orientace textů)
             this.katastrPrekreslitCanvas();
         },
@@ -6086,17 +6075,30 @@ function konceptKEditor(initialData) {
             this.autoSave("Smazání objektu");
         },
 
-        vyberObjekt(id) {
-            if (this.editObjektId) return; // probíhá editace
-            const wall = this.engine.walls.get(id);
-            if (wall) {
-                this.renderer.setSelection([id]);
-                return;
-            }
-            const opening = this.engine.openings.get(id);
-            if (opening) {
+        /** Výběr stěny nebo otvoru — společná cesta pro klik na plánku i v seznamu objektů. */
+        _vyberObjektKlikem(typ, id, multiSelect) {
+            if (typ === 'wall') {
+                if (multiSelect) this.renderer.toggleWallSelection(id);
+                else this.renderer.setSelection([id]);
+            } else if (multiSelect) {
+                this.renderer.toggleOpeningSelection(id);
+            } else {
                 this.renderer.setSelection([], [], [id]);
             }
+        },
+
+        /** Klik v seznamu objektů se chová jako klik na plánku v nástroji Výběr. */
+        vyberObjekt(id, e) {
+            if (this.editObjektId) return; // probíhá editace
+            const typ = this.engine.walls.has(id) ? 'wall' : this.engine.openings.has(id) ? 'opening' : null;
+            if (!typ) return;
+            // Kde plánek nevybírá (střecha, posun podkladu), nevybírá ani seznam
+            if (this.rezimStrecha || this.posunPodkladu) return;
+            if (this.nastroj !== 'vyber') this.nastroj = 'vyber';
+            // Na plánku jde kliknout jen na viditelné: řádek schovanou vrstvu zapne, jinak by výběr nebyl vidět
+            if (typ === 'wall' && !this.showSteny) { this.showSteny = true; this.toggleSteny(); }
+            if (typ === 'opening' && !this.showOtvory) { this.showOtvory = true; this.toggleOtvory(); }
+            this._vyberObjektKlikem(typ, id, !!(e && (e.shiftKey || e.ctrlKey || e.metaKey)));
         },
 
         // ═══════════════════════════════════════════════════════
@@ -6114,6 +6116,87 @@ function konceptKEditor(initialData) {
         },
 
         // ─── Historie (časová osa kroků) ───────────────────────
+        /**
+         * Hodnota pole platí ihned, bez potvrzování (CLAUDE.md, Formuláře editoru). Pole potřebuje jen :value a @change.
+         * - Po krátké pauze v psaní se odevzdá, pokud je hotová: není prázdná a sedí na min, max a pattern.
+         * - Stisk mimo pole ji odevzdá dřív, než klik změní výběr. Konva stisk zpracuje před odchodem z pole,
+         *   Alpine by do pole přepsal hodnotu nového výběru a rozepsaná by zmizela.
+         * - Rozepsaný text se pod rukama nemění, hodnotu upravenou setterem pole ukáže až po odchodu.
+         * - Celá úprava jednoho pole je v Zpět jeden krok.
+         */
+        _poleIhnedInit() {
+            // init() běží dvakrát (Alpine sám a x-init), dvě sady posluchačů by každou hodnotu odevzdaly dvakrát
+            if (this._poleIhnedZapojeno) return;
+            this._poleIhnedZapojeno = true;
+            const PAUZA_MS = 300;
+            const jePole = (n) => n?.matches?.('input[type=number], input[type=text], input:not([type])') && n.closest('.kk-editor');
+            const stavy = new WeakMap();
+            const stav = (el) => { if (!stavy.has(el)) stavy.set(el, {}); return stavy.get(el); };
+
+            const odevzdej = (el) => {
+                const s = stav(el);
+                clearTimeout(s.casovac);
+                s.casovac = null;
+                if (el.value === s.odevzdano) return;
+                s.odevzdano = el.value;
+                s.upraveno = undefined;
+                const krokPred = this.historie[this.historiePozice]?.id;
+                this._krokPole = s.krok;
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                this._krokPole = null;
+                const krokPo = this.historie[this.historiePozice]?.id;
+                if (krokPo !== krokPred) s.krok = krokPo;
+            };
+
+            document.addEventListener('focusin', (e) => {
+                if (jePole(e.target)) Object.assign(stav(e.target), { odevzdano: e.target.value, krok: undefined, upraveno: undefined });
+            });
+
+            document.addEventListener('input', (e) => {
+                const el = e.target;
+                if (!jePole(el)) return;
+                const s = stav(el);
+                if (document.activeElement !== el) s.odevzdano = undefined;
+                clearTimeout(s.casovac);
+                s.casovac = setTimeout(() => {
+                    s.casovac = null;
+                    const v = el.validity;
+                    if (!el.isConnected || !el.value || v.badInput || v.rangeUnderflow || v.rangeOverflow || v.patternMismatch) return;
+                    const psano = el.value;
+                    odevzdej(el);
+                    this.$nextTick(() => {
+                        if (document.activeElement !== el || el.value === psano) return;
+                        s.upraveno = el.value;
+                        el.value = psano;
+                    });
+                }, PAUZA_MS);
+            });
+
+            // Odevzdání z prohlížeče (odchod, Enter, šipky u pole) jde stejnou cestou, handlery dostanou jen náš change
+            document.addEventListener('change', (e) => {
+                if (!e.isTrusted || !jePole(e.target)) return;
+                e.stopImmediatePropagation();
+                odevzdej(e.target);
+            }, true);
+
+            document.addEventListener('focusout', (e) => {
+                const el = e.target;
+                if (!jePole(el)) return;
+                const s = stav(el);
+                if (s.casovac) odevzdej(el);
+                if (s.upraveno !== undefined && el.value === s.odevzdano) el.value = s.upraveno;
+                stavy.delete(el);
+            }, true);
+
+            document.addEventListener('pointerdown', (e) => {
+                const aktivni = document.activeElement;
+                if (!jePole(aktivni) || aktivni === e.target) return;
+                aktivni.blur();
+                // Odevzdání přestavělo tvary a zásahová plocha by byla do dalšího snímku prázdná, stisk by nic netrefil
+                this.stage?.draw();
+            }, true);
+        },
+
         _historieInit(aktualniId) {
             this._stavKroku = this.engine ? JSON.stringify(this.engine.toJSON()) : null;
             const i = this.historie.findIndex(k => k.id === aktualniId);
@@ -6154,6 +6237,15 @@ function konceptKEditor(initialData) {
             if (!this.engine) return false;
             const json = JSON.stringify(this.engine.toJSON());
             if (json === this._stavKroku) return false;
+            // Další hodnota v témže poli (_poleIhnedInit) přepíše jeho krok: jeden krok Zpět, jedna úprava do limitu tarifu.
+            // Krok, který už server má, se nepřepisuje, po delší pauze v psaní tak vznikne nový.
+            const krokPole = this.historie[this.historiePozice];
+            if (krokPole && krokPole.id === this._krokPole && this._neodeslaneKroky.includes(krokPole.id)) {
+                krokPole.data = JSON.parse(json);
+                krokPole.cas = new Date().toISOString();
+                this._stavKroku = json;
+                return true;
+            }
             // denní limit úprav tarifu (limit-tarifu.js) — nad limit se kresba vrátí
             if (this._limitPovolKrok?.() === false) return false;
             const krok = this._novyKrok(popis, JSON.parse(json));
@@ -6243,6 +6335,7 @@ function konceptKEditor(initialData) {
                 if (!resp.ok || !d.ok) throw new Error(d.message || ('HTTP ' + resp.status));
                 this.projektId = d.id;
                 this.projektNazev = nazev;
+                this.verze = 1;
                 localStorage.setItem('kv3_lastProjekt', String(d.id));
                 this.doplnKonceptDoSeznamu(d.id, nazev);
             } catch (e) {
@@ -6268,8 +6361,31 @@ function konceptKEditor(initialData) {
             select.value = String(id);
         },
 
+        /**
+         * Uložení jedno po druhém: dvě souběžná by poslala stejnou verzi a druhé by vypadalo jako
+         * změna odjinud. Co přijde během běžícího, uloží se hned po něm.
+         */
         async ulozit() {
+            if (this._ukladaniBezi) {
+                this._ulozitZnovu = true;
+                return this._ukladaniBezi;
+            }
+            this._ukladaniBezi = this._ulozitTed();
+            try {
+                await this._ukladaniBezi;
+            } finally {
+                this._ukladaniBezi = null;
+            }
+            if (this._ulozitZnovu) {
+                this._ulozitZnovu = false;
+                return this.ulozit();
+            }
+        },
+
+        async _ulozitTed() {
             if (!this.engine) return;
+            // Po konfliktu se neukládá, dokud uživatel nerozhodne. Kroky zůstávají neodeslané.
+            if (this._konfliktVerze != null) return;
             // rozkreslená práce bez konceptu → nejdřív ho založit, ať se neztratí
             if (!this.projektId) await this._zalozKoncept();
             if (!this.projektId) return;
@@ -6284,6 +6400,7 @@ function konceptKEditor(initialData) {
             const telo = {
                 data: this.engine.toJSON(), nazev: this.projektNazev, chat: this.chat,
                 aktualni: this.historie[this.historiePozice]?.id ?? null,
+                verze: this.verze,
             };
             if (kroky.length) {
                 telo.kroky = kroky;
@@ -6302,6 +6419,8 @@ function konceptKEditor(initialData) {
                     const odeslane = kroky.map(k => k.id);
                     this._neodeslaneKroky = this._neodeslaneKroky.filter(id => !odeslane.includes(id));
                     this._limitZeServeru?.(d.zbyva);
+                } else if (resp.status === 409) {
+                    this._konfliktUlozeni((await resp.json().catch(() => ({}))).verze);
                 } else if (resp.status === 402) {
                     // Denní limit úprav vyčerpaný jinde (druhá karta) — server dávku nepřijal.
                     // Kroky zůstávají neodeslané; nabídka předplatného, ne chyba.
@@ -6317,6 +6436,43 @@ function konceptKEditor(initialData) {
                 console.warn('Auto-save chyba:', e);
                 window.zalogujChybu?.(e, 'Koncept V3: autosave projektu', { projektId: this.projektId, verze: this.verze, akce: this.historie[this.historiePozice]?.popis, kroku: kroky.length });
             }
+        },
+
+        /**
+         * Koncept mezitím uložila jiná karta nebo jiný počítač. Uživatel rozhodne: načíst novější verzi,
+         * nebo ji přepsat tou svou. Do té doby se neukládá, takže se nic neztratí ani nepřepíše.
+         */
+        _konfliktUlozeni(verze) {
+            if (this._konfliktVerze != null) return;
+            this._konfliktVerze = verze ?? this.verze;
+            this._limitStyly?.();
+            const pozadi = document.createElement('div');
+            pozadi.id = 'kk-konflikt-dialog';
+            pozadi.className = 'kk-limit-pozadi';
+            pozadi.innerHTML = `
+                <div class="kk-limit-okno" role="alertdialog" aria-modal="true" aria-labelledby="kk-konflikt-nadpis">
+                    <h2 id="kk-konflikt-nadpis"></h2>
+                    <p></p>
+                    <div class="kk-limit-tlacitka">
+                        <button type="button" class="btn" data-konflikt="prepsat"></button>
+                        <button type="button" class="btn btn-primary" data-konflikt="nacist"></button>
+                    </div>
+                </div>`;
+            pozadi.querySelector('h2').textContent = preloz('koncept.konflikt_nadpis');
+            pozadi.querySelector('p').textContent = preloz('koncept.konflikt_text');
+            const prepsat = pozadi.querySelector('[data-konflikt=prepsat]');
+            const nacist = pozadi.querySelector('[data-konflikt=nacist]');
+            prepsat.textContent = preloz('koncept.konflikt_prepsat');
+            nacist.textContent = preloz('koncept.konflikt_nacist');
+            nacist.addEventListener('click', () => location.reload());
+            prepsat.addEventListener('click', () => {
+                this.verze = this._konfliktVerze;
+                this._konfliktVerze = null;
+                pozadi.remove();
+                this.ulozit();
+            });
+            document.body.appendChild(pozadi);
+            nacist.focus();
         },
 
         ulozitPanely() {
@@ -6335,9 +6491,11 @@ function konceptKEditor(initialData) {
                 tloustkaSteny: this.tloustkaSteny,
                 mapaPodklad: this.katastrMapaPodklad,
                 aiModel: this.aiModel,
-                showObjekty: this.showObjekty,
-                showKoty: this.showKoty,
-                showNodes: this.showNodes,
+                showSteny: this.showSteny,
+                showOtvory: this.showOtvory,
+                kotyVzdy: this.showKoty,
+                bodyVzdy: this.showNodes,
+                znackyVzdy: this.showZnacky,
                 showGrid: this.showGrid,
                 showMistnosti: this.showMistnosti,
                 showVybaveni: this.showVybaveni,
@@ -6373,12 +6531,25 @@ function konceptKEditor(initialData) {
             return this._prejdiNaKrok(this.historiePozice + 1);
         },
 
-        toggleObjekty() {
+        toggleSteny() {
             if (this.renderer) {
-                this.renderer.wallLayer.visible(this.showObjekty);
-                this.renderer.labelLayer.visible(this.showObjekty);
-                this.renderer.nodeLayer.visible(this.showObjekty);   // body spojů mají vlastní vrstvu
-                this.stage.batchDraw();
+                this.renderer.showSteny = this.showSteny;
+                // Schované nemá zůstat vybrané, jinak by ho smazala klávesa Delete naslepo
+                if (!this.showSteny) {
+                    this.renderer.selectedWalls.clear();
+                    this.renderer.selectedNodes.clear();
+                    this.renderer.selectedOddelovace.clear();
+                }
+                this.renderer.render();
+            }
+            this.ulozitNastaveni();
+        },
+
+        toggleOtvory() {
+            if (this.renderer) {
+                this.renderer.showOtvory = this.showOtvory;
+                if (!this.showOtvory) this.renderer.selectedOpenings.clear();
+                this.renderer.render();
             }
             this.ulozitNastaveni();
         },
@@ -6386,7 +6557,16 @@ function konceptKEditor(initialData) {
         toggleKoty() {
             if (this.renderer) {
                 this.renderer.showKoty = this.showKoty;
-                this.renderer.renderKoty(); this.renderer.resizeVysky();
+                this.renderer.render();   // rozměry místností jsou v jejich popiscích
+                this.renderer.resizeVysky();
+            }
+            this.ulozitNastaveni();
+        },
+
+        toggleZnacky() {
+            if (this.renderer) {
+                this.renderer.showIds = this.showZnacky;
+                this.renderer.renderIds();
             }
             this.ulozitNastaveni();
         },
@@ -6895,7 +7075,7 @@ function konceptKEditor(initialData) {
                     self.renderer.renderWalls();
                     self.renderer.renderNodes();
                     self.renderer.renderOpenings();
-                    if (self.renderer.showKoty) self.renderer.renderKoty();
+                    self.renderer.renderKoty();
                 }
                 // Překreslit katastr a mapy (uložené mimo renderer.render)
                 if (typeof self.katastrPrekreslitCanvas === 'function') {
@@ -7086,63 +7266,12 @@ function konceptKEditor(initialData) {
             if (!prof || !prof.body || prof.body.length === 0) return;
             if (!this.renderer || !this.renderer._fixedWgsCenter) return;
             const center = this.renderer._fixedWgsCenter;
-            const cosLat = Math.cos(center.lat * Math.PI / 180);
-            const METERS_PER_DEG = 111320;
 
-            // Převést body z WGS84 na scene coords.
-            // Wall v _build3d: scene.z = canvas.y / pxM (po ExtrudeGeometry +
-            // rotation.x=-PI/2 se y z 2D stane z v 3D s pozitivním znaménkem).
-            // Pro terrain stejně: canvas.y = -(lat - center.lat) * M_PER_DEG * pxM
-            // → scene.z (same as wall) = canvas.y / pxM = -(lat - center.lat) * M_PER_DEG.
-            const pts = prof.body.map(bod => {
-                const lat = bod[0], lon = bod[1], h = bod[2] || 0;
-                return {
-                    x: (lon - center.lon) * METERS_PER_DEG * cosLat,
-                    z: -(lat - center.lat) * METERS_PER_DEG,
-                    h,
-                };
-            });
-            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-            let minH = Infinity, maxH = -Infinity;
-            pts.forEach(p => {
-                if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
-                if (p.z < minZ) minZ = p.z; if (p.z > maxZ) maxZ = p.z;
-                if (p.h < minH) minH = p.h; if (p.h > maxH) maxH = p.h;
-            });
-            // Rozšířit bbox o 20 m
-            const PAD = 20;
-            minX -= PAD; maxX += PAD;
-            minZ -= PAD; maxZ += PAD;
-
-            // Grid resolution 2 m (odpovídá zhruba hustotě DMR 5G bodů)
-            const STEP = 2;
-            const cols = Math.max(2, Math.ceil((maxX - minX) / STEP) + 1);
-            const rows = Math.max(2, Math.ceil((maxZ - minZ) / STEP) + 1);
-
-            // Heightmap — IDW interpolation z profile body (3 nejbližší)
-            // Normalizujeme výšky k minH (terrain začíná na 0)
-            const heights = new Float32Array(cols * rows);
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const gx = minX + c * STEP;
-                    const gz = minZ + r * STEP;
-                    // Najít 3 nejbližší body
-                    const dists = pts.map(p => ({
-                        h: p.h,
-                        d: Math.hypot(p.x - gx, p.z - gz)
-                    })).sort((a, b) => a.d - b.d).slice(0, 3);
-                    if (dists[0].d < 0.5) {
-                        heights[r * cols + c] = dists[0].h;
-                    } else {
-                        let sumW = 0, sumH = 0;
-                        for (const d of dists) {
-                            const w = 1 / (d.d * d.d + 0.01);
-                            sumW += w; sumH += d.h * w;
-                        }
-                        heights[r * cols + c] = sumH / sumW;
-                    }
-                }
-            }
+            // Stejná mřížka jako ve výpočtu zeminy. Scéna: x = východ, z = canvas.y / pxM = -(lat - center.lat) * M_PER_DEG.
+            const mrizka = window.Zemina.mrizkaTerenu(prof.body, center);
+            const { minX, minY: minZ, sirka: bboxSirka, vyska: bboxVyska, sloupcu: cols, radku: rows, vysky: heights, minH } = mrizka;
+            const maxX = minX + bboxSirka, maxZ = minZ + bboxVyska;
+            const STEP = bboxSirka / (cols - 1);
 
             // Odstranit starý terrain / grid
             if (_3d.terrain) {
@@ -7170,50 +7299,14 @@ function konceptKEditor(initialData) {
             // Aplikovat výšky na vertices
             const posAttr = geometry.attributes.position;
             for (let i = 0; i < posAttr.count; i++) {
-                // Find grid index by position
-                const px = posAttr.getX(i);
-                const pz = posAttr.getZ(i);
-                const c = Math.round((px - minX) / STEP);
-                const r = Math.round((pz - minZ) / STEP);
-                const ci = Math.max(0, Math.min(cols - 1, c));
-                const ri = Math.max(0, Math.min(rows - 1, r));
-                const h = heights[ri * cols + ci];
-                posAttr.setY(i, h - minH); // normalizováno k 0
+                posAttr.setY(i, heights[i] - minH); // vrcholy jdou po řádcích jako mřížka, normalizováno k 0
             }
             posAttr.needsUpdate = true;
             geometry.computeVertexNormals();
 
-            // Vertexy bez colors — shader pracuje s normálami + maskou parcely.
-            // Příprava masky v canvas: 1 = uvnitř parcely, 0 = mimo, AA edges.
-            const MASK_RES = 1024;
-            const canvas2d = document.createElement('canvas');
-            canvas2d.width = MASK_RES;
-            canvas2d.height = MASK_RES;
-            const ctx2d = canvas2d.getContext('2d');
-            ctx2d.fillStyle = '#000';
-            ctx2d.fillRect(0, 0, MASK_RES, MASK_RES);
-            ctx2d.fillStyle = '#fff';
+            // Vertexy bez colors — shader pracuje s normálami + maskou parcely (teren-3d.js).
             const bboxW = maxX - minX, bboxH = maxZ - minZ;
-            const toMaskX = (sceneX) => ((sceneX - minX) / bboxW) * MASK_RES;
-            const toMaskY = (sceneZ) => ((sceneZ - minZ) / bboxH) * MASK_RES;
-            for (const p of (this.katastrParcely || [])) {
-                if (!p.polygon_wgs84 || p.polygon_wgs84.length < 3) continue;
-                ctx2d.beginPath();
-                p.polygon_wgs84.forEach(([lat, lon], i) => {
-                    const sx = (lon - center.lon) * METERS_PER_DEG * cosLat;
-                    const sz = -(lat - center.lat) * METERS_PER_DEG;
-                    const mx = toMaskX(sx), my = toMaskY(sz);
-                    if (i === 0) ctx2d.moveTo(mx, my);
-                    else ctx2d.lineTo(mx, my);
-                });
-                ctx2d.closePath();
-                ctx2d.fill();
-            }
-            const maskTexture = new THREE.CanvasTexture(canvas2d);
-            maskTexture.magFilter = THREE.LinearFilter;
-            maskTexture.minFilter = THREE.LinearFilter;
-            maskTexture.flipY = false;  // canvas má Y dolů, UV také — netřeba flip
-            maskTexture.needsUpdate = true;
+            const maskTexture = window.Teren3d.maskaParcel(this._parcelyVeScene(), minX, minZ, bboxW, bboxH);
             _3d.terrainMask = maskTexture;
             _3d.terrainMaskRange = { minX, minZ, bboxW, bboxH };
 
@@ -7225,34 +7318,7 @@ function konceptKEditor(initialData) {
             });
             mat.onBeforeCompile = (shader) => {
                 this._materialSJamou(shader);
-                shader.uniforms.uMask = { value: _3d.terrainMask };
-                shader.uniforms.uMaskMin = { value: new THREE.Vector2(minX, minZ) };
-                shader.uniforms.uMaskSize = { value: new THREE.Vector2(bboxW, bboxH) };
-                shader.vertexShader = 'varying vec3 vWorldPosCustom;\nvarying vec3 vNormalCustom;\n'
-                    + shader.vertexShader.replace(
-                        '#include <fog_vertex>',
-                        `#include <fog_vertex>
-vWorldPosCustom = (modelMatrix * vec4(transformed, 1.0)).xyz;
-vNormalCustom = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
-                    );
-                shader.fragmentShader = 'uniform sampler2D uMask;\nuniform vec2 uMaskMin;\nuniform vec2 uMaskSize;\nvarying vec3 vWorldPosCustom;\nvarying vec3 vNormalCustom;\n'
-                    + shader.fragmentShader.replace(
-                        '#include <color_fragment>',
-                        `#include <color_fragment>
-{
-    vec2 uv = (vWorldPosCustom.xz - uMaskMin) / uMaskSize;
-    float mask = 0.0;
-    if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
-        mask = texture2D(uMask, uv).r;
-    }
-    vec3 nrm = normalize(vNormalCustom);
-    float slope = sqrt(max(0.0, 1.0 - abs(nrm.y) * abs(nrm.y)));
-    float t = pow(slope, 0.4);
-    vec3 insideCol = mix(vec3(0.663, 0.761, 0.522), vec3(0.435, 0.322, 0.204), t);
-    vec3 outsideCol = vec3(0.9, 0.9, 0.9);
-    diffuseColor.rgb = tuVzorekNaLin(mix(outsideCol, insideCol, mask));
-}`
-                    );
+                window.Teren3d.shaderBarev(shader, _3d.terrainMask, minX, minZ, bboxW, bboxH);
             };
             const terrain = new THREE.Mesh(geometry, mat);
             terrain.receiveShadow = true;
