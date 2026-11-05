@@ -338,7 +338,7 @@ return [
         'skladba_deska' => 'Paquete con losa',
         'prodlouzit_tip' => 'Donde la casa queda sobre el terreno, el cimiento se prolonga hasta ella. En la parte baja de la pendiente sale más alto y bajo la casa se rellena más. Desactívalo si parte de la casa debe quedar en el aire: ahí no se excava y el panel indica que falta cimiento.',
         'prodlouzit' => 'Prolongar cimiento al suelo',
-        'pod_dum_tip' => 'Con qué se rellena bajo la casa hasta la base de la estructura: grava compactada o tierra excavada adecuada. La tierra vegetal no sirve.',
+        'pod_dum_tip' => 'Con qué se rellena bajo la casa hasta la base de la estructura. Normalmente tierra excavada compactada; la grava sustituye a la arcilla y al limo plástico. La tierra vegetal no sirve.',
         'pod_dum' => 'Bajo la casa',
         'pod_dum_sterk' => 'Grava',
         'pod_dum_vykopek' => 'Tierra excavada',

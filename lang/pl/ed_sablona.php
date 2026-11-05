@@ -338,7 +338,7 @@ return [
         'skladba_deska' => 'Grubość z płytą',
         'prodlouzit_tip' => 'Tam, gdzie dom jest nad terenem, fundament sięga aż do niego. Po dolnej stronie zbocza jest więc wyższy, a pod domem trzeba więcej zasypać. Wyłącz, jeśli część domu ma pozostać w powietrzu: wtedy nic się tam nie kopie, a panel pokaże brak fundamentu.',
         'prodlouzit' => 'Przedłuż fundament do gruntu',
-        'pod_dum_tip' => 'Czym uzupełnić pod domem do spodu konstrukcji: zagęszczonym żwirem lub odpowiednim urobkiem. Humus się nie nadaje.',
+        'pod_dum_tip' => 'Czym uzupełnić pod domem do spodu konstrukcji. Zwykle zagęszczonym urobkiem, ił i glinę plastyczną zastępuje żwir. Humus się nie nadaje.',
         'pod_dum' => 'Podsypka',
         'pod_dum_sterk' => 'Żwir',
         'pod_dum_vykopek' => 'Urobek',

@@ -338,7 +338,7 @@ return [
         'skladba_deska' => 'Dicke mit Platte',
         'prodlouzit_tip' => 'Wo das Haus über dem Gelände liegt, reicht das Fundament bis zu ihm. An der unteren Hangseite wird es dadurch höher und unter dem Haus wird mehr aufgefüllt. Schalte es aus, wenn ein Teil des Hauses frei schweben soll: Dort wird nicht gegraben und das Panel meldet ein fehlendes Fundament.',
         'prodlouzit' => 'Fundament bis zum Boden',
-        'pod_dum_tip' => 'Womit unter dem Haus bis zur Unterkante der Konstruktion aufgefüllt wird: verdichteter Kies oder geeigneter Aushub. Oberboden eignet sich nicht.',
+        'pod_dum_tip' => 'Womit unter dem Haus bis zur Unterkante der Konstruktion aufgefüllt wird. Meist verdichteter Aushub, Ton und plastischen Lehm ersetzt Kies. Oberboden eignet sich nicht.',
         'pod_dum' => 'Unter dem Haus',
         'pod_dum_sterk' => 'Kies',
         'pod_dum_vykopek' => 'Aushub',

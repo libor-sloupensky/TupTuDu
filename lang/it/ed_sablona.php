@@ -338,7 +338,7 @@ return [
         'skladba_deska' => 'Spess. platea',
         'prodlouzit_tip' => 'Dove la casa è sopra il terreno, la fondazione arriva fino a lei. Sul lato a valle del pendio risulta più alta e sotto la casa si riempie di più. Disattiva se una parte della casa deve restare sollevata: lì non si scava e il pannello segnala che manca la fondazione.',
         'prodlouzit' => 'Prolunga fondazione a terra',
-        'pod_dum_tip' => 'Con cosa riempire sotto la casa fino alla base della struttura: ghiaia compattata o terra di scavo adatta. Il terreno vegetale non è adatto.',
+        'pod_dum_tip' => 'Con cosa riempire sotto la casa fino alla base della struttura. Di solito terra di scavo compattata, la ghiaia sostituisce argilla e limo plastico. Il terreno vegetale non è adatto.',
         'pod_dum' => 'Sotto la casa',
         'pod_dum_sterk' => 'Ghiaia',
         'pod_dum_vykopek' => 'Terra di scavo',

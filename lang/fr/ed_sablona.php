@@ -338,7 +338,7 @@ return [
         'skladba_deska' => 'Épais. radier',
         'prodlouzit_tip' => 'Là où la maison est au-dessus du terrain, la fondation monte jusqu’à elle. Du côté aval d’une pente, elle est donc plus haute et le remblai sous la maison plus important. Désactivez cette option si une partie de la maison doit rester en l’air : rien n’y est creusé et le panneau signale une fondation manquante.',
         'prodlouzit' => 'Prolonger la fondation au sol',
-        'pod_dum_tip' => 'Matériau de remblai sous la maison jusqu’au bas de la structure : gravier compacté ou déblais adaptés. La terre végétale ne convient pas.',
+        'pod_dum_tip' => 'Matériau de remblai sous la maison jusqu’au bas de la structure. Généralement des déblais compactés, le gravier remplace l’argile et le limon plastique. La terre végétale ne convient pas.',
         'pod_dum' => 'Sous la maison',
         'pod_dum_sterk' => 'Gravier',
         'pod_dum_vykopek' => 'Déblais',
