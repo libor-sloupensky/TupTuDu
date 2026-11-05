@@ -67,9 +67,9 @@
          * Kresby podlaží jako canvasy se stejným měřítkem. Vše proběhne v jednom běhu, takže se na
          * obrazovce nic nemihne. Aktivní podlaží, výběr i pohled se vrátí, kresba se nemění.
          * Co na výkresu bude, řídí přepínače zobrazení (panely Objekty a Parcela, tytéž jsou v sekci Export).
-         * bezCiselParcel: čísla sousedních parcel by prozradila polohu, do odkazu nesmí (modules/sdileni.md).
+         * podlePohledu: výřez a přiblížení jako v editoru, jinak celý dům a parcela (odkaz, a když je otevřené 3D).
          */
-        _kresbyPodlazi(ids, { bezCiselParcel = false } = {}) {
+        _kresbyPodlazi(ids, { podlePohledu = false } = {}) {
             const e = this.engine, r = this.renderer, st = this.stage;
             const puvodne = {
                 aktivni: e.dum.aktivni, scale: st.scaleX(), x: st.x(), y: st.y(), sirka: st.width(), vyska: st.height(),
@@ -81,11 +81,12 @@
             const skryte = [r.podkladLayer, r.spodekLayer, r.strechaLayer, r.selectionLayer, r.kotyVyberuLayer].filter(Boolean);
             const viditelnost = skryte.map(v => v.visible());
             // Z vrstvy katastru jde na výkres jen kresba, mapový podklad nikdy
-            const schovaneKatastr = r.katastrLayer.getChildren(n => n.getAttr('_mapTile') || (bezCiselParcel && n.getClassName() === 'Text'));
+            const schovaneKatastr = r.katastrLayer.getChildren(n => n.getAttr('_mapTile'));
+            const pohled = podlePohledu && !this.rezim3d && st.width() > 1 && st.height() > 1;
             // Parcela a její stavby jsou celé na výkresu, sousedé a výškové body jen v tomhle výřezu
             const rozsah = r.katastrLayer.getChildren(n => n.getAttr('_rozsahExportu')).map(n => n.points());
             const okoli = this.katastrZobrazitSousedy && this.katastrParcely.length && this._katastrOkolni?.length ? OKOLI_SOUSEDU : 0;
-            const pxNaMetr = this._pxNaMetrVykresu(rozsah, MAX_STRANA / (ids.length > 1 ? 2 : 1));
+            const pxNaMetr = pohled ? puvodne.scale * e.PX_PER_M : this._pxNaMetrVykresu(rozsah, MAX_STRANA / (ids.length > 1 ? 2 : 1));
             const okraj = OKRAJ + okoli * pxNaMetr;
             const s = pxNaMetr / e.PX_PER_M;
             const vysledek = [];
@@ -95,8 +96,10 @@
                 schovaneKatastr.forEach(n => n.visible(false));
                 this.rezimStrecha = false;
                 this.strechaHrana = null;
-                st.scale({ x: s, y: s });
-                st.position({ x: 0, y: 0 });
+                if (!pohled) {
+                    st.scale({ x: s, y: s });
+                    st.position({ x: 0, y: 0 });
+                }
                 for (const id of ids) {
                     if (e.dum.aktivni !== id) e.prepniPodlazi(id);
                     r.selectedWalls.clear(); r.selectedNodes.clear(); r.selectedOpenings.clear(); r.selectedVybaveni.clear();
@@ -105,6 +108,10 @@
                     r.render();
                     r.poZmeneZoomu();
                     skryte.forEach(v => v.visible(false));   // render si vrstvy mohl přepnout
+                    if (pohled) {
+                        vysledek.push({ id, pxNaMetr, canvas: e.walls.size ? st.toCanvas({ x: 0, y: 0, width: st.width(), height: st.height(), pixelRatio: ZVETSENI }) : null });
+                        continue;
+                    }
                     const t = st.getAbsoluteTransform().copy();
                     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                     const bod = (p) => {
@@ -166,7 +173,7 @@
             const sirkaTextu = g.measureText(popis).width;
             g.fillText(popis, prava, zy - 15 * m);
             g.font = `700 ${24 * m}px ${pismo}`;
-            g.fillText('tuptudu.com', prava, zy + 15 * m);
+            g.fillText('www.tuptudu.com', prava, zy + 15 * m);
             if (this._znackaExportu) {
                 const v = 54 * m, s = v * this._znackaExportu.naturalWidth / this._znackaExportu.naturalHeight;
                 g.imageSmoothingQuality = 'high';
@@ -210,8 +217,11 @@
                 g.fillText(e.podlaziPodleId(k.id)?.nazev || '', x + kraj, y + popis / 2);
                 g.drawImage(k.canvas, x + (sirkaBunky - k.canvas.width) / 2, y + popis);
             });
-            // Měřítko 1 m a značka
-            const metr = platne[0].pxNaMetr * ZVETSENI;
+            // Úsečka měřítka v délce, která se vejde vedle značky a není droboučká, a značka
+            const naMetr = platne[0].pxNaMetr * ZVETSENI;
+            let delka = naMetr > sirka / 4 ? 0.1 : 1;
+            while (delka * naMetr < 30 * m && delka < 100) delka *= 10;
+            const metr = delka * naMetr, popisDelky = delka < 1 ? '10 cm' : delka + ' m';
             const zy = cv.height - zapati / 2;
             g.strokeStyle = '#374151';
             g.lineWidth = 3 * m;
@@ -220,7 +230,7 @@
             g.stroke();
             g.fillStyle = '#374151';
             g.font = `500 ${26 * m}px ${pismo}`;
-            g.fillText(this.renderer.showKoty ? preloz('ed_nastroje.export.meritko_koty') : '1 m', kraj + metr + 12 * m, zy);
+            g.fillText(this.renderer.showKoty ? preloz('ed_nastroje.export.meritko_koty', { delka: popisDelky }) : popisDelky, kraj + metr + 12 * m, zy);
             this._kresliZnacku(g, cv.width, zy, m, pismo);
             return cv;
         },
@@ -233,7 +243,7 @@
                 await this._pripravZnacku();
                 const e = this.engine;
                 const ids = vsechna ? [...e.dum.podlazi].reverse().map(p => p.id) : [e.dum.aktivni];
-                const list = this._listPudorysu(this._kresbyPodlazi(ids));
+                const list = this._listPudorysu(this._kresbyPodlazi(ids, { podlePohledu: true }));
                 if (!list) { this._dumHlaska(preloz('ed_nastroje.export.neni_co_exportovat')); return; }
                 await this._stahni(list, this._nazevSouboru(vsechna ? preloz('ed_nastroje.export.soubor_pudorysy') : preloz('ed_nastroje.export.soubor_pudorys', { podlazi: e.podlaziPodleId(ids[0])?.nazev || ids[0] })));
             } catch (err) {
@@ -373,7 +383,9 @@
                 diry: this._dirySnizeni().map(d => d.poly.map(q => [+q.x.toFixed(3), +q.y.toFixed(3)])),
                 skupiny: [...e.dum.podlazi].reverse().map(p => ({ id: p.id, nazev: p.nazev })),
                 objekty,
-                teren: this._terenProOdkaz(),
+                teren: this.zobrazTeren3d ? this._terenProOdkaz() : null,
+                bezZeme: !this.zobrazTeren3d,
+                mrizkaTerenu: this.zobrazMrizkuTerenu,
                 materialy,
                 textury,
                 meshe: [...kbelik.values()].map(k => ({
@@ -487,7 +499,7 @@
                 await this._pripravZnacku();
                 const e = this.engine;
                 const podlazi = [...e.dum.podlazi].reverse();
-                const kresby = this._kresbyPodlazi(podlazi.map(p => p.id), { bezCiselParcel: true });
+                const kresby = this._kresbyPodlazi(podlazi.map(p => p.id));
                 const fd = new FormData();
                 const zahrnuta = [];
                 for (const k of kresby) {

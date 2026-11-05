@@ -72,7 +72,7 @@ return [
     // Export obrázků; soubor_* jsou části názvu staženého souboru
     'export' => [
         'obrazek_selhal' => 'Nie udało się utworzyć obrazu',
-        'meritko_koty' => '1 m  ·  wymiary w cm',
+        'meritko_koty' => ':delka  ·  wymiary w cm',
         'podtitul' => 'Narzędzie online do projektowania domu i remontu',
         'neni_co_exportovat' => 'Nie ma czego eksportować, kondygnacja nie ma ścian.',
         'soubor_projekt' => 'projekt',

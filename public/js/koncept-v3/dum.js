@@ -2790,10 +2790,14 @@
                     }
                 }
             }
-            const jamaVidet = !!(ukazat && _3d.jama);
+            const teren = this.zobrazTeren3d, mrizka = teren && this.zobrazMrizkuTerenu;
+            const jamaVidet = !!(teren && ukazat && _3d.jama);
             if (_3d.jama) _3d.jama.visible = jamaVidet;
             window.Teren3d.nastavJamu(u, jamaVidet ? _3d.jama : null);
-            if (_3d.grid) _3d.grid.visible = !jamaVidet;
+            // Přepínače Terén a Mřížka terénu, tudy jde každá stavba scény i změna viditelnosti
+            for (const o of [_3d.terrain, _3d.ground, _3d.maskaZeme]) if (o) o.visible = teren;
+            if (_3d.gridLines) _3d.gridLines.visible = mrizka;
+            if (_3d.grid) _3d.grid.visible = mrizka && !jamaVidet;
         },
 
         /** Převažující směr stěn (radiány, 0–90°): podle něj se natočí mřížka jámy, aby hrany nebyly zubaté. */

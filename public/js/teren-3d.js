@@ -15,6 +15,8 @@
         g.fillStyle = '#000';
         g.fillRect(0, 0, ROZLISENI, ROZLISENI);
         g.fillStyle = '#fff';
+        // Sčítání: na společné hraně se vyhlazené okraje dvou parcel doplní do plné bílé, jinak tu zůstane čára
+        g.globalCompositeOperation = 'lighter';
         for (const poly of parcely) {
             if (poly.length < 3) continue;
             g.beginPath();

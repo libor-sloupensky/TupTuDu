@@ -80,7 +80,7 @@ async function main() {
             const c = document.createElement('canvas'); c.width = c.height = 32; const gc = c.getContext('2d'); gc.fillStyle = '#ff0000'; gc.fillRect(0, 0, 32, 32);
             const dlazdice = new Konva.Image({ image: c, x: -5000, y: -5000, width: 10000, height: 10000, listening: false }); dlazdice.setAttr('_mapTile', true); r.katastrLayer.add(dlazdice); dlazdice.moveToBottom();
             const puv = d.stage.toCanvas; let textu = -1, textuOdkaz = -1, dlazdiceVidet = null; const zachyt = (kam) => { d.stage.toCanvas = function (o) { const t = r.katastrLayer.getChildren(n => n.getClassName() === 'Text' && n.visible()).length; if (kam === 'png') textu = t; else textuOdkaz = t; dlazdiceVidet = dlazdice.visible(); return puv.call(this, o); }; };
-            zachyt('png'); const s = zmer(); zachyt('odkaz'); const odkaz = zmer({ bezCiselParcel: true }); d.stage.toCanvas = puv;
+            zachyt('png'); const s = zmer(); zachyt('odkaz'); const odkaz = zmer(); d.stage.toCanvas = puv;
             window.__k = d._listPudorysu([{ id: d.engine.dum.aktivni, pxNaMetr: s.px, canvas: s.c }]);
             const data = s.c.getContext('2d').getImageData(0, 0, s.w, s.h).data; let cervena = 0; for (let i = 0; i < data.length; i += 16) { if (data[i] > 200 && data[i + 1] < 60 && data[i + 2] < 60 && data[i + 3] > 200) cervena++; }
             const poSnimku = dlazdice.visible(), popisekEditor = r.katastrLayer.getChildren(n => n.getClassName() === 'Text' && n.visible()).length;
@@ -93,7 +93,7 @@ async function main() {
         await ulozCanvas('window.__k', 'export-parcela.png');
         kontrola('zaškrtnutá parcela s okolím obrázek zvětší, vypnutá ho vrátí', parcela.s[0] > parcela.bez[0] * 2 && parcela.s[2] === 60 && parcela.vypnuto.join() === parcela.bez.slice(0, 2).join(), JSON.stringify(parcela));
         kontrola('mapový podklad na obrázku není a po snímku se vrátí', parcela.cervena === 0 && parcela.dlazdiceVidet === false && parcela.poSnimku === true, JSON.stringify({ c: parcela.cervena, v: parcela.dlazdiceVidet, po: parcela.poSnimku }));
-        kontrola('číslo sousední parcely jde do PNG, do odkazu ne', parcela.textu === 1 && parcela.textuOdkaz === 0 && parcela.popisekEditor === 1, JSON.stringify({ png: parcela.textu, odkaz: parcela.textuOdkaz, editor: parcela.popisekEditor }));
+        kontrola('číslo sousední parcely je v PNG i v odkazu', parcela.textu === 1 && parcela.textuOdkaz === 1 && parcela.popisekEditor === 1, JSON.stringify({ png: parcela.textu, odkaz: parcela.textuOdkaz, editor: parcela.popisekEditor }));
         kontrola('velká parcela sníží měřítko, obrázek zůstane v limitu', parcela.velka[2] < 60 && Math.max(parcela.velka[0], parcela.velka[1]) <= 8800, JSON.stringify(parcela.velka));
         // Body se kreslí přímo: dosazení do vyskovyProfil by editor vzal jako nový terén a změnil výšku domu
         const vysky = await p.vyhodnot(`(() => { const d = ${D}; const mrizka = d.showGrid; d.showGrid = false; d.toggleGrid();
@@ -104,9 +104,23 @@ async function main() {
         kontrola('přepínač Výška platí i pro obrázek', vysky.s > 20 && vysky.bez === 0, JSON.stringify(vysky));
         const prepinace = await p.vyhodnot(`(async () => { const d = ${D}; d.panelOpen.export = true; document.querySelector('[data-sekce-export]').open = true; await new Promise(r => setTimeout(r, 400)); const vidim = () => [...document.querySelectorAll('[data-export-parcela] label')].filter(l => l.offsetParent).map(l => l.textContent.trim()).join(); const s = vidim(); const nadpis = document.querySelector('[data-export-parcela] > div').textContent; document.querySelector('[data-sekce-export]').scrollIntoView(); await new Promise(r => setTimeout(r, 300)); const r = document.querySelector('[data-export-parcela]').getBoundingClientRect(); const pretek = [...document.querySelectorAll('[data-export-parcela] label')].some(l => l.getBoundingClientRect().right > r.right + 0.5); const pole = [...document.querySelectorAll('details.kk-section label')].filter(x => x.textContent.trim() === 'Sousedé').map(l => l.querySelector('input')); pole[1].click(); await new Promise(r => setTimeout(r, 200)); const shoda = pole.map(i => i.checked); pole[1].click(); return { s, nadpis, pretek, shoda, oddelene: !document.querySelector('[data-export-prepinace] [x-model=katastrZobrazitParcely]') }; })()`);
         await p.snimek(path.join(vystup, 'export-prepinace.png'));
-        kontrola('v Exportu je samostatný odstavec parcely, nastavení je společné s panelem', prepinace.s === 'Mřížka,Parcely,Stavby,Sousedé,Výška' && prepinace.nadpis.includes('Parcela') && !prepinace.pretek && prepinace.shoda[0] === prepinace.shoda[1] && prepinace.shoda[0] === false && prepinace.oddelene, JSON.stringify(prepinace));
+        kontrola('v Exportu je samostatný odstavec parcely, nastavení je společné s panelem', prepinace.s === 'Mřížka,Parcely,Stavby,Sousedé,Výška,Terén,Mřížka terénu' && prepinace.nadpis.includes('Parcela') && !prepinace.pretek && prepinace.shoda[0] === prepinace.shoda[1] && prepinace.shoda[0] === false && prepinace.oddelene, JSON.stringify(prepinace));
         const bezParcely = await p.vyhodnot(`(async () => { const d = ${D}; d.katastrParcely = []; d._katastrOkolni = []; d.renderer._fixedWgsCenter = null; d.katastrPrekreslitCanvas(); await new Promise(r => setTimeout(r, 200)); const v = [...document.querySelectorAll('[data-export-parcela] label')].filter(l => l.offsetParent).map(l => l.textContent.trim()).join(); return { v, nadpis: document.querySelector('[data-export-parcela] > div').textContent }; })()`);
-        kontrola('bez parcely zbývá jen Mřížka', bezParcely.v === 'Mřížka' && bezParcely.nadpis === 'Mřížka:', JSON.stringify(bezParcely));
+        kontrola('bez parcely zbývá mřížka a terén', bezParcely.v === 'Mřížka,Terén,Mřížka terénu' && bezParcely.nadpis === 'Mřížka a terén:', JSON.stringify(bezParcely));
+
+        console.log('\n1b) Výřez podle pohledu v editoru');
+        const pohledEditoru = await p.vyhodnot(`(async () => { const d = ${D}; const st = d.stage; const puv = { s: st.scaleX(), x: st.x(), y: st.y() }; const sirka = st.width(), vyska = st.height();
+            st.scale({ x: puv.s * 3, y: puv.s * 3 }); st.position({ x: puv.x * 3 - sirka, y: puv.y * 3 - vyska }); d.renderer.poZmeneZoomu();
+            const stav = { s: st.scaleX(), x: st.x(), y: st.y() };
+            let stazeny = null; const stahni = d._stahni; d._stahni = async (cv) => { stazeny = cv; }; await d.exportPudorys(false); d._stahni = stahni; window.__k = stazeny;
+            const v = d._kresbyPodlazi([d.engine.dum.aktivni], { podlePohledu: true })[0], cely = d._kresbyPodlazi([d.engine.dum.aktivni])[0];
+            const po = { s: st.scaleX(), x: st.x(), y: st.y() };
+            st.scale({ x: puv.s, y: puv.s }); st.position({ x: puv.x, y: puv.y }); d.renderer.poZmeneZoomu();
+            return { sirka, vyska, v: [v.canvas.width, v.canvas.height], px: v.pxNaMetr, ocekavanePx: stav.s * d.engine.PX_PER_M, cely: [cely.canvas.width, cely.pxNaMetr], stazeny: stazeny.width, stejnyStav: JSON.stringify(po) === JSON.stringify(stav) }; })()`);
+        await ulozCanvas('window.__k', 'export-priblizeni.png');
+        kontrola('obrázek má výřez a přiblížení jako editor, pohled se nezmění, odkaz dál bere celý dům', pohledEditoru.v[0] === pohledEditoru.sirka * 2 && pohledEditoru.v[1] === pohledEditoru.vyska * 2 && Math.abs(pohledEditoru.px - pohledEditoru.ocekavanePx) < 1e-6 && pohledEditoru.stazeny === Math.max(900, pohledEditoru.sirka * 2) && pohledEditoru.stejnyStav && pohledEditoru.cely[1] === 60, JSON.stringify(pohledEditoru));
+        const maska = await p.vyhodnot(`(() => { const t = Teren3d.maskaParcel([[[0, 0], [50, 0], [60, 100], [0, 100]], [[50, 0], [100, 0], [100, 100], [60, 100]]], 0, 0, 100, 100); const g = t.image.getContext('2d'); let nejmene = 255; for (let r = 5; r < 1019; r += 7) { const x = Math.round((50 + 10 * r / 1024) / 100 * 1024); for (let i = -2; i <= 2; i++) nejmene = Math.min(nejmene, g.getImageData(x + i, r, 1, 1).data[0]); } return nejmene; })()`);
+        kontrola('mezi sousedními parcelami v masce terénu není šev', maska === 255, String(maska));
 
         const popisky = await p.vyhodnot(`(() => { const d = ${D}; const st = d.stage; const puv = st.toCanvas; const nalezene = []; d.naPodlazi('P2'); const srafPred = d.renderer.schodyLayer.getChildren().filter(n => n.getClassName() === 'Group' && n.clipFunc()).length; d.naPodlazi(${JSON.stringify(pred.aktivni)}); st.toCanvas = function (c) { for (const n of d.renderer.labelLayer.find('Text')) { if (/^[WOD]\\d+$/.test(n.text()) && n.isVisible()) nalezene.push(n.text()); } for (const n of d.renderer.schodyLayer.getChildren()) { if (n.getClassName() === 'Group' && n.clipFunc()) nalezene.push('nepodepřená'); } return puv.call(this, c); }; d.renderer.showIds = false; d.renderer.render(); d._kresbyPodlazi([...d.engine.dum.podlazi].map(x => x.id)); st.toCanvas = puv; d.renderer.showIds = ${pred.ids}; d.renderer.render(); return { nalezene, srafPred }; })()`);
         kontrola('se schovanými značkami v obrázku nejsou popisky stěn a otvorů, šrafy nepodepřených stěn nikdy (v editoru šrafy jsou)', popisky.nalezene.length === 0 && popisky.srafPred > 0, JSON.stringify(popisky));
@@ -204,6 +218,54 @@ async function main() {
         kontrola('s viditelnými podlažími se terén v odkazu zavře', vykopZpet === 0);
         kontrola('prohlížeč terén ukáže a uvnitř domu ho vyřízne', pohledOdkazu.teren && pohledOdkazu.ve && pohledOdkazu.vnitrek === 1, JSON.stringify(pohledOdkazu));
         await p.snimek(path.join(vystup, 'sdileni-teren.png'));
+
+        console.log('\n3c) Přepínače Terén a Mřížka terénu');
+        await p.jdiNa(urlEditoru);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        // Dvě sousední parcely se šikmou společnou hranou
+        await p.vyhodnot(`(async () => { const d = ${D}; d.katastrParcely = [{ cislo: 't1', label: 't1', centroid_wgs84: { lat: 50.0002, lon: 15 }, polygon_wgs84: [[49.9998, 14.9997], [50.0006, 14.9997], [50.0006, 15.0002], [49.9998, 15.0005]] }, { cislo: 't2', label: 't2', centroid_wgs84: { lat: 50.0002, lon: 15.0006 }, polygon_wgs84: [[49.9998, 15.0005], [50.0006, 15.0002], [50.0006, 15.0009], [49.9998, 15.0009]] }]; d.renderer._fixedWgsCenter = { lat: 50, lon: 15 };
+            const o = []; const M = 111320, c = Math.cos(50 * Math.PI / 180);
+            for (let i = -30; i <= 30; i++) for (let j = -30; j <= 30; j++) o.push([50 + j * 2 / M, 15 + i * 2 / (M * c), 400 + i * 0.1]);
+            d.vyskovyProfil = { body: o, vyska_min: 397, vyska_max: 403, vyskovy_rozdil: 6 }; d._zalozZaklady(); d._selectionTick++; d.panelOpen.export = true; document.querySelector('[data-sekce-export]').open = true; await d.prepni3d(); return true; })()`);
+        await pauza(1500);
+        const snimek3d = async (soubor) => { await p.vyhodnot(`(async () => { const d = ${D}; const stahni = d._stahni; d._stahni = async (cv) => { window.__k3 = cv; }; await d.export3d(); d._stahni = stahni; return true; })()`); await ulozCanvas('window.__k3', soubor); };
+        const stavTerenu = () => p.vyhodnot(`(() => { const d = ${D}, t = window._kk3d; return { zap: d.zobrazTeren3d, mriz: d.zobrazMrizkuTerenu, plocha: t.terrain?.visible, cary: t.gridLines?.visible }; })()`);
+        const klikPole = (model) => p.vyhodnot(`(() => { document.querySelector('[data-export-parcela] input[x-model=${model}]').click(); return true; })()`);
+        const vychozi = await stavTerenu();
+        await snimek3d('export-3d-teren.png');
+        kontrola('výchozí: terén je, mřížka terénu ne', vychozi.zap === true && vychozi.mriz === false && vychozi.plocha === true && vychozi.cary === false, JSON.stringify(vychozi));
+        await klikPole('zobrazMrizkuTerenu');
+        await pauza(200);
+        const sMrizkou = await stavTerenu();
+        await snimek3d('export-3d-mrizka.png');
+        kontrola('Mřížka terénu ji ve 3D zapne', sMrizkou.mriz === true && sMrizkou.cary === true, JSON.stringify(sMrizkou));
+        await klikPole('zobrazMrizkuTerenu');
+        await p.vyhodnot(`(() => { document.querySelector('[data-sdileni=aktualizovat]').click(); return true; })()`);
+        await pauza(500);
+        await p.cekej(`!${D}.sdileniBezi`, 40000, 'odkaz bez mřížky');
+        const modelBezMrizky = JSON.parse(Buffer.from((await anonym('/share/' + token + '/model')).telo).toString('utf8'));
+        kontrola('odkaz nese volbu bez mřížky terénu', modelBezMrizky.mrizkaTerenu === false && !!modelBezMrizky.teren && modelBezMrizky.bezZeme === false, JSON.stringify({ m: modelBezMrizky.mrizkaTerenu, z: modelBezMrizky.bezZeme }));
+        await klikPole('zobrazTeren3d');
+        await pauza(200);
+        const bezTerenu = await stavTerenu();
+        await snimek3d('export-3d-bez-terenu.png');
+        kontrola('Terén ho ve 3D skryje i s mřížkou', bezTerenu.zap === false && bezTerenu.plocha === false && bezTerenu.cary === false, JSON.stringify(bezTerenu));
+        await p.vyhodnot(`(() => { document.querySelector('[data-sdileni=aktualizovat]').click(); return true; })()`);
+        await pauza(500);
+        await p.cekej(`!${D}.sdileniBezi`, 40000, 'odkaz bez terénu');
+        const modelBezTerenu = JSON.parse(Buffer.from((await anonym('/share/' + token + '/model')).telo).toString('utf8'));
+        kontrola('odkaz bez terénu nenese terén a nemá ani rovnou zem', modelBezTerenu.teren === null && modelBezTerenu.bezZeme === true, JSON.stringify({ t: modelBezTerenu.teren, z: modelBezTerenu.bezZeme }));
+        await klikPole('zobrazTeren3d');
+        await p.vyhodnot(`(() => { ${D}.prepni2d(); return true; })()`);
+        await pauza(300);
+        const zustalo = await stavTerenu();
+        kontrola('po vrácení je terén zpět', zustalo.zap === true && zustalo.plocha === true, JSON.stringify(zustalo));
+        await p.vyhodnot(`(() => { const d = ${D}; d.ulozitNastaveni(); return true; })()`);
+        await p.jdiNa(adresa);
+        await p.cekej(`!!window.__sdileniScena`, 20000, 'prohlížeč bez terénu');
+        await pauza(500);
+        const pohledBez = await p.vyhodnot(`(() => { const sc = window.__sdileniScena; return { teren: !!sc.teren, zem: sc.scene.children.filter(o => o.isMesh && o.material?.color?.getHexString() === 'c8d6c0').length }; })()`);
+        kontrola('prohlížeč bez terénu nekreslí terén ani zem', !pohledBez.teren && pohledBez.zem === 0, JSON.stringify(pohledBez));
 
         console.log('\n3b) Odkaz autora ve verzi zdarma');
         await p.jdiNa(urlEditoru);

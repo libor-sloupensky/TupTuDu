@@ -65,7 +65,7 @@ return [
 
     'export' => [
         'obrazek_selhal' => 'The image could not be created',
-        'meritko_koty' => '1 m  ·  dimensions in cm',
+        'meritko_koty' => ':delka  ·  dimensions in cm',
         'podtitul' => 'Online tool for designing homes and renovations',
         'neni_co_exportovat' => 'Nothing to export, this floor has no walls.',
         'soubor_projekt' => 'project',

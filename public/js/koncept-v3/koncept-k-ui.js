@@ -137,6 +137,8 @@ function konceptKEditor(initialData) {
         katastrZobrazitStavby: _s.showStavby ?? true,
         katastrZobrazitSousedy: _s.showSousedy ?? true,
         katastrZobrazitVysky: _s.showVysky ?? false,
+        zobrazTeren3d: _s.showTeren ?? true,
+        zobrazMrizkuTerenu: _s.showMrizkaTerenu ?? false,
         vyskovyProfil: null,
         katastrMapaPodklad: _s.mapaPodklad || 'zadny',
         kompasUhel: _s.kompasUhel ?? 0,
@@ -6393,6 +6395,8 @@ function konceptKEditor(initialData) {
                 showStavby: this.katastrZobrazitStavby,
                 showSousedy: this.katastrZobrazitSousedy,
                 showVysky: this.katastrZobrazitVysky,
+                showTeren: this.zobrazTeren3d,
+                showMrizkaTerenu: this.zobrazMrizkuTerenu,
                 kompasUhel: this.kompasUhel,
                 rezim3d: this.rezim3d,
                 panelOtvoruPoz: this.panelOtvoruPoz,   // kam si uživatel přetáhl panel otvoru (null = výchozí roh)

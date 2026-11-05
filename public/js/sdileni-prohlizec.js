@@ -109,7 +109,8 @@
                 .map(c => ({ uroven: c.uroven, obrys: c.obrys.map(([x, y]) => ({ x, y })) })));
         };
         if (teren) {
-            scene.add(teren.plocha, teren.mrizka);
+            scene.add(teren.plocha);
+            if (data.mrizkaTerenu !== false) scene.add(teren.mrizka);   // starší odkazy mřížku mají
             obnovVnitrek();
             if (Object.keys(data.teren.jamy || {}).length) plocha.parentElement.querySelector('.tt-sdileni-pata')?.append(' ', plocha.dataset.textJama);
         }
@@ -132,7 +133,7 @@
         zeme.rotation.x = -Math.PI / 2;
         zeme.position.y = (data.zeme ?? 0) - 0.16;
         zeme.receiveShadow = true;
-        if (!teren) scene.add(zeme);
+        if (!teren && !data.bezZeme) scene.add(zeme);
 
         // Kusy z katalogu se dotáhnou samy, stín a obraz se překreslí po každém
         for (const o of data.objekty || []) {
