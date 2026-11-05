@@ -33,7 +33,7 @@
 
     function postav(data) {
         const THREE = window.THREE;
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: false });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         plocha.prepend(renderer.domElement);
         zprava.remove();

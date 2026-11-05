@@ -69,16 +69,19 @@ const trojuhelniku = (soubor) => {
 };
 
 // Bez zjednodušení: bere modelům zkosené hrany a stínování se pak rozlévá přes celou plochu, bílá skříň vypadá jako z chromu.
-// Velikost souboru dělá hlavně textura. Jen extrémně husté kusy se zjednoduší mírně.
+// Paměť prohlížeče dělají hlavně textury: 1024 px bralo 32 MB na kus a 40 kusů shodilo notebook, 512 px bere 10 MB a zblízka vypadá skoro stejně.
+// Jen extrémně husté kusy se zjednoduší, nejdřív mírně. Šest jídelních židlí po 170 tisících by grafiku zadusilo.
 async function zmensi(vstup, vystup) {
     fs.mkdirSync(path.dirname(vystup), { recursive: true });
     const q = (s) => (process.platform === 'win32' ? `"${s}"` : s);
     const optimalizuj = (zjednoduseni) => {
-        const a = ['optimize', q(vstup), q(vystup), '--compress', 'meshopt', '--texture-compress', 'webp', '--texture-size', '1024', '--instance', 'false', ...zjednoduseni];
+        const a = ['optimize', q(vstup), q(vystup), '--compress', 'meshopt', '--texture-compress', 'webp', '--texture-size', '512', '--instance', 'false', ...zjednoduseni];
         return TRANSFORM ? spust(q(TRANSFORM), a) : spust('npx', ['--yes', '@gltf-transform/cli@4', ...a]);
     };
     await optimalizuj(['--simplify', 'false']);
-    if (trojuhelniku(vystup) > MAX_TROJUHELNIKU) await optimalizuj(['--simplify', 'true', '--simplify-error', '0.0001']);
+    for (const presnost of ['0.0001', '0.001']) {
+        if (trojuhelniku(vystup) > MAX_TROJUHELNIKU) await optimalizuj(['--simplify', 'true', '--simplify-error', presnost]);
+    }
 }
 
 async function poVlaknech(polozky, n, prace) {

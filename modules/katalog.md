@@ -46,7 +46,7 @@ Postup hromadné dávky:
 Jednotlivě:
 
 1. Doplnit řádek do `services/katalog/polozky.json`: `id` (`abo-…`, `ph-…`), `zdroj`, `orig` (ID ve zdroji), `nazev`, `kategorie`, případně `uroven` (výška nad podlahou v metrech, u obrazů a stolních lamp).
-2. `node services/katalog/sestav.cjs` stáhne jen chybějící, zmenší na textury 1024 px a WebP, geometrii nezjednodušuje a komprimuje meshoptem, změří, udělá náhled a značku. `--jen=regex` omezí výběr, `--znovu` udělá znovu.
+2. `node services/katalog/sestav.cjs` stáhne jen chybějící, zmenší na textury 512 px a WebP, geometrii nezjednodušuje a komprimuje meshoptem, změří, udělá náhled a značku. `--jen=regex` omezí výběr, `--znovu` udělá znovu.
 3. Názvy značek do katalogu nepsat (Rivet, Stone & Beam…), jen obecný popis. Licence ABO kryje model, ne ochranné známky.
 
 Nový zdroj vyžaduje doplnit `ZDROJE` v `sestav.cjs` včetně autora a licence. Stránka autorů se z toho sestaví sama. Licence **CC BY** dovoluje splnit uvedení autora odkazem na stránku s údaji (čl. 3(a)(2)), proto stačí odkaz v panelu katalogu a na sdílené stránce, na každém kusu být nemusí.
@@ -143,12 +143,13 @@ Viděno při prohlídce, zatím neřešeno:
 
 ## Rozdělaná práce (k 5. 11. 2026)
 
-1. **Nová výroba modelů bez zjednodušení je hotová, otevřené je vyhlazování hran.** 926 kusů, modely 264 MB, medián 14 744 trojúhelníků místo 2 382. Bílé skříně a lampy přechod nemají, strop lesku v `katalog-3d.js` skoro nic nemění a zůstává. Vyřazená skříň B07C41C1C8 má přechod přímo v textuře.
-   Měření v editoru na Radeon 7520U, okno 1500 × 950, poměr 1 (`prohlizec.cjs` s `gpu: true`), hodnoty hodně kolísají:
-   - staré modely, 40 kusů, 107 tis. trojúhelníků: 40 a 44 fps,
-   - nové modely, 40 kusů, 629 tis. trojúhelníků: s vyhlazováním 3, 12 a 28 fps, bez něj 46 fps (jedno měření),
-   - nové modely, 12 kusů, 219 tis. trojúhelníků: 56 fps.
-   Paměť ani doba načtení se neliší. Strop na jeden kus moc nepomůže: 30 000 trojúhelníků sníží 40 kusů o 6 %, běžné kusy mají 15 až 40 tisíc. Libor porovnává vzhled a plynulost na konceptu Test plynulosti (lokálně `?id=1165`) s přepínačem `?aa=0` v adrese. Podle výsledku zvolit vyhlazování a přepínač nahradit. Zdroje v `%TEMP%\tuptudu-katalog` (17 GB) smazat, až bude rozhodnuto.
+1. **Lehčí modely (5. 11. 2026).** Porovnání 40 kusů s vyhlazováním hran a bez něj shodilo Liborovi notebook. Měl volné jen asi 3 GB paměti a rozdíl ve vzhledu neviděl. Proto je vyhlazování hran v editoru i ve sdíleném odkazu vypnuté a textury mají 512 px místo 1024 px.
+   Měření v Chrome na Radeon 7520U, okno 1500 × 950, poměr 1, bez vyhlazování, 40 kusů, 629 tis. trojúhelníků (`prohlizec.cjs` s `gpu: true`):
+   - textury 1024 px: 37 fps, soukromá paměť 2 111 MB,
+   - textury 512 px: 44 fps, 1 248 MB,
+   - textury 256 px: 57 fps, 1 050 MB, zblízka už rozmazané,
+   - samotný editor s jedním kusem má 833 MB.
+   S vyhlazováním a 1024 px to bylo 3 až 28 fps. Zjednodušení `--simplify-error 0.001` ubere 6× trojúhelníků, ale vrací kovový přechod na bílých skříních, proto jen u kusů, které jsou i po mírném zjednodušení nad 60 000. Po přepracování: `kontrola.cjs --archy`, testy, `s3.cjs nahraj`, commit `katalog.json`, smazat zdroje v `%TEMP%\tuptudu-katalog` (17 GB).
 2. **Přesun do S3 je hotový** (5. 11. 2026), viz Hosting. Soubory z prvního balíku z gitu zmizely, hosting je smaže při nasazení.
 3. **Další vrstvy v pořadí:** povrchy (ambientCG, Poly Haven), koupelna (Sweet Home 3D + vlastní materiály, kout), generátor linky.
 4. **Dotyk na tabletu** nikdo nezkoušel.
