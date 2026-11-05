@@ -1,9 +1,9 @@
 /**
- * Obrázek do článku o zemině: výkop pod dům 12 × 10 m na svahu 10 % ve 3D, z editoru.
+ * Obrázky do článku o zemině: výkop a prodloužený základ domu 12 × 10 m na svahu 10 % ve 3D, z editoru.
  * Dá se pustit znovu, když se změní vzhled 3D. Založí koncept s prefixem ClaudeTest a na konci ho smaže.
  *
  * Spuštění: node services/clanky/snimky-zemina.cjs [V3_URL=http://127.0.0.1:8002]
- * Výstup: public/img/clanky/kolik-zeminy-z-vykopu/vykop-svah.webp a .jpg (náhled při sdílení)
+ * Výstup: public/img/clanky/kolik-zeminy-z-vykopu/vykop-svah a zaklad-svah, .webp a .jpg (náhled při sdílení)
  */
 const fs = require('fs');
 const path = require('path');
@@ -49,45 +49,53 @@ const SIRKA = 1200, VYSKA = 700;
             d.renderer._fixedWgsCenter = { lat: 50, lon: 15 }; d.vyskovyProfil = { body: o, vyska_min: 392, vyska_max: 408, vyskovy_rozdil: 16 }; return true;`);
         await pauza(500);
 
-        // Dům zapustit tak, aby všude dosáhl na zem
-        const kota = await js(`for (let k = 30; k >= -300; k -= 5) { d.setNadTerenem(k / 100); if ((d.zemina?.bezZakladu ?? 1) < 0.5) return { k, bez: d.zemina.bezZakladu, vykop: d.zemina.vykopek.vykopano }; } return null;`);
+        // Dům zapustit tak, aby všude dosáhl na zem i bez prodloužení základu
+        const kota = await js(`d.setVolbuZakladu('prodlouzit', false); for (let k = 30; k >= -300; k -= 5) { d.setNadTerenem(k / 100); if ((d.zemina?.bezZakladu ?? 1) < 0.5) return { k, bez: d.zemina.bezZakladu, vykop: d.zemina.vykopek.vykopano }; } return null;`);
         console.log('kóta a výkop:', JSON.stringify(kota));
 
         await p.vyhodnot(`(async () => { const d = ${D}; d.rezim3d = true; await d.prepni3d(); await new Promise(r => setTimeout(r, 1500)); return true; })()`);
         await js(`d.seznamPodlazi.forEach(x => { if (x.viditelne3d) d.naPodlazi(x.id); }); return true;`);
         await pauza(1200);
-        const vidna = await js(`const _3d = window._kk3d; document.querySelectorAll('.kk-3d-help, .kk-coords').forEach(x => x.style.display = 'none');
-            const y0 = _3d.wallGroup.position.y - 0.6;
-            _3d.controls.target.set(6, y0, 5);
-            _3d.camera.position.set(6 - 26, y0 + 24, 5 + 30);
+        // Přiblížení tak, aby se okolí domu do dané výšky vešlo do výřezu ${SIRKA} × ${VYSKA}
+        const zaber = (vyska, okraj, kamera = [-26, 24, 30]) => js(`const _3d = window._kk3d; document.querySelectorAll('.kk-3d-help, .kk-coords').forEach(x => x.style.display = 'none');
+            const y0 = _3d.wallGroup.position.y - 0.6, ys = y0 + ${vyska} / 2;
+            _3d.controls.target.set(6, ys, 5);
+            _3d.camera.position.set(6 + ${kamera[0]}, ys + ${kamera[1]}, 5 + ${kamera[2]});
             _3d.camera.zoom = 1; _3d.camera.updateProjectionMatrix(); _3d.controls.update(); _3d.camera.updateMatrixWorld();
-            // Přiblížení tak, aby se okolí výkopu vešlo do výřezu ${SIRKA} × ${VYSKA}
             let maxX = 0, maxY = 0;
-            for (const [x, z] of [[-2.5, -2.5], [14.5, -2.5], [14.5, 12.5], [-2.5, 12.5]]) {
-                const q = new THREE.Vector3(x, y0, z).project(_3d.camera);
+            for (const [x, z] of [[-${okraj}, -${okraj}], [12 + ${okraj}, -${okraj}], [12 + ${okraj}, 10 + ${okraj}], [-${okraj}, 10 + ${okraj}]]) for (const y of [y0, y0 + ${vyska}]) {
+                const q = new THREE.Vector3(x, y, z).project(_3d.camera);
                 maxX = Math.max(maxX, Math.abs(q.x)); maxY = Math.max(maxY, Math.abs(q.y));
             }
             const cv = _3d.renderer.domElement, pomer = (cv.width / cv.height) / (${SIRKA} / ${VYSKA});
             _3d.camera.zoom = Math.min(0.95 / maxX, 0.95 * Math.min(1, pomer) / maxY);
             _3d.camera.updateProjectionMatrix(); _3d.controls.update(); _3d.camera.updateMatrixWorld();
             return { jama: !!_3d.jama?.visible, zap: _3d.jamaUniformy?.uJamaZap.value, zoom: _3d.camera.zoom };`);
-        console.log('jáma:', JSON.stringify(vidna));
-        await pauza(800);
-
         // Výřez ze snímku scény v poměru obrázku v článku
-        const data = await js(`const cv = d._snimekScény(); const pomer = ${SIRKA} / ${VYSKA}; let w = cv.width, h = Math.round(w / pomer);
-            if (h > cv.height) { h = cv.height; w = Math.round(h * pomer); }
-            const v = document.createElement('canvas'); v.width = ${SIRKA}; v.height = ${VYSKA};
-            v.getContext('2d').drawImage(cv, (cv.width - w) / 2, (cv.height - h) / 2, w, h, 0, 0, ${SIRKA}, ${VYSKA});
-            return { webp: v.toDataURL('image/webp', 0.82), jpg: v.toDataURL('image/jpeg', 0.85), zdroj: [cv.width, cv.height] };`);
-        const zapis = (nazev, url) => {
-            const soubor = path.join(VYSTUP, nazev);
-            fs.writeFileSync(soubor, Buffer.from(url.split(',')[1], 'base64'));
-            console.log(nazev, Math.round(fs.statSync(soubor).size / 1024), 'kB');
+        const uloz = async (nazev) => {
+            await pauza(800);
+            const data = await js(`const cv = d._snimekScény(); const pomer = ${SIRKA} / ${VYSKA}; let w = cv.width, h = Math.round(w / pomer);
+                if (h > cv.height) { h = cv.height; w = Math.round(h * pomer); }
+                const v = document.createElement('canvas'); v.width = ${SIRKA}; v.height = ${VYSKA};
+                v.getContext('2d').drawImage(cv, (cv.width - w) / 2, (cv.height - h) / 2, w, h, 0, 0, ${SIRKA}, ${VYSKA});
+                return { webp: v.toDataURL('image/webp', 0.82), jpg: v.toDataURL('image/jpeg', 0.85), zdroj: [cv.width, cv.height] };`);
+            for (const [pripona, url] of [['webp', data.webp], ['jpg', data.jpg]]) {
+                const soubor = path.join(VYSTUP, nazev + '.' + pripona);
+                fs.writeFileSync(soubor, Buffer.from(url.split(',')[1], 'base64'));
+                console.log(nazev + '.' + pripona, Math.round(fs.statSync(soubor).size / 1024), 'kB');
+            }
+            console.log('zdroj', data.zdroj.join(' × '));
         };
-        zapis('vykop-svah.webp', data.webp);
-        zapis('vykop-svah.jpg', data.jpg);
-        console.log('zdroj', data.zdroj.join(' × '));
+        console.log('jáma:', JSON.stringify(await zaber(0, 2.5)));
+        await uloz('vykop-svah');
+
+        // Stejný dům s podlahou 30 cm nad terénem: základ se na dolní straně protáhne až k němu
+        const nad = await js(`d.setVolbuZakladu('prodlouzit', true); d.setNadTerenem(0.3); d.strechaVytvor(); d.seznamPodlazi.forEach(x => { if (!x.viditelne3d) d.naPodlazi(x.id); });
+            const z = d.zemina; return { nad: z.zakladNadTerenem, vykopek: z.vykopek.vykopano, ornice: z.ornice.vykopano, sterk: z.sterk };`);
+        console.log('nad terénem:', JSON.stringify(nad));
+        await pauza(1500);
+        await zaber(7.5, 1, [-32, 9, 22]);
+        await uloz('zaklad-svah');
     } finally {
         if (id) {
             const smazano = await p.vyhodnot(`(async () => { const r = await fetch(_kkInitData.routes.smazat.replace(':id', ${JSON.stringify(id)}), { method: 'DELETE',

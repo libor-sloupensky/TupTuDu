@@ -50,13 +50,25 @@ async function main() {
 
         console.log('\n2) Kalkulačka');
         let v = await hodnoty(p);
-        kontrola('hláška o chybějícím základu je skrytá', !(await videt(p, '[data-ukaz="bez-kontaktu"]')));
-        kontrola('výchozí dům: ornice 30, výkopek 8, vykopáno 60, zpět 21, hromada 74',
-            v['ornice-navic'] === '30' && v['vykopek-navic'] === '8' && v['celkem-vykopano'] === '60' && v['celkem-zpet'] === '21' && v.hromada === '74', JSON.stringify(v));
+        kontrola('výchozí dům: ornice 30, výkopek 20, štěrk 12, vykopáno 60, zpět 9, zbude 50, hromada 74',
+            v['ornice-navic'] === '30' && v['vykopek-navic'] === '20' && v.sterk === '12' && v['celkem-vykopano'] === '60' && v['celkem-zpet'] === '9' && v['celkem-zbude'] === '50' && v.hromada === '74', JSON.stringify(v));
+        await nastav(p, 'podDum', 'vykopek');
+        v = await hodnoty(p);
+        kontrola('dosypání výkopkem: výkopek 8, zbude 38, řádek se štěrkem zmizí', v['vykopek-navic'] === '8' && v['celkem-zbude'] === '38' && !(await videt(p, '[data-ukaz="sterk"]')), JSON.stringify([v['vykopek-navic'], v['celkem-zbude']]));
+        await nastav(p, 'podDum', 'sterk');
         await nastav(p, 'typ', 'deska');
         v = await hodnoty(p);
-        kontrola('nosná deska: výkopek chybí 12', v['vykopek-chybi'] === '12' && await videt(p, '[data-ukaz="vykopek-chybi"]') && !(await videt(p, '[data-ukaz="vykopek-navic"]')), v['vykopek-chybi']);
+        const skladbaDesky = await p.vyhodnot(`document.querySelector('[data-pole="skladba"]').value`);
+        kontrola('nosná deska: skladba 70 cm, výkopek navíc 18', skladbaDesky === '70' && v['vykopek-navic'] === '18', JSON.stringify([skladbaDesky, v['vykopek-navic']]));
+        await nastav(p, 'typ', 'pasy');
+        kontrola('zpět na pasy: skladba 45 cm', await p.vyhodnot(`document.querySelector('[data-pole="skladba"]').value`) === '45');
+        await nastav(p, 'typ', 'deska');
         kontrola('u desky se pole pasů schovají', !(await p.vyhodnot(`(() => { document.querySelector('.tt-kalkulacka details').open = true; return document.querySelector('[data-pole="sirkaPasu"]').getClientRects().length > 0; })()`)));
+        await nastav(p, 'podDum', 'vykopek');
+        await nastav(p, 'skladba', '45');
+        v = await hodnoty(p);
+        kontrola('tenká deska dosypaná výkopkem: řádek Výkopek chybí', v['vykopek-chybi'] === '12' && await videt(p, '[data-ukaz="vykopek-chybi"]') && !(await videt(p, '[data-ukaz="vykopek-navic"]')), v['vykopek-chybi']);
+        await nastav(p, 'podDum', 'sterk');
         await nastav(p, 'typ', 'pasy');
         await nastav(p, 'sklep', 'ano');
         v = await hodnoty(p);
@@ -64,10 +76,11 @@ async function main() {
         kontrola('se sklepem je vidět jeho výška', await videt(p, '[data-pole="vyskaSklepu"]'));
         await nastav(p, 'sklep', 'ne');
         await nastav(p, 'nadTerenem', '60');
-        kontrola('podlaha moc vysoko: hláška místo výsledku', await videt(p, '[data-ukaz="bez-kontaktu"]') && !(await videt(p, '[data-ukaz="vysledek"]')));
+        v = await hodnoty(p);
+        kontrola('vysoká podlaha: základ se prodlouží a víc se dosype', v.sterk === '48' && v['vykopek-navic'] === '20', JSON.stringify([v.sterk, v['vykopek-navic']]));
         await nastav(p, 'nadTerenem', '');
         v = await hodnoty(p);
-        kontrola('prázdné pole bere výchozí hodnotu', v['ornice-navic'] === '30' && await videt(p, '[data-ukaz="vysledek"]'), v['ornice-navic']);
+        kontrola('prázdné pole bere výchozí hodnotu', v['ornice-navic'] === '30' && v.sterk === '12', v['ornice-navic']);
         await nastav(p, 'nadTerenem', '30');
         await nastav(p, 'delka', '1000');
         v = await hodnoty(p);
@@ -81,15 +94,25 @@ async function main() {
         kontrola('registrace nese článek jako zdroj', odkaz === APP + '/register?zdroj=kolik-zeminy-z-vykopu', odkaz);
         kontrola('obrázek se načte', await p.vyhodnot(`new Promise(r => { const i = document.querySelector('.tt-obrazek img'); i.loading = 'eager'; if (i.complete && i.naturalWidth) r(true); i.onload = () => r(true); i.onerror = () => r(false); setTimeout(() => r(false), 8000); })`));
         kontrola('stránka nenačítá kód editoru', await p.vyhodnot(`![...document.scripts].some(s => s.src.includes('/koncept-v3/')) && !window.Zemina`));
+        const vnejsi = await p.vyhodnot(`[...document.querySelectorAll('.tt-clanek a[href]')].filter(a => !a.hostname.endsWith('tuptudu.localhost')).map(a => a.href)`);
+        kontrola('v článku nejsou vnější odkazy', vnejsi.length === 0, vnejsi.join(' '));
+        kontrola('u výsledku kalkulačky je cesta do aplikace', await videt(p, '.tt-kalkulacka-aplikace a[data-vyzva-klik]'));
+        const doAplikace = await p.vyhodnot(`document.querySelectorAll('.tt-clanek a[href*="/register?zdroj="]').length`);
+        kontrola('do aplikace vedou aspoň tři cesty', doAplikace >= 3, String(doAplikace));
+        kontrola('odkaz na napsaný článek funguje', await p.vyhodnot(`!!document.querySelector('.tt-clanek p a[href$="/cs/clanky/koeficient-nakypreni-zeminy"]')`));
+        kontrola('článek, který ještě není, zůstane jen textem', await p.vyhodnot(`!document.querySelector('.tt-clanek a[href*="zaklady-na-svahu"]') && document.querySelector('.tt-clanek').textContent.replace(/\\u00a0/g, ' ').includes('základy se dělají po stupních')`));
+        kontrola('související články ukazují jen napsané', await p.vyhodnot(`document.querySelectorAll('.tt-clanky-polozka').length === 1`));
         await snimekCele(p, path.join(VYSTUP, 'clanek-pocitac-tmavy.png'));
         await p.vyhodnot(`document.documentElement.dataset.theme = 'light'`);
         await pauza(200);
         await snimekCele(p, path.join(VYSTUP, 'clanek-pocitac-svetly.png'));
         await p.vyhodnot(`document.documentElement.dataset.theme = 'dark'`);
 
-        console.log('\n4) Přehled a titulka');
+        console.log('\n4) Přehled, navazující článek a titulka');
         await p.jdiNa(WEB + '/cs/clanky');
         kontrola('přehled obsahuje článek', await p.vyhodnot(`!!document.querySelector('a[href$="${CLANEK}"]')`));
+        await p.jdiNa(WEB + '/cs/clanky/koeficient-nakypreni-zeminy');
+        kontrola('navazující článek vede zpět na hlavní', await p.vyhodnot(`!!document.querySelector('.tt-clanek p a[href$="${CLANEK}"]')`));
         await p.jdiNa(WEB + '/cs');
         kontrola('z titulky vede odkaz na články a ceník s jazykem', await p.vyhodnot(`!!document.querySelector('.topbar-akce a[href$="/cs/clanky"]') && !!document.querySelector('.topbar-akce a[href$="/cs/pricing"]')`));
         const prepnuti = await p.vyhodnot(`document.querySelector('.tt-jazyky a[hreflang=en]').href`);
@@ -129,6 +152,8 @@ async function main() {
         kontrola('žádný prvek mimo tabulky nesahá za okraj', siroke.length === 0, JSON.stringify(siroke));
         kontrola('na dotyku poslání odkazu místo registrace', await videt(t, '[data-poslat-odkaz]') && !(await videt(t, '[data-vyzva-klik]')));
         kontrola('kalkulačka funguje', (await hodnoty(t))['ornice-navic'] === '30');
+        kontrola('u kalkulačky na dotyku poslání odkazu', await videt(t, '.tt-kalkulacka-aplikace [data-poslat-odkaz]') && !(await videt(t, '.tt-kalkulacka-aplikace a[data-vyzva-klik]')));
+        kontrola('odkaz do aplikace v textu na dotyku neodvede na registraci', await t.vyhodnot(`(() => { navigator.share = async () => {}; const u = new MouseEvent('click', { bubbles: true, cancelable: true }); document.querySelector('[data-dotyk-poslat]').dispatchEvent(u); return u.defaultPrevented; })()`));
         await t.vyhodnot(`window.scrollTo(0, 0)`);
         await t.snimek(path.join(VYSTUP, 'clanek-telefon-horni.png'));
         await t.vyhodnot(`document.querySelector('.tt-rez').scrollIntoView()`);

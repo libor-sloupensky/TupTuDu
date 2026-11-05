@@ -10,8 +10,10 @@ use RuntimeException;
  * Články webu: Markdown v resources/clanky/{jazyk}/{adresa}.md s hlavičkou údajů a pevnou sadou
  * bloků (resources/views/clanky/bloky). Postup a pravidla: modules/blog.md.
  *
- * Hlavička mezi řádky `---`: `klíč: hodnota`, položky zdrojů `- Název | adresa`.
- * Bloky v textu: `::nazev parametr | parametr` na jednom řádku, `:::druh Titulek` … `:::` s Markdownem.
+ * Hlavička mezi řádky `---`: `klíč: hodnota`, položky zdrojů `- Název | adresa`. Zdroje slouží jen nám
+ * a revizi, na stránce se neukazují. Bloky v textu: `::nazev parametr | parametr` na jednom řádku,
+ * `:::druh Titulek` … `:::` s Markdownem. Odkazy v textu: `[text](clanek:adresa)` na jiný článek
+ * (dokud není vidět, zůstane jen text) a `[text](aplikace:)` do aplikace.
  *
  * Článek se `stav: koncept` je vidět jen lokálně, nasazení ho proto samo nezveřejní.
  */
@@ -57,6 +59,28 @@ final class Clanky
         return self::adresaPrehledu($clanek['jazyk']) . '/' . $clanek['adresa'];
     }
 
+    /** Registrace s článkem jako zdrojem (FortifyServiceProvider). */
+    public static function adresaRegistrace(array $clanek): string
+    {
+        return Domeny::url(Domeny::APP, '/register?zdroj=' . $clanek['adresa']);
+    }
+
+    /** Související články z hlavičky (`souvisejici: adresa, adresa`), jen ty, které jsou vidět. */
+    public static function souvisejici(array $clanek): array
+    {
+        $adresy = array_filter(array_map('trim', explode(',', $clanek['souvisejici'] ?? '')));
+
+        return array_values(array_filter(array_map(fn ($adresa) => self::najdi($clanek['jazyk'], $adresa), $adresy)));
+    }
+
+    /** Obrázek v jazyce článku, když existuje (…/slozka/{jazyk}/soubor), jinak společný pro všechny jazyky. */
+    public static function obrazekVJazyce(string $cesta, string $jazyk): string
+    {
+        $varianta = dirname($cesta) . '/' . $jazyk . '/' . basename($cesta);
+
+        return File::exists(public_path($varianta)) ? $varianta : $cesta;
+    }
+
     /** Text článku jako HTML, bloky vykreslené ze šablon. */
     public static function html(array $clanek): string
     {
@@ -69,7 +93,7 @@ final class Clanky
         };
 
         $md = preg_replace_callback('/^:::(\w+)[ \t]*(.*?)\n(.*?)\n:::[ \t]*$/ms', fn ($m) => $uloz(
-            self::blok('upozorneni', ['druh' => $m[1], 'titulek' => trim($m[2]), 'html' => self::vlna(self::markdown($m[3]), $clanek['jazyk'])])
+            self::blok('upozorneni', ['druh' => $m[1], 'titulek' => trim($m[2]), 'html' => self::text($m[3], $clanek)])
         ), $clanek['telo']);
 
         $md = preg_replace_callback('/^::([a-z-]+)[ \t]*(.*)$/m', fn ($m) => $uloz(
@@ -79,7 +103,7 @@ final class Clanky
         return str_replace(
             array_map(fn ($znacka) => '<p>' . $znacka . '</p>', array_keys($bloky)),
             array_values($bloky),
-            self::vlna(self::markdown($md), $clanek['jazyk'])
+            self::text($md, $clanek)
         );
     }
 
@@ -105,13 +129,21 @@ final class Clanky
         return view('clanky.bloky.' . $nazev, $data)->render();
     }
 
-    private static function markdown(string $md): string
+    /** Markdown na HTML s odkazy na články a do aplikace a s českou typografií. */
+    private static function text(string $md, array $clanek): string
     {
         $prevod = new GithubFlavoredMarkdownConverter(['html_input' => 'strip', 'allow_unsafe_links' => false]);
         $html = $prevod->convert($md)->getContent();
         $html = str_replace(['<table>', '</table>'], ['<div class="tt-tabulka"><table>', '</table></div>'], $html);
 
-        return preg_replace('/<a href="(https?:[^"]+)"/', '<a href="$1" rel="noopener"', $html);
+        $html = preg_replace_callback('/<a href="clanek:([a-z0-9-]+)">(.*?)<\/a>/us', function ($m) use ($clanek) {
+            $cil = self::najdi($clanek['jazyk'], $m[1]);
+
+            return $cil ? '<a href="' . e(self::adresa($cil)) . '">' . $m[2] . '</a>' : $m[2];
+        }, $html);
+        $html = str_replace('<a href="aplikace:">', '<a href="' . e(self::adresaRegistrace($clanek)) . '" data-vyzva-klik data-dotyk-poslat>', $html);
+
+        return self::vlna($html, $clanek['jazyk']);
     }
 
     private static function jeVidet(array $clanek): bool

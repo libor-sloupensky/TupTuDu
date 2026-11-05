@@ -7,7 +7,7 @@
         <rect class="tt-rez-ornice" x="0" y="96" width="150" height="22"/>
         <rect class="tt-rez-ornice" x="490" y="96" width="150" height="22"/>
         {{-- Dosypání pod dům --}}
-        <rect class="tt-rez-zasyp" x="150" y="104" width="340" height="14"/>
+        <rect class="tt-rez-sterk" x="150" y="104" width="340" height="14"/>
         {{-- Pasy v rýhách --}}
         <rect class="tt-rez-beton" x="150" y="104" width="42" height="98"/>
         <rect class="tt-rez-beton" x="299" y="104" width="42" height="98"/>

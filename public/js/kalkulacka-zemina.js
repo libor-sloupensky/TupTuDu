@@ -10,6 +10,7 @@
 (function (koren) {
     const VYCHOZI = {
         delka: 12, sirka: 10, typ: 'pasy', sklep: false,
+        podDum: 'sterk',    // čím se dosype pod dům: sterk, vykopek
         nadTerenem: 0.3,    // podlaha 1.NP nad terénem
         vnitrni: 10,        // délka vnitřních nosných stěn
         spara: 1.0,         // základová spára pod terénem
@@ -35,14 +36,8 @@
         const kota = v.sklep ? v.nadTerenem - v.vyskaSklepu : v.nadTerenem;
         const dno = kota - v.skladba;
         const hl = -dno;
-        const prazdny = {
-            ornice: { vykopano: 0, zpet: 0, prebytek: 0, prebytekNakypreny: 0 },
-            vykopek: { vykopano: 0, zpet: 0, prebytek: 0, prebytekNakypreny: 0, ryhy: 0 },
-            hromada: 0, bezKontaktu: false,
-        };
-        // Spodek základu nad terénem: dům nedosáhne na zem a nekope se
-        if (hl < 0) return { ...prazdny, bezKontaktu: true };
 
+        // Spodek základu může být i nad terénem: základ se prodlouží až k domu a víc se dosype
         const sirkaSvahu = hl > SVISLE_DO ? hl * Math.max(v.svah, 0.01) * Math.min(1, (hl - SVISLE_DO) / NABEH_SVAHU) : 0;
         const D = Math.max(hl, v.ornice);
 
@@ -65,8 +60,9 @@
         const orniceVykop = v.ornice * plocha(v.odkop + sirkaSvahu);
         const orniceZpet = v.ornice * (plocha(v.odkop + sirkaSvahu) - plochaDomu);
         const vykopekVykop = vykopekZona * plocha(v.odkop) + vykopekSvah + ryhy;
-        // Kolem domu se vrací všechno, pod domem se dosype po spodek konstrukce
-        const vykopekZpet = vykopekZona * (plocha(v.odkop) - plochaDomu) + vykopekSvah + Math.max(0, dno + D) * plochaDomu;
+        // Kolem domu se vrací všechno. Pod domem se dosype po spodek konstrukce, štěrkem nebo vhodným výkopkem.
+        const dosypani = Math.max(0, dno + D) * plochaDomu;
+        const vykopekZpet = vykopekZona * (plocha(v.odkop) - plochaDomu) + vykopekSvah + (v.podDum === 'vykopek' ? dosypani : 0);
 
         return {
             ornice: {
@@ -77,8 +73,8 @@
                 vykopano: vykopekVykop, zpet: vykopekZpet, prebytek: vykopekVykop - vykopekZpet,
                 prebytekNakypreny: (vykopekVykop - vykopekZpet) * v.nakypreni, ryhy,
             },
+            sterk: v.podDum === 'vykopek' ? 0 : dosypani,
             hromada: (orniceVykop + vykopekVykop) * v.nakypreni,
-            bezKontaktu: false,
         };
     }
 
@@ -112,8 +108,6 @@
             blok.querySelectorAll('[data-pouze-pasy]').forEach((prvek) => { prvek.hidden = vstup.typ !== 'pasy'; });
 
             const r = spocitej(vstup);
-            ukaz('vysledek', !r.bezKontaktu);
-            ukaz('bez-kontaktu', r.bezKontaktu);
             zapis('ornice-navic', r.ornice.prebytek);
             zapis('ornice-navic-nakypreny', r.ornice.prebytekNakypreny);
             const chybi = r.vykopek.prebytek < -0.5;
@@ -128,9 +122,20 @@
             zapis('vykopek-zpet', r.vykopek.zpet);
             zapis('celkem-vykopano', r.ornice.vykopano + r.vykopek.vykopano);
             zapis('celkem-zpet', r.ornice.zpet + r.vykopek.zpet);
+            zapis('celkem-zbude', Math.max(0, r.ornice.prebytek) + Math.max(0, r.vykopek.prebytek));
+            zapis('sterk', r.sterk);
+            ukaz('sterk', r.sterk > 0.5);
             zapis('hromada', r.hromada);
             return r;
         };
+
+        // Nosná deska má silnější skladbu než podlaha na pasech, výchozí hodnota se mění, dokud ji uživatel sám nepřepíše
+        const skladba = blok.querySelector('[data-pole="skladba"]');
+        const typ = blok.querySelector('[data-pole="typ"]');
+        skladba.addEventListener('input', () => { skladba.dataset.zmeneno = '1'; });
+        typ.addEventListener('change', () => {
+            if (!skladba.dataset.zmeneno) skladba.value = typ.value === 'deska' ? skladba.dataset.vychoziDeska : skladba.dataset.vychoziPasy;
+        });
 
         let hlaseno = false;
         const priZmene = () => {

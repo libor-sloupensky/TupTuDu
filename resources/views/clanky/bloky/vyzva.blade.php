@@ -3,7 +3,7 @@
      `zdroj` se uloží k registraci (FortifyServiceProvider, modules/blog.md). --}}
 @php
     [$titulek, $text] = array_pad($parametry, 2, '');
-    $registrace = \App\Support\Domeny::url('app', '/register?zdroj=' . $clanek['adresa']);
+    $registrace = \App\Support\Clanky::adresaRegistrace($clanek);
 @endphp
 <aside class="tt-vyzva" data-vyzva>
     <div class="tt-vyzva-titulek">{!! \App\Support\Clanky::vlna(e($titulek), $clanek['jazyk']) !!}</div>
