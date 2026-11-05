@@ -17,6 +17,11 @@
         <td>Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO)</td>
     </tr>
     <tr>
+        <td>Der Artikel auf unserer Website, über den die Registrierung erfolgte</td>
+        <td>Feststellen, welche Artikel den Menschen wirklich helfen</td>
+        <td>Berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO)</td>
+    </tr>
+    <tr>
         <td>Bei der Anmeldung über Google: Name, E-Mail-Adresse und Kennung des Google-Kontos</td>
         <td>Anmeldung ohne Passwort</td>
         <td>Vertragserfüllung</td>

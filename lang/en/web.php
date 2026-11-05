@@ -3,6 +3,8 @@
 return [
     'titulek' => 'TupTuDu — house and renovation concept online',
     'cenik' => 'Pricing',
+    'clanky' => 'Articles',
+    'popis' => 'Draw your house or renovation in the browser and view it in 3D. Start for free.',
     'nadpis' => 'Your house concept before you go to an architect',
     'perex' => 'Draw the layout and floor plan right in your browser, view the building in 3D and, where available, see the cadastral map and terrain of your plot. You can start for free.',
     'zacit_zdarma' => 'Start for free',

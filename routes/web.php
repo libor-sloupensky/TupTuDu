@@ -202,6 +202,13 @@ Route::middleware('subdomena:web')->group(function () {
         Route::post('/contact', [App\Http\Controllers\KontaktController::class, 'odeslat'])
             ->middleware('throttle:5,10')->name('kontakt.odeslat');
     });
+    // Články jen v jazycích, které je mají (modules/blog.md)
+    foreach (App\Support\Clanky::SEGMENTY as $jazyk => $segment) {
+        Route::prefix($jazyk . '/' . $segment)->group(function () {
+            Route::get('/', [App\Http\Controllers\ClankyController::class, 'prehled']);
+            Route::get('/{adresa}', [App\Http\Controllers\ClankyController::class, 'detail'])->where('adresa', '[a-z0-9-]+');
+        });
+    }
     // Adresy bez jazyka (starší odkazy, Paddle) přesměrují podle volby a polohy
     Route::get('/{stranka}', fn (Illuminate\Http\Request $request) => redirect('/' . app()->getLocale() . $request->getRequestUri()))
         ->whereIn('stranka', ['terms', 'privacy', 'refunds', 'model-credits', 'pricing', 'contact']);

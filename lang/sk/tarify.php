@@ -38,6 +38,7 @@ return [
 
     // Ceník (web)
     'cenik_titulek' => 'Cenník — TupTuDu',
+    'cenik_popis' => 'Tarify a ceny TupTuDu: Zadarmo, Home a Pro pre koncept domu a rekonštrukcie v prehliadači.',
     'cenik_nadpis' => 'Cenník',
     'cenik_uvod' => 'TupTuDu je online nástroj na koncept stavby alebo rekonštrukcie: nakreslíš dispozíciu a pôdorys, prezrieš si dom v 3D a tam, kde je to dostupné, aj katastrálnu mapu a terén pozemku. Začať môžeš zadarmo.',
     'v_kazdem_tarifu' => 'V každej tarife',

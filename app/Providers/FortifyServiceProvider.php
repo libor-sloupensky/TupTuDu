@@ -25,9 +25,17 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(fn () => view('auth.login'));
 
         // Registrace jen v zákaznické aplikaci — z masterteamu na app
-        Fortify::registerView(fn () => Domeny::jeMasterteam()
-            ? redirect(Domeny::url('app', '/register'))
-            : view('auth.register'));
+        Fortify::registerView(function (Request $request) {
+            if (Domeny::jeMasterteam()) {
+                return redirect(Domeny::url('app', '/register'));
+            }
+            // Článek, ze kterého návštěvník přišel (blok výzvy, modules/blog.md). Uloží se k registraci i přes Google.
+            if (preg_match('/^[a-z0-9-]{1,80}$/', (string) $request->query('zdroj'))) {
+                $request->session()->put('zdroj_registrace', $request->query('zdroj'));
+            }
+
+            return view('auth.register');
+        });
         Fortify::createUsersUsing(\App\Actions\Fortify\CreateNewUser::class);
 
         Fortify::requestPasswordResetLinkView(fn () => view('auth.forgot-password'));

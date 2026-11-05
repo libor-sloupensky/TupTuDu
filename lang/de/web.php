@@ -4,6 +4,8 @@
 return [
     'titulek' => 'TupTuDu – dein Haus- und Umbaukonzept online',
     'cenik' => 'Preise',
+    'clanky' => 'Artikel',
+    'popis' => 'Zeichne dein Haus oder deinen Umbau im Browser und sieh sie dir in 3D an. Der Einstieg ist kostenlos.',
     'nadpis' => 'Das Konzept für dein Haus, bevor du zum Architekten gehst',
     'perex' => 'Zeichne Raumaufteilung und Grundriss direkt im Browser, sieh dir das Gebäude in 3D an und, wo verfügbar, auch die Katasterkarte und das Gelände deines Grundstücks. Der Einstieg ist kostenlos.',
     'zacit_zdarma' => 'Kostenlos starten',

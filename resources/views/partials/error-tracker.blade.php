@@ -66,8 +66,9 @@
     }
 
     // Síťové selhání fetch (Firefox „NetworkError when attempting to fetch resource.",
-    // Chrome „Failed to fetch", Safari „Load failed") — viz zalogujChybu.
-    const SITOVA_CHYBA = /NetworkError when attempting to fetch|^Failed to fetch$|^Load failed$|network error/i;
+    // Chrome „Failed to fetch", Safari „Load failed") a požadavek zrušený prohlížečem při odchodu ze stránky
+    // (AbortError; vlastní AbortController kód nikde nepoužívá) — viz zalogujChybu.
+    const SITOVA_CHYBA = /NetworkError when attempting to fetch|^Failed to fetch$|^Load failed$|network error|^The operation was aborted|^The user aborted a request|^signal is aborted/i;
 
     window.zalogujChybu = function (errorOrMessage, kontext, detaily) {
         try {

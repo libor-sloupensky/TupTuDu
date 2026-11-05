@@ -4,6 +4,8 @@
 return [
     'titulek' => 'TupTuDu — la bozza della tua casa o ristrutturazione online',
     'cenik' => 'Prezzi',
+    'clanky' => 'Articoli',
+    'popis' => 'Disegna la tua casa o ristrutturazione nel browser e guardala in 3D. Puoi iniziare gratis.',
     'nadpis' => 'La bozza della tua casa, prima ancora di andare dal progettista',
     'perex' => 'Disegna la distribuzione degli spazi e la pianta direttamente nel browser, guarda la casa in 3D e, dove disponibili, anche la mappa catastale e il profilo del terreno. Puoi iniziare gratis.',
     'zacit_zdarma' => 'Inizia gratis',

@@ -38,6 +38,7 @@ return [
 
     // Ceník (web)
     'cenik_titulek' => 'Tarifs — TupTuDu',
+    'cenik_popis' => 'Formules et tarifs TupTuDu : Gratuit, Home et Pro pour l’esquisse de ta maison ou de ta rénovation dans le navigateur.',
     'cenik_nadpis' => 'Tarifs',
     'cenik_uvod' => 'TupTuDu est un outil en ligne pour esquisser une construction ou une rénovation : dessine l’agencement et le plan, découvre ta maison en 3D et, là où c’est disponible, consulte aussi le plan cadastral et le relief de ton terrain. Tu peux commencer gratuitement.',
     'v_kazdem_tarifu' => 'Dans chaque formule',

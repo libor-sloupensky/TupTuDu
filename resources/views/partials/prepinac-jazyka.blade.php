@@ -1,5 +1,6 @@
 {{-- Přepínač jazyka — zobrazí se, až je na výběr víc jazyků (config/lokalizace.php).
-     Na webu vede přímo na stejnou stránku v jiném jazyce (jazyk je v adresě), jinde přes volbu do session a účtu. --}}
+     Na webu vede přímo na stejnou stránku v jiném jazyce (jazyk je v adresě), jinde přes volbu do session a účtu.
+     $verze = kam vedou odkazy, když stránka nemá všechny jazyky (kód => adresa). --}}
 @if (count(config('lokalizace.jazyky')) > 1)
     <details class="tt-jazyky">
         <summary aria-label="{{ __('obecne.jazyk') }}: {{ config('lokalizace.jazyky.' . app()->getLocale()) }}">{{ strtoupper(app()->getLocale()) }}</summary>
@@ -8,7 +9,7 @@
                 @if ($kod === app()->getLocale())
                     <strong lang="{{ $kod }}">{{ $nazev }}</strong>
                 @else
-                    <a href="{{ \App\Support\Domeny::jeWeb() ? \App\Support\Domeny::url('web', request()->path(), $kod) : route('jazyk.prepnout', $kod) }}" lang="{{ $kod }}" hreflang="{{ $kod }}">{{ $nazev }}</a>
+                    <a href="{{ ($verze ?? [])[$kod] ?? (\App\Support\Domeny::jeWeb() ? \App\Support\Domeny::url('web', request()->path(), $kod) : route('jazyk.prepnout', $kod)) }}" lang="{{ $kod }}" hreflang="{{ $kod }}">{{ $nazev }}</a>
                 @endif
             @endforeach
         </nav>

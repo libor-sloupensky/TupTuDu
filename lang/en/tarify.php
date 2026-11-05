@@ -34,6 +34,7 @@ return [
     'funkce_teren' => 'Terrain elevation profile',
 
     'cenik_titulek' => 'Pricing — TupTuDu',
+    'cenik_popis' => 'TupTuDu plans and prices: Free, Home and Pro for house and renovation concepts in your browser.',
     'cenik_nadpis' => 'Pricing',
     'cenik_uvod' => 'TupTuDu is an online tool for the concept of a new build or renovation: draw the layout and floor plan, view the house in 3D and, where available, see the cadastral map and terrain of your plot. You can start for free.',
     'v_kazdem_tarifu' => 'In every plan',

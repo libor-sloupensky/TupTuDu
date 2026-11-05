@@ -4,6 +4,8 @@
 return [
     'titulek' => 'TupTuDu — koncept domu a rekonštrukcie online',
     'cenik' => 'Cenník',
+    'clanky' => 'Články',
+    'popis' => 'Nakresli si dom alebo rekonštrukciu v prehliadači a prezri si ich v 3D. Začať môžeš zadarmo.',
     'nadpis' => 'Koncept tvojho domu skôr, než pôjdeš za projektantom',
     'perex' => 'Nakresli dispozíciu a pôdorys priamo v prehliadači, prezri si stavbu v 3D a tam, kde je to dostupné, aj katastrálnu mapu a terén pozemku. Začať môžeš zadarmo.',
     'zacit_zdarma' => 'Začať zadarmo',

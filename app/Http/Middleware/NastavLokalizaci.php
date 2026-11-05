@@ -33,10 +33,12 @@ class NastavLokalizaci
         $pevnyJazyk = Domeny::jeMasterteam($request) ? config('lokalizace.masterteam_jazyk') : null;
         $zemePrichodu = $domena['zeme'] ?? ($pevnyJazyk ? null : $this->zemePodleIp($request));
 
-        // Jazyk v adrese webu: parametr routy (routes/web.php). Controllery ho nepotřebují.
+        // Jazyk v adrese webu: parametr routy, u článků první část adresy (routes/web.php). Controllery ho nepotřebují.
         $jazykAdresy = $request->route()?->parameter('jazyk');
         if ($jazykAdresy !== null) {
             $request->route()->forgetParameter('jazyk');
+        } elseif (Lokalizace::jeJazyk($request->segment(1))) {
+            $jazykAdresy = $request->segment(1);
         }
 
         $jazyk = $pevnyJazyk ?? collect([

@@ -38,6 +38,7 @@ return [
 
     // Ceník (web)
     'cenik_titulek' => 'Cennik — TupTuDu',
+    'cenik_popis' => 'Plany i ceny TupTuDu: Darmowy, Home i Pro do koncepcji domu i remontu w przeglądarce.',
     'cenik_nadpis' => 'Cennik',
     'cenik_uvod' => 'TupTuDu to narzędzie online do tworzenia koncepcji budowy lub remontu: narysujesz układ pomieszczeń i rzut, obejrzysz dom w 3D, a tam, gdzie to dostępne, także mapę katastralną i teren działki. Możesz zacząć za darmo.',
     'v_kazdem_tarifu' => 'W każdym planie',

@@ -17,6 +17,11 @@
         <td>Exécution d’un contrat (art. 6, par. 1, point b) du RGPD)</td>
     </tr>
     <tr>
+        <td>L’article de notre site à partir duquel l’inscription a été effectuée</td>
+        <td>Déterminer quels articles aident réellement les gens</td>
+        <td>Intérêt légitime (art. 6, par. 1, point f, du RGPD)</td>
+    </tr>
+    <tr>
         <td>En cas de connexion avec Google : nom, e-mail et identifiant du compte Google</td>
         <td>Connexion sans mot de passe</td>
         <td>Exécution d’un contrat</td>

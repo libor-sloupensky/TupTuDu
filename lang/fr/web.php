@@ -4,6 +4,8 @@
 return [
     'titulek' => 'TupTuDu — esquisse de maison et de rénovation en ligne',
     'cenik' => 'Tarifs',
+    'clanky' => 'Articles',
+    'popis' => 'Dessine ta maison ou ta rénovation dans le navigateur et découvre-les en 3D. Tu peux commencer gratuitement.',
     'nadpis' => 'L’esquisse de ta maison, avant même de voir un architecte',
     'perex' => 'Dessine l’agencement et le plan directement dans ton navigateur, découvre ta construction en 3D et, là où c’est disponible, consulte aussi le plan cadastral et le relief de ton terrain. Tu peux commencer gratuitement.',
     'zacit_zdarma' => 'Commencer gratuitement',

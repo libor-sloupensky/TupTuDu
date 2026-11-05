@@ -30,6 +30,7 @@ class Uzivatel extends Authenticatable implements MustVerifyEmail, HasLocalePref
         'heslo',
         'google_id',
         'souhlas_podminky_v',
+        'zdroj_registrace',
         'notifikace_poptavky',
         'posledni_prihlaseni',
     ];

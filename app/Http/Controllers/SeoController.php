@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Clanky;
 use App\Support\Domeny;
 use App\Support\Lokalizace;
 use Illuminate\Http\Response;
@@ -14,13 +15,13 @@ use Illuminate\Http\Response;
  *   app        neindexovat (titulka na app.tuptudu.com je kopie webu kvůli Paddle)
  *   masterteam neindexovat
  *
- * Seznam stránek v sitemapě je ruční (`STRANKY_WEBU`) — nová veřejná stránka na
- * tuptudu.com = přidat sem. Každá stránka má adresu v každém jazyce, hreflang je
- * v sitemapě i v hlavě stránky. Dokumentace: modules/marketing.md, modules/lokalizace.md.
+ * V sitemapě jsou kanonické adresy: stránky ze `STRANKY_WEBU` v každém jazyce s hreflang a články
+ * v jejich jazyce (modules/blog.md). Nová veřejná stránka na tuptudu.com = přidat sem.
+ * Dokumentace: modules/marketing.md, modules/lokalizace.md.
  */
 class SeoController extends Controller
 {
-    /** Veřejné stránky tuptudu.com: cesta => priorita. */
+    /** Veřejné stránky tuptudu.com, každá v každém jazyce: cesta => priorita. */
     private const STRANKY_WEBU = [
         '/' => '1.0',
         '/pricing' => '0.8',
@@ -54,20 +55,36 @@ class SeoController extends Controller
             abort(404);
         }
 
+        // Položka: adresa, priorita, poslední změna, jazykové verze
+        $polozky = [];
+        foreach (self::STRANKY_WEBU as $cesta => $priorita) {
+            $verze = Lokalizace::verzeStranky($cesta);
+            foreach ($verze as $adresa) {
+                $polozky[] = [$adresa, $priorita, null, $verze];
+            }
+        }
+        foreach (Lokalizace::jazyky() as $jazyk) {
+            $clanky = Clanky::vsechny($jazyk);
+            if ($clanky !== []) {
+                $polozky[] = [Clanky::adresaPrehledu($jazyk), '0.7', $clanky[0]['publikovano'], []];
+            }
+            foreach ($clanky as $clanek) {
+                $polozky[] = [Clanky::adresa($clanek), '0.7', $clanek['overeno'], []];
+            }
+        }
+
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
             . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' . "\n";
-        $jazyky = Lokalizace::jazyky();
-        foreach (self::STRANKY_WEBU as $cesta => $priorita) {
-            $alternativy = '';
-            foreach ($jazyky as $jazyk) {
-                $alternativy .= '    <xhtml:link rel="alternate" hreflang="' . $jazyk . '" href="' . e(Domeny::url('web', $cesta, $jazyk)) . '"/>' . "\n";
+        foreach ($polozky as [$adresa, $priorita, $zmena, $verze]) {
+            $xml .= '  <url>' . "\n" . '    <loc>' . e($adresa) . '</loc>' . "\n";
+            foreach ($verze as $kod => $alternativa) {
+                $xml .= '    <xhtml:link rel="alternate" hreflang="' . $kod . '" href="' . e($alternativa) . '"/>' . "\n";
             }
-            $alternativy .= '    <xhtml:link rel="alternate" hreflang="x-default" href="' . e(rtrim(Domeny::zaklad('web'), '/') . $cesta) . '"/>' . "\n";
-
-            foreach ($jazyky as $jazyk) {
-                $xml .= '  <url>' . "\n" . '    <loc>' . e(Domeny::url('web', $cesta, $jazyk)) . '</loc>' . "\n"
-                    . $alternativy . '    <priority>' . $priorita . '</priority>' . "\n" . '  </url>' . "\n";
+            if ($verze !== []) {
+                $xml .= '    <xhtml:link rel="alternate" hreflang="x-default" href="' . e($verze[config('lokalizace.vychozi_jazyk')]) . '"/>' . "\n";
             }
+            $xml .= ($zmena ? '    <lastmod>' . e($zmena) . '</lastmod>' . "\n" : '')
+                . '    <priority>' . $priorita . '</priority>' . "\n" . '  </url>' . "\n";
         }
         $xml .= "</urlset>\n";
 

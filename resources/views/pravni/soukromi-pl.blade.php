@@ -17,6 +17,11 @@
         <td>Wykonanie umowy (art. 6 ust. 1 lit. b RODO)</td>
     </tr>
     <tr>
+        <td>Artykuł na naszej stronie, z którego nastąpiła rejestracja</td>
+        <td>Ustalenie, które artykuły naprawdę pomagają ludziom</td>
+        <td>Prawnie uzasadniony interes (art. 6 ust. 1 lit. f RODO)</td>
+    </tr>
+    <tr>
         <td>Przy logowaniu przez Google: imię i nazwisko, e-mail i identyfikator konta Google</td>
         <td>Logowanie bez hasła</td>
         <td>Wykonanie umowy</td>

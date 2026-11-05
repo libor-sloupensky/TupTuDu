@@ -4,6 +4,8 @@
 return [
     'titulek' => 'TupTuDu — boceto online de tu casa o tu reforma',
     'cenik' => 'Precios',
+    'clanky' => 'Artículos',
+    'popis' => 'Dibuja tu casa o tu reforma en el navegador y mírala en 3D. Puedes empezar gratis.',
     'nadpis' => 'El boceto de tu casa antes de ir al arquitecto',
     'perex' => 'Dibuja la distribución y el plano directamente en el navegador, ve la construcción en 3D y, donde esté disponible, también el mapa catastral y el terreno de la parcela. Puedes empezar gratis.',
     'zacit_zdarma' => 'Empieza gratis',

@@ -49,6 +49,7 @@ class GoogleController extends Controller
                 'jazyk' => \App\Support\Lokalizace::jazyk(),
                 'zeme' => \App\Support\Lokalizace::zeme(),
                 'souhlas_podminky_v' => now(),
+                'zdroj_registrace' => $request->session()->get('zdroj_registrace'),
             ]);
         }
 

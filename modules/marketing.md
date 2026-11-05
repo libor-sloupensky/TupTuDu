@@ -49,16 +49,19 @@ netlačit** (produkt čeká mnoho úprav).
 - `App\Http\Controllers\SeoController`: `/robots.txt` a `/sitemap.xml` generované podle části
   (`Domeny::cast()`), protože všechny tři subdomény sdílejí jeden `public/`:
   web → `Disallow: /cron/ /jazyk/ /api/` + odkaz na sitemapu; app a masterteam → `Disallow: /`,
-  sitemapa tam 404. **Nová veřejná stránka = přidat do `STRANKY_WEBU`** (ruční seznam: `/`, `/pricing`,
-  `/contact`, `/terms`, `/privacy`, `/refunds`).
+  sitemapa tam 404. **Nová veřejná stránka = přidat do `STRANKY_WEBU`** (ruční seznam: `/contact`, `/terms`,
+  `/privacy`, `/refunds`). Titulka, ceník a články se doplňují samy v každém jazyce, viz `modules/blog.md` (lokálně, 4. 11. 2026).
 - Layout `components/layouts/web`: na tuptudu.com `<link rel="canonical">` na www, jinde (app.tuptudu.com
   má stejnou titulku kvůli Paddle, lokál) `noindex`. Layouty app/prihlaseni/zakaznik mají `noindex` dál.
 - `public/.htaccess`: `tuptudu.com` → 301 na `www.tuptudu.com` (dřív obě odpovídaly 200 = duplicita).
-- Jazyk není v URL (session/IP) → jedna adresa na stránku, bez hreflang. Až budou národní domény,
-  přidat hreflang a sitemapu per doména.
-- Chybí zatím meta description na stránkách webu — doplnit, až se bude na SEO tlačit.
+- Jazyk v adrese: `/cs`, `/en`, `/cs/pricing`, `/en/pricing` a články (lokálně 4. 11. 2026, `modules/lokalizace.md`). Titulka a ceník
+  mají hreflang, adresy bez jazyka zůstávají kvůli Paddlu a kanonická z nich vede na verzi s jazykem. Ostatní stránky jsou
+  dál na jedné adrese s jazykem podle session a IP. Až budou národní domény, přidat hreflang a sitemapu per doména.
+- Popis stránky (meta description) a náhled při sdílení mají titulka, ceník a články, ostatní stránky popis zatím nemají.
 
 ## Co dál (až bude čas, rozhodnuto 2026-11-01 odložit)
+- **4. 11. 2026 Libor zadal plán SEO článků, viz `modules/blog.md`.** Stav indexace ten den: 0 zobrazení, titulka
+  naposledy procházená 1. 11. ještě s `noindex`. Plánovač klíčových slov přes API nejde (stupeň Explorer vrací 403).
 - Analýzu zatím nepouštět — data v GA4 se sbírají od 1. 11. 2026, indexace teprve začíná, kampaně
   žádné. Priorita je dodělat produkt a získat návštěvníky.
 - Pravidla pro „analyzuj web" do CLAUDE.md (co stáhnout, co smí Claude měnit sám, rozpočty v Ads

@@ -38,6 +38,7 @@ return [
 
     // Ceník (web)
     'cenik_titulek' => 'Precios — TupTuDu',
+    'cenik_popis' => 'Planes y precios de TupTuDu: Gratis, Home y Pro para el boceto de tu casa o tu reforma en el navegador.',
     'cenik_nadpis' => 'Precios',
     'cenik_uvod' => 'TupTuDu es una herramienta online para hacer el boceto de una obra nueva o una reforma: dibujas la distribución y el plano, ves la casa en 3D y, donde esté disponible, también el mapa catastral y el terreno de la parcela. Puedes empezar gratis.',
     'v_kazdem_tarifu' => 'En todos los planes',

@@ -28,7 +28,7 @@ class KontrolaPrekladu extends Command
             $klice = array_keys(Arr::dot($loader->load($zdroj, $skupina)));
 
             foreach (array_keys(config('lokalizace.jazyky')) as $jazyk) {
-                if ($jazyk === $zdroj) {
+                if ($jazyk === $zdroj || ! in_array($jazyk, config('lokalizace.skupiny_jazyku.' . $skupina, [$jazyk]), true)) {
                     continue;
                 }
 

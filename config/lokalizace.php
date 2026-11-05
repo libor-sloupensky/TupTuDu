@@ -23,6 +23,9 @@ return [
         'it' => 'Italiano',
     ],
 
+    // Skupiny textů, které neexistují ve všech jazycích (preklady:kontrola). Články se zatím nepřekládají.
+    'skupiny_jazyku' => ['clanky' => ['cs', 'en']],
+
     // Formát data podle jazyku (bez ext-intl). Používá Lokalizace::datum().
     'format_data' => [
         'cs' => 'j. n. Y', 'sk' => 'j. n. Y', 'en' => 'j M Y', 'pl' => 'd.m.Y',

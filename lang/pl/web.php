@@ -4,6 +4,8 @@
 return [
     'titulek' => 'TupTuDu — koncepcja domu i remontu online',
     'cenik' => 'Cennik',
+    'clanky' => 'Artykuły',
+    'popis' => 'Narysuj dom lub remont w przeglądarce i obejrzyj go w 3D. Możesz zacząć za darmo.',
     'nadpis' => 'Koncepcja twojego domu, zanim pójdziesz do projektanta',
     'perex' => 'Narysuj układ pomieszczeń i rzut prosto w przeglądarce, obejrzyj budynek w 3D, a tam, gdzie to dostępne, także mapę katastralną i teren działki. Możesz zacząć za darmo.',
     'zacit_zdarma' => 'Zacznij za darmo',

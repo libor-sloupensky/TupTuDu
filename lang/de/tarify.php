@@ -38,6 +38,7 @@ return [
 
     // Ceník (web)
     'cenik_titulek' => 'Preise – TupTuDu',
+    'cenik_popis' => 'Tarife und Preise von TupTuDu: Gratis, Home und Pro für dein Haus- und Umbaukonzept im Browser.',
     'cenik_nadpis' => 'Preise',
     'cenik_uvod' => 'TupTuDu ist ein Online-Tool für das Konzept deines Neubaus oder Umbaus: Du zeichnest Raumaufteilung und Grundriss, siehst dir das Haus in 3D an und, wo verfügbar, auch die Katasterkarte und das Gelände des Grundstücks. Der Einstieg ist kostenlos.',
     'v_kazdem_tarifu' => 'In jedem Tarif',

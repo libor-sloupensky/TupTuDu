@@ -14,8 +14,8 @@ final class Domeny
     public const APP = 'app';
     public const MASTERTEAM = 'masterteam';
 
-    /** První části cest webu bez jazyka v adrese: soubory pro roboty a technické adresy. Sdílený odkaz si jazyk určí podle návštěvníka. */
-    private const WEB_BEZ_JAZYKA = ['share', 'sitemap.xml', 'robots.txt', 'jazyk', 'api', 'cron', 'up'];
+    /** První části cest webu bez jazyka v adrese: technické adresy. Sdílený odkaz si jazyk určí podle návštěvníka. Soubory (s příponou) jazyk nikdy nemají. */
+    private const WEB_BEZ_JAZYKA = ['share', 'jazyk', 'api', 'cron', 'up'];
 
     /** Část podle hostu requestu; null = neznámý host (např. holé 127.0.0.1). */
     public static function cast(?Request $request = null): ?string
@@ -97,7 +97,8 @@ final class Domeny
     {
         $bezJazyka = self::cestaBezJazyka($cesta);
         $prvni = strtok($bezJazyka, '/?#');
-        if ($prvni !== false && in_array($prvni, self::WEB_BEZ_JAZYKA, true)) {
+        if (($prvni !== false && in_array($prvni, self::WEB_BEZ_JAZYKA, true))
+            || preg_match('/\.[a-z0-9]+$/i', strtok($bezJazyka, '?#') ?: '')) {
             return '/' . $bezJazyka;
         }
 

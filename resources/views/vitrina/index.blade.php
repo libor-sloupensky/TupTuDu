@@ -1,7 +1,10 @@
 {{-- Titulní stránka webu (tuptudu.com). Paddle ji při schvalování domény čte jako popis produktu —
      slibovat jen to, co aplikace opravdu umí (modules/platby.md). Národní služby přes @funkce. --}}
-@php use App\Support\Domeny; @endphp
-<x-layouts.web :title="__('web.titulek')">
+@php
+    use App\Support\Domeny;
+    use App\Support\Lokalizace;
+@endphp
+<x-layouts.web :title="__('web.titulek')" :popis="__('web.popis')" :verze="Lokalizace::verzeStranky('/')">
     <div class="tt-vitrina">
         <section class="tt-vitrina-hlavni">
             <div>
@@ -9,7 +12,7 @@
                 <p class="tt-vitrina-perex">{{ __('web.perex') }}</p>
                 <div class="tt-vitrina-akce">
                     <a class="btn btn-primary" href="{{ Domeny::url('app', '/register') }}">{{ __('web.zacit_zdarma') }}</a>
-                    <a class="btn" href="{{ Domeny::url('web', '/pricing') }}">{{ __('web.cenik_tlacitko') }}</a>
+                    <a class="btn" href="{{ Lokalizace::adresaWebu('/pricing') }}">{{ __('web.cenik_tlacitko') }}</a>
                 </div>
             </div>
         </section>
