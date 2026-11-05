@@ -15,6 +15,14 @@
 - **Nikdy neopravovat symptom** — nejdřív zmapovat celý datový tok
 - **Max 2 debug cykly** — pokud po 2 opravách problém trvá, přehodnotit přístup od základu
 
+## Commity a nasazení — souběžná sezení
+Vyvíjí se lokálně v jedné složce na větvi `koncept-v3`, souběžně v několika sezeních a bez vlastních větví. Na produkci se dává jen na povel.
+- **Commit je rutina. Uživatele se na něj neptat a nepsat mu o něm.** Každé sezení commituje samo po každém dokončeném a otestovaném kroku. Souhlas dává tento odstavec, další není potřeba.
+- **Jen své změny:** `git add <soubory>`, pak hned `git commit -m "…" -- <soubory>`. Nikdy `git add -A` ani `git commit -a`. Je-li v souboru i cizí rozdělaná změna, commitnout jen své řádky (`git apply --cached`).
+- **Sezení se domlouvají mezi sebou.** Když jedno potřebuje commit od jiného, napíše mu a to commitne svou hotovou práci rovnou. Uživatel čísla sezení nevidí a nic si mezi nimi nepřeposílá, proto mu o nich nepsat. Když je zmínka nutná, popsat sezení tématem.
+- **Push jen na přímý pokyn uživatele v daném sezení:** „dej to na web“ = commitnout své a `git push origin koncept-v3:main`. Odejde všechno commitnuté, rozdělaná práce zůstane lokálně.
+- Větev `jazyky` je poslední výjimka. Další vlastní větve jen na výslovnou žádost.
+
 ## Hlášení chyb z frontendu — POVINNÉ u každého `catch`
 
 **V `catch` bloku nikdy nenechávat holý `alert()` ani prázdné `.catch(() => {})`.** Helpery jsou v `resources/views/partials/error-tracker.blade.php` (includuje ho každý layout):
@@ -62,6 +70,10 @@ Proxy čte celou DB (i uživatele) — **jen SELECT** pro ladění; zápis (`?wr
 - Texty, které uvidí zákazník, **nikdy natvrdo česky** — Blade `__('skupina.klic')`, JS `preloz('skupina.klic')`. Nový text rovnou do `lang/cs` i `lang/en`, pak `php artisan preklady:kontrola`. Ostatní jazyky se doplňují hromadně **před každým nasazením**, do té doby v nich platí angličtina; `preklady:kontrola` nesmí před pushem nic hlásit.
 - Národní služby (katastr, výškový profil, mapový podklad) jen přes profil země: `@funkce('katastr')`, middleware `funkce:katastr`, `Lokalizace::maFunkci()`.
 - Masterteam je jen česky, nepřekládá se. Podrobnosti: `modules/lokalizace.md`.
+
+## Články na webu
+- Před psaním nebo úpravou článku přečíst `modules/blog.md`. Platí pro všechny: do 500 slov a jedno téma, související témata jako samostatné propojené články, žádné vnější odkazy ani zdroje na stránce, 2 až 3 přirozené cesty do aplikace, hodnoty závislé na zemi vždy s označením země.
+- **Po každém napsání nebo větší úpravě** spustit `php artisan clanky:kontrola` a **nezávislou odbornou revizi** (agent `revize-clanku`, postup v `modules/blog.md`). Liborovi se článek předává až s vyřešenými nálezy.
 
 ## Formuláře editoru
 - Zarovnání polí a nápisů řeší jedno pravidlo `.kk-editor` v `koncept-v3.blade.php`, ne okraje u jednotlivých polí. Přidaný nebo změněný panel ověřit `node services/import-test/test-formulare-ui.cjs` a nový panel do toho testu doplnit.
