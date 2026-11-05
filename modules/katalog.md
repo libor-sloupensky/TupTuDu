@@ -116,7 +116,9 @@ Nejsou to alternativy, podoba 2 stojí na podobě 1, potřebuje stejné masky a 
 
 ## Hosting
 
-Prvních 120 kusů je v `public/katalog` v repozitáři. Celý katalog má 185 MB (modely 170, značky 10, náhledy 4), do repozitáře a přes FTP deploy se to nehodí, před nasazením zbytku je potřeba úložiště. Libor 4. 11. 2026 navrhuje AWS, účet má. Plán: bucket S3 ve Frankfurtu s veřejným čtením jen pro katalog a CORS, nahrání přes `aws s3 sync`, adresa katalogu z `.env`. U značek do půdorysu je potřeba `crossOrigin`, jinak obrázek z cizí adresy zablokuje export půdorysu do PNG. Zatím nic z toho není zapojené, kód S3 nepoužívá a balík pro S3 tu není. V GitHub Secrets ale `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` a `AWS_BUCKET` jsou (od 14. 8. 2026), deploy je nikam nepředává. **Bucket nezakládat, dokud Libor neověří, že TupTuDu nemíchá data s jiným projektem** (viz paměť `tuptudu-zdroje-objektu`).
+Prvních 120 kusů je v `public/katalog` v repozitáři. Celý katalog má 185 MB (modely 170, značky 10, náhledy 4), do repozitáře a přes FTP deploy se to nehodí, před nasazením zbytku je potřeba úložiště. Libor 4. 11. 2026 navrhuje AWS, účet má. Plán: bucket S3 ve Frankfurtu s veřejným čtením jen pro katalog a CORS, nahrání přes `services/katalog/s3.cjs`, adresa katalogu z `.env`. U značek do půdorysu je potřeba `crossOrigin`, jinak obrázek z cizí adresy zablokuje export půdorysu do PNG. Zatím nic z toho není zapojené, kód S3 nepoužívá a balík pro S3 tu není. V GitHub Secrets ale `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` a `AWS_BUCKET` jsou (od 14. 8. 2026), deploy je nikam nepředává. **Bucket nezakládat, dokud Libor neověří, že TupTuDu nemíchá data s jiným projektem** (viz paměť `tuptudu-zdroje-objektu`).
+
+**Bucket `tuptudu-katalog` ve Frankfurtu je založený a prázdný (5. 11. 2026).** Soubory smí číst každý, seznam souborů veřejný není, CORS pouští jen naše adresy, národní domény se doplní do `ADRESY` v `services/katalog/s3.cjs`. Klíč v `.env` (`KATALOG_AWS_KEY`, `KATALOG_AWS_SECRET`) smí jen do bucketů `tuptudu-katalog*`. Účet je společný s jiným projektem, plný přístup k němu záměrně nemáme. Založení a nastavení: `node services/katalog/s3.cjs zaloz`, ověření: `node services/katalog/s3.cjs over`. AWS CLI tu není, skript je bez knihoven.
 
 ## Stav a známá omezení (4. 11. 2026)
 
@@ -148,7 +150,7 @@ Viděno při prohlídce, zatím neřešeno:
    - spustit `test-katalog-ui`, `test-svetlo-3d-ui`, `test-sdileni-ui`,
    - smazat mezipaměť zdrojů.
    Změní se i 120 modelů, značek a náhledů v gitu, půjdou do dalšího nasazení. 927 kusů je jinak prohlédnutých, čeká na úložiště, viz Hosting a upozornění výš.
-2. **Před nasazením** vyřešit AWS: značky i modely z cizí adresy, `crossOrigin` kvůli exportu PNG. Plán z 5. 11. 2026: vlastní bucket `tuptudu-katalog` ve Frankfurtu a klíč omezený jen na něj, ne plný přístup k účtu. Přesun na úložiště Libor odložil na později.
+2. **Před nasazením** vyřešit AWS: značky i modely z cizí adresy, `crossOrigin` kvůli exportu PNG. Bucket je založený, viz Hosting. Zbývá nahrát soubory a přepnout adresu, Libor to odložil na později.
 3. **Další vrstvy v pořadí:** povrchy (ambientCG, Poly Haven), koupelna (Sweet Home 3D + vlastní materiály, kout), generátor linky.
 4. **Dotyk na tabletu** nikdo nezkoušel.
 5. **Stránka analýzy** v nákladech ještě uvádí Cloudflare R2, Libor navrhl AWS.
