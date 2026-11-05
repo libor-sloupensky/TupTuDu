@@ -266,19 +266,23 @@
     }
 
     /**
-     * Skutečné hodnoty hran: co hrana nemá nastavené sama, bere z celku. Bez vlastního
-     * přesahu mají všechny okapy stejnou spodní výšku, proto je u strmější plochy přesah
-     * menší. Vlastní přesah je přímo vodorovná vzdálenost od líce.
+     * Skutečné hodnoty hran: co hrana nemá nastavené sama, bere z celku. Spodní hrany okapů
+     * leží ve stejné výšce, proto je u strmější plochy přesah menší. Vlastní přesah je přímo
+     * vodorovná vzdálenost od líce: rovina se posune tak, aby okap zůstal ve stejné výšce,
+     * nároží pak vychází z rohu půdorysu a v rohu nevznikne zub. Jiná spodní výška okapu
+     * je jen tam, kde má hrana vlastní výšku okapu.
      */
     function parametryHran(hrany, nast) {
         const zaklad = Math.tan((nast.sklon || 35) * Math.PI / 180);
         const klesnuti = Math.max(0, nast.presah || 0) * zaklad;
+        const zCelek = nast.zOkap || 0;
         return hrany.map((h) => {
             const sklon = h.sklon || nast.sklon || 35;
             const tg = Math.tan(sklon * Math.PI / 180);
-            const z = typeof h.zOkap === 'number' ? h.zOkap : (nast.zOkap || 0);
             const presah = typeof h.presah === 'number' ? Math.max(0, h.presah)
                 : (h.typ === 'okap' ? klesnuti / tg : Math.max(0, nast.presahStit || 0));
+            const z = typeof h.zOkap === 'number' ? h.zOkap
+                : (h.typ === 'okap' && typeof h.presah === 'number' ? zCelek - klesnuti + presah * tg : zCelek);
             return { sklon, tg, z, presah, spodek: h.typ === 'okap' ? z - presah * tg : null };
         });
     }

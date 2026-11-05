@@ -47,11 +47,37 @@ console.log('Vlastní přesah a výška okapu hrany');
 v = Strecha.vypocet(hranyZ(OBD, [{ typ: 'okap', sklon: 30, presah: 1.2 }, { typ: 'stit', presah: 0.6 }, { typ: 'okap', sklon: 30, zOkap: 2.2, presah: 0.3 }, { typ: 'stit', presah: 0 }]), NAST);
 let o = obalka(v);
 kontrola('každá hrana má svůj přesah', blizko(o.y0, -1.2) && blizko(o.x1, 10.6) && blizko(o.y1, 6.3) && blizko(o.x0, 0), JSON.stringify(o));
-kontrola('líc horní strany ve výšce 3,0', blizko(zPlochy(v, 5, 0), 3, 0.002), String(zPlochy(v, 5, 0)));
-kontrola('líc dolní strany ve výšce 2,2', blizko(zPlochy(v, 5, 6), 2.2, 0.002), String(zPlochy(v, 5, 6)));
+const zHorni = 3 + (1.2 - 0.5) * tg(30);   // vlastní přesah bez vlastní výšky: okap zůstává ve výšce ostatních
+kontrola('líc horní strany se posune, okap drží výšku', blizko(zPlochy(v, 5, 0), zHorni, 0.002), String(zPlochy(v, 5, 0)));
+kontrola('líc dolní strany ve vlastní výšce 2,2', blizko(zPlochy(v, 5, 6), 2.2, 0.002), String(zPlochy(v, 5, 6)));
 kontrola('nižší okap je v zOkapMin', blizko(v.zOkapMin, 2.2));
-const hreben = (6 - (3 - 2.2) / tg(30)) / 2;   // kde se roviny potkají
-kontrola('hřeben se posune k vyšší straně', blizko(zPlochy(v, 5, hreben), 3 + hreben * tg(30), 0.01) && blizko(v.zMax, 3 + hreben * tg(30), 0.01), v.zMax.toFixed(3));
+const hreben = (6 - (zHorni - 2.2) / tg(30)) / 2;   // kde se roviny potkají
+kontrola('hřeben se posune k vyšší straně', blizko(zPlochy(v, 5, hreben), zHorni + hreben * tg(30), 0.01) && blizko(v.zMax, zHorni + hreben * tg(30), 0.01), v.zMax.toFixed(3));
+
+console.log('Valbová s různými přesahy a sklony: okapy v jedné výšce, v rohu žádný zub');
+v = Strecha.vypocet(hranyZ(OBD, [{ typ: 'okap', sklon: 30 }, { typ: 'okap', sklon: 30, presah: 0.3 }, { typ: 'okap', sklon: 30 }, { typ: 'okap', sklon: 60, presah: 0.4 }]), NAST);
+const spodek = 3 - 0.5 * tg(30);
+const okrajV = v.okraj;
+let zubu = 0, nejdal = 0;
+okrajV.forEach((a, i) => {
+    const b = okrajV[(i + 1) % okrajV.length];
+    // Těsně uvnitř obvodu: plocha musí být všude ve výšce okapu, zub by tu byl níž nebo výš
+    for (let k = 0.02; k < 1; k += 0.01) {
+        const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy);
+        const z = zPlochy(v, a.x + dx * k - dy / L * 1e-4, a.y + dy * k + dx / L * 1e-4);
+        if (z === null) continue;
+        nejdal = Math.max(nejdal, Math.abs(z - spodek));
+        if (Math.abs(z - spodek) > 0.005) zubu++;
+    }
+});
+kontrola('celý obvod střechy ve výšce okapu', zubu === 0, `nejvíc ${nejdal.toFixed(4)} m od ${spodek.toFixed(3)} m`);
+o = obalka(v);
+kontrola('přesahy zůstávají přesně podle zadání', blizko(o.x1, 10.3) && blizko(o.x0, -0.4) && blizko(o.y0, -0.5) && blizko(o.y1, 6.5), JSON.stringify(o));
+kontrola('nic se neořezává, všechny hrany začínají ve stejné výšce', blizko(v.zStart, spodek));
+const hranyV = Strecha.parametryHran(hranyZ(OBD, [{ typ: 'okap', sklon: 30 }, { typ: 'okap', sklon: 30, presah: 0.3 }, { typ: 'okap', sklon: 30, zOkap: 2.4, presah: 0.3 }, { typ: 'stit' }]), NAST);
+kontrola('hrana s přesahem bez vlastní výšky drží okap ve výšce ostatních', blizko(hranyV[1].spodek, spodek));
+kontrola('hrana s vlastní výškou si ji nechá', blizko(hranyV[2].z, 2.4) && blizko(hranyV[2].spodek, 2.4 - 0.3 * tg(30)));
+kontrola('bez vlastního přesahu rovina prochází lícem ve výšce celku', blizko(hranyV[0].z, 3));
 
 console.log('Valbová s různými výškami okapů');
 v = Strecha.vypocet(hranyZ(OBD, [{ typ: 'okap', sklon: 35, zOkap: 3.6 }, { typ: 'okap', sklon: 35 }, { typ: 'okap', sklon: 35, zOkap: 2.6 }, { typ: 'okap', sklon: 35 }]), { ...NAST, presah: 0.4, sklon: 35 });
