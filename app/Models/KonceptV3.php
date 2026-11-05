@@ -2,17 +2,47 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 /**
- * Koncept V3 — stejný model jako Koncept, jen vlastní tabulka.
- * Dědí z Koncept, takže projde všude, kde služby očekávají Koncept
- * (KonceptAiService, PravidlaService, RozhovorService).
+ * Koncept V3 — projekt v editoru.
  *
  * V zákaznické aplikaci se mu říká „projekt" a v adrese ho určuje `kod`
  * (app.tuptudu.com/projects/k7x2m), ne pořadové id.
  */
-class KonceptV3 extends Koncept
+class KonceptV3 extends Model
 {
     protected $table = 'koncepty_v3';
+
+    const CREATED_AT = 'vytvoreno';
+    const UPDATED_AT = 'upraveno';
+
+    protected $fillable = [
+        'uzivatel_id',
+        'nazev',
+        'data',
+        'verze',
+        'faze',
+        'metadata',
+        'historie',
+        'chat',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'data' => 'array',
+            'metadata' => 'array',
+            'historie' => 'array',
+            'chat' => 'array',
+        ];
+    }
+
+    public function uzivatel(): BelongsTo
+    {
+        return $this->belongsTo(Uzivatel::class, 'uzivatel_id');
+    }
 
     /** Bez znaků, které se pletou (0/o, 1/l/i) — kód se může opisovat. */
     private const ABECEDA_KODU = 'abcdefghjkmnpqrstuvwxyz23456789';

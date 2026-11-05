@@ -1,7 +1,7 @@
 """
 Půdorys SVG parser → JSON formát kompatibilní s Koncept (steny/otvory).
 
-Výstupní formát (PŘESNĚ jak to očekává StavebniEngine.fromJSON v public/js/stavebni-engine.js):
+Výstupní formát (PŘESNĚ jak to očekává StavebniEngine.fromJSON v public/js/koncept-v3/stavebni-engine.js):
 {
   "steny":  [{ "id", "od": [x, y], "do": [x, y], "tloustka", "typ" }],
   "otvory": [{ "id", "stena": "W1", "pozice", "sirka", "typ" }],
@@ -44,7 +44,7 @@ VENKOVNI_SPACE = {'Outdoor', 'Terrace', 'Balcony', 'CarPort', 'Garage', 'Garden'
 
 def urc_typ_steny(tloustka_m: float, je_obvodova: bool = False) -> str:
     """
-    Odvozeno z public/js/stavebni-engine.js — TYPY_STEN a urcTypSteny().
+    Odvozeno z public/js/koncept-v3/stavebni-engine.js — TYPY_STEN a urcTypSteny().
 
     Obvodová stěna: 0.20-0.60m  (leží na obvodu budovy)
     Nosná stěna:    0.20-0.45m  (vnitřní, ale tlustá)

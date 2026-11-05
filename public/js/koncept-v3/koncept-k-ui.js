@@ -12,9 +12,7 @@ function konceptKEditor(initialData) {
         koncepty: initialData.koncepty || [],   // seznam do nabídky (reaktivní)
         projektData: initialData.projektData,
         verze: initialData.verze,
-        faze: initialData.faze,
         metadata: initialData.metadata,
-        chat: initialData.chat,
         // Historie = časová osa kroků, každý krok je stav PO akci (i s polohou
         // podkladu). Ctrl+Z / Ctrl+Shift+Z i klik v panelu jen posouvají
         // `historiePozice`; nová úprava zahodí kroky za ní (jako v grafických
@@ -36,9 +34,6 @@ function konceptKEditor(initialData) {
         // začínáme vždy v klasickém zobrazení (nepokračujeme v fullscreenu
         // z minulého sezení). Stav se nepersistuje do kk_state.
         celaObrazovka: false,
-        aiVstup: '',
-        aiNacitani: false,
-        aiModel: _s.aiModel || 'claude-sonnet-4-6',
         napovedaOtevrena: false,
         // uložené 2/3 (dřívější rozložení nahoře/dole) se sklopí na vlevo/vpravo
         layoutMode: (_s.layoutMode ?? 0) % 2,
@@ -92,7 +87,7 @@ function konceptKEditor(initialData) {
         // Výchozí parametry kreslené stěny (lišta u nástroje „Kreslit stěnu")
         stenaTyp: _s.stenaTyp || 'obvodova',
         tloustkaSteny: _s.tloustkaSteny || 0.3,
-        panelOpen: JSON.parse(localStorage.getItem('kv3_panelOpen') || '{"objekty":false,"parcela":false,"historie":false,"chat":true}'),
+        panelOpen: JSON.parse(localStorage.getItem('kv3_panelOpen') || '{"objekty":false,"parcela":false,"historie":false}'),
 
         // ─── Engine + Renderer ──────────────────────────────────
         engine: null,
@@ -152,12 +147,6 @@ function konceptKEditor(initialData) {
             'Orchard': preloz('ed_ui.druh_sad'), 'Forest': preloz('ed_ui.druh_les'), 'WaterArea': preloz('ed_ui.druh_voda'),
             'BuiltUpArea': preloz('ed_ui.druh_zastavena'), 'OtherArea': preloz('ed_ui.druh_ostatni'),
         },
-
-        // ─── Zvýrazňovač ──────────────────────────────────────
-        zvyrazneniBody: [], // [{points: [x1,y1,x2,y2,...], id}]
-        _zvyrazKresba: null, // aktuální tah
-        _zvyrazLastPt: null, // pro Shift+click rovné čáry
-        _zvyrazNextId: 1,
 
         isDraggingWall: false,
         kotaEdit: null,               // právě přepisovaná kóta u výběru {k, x, y}
@@ -1636,7 +1625,6 @@ function konceptKEditor(initialData) {
                     if (kat.parcely) this.katastrParcely = kat.parcely;
                     if (kat.ku) { this.katastrVybraneKu = kat.ku; this.katastrKuHledani = kat.ku.n + ' (' + kat.ku.o + ')'; }
                     if (kat.kompasUhel && !this.kompasUhel) this.kompasUhel = kat.kompasUhel;
-                    if (kat.aiModel) this.aiModel = kat.aiModel;
                     if (this.katastrParcely.length > 0) {
                         // Načíst stavby a okolní parcely (neukládají se do DB)
                         // Vždy znovu načíst stavby a sousedy (neukládají se spolehlivě do DB)
@@ -1653,8 +1641,6 @@ function konceptKEditor(initialData) {
                     }
                     if (this.kompasUhel !== 0) this.aplikujRotaci(true);
                 }
-
-                this.scrollChat();
             });
         },
 
@@ -2420,13 +2406,6 @@ function konceptKEditor(initialData) {
             }
 
             if (this.domPohyb?.(pos, e)) return;
-
-            // Zvýrazňovač — kreslení tahu
-            if (this.nastroj === 'zvyraznovac' && this._zvyrazKresba) {
-                this._zvyrazKresba.points.push(pos.x, pos.y);
-                this.renderZvyrazTemp();
-                return;
-            }
 
             // Aktivovat pending drag po dostatečném pohybu.
             // Threshold 5 px (dříve 3) — při 3 px se drag aktivoval i nechtěným malým
@@ -3345,23 +3324,6 @@ function konceptKEditor(initialData) {
 
             if (this.domStisk?.(pos, e, hit)) return;
 
-            // Zvýrazňovač — začít kresbu
-            if (this.nastroj === 'zvyraznovac') {
-                if (e.evt.shiftKey && this._zvyrazLastPt) {
-                    // Shift+klik — rovná čára
-                    const id = 'Z' + this._zvyrazNextId++;
-                    this.zvyrazneniBody.push({
-                        id, points: [this._zvyrazLastPt.x, this._zvyrazLastPt.y, pos.x, pos.y]
-                    });
-                    this._zvyrazLastPt = { x: pos.x, y: pos.y };
-                    this.renderZvyrazneni();
-                } else {
-                    this._zvyrazKresba = { points: [pos.x, pos.y] };
-                    this._zvyrazLastPt = { x: pos.x, y: pos.y };
-                }
-                return;
-            }
-
             if (this.nastroj === 'vyber') {
                 // Klik na madlo sloučení → rovnou spojit, žádné tažení
                 if (hit.type === 'spoj') {
@@ -3466,18 +3428,6 @@ function konceptKEditor(initialData) {
                 this.ulozitNastaveni();
                 return;
             }
-
-            // Zvýrazňovač — dokončit tah
-            if (this._zvyrazKresba && this._zvyrazKresba.points.length >= 4) {
-                const id = 'Z' + this._zvyrazNextId++;
-                this.zvyrazneniBody.push({ id, points: [...this._zvyrazKresba.points] });
-                this._zvyrazKresba = null;
-                this._zvyrazLastPt = { x: pos.x, y: pos.y };
-                this.renderer.clearTemp();
-                this.renderZvyrazneni();
-                return;
-            }
-            this._zvyrazKresba = null;
 
             // Pending drag zrušen (klik bez tažení) — zpracuje se v onClick
             if (this._pendingDrag) {
@@ -5130,13 +5080,8 @@ function konceptKEditor(initialData) {
             }
 
             // F odstraněno — reset pozice přes dvojklik na kompas
-            if (e.key === 'b' || e.key === 'B') {
-                this.nastroj = this.nastroj === 'zvyraznovac' ? 'vyber' : 'zvyraznovac';
-                return;
-            }
             if (e.key === '1') this.nastroj = 'vyber';
             if (e.key === '2') this.nastroj = 'posun';
-            if (e.key === '3') this.nastroj = 'zvyraznovac';
             if (e.key === '4') this.nastroj = 'stena';
             if (e.key === '5' || e.key === 'm' || e.key === 'M') this.nastroj = this.nastroj === 'metr' ? 'vyber' : 'metr';
             if (e.key === '6' || e.key === 'o' || e.key === 'O') this.nastroj = this.nastroj === 'otvor' ? 'vyber' : 'otvor';
@@ -5281,60 +5226,6 @@ function konceptKEditor(initialData) {
             }
 
             this.renderer.tempLayer.batchDraw();
-        },
-
-        // ═══════════════════════════════════════════════════════
-        // ZVÝRAZŇOVAČ — rendering
-        // ═══════════════════════════════════════════════════════
-        renderZvyrazneni() {
-            if (!this.renderer || !this.renderer.highlightLayer) return;
-            // Překreslit všechny zvýraznění (ne mazat a kreslit znovu — to způsobuje blikání)
-            // Smazat jen ty co tam už nejsou
-            this.renderer.overlayLayer.find('.highlight').forEach(n => n.destroy());
-            for (const z of this.zvyrazneniBody) {
-                const line = new Konva.Line({
-                    points: z.points,
-                    stroke: 'rgba(255, 105, 180, 0.45)',
-                    strokeWidth: 13 / (this.stage.scaleX() || 1),
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                    listening: false,
-                    name: 'highlight',
-                });
-                this.renderer.overlayLayer.add(line);
-            }
-            this.renderer.overlayLayer.batchDraw();
-        },
-
-        renderZvyrazTemp() {
-            this.renderer.clearTemp();
-            if (!this._zvyrazKresba || this._zvyrazKresba.points.length < 4) return;
-            const line = new Konva.Line({
-                points: this._zvyrazKresba.points,
-                stroke: 'rgba(255, 105, 180, 0.45)',
-                strokeWidth: 13 / this.stage.scaleX(),
-                lineCap: 'round',
-                lineJoin: 'round',
-                listening: false,
-                name: 'temp', // aby clearTemp() / smazZvyrazneni() preview našly
-            });
-            this.renderer.tempLayer.add(line);
-            this.renderer.tempLayer.batchDraw();
-        },
-
-        smazZvyrazneni() {
-            this.zvyrazneniBody = [];
-            this._zvyrazLastPt = null;
-            this._zvyrazNextId = 1;
-            // POZOR: tempLayer === overlayLayer === labelLayer === highlightLayer
-            // (alias na stejný Konva.Layer). Dříve tu bylo tempLayer.destroyChildren(),
-            // což smazalo i kóty, popisky, místnosti a nábytek — všechno se kreslí
-            // do overlayLayer. Teď selektivní find/destroy: jen highlights a temp shapes.
-            if (this.renderer && this.renderer.overlayLayer) {
-                this.renderer.overlayLayer.find('.highlight').forEach(n => n.destroy());
-                this.renderer.overlayLayer.find('.temp').forEach(n => n.destroy());
-                this.renderer.overlayLayer.batchDraw();
-            }
         },
 
         // ═══════════════════════════════════════════════════════
@@ -5916,7 +5807,6 @@ function konceptKEditor(initialData) {
                                 ku: this.katastrVybraneKu,
                                 podklad: this.katastrMapaPodklad,
                                 kompasUhel: this.kompasUhel,
-                                aiModel: this.aiModel,
                             },
                         }),
                     });
@@ -6398,7 +6288,7 @@ function konceptKEditor(initialData) {
             const kroky = this.historie.filter(k => this._neodeslaneKroky.includes(k.id));
             const prvni = kroky.length ? this.historie.indexOf(kroky[0]) : -1;
             const telo = {
-                data: this.engine.toJSON(), nazev: this.projektNazev, chat: this.chat,
+                data: this.engine.toJSON(), nazev: this.projektNazev,
                 aktualni: this.historie[this.historiePozice]?.id ?? null,
                 verze: this.verze,
             };
@@ -6490,7 +6380,6 @@ function konceptKEditor(initialData) {
                 stenaTyp: this.stenaTyp,
                 tloustkaSteny: this.tloustkaSteny,
                 mapaPodklad: this.katastrMapaPodklad,
-                aiModel: this.aiModel,
                 showSteny: this.showSteny,
                 showOtvory: this.showOtvory,
                 kotyVzdy: this.showKoty,
@@ -6577,309 +6466,6 @@ function konceptKEditor(initialData) {
                 this.renderer.renderGrid();
             }
             this.ulozitNastaveni();
-        },
-
-        // ═══════════════════════════════════════════════════════
-        // AI CHAT
-        // ═══════════════════════════════════════════════════════
-        async posliAi() {
-            let text = this.aiVstup.trim();
-            if (!text || this.aiNacitani) return;
-
-            // Zkratka /navrh → přeskočí rozhovor a rovnou generuje návrh
-            // Užitečné pro testování. Příklad: "/navrh dům 4+kk 130 m² bungalov"
-            let rovnouNavrh = false;
-            if (/^\/navrh\b/i.test(text)) {
-                rovnouNavrh = true;
-                text = text.replace(/^\/navrh\b\s*/i, '').trim();
-                if (!text) text = 'Navrhni typický rodinný dům dle tvého uvážení.';
-            }
-
-            this.aiVstup = '';
-            this.chat.push({ role: 'user', text: (rovnouNavrh ? '/navrh ' : '') + text, cas: new Date().toISOString() });
-            this.aiNacitani = true;
-            this.scrollChat();
-
-            try {
-                let url, body;
-                const maData = this.engine && this.engine.walls.size > 0;
-
-                // Kontext parcely pro AI — tvar, rozměry, výšková data
-                const parcelaKontext = this._sestavParcelaKontext();
-
-                // Detekovat stěny pod zvýrazňovačem → kontext pro AI
-                const oznaceneSteny = this._detekujOznaceneSteny();
-
-                if (this.projektId && this.faze === 'navrh' && maData) {
-                    url = initialData.routes.aiUprav.replace(':id', this.projektId);
-                    body = { pozadavek: text, data: this.engine.toJSON(), katastr: parcelaKontext };
-                    if (oznaceneSteny.length > 0) body.oznacene = oznaceneSteny;
-                } else if (this.projektId) {
-                    url = initialData.routes.aiVytvor;
-                    body = { popis: text, koncept_id: this.projektId, parcela: parcelaKontext };
-                    if (rovnouNavrh) body.rovnou_navrh = true;
-                } else {
-                    url = initialData.routes.aiVytvor;
-                    body = { popis: text, parcela: parcelaKontext };
-                    if (rovnouNavrh) body.rovnou_navrh = true;
-                }
-
-                body.model = this.aiModel;
-                const resp = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': initialData.csrf, 'Accept': 'application/json' },
-                    body: JSON.stringify(body),
-                });
-                const d = await resp.json();
-
-                console.log('[AI response]', JSON.stringify(d).substring(0, 500));
-                if (d.error) {
-                    this.chat.push({ role: 'ai', text: 'Chyba: ' + d.error, cas: new Date().toISOString() });
-                    window.zalogujChybu?.(d.error, 'Koncept V3: AI chat', { projektId: this.projektId, model: this.aiModel, faze: this.faze, status: resp.status });
-                } else {
-                    const newData = d.data;
-
-                    // Hybridní zpracování: layout vs. příkaz vs. návrh
-                    if (newData?.layout) {
-                        // Mřížkový layout — engine přeloží do stěn
-                        this.engine.pushUndo();
-                        const layoutResult = this.engine.fromLayout(newData.layout);
-                        this.renderer.render();
-                        this.fitView();
-                        this.projektData = this.engine.toJSON();
-                        // Uložit střechu
-                        if (layoutResult.strecha) {
-                            this.projektData.strecha = layoutResult.strecha;
-                        }
-                        if (newData.objekt) this.projektData.objekt = newData.objekt;
-                    } else if (newData?.akce) {
-                        this._provedAkci(newData);
-                    } else if (newData && newData.steny !== undefined && (newData.steny.length > 0 || newData.rozmery)) {
-                        // Ochrana: varovat pokud AI nahrazuje většinu stěn
-                        const aktualniPocet = this.engine.walls.size;
-                        const novyPocet = (newData.steny || []).length;
-                        if (aktualniPocet > 3 && novyPocet > 0 && novyPocet < aktualniPocet * 0.5) {
-                            if (!confirm('AI chce nahradit ' + aktualniPocet + ' stěn za ' + novyPocet + '. Pokračovat?')) {
-                                this.chat.push({ role: 'ai', text: 'Změna zrušena uživatelem.', cas: new Date().toISOString() });
-                                this.aiNacitani = false;
-                                this.scrollChat();
-                                return;
-                            }
-                        }
-                        this.engine.pushUndo();
-                        this.engine.fromJSON(newData, { zachovatDum: true });
-                        this.renderer.render();
-                        if (newData.steny && newData.steny.length > 0) this.fitView();
-                        this.projektData = newData;
-                    }
-
-                    if (d.id && !this.projektId) {
-                        this.projektId = d.id;
-                        window.location.href = initialData.routes.indexK + '?id=' + d.id;
-                        return;
-                    }
-                    if (d.nazev) this.projektNazev = d.nazev;
-                    if (d.verze) this.verze = d.verze;
-                    if (d.faze) this.faze = d.faze;
-
-                    const aiText = d.aiOdpoved || d.dotaz || newData?.zmena || newData?.dotaz || '';
-                    if (aiText) {
-                        this.chat.push({ role: 'ai', text: aiText, cas: new Date().toISOString() });
-                    } else if (d.faze === 'rozhovor' || this.faze === 'rozhovor') {
-                        // Rozhovor pokračuje ale AI nevrátila text — zkusit znovu
-                        this.chat.push({ role: 'ai', text: 'Rozumím. Můžeš pokračovat nebo upřesnit požadavek.', cas: new Date().toISOString() });
-                    } else {
-                        this.chat.push({ role: 'ai', text: 'Koncept aktualizován.', cas: new Date().toISOString() });
-                    }
-                    this.ulozit();
-                }
-            } catch (e) {
-                this.chat.push({ role: 'ai', text: 'Chyba: ' + e.message, cas: new Date().toISOString() });
-                window.zalogujChybu?.(e, 'Koncept V3: AI chat', { projektId: this.projektId, model: this.aiModel, faze: this.faze });
-            }
-
-            this.aiNacitani = false;
-            this.scrollChat();
-        },
-
-        /** Provede AI příkaz (smazání, undo...) místo přímé JSON manipulace */
-        _provedAkci(cmd) {
-            const akce = cmd.akce;
-
-            if (akce === 'undo') {
-                this.undo();
-                return;
-            }
-
-            if (akce === 'smazat' && Array.isArray(cmd.ids)) {
-                this.engine.pushUndo();
-                for (const id of cmd.ids) {
-                    // Zkusit smazat jako stěnu, otvor, sloupek...
-                    if (this.engine.walls.has(id)) {
-                        this.engine.removeWall(id);
-                    } else if (this.engine.openings.has(id)) {
-                        this.engine.removeOpening(id);
-                    }
-                }
-                this.renderer.clearSelection();
-                this.renderer.render();
-                this.autoSave(cmd.zmena || 'AI: smazání');
-                return;
-            }
-
-            // Neznámý příkaz — logovat
-            console.warn('[AI] Neznámý příkaz:', akce, cmd);
-        },
-
-        /** Detekuje objekty pod zvýrazňovačem — objekt je označen pokud ≥5% jeho délky je pokryto */
-        _detekujOznaceneSteny() {
-            if (!this.zvyrazneniBody || this.zvyrazneniBody.length === 0 || !this.engine) return [];
-            const oznacene = new Set();
-            const pxM = this.PX_PER_M;
-
-            // Sesbírat všechny body zvýrazňovače
-            const zvBody = [];
-            for (const zv of this.zvyrazneniBody) {
-                const pts = zv.points;
-                for (let i = 0; i < pts.length; i += 2) {
-                    zvBody.push({ x: pts[i], y: pts[i + 1] });
-                }
-            }
-            if (zvBody.length === 0) return [];
-
-            // Pro každou stěnu: kolik % její délky je pokryto zvýrazňovačem
-            for (const wall of this.engine.walls.values()) {
-                const nA = this.engine.nodes.get(wall.nodeA);
-                const nB = this.engine.nodes.get(wall.nodeB);
-                if (!nA || !nB) continue;
-                const dx = nB.x - nA.x, dy = nB.y - nA.y;
-                const len = Math.hypot(dx, dy);
-                if (len < 1) continue;
-                const tl = (wall.tloustka || 0.3) * pxM;
-
-                // Rozdělit stěnu na segmenty a zjistit které jsou pokryté
-                const segmentu = Math.max(10, Math.ceil(len / 5)); // segment ~5px
-                let pokryto = 0;
-                for (let s = 0; s < segmentu; s++) {
-                    const t = (s + 0.5) / segmentu;
-                    const sx = nA.x + dx * t, sy = nA.y + dy * t;
-                    // Je nějaký bod zvýrazňovače blízko tohoto segmentu?
-                    for (const zb of zvBody) {
-                        if (Math.hypot(zb.x - sx, zb.y - sy) < tl + 10) {
-                            pokryto++;
-                            break;
-                        }
-                    }
-                }
-
-                if (pokryto / segmentu >= 0.05) {
-                    oznacene.add(wall.id);
-                }
-            }
-
-            // Vrátit názvy označených stěn
-            if (oznacene.size === 0) return [];
-            let wallNum = 1;
-            const result = [];
-            for (const wall of this.engine.walls.values()) {
-                const nazev = wall.nazev || ('Stěna ' + wallNum);
-                if (oznacene.has(wall.id)) {
-                    result.push({ id: wall.id, nazev, delka: this.engine.getWallLength(wall.id) });
-                }
-                wallNum++;
-            }
-            return result;
-        },
-
-        /** Sestaví kontext parcely pro AI — tvar, rozměry, výšková data */
-        _sestavParcelaKontext() {
-            if (!this.katastrParcely || this.katastrParcely.length === 0) return null;
-
-            const pxM = this.PX_PER_M;
-            const parcely = this.katastrParcely.map(p => {
-                const info = {
-                    label: p.label,
-                    ku: p.ku,
-                    druh: p.druh_pozemku_cz || p.druh_pozemku,
-                };
-
-                // Polygon v metrech — ve STEJNÉM souřadném systému jako stěny konceptu
-                // Použít canvas body z rendereru (po WGS84→canvas konverzi) dělené PX_PER_M
-                if (p.polygon_wgs84 && p.polygon_wgs84.length > 0 && this.renderer && this.renderer._fixedWgsCenter) {
-                    const canvasPts = this.renderer._wgs84NaCanvas(p.polygon_wgs84, this.renderer._fixedWgsCenter);
-                    info.polygon_m = canvasPts.map(pt => [
-                        Math.round((pt.x / pxM) * 100) / 100,
-                        Math.round((-pt.y / pxM) * 100) / 100, // Y invertováno (canvas Y dolů, metry Y nahoru)
-                    ]);
-                    // Rozměry z canvas bodů
-                    const xs = canvasPts.map(pt => pt.x / pxM);
-                    const ys = canvasPts.map(pt => pt.y / pxM);
-                    info.sirka_m = Math.round((Math.max(...xs) - Math.min(...xs)) * 100) / 100;
-                    info.delka_m = Math.round((Math.max(...ys) - Math.min(...ys)) * 100) / 100;
-                } else if (p.polygon_sjtsk && p.polygon_sjtsk.length > 0) {
-                    // Fallback — S-JTSK relativní souřadnice
-                    const cx = p.polygon_sjtsk.reduce((s, pt) => s + pt[0], 0) / p.polygon_sjtsk.length;
-                    const cy = p.polygon_sjtsk.reduce((s, pt) => s + pt[1], 0) / p.polygon_sjtsk.length;
-                    info.polygon_m = p.polygon_sjtsk.map(pt => [
-                        Math.round((pt[0] - cx) * 100) / 100,
-                        Math.round((pt[1] - cy) * 100) / 100,
-                    ]);
-                    const xs = p.polygon_sjtsk.map(pt => pt[0]);
-                    const ys = p.polygon_sjtsk.map(pt => pt[1]);
-                    info.sirka_m = Math.round((Math.max(...xs) - Math.min(...xs)) * 100) / 100;
-                    info.delka_m = Math.round((Math.max(...ys) - Math.min(...ys)) * 100) / 100;
-                }
-
-                // Obvod a plocha z polygon_m
-                if (info.polygon_m && info.polygon_m.length > 2) {
-                    let obvod = 0, plocha = 0;
-                    for (let i = 0; i < info.polygon_m.length; i++) {
-                        const j = (i + 1) % info.polygon_m.length;
-                        obvod += Math.hypot(info.polygon_m[j][0] - info.polygon_m[i][0], info.polygon_m[j][1] - info.polygon_m[i][1]);
-                        plocha += info.polygon_m[i][0] * info.polygon_m[j][1];
-                        plocha -= info.polygon_m[j][0] * info.polygon_m[i][1];
-                    }
-                    info.obvod_m = Math.round(obvod * 100) / 100;
-                    info.plocha_m2 = Math.round(Math.abs(plocha / 2) * 100) / 100;
-                }
-
-                return info;
-            });
-
-            const result = { parcely };
-
-            // Výškový profil
-            if (this.katastrProfil) {
-                const body = this.katastrProfil.body || this.katastrProfil;
-                if (Array.isArray(body) && body.length > 0) {
-                    const vysky = body.map(b => b.vyska || b.z).filter(v => v != null);
-                    if (vysky.length > 0) {
-                        result.vyskovy_profil = {
-                            min_m: Math.round(Math.min(...vysky) * 100) / 100,
-                            max_m: Math.round(Math.max(...vysky) * 100) / 100,
-                            rozdil_m: Math.round((Math.max(...vysky) - Math.min(...vysky)) * 100) / 100,
-                            pocet_bodu: vysky.length,
-                        };
-                    }
-                }
-            }
-
-            return result;
-        },
-
-        // formatujChat a scrollChat → sdílené v chat-widget.js (kkFormatujChat, kkScrollChat)
-
-        /**
-         * Kliknutí na volbu v chatu — okamžitě odešle (bez nutnosti Enter).
-         */
-        kkKlikVolba(celyText) {
-            if (this.aiNacitani) return;
-            this.aiVstup = celyText;
-            this.posliAi();
-        },
-
-        scrollChat() {
-            kkScrollChat(this.$refs.chatBox);
         },
 
         // ═══════════════════════════════════════════════════════

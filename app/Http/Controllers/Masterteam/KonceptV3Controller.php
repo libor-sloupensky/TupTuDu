@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Masterteam;
 
 use App\Http\Controllers\Controller;
-// Alias: tělo controlleru zůstává 1:1 s KonceptController, pracuje ale s tabulkou koncepty_v3.
+// Alias: tělo controlleru pracuje s Koncept, což je model tabulky koncepty_v3.
 use App\Models\KonceptV3 as Koncept;
-use App\Services\KonceptAiService;
 use App\Services\Katastr\KatastrService;
 use App\Services\Katastr\Dmr5gService;
-use App\Services\Pravidla\RozhovorService;
 use App\Support\Tarif;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Client\ConnectionException;
@@ -17,8 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 /**
- * Koncept V3 — kopie KonceptController pro novou verzi editoru.
- * Původní koncept zůstává beze změny; V3 se upravuje samostatně.
+ * Koncept V3 — editor (masterteam i zákaznická aplikace).
  */
 class KonceptV3Controller extends Controller
 {
@@ -41,7 +38,6 @@ class KonceptV3Controller extends Controller
         $request->validate([
             'nazev' => 'sometimes|string|max:255',
             'data' => 'sometimes|array',
-            'chat' => 'sometimes|array',
             'akce' => 'sometimes|string|max:100',
             // metadata drží mj. stav podkladu importu (obrázek výkresu pod kresbou)
             'metadata' => 'sometimes|nullable|array',
@@ -115,12 +111,8 @@ class KonceptV3Controller extends Controller
         }
 
         if ($request->filled('aktualni')) {
-            // mimo $fillable modelu (sdílí ho V2) — nastavit přímo, update() ho uloží s ostatním
+            // mimo $fillable modelu — nastavit přímo, update() ho uloží s ostatním
             $koncept->historie_aktualni = $request->input('aktualni');
-        }
-
-        if ($request->has('chat')) {
-            $updateData['chat'] = array_slice($request->chat, -200);
         }
 
         if ($request->has('metadata')) {
@@ -234,400 +226,6 @@ class KonceptV3Controller extends Controller
         ]);
 
         return redirect()->route('masterteam.koncept-v3', ['id' => $koncept->id]);
-    }
-
-    public function aiVytvor(Request $request)
-    {
-        $request->validate([
-            'popis' => 'required|string|max:50000',
-            'koncept_id' => 'nullable|integer',
-            'rovnou_navrh' => 'nullable|boolean',
-        ]);
-
-        // Production PHP má max_execution_time=30s. AI volání s few-shot může
-        // trvat až 60s, plus dvojí volání po rozhovor_hotovy=true → potřebujeme 180s.
-        @set_time_limit(180);
-        @ini_set('default_socket_timeout', '180');
-        ignore_user_abort(true);
-
-        $ai = app(KonceptAiService::class);
-        if ($request->model) $ai->setModel($request->model);
-        $rozhovor = app(RozhovorService::class);
-
-        $koncept = null;
-        if ($request->koncept_id) {
-            $koncept = Koncept::findOrFail($request->koncept_id);
-            $this->autorizuj($koncept);
-        } elseif ($odmitnuti = $this->limitProjektu()) {
-            // bez konceptu se zakládá nový — ještě před voláním AI
-            return $odmitnuti;
-        }
-
-        // Přeskočit rozhovor — rovnou generovat návrh
-        if ($request->rovnou_navrh) {
-            if ($koncept) {
-                $koncept->update(['faze' => 'navrh']);
-                $koncept->refresh();
-            } else {
-                // Nový koncept rovnou ve fázi 'navrh' (testovací prompt přeskočí dotazník)
-                $koncept = Koncept::create([
-                    'uzivatel_id' => Auth::id(),
-                    'nazev' => 'Test ' . now()->format('H:i:s'),
-                    'data' => null,
-                    'verze' => 1,
-                    'faze' => 'navrh',
-                    'metadata' => null,
-                    'chat' => [['role' => 'user', 'text' => $request->popis, 'cas' => now()->toISOString()]],
-                    'historie' => [],
-                ]);
-            }
-        }
-
-        // Přímý import JSON — pokud popis obsahuje hotová data se steny
-        $importData = $this->detekujPrimyImport($request->popis);
-        if ($importData) {
-            $data = $importData;
-        } else {
-            try {
-                $data = $ai->vytvorKoncept($request->popis, $koncept, $request->input('parcela') ?? $request->input('katastr'));
-            } catch (\RuntimeException $e) {
-                $chyba = $e->getMessage();
-                if ($koncept) {
-                    $this->pridatChat($koncept, $request->popis, 'Chyba AI: ' . $chyba);
-                }
-                return response()->json(['error' => $chyba, 'aiOdpoved' => 'Chyba AI: ' . $chyba], 422);
-            }
-        }
-
-        if ($koncept && $koncept->faze === 'rozhovor' && $rozhovor->jeRozhovorOdpoved($data)) {
-            $rozhovor->zpracujOdpoved($koncept, $data);
-        }
-
-        $dotaz = !empty($data['dotaz']) ? $data['dotaz'] : null;
-        $zmena = !empty($data['zmena']) ? $data['zmena'] : null;
-        $steny = count($data['steny'] ?? []);
-        $otvory = count($data['otvory'] ?? []);
-
-        // V rozhovoru: AI někdy zapíše odpověď do různých polí
-        $aiOdpoved = $dotaz ?? $zmena;
-        if (!$aiOdpoved && $steny > 0) {
-            $aiOdpoved = "Koncept má {$steny} stěn a {$otvory} otvorů.";
-        }
-        // Fallback: pokud jsme v rozhovoru a AI nevrátila text, logovat
-        if (!$aiOdpoved) {
-            \Illuminate\Support\Facades\Log::warning('AI rozhovor bez textu', [
-                'keys' => array_keys($data),
-                'dotaz' => $data['dotaz'] ?? 'NULL',
-                'zmena' => $data['zmena'] ?? 'NULL',
-                'faze' => $koncept?->faze ?? 'new',
-            ]);
-        }
-
-        if ($koncept) {
-            $this->ulozitSnapshot($koncept, $request->popis);
-
-            // Pokud AI signalizovala konec rozhovoru, ale nevrátila layout/steny —
-            // přepnout fázi na 'navrh' a znovu zavolat AI ať vygeneruje návrh.
-            $maData = !empty($data['layout']) || !empty($data['steny']) || !empty($data['rozmery']);
-            if (!empty($data['rozhovor_hotovy']) && !$maData) {
-                $koncept->update(['faze' => 'navrh']);
-                $koncept->refresh();
-                try {
-                    $data2 = $ai->vytvorKoncept(
-                        'Vygeneruj návrh dle dosavadního rozhovoru. Použij STĚNY formát s prostory[] a vybaveni[].',
-                        $koncept,
-                        $request->input('parcela') ?? $request->input('katastr')
-                    );
-                    if (!empty($data2['steny']) || !empty($data2['layout']) || !empty($data2['rozmery'])) {
-                        $data = $data2; // nahradit — nový návrh je důležitější než staré rozhovor JSON
-                        $dotaz = !empty($data2['dotaz']) ? $data2['dotaz'] : null;
-                        $zmena = !empty($data2['zmena']) ? $data2['zmena'] : 'Návrh konceptu vytvořen.';
-                        $aiOdpoved = $dotaz ?? $zmena;
-                        $maData = true;
-                    }
-                } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::warning('AI auto-návrh po rozhovor_hotovy selhal: ' . $e->getMessage());
-                }
-            }
-
-            $this->pridatChat($koncept, $request->popis, $aiOdpoved);
-
-            $updateData = ['verze' => $koncept->verze + 1];
-            if ($maData) {
-                $updateData['data'] = $data;
-            }
-            if (!empty($data['rozhovor_hotovy']) || $maData) {
-                $updateData['faze'] = 'navrh';
-            }
-            $koncept->update($updateData);
-
-            return response()->json([
-                'ok' => true,
-                'data' => $koncept->data,
-                'dotaz' => $dotaz,
-                'verze' => $koncept->verze,
-                'aiOdpoved' => $aiOdpoved,
-                'faze' => $koncept->faze,
-                'metadata' => $koncept->metadata,
-            ]);
-        }
-
-        // Nový koncept
-        $nazev = $data['objekt'] ?? 'Nový koncept';
-        $chat = [
-            ['role' => 'user', 'text' => $request->popis, 'cas' => now()->toISOString()],
-            ['role' => 'ai', 'text' => $aiOdpoved, 'cas' => now()->toISOString()],
-        ];
-
-        $faze = 'rozhovor';
-        $metadata = null;
-
-        if (!empty($data['layout']) || !empty($data['steny']) || !empty($data['rozmery'])) {
-            $faze = 'navrh';
-        }
-
-        if (isset($data['metadata'])) {
-            $metadata = $data['metadata'];
-            if (!empty($data['rozhovor_hotovy'])) {
-                $faze = 'navrh';
-            }
-        }
-
-        $koncept = Koncept::create([
-            'uzivatel_id' => Auth::id(),
-            'nazev' => $nazev,
-            'data' => (!empty($data['steny']) || !empty($data['rozmery'])) ? $data : null,
-            'verze' => 1,
-            'faze' => $faze,
-            'metadata' => $metadata,
-            'chat' => $chat,
-            'historie' => [],
-        ]);
-
-        return response()->json([
-            'ok' => true,
-            'id' => $koncept->id,
-            'data' => $koncept->data,
-            'dotaz' => $dotaz,
-            'verze' => $koncept->verze,
-            'aiOdpoved' => $aiOdpoved,
-            'faze' => $koncept->faze,
-            'metadata' => $koncept->metadata,
-            'redirect' => route('masterteam.koncept-v3', ['id' => $koncept->id]),
-        ]);
-    }
-
-    public function aiUprav(Request $request, Koncept $koncept)
-    {
-        $this->autorizuj($koncept);
-
-        $request->validate([
-            'pozadavek' => 'required|string|max:50000',
-            'prvek_id' => 'nullable|string|max:200',
-            'rozhovor_metadata' => 'nullable|array',
-            'katastr' => 'nullable|array',
-            'zvyrazneni' => 'nullable|array',
-            'oznacene' => 'nullable|array',
-        ]);
-
-        // PHP max_execution_time=30s — overridnout pro dlouhé AI volání.
-        @set_time_limit(180);
-        @ini_set('default_socket_timeout', '180');
-        ignore_user_abort(true);
-
-        $ai = app(KonceptAiService::class);
-        if ($request->model) $ai->setModel($request->model);
-
-        if ($request->rozhovor_metadata) {
-            $koncept->update([
-                'faze' => 'navrh',
-                'metadata' => $request->rozhovor_metadata,
-            ]);
-            $koncept->refresh();
-
-            if ($request->pozadavek === 'Uložit metadata rozhovoru') {
-                return response()->json([
-                    'ok' => true,
-                    'data' => $koncept->data,
-                    'verze' => $koncept->verze,
-                    'faze' => $koncept->faze,
-                    'metadata' => $koncept->metadata,
-                ]);
-            }
-        }
-
-        // Přímý import JSON — obejít AI
-        $importData = $this->detekujPrimyImport($request->pozadavek);
-        if ($importData) {
-            $koncept->update([
-                'data' => $importData,
-                'faze' => 'navrh',
-                'verze' => ($koncept->verze ?? 0) + 1,
-            ]);
-            $chat = $koncept->chat ?? [];
-            $chat[] = ['role' => 'user', 'text' => 'Import JSON geometrie', 'cas' => now()->toISOString()];
-            $chat[] = ['role' => 'ai', 'text' => 'Geometrie importována: ' . count($importData['steny'] ?? []) . ' stěn, ' . count($importData['otvory'] ?? []) . ' otvorů.', 'cas' => now()->toISOString()];
-            $koncept->update(['chat' => $chat]);
-
-            return response()->json([
-                'ok' => true,
-                'data' => $importData,
-                'verze' => $koncept->verze,
-                'faze' => 'navrh',
-                'aiOdpoved' => 'Geometrie importována: ' . count($importData['steny'] ?? []) . ' stěn, ' . count($importData['otvory'] ?? []) . ' otvorů.',
-            ]);
-        }
-
-        if ($koncept->faze === 'rozhovor') {
-            $rozhovor = app(RozhovorService::class);
-            $data = $ai->vytvorKoncept($request->pozadavek, $koncept);
-
-            if ($rozhovor->jeRozhovorOdpoved($data)) {
-                $rozhovor->zpracujOdpoved($koncept, $data);
-            }
-
-            $dotaz = $data['dotaz'] ?? null;
-            $zmena = $data['zmena'] ?? null;
-            $aiOdpoved = $dotaz ?: ($zmena ?: 'Rozhovor dokončen, přecházím k návrhu.');
-
-            $this->pridatChat($koncept, $request->pozadavek, $aiOdpoved);
-
-            $updateData = ['verze' => $koncept->verze + 1];
-            if (!empty($data['steny']) || !empty($data['rozmery'])) {
-                $updateData['data'] = $data;
-            }
-            $koncept->update($updateData);
-
-            return response()->json([
-                'ok' => true,
-                'data' => $koncept->data,
-                'dotaz' => $dotaz,
-                'verze' => $koncept->verze,
-                'aiOdpoved' => $aiOdpoved,
-                'faze' => $koncept->faze,
-                'metadata' => $koncept->metadata,
-            ]);
-        }
-
-        // Návrhová fáze
-        try {
-            if (!$koncept->data) {
-                $data = $ai->vytvorKoncept($request->pozadavek, $koncept);
-            } else {
-                $data = $ai->upravKoncept($koncept->data, $request->prvek_id, $request->pozadavek, $koncept->chat ?? [], $koncept, $request->katastr, $request->oznacene ?? $request->zvyrazneni);
-            }
-        } catch (\RuntimeException $e) {
-            $chyba = $e->getMessage();
-            $this->pridatChat($koncept, $request->pozadavek, 'Chyba AI: ' . $chyba);
-            return response()->json(['error' => $chyba], 422);
-        }
-
-        $dotaz = $data['dotaz'] ?? null;
-        $zmena = $data['zmena'] ?? null;
-        $jeAkce = isset($data['akce']); // příkaz (smazat, undo) — nepřepisovat data v DB
-
-        if ($jeAkce) {
-            $aiOdpoved = $dotaz ?: ($zmena ?: 'Provedeno.');
-            $this->pridatChat($koncept, $request->pozadavek, $aiOdpoved);
-
-            return response()->json([
-                'ok' => true,
-                'data' => $data, // obsahuje {akce, ids, zmena, dotaz}
-                'aiOdpoved' => $aiOdpoved,
-                'verze' => $koncept->verze,
-                'faze' => $koncept->faze,
-            ]);
-        }
-
-        $steny = count($data['steny'] ?? []);
-        $otvory = count($data['otvory'] ?? []);
-        $aiOdpoved = $dotaz ?: ($zmena ?: "Hotovo! Koncept má {$steny} stěn a {$otvory} otvorů.");
-
-        $popisZmeny = $request->pozadavek;
-        if ($request->prvek_id) {
-            $popisZmeny = "[{$request->prvek_id}] {$popisZmeny}";
-        }
-
-        $this->ulozitSnapshot($koncept, $popisZmeny);
-        $this->pridatChat($koncept, $request->pozadavek, $aiOdpoved);
-
-        $koncept->update([
-            'data' => $data,
-            'verze' => $koncept->verze + 1,
-        ]);
-
-        return response()->json([
-            'ok' => true,
-            'data' => $data,
-            'dotaz' => $dotaz,
-            'verze' => $koncept->verze,
-            'aiOdpoved' => $aiOdpoved,
-            'faze' => $koncept->faze,
-            'metadata' => $koncept->metadata,
-        ]);
-    }
-
-    public function importDxf(Request $request)
-    {
-        $request->validate([
-            'soubor' => 'required|file|max:10240',
-            'koncept_id' => 'nullable|integer',
-        ]);
-
-        $soubor = $request->file('soubor');
-        $obsah = file_get_contents($soubor->getRealPath());
-        $pripona = strtolower($soubor->getClientOriginalExtension());
-
-        if (!in_array($pripona, ['dxf', 'svg', 'json'])) {
-            return response()->json(['error' => 'Nepodporovaný formát. Povolené: DXF, SVG, JSON.'], 422);
-        }
-
-        if ($pripona === 'json') {
-            $data = json_decode($obsah, true);
-            if (!$data) {
-                return response()->json(['error' => 'Nevalidní JSON soubor.'], 422);
-            }
-        } else {
-            $ai = app(KonceptAiService::class);
-            $data = $ai->vytvorKoncept(
-                "Konvertuj tento {$pripona} soubor na JSON strukturu konceptu. Obsah souboru:\n\n" . mb_substr($obsah, 0, 8000)
-            );
-        }
-
-        $nazevSouboru = $soubor->getClientOriginalName();
-
-        if ($request->koncept_id) {
-            $koncept = Koncept::findOrFail($request->koncept_id);
-            $this->autorizuj($koncept);
-
-            $this->ulozitSnapshot($koncept, "Import: {$nazevSouboru}");
-            $this->pridatChat($koncept, "Import souboru: {$nazevSouboru}", "Soubor importován a konvertován na koncept.");
-
-            $koncept->update([
-                'data' => $data,
-                'verze' => $koncept->verze + 1,
-            ]);
-        } else {
-            $nazev = $data['objekt'] ?? pathinfo($nazevSouboru, PATHINFO_FILENAME);
-            $koncept = Koncept::create([
-                'uzivatel_id' => Auth::id(),
-                'nazev' => $nazev,
-                'data' => $data,
-                'verze' => 1,
-                'chat' => [
-                    ['role' => 'user', 'text' => "Import souboru: {$nazevSouboru}", 'cas' => now()->toISOString()],
-                    ['role' => 'ai', 'text' => 'Soubor importován a konvertován na koncept.', 'cas' => now()->toISOString()],
-                ],
-                'historie' => [],
-            ]);
-        }
-
-        return response()->json([
-            'ok' => true,
-            'id' => $koncept->id,
-            'data' => $data,
-            'redirect' => route('masterteam.koncept-v3', ['id' => $koncept->id]),
-        ]);
     }
 
     public function exportJson(Koncept $koncept)
@@ -905,36 +503,6 @@ class KonceptV3Controller extends Controller
 
     // ─── Helpers ─────────────────────────────────────
 
-    /**
-     * Před tím, než server přepíše data konceptu (AI, import), musí současný
-     * stav existovat v historii jako krok — jinak by se k němu nešlo vrátit.
-     * Historie drží stavy PO akci, takže stačí výchozí krok u prázdné historie;
-     * krok s novými daty pak zapíše klient při svém uložení.
-     */
-    private function ulozitSnapshot(Koncept $koncept, string $popis): void
-    {
-        if (!$koncept->data || !empty($koncept->historie)) return;
-
-        $id = 'z' . $koncept->id . '-' . $koncept->verze;
-        $koncept->historie = [[
-            'id' => $id,
-            'popis' => __('ed_nastroje.historie.zacatek'),
-            'data' => $koncept->data,
-            'cas' => now()->toISOString(),
-        ]];
-        $koncept->historie_aktualni = $id;
-        $koncept->save();
-    }
-
-    private function pridatChat(Koncept $koncept, string $uzivatelText, string $aiText): void
-    {
-        $chat = $koncept->chat ?? [];
-        $chat[] = ['role' => 'user', 'text' => $uzivatelText, 'cas' => now()->toISOString()];
-        $chat[] = ['role' => 'ai', 'text' => $aiText, 'cas' => now()->toISOString()];
-        $koncept->chat = array_slice($chat, -200);
-        $koncept->save();
-    }
-
     /** Výpadek služby ČÚZK není chyba aplikace: hláška uživateli, do logu jen varování (bez e-mailu o bugu). */
     private function katastrNedostupny(ConnectionException $e): \Illuminate\Http\JsonResponse
     {
@@ -948,34 +516,5 @@ class KonceptV3Controller extends Controller
         if ($koncept->uzivatel_id !== Auth::id() && !Auth::user()->jeMaster()) {
             abort(403);
         }
-    }
-
-    /**
-     * Detekuje přímý import JSON z promptu (např. "Vytvoř dům přesně podle těchto dat: {...}").
-     * Vrátí parsed JSON pokud obsahuje validní steny[], jinak null.
-     */
-    private function detekujPrimyImport(string $popis): ?array
-    {
-        // Hledat JSON objekt v popisu
-        $pos = strpos($popis, '{');
-        if ($pos === false) return null;
-
-        // Extrahovat JSON
-        $depth = 0;
-        $len = strlen($popis);
-        for ($i = $pos; $i < $len; $i++) {
-            if ($popis[$i] === '{') $depth++;
-            elseif ($popis[$i] === '}') $depth--;
-            if ($depth === 0) {
-                $jsonStr = substr($popis, $pos, $i - $pos + 1);
-                $data = json_decode($jsonStr, true);
-                if ($data && !empty($data['steny']) && is_array($data['steny'])) {
-                    return $data;
-                }
-                break;
-            }
-        }
-
-        return null;
     }
 }

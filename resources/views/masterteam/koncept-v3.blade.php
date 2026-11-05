@@ -217,8 +217,6 @@
     .kk-coords { background: rgba(0,80,0,.85); color: #0f0; }
     .kk-3d-help { background: rgba(0,0,0,.65); color: #ddd; }
     #kk-canvas-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; background: #fff; }
-    #kk-canvas-wrap.zvyraznovac-cursor canvas { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Ccircle cx='10' cy='10' r='9' fill='rgba(255,105,180,0.35)' stroke='rgba(255,105,180,0.8)' stroke-width='1'/%3E%3C/svg%3E") 10 10, crosshair !important; }
-    /* Chat styly importovány z /css/chat-widget.css */
 </style>
 
 {{-- komponenta se skládá funkcí, ne rozprostřením — jinak zmrznou gettery --}}
@@ -306,27 +304,6 @@
                         <path d="M12 6.5a1 1 0 012 0V10a5 5 0 01-5 5H8a4.5 4.5 0 01-3.5-1.7L2.8 11a1.2 1.2 0 011.7-1.3L6 11.5"/>
                     </svg>
                 </button>
-                {{-- Zvýrazňovač — sloužil JEN k označení stěn pro AI (posílá se jako
-                     „oznacene“ do AI úpravy). V3 je bez AI, takže je SKRYTÝ;
-                     v budoucnu k vymazání i s _detekujOznaceneSteny(). --}}
-                <div class="relative" style="display:none">
-                    <button @click="nastroj = nastroj === 'zvyraznovac' ? 'vyber' : 'zvyraznovac'" class="rounded p-1.5 transition"
-                            :style="nastroj === 'zvyraznovac' ? 'background-color: rgba(255,105,180,0.15); color: #ec4899;' : 'color: #6b7280'"
-                            @mouseenter="if (nastroj !== 'zvyraznovac') $el.style.backgroundColor='#f3f4f6'"
-                            @mouseleave="$el.style.backgroundColor = nastroj === 'zvyraznovac' ? 'rgba(255,105,180,0.15)' : 'transparent'"
-                            data-tip="Zvýrazňovač (3 / B)">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M10 1.5l4.5 4.5-7.5 7.5H2.5V9z"/>
-                            <path d="M8.5 3l4.5 4.5"/>
-                            <path d="M1.5 15h6" stroke-width="2.5" style="color: #ec4899; opacity: 0.35"/>
-                        </svg>
-                    </button>
-                    <button x-show="nastroj === 'zvyraznovac' && zvyrazneniBody.length > 0"
-                            x-cloak @click.stop="smazZvyrazneni()"
-                            class="rounded-full flex items-center justify-center"
-                            style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;background:#ec4899;color:white;z-index:10;font-size:10px;line-height:1"
-                            title="Smazat zvýraznění">&times;</button>
-                </div>
                 {{-- Stěna --}}
                 <button @click="nastroj = 'stena'" class="kk-tl" :class="nastroj === 'stena' && 'kk-tl-aktivni'"
                         data-tip="{{ __('ed_sablona.lista.stena') }}">
@@ -465,7 +442,7 @@
         </div>
 
         {{-- Canvas --}}
-        <div id="kk-canvas-wrap" x-ref="canvasWrap" class="flex-1" style="position:relative;overflow:hidden" :class="nastroj === 'zvyraznovac' ? 'zvyraznovac-cursor' : ''">
+        <div id="kk-canvas-wrap" x-ref="canvasWrap" class="flex-1" style="position:relative;overflow:hidden">
             <div id="kk-container" x-ref="konvaContainer" style="position:absolute;inset:0;" x-show="!rezim3d"></div>
             <div id="kk-3d-container" x-ref="threeContainer" style="position:absolute;inset:0;" x-show="rezim3d" x-cloak></div>
             {{-- Přepsání kóty u vybrané stěny nebo otvoru: pole na místě čísla --}}
@@ -931,7 +908,7 @@
                                             <div class="flex items-center gap-2 text-gray-500">
                                                 <span class="min-w-0 truncate" x-text="preloz('ed_sablona.mistnost.prenesena', { dh: Math.round(z.dh * 100), domov: z.domov }) + (z.mistnost ? ' (' + z.mistnost + ')' : '')"></span>
                                                 <button type="button" @click="schodkyNaPlochu(z.id)" class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.mistnost.schody_cast_tip') }}">{{ __('ed_sablona.spolecne.schody') }}</button>
-                                                <button type="button" @click="prepniPrenos(engine.dum.aktivni, z.id)" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.mistnost.neprenaset_tip') }}">{{ __('ed_sablona.mistnost.neprenaset') }}</button>
+                                                <button type="button" @click="prepniPrenos(engine.dum.aktivni, z.id)" class="border border-gray-500 rounded px-2 py-0.5 text-xs whitespace-nowrap shrink-0 hover:bg-orange-50" title="{{ __('ed_sablona.mistnost.neprenaset_tip') }}">{{ __('ed_sablona.mistnost.neprenaset') }}</button>
                                             </div>
                                         </template>
                                     </div>
@@ -1680,64 +1657,6 @@
                 </template>
             </div>
         </details>
-
-        {{-- AI Chat — V3 bude bez AI. Panel je zatím jen SKRYTÝ; v budoucnu určeno k VYMAZÁNÍ
-             (spolu s AI logikou v koncept-k-ui.js a AI routami/metodami V3). --}}
-        {{-- AI Chat — summary + obsah --}}
-        <div class="kk-section flex-1 flex flex-col min-h-0" style="display:none">
-            <div @click="panelOpen.chat = !panelOpen.chat; ulozitPanely()"
-                 class="px-3 py-2 text-xs font-medium text-gray-500 cursor-pointer hover:bg-gray-50 flex items-center justify-between flex-shrink-0 select-none">
-                <div class="flex items-center gap-1">
-                    <svg class="h-3 w-3 transition-transform shrink-0" :class="panelOpen.chat && 'rotate-90'" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l8 6-8 6V4z"/></svg>
-                    <span>AI asistent</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <span x-show="faze" class="px-1.5 py-0.5 rounded text-[10px] font-semibold"
-                          :class="faze === 'navrh' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'"
-                          x-text="faze === 'navrh' ? 'návrh' : faze === 'rozhovor' ? 'rozhovor' : faze"></span>
-                    <select x-model="aiModel" @change="ulozitNastaveni()" @click.stop
-                            class="text-[10px] border border-gray-200 rounded px-1 py-0 bg-white text-gray-500"
-                            data-tip="AI model">
-                        <option value="claude-haiku-4-5-20251001">Haiku</option>
-                        <option value="claude-sonnet-4-6">Sonnet</option>
-                        <option value="claude-opus-4-8">Opus</option>
-                    </select>
-                </div>
-            </div>
-            <template x-if="panelOpen.chat">
-                <div class="flex-1 flex flex-col min-h-0">
-                    <div class="flex-1 overflow-y-auto p-3 space-y-2" x-ref="chatBox" @kk-volba="kkKlikVolba($event.detail)">
-                        <template x-for="(msg, i) in chat" :key="i">
-                            <div class="flex" :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
-                                <div class="kk-chat-msg" :class="msg.role === 'user' ? 'kk-chat-user' : 'kk-chat-ai'">
-                                    {{-- Vizuálně skrytý prefix — zkopíruje se do clipboardu pro orientaci --}}
-                                    <span class="kk-sr-only" x-text="msg.role === 'user' ? 'Já: ' : 'AI: '"></span>
-                                    <span x-html="kkFormatujChat(msg.text)"></span>
-                                </div>
-                            </div>
-                        </template>
-                        <div x-show="aiNacitani" class="flex justify-start">
-                            <div class="kk-spinner">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83"/></svg>
-                                Přemýšlím...
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-2 border-t border-gray-100 flex-shrink-0">
-                        <div class="flex gap-1">
-                            <textarea x-model="aiVstup" @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); posliAi(); }" rows="2"
-                                      class="kk-chat-input flex-1 rounded border border-gray-200 px-2 py-1.5 text-sm resize-none focus:outline-none focus:border-primary"
-                                      placeholder="Popiš změnu... (zkratka: /navrh popis = přeskoč rozhovor)"></textarea>
-                            <button @click="posliAi()" :disabled="aiNacitani || !aiVstup.trim()"
-                                    class="px-3 rounded bg-primary text-white text-sm font-medium disabled:opacity-40 hover:opacity-90 shrink-0"
-                                    style="background: var(--c-primary);">
-                                &rarr;
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </template>
-        </div>
     </div>{{-- /Panel B --}}
 
     </div>{{-- /grid wrapper --}}
@@ -2048,8 +1967,6 @@ if (!{{ $aktivni?->id ?? 'null' }}) {
     }
 }
 </script>
-<link rel="stylesheet" href="/css/chat-widget.css?v=1">
-<script src="/js/chat-widget.js?v=1"></script>
 <script src="/js/koncept-v3/koncept-k-ui.js?v={{ filemtime(public_path('js/koncept-v3/koncept-k-ui.js')) }}"></script>
 <script src="/js/koncept-v3/import-analyza.js?v={{ filemtime(public_path('js/koncept-v3/import-analyza.js')) }}"></script>
 <script src="/js/koncept-v3/import-prohlizec.js?v={{ filemtime(public_path('js/koncept-v3/import-prohlizec.js')) }}"></script>
@@ -2069,9 +1986,7 @@ var _kkInitData = {
     projektNazev: @json($aktivni?->nazev ?? ''),
     projektData: @json($aktivni?->data ?? []),
     verze: {{ $aktivni?->verze ?? 0 }},
-    faze: @json($aktivni?->faze ?? 'rozhovor'),
     metadata: @json($aktivni?->metadata ?? []),
-    chat: @json($aktivni?->chat ?? []),
     historie: @json($aktivni?->historie ?? []),
     historieAktualni: @json($aktivni?->historie_aktualni),
     csrf: '{{ csrf_token() }}',
@@ -2079,8 +1994,6 @@ var _kkInitData = {
     routes: {
         sdileni: '{{ route($trasaV3 . ".sdileni", ":id") }}',
         ulozit: '{{ route($trasaV3 . ".ulozit", ":id") }}',
-        aiVytvor: '{{ route($trasaV3 . ".aiVytvor") }}',
-        aiUprav: '{{ route($trasaV3 . ".aiUprav", ":id") }}',
         vytvorit: '{{ route($trasaV3 . ".vytvorit") }}',
         indexK: '{{ route($trasaV3) }}',
         katastrParcela: '{{ route($trasaV3 . ".katastr.parcela") }}',

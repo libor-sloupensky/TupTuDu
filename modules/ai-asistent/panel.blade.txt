@@ -1,0 +1,54 @@
+        <div class="kk-section flex-1 flex flex-col min-h-0" style="display:none">
+            <div @click="panelOpen.chat = !panelOpen.chat; ulozitPanely()"
+                 class="px-3 py-2 text-xs font-medium text-gray-500 cursor-pointer hover:bg-gray-50 flex items-center justify-between flex-shrink-0 select-none">
+                <div class="flex items-center gap-1">
+                    <svg class="h-3 w-3 transition-transform shrink-0" :class="panelOpen.chat && 'rotate-90'" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l8 6-8 6V4z"/></svg>
+                    <span>AI asistent</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span x-show="faze" class="px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                          :class="faze === 'navrh' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'"
+                          x-text="faze === 'navrh' ? 'návrh' : faze === 'rozhovor' ? 'rozhovor' : faze"></span>
+                    <select x-model="aiModel" @change="ulozitNastaveni()" @click.stop
+                            class="text-[10px] border border-gray-200 rounded px-1 py-0 bg-white text-gray-500"
+                            data-tip="AI model">
+                        <option value="claude-haiku-4-5-20251001">Haiku</option>
+                        <option value="claude-sonnet-4-6">Sonnet</option>
+                        <option value="claude-opus-4-8">Opus</option>
+                    </select>
+                </div>
+            </div>
+            <template x-if="panelOpen.chat">
+                <div class="flex-1 flex flex-col min-h-0">
+                    <div class="flex-1 overflow-y-auto p-3 space-y-2" x-ref="chatBox" @kk-volba="kkKlikVolba($event.detail)">
+                        <template x-for="(msg, i) in chat" :key="i">
+                            <div class="flex" :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
+                                <div class="kk-chat-msg" :class="msg.role === 'user' ? 'kk-chat-user' : 'kk-chat-ai'">
+                                    {{-- Vizuálně skrytý prefix — zkopíruje se do clipboardu pro orientaci --}}
+                                    <span class="kk-sr-only" x-text="msg.role === 'user' ? 'Já: ' : 'AI: '"></span>
+                                    <span x-html="kkFormatujChat(msg.text)"></span>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="aiNacitani" class="flex justify-start">
+                            <div class="kk-spinner">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83"/></svg>
+                                Přemýšlím...
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-2 border-t border-gray-100 flex-shrink-0">
+                        <div class="flex gap-1">
+                            <textarea x-model="aiVstup" @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); posliAi(); }" rows="2"
+                                      class="kk-chat-input flex-1 rounded border border-gray-200 px-2 py-1.5 text-sm resize-none focus:outline-none focus:border-primary"
+                                      placeholder="Popiš změnu... (zkratka: /navrh popis = přeskoč rozhovor)"></textarea>
+                            <button @click="posliAi()" :disabled="aiNacitani || !aiVstup.trim()"
+                                    class="px-3 rounded bg-primary text-white text-sm font-medium disabled:opacity-40 hover:opacity-90 shrink-0"
+                                    style="background: var(--c-primary);">
+                                &rarr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
