@@ -17,10 +17,10 @@
 
     /**
      * @param {StavebniEngine} engine
-     * @param {{res?: number, vyrezy?: Array, pod13?: Array, bezOddelovacu?: boolean}} nast  res = krok rastru v metrech;
+     * @param {{res?: number, vyrezy?: Array, podLimitem?: Array, bezOddelovacu?: boolean}} nast  res = krok rastru v metrech;
      *        bezOddelovacu = prostor ohraničený jen stěnami (kuchyň a obývák s oddělovačem jsou jeden);
      *        vyrezy = polygony (px), které se do plochy nepočítají (galerie, prostupy);
-     *        pod13 = polygony (px) pod výškou 1,3 m v podkroví — zapocitatelna_m2 je bez nich
+     *        podLimitem = polygony (px) pod limitem výšky v podkroví — zapocitatelna_m2 je bez nich
      * @returns {null|{x0,y0,krok,w,h,stitky:Int32Array,komponenty:Array}}
      */
     function spocitej(engine, nast = {}) {
@@ -122,8 +122,8 @@
             });
         }
         // Plochy s výřezy: druhá bitmapa, spočítat buňky po místnostech
-        const vyrezy = nast.vyrezy || [], pod13 = nast.pod13 || [];
-        if (komponenty.length && (vyrezy.length || pod13.length)) {
+        const vyrezy = nast.vyrezy || [], podLimitem = nast.podLimitem || [];
+        if (komponenty.length && (vyrezy.length || podLimitem.length)) {
             const kresli = (polygony) => {
                 const c2 = document.createElement('canvas');
                 c2.width = w; c2.height = h;
@@ -138,7 +138,7 @@
                 return g2.getImageData(0, 0, w, h).data;
             };
             const dv = vyrezy.length ? kresli(vyrezy) : null;
-            const dp = pod13.length ? kresli(pod13) : null;
+            const dp = podLimitem.length ? kresli(podLimitem) : null;
             const vyr = new Map(), niz = new Map();
             for (let i = 0; i < w * h; i++) {
                 const s = stitky[i];
@@ -150,7 +150,7 @@
             for (const k of komponenty) {
                 const celkem = k.plocha_m2;
                 k.plocha_m2 = Math.round((celkem - (vyr.get(k.stitek) || 0) * plochaBunky) * 100) / 100;
-                if (pod13.length) k.zapocitatelna_m2 = Math.round((k.plocha_m2 - (niz.get(k.stitek) || 0) * plochaBunky) * 100) / 100;
+                if (podLimitem.length) k.zapocitatelna_m2 = Math.round((k.plocha_m2 - (niz.get(k.stitek) || 0) * plochaBunky) * 100) / 100;
             }
         }
         return { x0, y0, krok, w, h, stitky, komponenty };

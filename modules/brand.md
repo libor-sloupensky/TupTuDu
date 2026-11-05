@@ -27,7 +27,7 @@ Tmavý režim je **výchozí**, světlý na přepínač. Kreslicí plocha editor
 | text na oranžové | `#1a1a1a` | `#ffffff` |
 | šedá značky | `#a9b4c6` | `#52607a` |
 | podklad štítků (chip) | `#3c2a1a` | `#fdeee0` |
-| odkaz | `#5ec8d8` (tyrkys) | `#0f8da0` |
+| odkaz: text / podtržení / najetí | `#e6ebf2` / `#ff8a2b` / `#ffa257` | `#1b2330` / `#ee6f12` / `#b4500a` |
 | ok / varování / chyba | `#2f9e5f` / `#e9b949` / `#e04e4e` | stejné |
 
 Jemné doladění při nasazení do CSS proměnných je možné (kontrast, hover stavy), tóny zůstávají.
@@ -74,7 +74,7 @@ zůstávají i s nevybranými). Společný motiv: **oranžový zaoblený čtvere
 | tlačítka | — | Rubik 600 15 px, 10 × 18 px; hlavní oranžové s `--on-accent`, vedlejší obrys `--line-strong` (hover oranžový), tiché jen text v barvě odkazu |
 | pole formuláře | **I1** | tmavší než panel: tmavý režim výplň `#0f141c`, okraj `#5a6a85`; světlý režim bílá, okraj `#8f9bb0`; fokus oranžový obrys 2 px; popisek Rubik 500 13 px tlumeně |
 
-Odkazy v textu tyrkysové (`--link`), podtržení 1 px s odsazením 3 px, hover oranžová.
+Odkazy v textu L1 (rozhodnuto 5. 11. 2026): barva textu, oranžové podtržení 2 px s odsazením 3 px, po najetí oranžový text. Tokeny `--c-link`, `--c-link-linka`, `--c-link-hover`. Odkaz bez třídy je automaticky text s podtržením, navigace si ho vypíná, tlačítka a prvky s třídou ho nemají.
 
 ## Velikostní řada S2 (rozhodnuto 2. 11. 2026, poměr 1,25)
 Artefakt „Řada písma TupTuDu" https://claude.ai/artifact/DwL8YcoPkFBdph1PdRBKcQ (S1 těsná a S3 volná tam zůstávají).

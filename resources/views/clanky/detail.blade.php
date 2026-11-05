@@ -59,13 +59,16 @@
 
         {!! $html !!}
 
-        @if ($clanek['zdroje'] !== [])
-            <h2>{{ __('clanky.zdroje') }}</h2>
-            <ul class="tt-clanek-zdroje">
-                @foreach ($clanek['zdroje'] as $zdroj)
-                    <li><a href="{{ $zdroj['adresa'] }}" rel="noopener">{{ $zdroj['nazev'] }}</a></li>
+        @if ($souvisejici = Clanky::souvisejici($clanek))
+            <h2>{{ __('clanky.souvisejici') }}</h2>
+            <div class="tt-clanky-seznam">
+                @foreach ($souvisejici as $dalsi)
+                    <section class="tt-clanky-polozka">
+                        <h3><a href="{{ Clanky::adresa($dalsi) }}">{!! Clanky::vlna(e($dalsi['titulek']), $jazyk) !!}</a></h3>
+                        <p>{!! Clanky::vlna(e($dalsi['popis']), $jazyk) !!}</p>
+                    </section>
                 @endforeach
-            </ul>
+            </div>
         @endif
         <p class="tt-clanek-pozn">{{ __('web.upozorneni') }}</p>
     </article>

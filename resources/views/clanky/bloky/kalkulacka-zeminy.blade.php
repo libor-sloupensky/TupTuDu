@@ -40,16 +40,23 @@
             </div>
             <div class="tt-kalkulacka-radek">
                 <div>
+                    <label for="kalk-podDum">{{ __('clanky.kalk_pod_dum') }}</label>
+                    <select id="kalk-podDum" data-pole="podDum">
+                        <option value="sterk">{{ __('clanky.kalk_pod_dum_sterk') }}</option>
+                        <option value="vykopek">{{ __('clanky.kalk_pod_dum_vykopek') }}</option>
+                    </select>
+                </div>
+                <div>
                     <label for="kalk-sklep">{{ __('clanky.kalk_sklep') }}</label>
                     <select id="kalk-sklep" data-pole="sklep">
                         <option value="ne">{{ __('clanky.kalk_sklep_ne') }}</option>
                         <option value="ano">{{ __('clanky.kalk_sklep_ano') }}</option>
                     </select>
                 </div>
-                <div>
-                    <label for="kalk-nadTerenem">{{ __('clanky.kalk_nad_terenem') }}</label>
-                    <input type="number" inputmode="decimal" id="kalk-nadTerenem" data-pole="nadTerenem" data-meritko="0.01" value="30" min="0" max="150" step="5">
-                </div>
+            </div>
+            <div>
+                <label for="kalk-nadTerenem">{{ __('clanky.kalk_nad_terenem') }}</label>
+                <input type="number" inputmode="decimal" id="kalk-nadTerenem" data-pole="nadTerenem" data-meritko="0.01" value="30" min="0" max="150" step="5">
             </div>
             <details>
                 <summary>{{ __('clanky.kalk_podrobnosti') }}</summary>
@@ -57,7 +64,7 @@
                     @foreach ($podrobnosti as $p)
                         <div @if ($p['podminka'] === 'pasy') data-pouze-pasy @elseif ($p['podminka'] === 'sklep') data-pouze-sklep hidden @endif>
                             <label for="kalk-{{ $p['klic'] }}">{{ $p['popisek'] }}</label>
-                            <input type="number" inputmode="decimal" id="kalk-{{ $p['klic'] }}" data-pole="{{ $p['klic'] }}" data-meritko="{{ $p['meritko'] }}" value="{{ $p['hodnota'] }}" min="{{ $p['min'] }}" max="{{ $p['max'] }}" step="{{ $p['krok'] }}">
+                            <input type="number" inputmode="decimal" id="kalk-{{ $p['klic'] }}" data-pole="{{ $p['klic'] }}" data-meritko="{{ $p['meritko'] }}" value="{{ $p['hodnota'] }}" min="{{ $p['min'] }}" max="{{ $p['max'] }}" step="{{ $p['krok'] }}" @if ($p['klic'] === 'skladba') data-vychozi-pasy="45" data-vychozi-deska="70" @endif>
                         </div>
                     @endforeach
                 </div>
@@ -65,8 +72,7 @@
         </div>
         <div class="tt-kalkulacka-vysledek" aria-live="polite">
             <div class="tt-kalkulacka-popisek">{{ __('clanky.kalk_vysledek') }}</div>
-            <div data-ukaz="bez-kontaktu" hidden class="tt-upozorneni pozor"><p>{{ __('clanky.kalk_bez_kontaktu') }}</p></div>
-            <div data-ukaz="vysledek">
+            <div>
                 <table>
                     <thead>
                         <tr><th></th><th class="cislo">{{ __('clanky.kalk_rostly') }}</th><th class="cislo">{{ __('clanky.kalk_nakypreny') }}</th></tr>
@@ -92,11 +98,20 @@
                 <dl class="tt-kalkulacka-souhrn">
                     <div><dt>{{ __('clanky.kalk_vykopano') }}</dt><dd><span data-v="celkem-vykopano">–</span> m³</dd></div>
                     <div><dt>{{ __('clanky.kalk_zpet') }}</dt><dd><span data-v="celkem-zpet">–</span> m³</dd></div>
+                    <div><dt>{{ __('clanky.kalk_zbude') }}</dt><dd><strong data-v="celkem-zbude">–</strong> m³</dd></div>
+                    <div data-ukaz="sterk"><dt>{{ __('clanky.kalk_sterk') }}</dt><dd><span data-v="sterk">–</span> m³</dd></div>
                     <div><dt>{{ __('clanky.kalk_hromada') }}</dt><dd><span data-v="hromada">–</span> m³ {{ __('clanky.kalk_nakypreno') }}</dd></div>
                 </dl>
             </div>
             <p class="tt-clanek-meta">{{ __('clanky.kalk_odhad') }}</p>
         </div>
+    </div>
+    <div class="tt-kalkulacka-aplikace" data-vyzva>
+        <p class="tt-jen-mys">{{ __('clanky.kalk_aplikace') }}</p>
+        <p class="tt-jen-dotyk">{{ __('clanky.vyzva_dotyk') }}</p>
+        <a class="btn btn-primary tt-jen-mys" href="{{ \App\Support\Clanky::adresaRegistrace($clanek) }}" data-vyzva-klik>{{ __('clanky.kalk_aplikace_tlacitko') }}</a>
+        <button type="button" class="btn btn-primary tt-jen-dotyk" data-poslat-odkaz>{{ __('clanky.vyzva_poslat') }}</button>
+        <p class="tt-clanek-meta" data-zkopirovano hidden>{{ __('clanky.vyzva_zkopirovano') }}</p>
     </div>
 </form>
 <script src="/js/kalkulacka-zemina.js?v={{ filemtime(public_path('js/kalkulacka-zemina.js')) }}" defer></script>

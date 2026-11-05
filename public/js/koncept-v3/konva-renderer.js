@@ -315,7 +315,7 @@ class KonvaRenderer {
         }, 250);
     }
 
-    /** Výřezy a masky pro rastr: bez podlahy, prostupy, šrafa pod 1,3 m v podkroví (dům doplní). */
+    /** Výřezy a masky pro rastr: bez podlahy, prostupy, šrafa pod limitem výšky v podkroví (dům doplní). */
     _maskyRastru() {
         return this.maskyRastru ? this.maskyRastru() : {};
     }

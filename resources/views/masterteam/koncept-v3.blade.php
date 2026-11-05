@@ -432,7 +432,6 @@
                     <table class="napoveda-tabulka" style="border-collapse:collapse">
                         <tr><td><strong>1 / 2 / 3 / 4</strong></td><td>{{ __('ed_sablona.napoveda.nastroje') }}</td></tr>
                         <tr><td><strong>Alt</strong></td><td>{{ __('ed_sablona.napoveda.alt_stena') }}</td></tr>
-                        <tr><td><strong>B</strong></td><td>{{ __('ed_sablona.napoveda.zvyraznovac') }}</td></tr>
                         <tr><td><strong>{{ __('ed_sablona.napoveda.shift_klik') }}</strong></td><td>{{ __('ed_sablona.napoveda.rovna_cara') }}</td></tr>
                         <tr><td><strong>Ctrl+C / V / D</strong></td><td>{{ __('ed_sablona.napoveda.kopirovat') }}</td></tr>
                         <tr><td><strong>Ctrl+F</strong></td><td>{{ __('ed_sablona.napoveda.cela_obrazovka') }}</td></tr>
@@ -1249,10 +1248,20 @@
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.spara_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.spara') }}</span>
                                         <input type="number" min="40" max="300" step="5" class="w-16" data-zaklad="spara" :value="Math.round(zakladyHodnota('spara') * 100)"
                                                @change="setZaklady('spara', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('spara') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                    <label class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.prodlouzit_tip') }}"><input type="checkbox" data-zaklad-volba="prodlouzit" :checked="zakladyHodnota('prodlouzit')" @change="setVolbuZakladu('prodlouzit', $event.target.checked)"><span>{{ __('ed_sablona.zaklady.prodlouzit') }}</span></label>
+                                    <div x-show="zakladNadTerenemPopis" class="text-gray-500" data-zaklad-nad-terenem x-text="zakladNadTerenemPopis"></div>
                                     <details>
                                         <summary class="cursor-pointer text-gray-500">{{ __('ed_sablona.zaklady.podrobnosti') }}</summary>
                                         <div class="flex flex-col gap-1 pt-1">
-                                            <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.skladba_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.skladba') }}</span>
+                                            <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.pod_dum_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.pod_dum') }}</span>
+                                                <select class="flex-1 min-w-0" data-zaklad-volba="podDum" @change="setVolbuZakladu('podDum', $event.target.value)">
+                                                    <option value="sterk" :selected="zakladyHodnota('podDum') === 'sterk'">{{ __('ed_sablona.zaklady.pod_dum_sterk') }}</option>
+                                                    <option value="vykopek" :selected="zakladyHodnota('podDum') === 'vykopek'">{{ __('ed_sablona.zaklady.pod_dum_vykopek') }}</option>
+                                                </select></div>
+                                            <div class="kk-podlazi-pole" x-show="zemina?.casti.some(c => c.typ === 'deska')" title="{{ __('ed_sablona.zaklady.skladba_deska_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.skladba_deska') }}</span>
+                                                <input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladbaDeska" :value="Math.round(zakladyHodnota('skladbaDeska') * 100)"
+                                                       @change="setZaklady('skladbaDeska', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('skladbaDeska') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                            <div class="kk-podlazi-pole" x-show="zemina?.casti.some(c => c.typ === 'pasy')" title="{{ __('ed_sablona.zaklady.skladba_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.skladba') }}</span>
                                                 <input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladba" :value="Math.round(zakladyHodnota('skladba') * 100)"
                                                        @change="setZaklady('skladba', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('skladba') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
                                             <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.ornice_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.ornice') }}</span>
@@ -1274,6 +1283,7 @@
                                             <template x-for="r in materialyRadky" :key="r.id">
                                                 <div class="flex gap-2" :data-material="r.id"><span class="flex-1" x-text="r.nazev"></span><span class="w-16 text-right font-semibold" x-text="r.rostly"></span><span class="w-16 text-right font-semibold" x-text="r.nakypreny"></span></div>
                                             </template>
+                                            <div x-show="zemina.sterk >= 0.5" class="flex gap-2" data-material="sterk" title="{{ __('ed_sablona.zaklady.sterk_tip') }}"><span class="flex-1">{{ __('ed_sablona.zaklady.sterk') }}</span><span class="font-semibold" x-text="m3(zemina.sterk)"></span></div>
                                             <div x-show="zemina.mimoData > 0.05" class="text-amber-700" data-material-pozor>{{ __('ed_sablona.zaklady.mimo') }}</div>
                                             <details>
                                                 <summary class="cursor-pointer text-gray-500">{{ __('ed_sablona.zaklady.jak') }}</summary>

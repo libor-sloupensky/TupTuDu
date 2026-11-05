@@ -30,7 +30,7 @@ dum = {
 | `public/js/koncept-v3/stavebni-engine.js` | model domu, přepínání, kóty, kopie stěn, transformace domu, magnet spodního podlaží |
 | `public/js/koncept-v3/dum.js` | mixin editoru: přepínač, podepření, podklad po podlažích, schody, plochy, střecha, 2D a 3D domu |
 | `public/js/koncept-v3/strecha.js` | čistá geometrie střechy, bez kresby; test `services/import-test/test-strecha.cjs` |
-| `public/js/koncept-v3/mistnosti.js` | rastr místností, výřezy a plocha pod 1,3 m |
+| `public/js/koncept-v3/mistnosti.js` | rastr místností, výřezy a plocha pod limitem výšky |
 | `public/js/koncept-v3/koty-vyberu.js` | kóty u vybrané stěny a otvoru |
 | `public/js/koncept-v3/koty-retezce.js` | kótovací řetězce kolem domu a rozměry místností; test `test-zobrazeni-objektu-ui` |
 | `services/import-test/test-dum-ui.cjs` | test celého domu v prohlížeči (57 kontrol); `test-barvy-domu-ui`, `test-koty-vyberu-ui` a `test-magnet-patro-ui` a `test-schody-ui` pro barvy, kóty, magnet a schody; `test-dum-import-ui.cjs` ověřuje import skutečného výkresu na patro |
@@ -52,7 +52,7 @@ dum = {
 
 Každá hrana obrysu horního podlaží je **okap** (rovina stoupá) nebo **štít** (svislá stěna). Typ střechy v nabídce je jen předvolba. Výpočet je vážená střešní kostra: obrys se po výškových vrstvách stahuje dovnitř rychlostí `1/tg(sklon)`, štít rychlostí 0. Výstupem jsou rovnou trojúhelníky.
 
-Všechny roviny procházejí vnějším lícem stěny ve výšce okapu. Bez vlastního přesahu mají spodní hrany okapů stejnou výšku, takže přesah je u strmější plochy menší. Klíč hrany je `stena:strana`, u nedorovnané hrany `iN`.
+Všechny roviny procházejí vnějším lícem stěny ve výšce okapu. Bez vlastního přesahu mají spodní hrany okapů stejnou výšku, takže přesah je u strmější plochy menší. Klíč hrany je `stena:strana`, u nedorovnané hrany `iN`. Zbytek rastru v rohu natočeného domu (tětiva bez stěny, celá na líci sousední stěny) se z obrysu vyhazuje, jinak by jako skoro rovnoběžná hrana s jiným přesahem roztáhla roh střechy daleko ven (`hranyObrysu`). Krátký schod mezi rovnoběžnými stěnami zůstává.
 
 Hrana může mít vlastní typ, sklon, přesah, výšku okapu a barvu (`strecha.hrany[klíč]`), co nemá, bere z celku. Přímka hrany ve výpočtu je `n·p = c + w·(t − z)`, jde tedy o kostru s posunem startu. Roviny s různým spodkem začínají za svým okapem, proto se výsledek ořezává půdorysem střechy (rozklad na konvexní díly). Štítová stěna se počítá zvlášť, mezi nárožími domu, bez přesahů.
 
@@ -60,7 +60,7 @@ Stěny horního podlaží nikdy neprojdou střechou. Stěny na obrysu dosáhnou 
 
 Typ krytiny (`strecha.krytina`) určuje reliéf ve 3D a platí pro celek, barva je zvlášť (`strecha.barva`). Starší hodnoty jako `antracit` se čtou jako barva. Reliéf se kreslí jako dlaždice 1,2 × 1,2 m a mapuje se v metrech po ploše.
 
-Podkroví: šrafa pod 1,3 m, čáry 1,30 · 1,80 · 2,30 m, započitatelná plocha nad 1,3 m, stěny ve 3D končí pod střechou.
+Podkroví: šrafa pod 1,2 m, čáry 1,20 · 1,80 · 2,30 m, započitatelná plocha nad 1,2 m (česká vyhláška, `modules/stavebni-parametry.md`), stěny ve 3D končí pod střechou.
 
 ## Výběr barvy
 
