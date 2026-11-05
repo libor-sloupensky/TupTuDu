@@ -218,7 +218,7 @@ return [
         'prenesena' => 'Suelo elevado +:dh cm desde :domov',
         'schody_cast_tip' => 'Escalones hasta la parte elevada',
         'neprenaset_tip' => 'No aplicar la elevación en esta planta',
-        'neprenaset' => 'No aplicar aquí',
+        'neprenaset' => 'Aquí no',
         'pudorys_tip' => 'Solo para orientarse en el plano, no se ve en 3D',
         'pudorys' => 'en el plano:',
     ],

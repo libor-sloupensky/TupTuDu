@@ -119,7 +119,7 @@ return [
 
     // Základy a zemina. :objem u výkopu už obsahuje text s jednotkou (klíč objem).
     'zaklady' => [
-        'objem' => 'approx. :objem m³',
+        'objem' => '~:objem m³',
         'vykop' => ':objem excavation',
         'chybi_vykop' => 'no foundation, :objem excavation',
         'chybi' => 'no foundation',

@@ -218,7 +218,7 @@ return [
         'prenesena' => 'Zvýšená podlaha +:dh cm z :domov',
         'schody_cast_tip' => 'Krátke schody na zvýšenú časť',
         'neprenaset_tip' => 'Na tomto podlaží zvýšenie neuplatniť',
-        'neprenaset' => 'Neprenášať sem',
+        'neprenaset' => 'Nie sem',
         'pudorys_tip' => 'Len pre prehľad v pôdoryse, do 3D sa nepremieta',
         'pudorys' => 'v pôdoryse:',
     ],

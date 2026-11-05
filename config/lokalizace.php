@@ -37,7 +37,7 @@ return [
 
     // Masterteam zatím jen česky. Až se bude překládat, stačí null — pak se jazyk
     // určí stejně jako v aplikaci (a stránky masterteamu potřebují odkaz na DB-IP).
-    'masterteam_jazyk' => 'cs',
+    'masterteam_jazyk' => env('MASTERTEAM_JAZYK', 'cs'),
 
     // Když uživatel nic nezvolil a jazyk jeho země nemáme. Chybějící texty doplňuje
     // záložní jazyk APP_FALLBACK_LOCALE (také en).

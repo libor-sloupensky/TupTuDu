@@ -481,7 +481,7 @@
             <a x-show="katastrMapaPodklad && katastrMapaPodklad !== 'zadny' && !rezim3d"
                href="https://mapy.com/" target="_blank" rel="noopener noreferrer"
                style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);z-index:10;background:rgba(255,255,255,0.9);padding:3px 6px;border-radius:3px;pointer-events:auto;display:block">
-                <img src="/img/external/mapy-com-logo.png" alt="Mapy.com" style="height:14px;display:block">
+                <img src="/img/external/mapy-com-logo.svg" alt="Mapy.com" style="height:14px;display:block">
             </a>
 
             {{-- Panel otvoru — na plátně v levém horním rohu (odsazení 6 px jako nahoře), úchopem vlevo

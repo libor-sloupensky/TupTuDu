@@ -218,7 +218,7 @@ return [
         'prenesena' => 'Erhöhter Boden +:dh cm aus :domov',
         'schody_cast_tip' => 'Kurze Treppe zum erhöhten Bereich',
         'neprenaset_tip' => 'Erhöhung in diesem Geschoss nicht anwenden',
-        'neprenaset' => 'Nicht hierher übertragen',
+        'neprenaset' => 'Nicht hier',
         'pudorys_tip' => 'Nur zur Übersicht im Grundriss, nicht in 3D',
         'pudorys' => 'im Grundriss:',
     ],

@@ -104,9 +104,9 @@ async function main() {
             kontrola('žádná čeština v rozhraní', cesky.length === 0, `${cesky.length}: ` + cesky.slice(0, 25).join(' | '));
             const nazvy = await p.vyhodnot(`${D}.seznamPodlazi?.map(x => x.nazev).join(', ') || ''`);
             console.log('   podlaží:', nazvy);
-            // Nejde o texty: modely a podklad kopie projektu nemusí v této složce být, /masterteam je přesměrování po přihlášení, logo Mapy.com chybí i na produkci
+            // Nejde o texty: modely a podklad kopie projektu nemusí v této složce být, /masterteam je přesměrování po přihlášení
             const vady = [...new Set(p.chybyDetail.slice(pocetVad).map(c => (c.url || c.text).replace(ZAKLAD, '')))]
-                .filter(u => !/^\/(katalog|editor\/plans|masterteam$|img\/external\/mapy-com-logo)/.test(u));
+                .filter(u => !/^\/(katalog|editor\/plans|masterteam$)/.test(u));
             kontrola('bez chyb v konzoli', vady.length === 0, vady.slice(0, 10).join(' | ').slice(0, 500));
             await p.snimek(path.join(VYSTUP, `${jazyk}.png`));
         }

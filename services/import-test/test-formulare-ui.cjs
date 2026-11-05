@@ -5,6 +5,8 @@
  *
  * Spuštění: node services/import-test/test-formulare-ui.cjs [složka snímků]
  * V3_JEN_IHNED=1 přeskočí průchod panely a pustí jen scénáře z části 5.
+ * V3_POPISKY=1 u každého panelu vypíše přetékající a zalomené nápisy a uloží snímek panelu (pro kontrolu překladů,
+ * server pustit s MASTERTEAM_JAZYK=de). Mezi chyby se nepočítají, jen se vypíšou.
  */
 const path = require('path');
 const fs = require('fs');
@@ -16,6 +18,32 @@ const HESLO = process.env.V3_HESLO || '12345';
 const D = `Alpine.$data(document.querySelector('[x-data]'))`;
 const TOL = 1.01;   // px
 const JEN_IHNED = !!process.env.V3_JEN_IHNED;
+const POPISKY = !!process.env.V3_POPISKY;
+// Nápis mimo svůj prvek, oříznutý nebo krátký zalomený. Delší věty se zalamovat smějí.
+const MERENI_POPISKU = `(koren) => {
+    const vystup = [];
+    const k = koren.getBoundingClientRect();
+    const chod = document.createTreeWalker(koren, NodeFilter.SHOW_TEXT);
+    while (chod.nextNode()) {
+        const t = chod.currentNode, text = t.textContent.trim(), n = t.parentElement;
+        if (!text || n.closest('script,style,template,option') || !n.offsetParent) continue;
+        const rng = document.createRange(); rng.selectNodeContents(t);
+        const r = [...rng.getClientRects()].filter(q => q.width > 0);
+        if (!r.length) continue;
+        const radku = new Set(r.map(q => Math.round(q.top))).size;
+        const vpravo = Math.max(...r.map(q => q.right));
+        if (vpravo > k.right + 1) vystup.push('MIMO: ' + text.slice(0, 44));
+        else if (n.scrollWidth > n.clientWidth + 1 && getComputedStyle(n).overflow !== 'visible') vystup.push('ŘEZ: ' + text.slice(0, 44));
+        else if (radku > 1 && text.length <= 26) vystup.push('ZLOM: ' + text.slice(0, 44));
+    }
+    for (const b of koren.querySelectorAll('select')) {
+        if (!b.offsetParent) continue;
+        const o = b.options[b.selectedIndex]; if (!o) continue;
+        const c = document.createElement('canvas').getContext('2d'); c.font = getComputedStyle(b).font;
+        if (c.measureText(o.textContent).width > b.clientWidth - 22) vystup.push('VÝBĚR: ' + o.textContent.trim().slice(0, 44));
+    }
+    return [...new Set(vystup)];
+}`;
 const PO_PAUZE = 550;   // ms, déle než odevzdání rozepsané hodnoty v _poleIhnedInit
 
 let chyb = 0;
@@ -118,6 +146,11 @@ async function main() {
         const v = await p.vyhodnot(`(${MERENI})(document.querySelector(${JSON.stringify(selektor)}))`);
         kontrola(nazev, (v.poli > 0 || bezPoli) && v.vady.length === 0, `${v.poli} polí${v.vady.length ? ': ' + v.vady.join(' | ') : ''}`);
         if (v.vady.length) await p.snimek(path.join(vystup, 'formular-' + nazev.replace(/[^a-z0-9]+/gi, '-') + '.png'));
+        if (POPISKY) {
+            const nalezy = await p.vyhodnot(`(${MERENI_POPISKU})(document.querySelector(${JSON.stringify(selektor)}))`);
+            if (nalezy.length) console.log('   POPISKY ' + nazev + ': ' + nalezy.join(' | '));
+            await p.snimek(path.join(vystup, 'panel-' + nazev.replace(/[^a-z0-9]+/gi, '-') + '.png'));
+        }
         await hodnotaIhned(nazev, selektor);
     };
     const js = (kod) => p.vyhodnot(`(() => { const d = ${D}; const e = d.engine; const X = e.PX_PER_M; ${kod}; return true; })()`);

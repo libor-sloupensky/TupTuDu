@@ -218,7 +218,7 @@ return [
         'prenesena' => 'Raised floor +:dh cm from :domov',
         'schody_cast_tip' => 'Short stairs to the raised part',
         'neprenaset_tip' => 'Do not apply the raised level on this storey',
-        'neprenaset' => 'Do not carry here',
+        'neprenaset' => 'Not here',
         'pudorys_tip' => 'Only for clarity in the floor plan, not shown in 3D',
         'pudorys' => 'in floor plan:',
     ],
