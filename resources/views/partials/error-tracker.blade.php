@@ -122,14 +122,16 @@
      */
     window.chybaUzivateli = function (chyba, akce, detaily) {
         const zprava = chyba instanceof Error
-            ? (chyba.message || chyba.name || 'Neznámá chyba')
+            ? (chyba.message || chyba.name || 'Error')
             : String(chyba);
 
         // Hlásit DŘÍV než alert — ten blokuje vlákno a uživatel může zavřít kartu.
         try { window.zalogujChybu(chyba, akce, detaily); } catch (_) {}
 
         try { console.error(akce ? akce + ':' : 'Chyba:', chyba); } catch (_) {}
-        alert((akce ? akce + ' se nezdařilo: ' : '') + zprava);
+        // `akce` je česky a slouží hlavně do bugů; v jiném jazyce uživatel dostane obecnou hlášku
+        const cesky = !window.TT_LOKALIZACE || window.TT_LOKALIZACE.jazyk === 'cs';
+        alert(cesky ? (akce ? akce + ' se nezdařilo: ' : '') + zprava : window.preloz('obecne.akce_selhala') + ' ' + zprava);
 
         return zprava;
     };

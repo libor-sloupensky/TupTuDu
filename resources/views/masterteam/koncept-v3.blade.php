@@ -6,10 +6,8 @@
 @endphp
 <x-dynamic-component :component="$layoutV3" :title="$titulekV3 ?? 'Koncept V3 — TupTuDu'" :fullWidth="true">
 
-{{-- Zákaznický layout texty pro JS načítá sám, masterteamu je dialogy editoru potřebují taky --}}
-@if ($layoutV3 === 'layouts.app')
-    @include('partials.lokalizace-js')
-@endif
+{{-- Texty pro JS musí být hned, skripty editoru je čtou při načtení. Skupiny ed_* jsou jen tady, ať je ostatní stránky nenesou. --}}
+@include('partials.lokalizace-js', ['ttSkupiny' => ['ed_sablona', 'ed_ui', 'ed_dum', 'ed_kresba', 'ed_ral', 'ed_nastroje']])
 
 {{-- Konva.js + Three.js + StavebníEngine + Renderer — všechno self-hosted,
      aby fungovalo i v zemích, kde jsou unpkg/cdnjs/jsdelivr blokované

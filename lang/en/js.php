@@ -2,6 +2,7 @@
 
 return [
     'obecne' => [
+        'akce_selhala' => 'Action failed:',
         'chyba_spojeni' => 'Connection error. Please try again.',
         'ulozeno' => 'Saved',
     ],

@@ -6,6 +6,7 @@ return [
     'obecne' => [
         'chyba_spojeni' => 'Chyba připojení. Zkus to prosím znovu.',
         'ulozeno' => 'Uloženo',
+        'akce_selhala' => 'Akce se nezdařila:',
     ],
     // Stejný koncept uložený jinde (koncept-k-ui.js, _konfliktUlozeni)
     'koncept' => [

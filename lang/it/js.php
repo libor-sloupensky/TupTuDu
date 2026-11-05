@@ -4,6 +4,7 @@
 // Posílá se celé na každou stránku s partialem → sem jen to, co JS opravdu potřebuje.
 return [
     'obecne' => [
+        'akce_selhala' => 'Azione non riuscita:',
         'chyba_spojeni' => 'Errore di connessione. Riprova.',
         'ulozeno' => 'Salvato',
     ],
