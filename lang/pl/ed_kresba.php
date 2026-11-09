@@ -136,7 +136,7 @@ return [
     'vybaveni_pracka' => 'Pralka',
     'vybaveni_mycka' => 'Zmywarka',
     'vybaveni_susicka' => 'Suszarka',
-    'vybaveni_topeni' => 'Ogrzewanie',
+    'vybaveni_topeni' => 'Grzejnik',
     'vybaveni_misto_na_spotrebic' => 'Miejsce na urządzenie',
     'vybaveni_kulaty_spotrebic' => 'Okrągłe urządzenie',
 ];

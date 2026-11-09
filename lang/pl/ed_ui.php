@@ -77,7 +77,7 @@ return [
     'parcela_nenactena' => 'Nie udało się wczytać działki.',
     'parcela_duplicita' => 'Ta działka jest już dodana.',
     'parcela_nesousedi' => 'Działka nie sąsiaduje z żadną z wczytanych działek. Można dodawać tylko działki sąsiednie.',
-    'parcela_odebrat_posledni' => 'Na pewno usunąć ostatnią działkę? Obiekty stracą zakotwiczenie do terenu.',
+    'parcela_odebrat_posledni' => 'Na pewno usunąć ostatnią działkę? Obiekty stracą zakotwiczenie do działki.',
     'chyba' => 'Błąd',
     'chyba_zprava' => 'Błąd: :zprava',
     'druh_orna_puda' => 'Grunt orny',

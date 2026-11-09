@@ -110,7 +110,7 @@ return [
     // Katastr, výškový profil a vysvětlení pojmů (KonceptV3Controller, Katastr\Dmr5gService)
     'katastr' => [
         'parcela_nenalezena' => 'Nie znaleziono działki. Sprawdź numer działki i obręb katastralny.',
-        'pojem_kratky' => 'Pojęcie jest za krótkie',
+        'pojem_kratky' => 'Za krótka fraza',
         'ai_nedostupna' => 'AI nie jest dostępna',
         'ai_selhala' => 'Odpowiedź AI nie powiodła się',
         'ai_prazdna' => 'Pusta odpowiedź AI',

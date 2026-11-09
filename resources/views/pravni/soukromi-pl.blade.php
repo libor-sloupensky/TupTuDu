@@ -105,7 +105,7 @@
 <h2>5. Przekazywanie poza UE</h2>
 <p>
     Dane przechowujemy w UE. Poza UE mogą trafić tylko przy logowaniu przez Google oraz przy pomiarze ruchu
-    Google Analytics, jeśli użytkownik wyraził na niego zgodę (USA); Google uczestniczy w ramach ochrony
+    Google Analytics, jeśli użytkownik wyraził na niego zgodę (USA); Google przystąpił do Ram ochrony
     danych UE–USA (Data Privacy Framework). Przy płaceniu za subskrypcję dane trafiają
     do spółki Paddle w Wielkiej Brytanii, wobec której obowiązuje decyzja Komisji Europejskiej stwierdzająca odpowiedni
     stopień ochrony danych osobowych.
