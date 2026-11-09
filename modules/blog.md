@@ -112,9 +112,11 @@ Pět kroků: článek v indexu, zobrazení, klik na výzvu, registrace z článk
 2. **Čtenář zůstává na webu.** Žádné vnější odkazy v textu a žádný seznam zdrojů na stránce. Výjimka jen tam, kde to
    vyžaduje zákon (srovnávací stránky, `modules/srovnani.md`). Zdroje jsou v hlavičce souboru, jen pro nás a pro revizi.
    Předpis se smí jmenovat slovy, když to čtenář opravdu potřebuje, ale bez odkazu.
-3. **Přirozeně do aplikace.** Aspoň 2 až 3 místa, kde aplikace řeší přesně to, o čem je řeč: u kalkulačky (co spočítá
-   přesněji), věta v textu, výzva. Popisná věta, ne reklama. Slíbit jen to, co editor umí právě v daném případě: svah,
-   jiná země, telefon, limit zdarma.
+3. **Přirozeně do aplikace, vždy s výzvou k akci (Libor 9. 11. 2026).** Každý článek má aspoň jednu výzvu (blok
+   `::vyzva`) a celkem 2 až 3 místa, kde aplikace řeší přesně to, o čem je řeč: u kalkulačky (co spočítá přesněji),
+   věta v textu, výzva. Výzva navazuje na to, co čtenář právě zjistil, a nabízí další krok („Zkus si to na svém domě“),
+   ne obecné „Zaregistruj se“. Popisná věta, ne reklama. Slíbit jen to, co editor umí právě v daném případě: svah,
+   jiná země, telefon, limit zdarma. Musí to působit přirozeně a neotravně.
 4. **Čísla podle země.** Fyzika a postup platí všude, hodnota z předpisu nebo praxe platí v jedné zemi. Hodnotu závislou na
    zemi vždy označit („v Česku“). Srovnání a návrh řešení: `modules/stavebni-parametry.md`.
 5. **Čtenáři tykáme**, i v titulcích a popisech (CLAUDE.md, část Překlady).
@@ -137,8 +139,9 @@ Pět kroků: článek v indexu, zobrazení, klik na výzvu, registrace z článk
 ## SEO pravidla (Libor 9. 11. 2026)
 
 - **Téma z plánu klíčových slov.** Plán je tabulka Pořadí článků výše a stránka se zdroji (odkaz nahoře). Každý článek
-  má jedno hlavní klíčové slovo a 2 až 4 vedlejší (varianty, otázky). Před psaním zkontrolovat, že na stejné slovo
-  necílí jiný článek (kanibalizace). Když ano, rozšířit ten starší, nepsat nový.
+  má jedno hlavní klíčové slovo a 2 až 4 vedlejší (varianty, otázky). Před psaním se podívat, jestli na stejné slovo
+  necílí jiný článek. Lepší je nová fráze. Když se překrývají, nový článek může starší i pozvednout: oba se navzájem
+  odkážou a každý odpoví na jinou otázku. Nesmí to být dva skoro stejné texty.
 - **Kde je hlavní slovo:** v titulku (nejlépe na začátku), v perexu, v adrese a aspoň v jednom mezititulku. Psát
   přirozeně, slovo nikdy nehromadit. Odpovídat na to, co hledající opravdu chce (spočítat, porovnat, rozhodnout).
 - **Titulek do 60 znaků** (kontrola upozorní nad 65), **popis 120 až 160 znaků**: přínos pro čtenáře, tykání, bez
@@ -146,8 +149,11 @@ Pět kroků: článek v indexu, zobrazení, klik na výzvu, registrace z článk
 - **Adresa** krátká, z hlavního slova, bez diakritiky, v jazyce článku. Po zveřejnění se nemění.
 - **Stavba:** jeden H1 (titulek dává šablona), mezititulky H2 a H3 podle otázek čtenáře. Odpověď hned v perexu, aby
   šla převzít do výňatku ve výsledcích hledání.
-- **Odkazy:** na související články (pokud jsou vidět) a 2 až 3 do aplikace (pravidlo 3), vždy s popisným textem, nikdy
-  „zde“ nebo „klikni“. Nový článek doplnit i do `souvisejici` u starších článků, které na něj mají odkazovat.
+- **Provázání článků (Libor 9. 11. 2026), oběma směry.** Nový článek odkazuje na další články tam, kde čtenáři
+  opravdu pomohou, odkazem ve větě (`[text](clanek:adresa)`) a v `souvisejici`. Zároveň projít starší články a do
+  vhodných míst doplnit odkaz na nový článek, i do jejich `souvisejici`. Odkaz musí být ve větě, která dává smysl i bez
+  něj, s popisným textem, nikdy „zde“ nebo „klikni“. Raději méně a přesně: 2 až 4 odkazy na články v textu, žádné
+  hromady odkazů. Stejně přirozeně a neotravně jako výzva do aplikace.
 - **Obrázky:** popis pro nevidomé (kontrola ho hlídá) a popisný název souboru.
 - **Strukturovaná data** (Article, drobečková navigace) a kanonickou adresu dává šablona `clanky/detail` sama, ručně nic.
 - **Aktuálnost:** hodnoty z předpisů znovu ověřit nejpozději po roce a posunout `overeno`.
@@ -167,7 +173,7 @@ Copywriter s daty pracuje sám, Liborovi předává závěr, ne čísla k vyhodn
 
 Data z GA4 jsou jen od návštěvníků se souhlasem s cookies, proto rozhodují registrace z DB.
 
-## Jazyky a země u článků (Libor 9. 11. 2026, způsob pro více zemí čeká na rozhodnutí)
+## Jazyky a země u článků (Libor 9. 11. 2026)
 
 Každý článek po schválení české verze vyjde ve všech jazycích webu (cs, en, sk, pl, de, fr, es, it). Nejde o doslovný
 překlad, ale o verzi pro zemi:
@@ -181,7 +187,7 @@ překlad, ale o verzi pro zemi:
 - **Téma čistě národní** (odstup od hranice, katastr) se pro jinou zemi píše znovu podle jejích pravidel, nebo tam nevyjde.
 - Obrázky s textem vygenerovat pro každý jazyk (část Obrázky a překlad). Odborná revize zvlášť pro každou zemi.
 
-**Návrh pro jazyk ve více zemích (DE a AT, FR a BE a CH, IT a CH):** jeden článek na jazyk s jednou adresou, psaný pro
+**Jazyk ve více zemích (DE a AT, FR a BE a CH, IT a CH), schválil Libor 9. 11. 2026:** jeden článek na jazyk s jednou adresou, psaný pro
 hlavní zemi jazyka. Kde se hodnota v druhé zemi liší, uvede se v textu obojí („v Německu …, v Rakousku …“) nebo malou
 tabulkou. Samostatná verze pro zemi (vlastní adresa, `hreflang="de-AT"`) jen u článku, jehož jádro je národní předpis,
 a jen když je v té zemi dost hledání. Angličtina je bez cílové země: princip a postup, čísla jen jako příklad
@@ -193,9 +199,10 @@ nemá `zeme`. Udělat před prvním překladem.
 
 ## Postup jednoho článku
 
-1. Téma z plánu, data ze Search Console a našeptávače, hlavní a vedlejší klíčová slova, kontrola kanibalizace.
+1. Téma z plánu, data ze Search Console, Plánovače a našeptávače, hlavní a vedlejší klíčová slova, překryv se staršími články.
 2. Ověřit v kódu a v `modules/`, co aplikace v daném případě umí. Spočítat příklad v editoru nebo kalkulačce.
-3. Napsat podle pravidel výše, `stav: koncept`. `php artisan clanky:kontrola` bez chyb.
+3. Napsat podle pravidel výše, `stav: koncept`, s výzvou k akci a odkazy na související články. Do starších článků
+   doplnit odkazy na nový. `php artisan clanky:kontrola` bez chyb.
 4. Odborná revize nezávislým agentem a vyřešení nálezů, `revize: datum`.
 5. Předat Liborovi. Po schválení `stav: zverejneno`, nasadit až na jeho pokyn.
 6. Po nasazení indexace v Search Console, odkazy ze starších článků, za 2 až 4 týdny vyhodnotit.
