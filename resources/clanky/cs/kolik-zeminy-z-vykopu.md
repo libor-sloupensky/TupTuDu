@@ -1,7 +1,7 @@
 ---
 titulek: Kolik zeminy z výkopu základů zbude: výpočet a kalkulačka
 popis: Spočítej si, kolik zeminy z výkopu základů zbude a kolik aut ji odveze. Kalkulačka zeminy zdarma a příklady pro dům na pasech i se sklepem.
-perex: Kolik zeminy z výkopu zbude? U domu 12 × 10 m na rovině a na pasech se vykope asi 60 m³, zhruba 21 m³ se vrátí a skoro 40 m³ zbude, z toho 30 m³ ornice. Když ornice zůstane na zahradě, odvezou se 2 auta. Se sklepem zbude skoro 400 m³.
+perex: Kolik zeminy z výkopu zbude? U domu 12 × 10 m na rovině a na pasech se vykope asi 60 m³, zhruba 21 m³ se vrátí a skoro 40 m³ zbude, z toho 30 m³ ornice. Když ornice zůstane na zahradě, odvezou se 1 až 2 auta. Se sklepem zbude skoro 400 m³.
 publikovano: 2026-11-05
 overeno: 2026-11-09
 revize: 2026-11-09
@@ -54,7 +54,7 @@ Největší hromada je větší než přebytek: je nakypřená a leží v ní i 
 
 ## Odvoz zeminy: kolik aut to dělá
 
-Na korbě zabere hlína asi o čtvrtinu víc než v zemi a auto jí odveze 7 až 10 m³. Celých 38 m³ z příkladu je na korbě asi 48 m³, tedy 5 až 7 aut. Když ornici necháš na zahradě, odjede jen výkopek, asi 10 m³ na korbě, tedy 2 auta. Se sklepem asi 45 až 65 aut. Přepočet na tuny je v článku o [koeficientu nakypření](clanek:koeficient-nakypreni-zeminy).
+Na korbě zabere hlína asi o čtvrtinu víc než v zemi a auto jí odveze 7 až 10 m³. Celých 38 m³ z příkladu je na korbě asi 48 m³, tedy 5 až 7 aut. Když ornici necháš na zahradě, odjede jen výkopek, asi 10 m³ na korbě, tedy 1 až 2 auta. Se sklepem a s ornicí na zahradě asi 45 až 65 aut. Přepočet na tuny je v článku o [koeficientu nakypření](clanek:koeficient-nakypreni-zeminy).
 
 Jeden stavebník u domu na pasech odvezl 9 aut, ornici přitom nechal na pozemku. Spára mu vyšla 1,2 m a rýhy se po dešti rozjely skoro o polovinu. Jinde, třeba ve svahu, odjely desítky aut. Rozměry domů blogy většinou nepíšou. Víc aut dělá i větší dům, zemina nevhodná do zásypu nebo štěrk pod domem. Nakypřený objem z kalkulačky nahoře vyděl sedmi, vyjde spíš horní odhad. Kolik auto uveze, řekne dopravce.
 

@@ -99,7 +99,7 @@ async function main() {
         const doAplikace = await p.vyhodnot(`document.querySelectorAll('.tt-clanek a[href*="/register?zdroj="]').length`);
         kontrola('do aplikace vedou aspoň tři cesty', doAplikace >= 3, String(doAplikace));
         kontrola('odkaz na napsaný článek funguje', await p.vyhodnot(`!!document.querySelector('.tt-clanek p a[href$="/cs/clanky/koeficient-nakypreni-zeminy"]')`));
-        kontrola('článek, který ještě není, zůstane jen textem', await p.vyhodnot(`!document.querySelector('.tt-clanek a[href*="zaklady-na-svahu"]') && document.querySelector('.tt-clanek').textContent.replace(/\\u00a0/g, ' ').includes('základy se dělají po stupních')`));
+        kontrola('článek, který ještě není, zůstane jen textem', await p.vyhodnot(`!document.querySelector('.tt-clanek a[href*="zaklady-na-svahu"]') && document.querySelector('.tt-clanek').textContent.replace(/\\u00a0/g, ' ').includes('základy dělají po stupních')`));
         kontrola('související články ukazují jen napsané', await p.vyhodnot(`document.querySelectorAll('.tt-clanky-polozka').length === 1`));
         await snimekCele(p, path.join(VYSTUP, 'clanek-pocitac-tmavy.png'));
         await p.vyhodnot(`document.documentElement.dataset.theme = 'light'`);
