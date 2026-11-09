@@ -208,7 +208,7 @@ return [
     '9005' => 'sýta čierna',
     '9006' => 'biely hliník',
     '9007' => 'sivý hliník',
-    '9010' => 'čisto biela',
+    '9010' => 'čistá biela',
     '9011' => 'grafitová čierna',
     '9016' => 'dopravná biela',
     '9017' => 'dopravná čierna',
