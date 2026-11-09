@@ -1,7 +1,8 @@
 ---
 titulek: Koeficient nakypření zeminy: kolik skončí na korbě
+klicove_slovo: koeficient nakypření zeminy
 popis: Zjisti, o kolik víc místa zabere zemina po vykopání. Koeficienty pro běžné zeminy, přepočet na kubíky k odvozu i na tuny s příkladem.
-perex: Koeficient nakypření běžné hlíny je asi 1,25: po vykopání zabere zhruba o čtvrtinu víc místa než v zemi, rozpojená skála skoro o polovinu. Z 10 m³ výkopu v hlíně je tak na korbě asi 12,5 m³.
+perex: Koeficient nakypření zeminy říká, o kolik víc místa zabere zemina po vykopání. U běžné hlíny je asi 1,25, tedy zhruba o čtvrtinu víc, u rozpojené skály skoro o polovinu. Z 10 m³ výkopu v hlíně je tak na korbě asi 12,5 m³.
 publikovano: 2026-11-05
 overeno: 2026-11-09
 revize: 2026-11-09

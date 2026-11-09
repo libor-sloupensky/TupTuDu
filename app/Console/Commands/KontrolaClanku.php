@@ -7,15 +7,19 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 /**
- * Hlídá pravidla článků (modules/blog.md), která jde ověřit strojově: délku, žádné vnější odkazy,
- * zmínky aplikace, tykání, existenci obrázků a odkazovaných článků. Odbornou správnost nehlídá,
- * tu řeší revize. Chyba = článek takhle nemá vyjít, upozornění = podívat se na to.
+ * Hlídá pravidla článků (modules/blog.md), která jde ověřit strojově: délku, autora, klíčové slovo,
+ * žádné vnější odkazy ani vlastní HTML, výzvu a cesty do aplikace, provázání s dalšími články oběma
+ * směry, tón, tykání, existenci obrázků. Odbornou správnost nehlídá, tu řeší revize.
+ * Chyba = článek takhle nemá vyjít, upozornění = podívat se na to.
  */
 class KontrolaClanku extends Command
 {
     private const SLOV_DOPORUCENO = 500;
 
     private const SLOV_NEJVIC = 650;
+
+    /** Podpis všech článků (Libor 9. 11. 2026). */
+    private const AUTOR = 'Libor z TupTuDu';
 
     protected $signature = 'clanky:kontrola';
 
@@ -60,11 +64,34 @@ class KontrolaClanku extends Command
         }
 
         // Hlavička
+        if (($clanek['autor'] ?? null) !== self::AUTOR) {
+            $chyby[] = 'autor v hlavičce má být „' . self::AUTOR . '“, je „' . ($clanek['autor'] ?? '') . '“';
+        }
         if (mb_strlen($clanek['titulek']) > 65) {
-            $upozorneni[] = 'titulek přes 65 znaků, ve výsledcích hledání se zkrátí';
+            $chyby[] = 'titulek přes 65 znaků, ve výsledcích hledání se zkrátí';
+        } elseif (mb_strlen($clanek['titulek']) > 60) {
+            $upozorneni[] = 'titulek přes 60 znaků';
         }
         if (mb_strlen($clanek['popis']) > 160) {
             $upozorneni[] = 'popis přes 160 znaků, ve výsledcích hledání se zkrátí';
+        } elseif (mb_strlen($clanek['popis']) < 120) {
+            $upozorneni[] = 'popis pod 120 znaků';
+        }
+        if (! isset($clanek['revize'])) {
+            $upozorneni[] = 'chybí datum odborné revize';
+        }
+
+        // Hlavní klíčové slovo (SEO pravidla): titulek, perex a aspoň jeden mezititulek
+        if (! isset($clanek['klicove_slovo'])) {
+            $chyby[] = 'v hlavičce chybí klicove_slovo';
+        } else {
+            $vzor = $this->vzorSlova($clanek['klicove_slovo']);
+            preg_match_all('/^#{2,3}\s+(.+)$/m', $telo, $mezititulky);
+            foreach (['titulek' => [$clanek['titulek']], 'perex' => [$clanek['perex']], 'mezititulek' => $mezititulky[1]] as $kde => $texty) {
+                if (! array_filter($texty, fn ($s) => preg_match($vzor, $s))) {
+                    $upozorneni[] = "klíčové slovo „{$clanek['klicove_slovo']}“ chybí v: {$kde}";
+                }
+            }
         }
         if ($clanek['zdroje'] === []) {
             $chyby[] = 'v hlavičce chybí zdroje, revize nemá z čeho vycházet';
@@ -77,11 +104,32 @@ class KontrolaClanku extends Command
         if (preg_match_all('/\]\(https?:[^)]+\)/', $telo, $vnejsi)) {
             $chyby[] = 'vnější odkazy v textu: ' . count($vnejsi[0]);
         }
+        // Grafika jen z hotových prvků šablony
+        if (preg_match('/<\/?[a-z][a-z0-9]*[\s>]|style=/i', $telo)) {
+            $chyby[] = 'vlastní HTML nebo styly v textu, použij Markdown a bloky';
+        }
 
-        // Zmínky aplikace
+        // Výzva k akci a cesty do aplikace (pravidlo 3: aspoň jedna výzva, celkem 2 až 3 místa)
+        if (! preg_match('/^::vyzva/m', $telo)) {
+            $chyby[] = 'chybí výzva k akci (::vyzva)';
+        }
         $zminek = preg_match_all('/\(aplikace:\)|^::vyzva|^::kalkulacka/m', $telo);
         if ($zminek < 2) {
-            $upozorneni[] = "málo cest do aplikace: {$zminek}, doporučeny aspoň 2";
+            $chyby[] = "málo cest do aplikace: {$zminek}, mají být 2 až 3";
+        } elseif ($zminek > 3) {
+            $upozorneni[] = "cest do aplikace je {$zminek}, víc než 3 působí dotěrně";
+        }
+
+        // Tón (pravidlo 9) a text odkazů
+        $prosty = preg_replace('/^(::.*|:::.*)$/m', '', $telo);
+        if (preg_match('/!(?=\s|$)/u', $clanek['titulek'] . ' ' . $clanek['perex'] . ' ' . $prosty)) {
+            $upozorneni[] = 'vykřičník, tón má být věcný';
+        }
+        if (preg_match('/[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]/u', $telo . $clanek['perex'])) {
+            $chyby[] = 'emoji v textu';
+        }
+        if (preg_match_all('/v dnešní době|není nic jednoduššího|připravujeme|\[(zde|tady|klikni[^\]]*)\]/ui', $telo . ' ' . $clanek['perex'], $fraze)) {
+            $chyby[] = 'zakázané fráze: ' . implode(', ', array_unique($fraze[0]));
         }
 
         // Související články a odkazy na články
@@ -94,6 +142,14 @@ class KontrolaClanku extends Command
         }
         if ($odkazy[1] === []) {
             $upozorneni[] = 'v textu není odkaz na jiný článek';
+        } elseif (count($odkazy[1]) > 5) {
+            $upozorneni[] = 'odkazů na články je ' . count($odkazy[1]) . ', raději méně a přesně';
+        }
+        // Provázání oběma směry: na článek má odkazovat aspoň jeden jiný
+        $odkazujici = array_filter(File::glob(resource_path('clanky/' . $jazyk . '/*.md')), fn ($jiny) => basename($jiny, '.md') !== $adresa
+            && preg_match('/\(clanek:' . preg_quote($adresa, '/') . '\)|^souvisejici:.*\b' . preg_quote($adresa, '/') . '\b/m', File::get($jiny)));
+        if ($odkazujici === []) {
+            $upozorneni[] = 'na článek zatím neodkazuje žádný jiný článek, doplň odkaz do starších';
         }
 
         // Obrázky
@@ -132,5 +188,14 @@ class KontrolaClanku extends Command
         }
 
         return count($chyby);
+    }
+
+    /** Klíčové slovo jako regex: slova ve stejném pořadí, delší slova jen podle začátku kvůli pádům. */
+    private function vzorSlova(string $slovo): string
+    {
+        $casti = array_map(fn ($s) => preg_quote(mb_strlen($s) > 5 ? mb_substr($s, 0, mb_strlen($s) - 2) : $s, '/'),
+            preg_split('/\s+/u', mb_strtolower(trim($slovo))));
+
+        return '/(?<!\p{L})' . implode('\p{L}*\s+(?:\p{L}+\s+){0,2}?', $casti) . '/iu';
     }
 }

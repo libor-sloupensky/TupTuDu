@@ -18,9 +18,7 @@
                 <section class="tt-clanky-polozka">
                     <h2><a href="{{ Clanky::adresa($clanek) }}">{{ $clanek['titulek'] }}</a></h2>
                     <p>{{ $clanek['popis'] }}</p>
-                    @if ($clanek['stav'] !== 'zverejneno')
-                        <p class="tt-clanek-meta">{{ __('clanky.koncept') }}</p>
-                    @endif
+                    <p class="tt-clanek-meta">{{ __('clanky.autor', ['autor' => $clanek['autor'] ?? 'TupTuDu']) }}@if ($clanek['stav'] !== 'zverejneno') · {{ __('clanky.koncept') }}@endif</p>
                 </section>
             @endforeach
         </div>

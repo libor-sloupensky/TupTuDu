@@ -39,12 +39,13 @@ Soubor `resources/clanky/{jazyk}/{adresa}.md`, název souboru je adresa. Do site
 ```
 ---
 titulek: …
+klicove_slovo: …         ← hlavní klíčové slovo z analýzy, kontrola ho hledá v titulku, perexu a mezititulku
 popis: … (do 160 znaků, popis pro výsledky hledání)
 perex: … (rychlá odpověď hned nahoře)
 publikovano: 2026-11-20
 overeno: 2026-11-20
 revize: 2026-11-20       ← datum odborné revize, bez něj nejde zveřejnit
-autor: Libor z TupTuDu
+autor: Libor z TupTuDu   ← povinně, šablona ho dá pod titulek i do strukturovaných dat pro Google
 stav: koncept            ← jen lokálně; na produkci je vidět až `zverejneno` a datum publikovano ≤ dnes
 obrazek: /img/clanky/…   ← náhled při sdílení, JPEG nebo PNG
 souvisejici: adresa, adresa
@@ -80,7 +81,7 @@ Text je Markdown (tabulky, zarovnání `---:` pro čísla). Bloky mají vlastní
 | Článek jako zdroj registrace | `FortifyServiceProvider`, `uzivatele.zdroj_registrace` |
 | Obrázek výkopu z editoru | `node services/clanky/snimky-zemina.cjs` |
 | Test v prohlížeči | `node services/import-test/test-clanky-ui.cjs`, snímky ve `vystup/clanky` |
-| Kontrola pravidel | `php artisan clanky:kontrola` (`KontrolaClanku`) |
+| Kontrola pravidel | `php artisan clanky:kontrola` (`KontrolaClanku`): autor, klíčové slovo, délka, titulek a popis, výzva a 2 až 3 cesty do aplikace, odkazy na články oběma směry, vnější odkazy, vlastní HTML, emoji, vykřičníky, zakázané fráze, vykání, obrázky. Ověřeno na zkušebním článku s porušeními 9. 11. 2026 |
 
 **Kalkulačka nesmí načítat nic z `js/koncept-v3`** (rozhodnutí z 3. 11. 2026, `modules/sdileni.md`). Má vlastní přesný vzorec
 pro obdélník na rovině, test ho porovnává s `Zemina.spocitej` v 102 kombinacích. Změna výpočtu v editoru test shodí.
@@ -208,7 +209,7 @@ nemá `zeme`. Udělat před prvním překladem.
 1. Téma z plánu, data ze Search Console, Plánovače a našeptávače, hlavní a vedlejší klíčová slova, překryv se staršími články.
 2. Ověřit v kódu a v `modules/`, co aplikace v daném případě umí. Spočítat příklad v editoru nebo kalkulačce.
 3. Napsat podle pravidel výše, `stav: koncept`, s výzvou k akci a odkazy na související články. Do starších článků
-   doplnit odkazy na nový. `php artisan clanky:kontrola` bez chyb.
+   doplnit odkazy na nový. `php artisan clanky:kontrola` bez chyb, každé upozornění vyřešit nebo v hlášení zdůvodnit.
 4. Odborná revize nezávislým agentem a vyřešení nálezů, `revize: datum`.
 5. Předat Liborovi. Po schválení `stav: zverejneno`, nasadit až na jeho pokyn.
 6. Po nasazení indexace v Search Console, odkazy ze starších článků, za 2 až 4 týdny vyhodnotit.
@@ -278,7 +279,7 @@ Editor a kalkulačka počítají stejně i se štěrkem a prodlouženým základ
 
 ## Otevřené body
 
-- Libor: přečíst článek 1 a dodat přibližná čísla z vlastního výkopu. Články podepisuje „Libor z TupTuDu“ (Libor 9. 11. 2026).
+- Články o zemině jsou hotové a čekají na Liborovo schválení (9. 11. 2026). Délku 591 slov a zubatý okraj výkopu na snímku Libor přijal. Čísla z vlastního výkopu nemá a mít nebude, příklad z cizí stavby zůstává. Články podepisuje „Libor z TupTuDu“.
 - Hodnoty podle země: u článků je to vyřešené v části Jazyky a země (9. 11. 2026). Odložená zůstává jen část pro editor,
   kde platí jedna hodnota pro všechny země (`modules/stavebni-parametry.md`, Návrh řešení).
 - 3D ukázka přes sdílený odkaz v článku: `X-Frame-Options: SAMEORIGIN` vložení na www dovolí, chce to demo projekt na produkci

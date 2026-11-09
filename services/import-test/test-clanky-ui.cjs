@@ -47,6 +47,11 @@ async function main() {
             ld: JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent).map(x => x['@type']), h1: document.querySelectorAll('h1').length })`);
         kontrola('česky, kanonická adresa, popis, jeden nadpis', hlava.jazyk === 'cs' && hlava.kan.endsWith(CLANEK) && hlava.popis.length > 80 && hlava.h1 === 1, JSON.stringify(hlava.h1));
         kontrola('strukturovaná data článku a drobečků', hlava.ld.join() === 'Article,BreadcrumbList', hlava.ld.join());
+        // Autor z hlavičky článku: pod titulkem i pro vyhledávače
+        const autor = await p.vyhodnot(`({ meta: document.querySelector('.tt-clanek-meta')?.textContent || '',
+            ld: JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent)[0].author })`);
+        kontrola('autor Libor z TupTuDu na stránce i ve strukturovaných datech', autor.meta.includes('Libor z TupTuDu')
+            && autor.ld?.['@type'] === 'Person' && autor.ld?.name === 'Libor z TupTuDu', JSON.stringify(autor));
 
         console.log('\n2) Kalkulačka');
         let v = await hodnoty(p);

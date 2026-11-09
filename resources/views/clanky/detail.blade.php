@@ -23,7 +23,9 @@
             'datePublished' => $clanek['publikovano'],
             'dateModified' => $clanek['overeno'],
             'mainEntityOfPage' => $adresa,
-            'author' => ['@type' => 'Organization', 'name' => 'TupTuDu', 'url' => Lokalizace::adresaWebu('/', $jazyk)],
+            'author' => isset($clanek['autor'])
+                ? ['@type' => 'Person', 'name' => $autor, 'worksFor' => ['@type' => 'Organization', 'name' => 'TupTuDu', 'url' => Lokalizace::adresaWebu('/', $jazyk)]]
+                : ['@type' => 'Organization', 'name' => 'TupTuDu', 'url' => Lokalizace::adresaWebu('/', $jazyk)],
             'publisher' => [
                 '@type' => 'Organization',
                 'name' => 'TupTuDu',
