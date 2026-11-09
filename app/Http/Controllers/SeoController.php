@@ -12,7 +12,7 @@ use Illuminate\Http\Response;
  * masterteam) sdílejí jeden `public/` a každá potřebuje jiný obsah:
  *
  *   web        indexovat, sitemapa veřejných stránek
- *   app        neindexovat (titulka na app.tuptudu.com je kopie webu kvůli Paddle)
+ *   app        neindexovat (titulka na app.tuptudu.com je kopie webu kvůli Paddle, roboti na ni smí)
  *   masterteam neindexovat
  *
  * V sitemapě jsou kanonické adresy: stránky ze `STRANKY_WEBU` v každém jazyce s hreflang a články
@@ -42,6 +42,11 @@ class SeoController extends Controller
                 '',
                 'Sitemap: ' . Domeny::url('web', '/sitemap.xml'),
             ];
+        } elseif (Domeny::jeApp()) {
+            // Titulku app.tuptudu.com musí vidět kontrola domény v Paddlu (pokladna), úplný zákaz
+            // robotů bere jako „ochranu proti botům" a doménu neschválí. Do vyhledávačů se
+            // titulka stejně nedostane: má <meta name="robots" content="noindex">.
+            $radky = ['User-agent: *', 'Allow: /$', 'Disallow: /'];
         } else {
             $radky = ['User-agent: *', 'Disallow: /'];
         }
