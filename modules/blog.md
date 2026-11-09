@@ -142,6 +142,11 @@ Pět kroků: článek v indexu, zobrazení, klik na výzvu, registrace z článk
   má jedno hlavní klíčové slovo a 2 až 4 vedlejší (varianty, otázky). Před psaním se podívat, jestli na stejné slovo
   necílí jiný článek. Lepší je nová fráze. Když se překrývají, nový článek může starší i pozvednout: oba se navzájem
   odkážou a každý odpoví na jinou otázku. Nesmí to být dva skoro stejné texty.
+- **Volba hlavního slova podle analýzy, ne podle pocitu.** Vždy z dat: objem a konkurence z Plánovače (`py services/klicova-slova.py`),
+  dotazy ze Search Console a našeptávač Seznamu. Ověřit záměr hledání: kdo je dnes ve výsledcích. Když tam jsou
+  firmy a ceníky („odvoz zeminy cena“), chce hledající nakoupit, ne se poučit, a článek tam neuspěje. Pak je slovo
+  jen vedlejší. Malý objem u slova, které přesně odpovídá problému, nevadí (Pain Point SEO). Volbu hlavního
+  a vedlejších slov i s čísly a důvodem copywriter vždy uvede v hlášení.
 - **Kde je hlavní slovo:** v titulku (nejlépe na začátku), v perexu, v adrese a aspoň v jednom mezititulku. Psát
   přirozeně, slovo nikdy nehromadit. Odpovídat na to, co hledající opravdu chce (spočítat, porovnat, rozhodnout).
 - **Titulek do 60 znaků** (kontrola upozorní nad 65), **popis 120 až 160 znaků**: přínos pro čtenáře, tykání, bez
