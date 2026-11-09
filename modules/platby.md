@@ -6,6 +6,11 @@ předplatného přes **Paddle** — ten je prodejcem (Merchant of Record): faktu
 odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. WormUP s.r.o. dostává
 1× měsíčně výplatu se samofakturou. Poplatek 5 % + 0,50 $ za platbu, bez paušálu.
 
+## Schváleno 2026-11-09 večer
+- Paddle schválil `app.tuptudu.com` (mail „Your domain is approved", Checkout i Apple Pay). API `checkout-domains`: `tuptudu.com` i `app.tuptudu.com` = `approved`.
+- **Výchozí odkaz pokladny nastaven** (`paddle:katalog --odkaz=https://app.tuptudu.com/billing`, ověřeno `GET settings/checkout-url`).
+- **Zbývá:** ostrý test za 0 Kč — slevový kód 100 % (jednorázový, `recurring: false`, `usage_limit: 1`, jen cena Stavebník měsíčně, krátká platnost) založí Libor v dashboardu **Catalog → Discounts** (Claude zápis do ostrého účtu blokuje pojistka); test skutečnou kartou: platba, zprávy z Paddlu, změna tarifu, zrušení; pak předplatné zrušit, kód vypnout, smazat účet „Paddle Review".
+
 ## Kontrola 2026-11-09
 - Get started v dashboardu: ověření firmy (02 Verify) **hotové**; 01 a 03 „In progress".
 - `app.tuptudu.com` pořád `action_required` beze změny od 30. 10. 21:02 → Paddle čeká na nás, samo se to nepohne. Libor má v Checkout → Website approval zjistit důvod, případně napsat podpoře.
