@@ -1,10 +1,10 @@
 ---
-titulek: Koeficient nakypření zeminy: kolik kubíků skončí na korbě
-popis: Zemina po vykopání zabere víc místa než v zemi. Koeficienty nakypření pro běžné zeminy, přepočet na kubíky k odvozu a na tuny s příkladem.
-perex: Zemina po vykopání zabere víc místa než v zemi. Běžná hlína zhruba o čtvrtinu, rozpojená skála skoro o polovinu. Z 10 m³ výkopu v hlíně je tak na korbě asi 12,5 m³.
+titulek: Koeficient nakypření zeminy: kolik skončí na korbě
+popis: Zjisti, o kolik víc místa zabere zemina po vykopání. Koeficienty pro běžné zeminy, přepočet na kubíky k odvozu i na tuny s příkladem.
+perex: Koeficient nakypření běžné hlíny je asi 1,25: po vykopání zabere zhruba o čtvrtinu víc místa než v zemi, rozpojená skála skoro o polovinu. Z 10 m³ výkopu v hlíně je tak na korbě asi 12,5 m³.
 publikovano: 2026-11-05
-overeno: 2026-11-05
-revize: 2026-11-05
+overeno: 2026-11-09
+revize: 2026-11-09
 autor: Libor z TupTuDu
 stav: koncept
 souvisejici: kolik-zeminy-z-vykopu
@@ -14,7 +14,7 @@ souvisejici: kolik-zeminy-z-vykopu
 - Kolik materiálu: Kalkulačka výkopu (nakypření 1,25) | https://kolikmaterialu.cz/vykop/
 - Ceník odvozu (příklad, účtování podle jízd a hodin) | https://dovoz-odvoz.cz/cenik/
 ---
-## Koeficienty pro běžné zeminy
+## Koeficient nakypření pro běžné zeminy
 
 | Druh zeminy | Koeficient nakypření |
 |:---|---:|
@@ -30,14 +30,14 @@ Objem v zemi vynásob koeficientem a máš objem na hromadě nebo na korbě. Hod
 
 **Rostlý objem** je to, co bylo v zemi. Podle něj se počítá, kolik se vykope a kolik se vrátí do zásypu, který se hutní po vrstvách.
 
-**Nakypřený objem** je to, co leží na hromadě a na korbě. Podle něj plánuješ místo na pozemku i [odvoz zeminy](clanek:kolik-zeminy-z-vykopu). V Česku se odvoz účtuje různě: podle kubíků na korbě, jízd nebo hodin a kilometrů, skládka obvykle podle tun. Ptej se proto, o které kubíky jde.
+**Nakypřený objem** je to, co leží na hromadě a na korbě. Podle něj plánuješ místo na pozemku i [odvoz zeminy](clanek:kolik-zeminy-z-vykopu). V Česku bývá odvoz v rozpočtu stavební firmy v m³ rostlé zeminy, dopravce účtuje kubíky na korbě, jízdy nebo hodiny a kilometry, skládka obvykle tuny. Ptej se proto, o které kubíky jde.
 
 ## Kolik to váží
 
-Orientačně 1,7 až 1,9 t na m³ rostlé zeminy, mokrá i víc. Nakypřením se mění objem, hmotnost zůstává stejná. Z 10 m³ výkopu v hlíně je tak 12,5 m³ na korbě a asi 18 t. Při objednávce auta proto záleží na tom, co se naplní dřív: objem korby, nebo nosnost.
+Orientačně 1,5 až 1,9 t na m³ rostlé zeminy, běžná hlína kolem 1,8 t, mokrá i víc. Nakypřením se mění objem, hmotnost zůstává stejná. Z 10 m³ výkopu v hlíně je tak 12,5 m³ na korbě a asi 18 t. Při objednávce auta proto záleží na tom, co se naplní dřív: objem korby, nebo nosnost.
 
 ## Kolik zeminy budeš odvážet ty
 
-Kolik se u tvého domu vykope a kolik z toho zbude, spočítá [kalkulačka zeminy](clanek:kolik-zeminy-z-vykopu). Když si dům [nakreslíš v TupTuDu](aplikace:) a vybereš k němu parcelu, zatím jen v Česku, v panelu Základy vidíš rostlý i nakypřený objem. Po změně koeficientu se nakypřený hned přepočítá.
+Kolik se u tvého domu vykope a kolik z toho zbude, spočítá [kalkulačka zeminy](clanek:kolik-zeminy-z-vykopu). Když si dům [nakreslíš v TupTuDu](aplikace:) a vybereš k němu parcelu, zatím jen v Česku, v panelu Základy vidíš rostlý i nakypřený objem. Koeficient nastavíš v Podrobnostech, jeden pro ornici i výkopek, a nakypřený objem se hned přepočítá.
 
 ::vyzva Zkus to na svém domě | Nakresli půdorys, v Česku k němu vyber parcelu a nastav koeficient nakypření podle své zeminy. Verze zdarma má 30 úprav denně a jeden projekt.

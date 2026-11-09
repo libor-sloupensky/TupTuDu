@@ -1,7 +1,7 @@
 ---
-titulek: Kolik zeminy z výkopu základů zbude: výpočet a kalkulačka
+titulek: Kolik zeminy z výkopu základů zbude: kalkulačka
 popis: Spočítej si, kolik zeminy z výkopu základů zbude a kolik aut ji odveze. Kalkulačka zeminy zdarma a příklady pro dům na pasech i se sklepem.
-perex: Kolik zeminy z výkopu zbude? U domu 12 × 10 m na rovině a na pasech se vykope asi 60 m³, zhruba 21 m³ se vrátí a skoro 40 m³ zbude, z toho 30 m³ ornice. Když ornice zůstane na zahradě, odvezou se 1 až 2 auta. Se sklepem zbude skoro 400 m³.
+perex: Kolik zeminy z výkopu zbude? U domu 12 × 10 m na rovině a na pasech se vykope asi 60 m³, zhruba 21 m³ se vrátí a skoro 40 m³ zbude, z toho 30 m³ ornice. Když ornice zůstane na zahradě, odvezou se v ideálním případě asi 2 auta. Se sklepem zbude skoro 400 m³.
 publikovano: 2026-11-05
 overeno: 2026-11-09
 revize: 2026-11-09
@@ -21,7 +21,7 @@ souvisejici: koeficient-nakypreni-zeminy, zaklady-na-svahu, skryvka-ornice, neza
 - Dům a zahrada: Svažitý pozemek (základy po stupních) | https://www.dumazahrada.cz/stavba/svazity-pozemek-jak-cist-svah-orientace-odvodneni-zaklady/
 - Kolik materiálu: Kolik stojí odvoz zeminy (Tatra odveze asi 7 až 8 m³ nakypřené zeminy) | https://kolikmaterialu.cz/kolik-stoji-odvoz-zeminy/
 - ESTAV.cz: Jak si postavit rodinný dům, zemní práce (pasy, spára 1,2 m pod upraveným terénem, rýhy po dešti skoro o polovinu širší, ornice zůstala, odvezeno 9 Tater) | https://www.estav.cz/cz/548.jak-si-postavit-rodinny-dum-zemni-prace
-- Stavoblog: První problém, jak se zbavit zeminy (2012, stavba v kopcích, čekal asi 10 Tater, odvezeno 45, typ základů neuveden) | https://stavoblog.cz/prvni-problem-jak-se-zbavit-zeminy/
+- FAST VUT: Zemní práce (ornice skladovat nejvýš do 1,5 m, doporučeno 1,2 m) | https://www.fce.vutbr.cz/tst/x_txt_predmet_bw51_1_zemni-prace.pdf
 ---
 ::kalkulacka-zeminy
 
@@ -36,8 +36,8 @@ Tenhle vzorec řekne, kolik zeminy vykopeš. Tebe ale zajímá, kolik se vrátí
 Příklad: dům 12 × 10 m s jednou vnitřní nosnou stěnou, podlaha 30 cm nad terénem, tloušťka podlahy s podkladní deskou a podsypem 45 cm, ornice 25 cm, pracovní pruh kolem domu 80 cm a spodek pasů 1 m pod terénem.
 
 - **Ornice:** sejme se jí asi 39 m³. Kolem domu se 9 m³ vrátí, pod domem ne, zbude 30 m³. Přebytek [ornice](clanek:skryvka-ornice) je zhruba plocha domu × tloušťka.
-- **Rýhy pro pasy:** 54 m stěn × 0,5 m × 0,75 m = 20 m³ výkopku, tedy zeminy pod ornicí. Zjednodušeně, vnitřní pas bývá mělčí. Rýhu vyplní beton, výkopek z ní zbude. Hloubku určuje hlavně [nezámrzná hloubka](clanek:nezamrzna-hloubka-zakladu), v Česku obvykle 0,8 až 1,2 m pod upraveným terénem, na horách víc, a také podloží a podzemní voda.
-- **Dosypání pod dům:** spodek podsypu je 15 cm pod terénem, ornice sahala do 25 cm, chybí 10 cm, tedy 12 m³. Sype se obvykle hutněný výkopek, zbude ho 8 m³. Jíl a plastickou hlínu nahradí štěrk.
+- **Rýhy pro pasy:** asi 54 m pasů × 0,5 m × 0,75 m = 20 m³ výkopku, tedy zeminy pod ornicí. Rýhu vyplní beton, výkopek z ní zbude. Hloubku určuje hlavně [nezámrzná hloubka](clanek:nezamrzna-hloubka-zakladu), v Česku obvykle 0,8 až 1,2 m pod upraveným terénem, v jílech a na horách víc, až kolem 1,6 m.
+- **Dosypání pod dům:** spodek podsypu je 15 cm pod terénem, ornice sahala do 25 cm, chybí 10 cm, tedy 12 m³. Sype se obvykle hutněný výkopek, výkopku pak zbude 8 m³. Jíl a plastickou hlínu nahradí štěrk, rozhoduje projekt.
 
 ## Se sklepem zbude asi desetkrát víc
 
@@ -50,26 +50,28 @@ Příklad: dům 12 × 10 m s jednou vnitřní nosnou stěnou, podlaha 30 cm nad 
 
 ::rez-sklepu
 
-Největší hromada je větší než přebytek: je nakypřená a leží v ní i zemina, která se vrátí. Hromada 74 m³ vysoká 1,5 m zabere i se svahy asi 70 až 85 m², s oddělenou ornicí spíš 80 až 100 m². V TupTuDu si dům [postavíš na svou parcelu](aplikace:), zatím jen v Česku, a uvidíš, kolik místa kolem zbývá. Velikost hromady porovnáš sám.
+Největší hromada je větší než přebytek: je nakypřená a leží v ní i zemina, která se vrátí. Ornici skládej zvlášť a nejvýš do 1,5 m. Hromady z příkladu zaberou i se svahy asi 80 až 100 m². V TupTuDu si dům v Česku [postavíš na svou parcelu](aplikace:) a uvidíš, kolik místa kolem zbývá.
 
-## Odvoz zeminy: kolik aut to dělá
+## Odvoz zeminy: kolik aut počítat
 
-Na korbě zabere hlína asi o čtvrtinu víc než v zemi a auto jí odveze 7 až 10 m³. Celých 38 m³ z příkladu je na korbě asi 48 m³, tedy 5 až 7 aut. Když ornici necháš na zahradě, odjede jen výkopek, asi 10 m³ na korbě, tedy 1 až 2 auta. Se sklepem a s ornicí na zahradě asi 45 až 65 aut. Přepočet na tuny je v článku o [koeficientu nakypření](clanek:koeficient-nakypreni-zeminy).
+Na korbě zabere hlína asi o čtvrtinu víc než v zemi a auto jí odveze 7 až 10 m³ podle velikosti. Celých 38 m³ z příkladu je na korbě asi 48 m³, tedy 5 až 7 aut. Když ornici necháš na zahradě, odjede jen výkopek, asi 10 m³ na korbě, tedy zhruba 2 auta. Se sklepem a s ornicí na zahradě asi 45 až 65 aut. Přepočet na tuny je v článku o [koeficientu nakypření](clanek:koeficient-nakypreni-zeminy).
 
-Jeden stavebník u domu na pasech odvezl 9 aut, ornici přitom nechal na pozemku. Spára mu vyšla 1,2 m a rýhy se po dešti rozjely skoro o polovinu. Jinde, třeba ve svahu, odjely desítky aut. Rozměry domů blogy většinou nepíšou. Víc aut dělá i větší dům, zemina nevhodná do zásypu nebo štěrk pod domem. Nakypřený objem z kalkulačky nahoře vyděl sedmi, vyjde spíš horní odhad. Kolik auto uveze, řekne dopravce.
+To je ideální případ, v praxi počítej s rezervou. Rýhy bývají širší, část zeminy se do zásypu nehodí, pod domem může být štěrk a na pozemku chybí místo. Jeden stavebník u domu na pasech odvezl 9 aut, ornici přitom nechal na pozemku a rýhy se mu po dešti rozjely skoro o polovinu.
 
-::vyzva Spočítej to na svém domě a parcele | Nakresli skutečný tvar domu a v Česku k němu vyber parcelu z katastru. Editor podle domu a terénu odhadne výkop, dosypání i nakypřený objem k odvozu a po skrytí domu ukáže výkop ve 3D. Verze zdarma má 30 úprav denně a jeden projekt.
+Pro vlastní odhad sečti v kalkulačce nakypřenou ornici navíc a nakypřený výkopek navíc a vyděl sedmi. Největší hromadu nepočítej, část se z ní vrátí. Kolik auto uveze, řekne dopravce.
+
+::vyzva Kolik zeminy zbude u tvého domu | Nakresli skutečný půdorys a v Česku k němu vyber parcelu z katastru. Editor podle domu a terénu spočítá výkop, zásyp i nakypřený přebytek k odvozu. Verze zdarma má 30 úprav denně a jeden projekt.
 
 ## Na svahu to vyjde jinak
 
-Kalkulačka počítá rovinu. Na svahu se [základy dělají po stupních](clanek:zaklady-na-svahu) a dole bývají vyšší. O objemu nejvíc rozhoduje, jak vysoko dům osadíš. V Česku editor zná terén parcely, základ dole protáhne od terénu až pod podlahu a výkop i dosypání odhadne. Stupně nepočítá a pod domem vždy dosype, u vysokého základu je zásyp spíš horní odhad.
+Kalkulačka počítá rovinu. Na svahu se [základy dělají po stupních](clanek:zaklady-na-svahu) a dole bývají vyšší. O objemu nejvíc rozhoduje, jak vysoko dům osadíš. Editor terén parcely zná, stupně ale nepočítá a pod domem vždy dosype, u vysokého základu je zásyp spíš horní odhad.
 
 ::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | 3D pohled na dům se základem, který je na jedné straně vyšší | Dům na mírně svažité parcele: základ se na dolní straně protáhne od terénu až pod podlahu, editor TupTuDu | 1200 | 700
 
-::obrazek /img/clanky/kolik-zeminy-z-vykopu/vykop-svah.webp | 3D pohled na výkop pod dům zapuštěný do terénu | Stejný dům zapuštěný hlouběji do terénu: víc se kope, míň se dosype, editor TupTuDu | 1200 | 700
+::obrazek /img/clanky/kolik-zeminy-z-vykopu/vykop-svah.webp | 3D pohled na výkop pod dům zapuštěný do terénu | Výkop pro stejný dům zapuštěný hlouběji do terénu, dům je skrytý: víc se kope, míň se dosype, editor TupTuDu | 1200 | 700
 
 ## Kam se zeminou
 
-Na zemědělské půdě v Česku zákon nařizuje ornici sejmout zvlášť a využít ji podle podmínek úřadu. Obvykle se vrací na zahradu. Vhodný výkopek použij na terénní úpravy, ty patří do projektu. Co odjede, bývá v Česku odpadem, proto odvoz nech na firmě s potvrzením, kam zemina jela.
+Zahrada i orná půda patří v Česku do zemědělského půdního fondu. Ornici proto musíš sejmout zvlášť a hospodárně využít, obvykle se vrací na zahradu. Vhodný výkopek použij na terénní úpravy, větší úpravy patří do projektu. Co odjede, bývá v Česku odpadem, proto odvoz nech na firmě s potvrzením, kam zemina jela.
 
-Čísla nepočítají přípojky, vsak, jímku či čistírnu, nádrž na dešťovku, příjezd, terasu ani chodníky. Ornici berou jen z pruhu 80 cm kolem domu a celou ji tam vracejí, i kde bude okapový chodník.
+V číslech nejsou přípojky, vsak, jímka ani čistírna, nádrž na dešťovku, příjezd, terasa ani chodníky. Ornice se počítá jen z pruhu 80 cm kolem domu a celá se tam vrací, i kde bude okapový chodník.
