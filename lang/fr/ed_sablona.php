@@ -189,6 +189,8 @@ return [
         'nad_podlahou' => 'Au-dessus du sol',
         'barva' => 'Couleur',
         'barva_puvodni' => 'Couleur d’origine',
+        'barva_vlastni' => 'Personnalisée',
+        'jde_prebarvit' => 'Couleur modifiable',
         'barvy' => [
             'bila' => 'Blanc',
             'kremova' => 'Crème',

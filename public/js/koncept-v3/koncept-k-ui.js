@@ -5952,6 +5952,12 @@ function konceptKEditor(initialData) {
             if (opening) {
                 opening.nazev = this.editObjektNazev.trim();
             }
+            // Vlastní název kusu: překlad podle zdroje by ho při načtení přepsal
+            const kus = (this.engine.vybaveni || []).find(v => v.id === this.editObjektId);
+            if (kus) {
+                kus.nazev = this.editObjektNazev.trim();
+                kus.nazevZdroj = null;
+            }
             this.editObjektId = null;
             this.autoSave(preloz('ed_ui.krok_prejmenovani_objektu'));
         },
@@ -5962,6 +5968,8 @@ function konceptKEditor(initialData) {
                 this.engine.removeWall(id);
             } else if (this.engine.openings.has(id)) {
                 this.engine.removeOpening(id);
+            } else {
+                this.engine.removeVybaveni(id);
             }
             this.renderer.clearSelection();
             this.renderer.render();
@@ -5983,7 +5991,8 @@ function konceptKEditor(initialData) {
         /** Klik v seznamu objektů se chová jako klik na plánku v nástroji Výběr. */
         vyberObjekt(id, e) {
             if (this.editObjektId) return; // probíhá editace
-            const typ = this.engine.walls.has(id) ? 'wall' : this.engine.openings.has(id) ? 'opening' : null;
+            const kus = (this.engine.vybaveni || []).some(v => v.id === id);
+            const typ = this.engine.walls.has(id) ? 'wall' : this.engine.openings.has(id) ? 'opening' : kus ? 'kus' : null;
             if (!typ) return;
             // Kde plánek nevybírá (střecha, posun podkladu), nevybírá ani seznam
             if (this.rezimStrecha || this.posunPodkladu) return;
@@ -5991,6 +6000,13 @@ function konceptKEditor(initialData) {
             // Na plánku jde kliknout jen na viditelné: řádek schovanou vrstvu zapne, jinak by výběr nebyl vidět
             if (typ === 'wall' && !this.showSteny) { this.showSteny = true; this.toggleSteny(); }
             if (typ === 'opening' && !this.showOtvory) { this.showOtvory = true; this.toggleOtvory(); }
+            if (typ === 'kus') {
+                if (!this.showVybaveni) { this.showVybaveni = true; this.renderer.showVybaveni = true; }
+                this.renderer.setSelection([], [], [], [id]);
+                this.renderer.render();
+                this._selectionTick++;
+                return;
+            }
             this._vyberObjektKlikem(typ, id, !!(e && (e.shiftKey || e.ctrlKey || e.metaKey)));
         },
 

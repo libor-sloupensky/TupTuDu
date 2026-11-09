@@ -85,7 +85,9 @@ Libor 9. 11. 2026 zadal variantu 1: paleta u vloženého kusu. Hotové je to u p
 - **Postele ne:** největší plochou jsou lůžkoviny, přebarvila by se matrace místo čalounění. Potřebovaly by masku jiným postupem.
 - **Přebarvení:** `Katalog3d.prebarvi(id, barva)` a `prebarviZnacku` v prohlížeči, asi 100 ms na kus, výsledek v mezipaměti podle kusu a barvy. Přebarví se první materiál s texturou, k němu patří maska. Dvanáct barev v `BARVY` (Lab), názvy v `ed_sablona.katalog.barvy`. Tmavý potah (L pod 35) světlé barvy nenabízí.
 - **Uložení:** `barva` u kusu ve vybavení (engine ji ukládá a načítá), jeden krok Zpět, kopie ji přebírá, jde do `objekty` sdíleného odkazu i do 3D v odkazu. Značka v půdorysu se přebarví taky.
-- **Panel:** tlačítko Barva vedle Otočit a Kopie rozbalí paletu přes plochu. Řádek palety přímo v panelu ho zvětšil, plocha se posunula a kus pod myší utekl (test tažení), proto rozbalovací.
+- **Panel:** tlačítko Barva vedle Otočit a Kopie rozbalí paletu přes plochu. Řádek palety přímo v panelu ho zvětšil, plocha se posunula a kus pod myší utekl (test tažení), proto rozbalovací. Nahoře tlačítko Původní barva, pod paletou Vlastní: stávající nástroj na barvu (`vyberBarvy`, RAL, odstín, barvy z jiných kusů). Vlastní barva se ukládá jako `#rrggbb` místo klíče palety, `Katalog3d` ji bere stejně (`cilBarvy`).
+- **Označení kusu:** na plánu a v Objektech jako písmeno + číslo z id (`vb9` → N9), písmeno je překlad `ed_ui.oznaceni_nabytku` (cs/sk N, en F, ostatní M). Ukazuje se se značkami (přepínač značek jako u W/D/O). V Objektech jde kus vybrat, přejmenovat (`nazevZdroj` se zruší) a smazat.
+- **Karta katalogu:** kus s maskou má vpravo dole čtyři barevné tečky (`Katalog3d.ukazka`), popisek Jde přebarvit.
 - **Známé:** u některých židlí se přebarví i nožičky stejného odstínu jako potah. Stoly a skříně (dekor dřeva) zatím ne, viz zkouška níž.
 
 **Zkouška ze 4. 11. 2026 a původní nápad** (dál platí pro stoly, skříně a variantu 2):

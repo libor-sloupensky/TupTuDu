@@ -189,6 +189,8 @@ return [
         'nad_podlahou' => 'Nad podlahou',
         'barva' => 'Farba',
         'barva_puvodni' => 'Pôvodná farba',
+        'barva_vlastni' => 'Vlastná',
+        'jde_prebarvit' => 'Dá sa prefarbiť',
         'barvy' => [
             'bila' => 'Biela',
             'kremova' => 'Krémová',

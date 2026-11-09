@@ -189,6 +189,8 @@ return [
         'nad_podlahou' => 'Über Boden',
         'barva' => 'Farbe',
         'barva_puvodni' => 'Ursprüngliche Farbe',
+        'barva_vlastni' => 'Eigene',
+        'jde_prebarvit' => 'Farbe änderbar',
         'barvy' => [
             'bila' => 'Weiß',
             'kremova' => 'Creme',

@@ -189,6 +189,8 @@ return [
         'nad_podlahou' => 'Nad podłogą',
         'barva' => 'Kolor',
         'barva_puvodni' => 'Oryginalny kolor',
+        'barva_vlastni' => 'Własny',
+        'jde_prebarvit' => 'Można zmienić kolor',
         'barvy' => [
             'bila' => 'Biały',
             'kremova' => 'Kremowy',

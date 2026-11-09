@@ -189,6 +189,8 @@ return [
         'nad_podlahou' => 'Da terra',
         'barva' => 'Colore',
         'barva_puvodni' => 'Colore originale',
+        'barva_vlastni' => 'Personalizzato',
+        'jde_prebarvit' => 'Colore modificabile',
         'barvy' => [
             'bila' => 'Bianco',
             'kremova' => 'Crema',

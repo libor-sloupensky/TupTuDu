@@ -189,6 +189,8 @@ return [
         'nad_podlahou' => 'Sobre el suelo',
         'barva' => 'Color',
         'barva_puvodni' => 'Color original',
+        'barva_vlastni' => 'Personalizado',
+        'jde_prebarvit' => 'Se puede cambiar el color',
         'barvy' => [
             'bila' => 'Blanco',
             'kremova' => 'Crema',

@@ -500,6 +500,20 @@ class KonvaRenderer {
             this.labelLayer.add(text);
             this._labelShapes.set('id_' + opening.id, text);
         }
+        // Označení kusů nábytku uprostřed kusu, bílý lem kvůli značce pod ním
+        for (const kus of (this.showVybaveni && this.citelnePismo(9) && Array.isArray(this.engine.vybaveni) ? this.engine.vybaveni : [])) {
+            if (!kus.polygon || kus.polygon.length < 3) continue;
+            const cx = kus.polygon.reduce((s, q) => s + q[0], 0) / kus.polygon.length * this.PX_PER_M;
+            const cy = -kus.polygon.reduce((s, q) => s + q[1], 0) / kus.polygon.length * this.PX_PER_M;
+            const text = new Konva.Text({
+                x: cx, y: cy, text: StavebniEngine.oznaceniKusu(kus), fontSize: v(11), fill: '#0f766e', fontStyle: 'bold',
+                stroke: '#ffffff', strokeWidth: v(2.5), fillAfterStrokeEnabled: true, listening: false,
+            });
+            text.offsetX(text.width() / 2);
+            text.offsetY(text.height() / 2);
+            this.labelLayer.add(text);
+            this._labelShapes.set('id_' + kus.id, text);
+        }
         this.labelLayer.batchDraw();
     }
 

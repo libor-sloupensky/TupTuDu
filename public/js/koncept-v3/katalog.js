@@ -434,17 +434,31 @@
                 zmeneno: ROZMERY.some(([osa]) => Math.abs(v[osa] - z[osa]) > 0.0005),
                 barva: v.barva || '',
                 barvy: this._katalogBarvy(v),
+                barvaHex: window.Katalog3d.hex(v.barva, this._katalogPolozka(v)?.maska),
+                puvodniCss: window.Katalog3d.hex('', this._katalogPolozka(v)?.maska),
             };
+        },
+
+        _katalogPolozka(v) {
+            return this.katalog?.polozky.find(x => x.id === v.katalog) || null;
         },
 
         /** Paleta kusu z katalogu: jen když má kus masku potahu. Katalog se dotáhne, kdyby ještě nebyl načtený. */
         _katalogBarvy(v) {
             if (!this.katalog) { this._katalogNacti().then(() => { this._selectionTick++; }); return []; }
-            const p = this.katalog.polozky.find(x => x.id === v.katalog);
-            return window.Katalog3d.barvy(p?.maska).map(b => ({ ...b, nazev: preloz(b.klic ? 'ed_sablona.katalog.barvy.' + b.klic : 'ed_sablona.katalog.barva_puvodni') }));
+            return window.Katalog3d.barvy(this._katalogPolozka(v)?.maska).map(b => ({ ...b, nazev: preloz('ed_sablona.katalog.barvy.' + b.klic) }));
         },
 
-        /** Barva potahu, prázdný klíč vrátí původní. */
+        /** Vlastní barvy na jiných kusech: v nástroji na barvu jde potah sladit. */
+        katalogPouziteBarvy() {
+            const v0 = this.katalogObjekt, videno = new Map();
+            for (const v of this.engine?.vybaveni || []) {
+                if (v !== v0 && /^#/.test(v.barva || '') && !videno.has(v.barva)) videno.set(v.barva, { hex: v.barva, kde: v.nazev });
+            }
+            return [...videno.values()];
+        },
+
+        /** Barva potahu: klíč palety, #rrggbb z nástroje na barvu, prázdná vrátí původní. */
         katalogBarva(klic) {
             const v = this.katalogObjekt;
             if (!v || (v.barva || '') === klic) return;

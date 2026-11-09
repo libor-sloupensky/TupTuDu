@@ -44,6 +44,9 @@
             .map(c => { c = Math.max(0, Math.min(1, c)); return 255 * (c <= .0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - .055); });
     };
     const cssZLab = (l) => 'rgb(' + zLab(...l).map(Math.round).join(',') + ')';
+    const hexZLab = (l) => '#' + zLab(...l).map(c => Math.round(c).toString(16).padStart(2, '0')).join('');
+    /** Cíl přebarvení v Lab: klíč palety, nebo vlastní barva #rrggbb z nástroje na barvu. */
+    const cilBarvy = (barva) => BARVY[barva] || (/^#[0-9a-f]{6}$/i.test(barva || '') ? lab(...[1, 3, 5].map(i => parseInt(barva.slice(i, i + 2), 16))) : null);
 
     const obrazky = new Map();
     const nactiObrazek = (url) => {
@@ -100,13 +103,21 @@
     const prebarvene = new Map();
 
     window.Katalog3d = {
-        /** Barvy pro kus s maskou: původní (medián potahu) a paleta. Bez masky prázdné pole. */
+        /** Paleta pro kus s maskou. Bez masky prázdné pole. Původní barvu nabízí panel zvlášť (puvodni). */
         barvy(maska) {
             if (!Array.isArray(maska)) return [];
             const tmavy = maska[0] < TMAVY_POTAH;
-            return [{ klic: '', css: cssZLab(maska) }, ...Object.entries(BARVY)
-                .filter(([, l]) => !(tmavy && l[0] > SVETLA_BARVA)).map(([klic, l]) => ({ klic, css: cssZLab(l) }))];
+            return Object.entries(BARVY).filter(([, l]) => !(tmavy && l[0] > SVETLA_BARVA)).map(([klic, l]) => ({ klic, css: cssZLab(l) }));
         },
+
+        /** Barva kusu jako #rrggbb pro nástroj na barvu: vlastní, z palety, nebo původní (medián potahu). */
+        hex(barva, maska) {
+            const l = cilBarvy(barva) || (Array.isArray(maska) ? maska : null);
+            return l ? hexZLab(l) : '#808080';
+        },
+
+        /** Ukázka palety na kartě katalogu u kusů, které jde přebarvit. */
+        ukazka: ['zelena', 'horcicova', 'modra', 'terakota'].map(klic => cssZLab(BARVY[klic])),
 
         /** Přebarvené materiály kusu: mapa původní → nový. Přebarví se první materiál s texturou, k němu patří maska. */
         prebarvi(id, barva) {
@@ -116,9 +127,9 @@
                     const mapa = new Map();
                     let m = null;
                     model.traverse((o) => { if (o.isMesh && !m) m = [].concat(o.material).find(x => x.map && x.map.image) || null; });
-                    if (!m || !BARVY[barva]) return mapa;
+                    if (!m || !cilBarvy(barva)) return mapa;
                     const w = m.map.image.width, h = m.map.image.height;
-                    const c = prebarviPlatno(platno(m.map.image, w, h), platno(maska, w, h), BARVY[barva]);
+                    const c = prebarviPlatno(platno(m.map.image, w, h), platno(maska, w, h), cilBarvy(barva));
                     if (!c) return mapa;
                     const t = m.map.clone();
                     t.image = c;
@@ -138,7 +149,7 @@
             const klic = 'znacka|' + id + '|' + barva;
             if (!prebarvene.has(klic)) {
                 prebarvene.set(klic, Promise.all([nactiObrazek(this.soubor('pudorys/' + id + '.webp')), nactiObrazek(this.soubor('masky-pudorys/' + id + '.webp'))])
-                    .then(([znacka, maska]) => (BARVY[barva] ? prebarviPlatno(platno(znacka, znacka.naturalWidth, znacka.naturalHeight), platno(maska, znacka.naturalWidth, znacka.naturalHeight), BARVY[barva]) : null)));
+                    .then(([znacka, maska]) => (cilBarvy(barva) ? prebarviPlatno(platno(znacka, znacka.naturalWidth, znacka.naturalHeight), platno(maska, znacka.naturalWidth, znacka.naturalHeight), cilBarvy(barva)) : null)));
             }
             return prebarvene.get(klic);
         },

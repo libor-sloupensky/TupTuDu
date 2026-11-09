@@ -2,6 +2,8 @@
 
 // Editor V3 texts — main controller (public/js/koncept-v3/koncept-k-ui.js), in JS via preloz('ed_ui.klic').
 return [
+    // Označení kusu nábytku na plánu a v seznamu objektů (N12)
+    'oznaceni_nabytku' => 'F',
     // Panel layout
     'rozlozeni_text_vlevo' => 'Text left, graphics right',
     'rozlozeni_grafika_vlevo' => 'Graphics left, text right',

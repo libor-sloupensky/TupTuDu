@@ -189,6 +189,8 @@ return [
         'nad_podlahou' => 'Above floor',
         'barva' => 'Colour',
         'barva_puvodni' => 'Original colour',
+        'barva_vlastni' => 'Custom',
+        'jde_prebarvit' => 'Colour can be changed',
         'barvy' => [
             'bila' => 'White',
             'kremova' => 'Cream',

@@ -662,6 +662,11 @@ class StavebniEngine {
      * Na jednom místě proto, že se to počítalo zvlášť v addOpening a zvlášť ve
      * fromJSON — a tam natvrdo „O", takže dveře načtené bez id dostaly okenní id.
      */
+    /** Označení kusu nábytku na plánu a v seznamu: písmeno podle jazyka a číslo z id (vb12 → N12). */
+    static oznaceniKusu(v) {
+        return tx('ed_ui.oznaceni_nabytku') + ((String(v.id).match(/\d+/) || [''])[0]);
+    }
+
     static prefixOtvoru(typ) {
         return (typ === 'dvere' || typ === 'francouzske_okno'
             || typ === 'pruchod' || typ === 'garazova_vrata') ? 'D' : 'O';
@@ -4738,11 +4743,21 @@ class StavebniEngine {
                 info: (Math.round((opening.sirka || 0) * 100) / 100) + ' m',
             });
         }
+        for (const v of this.vybaveni || []) {
+            list.push({
+                id: v.id,
+                type: 'kus',
+                oznaceni: StavebniEngine.oznaceniKusu(v),
+                nazev: v.nazev || v.typ || '',
+                info: Math.round((v.sirka || 0) * 100) + ' × ' + Math.round((v.hloubka || 0) * 100) + ' cm',
+            });
+        }
         // Stěny před otvory, pak podle označení: písmena (D, O…) a číslo
         // číselně (W2 před W10) — ať se v seznamu hledá stejně jako ve výkrese.
         const cislo = (id) => parseInt(String(id).replace(/\D+/g, ''), 10) || 0;
         const pismena = (id) => String(id).replace(/\d+/g, '');
-        list.sort((a, b) => (a.type === b.type ? 0 : a.type === 'wall' ? -1 : 1)
+        const poradi = { wall: 0, opening: 1, kus: 2 };
+        list.sort((a, b) => poradi[a.type] - poradi[b.type]
             || pismena(a.id).localeCompare(pismena(b.id)) || cislo(a.id) - cislo(b.id));
         return list;
     }

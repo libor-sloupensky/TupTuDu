@@ -611,13 +611,22 @@
                                     {{-- Paleta potahu se rozbalí přes plochu: panel nesmí změnit výšku, jinak se plocha posune a kus pod myší uteče --}}
                                     <div x-show="inspector.barvy.length" class="relative" x-data="{ paleta: false }" @click.outside="paleta = false" data-katalog-barvy>
                                         <button type="button" @click="paleta = !paleta" :aria-expanded="paleta" class="border border-gray-500 rounded px-2 hover:bg-gray-100 flex items-center gap-1" data-katalog-paleta>
-                                            <span class="rounded-full border border-gray-500" :style="'width:11px;height:11px;background:' + (inspector.barvy.find(b => b.klic === inspector.barva)?.css || 'transparent')"></span>{{ __('ed_sablona.katalog.barva') }}
+                                            <span class="rounded-full border border-gray-500" :style="'width:11px;height:11px;background:' + inspector.barvaHex"></span>{{ __('ed_sablona.katalog.barva') }}
                                         </button>
-                                        <div x-show="paleta" x-cloak class="absolute z-30 left-0 mt-1 p-1.5 bg-white border border-gray-300 rounded shadow flex flex-wrap gap-1" style="width:146px">
-                                            <template x-for="b in inspector.barvy" :key="b.klic">
-                                                <button type="button" @click="katalogBarva(b.klic); paleta = false" :data-katalog-barva="b.klic" :aria-label="b.nazev" :aria-pressed="inspector.barva === b.klic" :data-tip-below="b.nazev"
-                                                        class="rounded-full border border-gray-500" :style="'width:20px;height:20px;background:' + b.css + (inspector.barva === b.klic ? ';outline:2px solid var(--c-primary);outline-offset:1px' : '')"></button>
-                                            </template>
+                                        <div x-show="paleta" x-cloak class="absolute z-30 left-0 mt-1 p-1.5 bg-white border border-gray-300 rounded shadow flex flex-col gap-1.5" style="width:240px">
+                                            <button type="button" @click="katalogBarva(''); paleta = false" data-katalog-barva="" :aria-pressed="!inspector.barva" class="flex items-center gap-1.5 border rounded px-1.5 py-0.5 hover:bg-gray-100 self-start"
+                                                    :style="!inspector.barva ? 'border-color:var(--c-primary);outline:1px solid var(--c-primary)' : 'border-color:#6b7280'">
+                                                <span class="rounded-full border border-gray-500" :style="'width:14px;height:14px;background:' + inspector.puvodniCss"></span>{{ __('ed_sablona.katalog.barva_puvodni') }}
+                                            </button>
+                                            <div class="flex flex-wrap gap-1">
+                                                <template x-for="b in inspector.barvy" :key="b.klic">
+                                                    <button type="button" @click="katalogBarva(b.klic); paleta = false" :data-katalog-barva="b.klic" :aria-label="b.nazev" :aria-pressed="inspector.barva === b.klic" :data-tip-below="b.nazev"
+                                                            class="rounded-full border border-gray-500" :style="'width:20px;height:20px;background:' + b.css + (inspector.barva === b.klic ? ';outline:2px solid var(--c-primary);outline-offset:1px' : '')"></button>
+                                                </template>
+                                            </div>
+                                            <div data-katalog-vlastni x-data="vyberBarvy({ hodnota: () => inspector?.barvaHex, nastav: (hex) => katalogBarva(hex), pouzite: () => katalogPouziteBarvy() })">
+                                                @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.katalog.barva_vlastni')])
+                                            </div>
                                         </div>
                                     </div>
                                     <button type="button" @click="katalogSmaz()" class="border border-gray-500 rounded px-2 hover:bg-gray-100 ml-auto" data-katalog-smaz>{{ __('ed_sablona.spolecne.smazat') }}</button>
@@ -1370,7 +1379,10 @@
                         <template x-for="p in katalogPolozky" :key="p.id">
                             <button type="button" @click="katalogVyber(p)" @pointerdown="katalogTazeniStart($event, p)" @dragstart.prevent class="text-left rounded border p-1 flex flex-col gap-0.5 hover:border-gray-500"
                                     :style="(katalogVybrany?.id === p.id ? 'border-color:var(--c-primary);box-shadow:0 0 0 1px var(--c-primary)' : 'border-color:#e5e7eb') + ';touch-action:pan-y;user-select:none;cursor:grab'" :data-katalog-polozka="p.id">
-                                <img :src="Katalog3d.soubor('nahledy/' + p.id + '.webp')" :alt="p.nazev" loading="lazy" width="320" height="240" style="width:100%;height:auto;display:block;background:#f3f4f6;border-radius:4px">
+                                <div class="relative"><img :src="Katalog3d.soubor('nahledy/' + p.id + '.webp')" :alt="p.nazev" loading="lazy" width="320" height="240" style="width:100%;height:auto;display:block;background:#f3f4f6;border-radius:4px">
+                                    <span x-show="p.maska" class="absolute flex gap-px rounded-full border border-gray-300 bg-white px-1 py-0.5" style="right:3px;bottom:3px" :title="preloz('ed_sablona.katalog.jde_prebarvit')" data-katalog-prebarvit>
+                                        <template x-for="c in Katalog3d.ukazka" :key="c"><span class="rounded-full" :style="'width:7px;height:7px;background:' + c"></span></template>
+                                    </span></div>
                                 <span class="text-gray-800 leading-tight" x-text="p.nazev"></span>
                                 <span class="text-gray-500 leading-tight" x-text="katalogRozmery(p)"></span>
                             </button>
@@ -1511,8 +1523,8 @@
                         <div class="flex items-center gap-1 min-w-0">
                             {{-- Označení z výkresu — stejná barva jako popisek na plátně
                                  (stěny fialově, otvory oranžově), ať jde řádek spárovat s kresbou --}}
-                            <span class="kk-oznaceni" :class="obj.type === 'wall' ? 'text-purple-600 bg-purple-50' : 'text-orange-600 bg-orange-50'"
-                                  x-text="obj.id"></span>
+                            <span class="kk-oznaceni" :class="obj.type === 'wall' ? 'text-purple-600 bg-purple-50' : obj.type === 'kus' ? 'text-teal-700 bg-teal-50' : 'text-orange-600 bg-orange-50'"
+                                  x-text="obj.oznaceni || obj.id"></span>
                             <span x-show="editObjektId !== obj.id"
                                   :class="vybraneIds.includes(obj.id) ? 'font-bold text-blue-700' : 'text-gray-600'"
                                   x-text="obj.nazev" class="truncate"></span>
