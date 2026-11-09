@@ -9,6 +9,7 @@ Masterteam je interní a **vždy česky** — nepřekládá se.
 
 ## Aktuální stav
 - **Na webu od 5. 11. 2026:** všech osm jazyků včetně editoru, jazyk v adrese, přesměrování podle země, hreflang a sitemapa.
+- **Vlastní kontrola 9. 11. 2026:** každý jazyk prošel nezávislý agent proti cs a en, opraveno sk 3, pl 11, de 17, fr 24, es 10, it 10 míst (termíny základů a podlaží, rod, typografie, množné číslo autorů v pl). Nejistoty, které zůstaly, jsou drobné a vkusové. Test editoru ve všech jazycích prošel.
 - Aktivní jazyky: **cs** (zdrojový), **en** (výchozí i záložní — chybějící text se ukáže anglicky), **sk, pl, de, fr, es, it** (od 4. 11. 2026, přeložil Claude, rodilí mluvčí to zatím nekontrolovali).
 - **Oslovení:** tykání všude kromě právních dokumentů (du, tu, ty, tú). Mimo češtinu se tarify jmenují Home a Pro.
 - Pořadí napojení národních služeb (potvrdil Libor 4. 11. 2026): vlna 1 sk, pl, vlna 2 de s Rakouskem, fr, vlna 3 es, it. Rozbor po zemích: https://claude.ai/artifact/NCyfAVyDQ1R9aUTMoMKaGo, část Jazyky a země.
