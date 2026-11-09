@@ -5543,6 +5543,7 @@ function konceptKEditor(initialData) {
             if (this.renderer) {
                 this.renderer.highlightWall(id);
                 this.renderer.highlightOpening(id);
+                this.renderer.highlightVybaveni(id);
             }
         },
 
@@ -6682,6 +6683,7 @@ function konceptKEditor(initialData) {
             }
             this._buildTerrain3D();
             this._build3d();
+            this._oznacKus3d?.();
             this._resize3d();
         },
 
@@ -6732,6 +6734,9 @@ function konceptKEditor(initialData) {
             controls.enableDamping = true;
             controls.dampingFactor = 0.1;
             controls.maxPolarAngle = Math.PI / 2.1;
+
+            // Klik bez tažení vybere kus nábytku (tažení otáčí pohledem)
+            this._kus3dKlik?.(renderer.domElement);
 
             // Plnou rychlostí se kreslí jen při aktivitě, viz _start3dLoop
             const probud = () => { _3d.kresliDo = performance.now() + 300; };

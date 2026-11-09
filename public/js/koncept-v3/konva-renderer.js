@@ -1044,6 +1044,21 @@ class KonvaRenderer {
         this.openingLayer.batchDraw();
     }
 
+    /** Kus nábytku pod myší v seznamu Objekty: jemný modrý obrys a nádech, null zvýraznění zruší. */
+    highlightVybaveni(kusId) {
+        this._hoverKus?.destroy();
+        this._hoverKus = null;
+        const kus = kusId && (this.engine.vybaveni || []).find(v => v.id === kusId);
+        if (kus?.polygon?.length >= 3 && this.showVybaveni) {
+            this._hoverKus = new Konva.Line({
+                points: kus.polygon.flatMap(([x, y]) => [x * this.PX_PER_M, -y * this.PX_PER_M]), closed: true,
+                fill: 'rgba(37,99,235,0.12)', stroke: '#2563eb', strokeWidth: this.velikostPopisku(1.5), listening: false,
+            });
+            this.overlayLayer.add(this._hoverKus);
+        }
+        this.overlayLayer.batchDraw();
+    }
+
     /** Velikost popisku ve výkresu pro `px` obrazovkových pixelů (viz POPISKY). */
     velikostPopisku(px) {
         return px / Math.max(this.stage.scaleX() || 1, POPISKY.zoomMez);

@@ -2,8 +2,6 @@
 
 // Texty editoru V3 — hlavní ovladač (public/js/koncept-v3/koncept-k-ui.js), v JS přes preloz('ed_ui.klic').
 return [
-    // Označení kusu nábytku na plánu a v seznamu objektů (N12)
-    'oznaceni_nabytku' => 'N',
     // Rozložení panelů
     'rozlozeni_text_vlevo' => 'Text vľavo, grafika vpravo',
     'rozlozeni_grafika_vlevo' => 'Grafika vľavo, text vpravo',

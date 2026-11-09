@@ -289,7 +289,8 @@
         <div class="kk-lista flex items-center px-3 py-1.5 gap-2 border-b border-gray-200">
             <div class="flex items-center gap-1.5">
                 {{-- Výběr --}}
-                <button @click="nastroj = 'vyber'" class="kk-tl" :class="nastroj === 'vyber' && 'kk-tl-aktivni'"
+                {{-- Rozsvícená je vždy jen jedna ikona: s otevřeným katalogem svítí Katalog místo Výběru --}}
+                <button @click="nastroj = 'vyber'; panelOpen.katalog && prepniKatalog()" class="kk-tl" :class="nastroj === 'vyber' && !panelOpen.katalog && 'kk-tl-aktivni'"
                         data-tip="{{ __('ed_sablona.lista.vyber') }}">
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="1" y="1" width="14" height="14" rx="1" stroke-dasharray="3 2"/>
@@ -338,7 +339,7 @@
                         <path d="M2 14h3v-3h3V8h3V5h3V2"/>
                     </svg>
                 </button>
-                <button @click="prepniKatalog()" class="kk-tl" :class="panelOpen.katalog && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.katalog') }}" data-katalog-tlacitko>
+                <button @click="prepniKatalog()" class="kk-tl" :class="panelOpen.katalog && ['vyber', 'katalog'].includes(nastroj) && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.katalog') }}" data-katalog-tlacitko>
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3.5 7.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v2"/><path d="M1.5 9a1.5 1.5 0 0 1 3 0v1.5h7V9a1.5 1.5 0 0 1 3 0v3.5h-13z"/><path d="M3.5 12.5V14M12.5 12.5V14"/>
                     </svg>
@@ -464,7 +465,7 @@
             {{-- Panel otvoru — na plátně v levém horním rohu (odsazení 6 px jako nahoře), úchopem vlevo
                  jde přetáhnout jinam (poloha se pamatuje), dvojklik na úchop ho vrátí. Ukazuje buď
                  volby nového otvoru (nástroj zapnutý), nebo vlastnosti výběru. --}}
-            <div id="kk-panel-otvoru" x-show="rezim3d ? ['opening', 'opening_multi', 'mistnost', 'schodiste'].includes(inspector?.kind) : (nastroj === 'otvor' || nastroj === 'stena' || nastroj === 'schody' || nastroj === 'lico' || posunPodkladu || inspector)" x-cloak
+            <div id="kk-panel-otvoru" x-show="rezim3d ? ['opening', 'opening_multi', 'mistnost', 'schodiste', 'katalog'].includes(inspector?.kind) : (nastroj === 'otvor' || nastroj === 'stena' || nastroj === 'schody' || nastroj === 'lico' || posunPodkladu || inspector)" x-cloak
                  class="bg-white rounded-lg shadow-md text-xs flex items-stretch"
                  :style="panelOtvoruStyl"
                  style="position:absolute;z-index:15;width:max-content;min-width:250px;max-width:min(420px,100%);border:1.5px solid var(--c-primary)">

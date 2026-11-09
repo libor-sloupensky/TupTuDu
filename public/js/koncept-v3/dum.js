@@ -566,7 +566,7 @@
             if (!this.rezim3d || this._obnova3d) return;
             this._obnova3d = setTimeout(() => {
                 this._obnova3d = null;
-                if (this.rezim3d) this._build3d();
+                if (this.rezim3d) { this._build3d(); this._oznacKus3d?.(); }
             }, 30);
         },
 

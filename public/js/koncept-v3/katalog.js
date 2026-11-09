@@ -83,10 +83,13 @@
 
         /** Tlačítko nástroje: otevře sekci v pravém panelu, ať je panel zrovna skrytý, nebo ne. */
         async prepniKatalog() {
+            // Otevřený katalog při jiném nástroji: tlačítko jen přepne zpět na nábytek, panel nechá
+            if (this.panelOpen.katalog && !['vyber', 'katalog'].includes(this.nastroj)) { this.nastroj = 'vyber'; return; }
             const otevrit = !this.panelOpen.katalog;
             this.panelOpen.katalog = otevrit;
             this.ulozitPanely();
             if (!otevrit) { this._katalogZrusVyber(); return; }
+            if (this.nastroj !== 'katalog') this.nastroj = 'vyber';
             await this._katalogNacti();
             await this.$nextTick();
             document.getElementById('kk-sekce-katalog')?.scrollIntoView({ block: 'nearest' });
@@ -546,8 +549,67 @@
                 window.Katalog3d.vloz(g, {
                     id: v.katalog, x: v.stred[0], y: dh + (v.uroven || 0), z: -v.stred[1],
                     uhel: v.uhel || 0, sirka: v.sirka, hloubka: v.hloubka, vyska: v.vyska, ...(v.barva ? { barva: v.barva } : {}),
-                }, () => window.Svetlo3d.prekresliStiny(_3d.renderer));
+                }, () => window.Svetlo3d.prekresliStiny(_3d.renderer)).userData.kus = v.id;
             }
+        },
+
+        /** Klik bez tažení na plátno 3D vybere kus nábytku, klik vedle výběr kusu zruší. */
+        _kus3dKlik(platno) {
+            let start = null;
+            platno.addEventListener('pointerdown', (e) => { start = e.button === 0 ? { x: e.clientX, y: e.clientY, t: performance.now() } : null; });
+            platno.addEventListener('pointerup', (e) => {
+                if (!start || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4 || performance.now() - start.t > 600) return;
+                start = null;
+                try {
+                    const _3d = window._kk3d, r = platno.getBoundingClientRect();
+                    const paprsek = new THREE.Raycaster();
+                    paprsek.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), _3d.camera);
+                    // Kus podle kvádru z rozměrů: modely mají zhuštěné souřadnice (meshopt) a zásah do nich
+                    // vychází v r128 jinde. Stěna nebo strop před kusem má přednost.
+                    const vKusu = (o) => { for (; o; o = o.parent) if (o.userData?.kus) return true; return false; };
+                    const viditelny = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+                    const zakryti = paprsek.intersectObject(_3d.wallGroup, true).find(z => viditelny(z.object) && !vKusu(z.object));
+                    let kus = null, nejblizsi = zakryti ? zakryti.distance : Infinity;
+                    _3d.wallGroup.traverse((o) => {
+                        if (!o.userData?.kus || !viditelny(o)) return;
+                        const p = o.userData.katalog, inv = o.matrixWorld.clone().invert();
+                        const box = new THREE.Box3(new THREE.Vector3(-p.sirka / 2, 0, -p.hloubka / 2), new THREE.Vector3(p.sirka / 2, p.vyska, p.hloubka / 2));
+                        const bod = paprsek.ray.clone().applyMatrix4(inv).intersectBox(box, new THREE.Vector3());
+                        if (!bod) return;
+                        const vzdalenost = bod.applyMatrix4(o.matrixWorld).distanceTo(paprsek.ray.origin);
+                        if (vzdalenost < nejblizsi) { nejblizsi = vzdalenost; kus = o.userData.kus; }
+                    });
+                    if (kus) this.renderer.setSelection([], [], [], [kus]);
+                    else if (this.katalogObjekt) this.renderer.clearSelection();
+                    else return;
+                    this.renderer.render();
+                    this._selectionTick++;
+                } catch (chyba) {
+                    window.zalogujChybu?.(chyba, 'Katalog: výběr kusu ve 3D');
+                }
+            });
+        },
+
+        /** Obrys vybraného kusu ve 3D: kvádr podle rozměrů kusu, otáčí se s ním. */
+        _oznacKus3d() {
+            const _3d = window._kk3d;
+            if (!_3d?.wallGroup) return;
+            const id = this.katalogObjekt?.id;
+            _3d.wallGroup.traverse((o) => {
+                if (!o.userData?.kus) return;
+                const stary = o.children.find(c => c.userData.vyber3d);
+                if (stary && (o.userData.kus !== id)) { o.remove(stary); stary.geometry.dispose(); stary.material.dispose(); }
+                if (o.userData.kus === id && !stary) {
+                    const p = o.userData.katalog;
+                    const obrys = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(p.sirka, p.vyska, p.hloubka)),
+                        new THREE.LineBasicMaterial({ color: getComputedStyle(document.documentElement).getPropertyValue('--c-primary').trim() || 'orange', depthTest: false }));
+                    obrys.position.y = p.vyska / 2;
+                    obrys.renderOrder = 10;
+                    obrys.userData.vyber3d = true;
+                    o.add(obrys);
+                }
+            });
+            _3d.kresliDo = performance.now() + 300;
         },
     };
 })();

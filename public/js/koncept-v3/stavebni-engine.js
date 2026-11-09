@@ -661,9 +661,10 @@ class StavebniEngine {
      * Na jednom místě proto, že se to počítalo zvlášť v addOpening a zvlášť ve
      * fromJSON — a tam natvrdo „O", takže dveře načtené bez id dostaly okenní id.
      */
-    /** Označení kusu nábytku na plánu a v seznamu: písmeno podle jazyka a číslo z id (vb12 → N12). */
+    /** Označení kusu nábytku na plánu a v seznamu: M a číslo z id (vb12 → M12). Jako W, D a O je
+     *  ve všech jazycích stejné, ať si lidé v různých jazycích můžou na kus odkázat (Libor 9. 11. 2026). */
     static oznaceniKusu(v) {
-        return tx('ed_ui.oznaceni_nabytku') + ((String(v.id).match(/\d+/) || [''])[0]);
+        return 'M' + ((String(v.id).match(/\d+/) || [''])[0]);
     }
 
     static prefixOtvoru(typ) {
