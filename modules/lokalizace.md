@@ -88,7 +88,7 @@ Lokalizace::maFunkci('katastr');
 - Nesouvislé věty neskládat, jeden text s parametry. Názvy podlaží generuje `autoNazevPodlazi`, ruční `vlastniNazev` se nemění.
 
 ## Jak přidat jazyk
-1. Zkopírovat `lang/en/` do `lang/{kod}/` a přeložit (odborné stavařské termíny nechat zkontrolovat rodilým mluvčím).
+1. Zkopírovat `lang/en/` do `lang/{kod}/` a přeložit. Překlad od Clauda je finální, rodilí mluvčí ho nekontrolují (Libor 9. 11. 2026). Po každém překladu proto následuje vlastní kontrola nezávislým agentem: věcná shoda s cs/en, odborné stavařské termíny, oslovení, zástupné symboly a tvary množného čísla.
 2. Přidat řádek do `jazyky` v `config/lokalizace.php`.
 3. `php artisan preklady:kontrola` musí hlásit „Překlady jsou úplné".
 
@@ -96,6 +96,16 @@ Lokalizace::maFunkci('katastr');
 - Služba v zemi: doplnit kód služby do `zeme.{KÓD}` v `config/lokalizace.php`.
 - Katastrální parcely jdou přes INSPIRE (celoevropský standard) — v jiných zemích EU
   by stačilo napojit jejich službu; výškový profil a mapový podklad se řeší zvlášť.
+
+## Úkol v plánu: parcely v Evropě přes INSPIRE (zadal Libor 9. 11. 2026)
+Hledání parcely a obrys pozemku dnes umí jen Česko (ČÚZK). INSPIRE je směrnice EU (2007/2/ES), podle níž
+každý členský stát zveřejňuje mimo jiné katastrální parcely jako mapové služby (WMS, WFS) ve společném
+datovém modelu. Jedno napojení na tento model by tak šlo použít ve více zemích.
+- Cíl: v dalších zemích zapnout `katastr` (hledání parcely, obrys pozemku do editoru) přes jejich službu INSPIRE.
+- Pořadí jako u jazyků: SK a PL, potom DE s Rakouskem, FR, ES a IT.
+- Před začátkem zjistit u každé země adresu služby, jestli jde hledat podle čísla parcely nebo jen podle mapy,
+  přesnost, licenci a limity. Německo má katastr po spolkových zemích. Podrobnosti se dohledají až při práci.
+- Do té doby platí ruční pozemek (také v plánu).
 
 ## Národní domény (až podle zájmu)
 Jedna aplikace pro všechny domény: host do `config/domeny.php` (`web`) a do
