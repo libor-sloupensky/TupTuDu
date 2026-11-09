@@ -627,7 +627,6 @@ class StavebniEngine {
         this.nodes = new Map();   // id → {id, x, y}
         this.walls = new Map();   // id → {id, nodeA, nodeB, tloustka, typ}
         this.openings = new Map(); // id → {id, wallId, pozice, sirka, typ, nazev, smer, strana, vyska?, parapet?, kridla?}
-        this.prostory = [];        // [{id, typ, podtyp, polygon:[[x,y]..m], plocha_m2, nazev, venkovni}]
         this.vybaveni = [];        // [{id, typ, podtyp, kategorie, polygon, stred:[x,y px], sirka, hloubka, uhel, vyska}] — souřadnice v canvas px
         this.oddelovace = new Map(); // id → {id, a, b, delkaPx}; konec = {x, y, host?: {stena, t, strana}} — viz addOddelovac
         this.mistnosti = [];         // [{id, nazev, barva, podlaha:{dekor, barva}, kotva:{x,y px}}] — plochy počítá rastr (mistnosti.js), záznam drží jméno a barvu u kotvy; barva je pro půdorys, podlaha pro 3D
@@ -979,7 +978,8 @@ class StavebniEngine {
             polygon: Array.isArray(v.polygon) ? v.polygon.map(m) : v.polygon,
             uhel: (v.uhel || 0) + deg,
         }));
-        o.prostory = (data.prostory || []).map(p => ({
+        // Starší projekty: prostory z importu se převedou na místnosti až při načtení podlaží, do té doby se posouvají s domem
+        if (data.prostory) o.prostory = data.prostory.map(p => ({
             ...p,
             vertices: (p.vertices || []).map(v => {
                 const n = { ...v };
@@ -2781,31 +2781,6 @@ class StavebniEngine {
         this.vybaveni = this.vybaveni.filter(v => v.id !== id);
     }
 
-    removeProstor(id) {
-        if (!Array.isArray(this.prostory)) return;
-        this.prostory = this.prostory.filter(p => p.id !== id);
-    }
-
-    /**
-     * Smaže prostory, jejichž vrcholy ztratily reference (smazané stěny / uzly).
-     * Pokud měl prostor původně reference (refNodeId nebo wallA+wallB) a všechny
-     * platné už zmizely, smaž ho — bez stěn nemá smysl. Open-plan místnosti
-     * (purely-fixed vrcholy) se neruší — ty existují legálně bez stěn.
-     */
-    cleanupOrphanProstory() {
-        if (!Array.isArray(this.prostory)) return;
-        this.prostory = this.prostory.filter(p => {
-            const verts = p.vertices || [];
-            const hadRefs = verts.some(v => v.refNodeId || (v.wallA && v.wallB));
-            if (!hadRefs) return true; // čistě open-plan, ponech
-            const validRefs = verts.filter(v =>
-                (v.refNodeId && this.nodes.has(v.refNodeId)) ||
-                (v.wallA && v.wallB && this.walls.has(v.wallA) && this.walls.has(v.wallB))
-            ).length;
-            return validRefs >= 3;
-        });
-    }
-
     _cleanOrphanNodes() {
         const usedNodes = new Set();
         for (const wall of this.walls.values()) {
@@ -3217,15 +3192,6 @@ class StavebniEngine {
             otvory.push(out);
         }
 
-        const prostory = [];
-        for (const p of (this.prostory || [])) {
-            prostory.push({
-                id: p.id, nazev: p.nazev, typ: p.typ, podtyp: p.podtyp,
-                venkovni: !!p.venkovni,
-                vertices: (p.vertices || []).map(v => ({ ...v })),
-                plocha_m2: this.getProstorPlocha(p),
-            });
-        }
         // Vybavení (nábytek) — engine si polygon drží v metrech (kompatibilita
         // s output.json formátem a pudorys-icons.createFurnitureShape).
         const vybaveni = (this.vybaveni || []).map(v => ({
@@ -3267,7 +3233,7 @@ class StavebniEngine {
             kotva: [Math.round(m.kotva.x / this.PX_PER_M * 1000) / 1000, Math.round(-m.kotva.y / this.PX_PER_M * 1000) / 1000],
         }));
 
-        return { steny, otvory, prostory, vybaveni, oddelovace, mistnosti };
+        return { steny, otvory, vybaveni, oddelovace, mistnosti };
     }
 
     /**
@@ -3290,7 +3256,9 @@ class StavebniEngine {
         this.nodes.clear();
         this.walls.clear();
         this.openings.clear();
-        this.prostory = [];
+        // Starší projekty a import výkresu nesou pojmenované prostory (polygony). Model už není, převedou se
+        // na místnosti (název a kotva) níž, jakmile jsou stěny načtené.
+        const stareProstory = [];
         this.vybaveni = [];
         this.oddelovace.clear();
         this.mistnosti = [];
@@ -3449,7 +3417,7 @@ class StavebniEngine {
             // retroaktivní oprava starých projektů uložených před zvětšením
             // import tolerance (kde vrcholy mírně mimo uzel zůstaly fixed).
             if (Array.isArray(rp.vertices) && rp.vertices.length >= 3) {
-                this.prostory.push({
+                stareProstory.push({
                     id: rp.id, nazev: rp.nazev, typ: rp.typ, podtyp: rp.podtyp,
                     venkovni: !!rp.venkovni,
                     vertices: rp.vertices.map(v => {
@@ -3533,7 +3501,7 @@ class StavebniEngine {
                     vertices.push({ x, y });
                 }
             }
-            this.prostory.push({
+            stareProstory.push({
                 id: rp.id,
                 nazev: rp.nazev,
                 typ: rp.typ,
@@ -3572,6 +3540,18 @@ class StavebniEngine {
             if (vnum >= this.nextId) this.nextId = vnum + 1;
         }
 
+        // Jména starých prostorů přejdou na kotvy místností (těžiště polygonu), plochu už počítá rastr.
+        // Musí to být před sjednocením id stěn, vrcholy odkazují na stěny původními id.
+        if (this.mistnosti.length === 0 && stareProstory.length > 0) {
+            for (const p of stareProstory) {
+                if (p.venkovni) continue;
+                const body = (p.vertices || []).map(v => this.getProstorVertexPx(v)).filter(Boolean);
+                if (body.length < 3) continue;
+                const kotva = { x: body.reduce((a, b) => a + b.x, 0) / body.length, y: body.reduce((a, b) => a + b.y, 0) / body.length };
+                this.mistnosti.push({ id: this._id('M'), nazev: String(p.nazev || p.typ || ''), barva: PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length], kotva });
+            }
+        }
+
         // Starší koncepty se opraví samy při otevření — viz obě metody níž.
         // POŘADÍ: kontrola vazeb musí být PŘED srovnáváním. Srovnání nesmyslnou
         // vazbu jinak vynutí a odtáhne uzel přes půl domu (Na bělidle: W53 se
@@ -3586,18 +3566,6 @@ class StavebniEngine {
         this.oddelVsechnaCelaNapojeni();
         this.srovnejPrickyNaLic();
         this.srovnejCelaNaRoh();
-
-        // Starší projekty z importu mají pojmenované prostory (polygony) — jména
-        // přejdou na kotvy místností (těžiště polygonu), plochu už počítá rastr.
-        if (this.mistnosti.length === 0 && Array.isArray(this.prostory) && this.prostory.length > 0) {
-            for (const p of this.prostory) {
-                if (p.venkovni) continue;
-                const body = (p.vertices || []).map(v => this.getProstorVertexPx(v)).filter(Boolean);
-                if (body.length < 3) continue;
-                const kotva = { x: body.reduce((a, b) => a + b.x, 0) / body.length, y: body.reduce((a, b) => a + b.y, 0) / body.length };
-                this.mistnosti.push({ id: this._id('M'), nazev: String(p.nazev || p.typ || ''), barva: PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length], kotva });
-            }
-        }
 
         // UI se dozví o změně kresby (Zpět, historie, přepnutí podlaží); dočasné enginy hook nemají
         if (this.poNacteni) this.poNacteni();
@@ -3641,12 +3609,6 @@ class StavebniEngine {
         }
         for (const op of this.openings.values()) {
             if (prejmenovat.has(op.wallId)) op.wallId = prejmenovat.get(op.wallId);
-        }
-        for (const p of this.prostory) {
-            for (const v of (p.vertices || p.vrcholy || [])) {
-                if (v && prejmenovat.has(v.wallA)) v.wallA = prejmenovat.get(v.wallA);
-                if (v && prejmenovat.has(v.wallB)) v.wallB = prejmenovat.get(v.wallB);
-            }
         }
 
         return prejmenovat.size;
@@ -3814,24 +3776,6 @@ class StavebniEngine {
         return od <= d ? { od, do: d } : { od: (od + d) / 2, do: (od + d) / 2 };
     }
 
-    /**
-     * Vrátí aktuální polygon místnosti jako pole [x, y] v metrech.
-     * Sjednocené s getProstorVertexPx — všechny tři typy vrcholů (refNodeId,
-     * wallA+wallB, fixed {x,y}) se počítají z aktuálního stavu engine, takže
-     * polygon se hýbe se zdmi.
-     */
-    getProstorPolygon(prostor) {
-        const out = [];
-        if (!prostor) return out;
-        const verts = prostor.vertices || [];
-        for (const v of verts) {
-            const px = this.getProstorVertexPx(v);
-            if (!px) continue;
-            out.push([px.x / this.PX_PER_M, -px.y / this.PX_PER_M]);
-        }
-        return out;
-    }
-
     /** Pozice vertexu v px. Počítáno podle typu vrcholu:
      *  - refNodeId: live pozice wall uzlu
      *  - wallA/wallB: průsečík vnitřních povrchů dvou zdí (sleduje jejich pohyb)
@@ -3878,721 +3822,6 @@ class StavebniEngine {
         if (Math.abs(det) < 1e-6) return null;
         const t = ((p2x - p1x) * (-d2y) - (p2y - p1y) * (-d2x)) / det;
         return { x: p1x + t * d1x, y: p1y + t * d1y };
-    }
-
-    /**
-     * Plocha polygonu v m². Shoelace formula + korekce na tloušťku stěn:
-     * pokud vertex edge spojuje dva wall-uzly patřící stejné reálné stěně,
-     * odečteme pás (length × thk/2) — místnost se měří od povrchu zdi.
-     */
-    getProstorPlocha(prostor) {
-        const poly = this.getProstorPolygon(prostor);
-        if (poly.length < 3 || !prostor.vertices) return 0;
-        let sum = 0;
-        for (let i = 0; i < poly.length; i++) {
-            const [x1, y1] = poly[i];
-            const [x2, y2] = poly[(i + 1) % poly.length];
-            sum += x1 * y2 - x2 * y1;
-        }
-        const rawArea = Math.abs(sum) / 2;
-        let correction = 0;
-        for (let i = 0; i < prostor.vertices.length; i++) {
-            const vA = prostor.vertices[i];
-            const vB = prostor.vertices[(i + 1) % prostor.vertices.length];
-            if (!vA.refNodeId || !vB.refNodeId) continue;
-            // Najít reálnou stěnu s těmito dvěma endpointy
-            for (const w of this.walls.values()) {
-                if ((w.nodeA === vA.refNodeId && w.nodeB === vB.refNodeId) ||
-                    (w.nodeA === vB.refNodeId && w.nodeB === vA.refNodeId)) {
-                    const [x1, y1] = poly[i];
-                    const [x2, y2] = poly[(i + 1) % poly.length];
-                    const len = Math.hypot(x2 - x1, y2 - y1);
-                    correction += len * (w.tloustka / 2);
-                    break;
-                }
-            }
-        }
-        return Math.max(0, rawArea - correction);
-    }
-
-    // ─── LAYOUT → GEOMETRIE ─────────────────────────────
-    /**
-     * Přeloží mřížku místností do stěn, otvorů a střechy.
-     * Layout formát:
-     * {
-     *   sirka: 12, hloubka: 8,
-     *   rady: [
-     *     { hloubka: 4, bunky: [{nazev: "Obývák", sirka: 7}, {nazev: "Chodba", sirka: 5}] },
-     *     { hloubka: 4, bunky: [{nazev: "Ložnice", sirka: 4}, {nazev: "Koupelna", sirka: 3}, {nazev: "Pokoj", sirka: 5}] }
-     *   ],
-     *   dvere: ["Chodba→Obývák", "Chodba→Koupelna"],
-     *   okna: {"Obývák": "sever", "Ložnice": "východ"},
-     *   strecha: {typ: "sedlova", sklon: 35}
-     * }
-     */
-    fromLayout(layout) {
-        this.nodes.clear();
-        this.walls.clear();
-        this.openings.clear();
-        this.prostory = [];
-        this.vybaveni = [];
-        this.oddelovace.clear();
-        this.mistnosti = [];
-        this.nextId = 1;
-
-        const px = this.PX_PER_M;
-        const tlObvodova = 0.3;
-        const tlPricka = 0.1;
-
-        // Mapování místností na pozice (pro dveře/okna)
-        const mistnosti = new Map(); // nazev → {x, y, w, h}
-
-        // 1) Obvodové stěny
-        const W = layout.sirka;
-        const H = layout.hloubka;
-        this.addWall(0, 0, W * px, 0, tlObvodova);           // sever
-        this.addWall(W * px, 0, W * px, H * px, tlObvodova);  // východ
-        this.addWall(W * px, H * px, 0, H * px, tlObvodova);  // jih
-        this.addWall(0, H * px, 0, 0, tlObvodova);            // západ
-
-        // 2) Příčky z mřížky
-        let y = 0;
-        for (const rada of layout.rady || []) {
-            const radaH = rada.hloubka;
-            let x = 0;
-
-            // Horizontální příčka (hranice řad) — kromě první a poslední
-            if (y > 0) {
-                this.addWall(0, y * px, W * px, y * px, tlPricka);
-            }
-
-            for (let i = 0; i < (rada.bunky || []).length; i++) {
-                const bunka = rada.bunky[i];
-                const bunkaW = bunka.sirka;
-
-                // Uložit pozici místnosti
-                mistnosti.set(bunka.nazev, {
-                    x: x, y: y, w: bunkaW, h: radaH,
-                    cx: (x + bunkaW / 2) * px,
-                    cy: (y + radaH / 2) * px,
-                    typ: bunka.typ || 'Undefined',
-                    nazev: bunka.nazev,
-                    vybaveni: Array.isArray(bunka.vybaveni) ? bunka.vybaveni : [],
-                });
-
-                // Vertikální příčka (hranice buněk) — kromě poslední v řadě
-                if (i < rada.bunky.length - 1) {
-                    const prX = (x + bunkaW) * px;
-                    this.addWall(prX, y * px, prX, (y + radaH) * px, tlPricka);
-                }
-
-                x += bunkaW;
-            }
-            y += radaH;
-        }
-
-        // 3) AutoSplit pro T-napojení
-        this._autoSplitWalls();
-
-        // 4) Dveře — mezi sousedními místnostmi
-        for (const dvere of layout.dvere || []) {
-            const parts = dvere.split(/→|->/).map(s => s.trim());
-            if (parts.length !== 2) continue;
-            const m1 = mistnosti.get(parts[0]);
-            const m2 = mistnosti.get(parts[1]);
-            if (!m1 || !m2) continue;
-
-            // Najít sdílenou hranu
-            let dverePoz = null;
-            const tolerance = 0.01 * px;
-
-            // Horizontální sdílená hrana (m1 nad m2 nebo naopak)
-            if (Math.abs((m1.y + m1.h) - m2.y) < 0.01 || Math.abs((m2.y + m2.h) - m1.y) < 0.01) {
-                const hranice = Math.abs((m1.y + m1.h) - m2.y) < 0.01 ? (m1.y + m1.h) : (m2.y + m2.h);
-                const overlapL = Math.max(m1.x, m2.x);
-                const overlapR = Math.min(m1.x + m1.w, m2.x + m2.w);
-                if (overlapR > overlapL) {
-                    const stredX = ((overlapL + overlapR) / 2) * px;
-                    dverePoz = { x: stredX, y: hranice * px, orient: 'h' };
-                }
-            }
-            // Vertikální sdílená hrana (m1 vlevo od m2 nebo naopak)
-            if (!dverePoz) {
-                if (Math.abs((m1.x + m1.w) - m2.x) < 0.01 || Math.abs((m2.x + m2.w) - m1.x) < 0.01) {
-                    const hranice = Math.abs((m1.x + m1.w) - m2.x) < 0.01 ? (m1.x + m1.w) : (m2.x + m2.w);
-                    const overlapT = Math.max(m1.y, m2.y);
-                    const overlapB = Math.min(m1.y + m1.h, m2.y + m2.h);
-                    if (overlapB > overlapT) {
-                        const stredY = ((overlapT + overlapB) / 2) * px;
-                        dverePoz = { x: hranice * px, y: stredY, orient: 'v' };
-                    }
-                }
-            }
-
-            if (!dverePoz) continue;
-
-            // Najít stěnu na této pozici
-            for (const wall of this.walls.values()) {
-                const nA = this.nodes.get(wall.nodeA);
-                const nB = this.nodes.get(wall.nodeB);
-                if (!nA || !nB) continue;
-
-                const dx = nB.x - nA.x, dy = nB.y - nA.y;
-                const len = Math.hypot(dx, dy);
-                if (len < px * 0.5) continue;
-
-                // Vzdálenost bodu od stěny
-                const t = ((dverePoz.x - nA.x) * dx + (dverePoz.y - nA.y) * dy) / (len * len);
-                if (t < 0.05 || t > 0.95) continue;
-                const cx = nA.x + t * dx, cy = nA.y + t * dy;
-                const dist = Math.hypot(dverePoz.x - cx, dverePoz.y - cy);
-                if (dist > px * 0.5) continue;
-
-                // Přidat dveře
-                const poziceM = (t * len) / px - 0.45; // centrovat dveře
-                const id = this._id('D');
-                this.openings.set(id, {
-                    id, wallId: wall.id,
-                    pozice: Math.max(0.3, poziceM),
-                    sirka: 0.9, typ: 'dvere', nazev: dvere,
-                });
-                break;
-            }
-        }
-
-        // 5a) Vchod — vchodové dveře na obvodu domu.
-        // Formát: layout.vchod = { strana: "S|J|V|Z", pozice_od: 1.5 (volitelné, default uprostřed) }
-        if (layout.vchod && layout.vchod.strana) {
-            const vch = layout.vchod;
-            const strana = String(vch.strana).toUpperCase().charAt(0);
-            let vchX, vchY;
-            const W_m = layout.sirka, H_m = layout.hloubka;
-            const pozice = vch.pozice_od ?? null;
-            if (strana === 'S') { vchX = (pozice ?? W_m / 2) * px; vchY = 0; }
-            else if (strana === 'J') { vchX = (pozice ?? W_m / 2) * px; vchY = H_m * px; }
-            else if (strana === 'Z') { vchX = 0; vchY = (pozice ?? H_m / 2) * px; }
-            else if (strana === 'V') { vchX = W_m * px; vchY = (pozice ?? H_m / 2) * px; }
-
-            if (vchX !== undefined) {
-                for (const wall of this.walls.values()) {
-                    if (wall.tloustka < 0.2) continue;
-                    const nA = this.nodes.get(wall.nodeA);
-                    const nB = this.nodes.get(wall.nodeB);
-                    if (!nA || !nB) continue;
-                    const dx = nB.x - nA.x, dy = nB.y - nA.y;
-                    const len = Math.hypot(dx, dy);
-                    if (len < px) continue;
-                    const t = ((vchX - nA.x) * dx + (vchY - nA.y) * dy) / (len * len);
-                    if (t < 0.05 || t > 0.95) continue;
-                    const cx = nA.x + t * dx, cy = nA.y + t * dy;
-                    if (Math.hypot(vchX - cx, vchY - cy) > px * 0.5) continue;
-                    const poziceM = (t * len) / px - 0.45;
-                    const id = this._id('D');
-                    this.openings.set(id, {
-                        id, wallId: wall.id,
-                        pozice: Math.max(0.3, poziceM),
-                        sirka: 0.9, typ: 'dvere', nazev: 'Vchod',
-                    });
-                    break;
-                }
-            }
-        }
-
-        // 5b) Okna — na obvodových stěnách
-        for (const [nazev, strana] of Object.entries(layout.okna || {})) {
-            const m = mistnosti.get(nazev);
-            if (!m) continue;
-
-            const strany = strana.split(/[+,]/).map(s => s.trim().toLowerCase());
-            for (const s of strany) {
-                let oknoX, oknoY;
-                if (s === 'sever' || s === 's') { oknoX = m.cx; oknoY = 0; }
-                else if (s === 'jih' || s === 'j') { oknoX = m.cx; oknoY = H * px; }
-                else if (s === 'západ' || s === 'z') { oknoX = 0; oknoY = m.cy; }
-                else if (s === 'východ' || s === 'v') { oknoX = W * px; oknoY = m.cy; }
-                else continue;
-
-                // Najít obvodovou stěnu
-                for (const wall of this.walls.values()) {
-                    if (wall.tloustka < 0.2) continue; // jen obvodové
-                    const nA = this.nodes.get(wall.nodeA);
-                    const nB = this.nodes.get(wall.nodeB);
-                    if (!nA || !nB) continue;
-
-                    const dx = nB.x - nA.x, dy = nB.y - nA.y;
-                    const len = Math.hypot(dx, dy);
-                    if (len < px) continue;
-
-                    const t = ((oknoX - nA.x) * dx + (oknoY - nA.y) * dy) / (len * len);
-                    if (t < 0.05 || t > 0.95) continue;
-                    const cx = nA.x + t * dx, cy = nA.y + t * dy;
-                    const dist = Math.hypot(oknoX - cx, oknoY - cy);
-                    if (dist > px * 0.5) continue;
-
-                    const poziceM = (t * len) / px - 0.6;
-                    const id = this._id('O');
-                    this.openings.set(id, {
-                        id, wallId: wall.id,
-                        pozice: Math.max(0.3, poziceM),
-                        sirka: 1.2, typ: 'okno', nazev: nazev,
-                    });
-                    break;
-                }
-            }
-        }
-
-        // 6) Prostory — 4 rohy buňky jako polygon (vertices). Engine si dopočítá plochu.
-        let prostorIdx = 1;
-        for (const m of mistnosti.values()) {
-            const x1 = m.x * px, y1 = m.y * px;
-            const x2 = (m.x + m.w) * px, y2 = (m.y + m.h) * px;
-            this.prostory.push({
-                id: 'P' + (prostorIdx++),
-                nazev: m.nazev,
-                typ: m.typ || 'Undefined',
-                podtyp: null,
-                venkovni: false,
-                vertices: [
-                    { x: x1, y: y1 },
-                    { x: x2, y: y1 },
-                    { x: x2, y: y2 },
-                    { x: x1, y: y2 },
-                ],
-            });
-        }
-
-        // 7) Vybavení (nábytek) — z relativních pozic uvnitř místnosti.
-        // u_steny: 'S'|'J'|'V'|'Z'|'C' (sever/jih/východ/západ/centrum)
-        // od_kraje: vzdálenost od levého (S/J) nebo horního (V/Z) okraje místnosti v metrech
-        // sirka, hloubka v metrech (sirka rovnoběžně se zdí, hloubka kolmo)
-        // POSUN OD STĚNY — nábytek se posouvá dovnitř o tloušťku stěny / 2,
-        // aby polygon nepřeléval přes vnitřek stěny. Použijeme konzervativní 0.15 m
-        // (= polovina obvodové stěny 0.3m). U příček (0.1m) bude o trochu odsazeno.
-        const ODSAZENI = 0.15;
-        let vybIdx = 1;
-        for (const m of mistnosti.values()) {
-            for (const vbDef of m.vybaveni || []) {
-                const sirka = vbDef.sirka || 0.6;
-                const hloubka = vbDef.hloubka || 0.4;
-                const odKraje = vbDef.od_kraje ?? 0;
-                const strana = (vbDef.u_steny || 'S').toUpperCase().charAt(0);
-                let cx, cy, uhel;
-
-                if (strana === 'S') { // sever — horní stěna místnosti
-                    cx = m.x + ODSAZENI + odKraje + sirka / 2;
-                    cy = m.y + ODSAZENI + hloubka / 2;
-                    uhel = 0;
-                } else if (strana === 'J') { // jih
-                    cx = m.x + ODSAZENI + odKraje + sirka / 2;
-                    cy = m.y + m.h - ODSAZENI - hloubka / 2;
-                    uhel = Math.PI;
-                } else if (strana === 'V') { // východ
-                    cx = m.x + m.w - ODSAZENI - hloubka / 2;
-                    cy = m.y + ODSAZENI + odKraje + sirka / 2;
-                    uhel = -Math.PI / 2;
-                } else if (strana === 'Z') { // západ
-                    cx = m.x + ODSAZENI + hloubka / 2;
-                    cy = m.y + ODSAZENI + odKraje + sirka / 2;
-                    uhel = Math.PI / 2;
-                } else { // centrum (C)
-                    cx = m.x + m.w / 2;
-                    cy = m.y + m.h / 2;
-                    uhel = 0;
-                }
-
-                // Polygon — pro S/J má sirka v X (rovnoběžně se zdí) a hloubku v Y;
-                // pro V/Z je to obráceně (sirka v Y, hloubka v X). Centrum použije S/J orientaci.
-                const horizontalniSirka = (strana === 'V' || strana === 'Z') ? hloubka : sirka;
-                const vertikalniHloubka = (strana === 'V' || strana === 'Z') ? sirka : hloubka;
-                const polygon = [
-                    [cx - horizontalniSirka / 2, -(cy - vertikalniHloubka / 2)],
-                    [cx + horizontalniSirka / 2, -(cy - vertikalniHloubka / 2)],
-                    [cx + horizontalniSirka / 2, -(cy + vertikalniHloubka / 2)],
-                    [cx - horizontalniSirka / 2, -(cy + vertikalniHloubka / 2)],
-                ];
-                this.vybaveni.push({
-                    id: 'V' + (vybIdx++),
-                    typ: vbDef.typ,
-                    podtyp: vbDef.podtyp ?? null,
-                    kategorie: vbDef.kategorie ?? null,
-                    stred: [cx, -cy], // engine drží y_dolů, ale formát output.json má y_nahoru
-                    polygon,
-                    sirka, hloubka,
-                    uhel,
-                    vyska: vbDef.vyska ?? null,
-                    tvar: vbDef.tvar || 'rect',
-                    zadni_strana: vbDef.zadni_strana ?? null,
-                });
-            }
-        }
-
-        return {
-            mistnosti: Object.fromEntries(mistnosti),
-            strecha: layout.strecha || null,
-        };
-    }
-
-    // ════════════════════════════════════════════════════════
-    // fromAsciiPlus — reprezentace E (ASCII grid + cm legendy)
-    // Vstup:
-    //  paket = {
-    //    granularita: 0.25,         // metry/znak
-    //    grid: "AABB\nAACC\n....",
-    //    mistnosti: [{id:'A', nazev, typ}, ...],   (volitelné — typ a popis)
-    //    otvory: [{id:'d1', typ, sirka_cm, mezi:['A','B']|'obvod', strana?}, ...],
-    //    vybaveni: [{id:'n1', typ, kategorie, sirka_cm, hloubka_cm, v_mistnosti, u_steny, od_kraje_cm}, ...]
-    //  }
-    // Výstup: vyplní engine.nodes/walls/openings/prostory/vybaveni
-    // Algoritmus:
-    //  1. Pro každý znak v gridu najdi obvodové hrany (mřížkové úsečky kde sousedí jiný znak)
-    //  2. Z hran vyrob polygon prostoru (chain + simplify kolineárních)
-    //  3. Pro každou unikátní hranu rozhodni: sdílená mezi 2 znaky = příčka, hrana s '.' = obvod
-    //  4. Spoj kolineární hrany stejné kategorie do jedné stěny
-    //  5. Otvory (později) — z legendy umístit do správné stěny
-    //  6. Vybavení (později) — z legendy s relativní pozicí v místnosti
-    // ════════════════════════════════════════════════════════
-    fromAsciiPlus(paket) {
-        this.nodes.clear();
-        this.walls.clear();
-        this.openings.clear();
-        this.prostory = [];
-        this.vybaveni = [];
-        this.oddelovace.clear();
-        this.mistnosti = [];
-        this.nextId = 1;
-
-        const granularita = paket.granularita || 0.25;
-        const krokPx = granularita * this.PX_PER_M;
-
-        const gridLines = (paket.grid || '').split('\n').filter(l => l.length > 0);
-        if (gridLines.length === 0) return { ok: false, chyba: 'Prázdný grid' };
-
-        const gridChar = (col, row) => {
-            if (row < 0 || row >= gridLines.length) return '.';
-            if (col < 0 || col >= gridLines[row].length) return '.';
-            return gridLines[row][col];
-        };
-
-        // 1. Pro každý znak (kromě '.', ' ', a otvor-id 'd1','o1' atd.) najít hrany
-        const znakSet = new Set();
-        for (const line of gridLines) {
-            for (const c of line) {
-                if (c !== '.' && c !== ' ') znakSet.add(c);
-            }
-        }
-
-        const hranyZnaku = new Map();
-        for (const z of znakSet) hranyZnaku.set(z, new Set());
-
-        for (let r = 0; r < gridLines.length; r++) {
-            for (let c = 0; c < gridLines[r].length; c++) {
-                const z = gridLines[r][c];
-                if (!hranyZnaku.has(z)) continue;
-                const set = hranyZnaku.get(z);
-                if (gridChar(c, r - 1) !== z) set.add(`${c},${r},${c + 1},${r}`);
-                if (gridChar(c + 1, r) !== z) set.add(`${c + 1},${r},${c + 1},${r + 1}`);
-                if (gridChar(c, r + 1) !== z) set.add(`${c},${r + 1},${c + 1},${r + 1}`);
-                if (gridChar(c - 1, r) !== z) set.add(`${c},${r},${c},${r + 1}`);
-            }
-        }
-
-        // 2. Pro každý znak vyrob polygon (chain + simplify)
-        const polygony = new Map();
-        for (const [znak, hrany] of hranyZnaku) {
-            const poly = this._chainGridEdges(hrany);
-            if (poly && poly.length >= 3) {
-                polygony.set(znak, poly);
-            }
-        }
-
-        // 3. Vyrob prostory
-        const mistByZnak = new Map();
-        for (const m of paket.mistnosti || []) mistByZnak.set(m.id, m);
-
-        let prostorIdx = 1;
-        for (const [znak, polygon] of polygony) {
-            const def = mistByZnak.get(znak) || { nazev: znak, typ: 'Undefined' };
-            this.prostory.push({
-                id: 'P' + (prostorIdx++),
-                nazev: def.nazev || znak,
-                typ: def.typ || 'Undefined',
-                podtyp: null,
-                venkovni: !!def.venkovni,
-                vertices: polygon.map(([gx, gy]) => ({
-                    x: gx * krokPx,
-                    y: gy * krokPx,
-                })),
-            });
-        }
-
-        // 4. Sjednocení všech hran napříč znaky → klasifikace (sdílená vs obvod)
-        // Pro každou hranu zjistit pár znaků (= co je na obou stranách)
-        const vsechnyHrany = new Set();
-        for (const set of hranyZnaku.values()) {
-            for (const h of set) vsechnyHrany.add(h);
-        }
-
-        const hranaParZnaku = (klic) => {
-            const [x1, y1, x2, y2] = klic.split(',').map(Number);
-            if (y1 === y2) {
-                return [gridChar(x1, y1 - 1), gridChar(x1, y1)].sort().join(':');
-            }
-            return [gridChar(x1 - 1, y1), gridChar(x1, y1)].sort().join(':');
-        };
-
-        // Seskupit po párech + směru pro spojování kolineárních
-        const skupiny = new Map();
-        for (const klic of vsechnyHrany) {
-            const [x1, y1, x2, y2] = klic.split(',').map(Number);
-            const par = hranaParZnaku(klic);
-            const [a, b] = par.split(':');
-            if (a === b) continue; // hrana mezi stejnými znaky = ne hrana
-            const smer = y1 === y2 ? 'h_y' + y1 : 'v_x' + x1;
-            const k = par + '|' + smer;
-            if (!skupiny.has(k)) skupiny.set(k, []);
-            skupiny.get(k).push([x1, y1, x2, y2]);
-        }
-
-        // 5. Pro každou skupinu spojit kolineární do jedné stěny.
-        // Pro otvory si pamatujeme par→[wall, smer] aby se daly otvory umístit.
-        // segmentyPodleParu: par 'A:B' → [{wall, smer:'h'/'v', startGrid, endGrid}]
-        const segmentyPodleParu = new Map();
-
-        for (const [k, edges] of skupiny) {
-            const [par] = k.split('|');
-            const isObvod = par.includes('.'); // jeden ze sousedů je '.' = mimo dům
-            const tloustka = isObvod ? 0.3 : 0.1;
-
-            const isH = edges[0][1] === edges[0][3];
-            edges.sort((a, b) => isH ? a[0] - b[0] : a[1] - b[1]);
-
-            const spojene = [];
-            let curr = edges[0].slice();
-            for (let i = 1; i < edges.length; i++) {
-                const next = edges[i];
-                if ((isH && curr[2] === next[0] && curr[1] === next[1]) ||
-                    (!isH && curr[3] === next[1] && curr[0] === next[0])) {
-                    curr[2] = next[2];
-                    curr[3] = next[3];
-                } else {
-                    spojene.push(curr);
-                    curr = next.slice();
-                }
-            }
-            spojene.push(curr);
-
-            if (!segmentyPodleParu.has(par)) segmentyPodleParu.set(par, []);
-            const seznam = segmentyPodleParu.get(par);
-
-            for (const [x1, y1, x2, y2] of spojene) {
-                const wall = this.addWall(x1 * krokPx, y1 * krokPx, x2 * krokPx, y2 * krokPx, tloustka);
-                if (wall) {
-                    seznam.push({
-                        wallId: wall.id,
-                        smer: isH ? 'h' : 'v',
-                        gridStart: isH ? x1 : y1,
-                        gridEnd: isH ? x2 : y2,
-                        delkaCm: Math.abs((isH ? x2 - x1 : y2 - y1)) * granularita * 100,
-                    });
-                }
-            }
-        }
-
-        // 6. Otvory — z legendy umístit do správné stěny mezi A↔B (nebo A↔.).
-        // Algoritmus:
-        //  a) najdi par 'A:B' (sortováno) ve segmentyPodleParu
-        //  b) pokud není definován pozice_cm, umísti otvor doprostřed nejdelšího segmentu
-        //  c) jinak: setříď segmenty podle gridStart, walk-through s akumulátorem délky,
-        //     najdi segment kde se pozice_cm nachází, vypočti relative t na stěně
-        for (const o of paket.otvory || []) {
-            const sirka = (o.sirka_cm || 90) / 100;
-            const typ = o.typ || (o.id && /^o/i.test(o.id) ? 'okno' : 'dvere');
-            const mezi = Array.isArray(o.mezi) ? o.mezi : null;
-            if (!mezi || mezi.length !== 2) continue;
-
-            const par = [...mezi].sort().join(':');
-            const segmenty = segmentyPodleParu.get(par);
-            if (!segmenty || segmenty.length === 0) continue;
-
-            // Setřídit kolineární kompozici (segmenty mohou být v různých řádcích/sloupcích)
-            segmenty.sort((a, b) => a.gridStart - b.gridStart);
-
-            // Engine očekává pozici v METRECH od nodeA (ne 0-1).
-            // pozice_cm = vzdálenost od začátku celé sdílené hranice (across všech segmentů).
-            const pozCm = o.pozice_cm != null ? o.pozice_cm : null;
-            let target = null;
-            let pozM = 0;
-
-            if (pozCm == null) {
-                target = segmenty.reduce((a, b) => a.delkaCm >= b.delkaCm ? a : b);
-                pozM = (target.delkaCm / 100) / 2;
-            } else {
-                let akumulovano = 0;
-                for (const s of segmenty) {
-                    if (pozCm <= akumulovano + s.delkaCm) {
-                        target = s;
-                        const lokalniCm = pozCm - akumulovano;
-                        pozM = Math.min(s.delkaCm / 100 - sirka / 2, Math.max(sirka / 2, lokalniCm / 100));
-                        break;
-                    }
-                    akumulovano += s.delkaCm;
-                }
-                if (!target) {
-                    target = segmenty[segmenty.length - 1];
-                    pozM = (target.delkaCm / 100) / 2;
-                }
-            }
-
-            // o.otevira_do = "A" znamená dveře se otevírají DO místnosti A.
-            // Engine interně používá strana='in'/'out' relativně ke směru stěny (nodeA→nodeB).
-            // Mapování: pokud otevira_do je lexikálně menší písmeno (A z A:B), strana='in'.
-            const [parA] = par.split(':');
-            const strana = o.otevira_do === parA ? 'in' : 'out';
-
-            const smer = o.smer || (typ === 'okno' ? null : 'pravy');
-
-            this.addOpening(target.wallId, pozM, sirka, typ, { smer, strana });
-        }
-
-        // 7. Vybavení — z legendy umístit do místnosti pomocí u_steny + od_kraje_cm.
-        // Najdi prostor podle v_mistnosti, vezmi jeho bbox, umísti relativně.
-        const prostorByZnak = new Map();
-        let pIdx = 0;
-        for (const znak of polygony.keys()) {
-            prostorByZnak.set(znak, this.prostory[pIdx++]);
-        }
-        const ODSAZENI_M = 0.15;
-        let vybIdx = 1;
-        for (const v of paket.vybaveni || []) {
-            const prostor = prostorByZnak.get(v.v_mistnosti);
-            if (!prostor) continue;
-
-            const xs = prostor.vertices.map(p => p.x);
-            const ys = prostor.vertices.map(p => p.y);
-            const minX = Math.min(...xs) / this.PX_PER_M;
-            const maxX = Math.max(...xs) / this.PX_PER_M;
-            const minY = Math.min(...ys) / this.PX_PER_M;
-            const maxY = Math.max(...ys) / this.PX_PER_M;
-            const W = maxX - minX;
-            const H = maxY - minY;
-
-            const sirka = (v.sirka_cm || 80) / 100;
-            const hloubka = (v.hloubka_cm || 60) / 100;
-            const odKraje = (v.od_kraje_cm || 0) / 100;
-            const strana = (v.u_steny || 'S').toUpperCase();
-
-            let cx, cy, uhel;
-            if (strana === 'S') {
-                cx = minX + ODSAZENI_M + odKraje + sirka / 2;
-                cy = minY + ODSAZENI_M + hloubka / 2;
-                uhel = 0;
-            } else if (strana === 'J') {
-                cx = minX + ODSAZENI_M + odKraje + sirka / 2;
-                cy = maxY - ODSAZENI_M - hloubka / 2;
-                uhel = Math.PI;
-            } else if (strana === 'V') {
-                cx = maxX - ODSAZENI_M - hloubka / 2;
-                cy = minY + ODSAZENI_M + odKraje + sirka / 2;
-                uhel = -Math.PI / 2;
-            } else if (strana === 'Z') {
-                cx = minX + ODSAZENI_M + hloubka / 2;
-                cy = minY + ODSAZENI_M + odKraje + sirka / 2;
-                uhel = Math.PI / 2;
-            } else { // C = centrum
-                cx = (minX + maxX) / 2;
-                cy = (minY + maxY) / 2;
-                uhel = 0;
-            }
-
-            const horizontalniSirka = (strana === 'V' || strana === 'Z') ? hloubka : sirka;
-            const vertikalniHloubka = (strana === 'V' || strana === 'Z') ? sirka : hloubka;
-            const polygon = [
-                [cx - horizontalniSirka / 2, -(cy - vertikalniHloubka / 2)],
-                [cx + horizontalniSirka / 2, -(cy - vertikalniHloubka / 2)],
-                [cx + horizontalniSirka / 2, -(cy + vertikalniHloubka / 2)],
-                [cx - horizontalniSirka / 2, -(cy + vertikalniHloubka / 2)],
-            ];
-            this.vybaveni.push({
-                id: 'V' + (vybIdx++),
-                typ: v.typ || 'Generic',
-                podtyp: v.podtyp || null,
-                kategorie: v.kategorie || null,
-                stred: [cx, -cy],
-                polygon,
-                sirka,
-                hloubka,
-                uhel,
-                vyska: v.vyska || null,
-                tvar: v.tvar || 'rect',
-            });
-        }
-
-        return {
-            ok: true,
-            stats: {
-                prostory: this.prostory.length,
-                walls: this.walls.size,
-                openings: this.openings.size,
-                vybaveni: this.vybaveni.length,
-            },
-        };
-    }
-
-    /**
-     * Sleduje hrany v Setu klíčů "x1,y1,x2,y2" a sestaví uzavřený polygon.
-     * Vrací pole [x, y] grid souřadnic vrcholů (po simplifikaci kolineárních).
-     */
-    _chainGridEdges(hranyKlice) {
-        if (hranyKlice.size === 0) return null;
-
-        const sousede = new Map();
-        for (const klic of hranyKlice) {
-            const [x1, y1, x2, y2] = klic.split(',').map(Number);
-            const k1 = `${x1},${y1}`;
-            const k2 = `${x2},${y2}`;
-            if (!sousede.has(k1)) sousede.set(k1, []);
-            if (!sousede.has(k2)) sousede.set(k2, []);
-            sousede.get(k1).push(k2);
-            sousede.get(k2).push(k1);
-        }
-
-        const start = Array.from(hranyKlice)[0].split(',').slice(0, 2).join(',');
-        const polygon = [];
-        let prev = null;
-        let curr = start;
-        const visited = new Set();
-
-        let safety = 0;
-        while (safety++ < hranyKlice.size + 10) {
-            polygon.push(curr.split(',').map(Number));
-            const candidates = (sousede.get(curr) || []).filter(n => {
-                const ek = [curr, n].sort().join('|');
-                return !visited.has(ek);
-            });
-            if (candidates.length === 0) break;
-            const next = candidates.find(n => n !== prev) || candidates[0];
-            visited.add([curr, next].sort().join('|'));
-            prev = curr;
-            curr = next;
-            if (curr === start) break;
-        }
-
-        return this._simplifyGridPolygon(polygon);
-    }
-
-    _simplifyGridPolygon(poly) {
-        if (poly.length < 3) return poly;
-        const result = [];
-        for (let i = 0; i < poly.length; i++) {
-            const prev = poly[(i - 1 + poly.length) % poly.length];
-            const curr = poly[i];
-            const next = poly[(i + 1) % poly.length];
-            const dx1 = curr[0] - prev[0], dy1 = curr[1] - prev[1];
-            const dx2 = next[0] - curr[0], dy2 = next[1] - curr[1];
-            const cross = dx1 * dy2 - dy1 * dx2;
-            if (cross !== 0) result.push(curr);
-        }
-        return result.length >= 3 ? result : poly;
     }
 
     // ─── QUERIES ───────────────────────────────────────

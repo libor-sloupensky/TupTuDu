@@ -74,7 +74,7 @@
             const puvodne = {
                 aktivni: e.dum.aktivni, scale: st.scaleX(), x: st.x(), y: st.y(), sirka: st.width(), vyska: st.height(),
                 walls: [...r.selectedWalls], nodes: [...r.selectedNodes], openings: [...r.selectedOpenings], vybaveni: [...r.selectedVybaveni],
-                prostory: [...r.selectedProstory], oddelovace: [...r.selectedOddelovace], mistnosti: [...r.selectedMistnosti],
+                oddelovace: [...r.selectedOddelovace], mistnosti: [...r.selectedMistnosti],
                 schody: [...r.selectedSchody], plochy: [...r.selectedPlochy],
                 rezimStrecha: this.rezimStrecha, strechaHrana: this.strechaHrana,
             };
@@ -103,7 +103,7 @@
                 for (const id of ids) {
                     if (e.dum.aktivni !== id) e.prepniPodlazi(id);
                     r.selectedWalls.clear(); r.selectedNodes.clear(); r.selectedOpenings.clear(); r.selectedVybaveni.clear();
-                    r.selectedProstory.clear(); r.selectedOddelovace.clear(); r.selectedMistnosti.clear(); r.selectedSchody.clear(); r.selectedPlochy.clear();
+                    r.selectedOddelovace.clear(); r.selectedMistnosti.clear(); r.selectedSchody.clear(); r.selectedPlochy.clear();
                     r._mistnostiCache = null;
                     r.render();
                     r.poZmeneZoomu();
@@ -143,7 +143,7 @@
                 st.position({ x: puvodne.x, y: puvodne.y });
                 st.size({ width: puvodne.sirka, height: puvodne.vyska });
                 r.selectedWalls = new Set(puvodne.walls); r.selectedNodes = new Set(puvodne.nodes); r.selectedOpenings = new Set(puvodne.openings);
-                r.selectedVybaveni = new Set(puvodne.vybaveni); r.selectedProstory = new Set(puvodne.prostory); r.selectedOddelovace = new Set(puvodne.oddelovace);
+                r.selectedVybaveni = new Set(puvodne.vybaveni); r.selectedOddelovace = new Set(puvodne.oddelovace);
                 r.selectedMistnosti = new Set(puvodne.mistnosti); r.selectedSchody = new Set(puvodne.schody); r.selectedPlochy = new Set(puvodne.plochy);
                 r._mistnostiCache = null;
                 r.render();

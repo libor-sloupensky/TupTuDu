@@ -1331,7 +1331,7 @@ function konceptKEditor(initialData) {
             const r = this.renderer;
             if (!r || !this.engine) return null;
             if (r.selectedNodes.size !== 1) return null;
-            if (r.selectedOpenings.size || r.selectedVybaveni.size || r.selectedProstory.size) return null;
+            if (r.selectedOpenings.size || r.selectedVybaveni.size) return null;
 
             const uzelId = [...r.selectedNodes][0];
             // Klik na uzel vybere i jeho stěny — to je v pořádku. Širší výběr
@@ -2157,19 +2157,6 @@ function konceptKEditor(initialData) {
                     if (this.podkladJedeSVyberem?.() && (dx || dy)) {
                         this.podkladPosun(dx, dy);
                         this._podkladPohnut = true;
-                    }
-                    for (const prostor of (this.engine.prostory || [])) {
-                        for (const v of (prostor.vertices || [])) {
-                            if (v.refNodeId) continue; // hýbe se s wall nodem
-                            if (v.wallA && v.wallB) {
-                                // pozice se počítá z node průsečíku, ale fallback ano
-                                if (typeof v.fallbackX === 'number') v.fallbackX += dx;
-                                if (typeof v.fallbackY === 'number') v.fallbackY += dy;
-                                continue;
-                            }
-                            if (typeof v.x === 'number') v.x += dx;
-                            if (typeof v.y === 'number') v.y += dy;
-                        }
                     }
                     for (const vb of (this.engine.vybaveni || [])) {
                         if (Array.isArray(vb.stred)) {
@@ -3912,12 +3899,6 @@ function konceptKEditor(initialData) {
                     } else {
                         this.renderer.setSelection([], [], [], [hit.id]);
                     }
-                } else if (hit.type === 'prostor') {
-                    if (multiSelect) {
-                        this.renderer.toggleProstorSelection(hit.id);
-                    } else {
-                        this.renderer.setSelection([], [], [], [], [hit.id]);
-                    }
                 } else if (hit.type === 'mistnost' && !multiSelect) {
                     // Po gumovém výběru nebo posunu plátna klik místnost nevybírá (jako u prázdna)
                     if (this._justRubberBand) { this._justRubberBand = false; return; }
@@ -5028,8 +5009,7 @@ function konceptKEditor(initialData) {
                 const hasSel = this.renderer.selectedWalls.size > 0
                     || this.renderer.selectedOpenings.size > 0
                     || this.renderer.selectedNodes.size > 0
-                    || this.renderer.selectedVybaveni.size > 0
-                    || this.renderer.selectedProstory.size > 0;
+                    || this.renderer.selectedVybaveni.size > 0;
                 if (hasSel) {
                     this.engine.pushUndo();
                     for (const id of this.renderer.selectedOpenings) {
@@ -5041,19 +5021,11 @@ function konceptKEditor(initialData) {
                     for (const id of this.renderer.selectedVybaveni) {
                         this.engine.removeVybaveni(id);
                     }
-                    for (const id of this.renderer.selectedProstory) {
-                        this.engine.removeProstor(id);
-                    }
                     for (const id of this.renderer.selectedNodes) {
                         // Smazat všechny stěny napojené na uzel
                         const walls = this.engine.getNodeWalls(id);
                         for (const w of walls) this.engine.removeWall(w.id);
                     }
-                    // Po mazání stěn projít prostory a smazat ty, kterým chybí
-                    // dost platných referenčních vrcholů (refNodeId/wallA+wallB).
-                    // Jinak by po smazání všech stěn zůstaly viset názvy místností
-                    // bez geometrie.
-                    this.engine.cleanupOrphanProstory();
                     this.renderer.clearSelection();
                     this.renderer.render();
                     this.autoSave(preloz('ed_ui.krok_smazani_objektu'));

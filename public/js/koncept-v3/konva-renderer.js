@@ -130,7 +130,6 @@ class KonvaRenderer {
         this.selectedNodes = new Set();
         this.selectedOpenings = new Set();
         this.selectedVybaveni = new Set();
-        this.selectedProstory = new Set();
         this.selectedOddelovace = new Set();
         this._oddelovacShapes = [];
         this.selectedMistnosti = new Set();
@@ -1176,12 +1175,12 @@ class KonvaRenderer {
     // ═══════════════════════════════════════════════════════
     // SELECTION
     // ═══════════════════════════════════════════════════════
-    setSelection(wallIds = [], nodeIds = [], openingIds = [], vybaveniIds = [], prostoryIds = [], oddelovaceIds = [], mistnostiIds = []) {
+    // Páté místo patřilo prostorům z importu (model zrušen 9. 11. 2026), pořadí zůstává kvůli volajícím
+    setSelection(wallIds = [], nodeIds = [], openingIds = [], vybaveniIds = [], _drivProstory = [], oddelovaceIds = [], mistnostiIds = []) {
         this.selectedWalls = new Set(wallIds);
         this.selectedNodes = new Set(nodeIds);
         this.selectedOpenings = new Set(openingIds);
         this.selectedVybaveni = new Set(vybaveniIds);
-        this.selectedProstory = new Set(prostoryIds);
         this.selectedOddelovace = new Set(oddelovaceIds);
         this.selectedMistnosti = new Set(mistnostiIds);
         this.selectedSchody = new Set();
@@ -1198,7 +1197,6 @@ class KonvaRenderer {
         this.selectedMistnosti.clear();
         this.selectedSchody.clear();
         this.selectedPlochy.clear();
-        this.selectedProstory.clear();
         this.render();
     }
 
@@ -1211,14 +1209,6 @@ class KonvaRenderer {
         this.render();
     }
 
-    toggleProstorSelection(id) {
-        if (this.selectedProstory.has(id)) {
-            this.selectedProstory.delete(id);
-        } else {
-            this.selectedProstory.add(id);
-        }
-        this.render();
-    }
 
     toggleWallSelection(wallId) {
         if (this.selectedWalls.has(wallId)) {
@@ -1247,9 +1237,6 @@ class KonvaRenderer {
         }
         for (const v of (this.engine.vybaveni || [])) {
             this.selectedVybaveni.add(v.id);
-        }
-        for (const p of (this.engine.prostory || [])) {
-            this.selectedProstory.add(p.id);
         }
         this.render();
     }
@@ -1373,9 +1360,6 @@ class KonvaRenderer {
             if (vid) return { type: 'vybaveni', id: vid };
             cursor = cursor.getParent ? cursor.getParent() : null;
         }
-
-        const prostorId = konvaTarget?.getAttr?.('_prostorId');
-        if (prostorId) return { type: 'prostor', id: prostorId };
 
         // Bitmapa místností je jeden obraz — která místnost, řekne mřížka pod kurzorem
         if (konvaTarget?.getAttr?.('_mistnostiObraz') && this.stage) {
