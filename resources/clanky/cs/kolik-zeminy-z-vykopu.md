@@ -1,7 +1,7 @@
 ---
-titulek: Kolik zeminy zbude po výkopu základů: výpočet a kalkulačka
-popis: Spočítej si, kolik zeminy se při výkopu základů vykope, kolik se vrátí a kolik zbude. Kalkulačka zdarma a příklady pro dům na pasech i se sklepem.
-perex: U domu 12 × 10 m na rovině a na pasech se vykope asi 60 m³ zeminy, zhruba 21 m³ se vrátí a skoro 40 m³ zbude, z toho 30 m³ ornice. Se sklepem zbude skoro 400 m³.
+titulek: Kolik zeminy z výkopu základů zbude: výpočet a kalkulačka
+popis: Spočítej si, kolik zeminy z výkopu základů zbude a kolik aut ji odveze. Kalkulačka zeminy zdarma a příklady pro dům na pasech i se sklepem.
+perex: Kolik zeminy z výkopu zbude? U domu 12 × 10 m na rovině a na pasech se vykope asi 60 m³, zhruba 21 m³ se vrátí a skoro 40 m³ zbude, z toho 30 m³ ornice. Když ornice zůstane na zahradě, odvezou se 2 auta. Se sklepem zbude skoro 400 m³.
 publikovano: 2026-11-05
 overeno: 2026-11-09
 revize: 2026-11-09
@@ -29,7 +29,7 @@ souvisejici: koeficient-nakypreni-zeminy, zaklady-na-svahu, skryvka-ornice, neza
 
 Tenhle vzorec řekne, kolik zeminy vykopeš. Tebe ale zajímá, kolik se vrátí a kolik musíš odvézt.
 
-## Kolik zeminy zbude a odkud se bere
+## Kolik zeminy z výkopu zbude a odkud se bere
 
 ::rez-vykopu
 
@@ -58,6 +58,8 @@ Na korbě zabere hlína asi o čtvrtinu víc než v zemi a auto jí odveze 7 až
 
 Jeden stavebník u domu na pasech odvezl 9 aut, ornici přitom nechal na pozemku. Spára mu vyšla 1,2 m a rýhy se po dešti rozjely skoro o polovinu. Jinde, třeba ve svahu, odjely desítky aut. Rozměry domů blogy většinou nepíšou. Víc aut dělá i větší dům, zemina nevhodná do zásypu nebo štěrk pod domem. Nakypřený objem z kalkulačky nahoře vyděl sedmi, vyjde spíš horní odhad. Kolik auto uveze, řekne dopravce.
 
+::vyzva Spočítej to na svém domě a parcele | Nakresli skutečný tvar domu a v Česku k němu vyber parcelu z katastru. Editor podle domu a terénu odhadne výkop, dosypání i nakypřený objem k odvozu a po skrytí domu ukáže výkop ve 3D. Verze zdarma má 30 úprav denně a jeden projekt.
+
 ## Na svahu to vyjde jinak
 
 Kalkulačka počítá rovinu. Na svahu se [základy dělají po stupních](clanek:zaklady-na-svahu) a dole bývají vyšší. O objemu nejvíc rozhoduje, jak vysoko dům osadíš. V Česku editor zná terén parcely, základ dole protáhne od terénu až pod podlahu a výkop i dosypání odhadne. Stupně nepočítá a pod domem vždy dosype, u vysokého základu je zásyp spíš horní odhad.
@@ -71,5 +73,3 @@ Kalkulačka počítá rovinu. Na svahu se [základy dělají po stupních](clane
 Na zemědělské půdě v Česku zákon nařizuje ornici sejmout zvlášť a využít ji podle podmínek úřadu. Obvykle se vrací na zahradu. Vhodný výkopek použij na terénní úpravy, ty patří do projektu. Co odjede, bývá v Česku odpadem, proto odvoz nech na firmě s potvrzením, kam zemina jela.
 
 Čísla nepočítají přípojky, vsak, jímku či čistírnu, nádrž na dešťovku, příjezd, terasu ani chodníky. Ornici berou jen z pruhu 80 cm kolem domu a celou ji tam vracejí, i kde bude okapový chodník.
-
-::vyzva Spočítej to na svém domě | Nakresli skutečný tvar domu. V Česku k němu vybereš parcelu z katastru, výkop se spočítá podle domu i terénu a po skrytí domu ho uvidíš ve 3D. Verze zdarma má 30 úprav denně a jeden projekt.

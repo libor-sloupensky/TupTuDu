@@ -30,7 +30,7 @@ Objem v zemi vynásob koeficientem a máš objem na hromadě nebo na korbě. Hod
 
 **Rostlý objem** je to, co bylo v zemi. Podle něj se počítá, kolik se vykope a kolik se vrátí do zásypu, který se hutní po vrstvách.
 
-**Nakypřený objem** je to, co leží na hromadě a na korbě. Podle něj plánuješ místo na pozemku i odvoz. V Česku se odvoz účtuje různě: podle kubíků na korbě, jízd nebo hodin a kilometrů, skládka obvykle podle tun. Ptej se proto, o které kubíky jde.
+**Nakypřený objem** je to, co leží na hromadě a na korbě. Podle něj plánuješ místo na pozemku i [odvoz zeminy](clanek:kolik-zeminy-z-vykopu). V Česku se odvoz účtuje různě: podle kubíků na korbě, jízd nebo hodin a kilometrů, skládka obvykle podle tun. Ptej se proto, o které kubíky jde.
 
 ## Kolik to váží
 
