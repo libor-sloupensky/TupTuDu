@@ -6,6 +6,11 @@ předplatného přes **Paddle** — ten je prodejcem (Merchant of Record): faktu
 odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. WormUP s.r.o. dostává
 1× měsíčně výplatu se samofakturou. Poplatek 5 % + 0,50 $ za platbu, bez paušálu.
 
+## Kontrola 2026-11-09
+- Get started v dashboardu: ověření firmy (02 Verify) **hotové**; 01 a 03 „In progress".
+- `app.tuptudu.com` pořád `action_required` beze změny od 30. 10. 21:02 → Paddle čeká na nás, samo se to nepohne. Libor má v Checkout → Website approval zjistit důvod, případně napsat podpoře.
+- Host na app.tuptudu.com dostane titulní stránku (200), `/pricing`, `/terms`, `/refunds`, `/privacy` přesměrují na www.tuptudu.com.
+
 ## Kontrola 2026-11-05
 - `app.tuptudu.com` je v Paddlu dál `action_required` (poslední změna 30. 10. 21:02), `tuptudu.com` schválená. Výchozí odkaz pokladny prázdný, nastavit ho jde až po schválení domény.
 - V pořádku: ostrý účet, čtyři aktivní ceny, cíl zpráv aktivní, nepodepsaná zpráva na webhook dostane 403, `/billing` bez přihlášení vede na login. Náhled ceny (`transactions/preview`, nic nezakládá): CZ 249 a 990 Kč, DE 9,90 a 39,90 €, PL 43,48 a 175,23 zł.
