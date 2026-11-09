@@ -5,7 +5,7 @@ perex: Zemina po vykopání zabere víc místa než v zemi. Běžná hlína zhru
 publikovano: 2026-11-05
 overeno: 2026-11-05
 revize: 2026-11-05
-autor: tým TupTuDu
+autor: Libor z TupTuDu
 stav: koncept
 souvisejici: kolik-zeminy-z-vykopu
 - Technický dozor Brno: Zemina z výkopu (koeficienty) | https://dozor-brno.cz/poradna-vykopova-zemina.html

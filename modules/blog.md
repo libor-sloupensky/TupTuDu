@@ -43,7 +43,7 @@ perex: … (rychlá odpověď hned nahoře)
 publikovano: 2026-11-20
 overeno: 2026-11-20
 revize: 2026-11-20       ← datum odborné revize, bez něj nejde zveřejnit
-autor: tým TupTuDu
+autor: Libor z TupTuDu
 stav: koncept            ← jen lokálně; na produkci je vidět až `zverejneno` a datum publikovano ≤ dnes
 obrazek: /img/clanky/…   ← náhled při sdílení, JPEG nebo PNG
 souvisejici: adresa, adresa
@@ -186,7 +186,7 @@ Editor a kalkulačka počítají stejně i se štěrkem a prodlouženým základ
 
 ## Otevřené body
 
-- Libor: přečíst článek 1, dodat přibližná čísla z vlastního výkopu a říct, kdo články podepisuje. Zatím „tým TupTuDu“.
+- Libor: přečíst článek 1 a dodat přibližná čísla z vlastního výkopu. Články podepisuje „Libor z TupTuDu“ (Libor 9. 11. 2026).
 - Libor: export z Plánovače klíčových slov.
 - Hodnoty podle země: Libor souhlasí se směrem z `modules/stavebni-parametry.md`, ale chce důkladnější plán. Odloženo, teď se nedělá.
 - 3D ukázka přes sdílený odkaz v článku: `X-Frame-Options: SAMEORIGIN` vložení na www dovolí, chce to demo projekt na produkci

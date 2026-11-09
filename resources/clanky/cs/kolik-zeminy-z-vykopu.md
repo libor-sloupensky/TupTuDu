@@ -5,7 +5,7 @@ perex: U domu 12 × 10 m na rovině a na pasech se vykope asi 60 m³ zeminy, zhr
 publikovano: 2026-11-05
 overeno: 2026-11-05
 revize: 2026-11-05
-autor: tým TupTuDu
+autor: Libor z TupTuDu
 stav: koncept
 obrazek: /img/clanky/kolik-zeminy-z-vykopu/vykop-svah.jpg
 souvisejici: koeficient-nakypreni-zeminy, zaklady-na-svahu, skryvka-ornice, nezamrzna-hloubka-zakladu
