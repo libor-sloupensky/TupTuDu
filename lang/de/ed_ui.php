@@ -13,7 +13,7 @@ return [
     'dvere_prave' => 'Rechts',
     'dvere_leve' => 'Links',
     'dvere_dvoukridle' => 'Zweiflügelig',
-    'dvere_posuvne' => 'Schiebetür in Wand',
+    'dvere_posuvne' => 'Schiebetür in der Wand',
     'dvere_bez_kridla' => 'Öffnung ohne Flügel',
     'konec_na_stene' => 'an Wand :stena',
     'konec_volny' => 'frei',

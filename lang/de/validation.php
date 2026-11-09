@@ -129,7 +129,7 @@ return [
     'string' => 'Das Feld :attribute muss eine Zeichenkette sein.',
     'timezone' => 'Das Feld :attribute muss eine gültige Zeitzone sein.',
     'unique' => 'Der Wert für :attribute wird bereits verwendet.',
-    'uploaded' => 'Das Feld :attribute konnte nicht hochgeladen werden.',
+    'uploaded' => 'Die Datei :attribute konnte nicht hochgeladen werden.',
     'url' => 'Das Feld :attribute muss eine gültige URL sein.',
     'uuid' => 'Das Feld :attribute muss eine gültige UUID sein.',
 

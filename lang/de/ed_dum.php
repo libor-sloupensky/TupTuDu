@@ -72,7 +72,7 @@ return [
         'planek_usazen' => 'Plan am unteren Geschoss ausgerichtet.',
         'pribyla_nosna' => 'In :nazev wurde eine tragende Wand ergänzt.',
         'schody_bez_podlazi' => 'Die Treppe führt ins Geschoss über dem aktiven. Füge zuerst ein höheres Geschoss hinzu.',
-        'schody_odstraneny' => 'Die Treppe zu diesem Boden wurde entfernt.',
+        'schody_odstraneny' => 'Die Treppe zu dieser Bodenfläche wurde entfernt.',
     ],
 
     // Ruční usazení plánku dvěma body
@@ -123,7 +123,7 @@ return [
         'vykop' => ':objem Aushub',
         'chybi_vykop' => 'kein Fundament, :objem Aushub',
         'chybi' => 'kein Fundament',
-        'chybi_upozorneni' => 'Kein Fundament: :seznam. Das Haus reicht hier nicht bis zum Gelände, deshalb wird hier nicht gegraben. Die Option „Fundament bis zum Boden“ führt es nach unten.',
+        'chybi_upozorneni' => 'Kein Fundament: :seznam. Das Haus reicht hier nicht bis zum Gelände, deshalb wird hier nicht gegraben. Die Option „Fundament bis zum Gelände“ führt es bis nach unten.',
         'nad_terenem' => 'Das Fundament ragt bis zu :vyska m über das Gelände.',
         'teren_rovina' => 'Gelände: eben, Höhendaten sind nicht verfügbar.',
         'teren_vyska' => 'Gelände unter dem Haus: :vyska m ü. M. (laut Höhendaten)',

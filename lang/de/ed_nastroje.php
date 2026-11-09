@@ -85,7 +85,7 @@ return [
         'neni_co_sdilet' => 'Nichts zu teilen, das Haus hat keine Wände.',
         'odkaz_neulozen' => 'Der Link konnte nicht gespeichert werden.',
         'odkaz_aktualni' => 'Der Link zeigt den aktuellen Stand.',
-        'vypnout_potvrzeni' => 'Link deaktivieren? Wer ihn hat, sieht das Projekt nicht mehr. Erneutes Teilen erhält eine neue Adresse.',
+        'vypnout_potvrzeni' => 'Link deaktivieren? Wer ihn hat, sieht das Projekt nicht mehr. Teilst du erneut, bekommt der Link eine neue Adresse.',
         'vypnuti_http' => 'Link deaktivieren: HTTP :status',
         'chybi_plan' => 'Der Grundriss eines Geschosses fehlt.',
         'neplatny_model' => 'Ungültiges 3D-Modell.',
@@ -109,7 +109,7 @@ return [
 
     // Katastr, výškový profil a vysvětlení pojmů (KonceptV3Controller, Katastr\Dmr5gService)
     'katastr' => [
-        'parcela_nenalezena' => 'Parzelle nicht gefunden. Prüfe die Parzellennummer und das Katastergebiet.',
+        'parcela_nenalezena' => 'Parzelle nicht gefunden. Prüfe die Parzellennummer und die Katastralgemeinde.',
         'pojem_kratky' => 'Begriff zu kurz',
         'ai_nedostupna' => 'KI ist nicht verfügbar',
         'ai_selhala' => 'Die KI-Antwort ist fehlgeschlagen',
