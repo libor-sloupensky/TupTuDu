@@ -14,7 +14,9 @@
                 <div :style="{ background: hex }" data-barva-nova><span>{{ __('ed_sablona.barva.nova') }}</span></div>
             </div>
             <div class="kk-barva-kod">
-                <span x-text="hex"></span>
+                <input type="text" class="kk-barva-hex" data-barva-hex :value="hex" pattern="#?[0-9a-fA-F]{6}" maxlength="7" spellcheck="false" autocomplete="off"
+                       title="{{ __('ed_sablona.barva.kod_tip') }}" aria-label="{{ __('ed_sablona.barva.kod') }}"
+                       @focus="$event.target.select()" @change="zadejKod($event.target.value); if (!ralChyba) $event.target.value = hex" @keydown.enter.prevent="$event.target.blur()">
                 <button type="button" x-show="!ralPresny && ralNejblizsi" class="underline hover:text-primary" title="{{ __('ed_sablona.barva.ral_presny_tip') }}" data-barva-nejblizsi @click="vyber(ralNejblizsi.hex)">{{ __('ed_sablona.barva.ral_presny') }}</button>
             </div>
 

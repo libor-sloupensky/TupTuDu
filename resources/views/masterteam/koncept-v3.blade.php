@@ -65,6 +65,7 @@
         cursor: pointer; user-select: none; list-style: none;
     }
     .kk-section-hlava::-webkit-details-marker { display: none; }
+    .kk-sekce-ik { flex-shrink: 0; margin-right: -2px; color: var(--c-text-secondary); }
     .kk-sipka { margin-left: auto; flex-shrink: 0; color: var(--c-text-secondary); transition: transform .2s; }
     .kk-section[open] > .kk-section-hlava .kk-sipka { transform: rotate(180deg); }
     .kk-section[open] > .kk-section-hlava { border-bottom: 1px solid var(--c-border); }
@@ -146,7 +147,8 @@
     .kk-barva-vzorek > * { display: flex; align-items: flex-end; padding: 0 0 0 4px; border: 0; margin: 0; min-width: 0; }
     .kk-barva-vzorek span { font-size: 10px; line-height: 14px; padding: 0 4px; margin-bottom: 3px; border-radius: 3px; background: rgba(255,255,255,.85); color: #374151; }
     .kk-barva-vzorek button { cursor: pointer; }
-    .kk-barva-kod { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; color: var(--c-text); }
+    .kk-barva-kod { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 8px; color: var(--c-text); }
+    .kk-barva-hex { width: 9ch; padding: 1px 4px; border: 1px solid #9ca3af; border-radius: 4px; font: inherit; font-variant-numeric: tabular-nums; color: var(--c-text); background: var(--c-surface); }
     .kk-barva-posuvnik { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 12px; font-weight: 400; color: #6b7280; }
     .kk-barva-posuvnik > span { display: flex; justify-content: space-between; }
     .kk-barva-posuvnik output { color: var(--c-text); font-variant-numeric: tabular-nums; }
@@ -292,8 +294,9 @@
                 {{-- Rozsvícená je vždy jen jedna ikona: s otevřeným katalogem svítí Katalog místo Výběru --}}
                 <button @click="nastroj = 'vyber'; panelOpen.katalog && prepniKatalog()" class="kk-tl" :class="nastroj === 'vyber' && !panelOpen.katalog && 'kk-tl-aktivni'"
                         data-tip="{{ __('ed_sablona.lista.vyber') }}">
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="1" y="1" width="14" height="14" rx="1" stroke-dasharray="3 2"/>
+                    {{-- šipka v rámečku --}}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2.5" y="2.5" width="15" height="15" rx="1.5" stroke-dasharray="3.5 2.5"/><path d="M11 10.5v11l3-2.9 2 4.2 1.9-.9-2-4.1h4.1z" fill="currentColor" stroke-width="1.2"/>
                     </svg>
                 </button>
                 {{-- Posun (ruka) --}}
@@ -309,9 +312,9 @@
                 {{-- Stěna --}}
                 <button @click="nastroj = 'stena'" class="kk-tl" :class="nastroj === 'stena' && 'kk-tl-aktivni'"
                         data-tip="{{ __('ed_sablona.lista.stena') }}">
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="2" y1="14" x2="14" y2="2"/>
-                        <line x1="1" y1="13" x2="13" y2="1"/>
+                    {{-- roh stěny v půdorysu --}}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3.5 20.5v-16h17v4.5H8v11.5z" fill="currentColor" fill-opacity=".22"/>
                     </svg>
                 </button>
                 {{-- Metr --}}
@@ -326,11 +329,9 @@
                 {{-- Otvor --}}
                 <button @click="nastroj = nastroj === 'otvor' ? 'vyber' : 'otvor'" class="kk-tl" :class="nastroj === 'otvor' && 'kk-tl-aktivni'"
                         data-tip="{{ __('ed_sablona.lista.otvor') }}">
-                    {{-- zeď v řezu s proraženým otvorem --}}
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-                        <line x1="1" y1="5" x2="5" y2="5"/><line x1="1" y1="11" x2="5" y2="11"/>
-                        <line x1="11" y1="5" x2="15" y2="5"/><line x1="11" y1="11" x2="15" y2="11"/>
-                        <line x1="5" y1="4" x2="5" y2="12"/><line x1="11" y1="4" x2="11" y2="12"/>
+                    {{-- dveře a okno --}}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2.5" y="5" width="8.5" height="16" rx="1"/><circle cx="8.6" cy="13.4" r=".9" fill="currentColor"/><rect x="13.5" y="5" width="8" height="8" rx="1"/><path d="M17.5 5v8M13.5 9h8"/>
                     </svg>
                 </button>
                 {{-- Schodiště --}}
@@ -582,7 +583,6 @@
                                 <div class="flex items-center gap-1">
                                     <span class="text-gray-600">{{ __('ed_sablona.katalog.rozmery') }}</span>
                                     <button type="button" @click="katalogRetez = !katalogRetez" data-katalog-retez :aria-pressed="katalogRetez" class="border border-gray-500 rounded px-1 hover:bg-gray-100"
-                                            :style="katalogRetez ? 'color:var(--c-primary);border-color:var(--c-primary)' : ''"
                                             :data-tip-below="katalogRetez ? preloz('ed_sablona.katalog.retez_spojeno') : preloz('ed_sablona.katalog.retez_rozpojeno')">
                                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                             <path d="M6.5 9.5l3-3"/>
@@ -609,12 +609,13 @@
                                 <div class="flex items-center gap-1">
                                     <button type="button" @click="katalogOtoc()" class="border border-gray-500 rounded px-2 hover:bg-gray-100" data-katalog-otoc>{{ __('ed_sablona.spolecne.otocit_90') }}</button>
                                     <button type="button" @click="katalogKopie()" class="border border-gray-500 rounded px-2 hover:bg-gray-100" data-katalog-kopie>{{ __('ed_sablona.katalog.kopie') }}</button>
-                                    {{-- Paleta potahu se rozbalí přes plochu: panel nesmí změnit výšku, jinak se plocha posune a kus pod myší uteče --}}
-                                    <div x-show="inspector.barvy.length" class="relative" x-data="{ paleta: false }" @click.outside="paleta = false" data-katalog-barvy>
-                                        <button type="button" @click="paleta = !paleta" :aria-expanded="paleta" class="border border-gray-500 rounded px-2 hover:bg-gray-100 flex items-center gap-1" data-katalog-paleta>
+                                    {{-- Paleta potahu se rozbalí přes plochu: panel nesmí změnit výšku, jinak se plocha posune a kus pod myší uteče.
+                                         Otevírá se vedle panelu, pod ním by s nástrojem na barvu přetekla přes spodní hranu. --}}
+                                    <div x-show="inspector.barvy.length" x-data="{ paleta: false, poloha: {} }" @click.outside="paleta = false" data-katalog-barvy>
+                                        <button type="button" @click="paleta = !paleta; if (paleta) poloha = katalogPaletaPoloha($el)" :aria-expanded="paleta" class="border border-gray-500 rounded px-2 hover:bg-gray-100 flex items-center gap-1" data-katalog-paleta>
                                             <span class="rounded-full border border-gray-500" :style="'width:11px;height:11px;background:' + inspector.barvaHex"></span>{{ __('ed_sablona.katalog.barva') }}
                                         </button>
-                                        <div x-show="paleta" x-cloak class="absolute z-30 left-0 mt-1 p-1.5 bg-white border border-gray-300 rounded shadow flex flex-col gap-1.5" style="width:240px">
+                                        <div x-show="paleta" x-cloak class="z-30 p-1.5 bg-white border border-gray-300 rounded shadow flex flex-col gap-1.5" :style="poloha" data-katalog-paleta-okno>
                                             <button type="button" @click="katalogBarva(''); paleta = false" data-katalog-barva="" :aria-pressed="!inspector.barva" class="flex items-center gap-1.5 border rounded px-1.5 py-0.5 hover:bg-gray-100 self-start"
                                                     :style="!inspector.barva ? 'border-color:var(--c-primary);outline:1px solid var(--c-primary)' : 'border-color:#6b7280'">
                                                 <span class="rounded-full border border-gray-500" :style="'width:14px;height:14px;background:' + inspector.puvodniCss"></span>{{ __('ed_sablona.katalog.barva_puvodni') }}
@@ -1104,6 +1105,7 @@
              tužka rozbalí úpravy právě toho řádku, přidání je oddělené a podlaží vzniká až potvrzením. --}}
         <details class="kk-section" :open="panelOpen.plochy !== false" @toggle="panelOpen.plochy = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
+                <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21 8.5l-9 5-9-5z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 16.5 9 5 9-5"/></svg>
                 <span>{{ __('ed_sablona.podlazi.nadpis') }}</span>
                 <span x-show="seznamPodlazi.length > 1 && panelOpen.plochy === false" class="kk-pocet" x-text="nazevAktivniho"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -1360,6 +1362,7 @@
         {{-- Katalog nábytku a vybavení, modules/katalog.md --}}
         <details id="kk-sekce-katalog" class="kk-section" :open="panelOpen.katalog" @toggle="panelOpen.katalog = $el.open; ulozitPanely(); if ($el.open) _katalogNacti(); else _katalogZrusVyber()">
             <summary class="kk-section-hlava">
+                <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="scale(1.5)" stroke-width="1.13"><path d="M3.5 7.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v2"/><path d="M1.5 9a1.5 1.5 0 0 1 3 0v1.5h7V9a1.5 1.5 0 0 1 3 0v3.5h-13z"/><path d="M3.5 12.5V14M12.5 12.5V14"/></g></svg>
                 <span>{{ __('ed_sablona.katalog.nadpis') }}</span>
                 <span x-show="katalog" class="kk-pocet" x-text="katalog?.polozky.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -1399,6 +1402,7 @@
 
         <details class="kk-section" :open="panelOpen.parcela" @toggle="panelOpen.parcela = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
+                <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.2 9 3.5l6 2.7 6-2.7v14.3l-6 2.7-6-2.7-6 2.7z"/><path d="M9 3.5v14.3M15 6.2v14.3"/></svg>
                 <span>@funkce('katastr') {{ __('ed_sablona.parcela.nadpis') }} @else {{ __('ed_sablona.parcela.mrizka') }} @endfunkce</span>
                 <span x-show="katastrParcely.length > 0" class="kk-pocet" x-text="katastrParcely.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -1505,6 +1509,7 @@
         {{-- Objekty --}}
         <details class="kk-section" :open="panelOpen.objekty" @toggle="panelOpen.objekty = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
+                <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="1.2" fill="currentColor"/><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="5" cy="18" r="1.2" fill="currentColor"/><path d="M9.5 6h11M9.5 12h11M9.5 18h11"/></svg>
                 <span>{{ __('ed_sablona.objekty.nadpis') }}</span>
                 <span x-show="seznamObjektu.length > 0" class="kk-pocet" x-text="seznamObjektu.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -1562,6 +1567,7 @@
         {{-- Podklad (import půdorysu z výkresu) --}}
         <details class="kk-section" :open="panelOpen.podklad" @toggle="panelOpen.podklad = $el.open; ulozitPanely(); if ($el.open) impNactiDrive()">
             <summary class="kk-section-hlava">
+                <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="13" height="13" rx="1" stroke-dasharray="3 2"/><rect x="8" y="3" width="13" height="13" rx="1" fill="currentColor" fill-opacity=".12"/></svg>
                 <span>{{ __('ed_sablona.podklad.nadpis') }}</span>
                 <span x-show="podklad" class="kk-pocet">1</span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -1621,6 +1627,7 @@
         {{-- Export a sdílení: obrázky vznikají v prohlížeči, odkaz je hotový stav jen pro čtení (modules/sdileni.md) --}}
         <details class="kk-section" data-sekce-export :open="panelOpen.export" @toggle="panelOpen.export = $el.open; ulozitPanely(); if ($el.open && !sdileni) nactiSdileni()">
             <summary class="kk-section-hlava">
+                <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/></svg>
                 <span>{{ __('ed_sablona.export.nadpis') }}</span>
                 <span x-show="sdileni?.aktivni" class="kk-pocet" title="{{ __('ed_sablona.export.odkaz_zapnuty') }}">{{ __('ed_sablona.export.odkaz') }}</span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -1679,6 +1686,7 @@
         {{-- Historie --}}
         <details class="kk-section" :open="panelOpen.historie" @toggle="panelOpen.historie = $el.open; ulozitPanely()">
             <summary data-historie-souhrn class="kk-section-hlava">
+                <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5"/><path d="M3.5 3.8v4.7h4.7"/><path d="M12 7.5V12l3.2 1.8"/></svg>
                 <span>{{ __('ed_sablona.historie.nadpis') }}</span>
                 {{-- Po Zpět je vidět i u sbaleného panelu, na kterém kroku se stojí --}}
                 <span x-show="historie.length > 0" class="kk-pocet"

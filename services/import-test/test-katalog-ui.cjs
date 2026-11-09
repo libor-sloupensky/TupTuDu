@@ -260,6 +260,17 @@ const kontrola = (popis, podminka, detail = '') => {
             d.katalogBarva('#3366aa'); await c(); const vlastni = d.engine.vybaveni[0].barva, hex = d.inspector.barvaHex;
             const mapa = await Katalog3d.prebarvi(v.katalog, '#3366aa');
             const nastroj = !!document.querySelector('[data-katalog-vlastni] [x-data], [data-katalog-vlastni] button');
+            // Paleta se otevře vpravo vedle panelu, kód #rrggbb jde vložit a barva se tím přenese
+            document.querySelector('[data-katalog-paleta]').click(); await c();
+            const okno = document.querySelector('[data-katalog-paleta-okno]').getBoundingClientRect(), pan = document.getElementById('kk-panel-otvoru').getBoundingClientRect();
+            const vedle = okno.left >= pan.right && Math.abs(okno.top - pan.top) < 2 && okno.bottom <= innerHeight;
+            const retez = document.querySelector('[data-katalog-retez]').getAttribute('style') || '';
+            document.querySelector('[data-katalog-vlastni] [data-barva-symbol]').click(); await c();
+            const kod = document.querySelector('[data-katalog-vlastni] [data-barva-hex]'); kod.focus(); kod.value = 'A0BBA0'; kod.dispatchEvent(new Event('change', { bubbles: true })); kod.blur(); await c();
+            const prenos = d.engine.vybaveni[0].barva, kodPole = kod.value;
+            const okno2 = document.querySelector('[data-katalog-paleta-okno]').getBoundingClientRect();
+            const vejde = okno2.bottom <= innerHeight + 1;
+            document.querySelector('[data-katalog-paleta]').click(); await c();
             d.katalogBarva('zelena'); await c();
             const obj = d.seznamObjektu.find(o => o.id === v.id);
             d.renderer.clearSelection(); d._selectionTick++; await c();
@@ -269,8 +280,10 @@ const kontrola = (popis, podminka, detail = '') => {
             const stitek = d.renderer._labelShapes?.get('id_' + v.id)?.text?.();
             d.renderer.showIds = znackyByly; d.renderer.render();
             const karty = document.querySelectorAll('[data-katalog-prebarvit]').length, sMaskou = d.katalog.polozky.filter(x => x.maska).length;
-            return { puvodni, vlastni, hex, mapa: mapa.size, nastroj, oznaceni: obj?.oznaceni, typ: obj?.type, vybrany, stitek, karty, sMaskou }; })()`);
+            return { puvodni, vlastni, hex, mapa: mapa.size, nastroj, vedle, retez, prenos, kodPole, vejde, oznaceni: obj?.oznaceni, typ: obj?.type, vybrany, stitek, karty, sMaskou }; })()`);
         kontrola('původní barva, vlastní barva z nástroje na barvu', barva2.puvodni === '' && barva2.vlastni === '#3366aa' && barva2.hex === '#3366aa' && barva2.mapa > 0 && barva2.nastroj, JSON.stringify(barva2));
+        kontrola('paleta vedle panelu, celá v okně, řetízek bez oranžové', barva2.vedle && barva2.vejde && !/primary/.test(barva2.retez), JSON.stringify(barva2));
+        kontrola('kód barvy #a0bba0 jde vložit a barva se přenese', barva2.prenos === '#a0bba0' && barva2.kodPole === '#a0bba0', JSON.stringify(barva2));
         kontrola('kus má označení M, je v Objektech a jde z nich vybrat', /^M\d+$/.test(barva2.oznaceni || '') && barva2.typ === 'kus' && barva2.vybrany && barva2.stitek === barva2.oznaceni, JSON.stringify(barva2));
         const lista = await p.vyhodnot(`(async () => { const d = ${D}, c = () => new Promise(r => setTimeout(r, 150)), v = d.engine.vybaveni[0];
             const svit = () => [...document.querySelectorAll('.kk-lista > div:first-child .kk-tl-aktivni')].length;
@@ -334,8 +347,8 @@ const kontrola = (popis, podminka, detail = '') => {
             for (const typ of ['pointerdown', 'pointerup']) pl.dispatchEvent(new PointerEvent(typ, { clientX: r.left + 5, clientY: r.top + 5, button: 0, bubbles: true }));
             await c(300);
             return { vybrany, panel, obrys, modra, obrysPo, barva: v.barva, zrusen: !d.katalogObjekt }; })()`);
-        kontrola('ve 3D jde kus vybrat klikem, má obrys a panel', klik3d.vybrany && klik3d.panel && klik3d.obrys, JSON.stringify(klik3d));
-        kontrola('ve 3D jde kus přebarvit, klik vedle výběr zruší', klik3d.modra && klik3d.obrysPo && klik3d.barva === 'zelena' && klik3d.zrusen, JSON.stringify(klik3d));
+        kontrola('ve 3D jde kus vybrat klikem, má panel a žádný obrys', klik3d.vybrany && klik3d.panel && !klik3d.obrys, JSON.stringify(klik3d));
+        kontrola('ve 3D jde kus přebarvit, klik vedle výběr zruší', klik3d.modra && !klik3d.obrysPo && klik3d.barva === 'zelena' && klik3d.zrusen, JSON.stringify(klik3d));
 
         console.log('\n6) Model pro sdílený odkaz');
         const zapec = await p.vyhodnot(`(() => { const d = ${D}; const m = d._zapecModel(); return { objektu: (m.objekty || []).length, prvni: m.objekty?.[0], trojuhelniku: m.meshe.reduce((s, k) => s + k.pozice.length, 0) }; })()`);

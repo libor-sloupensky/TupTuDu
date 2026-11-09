@@ -122,8 +122,19 @@
                 this.potvrd();
             },
 
-            /** Pole RAL: stačí čtyři číslice, z našeptávače přijde celý název. */
+            /** Kód barvy #rrggbb (i bez mřížky, i zkrácený #abc): jde tak přenést barvu z jiné části nebo odjinud. */
+            zadejKod(text) {
+                const t = String(text).trim().replace(/^#/, '').toLowerCase();
+                if (!t) { this.ralChyba = ''; return; }
+                if (!/^([0-9a-f]{3}|[0-9a-f]{6})$/.test(t)) { this.ralChyba = preloz('ed_sablona.barva.kod_chyba'); return; }
+                const hex = '#' + (t.length === 3 ? t.replace(/./g, '$&$&') : t);
+                if (hex === this.hex) { this.ralChyba = ''; return; }
+                this.vyber(hex);
+            },
+
+            /** Pole RAL: stačí čtyři číslice, z našeptávače přijde celý název. Vložený kód #rrggbb se vezme taky. */
             zadejRal(text) {
+                if (/^\s*#/.test(String(text))) { this.zadejKod(text); return; }
                 const kod = (String(text).match(/\d{4}/) || [])[0];
                 if (!String(text).trim()) { this.ralChyba = ''; return; }
                 const r = kod && (window.RAL_KLASIK || []).find(x => x.kod === kod);

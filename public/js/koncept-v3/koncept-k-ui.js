@@ -6683,7 +6683,6 @@ function konceptKEditor(initialData) {
             }
             this._buildTerrain3D();
             this._build3d();
-            this._oznacKus3d?.();
             this._resize3d();
         },
 

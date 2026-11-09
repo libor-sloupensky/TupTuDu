@@ -590,26 +590,16 @@
             });
         },
 
-        /** Obrys vybraného kusu ve 3D: kvádr podle rozměrů kusu, otáčí se s ním. */
-        _oznacKus3d() {
-            const _3d = window._kk3d;
-            if (!_3d?.wallGroup) return;
-            const id = this.katalogObjekt?.id;
-            _3d.wallGroup.traverse((o) => {
-                if (!o.userData?.kus) return;
-                const stary = o.children.find(c => c.userData.vyber3d);
-                if (stary && (o.userData.kus !== id)) { o.remove(stary); stary.geometry.dispose(); stary.material.dispose(); }
-                if (o.userData.kus === id && !stary) {
-                    const p = o.userData.katalog;
-                    const obrys = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(p.sirka, p.vyska, p.hloubka)),
-                        new THREE.LineBasicMaterial({ color: getComputedStyle(document.documentElement).getPropertyValue('--c-primary').trim() || 'orange', depthTest: false }));
-                    obrys.position.y = p.vyska / 2;
-                    obrys.renderOrder = 10;
-                    obrys.userData.vyber3d = true;
-                    o.add(obrys);
-                }
-            });
-            _3d.kresliDo = performance.now() + 300;
+        /** Poloha palety potahu: vpravo vedle panelu kusu, když se tam nevejde, vlevo. Shora zarovnaná s panelem
+         *  a omezená výškou okna, ať se rozbalený nástroj na barvu nedostane pod spodní hranu. */
+        katalogPaletaPoloha(prvek) {
+            const panel = prvek.closest('#kk-panel-otvoru')?.getBoundingClientRect();
+            if (!panel) return {};
+            const SIRKA = 240, MEZERA = 6, OKRAJ = 8;
+            let x = panel.right + MEZERA;
+            if (x + SIRKA > window.innerWidth - OKRAJ) x = Math.max(OKRAJ, panel.left - MEZERA - SIRKA);
+            const y = Math.max(OKRAJ, Math.min(panel.top, window.innerHeight - OKRAJ - 240));
+            return { position: 'fixed', left: x + 'px', top: y + 'px', width: SIRKA + 'px', maxHeight: (window.innerHeight - y - OKRAJ) + 'px', overflowY: 'auto' };
         },
     };
 })();
