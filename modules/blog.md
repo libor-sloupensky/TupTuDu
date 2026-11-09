@@ -159,7 +159,8 @@ Copywriter s daty pracuje sám, Liborovi předává závěr, ne čísla k vyhodn
 | Kdy | Nástroj | Co zjistit |
 |---|---|---|
 | výběr tématu | Search Console (`get_search_analytics`, `get_search_by_page_query`) | na jaké dotazy se už zobrazujeme, které stránky soupeří o stejné slovo |
-| výběr tématu | našeptávač Seznamu, Plánovač klíčových slov (ručně, API vrací 403, viz Jak se data sbírala) | jak lidé dotaz skutečně píšou, srovnání variant |
+| výběr tématu | Plánovač klíčových slov přes API: `py services/klicova-slova.py` (objemy pro `services/clanky/klicova-slova.txt`), `--napady "slovo"` (další dotazy) | průměrný měsíční počet hledání v Česku a průběh po měsících, CSV v `storage/app/klicova-slova/` |
+| výběr tématu | našeptávač Seznamu | jak lidé dotaz skutečně píšou, srovnání variant |
 | po zveřejnění | Search Console (`inspect_url_enhanced`, sitemapa) | je článek v indexu, jinak požádat o indexování |
 | 2 až 4 týdny po zveřejnění | Search Console | zobrazení, proklik, pozice. Při nízkém prokliku upravit titulek a popis |
 | průběžně | GA4 (`run_report`, události `clanek_vyzva`, `clanek_poslat_odkaz`, `kalkulacka_pouzita`) a DB (`zdroj_registrace`) | vede článek k registraci a k projektu se stěnami (část Měření) |
@@ -253,8 +254,10 @@ Editor a kalkulačka počítají stejně i se štěrkem a prodlouženým základ
 
 ## Jak se data sbírala
 
-- **Objemy z Googlu chybí.** `generateKeywordHistoricalMetrics` vrací 403 `DEVELOPER_TOKEN_NOT_APPROVED`: „not allowed for
-  use with explorer access“. Pro API by byl potřeba stupeň Basic, ručně to jde v Plánovači v Google Ads. Seznam dotazů je na stránce s plánem.
+- **Objemy z Googlu** jdou od 9. 11. 2026 přímo přes API (Cloud projekt má stupeň Basic): `services/klicova-slova.py`, Česko
+  a čeština, Google je zaokrouhluje (10, 20 … 1 300) a slabé dotazy vrací bez dat (0). První měření 9. 11. 2026: nejvíc
+  výpočet schodiště a pultová střecha (1 300), půdorys domu (1 000), typy střech (880), výška schodu (720), dům ve svahu (590).
+  Dotazy kolem výpočtu zeminy mají 0 až 10, nejsilnější je odvoz zeminy (90) a jeho varianty s cenou (40 až 50).
 - **Našeptávač Seznamu** vrací u dotazů pole `_count`. Období neuvádí, slouží jen ke srovnání dotazů mezi sebou. Seznam má
   v Česku 13 % hledání (Statcounter, říjen 2026).
 - **Soupeři ve vyhledávání** nejsou aplikace z analýzy konkurence: kolikmaterialu.cz, dozor-brno.cz, AIkatastr,
@@ -263,7 +266,6 @@ Editor a kalkulačka počítají stejně i se štěrkem a prodlouženým základ
 ## Otevřené body
 
 - Libor: přečíst článek 1 a dodat přibližná čísla z vlastního výkopu. Články podepisuje „Libor z TupTuDu“ (Libor 9. 11. 2026).
-- Libor: export z Plánovače klíčových slov.
 - Hodnoty podle země: Libor souhlasí se směrem z `modules/stavebni-parametry.md`, ale chce důkladnější plán. Odloženo, teď se nedělá.
 - 3D ukázka přes sdílený odkaz v článku: `X-Frame-Options: SAMEORIGIN` vložení na www dovolí, chce to demo projekt na produkci
   (ne Klemov) a vyzkoušet na telefonu. V článku 1 zatím jen obrázek.

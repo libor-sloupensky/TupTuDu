@@ -61,7 +61,7 @@ netlačit** (produkt čeká mnoho úprav).
 
 ## Co dál (až bude čas, rozhodnuto 2026-11-01 odložit)
 - **4. 11. 2026 Libor zadal plán SEO článků, viz `modules/blog.md`.** Stav indexace ten den: 0 zobrazení, titulka
-  naposledy procházená 1. 11. ještě s `noindex`. Plánovač klíčových slov přes API nejde (stupeň Explorer vrací 403).
+  naposledy procházená 1. 11. ještě s `noindex`. Plánovač klíčových slov přes API od 9. 11. 2026 jde (stupeň Basic, `services/klicova-slova.py`).
 - Analýzu zatím nepouštět — data v GA4 se sbírají od 1. 11. 2026, indexace teprve začíná, kampaně
   žádné. Priorita je dodělat produkt a získat návštěvníky.
 - Pravidla pro „analyzuj web" do CLAUDE.md (co stáhnout, co smí Claude měnit sám, rozpočty v Ads
@@ -105,6 +105,7 @@ netlačit** (produkt čeká mnoho úprav).
   Test (jen testovací účty) → Explorer (produkce, 2 880 operací/den, schvaluje se automaticky)
   → Basic (15 000/den, vyžaduje ověření značky; nutné pro Plánovač klíčových slov) → Standard.
   Pro jeden účet stačí Explorer. Manager účet (MCC) není potřeba.
+  **Stav: Basic od 9. 11. 2026** (Libor ověřil značku projektu a požádal v konzoli, schváleno během minut).
 - Oficiální MCP Googlu jsou **jen pro čtení**. Zápisy do Ads (kampaně, rozpočty) bude dělat
   vlastní skript nad Google Ads API, vždy jen po výslovném potvrzení.
 
