@@ -10,7 +10,8 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
 - Get started v dashboardu: ověření firmy (02 Verify) **hotové**; 01 a 03 „In progress".
 - `app.tuptudu.com` pořád `action_required` beze změny od 30. 10. 21:02 → Paddle čeká na nás, samo se to nepohne. Libor má v Checkout → Website approval zjistit důvod, případně napsat podpoře.
 - Host na app.tuptudu.com dostane titulní stránku (200), `/pricing`, `/terms`, `/refunds`, `/privacy` přesměrují na www.tuptudu.com.
-- Mail Paddlu z 30. 10. 22:02 (na libor@wormup.com): web „offline, bez HTTPS, nebo za login wall / geo-blokací / ochranou proti robotům". Oprava f425c8b je z 21:28 téhož dne, Paddle ji ale znovu nezkontroloval (Resubmit neproběhl). Odpovídá se na jejich mail, podpora jinak `sellers@paddle.com` z adresy účtu. Libor posílá odpověď s testovacím účtem a pak dá Resubmit.
+- Mail Paddlu z 30. 10. 22:02 (na libor@wormup.com): web „offline, bez HTTPS, nebo za login wall / geo-blokací / ochranou proti robotům". Oprava f425c8b je z 21:28 téhož dne, Paddle ji ale znovu nezkontroloval (Resubmit neproběhl). Odpovídá se na jejich mail, podpora jinak `sellers@paddle.com` z adresy účtu. **9. 11. Libor odpověď s testovacím účtem odeslal** (účet „Paddle Review" si založil sám přes /register, Claude zápis do ostré DB blokuje pojistka) a dal Resubmit. Paddle slibuje kontrolu do 1 pracovního dne.
+- **Další krok:** ověřit stav `checkout-domains` (`approved`?) → `paddle:katalog --odkaz=https://app.tuptudu.com/billing` → ostrý test za 0 Kč → smazat účet „Paddle Review".
 
 ## Kontrola 2026-11-05
 - `app.tuptudu.com` je v Paddlu dál `action_required` (poslední změna 30. 10. 21:02), `tuptudu.com` schválená. Výchozí odkaz pokladny prázdný, nastavit ho jde až po schválení domény.
