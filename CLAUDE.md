@@ -76,6 +76,7 @@ Proxy čte celou DB (i uživatele) — **jen SELECT** pro ladění; zápis (`?wr
 ## Články na webu
 - Před psaním nebo úpravou článku přečíst `modules/blog.md`. Platí pro všechny: do 500 slov a jedno téma, související témata jako samostatné propojené články, žádné vnější odkazy ani zdroje na stránce, 2 až 3 přirozené cesty do aplikace, hodnoty závislé na zemi vždy s označením země.
 - **Po každém napsání nebo větší úpravě** spustit `php artisan clanky:kontrola` a **nezávislou odbornou revizi** (agent `revize-clanku`, postup v `modules/blog.md`). Liborovi se článek předává až s vyřešenými nálezy.
+- Psaní článků a verzí pro další jazyky dělá agent `copywriter-clanku`. Pravidla tónu, SEO, grafiky, jazyků a zemí a práce s daty ze Search Console a GA4 jsou v `modules/blog.md`.
 
 ## Formuláře editoru
 - Zarovnání polí a nápisů řeší jedno pravidlo `.kk-editor` v `koncept-v3.blade.php`, ne okraje u jednotlivých polí. Přidaný nebo změněný panel ověřit `node services/import-test/test-formulare-ui.cjs` a nový panel do toho testu doplnit.

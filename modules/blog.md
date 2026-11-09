@@ -123,6 +123,82 @@ Pět kroků: článek v indexu, zobrazení, klik na výzvu, registrace z článk
    „jediný“ nepoužívat. Na konci upozornění z titulky (šablona ho přidá sama).
 8. Žádná hromadná výroba. Před předáním Liborovi: `php artisan clanky:kontrola`, odborná revize a vyřešení nálezů.
    Po revizi se do hlavičky zapíše `revize: datum`, bez něj kontrola zveřejněný článek odmítne.
+9. **Tón (Libor 9. 11. 2026): přátelský, ale profesionální.** Jako zkušený stavař, který radí známému: věcně, s čísly,
+   bez žoviálnosti. Krátké odstavce (2 až 4 věty), krátké věty, odborný pojem vysvětlit při prvním použití. Bez emoji,
+   vykřičníků, superlativů a frází typu „v dnešní době“ nebo „není nic jednoduššího“. Text nesmí znít jako reklama ani
+   jako stroj.
+10. **Vlastní zkušenost.** Kde to jde, naše čísla, příklad spočítaný v editoru nebo zkušenost z vlastní stavby. Podpis
+   „Libor z TupTuDu“, datum ověření `overeno`. Odborný obsah bez autora a bez dat Google hodnotí hůř.
+11. **Grafický styl jen z hotových prvků.** Článek používá jen Markdown a bloky z tabulky výše, takže vzhled dodá šablona
+   podle `modules/brand.md`, část Prvky článků (perex Q1, mezititulky N4, odrážky O2, upozornění U1, tabulka T1, výzva V1,
+   odkazy L1). Žádné vlastní HTML, styly ani barvy. Nový druh prvku napřed navrhnout Liborovi a doplnit do šablony.
+   Obrázky jen skriptem, v jednotném stylu (snímek z editoru nebo schéma), nikdy fotky z cizích webů.
+
+## SEO pravidla (Libor 9. 11. 2026)
+
+- **Téma z plánu klíčových slov.** Plán je tabulka Pořadí článků výše a stránka se zdroji (odkaz nahoře). Každý článek
+  má jedno hlavní klíčové slovo a 2 až 4 vedlejší (varianty, otázky). Před psaním zkontrolovat, že na stejné slovo
+  necílí jiný článek (kanibalizace). Když ano, rozšířit ten starší, nepsat nový.
+- **Kde je hlavní slovo:** v titulku (nejlépe na začátku), v perexu, v adrese a aspoň v jednom mezititulku. Psát
+  přirozeně, slovo nikdy nehromadit. Odpovídat na to, co hledající opravdu chce (spočítat, porovnat, rozhodnout).
+- **Titulek do 60 znaků** (kontrola upozorní nad 65), **popis 120 až 160 znaků**: přínos pro čtenáře, tykání, bez
+  opakování titulku.
+- **Adresa** krátká, z hlavního slova, bez diakritiky, v jazyce článku. Po zveřejnění se nemění.
+- **Stavba:** jeden H1 (titulek dává šablona), mezititulky H2 a H3 podle otázek čtenáře. Odpověď hned v perexu, aby
+  šla převzít do výňatku ve výsledcích hledání.
+- **Odkazy:** na související články (pokud jsou vidět) a 2 až 3 do aplikace (pravidlo 3), vždy s popisným textem, nikdy
+  „zde“ nebo „klikni“. Nový článek doplnit i do `souvisejici` u starších článků, které na něj mají odkazovat.
+- **Obrázky:** popis pro nevidomé (kontrola ho hlídá) a popisný název souboru.
+- **Strukturovaná data** (Article, drobečková navigace) a kanonickou adresu dává šablona `clanky/detail` sama, ručně nic.
+- **Aktuálnost:** hodnoty z předpisů znovu ověřit nejpozději po roce a posunout `overeno`.
+
+## Data z Googlu a Seznamu (nástroje MCP)
+
+Copywriter s daty pracuje sám, Liborovi předává závěr, ne čísla k vyhodnocení. Nastavení je v `modules/marketing.md`.
+
+| Kdy | Nástroj | Co zjistit |
+|---|---|---|
+| výběr tématu | Search Console (`get_search_analytics`, `get_search_by_page_query`) | na jaké dotazy se už zobrazujeme, které stránky soupeří o stejné slovo |
+| výběr tématu | našeptávač Seznamu, Plánovač klíčových slov (ručně, API vrací 403, viz Jak se data sbírala) | jak lidé dotaz skutečně píšou, srovnání variant |
+| po zveřejnění | Search Console (`inspect_url_enhanced`, sitemapa) | je článek v indexu, jinak požádat o indexování |
+| 2 až 4 týdny po zveřejnění | Search Console | zobrazení, proklik, pozice. Při nízkém prokliku upravit titulek a popis |
+| průběžně | GA4 (`run_report`, události `clanek_vyzva`, `clanek_poslat_odkaz`, `kalkulacka_pouzita`) a DB (`zdroj_registrace`) | vede článek k registraci a k projektu se stěnami (část Měření) |
+
+Data z GA4 jsou jen od návštěvníků se souhlasem s cookies, proto rozhodují registrace z DB.
+
+## Jazyky a země u článků (Libor 9. 11. 2026, způsob pro více zemí čeká na rozhodnutí)
+
+Každý článek po schválení české verze vyjde ve všech jazycích webu (cs, en, sk, pl, de, fr, es, it). Nejde o doslovný
+překlad, ale o verzi pro zemi:
+- **Klíčová slova znovu pro každý jazyk.** Titulek, adresa a mezititulky podle toho, jak to lidé v dané zemi hledají,
+  ne převodem z češtiny.
+- **Hodnoty podle země.** Fyzika a postup se přeloží, číslo z předpisu nebo praxe se vezme pro zemi jazyka
+  (`modules/stavebni-parametry.md`, tři stavy: ověřeno, závisí na regionu, neověřeno). Česká hodnota nikdy jako náhrada.
+- **Možnosti aplikace v zemi.** Co aplikace v zemi neumí, článek neslibuje: katastr a hledání parcely jsou jen v Česku
+  (parcely přes INSPIRE jsou v plánu, `modules/lokalizace.md`), ruční pozemek zatím není, jednotky jen metrické. Výzvu
+  do aplikace upravit na to, co tam funguje, nebo omezení jednou větou přiznat.
+- **Téma čistě národní** (odstup od hranice, katastr) se pro jinou zemi píše znovu podle jejích pravidel, nebo tam nevyjde.
+- Obrázky s textem vygenerovat pro každý jazyk (část Obrázky a překlad). Odborná revize zvlášť pro každou zemi.
+
+**Návrh pro jazyk ve více zemích (DE a AT, FR a BE a CH, IT a CH):** jeden článek na jazyk s jednou adresou, psaný pro
+hlavní zemi jazyka. Kde se hodnota v druhé zemi liší, uvede se v textu obojí („v Německu …, v Rakousku …“) nebo malou
+tabulkou. Samostatná verze pro zemi (vlastní adresa, `hreflang="de-AT"`) jen u článku, jehož jádro je národní předpis,
+a jen když je v té zemi dost hledání. Angličtina je bez cílové země: princip a postup, čísla jen jako příklad
+s uvedením země.
+
+**Technicky chybí:** články mají jen cs a en (`Clanky::SEGMENTY`, `skupiny_jazyku.clanky`), jazykové verze téhož
+článku se zatím nepropojují (`:verze="[]"` v `clanky/detail`, potřeba společný klíč v hlavičce a hreflang) a hlavička
+nemá `zeme`. Udělat před prvním překladem.
+
+## Postup jednoho článku
+
+1. Téma z plánu, data ze Search Console a našeptávače, hlavní a vedlejší klíčová slova, kontrola kanibalizace.
+2. Ověřit v kódu a v `modules/`, co aplikace v daném případě umí. Spočítat příklad v editoru nebo kalkulačce.
+3. Napsat podle pravidel výše, `stav: koncept`. `php artisan clanky:kontrola` bez chyb.
+4. Odborná revize nezávislým agentem a vyřešení nálezů, `revize: datum`.
+5. Předat Liborovi. Po schválení `stav: zverejneno`, nasadit až na jeho pokyn.
+6. Po nasazení indexace v Search Console, odkazy ze starších článků, za 2 až 4 týdny vyhodnotit.
+7. Verze v dalších jazycích podle části Jazyky a země, každá s vlastní kontrolou a revizí.
 
 ## Odborná revize
 
