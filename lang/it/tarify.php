@@ -22,7 +22,7 @@ return [
     'za_mesic' => 'al mese',
     'za_rok' => 'all’anno',
     'rocne_vychazi' => 'pari a :castka al mese',
-    'usetrite' => "risparmi :procent\u{00A0}%",   // nezlomitelná mezera — % nesmí odskočit na další řádek
+    'usetrite' => "risparmi il :procent\u{00A0}%",   // nezlomitelná mezera — % nesmí odskočit na další řádek
     'navzdy' => 'per sempre',
 
     // Limity v kartách tarifů

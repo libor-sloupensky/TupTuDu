@@ -136,7 +136,7 @@ return [
     'vybaveni_pracka' => 'Lavatrice',
     'vybaveni_mycka' => 'Lavastoviglie',
     'vybaveni_susicka' => 'Asciugatrice',
-    'vybaveni_topeni' => 'Riscaldamento',
+    'vybaveni_topeni' => 'Radiatore',
     'vybaveni_misto_na_spotrebic' => 'Spazio per elettrodomestico',
     'vybaveni_kulaty_spotrebic' => 'Elettrodomestico rotondo',
 ];

@@ -40,7 +40,7 @@
         mensile o annuale) estendono i limiti e rendono disponibili ulteriori funzioni. La portata e i prezzi aggiornati dei piani
         sono indicati nella <a href="{{ \App\Support\Domeny::url('web', '/pricing') }}">pagina dei prezzi</a>.</li>
     <li><strong>Il nostro processo di ordine è gestito dal nostro rivenditore online Paddle.com. Paddle.com è il Merchant of
-        Record per tutti i nostri ordini.</strong> Paddle gestisce tutte le richieste di assistenza clienti e i resi.
+        Record per tutti i nostri ordini.</strong> Paddle gestisce tutte le richieste di assistenza clienti e i rimborsi.
         Il contratto di acquisto è concluso con Paddle.com Market Limited, che accetta i pagamenti, emette le ricevute
         e gestisce l’IVA. All’acquisto si applicano anche le <a href="https://www.paddle.com/legal/checkout-buyer-terms" target="_blank" rel="noopener">condizioni di Paddle per gli acquirenti</a>.</li>
     <li>I prezzi includono l’IVA. Le aziende con partita IVA UE valida possono pagare senza IVA; l’utente vede l’importo finale

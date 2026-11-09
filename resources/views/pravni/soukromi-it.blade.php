@@ -19,7 +19,7 @@
     <tr>
         <td>L’articolo del nostro sito da cui è avvenuta la registrazione</td>
         <td>Capire quali articoli aiutano davvero le persone</td>
-        <td>Legittimo interesse (art. 6, par. 1, lett. f, GDPR)</td>
+        <td>Legittimo interesse (art. 6, par. 1, lett. f) GDPR)</td>
     </tr>
     <tr>
         <td>In caso di accesso con Google: nome, email e identificativo dell’account Google</td>
