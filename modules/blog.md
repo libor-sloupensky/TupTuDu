@@ -15,13 +15,14 @@ záviset na domě a pozemku čtenáře. Trh je malý, hodnotí se založené pro
 | # | Článek | Adresa | Stav | Před napsáním |
 |---|---|---|---|---|
 | 1 | Kolik zeminy zbude po výkopu základů | `/cs/clanky/kolik-zeminy-z-vykopu` | koncept, čeká na přečtení | hotovo: kalkulačka, schéma, snímek. Navazují: koeficient nakypření (napsaný), základy na svahu, skrývka ornice, nezámrzná hloubka, pracovní prostor výkopu, kam se zeminou |
-| 2 | Dům na vlastním pozemku dřív, než zaplatíš projekt | `/cs/clanky/dum-na-pozemku` | nenapsáno | říct hned, že nejde o fotorealistický obrázek |
-| 3 | Výpočet schodiště s nákresem | `/cs/clanky/vypocet-schodiste` | nenapsáno | kalkulačka s nákresem, ověřit ČSN 73 4130 |
-| 4 | Základy na svahu | `/cs/clanky/zaklady-na-svahu` | nenapsáno | editor od 5. 11. 2026 základ prodlouží až k domu, čísla brát z něj. Snímek domu na svahu už je (`zaklad-svah`) |
-| 5 | Jak daleko od hranice pozemku smí stát dům | `/cs/clanky/odstup-od-hranice-pozemku` | nenapsáno | § 11 ověřen na zakonyprolidi.cz, zjistit, jak je to v Praze |
-| 6 | Jak nakreslit půdorys domu online | `/cs/clanky/jak-nakreslit-pudorys` | nenapsáno | ověřit, kolik úprav spotřebuje jednoduchý dům |
+| 2 | Výpočet schodiště s nákresem | `/cs/clanky/vypocet-schodiste` | nenapsáno | Plánovač 9. 11.: výpočet schodiště 1 300, výška schodu 720, schody výpočet 50, kalkulačka schodiště 50. kalkulačka s nákresem, ověřit ČSN 73 4130 |
+| 3 | Základy na svahu | `/cs/clanky/zaklady-na-svahu` | nenapsáno | Plánovač: dům ve svahu 590, stavba domu ve svahu 30, dům na svažitém pozemku 10. Titulek a adresu zvážit podle „dům ve svahu“. editor od 5. 11. 2026 základ prodlouží až k domu, čísla brát z něj. Snímek domu na svahu už je (`zaklad-svah`) |
+| 4 | Jak nakreslit půdorys domu online | `/cs/clanky/jak-nakreslit-pudorys` | nenapsáno | Plánovač: půdorys domu 1 000, půdorys online 50, jak nakreslit půdorys domu 40. ověřit, kolik úprav spotřebuje jednoduchý dům |
+| 5 | Typy střech na jednom domě | `/cs/clanky/typy-strech` | nenapsáno | Plánovač: pultová střecha 1 300, typy střech 880, sklon střechy 390, druhy střech 260. Vikýře a polovalba zatím chybí. |
+| 6 | Dům na vlastním pozemku dřív, než zaplatíš projekt | `/cs/clanky/dum-na-pozemku` | nenapsáno | Plánovač: vizualizace domu 210, „na pozemku“ jen 10. říct hned, že nejde o fotorealistický obrázek |
+| 7 | Jak daleko od hranice pozemku smí stát dům | `/cs/clanky/odstup-od-hranice-pozemku` | nenapsáno | Plánovač: vzdálenost stavby od hranice pozemku 70, odstup 40. § 11 ověřen na zakonyprolidi.cz, zjistit, jak je to v Praze |
 
-Druhá vlna podle dat z první: pasy nebo deska, podkroví, typy střech na jednom domě, převýšení a sklon pozemku, barva
+Pořadí od 2 dál podle objemů z Plánovače (Libor 9. 11. 2026). Druhá vlna podle dat z první: pasy nebo deska, podkroví, převýšení a sklon pozemku, barva
 fasády na domě, který ještě nestojí, z kubíků na tuny.
 
 Čeká na podmínku: výkres základů (základy ve 2D), plocha střechy (řádek v panelu), zastavěná a užitná plocha, kam se
@@ -278,7 +279,8 @@ Editor a kalkulačka počítají stejně i se štěrkem a prodlouženým základ
 ## Otevřené body
 
 - Libor: přečíst článek 1 a dodat přibližná čísla z vlastního výkopu. Články podepisuje „Libor z TupTuDu“ (Libor 9. 11. 2026).
-- Hodnoty podle země: Libor souhlasí se směrem z `modules/stavebni-parametry.md`, ale chce důkladnější plán. Odloženo, teď se nedělá.
+- Hodnoty podle země: u článků je to vyřešené v části Jazyky a země (9. 11. 2026). Odložená zůstává jen část pro editor,
+  kde platí jedna hodnota pro všechny země (`modules/stavebni-parametry.md`, Návrh řešení).
 - 3D ukázka přes sdílený odkaz v článku: `X-Frame-Options: SAMEORIGIN` vložení na www dovolí, chce to demo projekt na produkci
   (ne Klemov) a vyzkoušet na telefonu. V článku 1 zatím jen obrázek.
 - Ukázkový dům otevíraný z článku, přehled registrací v Masterteamu.
