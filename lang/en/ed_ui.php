@@ -52,6 +52,8 @@ return [
     'krok_otocit_kridla' => 'Flip leaves',
     'krok_sirka_otvoru' => 'Opening width',
     'krok_typ_steny' => 'Wall type',
+    'krok_zajisteno' => 'Wall structurally secured',
+    'krok_zajisteno_zrusit' => 'Wall no longer marked as secured',
     'krok_vyska_steny' => 'Wall height',
     'krok_tloustka_steny' => 'Wall thickness',
     'krok_slouceni_sten' => 'Merge walls',

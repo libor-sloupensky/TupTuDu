@@ -146,6 +146,12 @@ return [
         'na_pricku' => 'Change to partition',
         'podpera_tip' => 'Adds the same load-bearing wall on the storey below',
         'podpera' => 'Add support below',
+        'zajistit_tip' => 'A lintel, beam or other structure designed by an engineer carries this section. The hatching disappears and comes back if the section changes.',
+        'zajistit' => 'Structurally secured',
+        'zajisteno_tip' => 'You marked this section as resolved. If it changes, the warning comes back.',
+        'zajisteno' => 'Structurally secured :delka m',
+        'zrusit_zajisteni_tip' => 'Mark the section as unsupported again',
+        'zrusit_zajisteni' => 'Undo',
     ],
     // Otvory: nový a panel vybraného
     'otvor' => [

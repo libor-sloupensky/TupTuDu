@@ -52,6 +52,8 @@ return [
     'krok_otocit_kridla' => 'Ruota ante',
     'krok_sirka_otvoru' => 'Larghezza apertura',
     'krok_typ_steny' => 'Tipo di parete',
+    'krok_zajisteno' => 'Muro messo in sicurezza',
+    'krok_zajisteno_zrusit' => 'Muro non più segnato come in sicurezza',
     'krok_vyska_steny' => 'Altezza parete',
     'krok_tloustka_steny' => 'Spessore parete',
     'krok_slouceni_sten' => 'Unione pareti',

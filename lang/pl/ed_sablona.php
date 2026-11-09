@@ -146,6 +146,12 @@ return [
         'na_pricku' => 'Zmień na działową',
         'podpera_tip' => 'Dodaje taką samą ścianę nośną na kondygnacji niżej',
         'podpera' => 'Dodaj podporę poniżej',
+        'zajistit_tip' => 'Odcinek przenosi nadproże, podciąg lub inna konstrukcja według konstruktora. Kreskowanie zniknie, po zmianie odcinka ostrzeżenie wróci.',
+        'zajistit' => 'Zabezpieczone statycznie',
+        'zajisteno_tip' => 'Oznaczyłeś odcinek jako rozwiązany. Gdy się zmieni, ostrzeżenie wróci.',
+        'zajisteno' => 'Zabezpieczone statycznie :delka m',
+        'zrusit_zajisteni_tip' => 'Ponownie oznacz odcinek jako niepodparty',
+        'zrusit_zajisteni' => 'Cofnij',
     ],
     // Otvory: nový a panel vybraného
     'otvor' => [

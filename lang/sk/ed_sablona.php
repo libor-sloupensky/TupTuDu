@@ -146,6 +146,12 @@ return [
         'na_pricku' => 'Zmeniť na priečku',
         'podpera_tip' => 'Pridá rovnakú nosnú stenu do podlažia nižšie',
         'podpera' => 'Pridať podperu nadol',
+        'zajistit_tip' => 'Úsek rieši preklad, prievlak alebo iná konštrukcia podľa statika. Šrafa zmizne, po zmene úseku sa upozornenie vráti.',
+        'zajistit' => 'Staticky zaistené',
+        'zajisteno_tip' => 'Úsek si označil ako vyriešený. Keď sa zmení, upozornenie sa vráti.',
+        'zajisteno' => 'Staticky zaistené :delka m',
+        'zrusit_zajisteni_tip' => 'Úsek znova označiť ako nepodopretý',
+        'zrusit_zajisteni' => 'Zrušiť',
     ],
     // Otvory: nový a panel vybraného
     'otvor' => [

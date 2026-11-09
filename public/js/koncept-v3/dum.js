@@ -588,7 +588,7 @@
                 id: p.id, nazev: p.nazev, typ: p.typ, aktivni: p.id === d.aktivni,
                 kota: kory.get(p.id) ?? 0, vyska: p.vyska, strop: p.strop,
                 svetla: this.engine.svetlaVyska(p),
-                nepodeprene: this.podepreniPodlazi(p.id).size,
+                nepodeprene: this.nepodeprenePodlazi(p.id).size,
                 viditelne3d: this._viditelne3d(p.id),
             })).reverse();
         },
@@ -1054,7 +1054,11 @@
                     }
                 }
                 if (useky.length) {
-                    vysledek.set(w.id, { useky, delka: useky.reduce((s, u) => s + (u[1] - u[0]) * L, 0) / PX, chybiZaklad });
+                    // Podpis úseků (konce v metrech po 10 cm): označení „staticky zajištěno“ platí jen pro tenhle problém,
+                    // po posunu, prodloužení nebo jiné podpoře dole se upozornění vrátí
+                    const bodM = (t) => ((a.x + (b.x - a.x) * t) / PX).toFixed(1) + ' ' + ((a.y + (b.y - a.y) * t) / PX).toFixed(1);
+                    const podpis = useky.map(u => bodM(u[0]) + '-' + bodM(u[1])).join(',') + (chybiZaklad ? 'z' : '');
+                    vysledek.set(w.id, { useky, delka: useky.reduce((s, u) => s + (u[1] - u[0]) * L, 0) / PX, chybiZaklad, podpis });
                 }
             }
             this._podepreniCache.set(id, { klic, vysledek });
@@ -1082,10 +1086,38 @@
             };
         },
 
+        /**
+         * Nepodepřené stěny, které uživatel neoznačil jako staticky zajištěné. Označení drží podpis úseků,
+         * po změně úseku (posun stěny, jiná podpora dole) se upozornění vrátí samo.
+         */
+        nepodeprenePodlazi(id) {
+            const eng = this.engine.enginePodlazi(id);
+            const vysledek = new Map();
+            for (const [wid, v] of this.podepreniPodlazi(id)) {
+                if (eng?.walls.get(wid)?.zajisteno !== v.podpis) vysledek.set(wid, v);
+            }
+            return vysledek;
+        },
+
         podepreniSteny(wallId) {
             const dole = this.engine.podlaziPod(this.engine.dum.aktivni);
             const v = this.podepreniPodlazi(this.engine.dum.aktivni).get(wallId);
-            return v ? { delka: v.delka, dole: dole?.nazev || '', chybiZaklad: v.chybiZaklad } : null;
+            if (!v) return null;
+            const zajisteno = this.engine.walls.get(wallId)?.zajisteno === v.podpis;
+            return { delka: v.delka, dole: dole?.nazev || '', chybiZaklad: v.chybiZaklad, zajisteno };
+        },
+
+        /** Uživatel označí nepodepřený úsek vybrané stěny jako staticky vyřešený (překlad, průvlak), nebo to zruší. */
+        stenaZajistena(ano) {
+            const w = this.engine.walls.get([...this.renderer.selectedWalls][0]);
+            const v = w && this.podepreniPodlazi(this.engine.dum.aktivni).get(w.id);
+            if (!v) return;
+            this.engine.pushUndo();
+            if (ano) w.zajisteno = v.podpis;
+            else delete w.zajisteno;
+            this.renderer.render();
+            this.autoSave(preloz(ano ? 'ed_ui.krok_zajisteno' : 'ed_ui.krok_zajisteno_zrusit'));
+            this._selectionTick++;
         },
 
         /** Rychlá akce: nepodepřenou stěnu změnit na příčku. */
@@ -2429,7 +2461,7 @@
             // ── Nepodepřené nosné stěny: červená šrafa přes úsek, oříznutá tvarem stěny ──
             const chyba = css.getPropertyValue('--c-error').trim() || primary;
             // Upozornění editoru: do exportu a sdíleného půdorysu nepatří
-            const nepodeprene = this._kresbaProExport ? new Map() : this.podepreniPodlazi(aktivni);
+            const nepodeprene = this._kresbaProExport ? new Map() : this.nepodeprenePodlazi(aktivni);
             for (const [id, info] of nepodeprene) {
                 const w = this.engine.walls.get(id);
                 const a = w && this.engine.nodes.get(w.nodeA), b = w && this.engine.nodes.get(w.nodeB);

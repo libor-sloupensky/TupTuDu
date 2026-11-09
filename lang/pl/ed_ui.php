@@ -52,6 +52,8 @@ return [
     'krok_otocit_kridla' => 'Obrót skrzydeł',
     'krok_sirka_otvoru' => 'Szerokość otworu',
     'krok_typ_steny' => 'Typ ściany',
+    'krok_zajisteno' => 'Ściana zabezpieczona statycznie',
+    'krok_zajisteno_zrusit' => 'Cofnięto zabezpieczenie ściany',
     'krok_vyska_steny' => 'Wysokość ściany',
     'krok_tloustka_steny' => 'Grubość ściany',
     'krok_slouceni_sten' => 'Scalenie ścian',

@@ -167,6 +167,18 @@ async function main() {
         kontrola('panel stěny hlásí nepodepření a výšku podle podlaží 2,80', insp.kind === 'wall' && insp.pod && insp.pod.dole === '1.NP' && blizko(insp.auto, 2.8, 1e-6), JSON.stringify(insp));
         await pauza(300);
         await p.snimek(path.join(vystup, 'dum-podepreni.png'));
+        const zajisteni = await p.vyhodnot(`(() => { const d = ${D}; const e = d.engine; const r = d.renderer; const id = ${JSON.stringify(nep.id)}; r.setSelection([id]); d._selectionTick++;
+            const srafy = () => { r.render(); return r.schodyLayer.getChildren().filter(n => n.getClassName() === 'Group' && n.clipFunc()).length; };
+            const kroku = d.historie.length;
+            d.stenaZajistena(true); d._selectionTick++;
+            const po = { vsechny: d.podepreniPodlazi(e.dum.aktivni).size, problemy: d.nepodeprenePodlazi(e.dum.aktivni).size, seznam: d.seznamPodlazi.map(p => p.nepodeprene)[0], srafy: srafy(), panel: d.inspector.podepreni?.zajisteno, ulozeno: JSON.stringify(e.toJSON()).includes('"zajisteno"'), krok: d.historie.length - kroku };
+            const w = e.walls.get(id), b = e.nodes.get(w.nodeB), X = e.PX_PER_M;
+            const a = e.nodes.get(w.nodeA); a.x += 0.5 * X; b.x += 0.5 * X; const zmena = { problemy: d.nepodeprenePodlazi(e.dum.aktivni).size, srafy: srafy() };
+            a.x -= 0.5 * X; b.x -= 0.5 * X; const zpet = d.nepodeprenePodlazi(e.dum.aktivni).size;
+            d.stenaZajistena(false); d._selectionTick++;
+            const zrus = { problemy: d.nepodeprenePodlazi(e.dum.aktivni).size, srafy: srafy(), panel: d.inspector.podepreni?.zajisteno };
+            return { po, zmena, zpet, zrus }; })()`);
+        kontrola('„Staticky zajištěno": šrafa a počet zmizí, uloží se jedním krokem, po posunu stěny se vrátí, jde zrušit', zajisteni.po.vsechny === 1 && zajisteni.po.problemy === 0 && zajisteni.po.seznam === 0 && zajisteni.po.srafy === 0 && zajisteni.po.panel === true && zajisteni.po.ulozeno && zajisteni.po.krok === 1 && zajisteni.zmena.problemy === 1 && zajisteni.zmena.srafy >= 1 && zajisteni.zpet === 0 && zajisteni.zrus.problemy === 1 && zajisteni.zrus.srafy >= 1 && zajisteni.zrus.panel === false, JSON.stringify(zajisteni));
         nep = await p.vyhodnot(`(() => { const d = ${D}; d.pridatPodperu(); const po = d.podepreniPodlazi(d.engine.dum.aktivni).size; const dole = d.engine.enginePodlazi('P1'); return { po, nosneDole: [...dole.walls.values()].filter(w => w.typ === 'nosna').length }; })()`);
         kontrola('„Přidat podpěru dolů": stěna vznikne v 1.NP, označení zmizí', nep.po === 0 && nep.nosneDole >= 2, JSON.stringify(nep));
 

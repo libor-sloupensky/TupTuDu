@@ -146,6 +146,12 @@ return [
         'na_pricku' => 'Changer en cloison',
         'podpera_tip' => 'Ajoute le même mur porteur au niveau inférieur',
         'podpera' => 'Ajouter un appui dessous',
+        'zajistit_tip' => 'Un linteau, une poutre ou une autre structure dimensionnée par un ingénieur porte ce tronçon. Les hachures disparaissent et reviennent si le tronçon change.',
+        'zajistit' => 'Sécurisé structurellement',
+        'zajisteno_tip' => 'Vous avez marqué ce tronçon comme résolu. S\'il change, l\'avertissement revient.',
+        'zajisteno' => 'Sécurisé structurellement :delka m',
+        'zrusit_zajisteni_tip' => 'Marquer de nouveau le tronçon comme non soutenu',
+        'zrusit_zajisteni' => 'Annuler',
     ],
     // Otvory: nový a panel vybraného
     'otvor' => [

@@ -146,6 +146,12 @@ return [
         'na_pricku' => 'Cambiar a tabique',
         'podpera_tip' => 'Añade la misma pared de carga en la planta inferior',
         'podpera' => 'Añadir apoyo abajo',
+        'zajistit_tip' => 'Un dintel, una viga u otra estructura calculada por un ingeniero sostiene este tramo. El rayado desaparece y vuelve si el tramo cambia.',
+        'zajistit' => 'Asegurado estructuralmente',
+        'zajisteno_tip' => 'Marcaste este tramo como resuelto. Si cambia, el aviso vuelve.',
+        'zajisteno' => 'Asegurado estructuralmente :delka m',
+        'zrusit_zajisteni_tip' => 'Volver a marcar el tramo como sin apoyo',
+        'zrusit_zajisteni' => 'Deshacer',
     ],
     // Otvory: nový a panel vybraného
     'otvor' => [

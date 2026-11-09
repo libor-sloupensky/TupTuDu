@@ -38,6 +38,11 @@ dum = {
 ## Pravidla
 
 - **Podlaží nejde posunout samostatně.** Hýbe se jen celý dům (výběr všech stěn aktivního podlaží, tažení nebo otočení), zvlášť jen podklad daného podlaží.
+- **Staticky zajištěno (Libor 9. 11. 2026):** nejsme statický garant, překlad ani průvlak se nenavrhuje. Editor jen upozorní
+  a uživatel smí upozornění u vybrané stěny označit jako vyřešené (tlačítko „Staticky zajištěno" v panelu stěny, i u
+  chybějícího základu). Stěna si uloží podpis nepodepřených úseků (`zajisteno`, konce v metrech po 10 cm, `podepreniPodlazi`).
+  Šrafa a počet u podlaží zmizí (`nepodeprenePodlazi`), panel ukáže „Staticky zajištěno" s tlačítkem Zrušit. Když se úsek
+  změní (posun stěny, jiná podpora dole, jiný základ), podpis nesedí a upozornění se vrátí samo. Jeden krok Zpět.
 - **Nosné stěny se nevynucují.** Nepodepřený úsek nosné nebo obvodové stěny je červeně vyšrafovaný, panel nabídne změnu na příčku nebo podpěru dolů. Nic se samo nepřesouvá. Nové podlaží vznikne jako kopie obvodových a nosných stěn.
 - **Patro může přesahovat přes podlaží pod ním** (krytý vstup, garáž). Podlaha patra má jeho celý obrys, přesah zůstává nepodepřený a značený.
 - **Stěna vedle sklepu leží na zemině.** Úsek nad podlažím typu sklep je podepřený jen stěnou pod ním, úsek mimo obrys sklepu stojí na vlastních základech a neznačí se. Neuzavřený sklep obrys nemá, platí pak obyčejné pravidlo. Přesahu vyššího patra se to netýká. S parcelou musí stěna na zem i dosáhnout, jinak jí chybí základ (modules/zemina.md).
@@ -150,7 +155,7 @@ Změna domu v režimu 3D přestaví scénu hned (`_obnov3dPozdeji` z `afterRende
 
 ## Zatím neřešeno
 
-- Sloup a překlad jako podpěra rohu nebo přesahu. Stávající „Přidat podpěru dolů" jen zkopíruje stěnu a překlad neřeší (Libor 2. 11. 2026: nechat, řešit později).
+- **Sloup jako podpěra rohu nebo přesahu patra** (samostatný úkol, Libor 9. 11. 2026). „Přidat podpěru dolů" jen zkopíruje stěnu.
 - Stíny ve 3D (Libor 2. 11. 2026: nebyly správně, udělat později pořádně).
 - Plochá střecha bez přesahu. Vikýře, střešní okna a polovalba jako předvolba (polovalba jde nastavit po hranách jen částečně).
 - Ve 3D jsou zvýšené plochy jako deska na podlaze, strop se nad nimi nezvedá.

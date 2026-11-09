@@ -986,11 +986,18 @@
                             </div>
                         </template>
                         {{-- Nosná stěna bez podpory v podlaží pod ní: označit a nabídnout řešení, nic samo nepřesouvat --}}
-                        <template x-if="inspector.kind === 'wall' && inspector.podepreni">
+                        <template x-if="inspector.kind === 'wall' && inspector.podepreni && inspector.podepreni.zajisteno">
+                            <div class="flex items-center gap-1 flex-wrap w-full border-t border-gray-200 pt-1" data-stena-zajistena>
+                                <span class="text-gray-500" title="{{ __('ed_sablona.stena.zajisteno_tip') }}" x-text="preloz('ed_sablona.stena.zajisteno', { delka: prelozCislo(inspector.podepreni.delka, 1) })"></span>
+                                <button type="button" @click="stenaZajistena(false)" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.stena.zrusit_zajisteni_tip') }}">{{ __('ed_sablona.stena.zrusit_zajisteni') }}</button>
+                            </div>
+                        </template>
+                        <template x-if="inspector.kind === 'wall' && inspector.podepreni && !inspector.podepreni.zajisteno">
                             <div class="flex items-center gap-1 flex-wrap w-full border-t border-gray-200 pt-1">
                                 <span style="color: var(--c-error)" title="{{ __('ed_sablona.stena.podepreni_tip') }}" x-text="inspector.podepreni.chybiZaklad ? preloz('ed_sablona.stena.chybi_zaklad', { delka: prelozCislo(inspector.podepreni.delka, 1) }) : preloz('ed_sablona.stena.nepodepreno', { delka: prelozCislo(inspector.podepreni.delka, 1), dole: inspector.podepreni.dole })"></span>
                                 <button type="button" @click="stenaNaPricku()" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.stena.na_pricku_tip') }}">{{ __('ed_sablona.stena.na_pricku') }}</button>
                                 <button type="button" x-show="!inspector.podepreni.chybiZaklad" @click="pridatPodperu()" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.stena.podpera_tip') }}">{{ __('ed_sablona.stena.podpera') }}</button>
+                                <button type="button" @click="stenaZajistena(true)" data-zajistit class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.stena.zajistit_tip') }}">{{ __('ed_sablona.stena.zajistit') }}</button>
                             </div>
                         </template>
                     </div>

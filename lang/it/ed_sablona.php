@@ -146,6 +146,12 @@ return [
         'na_pricku' => 'Cambia in tramezzo',
         'podpera_tip' => 'Aggiunge la stessa parete portante al piano inferiore',
         'podpera' => 'Aggiungi appoggio sotto',
+        'zajistit_tip' => 'Un architrave, una trave o un\'altra struttura progettata dallo strutturista sostiene questo tratto. Il tratteggio sparisce e ritorna se il tratto cambia.',
+        'zajistit' => 'Messo in sicurezza',
+        'zajisteno_tip' => 'Hai segnato questo tratto come risolto. Se cambia, l\'avviso ritorna.',
+        'zajisteno' => 'Messo in sicurezza :delka m',
+        'zrusit_zajisteni_tip' => 'Segna di nuovo il tratto come non sostenuto',
+        'zrusit_zajisteni' => 'Annulla',
     ],
     // Otvory: nový a panel vybraného
     'otvor' => [

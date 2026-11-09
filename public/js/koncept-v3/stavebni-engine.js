@@ -3181,6 +3181,7 @@ class StavebniEngine {
                 typ: wall.typ,
             };
             if (typeof wall.vyska === 'number') wallOut.vyska = wall.vyska;
+            if (wall.zajisteno) wallOut.zajisteno = wall.zajisteno;
             // Constraint metadata (T-junction) — zachovat při uložení
             if (wall.odConstraint) wallOut.od_constraint = wall.odConstraint;
             if (wall.doConstraint) wallOut.do_constraint = wall.doConstraint;
@@ -3341,6 +3342,8 @@ class StavebniEngine {
                 doConstraint: s.do_constraint || null,
             };
             if (typeof s.vyska === 'number' && s.vyska > 0) wall.vyska = s.vyska;
+            // Podpis nepodepřeného úseku, který uživatel označil jako staticky zajištěný (dum.js)
+            if (typeof s.zajisteno === 'string') wall.zajisteno = s.zajisteno;
             this.walls.set(wall.id, wall);
 
             // Aktualizovat nextId

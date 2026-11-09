@@ -52,6 +52,8 @@ return [
     'krok_otocit_kridla' => 'Otočit křídla',
     'krok_sirka_otvoru' => 'Šířka otvoru',
     'krok_typ_steny' => 'Typ stěny',
+    'krok_zajisteno' => 'Stěna staticky zajištěna',
+    'krok_zajisteno_zrusit' => 'Zrušeno zajištění stěny',
     'krok_vyska_steny' => 'Výška stěny',
     'krok_tloustka_steny' => 'Tloušťka stěny',
     'krok_slouceni_sten' => 'Sloučení stěn',

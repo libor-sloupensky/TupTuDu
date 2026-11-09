@@ -146,6 +146,12 @@ return [
         'na_pricku' => 'In Trennwand ändern',
         'podpera_tip' => 'Fügt dieselbe tragende Wand im Geschoss darunter hinzu',
         'podpera' => 'Stütze unten ergänzen',
+        'zajistit_tip' => 'Ein Sturz, Unterzug oder eine andere Konstruktion nach Statiker trägt diesen Abschnitt. Die Schraffur verschwindet und kommt zurück, wenn sich der Abschnitt ändert.',
+        'zajistit' => 'Statisch gesichert',
+        'zajisteno_tip' => 'Du hast den Abschnitt als gelöst markiert. Ändert er sich, kommt die Warnung zurück.',
+        'zajisteno' => 'Statisch gesichert :delka m',
+        'zrusit_zajisteni_tip' => 'Abschnitt wieder als nicht unterstützt markieren',
+        'zrusit_zajisteni' => 'Aufheben',
     ],
     // Otvory: nový a panel vybraného
     'otvor' => [

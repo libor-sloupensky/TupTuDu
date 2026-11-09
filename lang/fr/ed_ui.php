@@ -52,6 +52,8 @@ return [
     'krok_otocit_kridla' => 'Retournement des vantaux',
     'krok_sirka_otvoru' => 'Largeur de l’ouverture',
     'krok_typ_steny' => 'Type de mur',
+    'krok_zajisteno' => 'Mur sécurisé structurellement',
+    'krok_zajisteno_zrusit' => 'Sécurisation du mur annulée',
     'krok_vyska_steny' => 'Hauteur du mur',
     'krok_tloustka_steny' => 'Épaisseur du mur',
     'krok_slouceni_sten' => 'Fusion de murs',

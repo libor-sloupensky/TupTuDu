@@ -52,6 +52,8 @@ return [
     'krok_otocit_kridla' => 'Flügel gedreht',
     'krok_sirka_otvoru' => 'Breite der Öffnung',
     'krok_typ_steny' => 'Wandtyp',
+    'krok_zajisteno' => 'Wand statisch gesichert',
+    'krok_zajisteno_zrusit' => 'Sicherung der Wand aufgehoben',
     'krok_vyska_steny' => 'Wandhöhe',
     'krok_tloustka_steny' => 'Wanddicke',
     'krok_slouceni_sten' => 'Wände zusammengeführt',

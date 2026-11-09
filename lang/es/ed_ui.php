@@ -52,6 +52,8 @@ return [
     'krok_otocit_kridla' => 'Girar hojas',
     'krok_sirka_otvoru' => 'Ancho del hueco',
     'krok_typ_steny' => 'Tipo de pared',
+    'krok_zajisteno' => 'Muro asegurado estructuralmente',
+    'krok_zajisteno_zrusit' => 'Muro ya no marcado como asegurado',
     'krok_vyska_steny' => 'Altura de pared',
     'krok_tloustka_steny' => 'Espesor de pared',
     'krok_slouceni_sten' => 'Unir paredes',
