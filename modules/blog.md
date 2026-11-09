@@ -279,7 +279,7 @@ Editor a kalkulačka počítají stejně i se štěrkem a prodlouženým základ
 
 ## Otevřené body
 
-- Články o zemině jsou hotové a čekají na Liborovo schválení (9. 11. 2026). Délku 591 slov a zubatý okraj výkopu na snímku Libor přijal. Čísla z vlastního výkopu nemá a mít nebude, příklad z cizí stavby zůstává. Články podepisuje „Libor z TupTuDu“.
+- Články o zemině Libor schválil 9. 11. 2026 (`stav: zverejneno`, `publikovano: 2026-11-09`), na web jdou s dalším nasazením. Délku 591 slov a zubatý okraj výkopu na snímku přijal. Čísla z vlastního výkopu nemá a mít nebude, příklad z cizí stavby zůstává. Další krok: technická příprava jazyků (část Jazyky a země, Technicky chybí) a verze pro další jazyky.
 - Hodnoty podle země: u článků je to vyřešené v části Jazyky a země (9. 11. 2026). Odložená zůstává jen část pro editor,
   kde platí jedna hodnota pro všechny země (`modules/stavebni-parametry.md`, Návrh řešení).
 - 3D ukázka přes sdílený odkaz v článku: `X-Frame-Options: SAMEORIGIN` vložení na www dovolí, chce to demo projekt na produkci

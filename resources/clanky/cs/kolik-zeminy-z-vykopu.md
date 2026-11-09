@@ -3,11 +3,11 @@ titulek: Kolik zeminy z výkopu základů zbude: kalkulačka
 klicove_slovo: kolik zeminy z výkopu
 popis: Spočítej si, kolik zeminy z výkopu základů zbude a kolik aut ji odveze. Kalkulačka zeminy zdarma a příklady pro dům na pasech i se sklepem.
 perex: Kolik zeminy z výkopu zbude? U domu 12 × 10 m na rovině a na pasech se vykope asi 60 m³, zhruba 21 m³ se vrátí a skoro 40 m³ zbude, z toho 30 m³ ornice. Když ornice zůstane na zahradě, odvezou se v ideálním případě asi 2 auta. Se sklepem zbude skoro 400 m³.
-publikovano: 2026-11-05
+publikovano: 2026-11-09
 overeno: 2026-11-09
 revize: 2026-11-09
 autor: Libor z TupTuDu
-stav: koncept
+stav: zverejneno
 obrazek: /img/clanky/kolik-zeminy-z-vykopu/vykop-svah.jpg
 souvisejici: koeficient-nakypreni-zeminy, zaklady-na-svahu, skryvka-ornice, nezamrzna-hloubka-zakladu
 - ČESKÉSTAVBY.cz: Bez kvalitních základů rodinný dům nepostavíme (ornice 25 až 30 cm, deponie, zásyp štěrkem) | https://www.ceskestavby.cz/clanky/bez-kvalitnich-zakladu-rodinny-dum-nepostavime-28882.html
