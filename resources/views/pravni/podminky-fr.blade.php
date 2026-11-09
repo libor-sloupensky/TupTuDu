@@ -75,7 +75,7 @@
 <p>
     Les consommateurs disposent en règle générale d’un droit de rétractation de 14 jours pour les contrats conclus à distance. Pour les services
     numériques payants dont l’exécution commence immédiatement à la demande expresse du consommateur, ce droit est régi par l’article 1837
-    du Code civil tchèque (loi n° 89/2012 Rec.). La rétractation portant sur l’achat d’une formule payante et les remboursements sont
+    du Code civil tchèque (loi n° 89/2012 Sb.). La rétractation portant sur l’achat d’une formule payante et les remboursements sont
     traités par le revendeur Paddle.com selon les règles de la page <a href="{{ \App\Support\Domeny::url('web', '/refunds') }}">Politique de remboursement</a>.
     L’organisme chargé du règlement extrajudiciaire des litiges de consommation est l’Inspection tchèque du commerce
     (<a href="https://adr.coi.cz" target="_blank">adr.coi.cz</a>). Les consommateurs d’autres pays de l’UE peuvent également

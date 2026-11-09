@@ -6,7 +6,7 @@ return [
     // Automatické názvy podlaží. :n = číslo patra nebo sklepu od 1, :np = :n + 1
     'podlazi_prizemi' => 'RDC',
     'podlazi_patro' => 'R+:n',
-    'podlazi_sklep' => 'S:n',
+    'podlazi_sklep' => 'R-:n',
     'podkrovi' => 'Combles',
 
     // Typy stěn

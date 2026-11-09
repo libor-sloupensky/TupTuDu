@@ -126,7 +126,7 @@ return [
         'chybi_upozorneni' => 'Fondation manquante : :seznam. La maison n’atteint pas le terrain à cet endroit, on n’y creuse donc pas. L’option « Prolonger la fondation au sol » la complète.',
         'nad_terenem' => 'La fondation dépasse le terrain de :vyska m au maximum.',
         'teren_rovina' => 'Terrain : plat, données d’altitude non disponibles.',
-        'teren_vyska' => 'Terrain sous la maison : :vyska m d’altitude (selon les données d’altitude)',
+        'teren_vyska' => 'Terrain sous la maison : :vyska m d’altitude (d’après les données altimétriques)',
         'vykopek_chybi' => 'Déblais manquants',
         'vykopek_navic' => 'Déblais en surplus',
         'ornice_chybi' => 'Terre végétale manquante',

@@ -134,7 +134,7 @@ return [
     'Jídelní stůl, dřevěný' => 'Table à manger, en bois',
     'Jídelní stůl, černý' => 'Table à manger, noire',
     'Konzolový stolek, černý' => 'Table console, noire',
-    'Konferenční stolek, nízký' => 'Table basse, basse',
+    'Konferenční stolek, nízký' => 'Table basse, extra-basse',
     'Odkládací stolek, kulatý černý' => 'Table d’appoint, ronde et noire',
     'Konferenční stolek, bílý' => 'Table basse, blanche',
     'Konferenční stolek, dřevo a kov' => 'Table basse, bois et métal',

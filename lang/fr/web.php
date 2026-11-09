@@ -29,7 +29,7 @@ return [
         ],
         'pozemek' => [
             'nadpis' => 'Votre terrain sur le cadastre',
-            'text' => 'Trouvez votre parcelle : vous verrez les terrains voisins et les bâtiments du cadastre, la carte Mapy.com et le profil du terrain.',
+            'text' => 'Trouvez votre parcelle : vous verrez les terrains voisins et les bâtiments du cadastre, la carte Mapy.com et le profil altimétrique du terrain.',
         ],
     ],
 

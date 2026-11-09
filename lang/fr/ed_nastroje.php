@@ -15,7 +15,7 @@ return [
         'pokyn_soubor' => 'Choisissez un plan, ou utilisez un plan déjà importé.',
         'pokyn_strana' => 'Choisissez la page qui contient le plan.',
         'pokyn_meritko' => 'Mesurez une dimension connue sur le plan — cliquez sur deux points et saisissez leur distance réelle.',
-        'pokyn_obrys' => 'Décalquez le bord extérieur des murs extérieurs — cliquez sur les angles de la maison.',
+        'pokyn_obrys' => 'Décalquez le bord extérieur des murs de façade — cliquez sur les angles de la maison.',
         'pokyn_steny' => 'Choisissez la variante qui correspond le mieux aux murs.',
         'jen_formaty' => 'Seuls les fichiers PDF, PNG et JPG sont pris en charge.',
         'nahrani_selhalo' => 'Impossible d’importer le fichier.',

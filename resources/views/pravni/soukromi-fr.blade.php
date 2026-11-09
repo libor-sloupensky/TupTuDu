@@ -19,7 +19,7 @@
     <tr>
         <td>L’article de notre site à partir duquel l’inscription a été effectuée</td>
         <td>Déterminer quels articles aident réellement les gens</td>
-        <td>Intérêt légitime (art. 6, par. 1, point f, du RGPD)</td>
+        <td>Intérêt légitime (art. 6, par. 1, point f) du RGPD)</td>
     </tr>
     <tr>
         <td>En cas de connexion avec Google : nom, e-mail et identifiant du compte Google</td>
@@ -86,7 +86,7 @@
 <p>
     Vous pouvez modifier ou retirer votre consentement à tout moment via le lien « Paramètres des cookies » en bas de page du site ;
     le retrait n’affecte pas la licéité du traitement antérieur. Base juridique : votre consentement (art. 6, par. 1, point a) du
-    RGPD et article 89, paragraphe 3, de la loi tchèque n° 127/2005 Rec. sur les communications électroniques).
+    RGPD et article 89, paragraphe 3, de la loi tchèque n° 127/2005 Sb. sur les communications électroniques).
 </p>
 
 <h2>4. Qui a accès aux données</h2>

@@ -34,7 +34,7 @@ return [
     'funkce_export' => 'Export d’images PNG et partage du projet par lien',
     'funkce_katastr' => 'Informations cadastrales sur le terrain : parcelles, bâtiments, voisins',
     'funkce_mapy' => 'Fond de carte Mapy.com',
-    'funkce_teren' => 'Profil du terrain',
+    'funkce_teren' => 'Profil altimétrique du terrain',
 
     // Ceník (web)
     'cenik_titulek' => 'Tarifs — TupTuDu',
