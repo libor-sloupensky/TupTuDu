@@ -17,7 +17,8 @@ return [
     'vyzva_zkopirovano' => 'Odkaz je zkopírovaný.',
 
     'kalk_nadpis' => 'Spočítej si to pro svůj dům',
-    'kalk_uvod' => 'Obdélníkový dům na rovině. Výchozí hodnoty jsou obvyklé v Česku, jdou změnit.',
+    'kalk_uvod' => 'Obdélníkový dům na rovině. Výchozí hodnoty jsou obvyklé pro :zeme, jdou změnit.',
+    'kalk_uvod_obecny' => 'Obdélníkový dům na rovině. Výchozí hodnoty jsou jen příklad, nastav je podle předpisů a zvyklostí ve své zemi.',
     'kalk_delka' => 'Délka domu (m)',
     'kalk_sirka' => 'Šířka domu (m)',
     'kalk_typ' => 'Základy',

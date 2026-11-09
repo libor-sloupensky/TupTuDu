@@ -3,13 +3,14 @@
     use App\Support\Clanky;
     use App\Support\Lokalizace;
 
-    // Články nejsou ve všech jazycích: přepínač vede na titulku
+    // Přehled je jen v jazycích, které mají článek. Jinde vede přepínač na titulku.
+    $verze = Clanky::verzePrehledu();
     $prepinac = [];
     foreach (Lokalizace::jazyky() as $kod) {
-        $prepinac[$kod] = Lokalizace::adresaWebu('/', $kod);
+        $prepinac[$kod] = $verze[$kod] ?? Lokalizace::adresaWebu('/', $kod);
     }
 @endphp
-<x-layouts.web :title="__('clanky.prehled_titulek')" :popis="__('clanky.prehled_popis')" :verze="[]" :prepinac="$prepinac">
+<x-layouts.web :title="__('clanky.prehled_titulek')" :popis="__('clanky.prehled_popis')" :verze="$verze" :prepinac="$prepinac">
     <div class="tt-clanek tt-clanek-stranka">
         <h1>{{ __('clanky.prehled_nadpis') }}</h1>
         <p class="tt-perex">{{ __('clanky.prehled_popis') }}</p>

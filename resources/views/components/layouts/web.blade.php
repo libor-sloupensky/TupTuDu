@@ -1,7 +1,7 @@
 @props([
     'title' => 'TupTuDu',
     'popis' => null,        // popis stránky pro výsledky hledání a náhled při sdílení
-    'verze' => null,        // jazykové verze stránky: kód => adresa; výchozí všechny, článek bez překladů předá []
+    'verze' => null,        // jazykové verze stránky: kód => adresa; výchozí všechny, článek předá jen své verze
     'kanonicka' => null,    // kanonická adresa, výchozí je verze v aktuálním jazyce, jinak adresa stránky
     'prepinac' => null,     // kam vedou odkazy přepínače jazyka, výchozí jsou jazykové verze
     'obrazek' => null,      // náhled při sdílení, cesta od kořene webu
@@ -33,7 +33,10 @@
     @foreach ($verze as $kod => $adresa)
     <link rel="alternate" hreflang="{{ $kod }}" href="{{ $adresa }}">
     @endforeach
-    <link rel="alternate" hreflang="x-default" href="{{ $verze[config('lokalizace.vychozi_jazyk')] ?? reset($verze) }}">
+    {{-- x-default jen na anglickou verzi; článek bez ní ho nemá, cizinci by jinak dostali češtinu --}}
+    @isset($verze[config('lokalizace.vychozi_jazyk')])
+    <link rel="alternate" hreflang="x-default" href="{{ $verze[config('lokalizace.vychozi_jazyk')] }}">
+    @endisset
     @endif
     @else
     <meta name="robots" content="noindex">

@@ -15,8 +15,9 @@ use Illuminate\Http\Response;
  *   app        neindexovat (titulka na app.tuptudu.com je kopie webu kvůli Paddle, roboti na ni smí)
  *   masterteam neindexovat
  *
- * V sitemapě jsou kanonické adresy: stránky ze `STRANKY_WEBU` v každém jazyce s hreflang a články
- * v jejich jazyce (modules/blog.md). Nová veřejná stránka na tuptudu.com = přidat sem.
+ * V sitemapě jsou kanonické adresy: stránky ze `STRANKY_WEBU` v každém jazyce s hreflang, články
+ * a jejich přehledy s hreflang mezi jazykovými verzemi (modules/blog.md). Jedna sitemapa pro všechny
+ * jazyky, Google si verze spáruje podle hreflang. Nová veřejná stránka na tuptudu.com = přidat sem.
  * Dokumentace: modules/marketing.md, modules/lokalizace.md.
  */
 class SeoController extends Controller
@@ -68,13 +69,15 @@ class SeoController extends Controller
                 $polozky[] = [$adresa, $priorita, null, $verze];
             }
         }
-        foreach (Lokalizace::jazyky() as $jazyk) {
-            $clanky = Clanky::vsechny($jazyk);
-            if ($clanky !== []) {
-                $polozky[] = [Clanky::adresaPrehledu($jazyk), '0.7', $clanky[0]['publikovano'], []];
-            }
-            foreach ($clanky as $clanek) {
-                $polozky[] = [Clanky::adresa($clanek), '0.7', $clanek['overeno'], []];
+        // Přehledy a články s hreflang mezi jazykovými verzemi (Clanky::verze, propojené klíčem)
+        $prehledy = Clanky::verzePrehledu();
+        foreach ($prehledy as $jazyk => $adresa) {
+            $polozky[] = [$adresa, '0.7', Clanky::vsechny($jazyk)[0]['publikovano'], count($prehledy) > 1 ? $prehledy : []];
+        }
+        foreach (array_keys($prehledy) as $jazyk) {
+            foreach (Clanky::vsechny($jazyk) as $clanek) {
+                $verze = Clanky::verze($clanek);
+                $polozky[] = [Clanky::adresa($clanek), '0.7', $clanek['overeno'], count($verze) > 1 ? $verze : []];
             }
         }
 
@@ -85,7 +88,8 @@ class SeoController extends Controller
             foreach ($verze as $kod => $alternativa) {
                 $xml .= '    <xhtml:link rel="alternate" hreflang="' . $kod . '" href="' . e($alternativa) . '"/>' . "\n";
             }
-            if ($verze !== []) {
+            // x-default jen na anglickou verzi, článek bez ní ho nemá
+            if (isset($verze[config('lokalizace.vychozi_jazyk')])) {
                 $xml .= '    <xhtml:link rel="alternate" hreflang="x-default" href="' . e($verze[config('lokalizace.vychozi_jazyk')]) . '"/>' . "\n";
             }
             $xml .= ($zmena ? '    <lastmod>' . e($zmena) . '</lastmod>' . "\n" : '')

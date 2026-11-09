@@ -16,15 +16,29 @@ use RuntimeException;
  * (dokud není vidět, zůstane jen text) a `[text](aplikace:)` do aplikace.
  *
  * Článek se `stav: koncept` je vidět jen lokálně, nasazení ho proto samo nezveřejní.
+ *
+ * Jazykové verze: originál je česky, verze v jiném jazyce má v hlavičce `klic: adresa-ceskeho-clanku`
+ * a `zeme: DE, AT` (pro které země je psaná; angličtina zemi nemá). Podle klíče se verze propojí
+ * v přepínači jazyka, v hreflang a v sitemapě. Vlastní adresu má každá verze ve svém jazyce.
  */
 final class Clanky
 {
-    /** Část adresy podle jazyka. Nový jazyk = řádek sem a složka s texty. */
-    public const SEGMENTY = ['cs' => 'clanky', 'en' => 'articles'];
+    /** Část adresy podle jazyka. Nový jazyk = řádek sem a překlad lang/{jazyk}/clanky.php. */
+    public const SEGMENTY = [
+        'cs' => 'clanky', 'en' => 'articles', 'sk' => 'clanky', 'pl' => 'artykuly',
+        'de' => 'artikel', 'fr' => 'articles', 'es' => 'articulos', 'it' => 'articoli',
+    ];
+
+    /** Jazyk originálů. Verze v ostatních jazycích se k nim vážou klíčem. */
+    public const ZDROJOVY_JAZYK = 'cs';
 
     /** Články v jazyce, nejnovější první. */
     public static function vsechny(string $jazyk): array
     {
+        static $nactene = [];
+        if (isset($nactene[$jazyk])) {
+            return $nactene[$jazyk];
+        }
         $clanky = [];
         foreach (File::glob(resource_path('clanky/' . $jazyk . '/*.md')) as $soubor) {
             $clanek = self::nacti($soubor, $jazyk);
@@ -34,7 +48,7 @@ final class Clanky
         }
         usort($clanky, fn ($a, $b) => strcmp($b['publikovano'], $a['publikovano']));
 
-        return $clanky;
+        return $nactene[$jazyk] = $clanky;
     }
 
     public static function najdi(string $jazyk, string $adresa): ?array
@@ -46,6 +60,56 @@ final class Clanky
         $clanek = self::nacti($soubor, $jazyk);
 
         return self::jeVidet($clanek) ? $clanek : null;
+    }
+
+    /** Společný klíč jazykových verzí: adresa českého originálu. */
+    public static function klic(array $clanek): string
+    {
+        return $clanek['klic'] ?? $clanek['adresa'];
+    }
+
+    /** Země, pro které je verze psaná (`zeme: DE, AT`), originál bez údaje je pro Česko. */
+    public static function zeme(array $clanek): array
+    {
+        if (isset($clanek['zeme'])) {
+            return array_values(array_filter(array_map(fn ($kod) => strtoupper(trim($kod)), explode(',', $clanek['zeme']))));
+        }
+
+        return $clanek['jazyk'] === self::ZDROJOVY_JAZYK ? ['CZ'] : [];
+    }
+
+    /** Viditelné jazykové verze článku: kód jazyka => adresa (včetně článku samotného). */
+    public static function verze(array $clanek): array
+    {
+        $klic = self::klic($clanek);
+        $verze = [];
+        foreach (array_keys(self::SEGMENTY) as $jazyk) {
+            if ($jazyk === $clanek['jazyk']) {
+                $verze[$jazyk] = self::adresa($clanek);
+                continue;
+            }
+            foreach (self::vsechny($jazyk) as $jiny) {
+                if (self::klic($jiny) === $klic) {
+                    $verze[$jazyk] = self::adresa($jiny);
+                    break;
+                }
+            }
+        }
+
+        return $verze;
+    }
+
+    /** Přehledy článků v jazycích, které nějaký článek mají: kód jazyka => adresa. */
+    public static function verzePrehledu(): array
+    {
+        $verze = [];
+        foreach (array_keys(self::SEGMENTY) as $jazyk) {
+            if (self::vsechny($jazyk) !== []) {
+                $verze[$jazyk] = self::adresaPrehledu($jazyk);
+            }
+        }
+
+        return $verze;
     }
 
     /** Adresa přehledu článků v jazyce. */

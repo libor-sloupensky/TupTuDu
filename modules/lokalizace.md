@@ -15,7 +15,7 @@ Masterteam je interní a **vždy česky** — nepřekládá se.
 - Pořadí napojení národních služeb (potvrdil Libor 4. 11. 2026): vlna 1 sk, pl, vlna 2 de s Rakouskem, fr, vlna 3 es, it. Rozbor po zemích: https://claude.ai/artifact/NCyfAVyDQ1R9aUTMoMKaGo, část Jazyky a země.
 - Přeložené: titulka webu, přihlášení, registrace, hesla, ověření e-mailu, e-maily,
   účet, úvodní obrazovka, hlavička aplikace, právní stránky (celé dokumenty cs/en).
-- SEO články se zatím nepřekládají (Libor 4. 11. 2026).
+- SEO články: každý vychází ve všech jazycích jako verze pro zemi, propojené klíčem `klic:` a hreflang (od 9. 11. 2026, modules/blog.md, Jazyky a země).
 - V zemích bez služby editor skrývá hledání parcely a volbu mapového podkladu (`@funkce`), mřížka v panelu zůstává. Ruční pozemek a napojení parcel na Slovensku a v Polsku jsou další kroky.
 - **Editor je přeložený** (5. 11. 2026): texty ve skupinách `ed_sablona`, `ed_ui`, `ed_dum`, `ed_kresba`, `ed_ral`, `ed_nastroje`, `ed_katalog`, načítají se jen na stránce editoru. Názvy kusů katalogu přes `ed_katalog` podle českého názvu, nový kus bez překladu zůstane česky. Skrytý AI panel přeložený není, je určený ke smazání. Data z ČÚZK a ČGS a popisy kroků historie zůstávají v jazyce, v němž vznikly. Katastr hlídá i server (`funkce:katastr`).
 - Test: `node services/import-test/test-jazyky-editor-ui.cjs` projde editor ve všech jazycích.

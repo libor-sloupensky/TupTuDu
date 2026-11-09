@@ -1,7 +1,21 @@
 {{-- Blok článku `::kalkulacka-zeminy`. Výpočet a dosazování čísel: public/js/kalkulacka-zemina.js, výchozí hodnoty
-     odpovídají editoru (modules/zemina.md). Pole v cm mají data-meritko 0.01, kalkulačka počítá v metrech. --}}
+     odpovídají editoru (modules/zemina.md). Pole v cm mají data-meritko 0.01, kalkulačka počítá v metrech.
+     Verze článku pro jinou zemi přepíše výchozí hodnoty parametry, např. `::kalkulacka-zeminy spara=80 | ornice=30`
+     (klíče jako data-pole níž, cm v cm). Úvod kalkulačky jmenuje země z hlavičky článku (`zeme:`). --}}
 @php
-    $pole = fn (string $klic, string $popisek, $hodnota, $min, $max, $krok, string $meritko = '1', string $podminka = '') => compact('klic', 'popisek', 'hodnota', 'min', 'max', 'krok', 'meritko', 'podminka');
+    $vlastni = [];
+    foreach ($parametry ?? [] as $parametr) {
+        if (preg_match('/^([a-zA-Z]+)\s*=\s*([0-9.]+)$/', $parametr, $m)) {
+            $vlastni[$m[1]] = (float) $m[2];
+        }
+    }
+    $zeme = array_map(fn ($kod) => __('zeme.' . $kod), \App\Support\Clanky::zeme($clanek));
+    $uvod = $zeme === [] ? __('clanky.kalk_uvod_obecny') : __('clanky.kalk_uvod', ['zeme' => implode(' / ', $zeme)]);
+    $pole = function (string $klic, string $popisek, $hodnota, $min, $max, $krok, string $meritko = '1', string $podminka = '') use ($vlastni) {
+        $hodnota = $vlastni[$klic] ?? $hodnota;
+
+        return compact('klic', 'popisek', 'hodnota', 'min', 'max', 'krok', 'meritko', 'podminka');
+    };
     $hlavni = [
         $pole('delka', __('clanky.kalk_delka'), 12, 3, 60, 0.1),
         $pole('sirka', __('clanky.kalk_sirka'), 10, 3, 60, 0.1),
@@ -20,7 +34,7 @@
 @endphp
 <form class="tt-kalkulacka" data-kalkulacka="zemina" data-clanek="{{ $clanek['adresa'] }}" novalidate>
     <div class="tt-kalkulacka-titulek">{{ __('clanky.kalk_nadpis') }}</div>
-    <p class="tt-kalkulacka-uvod">{{ __('clanky.kalk_uvod') }}</p>
+    <p class="tt-kalkulacka-uvod">{{ $uvod }}</p>
     <div class="tt-kalkulacka-sloupce">
         <div class="tt-kalkulacka-pole">
             <div class="tt-kalkulacka-radek">
@@ -56,7 +70,7 @@
             </div>
             <div>
                 <label for="kalk-nadTerenem">{{ __('clanky.kalk_nad_terenem') }}</label>
-                <input type="number" inputmode="decimal" id="kalk-nadTerenem" data-pole="nadTerenem" data-meritko="0.01" value="30" min="0" max="150" step="5">
+                <input type="number" inputmode="decimal" id="kalk-nadTerenem" data-pole="nadTerenem" data-meritko="0.01" value="{{ $vlastni['nadTerenem'] ?? 30 }}" min="0" max="150" step="5">
             </div>
             <details>
                 <summary>{{ __('clanky.kalk_podrobnosti') }}</summary>

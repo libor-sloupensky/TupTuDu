@@ -8,10 +8,12 @@
     $jazyk = $clanek['jazyk'];
     $obrazek = $clanek['obrazek'] ?? null;
     $autor = $clanek['autor'] ?? 'TupTuDu';
-    // Článek zatím nemá překlady: přepínač vede na titulku v jiném jazyce
+    // Jazykové verze podle klíče (hreflang). Kde verze není, vede přepínač na přehled článků, nebo na titulku.
+    $verze = Clanky::verze($clanek);
+    $prehledy = Clanky::verzePrehledu();
     $prepinac = [];
     foreach (Lokalizace::jazyky() as $kod) {
-        $prepinac[$kod] = $kod === $jazyk ? $adresa : Lokalizace::adresaWebu('/', $kod);
+        $prepinac[$kod] = $verze[$kod] ?? $prehledy[$kod] ?? Lokalizace::adresaWebu('/', $kod);
     }
     $data = [
         [
@@ -43,7 +45,7 @@
     ];
     $datum = fn (string $iso) => \Illuminate\Support\Carbon::parse($iso)->locale($jazyk)->isoFormat('LL');
 @endphp
-<x-layouts.web :title="$clanek['titulek'] . ' — TupTuDu'" :popis="$clanek['popis']" :kanonicka="$adresa" :verze="[]" :prepinac="$prepinac" :obrazek="$obrazek" og-typ="article">
+<x-layouts.web :title="$clanek['titulek'] . ' — TupTuDu'" :popis="$clanek['popis']" :kanonicka="$adresa" :verze="$verze" :prepinac="$prepinac" :obrazek="$obrazek" og-typ="article">
     <x-slot:hlava>
         <script type="application/ld+json">{!! json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
     </x-slot:hlava>

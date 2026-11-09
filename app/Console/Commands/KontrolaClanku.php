@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\File;
 
 /**
  * Hlídá pravidla článků (modules/blog.md), která jde ověřit strojově: délku, autora, klíčové slovo,
+ * propojení jazykových verzí (klic, zeme),
  * žádné vnější odkazy ani vlastní HTML, výzvu a cesty do aplikace, provázání s dalšími články oběma
  * směry, tón, tykání, existenci obrázků. Odbornou správnost nehlídá, tu řeší revize.
  * Chyba = článek takhle nemá vyjít, upozornění = podívat se na to.
@@ -56,7 +57,7 @@ class KontrolaClanku extends Command
 
         // Délka: text bez bloků a tabulek
         $text = preg_replace('/^(::.*|:::.*|\|.*)$/m', '', $telo);
-        $slov = str_word_count(strip_tags($text), 0, 'áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ0123456789');
+        $slov = preg_match_all('/[\p{L}\p{N}][\p{L}\p{N}\'’-]*/u', strip_tags($text));
         if ($slov > self::SLOV_NEJVIC) {
             $chyby[] = "dlouhý text: {$slov} slov, nejvíc " . self::SLOV_NEJVIC;
         } elseif ($slov > self::SLOV_DOPORUCENO) {
@@ -66,6 +67,29 @@ class KontrolaClanku extends Command
         // Hlavička
         if (($clanek['autor'] ?? null) !== self::AUTOR) {
             $chyby[] = 'autor v hlavičce má být „' . self::AUTOR . '“, je „' . ($clanek['autor'] ?? '') . '“';
+        }
+        // Jazykové verze (modules/blog.md, Jazyky a země): klíč na český originál a cílové země
+        if ($jazyk !== Clanky::ZDROJOVY_JAZYK) {
+            if (! isset($clanek['klic'])) {
+                $chyby[] = 'v hlavičce chybí klic (adresa českého originálu)';
+            } elseif (! File::exists(resource_path('clanky/' . Clanky::ZDROJOVY_JAZYK . '/' . $clanek['klic'] . '.md'))) {
+                $chyby[] = "klic {$clanek['klic']} nevede na český článek";
+            } else {
+                $stejne = array_filter(File::glob(resource_path('clanky/' . $jazyk . '/*.md')), fn ($jiny) => basename($jiny, '.md') !== $adresa
+                    && preg_match('/^klic:\s*' . preg_quote($clanek['klic'], '/') . '\s*$/m', File::get($jiny)));
+                if ($stejne !== []) {
+                    $chyby[] = 'stejný klic má i ' . implode(', ', array_map(fn ($f) => basename($f, '.md'), $stejne)) . ', v jazyce smí být jedna verze';
+                }
+            }
+        }
+        $zeme = Clanky::zeme($clanek);
+        if ($zeme === [] && $jazyk !== 'en') {
+            $chyby[] = 'v hlavičce chybí zeme, pro které země je verze psaná (např. zeme: DE, AT)';
+        }
+        foreach ($zeme as $kod) {
+            if (! array_key_exists($kod, trans('zeme', [], 'cs'))) {
+                $chyby[] = "neznámá země {$kod} v hlavičce";
+            }
         }
         if (mb_strlen($clanek['titulek']) > 65) {
             $chyby[] = 'titulek přes 65 znaků, ve výsledcích hledání se zkrátí';

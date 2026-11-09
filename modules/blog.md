@@ -49,6 +49,8 @@ autor: Libor z TupTuDu   ← povinně, šablona ho dá pod titulek i do struktur
 stav: koncept            ← jen lokálně; na produkci je vidět až `zverejneno` a datum publikovano ≤ dnes
 obrazek: /img/clanky/…   ← náhled při sdílení, JPEG nebo PNG
 souvisejici: adresa, adresa
+klic: adresa-ceskeho-clanku  ← jen jazyková verze: propojí ji s originálem (přepínač jazyka, hreflang, sitemapa)
+zeme: DE, AT             ← jen jazyková verze: pro které země je psaná, angličtina bez zemí; originál = CZ
 - Název zdroje | https://…   ← jen pro nás a revizi, na stránce se neukáže
 ---
 ```
@@ -57,7 +59,7 @@ Text je Markdown (tabulky, zarovnání `---:` pro čísla). Bloky mají vlastní
 
 | Blok | Zápis |
 |---|---|
-| kalkulačka zeminy | `::kalkulacka-zeminy` |
+| kalkulačka zeminy | `::kalkulacka-zeminy`, ve verzi pro jinou zemi výchozí hodnoty podle ní: `::kalkulacka-zeminy spara=80 \| ornice=30` (klíče `data-pole`: spara, sirkaPasu, skladba, ornice, odkop, svah, nakypreni, vyskaSklepu, nadTerenem, vnitrni; cm v cm). Úvod kalkulačky jmenuje země z `zeme:` |
 | schéma výkopu | `::rez-vykopu` |
 | obrázek | `::obrazek cesta \| popis pro nevidomé \| popisek \| šířka \| výška` |
 | výzva | `::vyzva Titulek \| Text` (na dotyku místo registrace nabídne poslat si odkaz) |
@@ -200,9 +202,19 @@ tabulkou. Samostatná verze pro zemi (vlastní adresa, `hreflang="de-AT"`) jen u
 a jen když je v té zemi dost hledání. Angličtina je bez cílové země: princip a postup, čísla jen jako příklad
 s uvedením země.
 
-**Technicky chybí:** články mají jen cs a en (`Clanky::SEGMENTY`, `skupiny_jazyku.clanky`), jazykové verze téhož
-článku se zatím nepropojují (`:verze="[]"` v `clanky/detail`, potřeba společný klíč v hlavičce a hreflang) a hlavička
-nemá `zeme`. Udělat před prvním překladem.
+**Technicky hotovo (9. 11. 2026):** články jdou ve všech osmi jazycích (`Clanky::SEGMENTY`: cs `clanky`, en `articles`,
+sk `clanky`, pl `artykuly`, de `artikel`, fr `articles`, es `articulos`, it `articoli`), texty kolem článků a kalkulačky
+jsou v `lang/*/clanky.php`. Verze se vážou klíčem `klic:` na adresu českého originálu, každá má vlastní adresu
+ve svém jazyce. Podle klíče se propojí přepínač jazyka, `hreflang` v hlavičce stránky a v sitemapě (přehledy článků
+také). `x-default` jen tam, kde je anglická verze. Přehled a menu Články se v jazyce ukážou s prvním zveřejněným
+článkem. `clanky:kontrola` hlídá `klic` (vede na český článek, v jazyce jen jedna verze) a `zeme`.
+Samostatná verze pro druhou zemi téhož jazyka (`de-AT`) zatím technicky není, kontrola ji odmítne.
+Test: `test-clanky-ui.cjs`, část 7, se zkušební německou verzí.
+
+**Google a jazyky:** stačí jedna sitemapa pro všechny jazyky a jedna vlastnost `sc-domain:tuptudu.com` v Search Console.
+Google spáruje verze podle `hreflang` a každé zemi ukáže tu její. Výkon podle jazyka se filtruje podle stránky
+(`/de/`) nebo země. Žádost o indexování jde jen ručně v Search Console (Kontrola URL → Požádat o indexování), API
+to pro běžné stránky neumí. Sitemapu po nasazení nových článků znovu odeslat (`submit_sitemap`).
 
 ## Postup jednoho článku
 
@@ -279,7 +291,7 @@ Editor a kalkulačka počítají stejně i se štěrkem a prodlouženým základ
 
 ## Otevřené body
 
-- Články o zemině Libor schválil 9. 11. 2026 (`stav: zverejneno`, `publikovano: 2026-11-09`), na web jdou s dalším nasazením. Délku 591 slov a zubatý okraj výkopu na snímku přijal. Čísla z vlastního výkopu nemá a mít nebude, příklad z cizí stavby zůstává. Další krok: technická příprava jazyků (část Jazyky a země, Technicky chybí) a verze pro další jazyky.
+- Články o zemině Libor schválil 9. 11. 2026 (`stav: zverejneno`, `publikovano: 2026-11-09`), na web jdou s dalším nasazením. Délku 591 slov a zubatý okraj výkopu na snímku přijal. Čísla z vlastního výkopu nemá a mít nebude, příklad z cizí stavby zůstává. Sitemapa odeslaná znovu 9. 11. 2026. Technika jazyků hotová, další krok: verze obou článků pro další jazyky (copywriter, revize pro každou zemi).
 - Hodnoty podle země: u článků je to vyřešené v části Jazyky a země (9. 11. 2026). Odložená zůstává jen část pro editor,
   kde platí jedna hodnota pro všechny země (`modules/stavebni-parametry.md`, Návrh řešení).
 - 3D ukázka přes sdílený odkaz v článku: `X-Frame-Options: SAMEORIGIN` vložení na www dovolí, chce to demo projekt na produkci

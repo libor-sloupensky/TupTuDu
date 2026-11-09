@@ -16,7 +16,8 @@ return [
     'vyzva_zkopirovano' => 'The link has been copied.',
 
     'kalk_nadpis' => 'Calculate it for your house',
-    'kalk_uvod' => 'A rectangular house on flat ground. The default values are common in Czechia and can be changed.',
+    'kalk_uvod' => 'A rectangular house on flat ground. The default values are typical for :zeme and can be changed.',
+    'kalk_uvod_obecny' => 'A rectangular house on flat ground. The default values are only an example, set them according to the rules and practice in your country.',
     'kalk_delka' => 'House length (m)',
     'kalk_sirka' => 'House width (m)',
     'kalk_typ' => 'Foundations',

@@ -170,6 +170,38 @@ async function main() {
         await t.zavri();
     }
 
+    // Zkušební německá verze (klíč na český článek), po testu se smaže i se složkou, kterou založil
+    console.log('\n7) Jazykové verze článku');
+    const slozkaDe = path.join(__dirname, '../../resources/clanky/de');
+    const zalozenaSlozka = !fs.existsSync(slozkaDe);
+    const soubor = path.join(slozkaDe, 'claudetest-verze.md');
+    fs.mkdirSync(slozkaDe, { recursive: true });
+    fs.writeFileSync(soubor, ['---', 'titulek: ClaudeTest verze', 'popis: Zkušební verze.', 'perex: Zkušební verze.',
+        'publikovano: 2026-11-09', 'overeno: 2026-11-09', 'stav: koncept', 'klic: kolik-zeminy-z-vykopu', 'zeme: DE, AT',
+        '---', '::kalkulacka-zeminy spara=80 | ornice=30', ''].join('\n'));
+    // Node adresu *.localhost nepřeloží, stránky proto stahuje prohlížeč (stejný původ)
+    const v7 = await otevriProhlizec({ sirka: 1200, vyska: 800 });
+    try {
+        await v7.jdiNa(WEB + CLANEK);
+        const stranka = (cesta) => v7.vyhodnot(`fetch(${JSON.stringify(WEB + cesta)}).then((r) => r.text())`);
+        const hreflang = (html) => [...html.matchAll(/<link rel="alternate" hreflang="([a-z-]+)" href="([^"]+)"/g)].map((m) => m[1] + '=' + m[2].replace(WEB, ''));
+        const cs = await stranka(CLANEK);
+        const de = await stranka('/de/artikel/claudetest-verze');
+        const ocekavane = ['cs=' + CLANEK, 'de=/de/artikel/claudetest-verze'].join();
+        kontrola('hreflang na české i německé verzi, bez x-default (anglická verze není)', hreflang(cs).join() === ocekavane && hreflang(de).join() === ocekavane,
+            hreflang(cs).join() + ' | ' + hreflang(de).join());
+        kontrola('přepínač jazyka vede na druhou verzi', cs.includes(`href="${WEB}/de/artikel/claudetest-verze" lang="de"`) && de.includes(`href="${WEB}${CLANEK}" lang="cs"`));
+        kontrola('kalkulačka bere výchozí hodnoty a země z verze', /id="kalk-spara"[^>]*value="80"/.test(de) && /id="kalk-ornice"[^>]*value="30"/.test(de)
+            && de.includes('Deutschland / Österreich') && /id="kalk-spara"[^>]*value="100"/.test(cs));
+        const mapa = await stranka('/sitemap.xml');
+        kontrola('sitemapa má německou verzi s hreflang na českou', mapa.includes('<loc>' + WEB + '/de/artikel/claudetest-verze</loc>')
+            && mapa.includes('hreflang="cs" href="' + WEB + CLANEK + '"') && mapa.includes('<loc>' + WEB + '/de/artikel</loc>'));
+    } finally {
+        await v7.zavri();
+        fs.rmSync(soubor);
+        if (zalozenaSlozka) fs.rmdirSync(slozkaDe);
+    }
+
     console.log(chyb ? `\nCHYBY: ${chyb}` : '\nVše v pořádku');
     process.exit(chyb ? 1 : 0);
 }
