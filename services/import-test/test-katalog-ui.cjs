@@ -245,6 +245,14 @@ const kontrola = (popis, podminka, detail = '') => {
         const kopieVedle = await p.vyhodnot(`(() => { const [a, b] = ${D}.engine.vybaveni; const k = Math.hypot(b.stred[0] - a.stred[0], b.stred[1] - a.stred[1]); const c = b.uhel * Math.PI / 180; return { vzdalenost: +k.toFixed(3), cekano: +(a.sirka + 0.1).toFixed(3), stejneOdZdi: Math.abs((b.stred[0] - a.stred[0]) * Math.sin(c) + (b.stred[1] - a.stred[1]) * Math.cos(c)) < 0.001 }; })()`);
         kontrola('kopie stojí vedle originálu podél jeho šířky', Math.abs(kopieVedle.vzdalenost - kopieVedle.cekano) < 0.001 && kopieVedle.stejneOdZdi, JSON.stringify(kopieVedle));
         kontrola('otočení o 90°, kopie a Zpět fungují', Math.abs(((uprava.u1 - uprava.u0 + 360) % 360) - 90) < 0.1 && uprava.po === 2 && uprava.zpet === 1 && uprava.ted === 2, JSON.stringify(uprava));
+        const barva = await p.vyhodnot(`(async () => { const d = ${D}; const c = () => new Promise(r => setTimeout(r, 200)); await c();
+            const v = d.engine.vybaveni[0]; const n = document.querySelectorAll('[data-katalog-barva]').length;
+            document.querySelector('[data-katalog-barva="zelena"]').click(); await c();
+            const po = d.engine.vybaveni[0].barva, oznaceno = document.querySelector('[data-katalog-barva="zelena"]').getAttribute('aria-pressed');
+            d.undo(); await c(); const zpet = d.engine.vybaveni[0].barva ?? ''; d.redo(); await c();
+            const znacka = await Katalog3d.prebarviZnacku(v.katalog, 'zelena');
+            return { n, po, oznaceno, zpet, ted: d.engine.vybaveni[0].barva, znacka: !!(znacka && znacka.getContext) }; })()`);
+        kontrola('paleta potahu: barva se nastaví, jde vrátit a značka se přebarví', barva.n > 5 && barva.po === 'zelena' && barva.oznaceno === 'true' && barva.zpet === '' && barva.ted === 'zelena' && barva.znacka, JSON.stringify(barva));
         await p.vyhodnot(`(() => { const d = ${D}; d.katalogVyber(d.katalog.polozky.find(x => x.kategorie === 'stoly')); return true; })()`);
         await klikM(2, 1);
         const stul = await p.vyhodnot(`(() => { const d = ${D}; const v = d.engine.vybaveni.find(x => x.kategorie === 'stoly'); return { y: -v.stred[1], uhel: v.uhel }; })()`);
@@ -255,8 +263,9 @@ const kontrola = (popis, podminka, detail = '') => {
         await p.jdiNa(url);
         await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'znovu');
         await pauza(1500);
-        const poNacteni = await p.vyhodnot(`${D}.engine.vybaveni.map(v => ({ k: v.katalog, n: v.nazev, u: v.uroven }))`);
+        const poNacteni = await p.vyhodnot(`${D}.engine.vybaveni.map(v => ({ k: v.katalog, n: v.nazev, u: v.uroven, b: v.barva }))`);
         kontrola('po znovuotevření jsou kusy zpět i s katalogem', poNacteni.length === 3 && poNacteni.every(v => v.k && v.n), JSON.stringify(poNacteni).slice(0, 200));
+        kontrola('barva potahu se uloží', poNacteni.filter(v => v.b === 'zelena').length === 1, JSON.stringify(poNacteni.map(v => v.b)));
 
         console.log('\n5) 3D');
         await p.vyhodnot(`(async () => { const d = ${D}; await d.prepni3d(); await new Promise(r => setTimeout(r, 300)); return true; })()`);
@@ -270,6 +279,9 @@ const kontrola = (popis, podminka, detail = '') => {
         kontrola('změněná výška sedí i ve 3D', d3.every(v => Math.abs(v.vyskaBox - v.vyskaCekano) < 0.03) && d3.some(v => v.vyskaCekano === 1.2), JSON.stringify(d3.map(v => [v.vyskaBox, v.vyskaCekano])));
         // Stůl je v půdorysu kolem [2; 1]: stejné místo musí vyjít i ve 3D
         const poloha = await p.vyhodnot(`(() => { const T = window.THREE; let o = null; window._kk3d.wallGroup.traverse(x => { if (x.userData?.katalog && !o) { const v = ${D}.engine.vybaveni.find(q => q.katalog === x.userData.katalog.id && q.kategorie === 'stoly'); if (v) o = x; } }); const p = o.getWorldPosition(new T.Vector3()); return { x: +p.x.toFixed(2), z: +p.z.toFixed(2) }; })()`);
+        await pauza(800);
+        const barva3d = await p.vyhodnot(`(() => { let n = 0; window._kk3d.wallGroup.traverse(o => { if (o.isMesh && o.material?.map?.image instanceof HTMLCanvasElement) n++; }); return n; })()`);
+        kontrola('přebarvený kus má ve 3D přebarvenou texturu', barva3d > 0, String(barva3d));
         kontrola('poloha ve 3D odpovídá půdorysu', Math.abs(poloha.x - 2) < 0.05 && Math.abs(poloha.z - 1) < 0.05, JSON.stringify(poloha));
         await p.vyhodnot(`(() => { const k = window._kk3d.camera; k.zoom = 0.8; k.updateProjectionMatrix(); return true; })()`);
         await pauza(800);
@@ -278,6 +290,8 @@ const kontrola = (popis, podminka, detail = '') => {
         console.log('\n6) Model pro sdílený odkaz');
         const zapec = await p.vyhodnot(`(() => { const d = ${D}; const m = d._zapecModel(); return { objektu: (m.objekty || []).length, prvni: m.objekty?.[0], trojuhelniku: m.meshe.reduce((s, k) => s + k.pozice.length, 0) }; })()`);
         kontrola('kusy jdou do odkazu jako odkaz na model, ne jako trojúhelníky', zapec.objektu === 3 && zapec.prvni.id && typeof zapec.prvni.uhel === 'number', JSON.stringify(zapec).slice(0, 240));
+        const barvaOdkaz = await p.vyhodnot(`(${D}._zapecModel().objekty || []).filter(o => o.barva === 'zelena').length`);
+        kontrola('barva potahu jde i do odkazu', barvaOdkaz === 1, String(barvaOdkaz));
 
         console.log('\n7) Sdílený odkaz s nábytkem');
         await p.vyhodnot(`(() => { const d = ${D}; d.prepni2d(); document.querySelector('[data-sekce-export]').open = true; return true; })()`);

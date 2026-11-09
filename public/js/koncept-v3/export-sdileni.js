@@ -364,7 +364,7 @@
                 const k = o.userData?.katalog;
                 if (k) {
                     o.getWorldPosition(v);
-                    objekty.push({ id: k.id, skupina, x: +v.x.toFixed(3), y: +(v.y - y0).toFixed(3), z: +v.z.toFixed(3), uhel: k.uhel, sirka: k.sirka, hloubka: k.hloubka, vyska: k.vyska });
+                    objekty.push({ id: k.id, skupina, x: +v.x.toFixed(3), y: +(v.y - y0).toFixed(3), z: +v.z.toFixed(3), uhel: k.uhel, sirka: k.sirka, hloubka: k.hloubka, vyska: k.vyska, ...(k.barva ? { barva: k.barva } : {}) });
                     return;
                 }
                 pridej(o, skupina);

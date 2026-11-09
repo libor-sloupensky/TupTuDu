@@ -432,7 +432,26 @@
                 urovenCm: Math.round((v.uroven || 0) * 100),
                 rozmery: ROZMERY.map(([osa, klic]) => ({ osa, nazev: preloz(klic), cm: Math.round(v[osa] * 100), procenta: Math.round(v[osa] / z[osa] * 100) })),
                 zmeneno: ROZMERY.some(([osa]) => Math.abs(v[osa] - z[osa]) > 0.0005),
+                barva: v.barva || '',
+                barvy: this._katalogBarvy(v),
             };
+        },
+
+        /** Paleta kusu z katalogu: jen když má kus masku potahu. Katalog se dotáhne, kdyby ještě nebyl načtený. */
+        _katalogBarvy(v) {
+            if (!this.katalog) { this._katalogNacti().then(() => { this._selectionTick++; }); return []; }
+            const p = this.katalog.polozky.find(x => x.id === v.katalog);
+            return window.Katalog3d.barvy(p?.maska).map(b => ({ ...b, nazev: preloz(b.klic ? 'ed_sablona.katalog.barvy.' + b.klic : 'ed_sablona.katalog.barva_puvodni') }));
+        },
+
+        /** Barva potahu, prázdný klíč vrátí původní. */
+        katalogBarva(klic) {
+            const v = this.katalogObjekt;
+            if (!v || (v.barva || '') === klic) return;
+            if (klic) v.barva = klic;
+            else delete v.barva;
+            this.renderer.setSelection([], [], [], [v.id]);
+            this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_barva'));
         },
 
         /** Změna rozměru v cm nebo %. Se spojeným řetízkem se ostatní rozměry mění ve stejném poměru. */
@@ -512,7 +531,7 @@
                 const dh = this._nulaBodu?.(podl.id, { x: v.stred[0] * PX, y: -v.stred[1] * PX }) || 0;
                 window.Katalog3d.vloz(g, {
                     id: v.katalog, x: v.stred[0], y: dh + (v.uroven || 0), z: -v.stred[1],
-                    uhel: v.uhel || 0, sirka: v.sirka, hloubka: v.hloubka, vyska: v.vyska,
+                    uhel: v.uhel || 0, sirka: v.sirka, hloubka: v.hloubka, vyska: v.vyska, ...(v.barva ? { barva: v.barva } : {}),
                 }, () => window.Svetlo3d.prekresliStiny(_3d.renderer));
             }
         },

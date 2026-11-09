@@ -46,6 +46,7 @@ return [
         'akce_kopie' => 'Kópia objektu',
         'akce_smazani' => 'Zmazanie objektu',
         'akce_vyska' => 'Výška objektu nad podlahou',
+        'akce_barva' => 'Farba objektu',
     ],
 
     // Kategorie katalogu podle id z public/katalog/katalog.json

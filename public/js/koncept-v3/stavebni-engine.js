@@ -3238,6 +3238,7 @@ class StavebniEngine {
             katalog: v.katalog ?? undefined,
             nazev: v.nazev ?? undefined,
             nazevZdroj: v.nazevZdroj ?? undefined,
+            barva: v.barva || undefined,
             uroven: v.uroven ?? undefined,
             zaklad: v.zaklad ?? undefined,
         }));
@@ -3557,6 +3558,7 @@ class StavebniEngine {
                 ...nazevKusuKatalogu(rv),
                 uroven: rv.uroven ?? 0,
                 zaklad: rv.zaklad ?? null,
+                ...(rv.barva ? { barva: rv.barva } : {}),
             });
             const vnum = parseInt(String(rv.id).replace(/\D/g, ''));
             if (vnum >= this.nextId) this.nextId = vnum + 1;

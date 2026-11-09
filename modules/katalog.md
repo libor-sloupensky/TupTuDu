@@ -77,10 +77,20 @@ Kus je obyčejný `engine.vybaveni` s polem `katalog` (ID), `nazev` a `uroven` (
 - **Sdílený odkaz** dostane kusy jako seznam `objekty` (ID, poloha, rozměry), ne jako trojúhelníky. Prohlížeč si model stáhne z `/katalog/modely/`. Dřívější cesta přes `_zapecModel` by textury modelů ztratila, čte jen textury kreslené na plátno.
 - **Názvy kusů** se překládají přes `lang/*/ed_katalog.php` podle českého názvu (`modules/lokalizace.md`). Nové názvy doplnit před nasazením.
 
-## Přebarvování a dekory (odloženo, Libor 4. 11. 2026)
+## Přebarvování potahu (varianta 1 od 9. 11. 2026)
 
-Nápad Libora: měnit barvu kusu z katalogu, u stolů a skříní i dekor. **Nedělat bez výzvy.** Odklad nic nezkazí: `barva` bude nové volitelné pole kusu a masky se dají doplnit k hotovým modelům.
+Libor 9. 11. 2026 zadal variantu 1: paleta u vloženého kusu. Hotové je to u pohovek, křesel a židlí, 289 kusů s maskou.
 
+- **Výroba:** `node services/katalog/masky.cjs` (výchozí kategorie pohovky, kresla, zidle) spočítá v `nahled.html` masku potahu v UV (`public/katalog/masky/`) a stejnou masku pohledem shora pro značku (`masky-pudorys/`). Do `katalog.json` zapíše `maska: [L, a, b]`, medián barvy potahu. Kus, kde maska kryje méně než 30 % povrchu, barvy nedostane. Potom `s3.cjs nahraj`. Masky jsou mimo git, v S3 mají 1,8 MB. `sestav.cjs` masku u kusu při nové výrobě zachová.
+- **Postele ne:** největší plochou jsou lůžkoviny, přebarvila by se matrace místo čalounění. Potřebovaly by masku jiným postupem.
+- **Přebarvení:** `Katalog3d.prebarvi(id, barva)` a `prebarviZnacku` v prohlížeči, asi 100 ms na kus, výsledek v mezipaměti podle kusu a barvy. Přebarví se první materiál s texturou, k němu patří maska. Dvanáct barev v `BARVY` (Lab), názvy v `ed_sablona.katalog.barvy`. Tmavý potah (L pod 35) světlé barvy nenabízí.
+- **Uložení:** `barva` u kusu ve vybavení (engine ji ukládá a načítá), jeden krok Zpět, kopie ji přebírá, jde do `objekty` sdíleného odkazu i do 3D v odkazu. Značka v půdorysu se přebarví taky.
+- **Panel:** tlačítko Barva vedle Otočit a Kopie rozbalí paletu přes plochu. Řádek palety přímo v panelu ho zvětšil, plocha se posunula a kus pod myší utekl (test tažení), proto rozbalovací.
+- **Známé:** u některých židlí se přebarví i nožičky stejného odstínu jako potah. Stoly a skříně (dekor dřeva) zatím ne, viz zkouška níž.
+
+**Zkouška ze 4. 11. 2026 a původní nápad** (dál platí pro stoly, skříně a variantu 2):
+
+Nápad Libora: měnit barvu kusu z katalogu, u stolů a skříní i dekor. Licence jsou ve stránce autorů doplněné (`autori_upravy`).
 **Licence to dovolují.** CC BY 4.0 u ABO výslovně dovoluje upravovat a upravené šířit, i komerčně (čl. 2(a)(1)), CC0 u Poly Haven je bez podmínek. Při zavedení doplnit změnu barvy do výčtu úprav `autori_upravy` v `lang/*/pravni.php`. Přebarvený kus nevydávat za skutečný výrobek, taková varianta nemusí existovat. To by vadilo, až kdyby se kusy nabízely jako zboží nebo s odkazem do obchodu.
 
 **Proč maska.** 926 z 930 modelů má jeden materiál a jednu texturu na celý kus, potah i nožičky jsou na jednom obrázku. Násobení barvou (`material.color`) umí jen ztmavit, z hnědé bílou neudělá. Každý kus proto potřebuje masku, co se přebarví, a nahrazení barvy se zachováním jasu.

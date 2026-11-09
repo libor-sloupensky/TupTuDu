@@ -44,6 +44,7 @@ return [
         'akce_kopie' => 'Copy object',
         'akce_smazani' => 'Delete object',
         'akce_vyska' => 'Object height above floor',
+        'akce_barva' => 'Object colour',
     ],
 
     'kategorie' => [

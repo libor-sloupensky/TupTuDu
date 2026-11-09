@@ -49,6 +49,7 @@ return [
         'akce_kopie' => 'Copie de l’objet',
         'akce_smazani' => 'Suppression de l’objet',
         'akce_vyska' => 'Hauteur de l’objet au-dessus du sol',
+        'akce_barva' => 'Couleur de l’objet',
     ],
 
     // Kategorie katalogu podle id z public/katalog/katalog.json

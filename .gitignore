@@ -36,3 +36,6 @@ services/import-test/.cache/
 /public/katalog/modely/
 /public/katalog/nahledy/
 /public/katalog/pudorys/
+
+/public/katalog/masky/
+/public/katalog/masky-pudorys/

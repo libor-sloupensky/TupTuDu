@@ -12,5 +12,5 @@ return [
     'autori_autor' => 'Autor',
     'autori_licence' => 'Licencia',
     'autori_pocet' => '{1} Usamos :pocet modelo.|[2,*] Usamos :pocet modelos.',
-    'autori_upravy' => 'Hemos modificado los modelos: hemos reducido las texturas y el número de polígonos para que se carguen rápido en el navegador, y hemos añadido un símbolo en planta y una vista previa. Los autores no tienen ninguna relación con nuestro servicio ni lo respaldan.',
+    'autori_upravy' => 'Hemos modificado los modelos: hemos reducido las texturas y el número de polígonos para que se carguen rápido en el navegador, y hemos añadido un símbolo en planta y una vista previa. Los autores no tienen ninguna relación con nuestro servicio ni lo respaldan. En los muebles tapizados se puede cambiar el color de la tapicería, una pieza así puede no existir como producto real.',
 ];

@@ -87,7 +87,12 @@
    "hloubka": 0.969,
    "vyska": 0.892,
    "uroven": 0,
-   "plosek": 27684
+   "plosek": 27684,
+   "maska": [
+    57,
+    1,
+    5
+   ]
   },
   {
    "id": "abo-B072M1WJF2",
@@ -99,7 +104,12 @@
    "hloubka": 0.957,
    "vyska": 0.863,
    "uroven": 0,
-   "plosek": 28150
+   "plosek": 28150,
+   "maska": [
+    73,
+    0,
+    6
+   ]
   },
   {
    "id": "abo-B075X2WN11",
@@ -111,7 +121,12 @@
    "hloubka": 0.886,
    "vyska": 0.779,
    "uroven": 0,
-   "plosek": 34946
+   "plosek": 34946,
+   "maska": [
+    44,
+    19,
+    35
+   ]
   },
   {
    "id": "abo-B075X4VM8W",
@@ -123,7 +138,12 @@
    "hloubka": 0.805,
    "vyska": 0.947,
    "uroven": 0,
-   "plosek": 20368
+   "plosek": 20368,
+   "maska": [
+    9,
+    3,
+    0
+   ]
   },
   {
    "id": "abo-B07B4MF6S6",
@@ -135,7 +155,12 @@
    "hloubka": 0.956,
    "vyska": 0.96,
    "uroven": 0,
-   "plosek": 19496
+   "plosek": 19496,
+   "maska": [
+    49,
+    0,
+    7
+   ]
   },
   {
    "id": "abo-B07B4NVYM9",
@@ -147,7 +172,12 @@
    "hloubka": 0.864,
    "vyska": 0.896,
    "uroven": 0,
-   "plosek": 14625
+   "plosek": 14625,
+   "maska": [
+    39,
+    38,
+    33
+   ]
   },
   {
    "id": "abo-B07DBG898G",
@@ -159,7 +189,12 @@
    "hloubka": 0.888,
    "vyska": 0.984,
    "uroven": 0,
-   "plosek": 46857
+   "plosek": 46857,
+   "maska": [
+    13,
+    4,
+    -15
+   ]
   },
   {
    "id": "abo-B07HYY8ZGY",
@@ -171,7 +206,12 @@
    "hloubka": 0.969,
    "vyska": 0.867,
    "uroven": 0,
-   "plosek": 15422
+   "plosek": 15422,
+   "maska": [
+    65,
+    0,
+    11
+   ]
   },
   {
    "id": "abo-B07HZ65PW3",
@@ -183,7 +223,12 @@
    "hloubka": 0.903,
    "vyska": 0.944,
    "uroven": 0,
-   "plosek": 48570
+   "plosek": 48570,
+   "maska": [
+    71,
+    0,
+    10
+   ]
   },
   {
    "id": "abo-B07P5LKKMW",
@@ -195,7 +240,12 @@
    "hloubka": 0.981,
    "vyska": 0.892,
    "uroven": 0,
-   "plosek": 16844
+   "plosek": 16844,
+   "maska": [
+    48,
+    10,
+    34
+   ]
   },
   {
    "id": "abo-B07QFP4M7W",
@@ -207,7 +257,12 @@
    "hloubka": 1.016,
    "vyska": 0.873,
    "uroven": 0,
-   "plosek": 32264
+   "plosek": 32264,
+   "maska": [
+    38,
+    2,
+    13
+   ]
   },
   {
    "id": "abo-B07VLFWRFV",
@@ -219,7 +274,12 @@
    "hloubka": 0.92,
    "vyska": 0.87,
    "uroven": 0,
-   "plosek": 37096
+   "plosek": 37096,
+   "maska": [
+    48,
+    -1,
+    0
+   ]
   },
   {
    "id": "abo-B07124WQLW",
@@ -231,7 +291,12 @@
    "hloubka": 0.985,
    "vyska": 0.703,
    "uroven": 0,
-   "plosek": 46942
+   "plosek": 46942,
+   "maska": [
+    42,
+    0,
+    3
+   ]
   },
   {
    "id": "abo-B071FMSY5S",
@@ -243,7 +308,12 @@
    "hloubka": 0.999,
    "vyska": 0.93,
    "uroven": 0,
-   "plosek": 22524
+   "plosek": 22524,
+   "maska": [
+    27,
+    -3,
+    -6
+   ]
   },
   {
    "id": "abo-B071ZLY13G",
@@ -255,7 +325,12 @@
    "hloubka": 0.942,
    "vyska": 0.853,
    "uroven": 0,
-   "plosek": 15124
+   "plosek": 15124,
+   "maska": [
+    71,
+    0,
+    11
+   ]
   },
   {
    "id": "abo-B0728NWFCG",
@@ -267,7 +342,12 @@
    "hloubka": 0.96,
    "vyska": 0.657,
    "uroven": 0,
-   "plosek": 33406
+   "plosek": 33406,
+   "maska": [
+    33,
+    0,
+    4
+   ]
   },
   {
    "id": "abo-B072M1W877",
@@ -279,7 +359,12 @@
    "hloubka": 0.929,
    "vyska": 0.925,
    "uroven": 0,
-   "plosek": 36258
+   "plosek": 36258,
+   "maska": [
+    69,
+    4,
+    11
+   ]
   },
   {
    "id": "abo-B072PZ4LVN",
@@ -291,7 +376,12 @@
    "hloubka": 0.944,
    "vyska": 0.918,
    "uroven": 0,
-   "plosek": 31052
+   "plosek": 31052,
+   "maska": [
+    60,
+    0,
+    4
+   ]
   },
   {
    "id": "abo-B075NP5K3L",
@@ -303,7 +393,12 @@
    "hloubka": 0.87,
    "vyska": 0.78,
    "uroven": 0,
-   "plosek": 15828
+   "plosek": 15828,
+   "maska": [
+    94,
+    0,
+    1
+   ]
   },
   {
    "id": "abo-B075X3SHX2",
@@ -315,7 +410,12 @@
    "hloubka": 0.746,
    "vyska": 0.64,
    "uroven": 0,
-   "plosek": 32386
+   "plosek": 32386,
+   "maska": [
+    81,
+    0,
+    8
+   ]
   },
   {
    "id": "abo-B075X4PRNS",
@@ -327,7 +427,12 @@
    "hloubka": 0.817,
    "vyska": 0.681,
    "uroven": 0,
-   "plosek": 41186
+   "plosek": 41186,
+   "maska": [
+    32,
+    -8,
+    5
+   ]
   },
   {
    "id": "abo-B075X4T5L6",
@@ -339,7 +444,12 @@
    "hloubka": 0.77,
    "vyska": 0.775,
    "uroven": 0,
-   "plosek": 43812
+   "plosek": 43812,
+   "maska": [
+    81,
+    1,
+    11
+   ]
   },
   {
    "id": "abo-B075X4VW2P",
@@ -351,7 +461,12 @@
    "hloubka": 0.686,
    "vyska": 0.635,
    "uroven": 0,
-   "plosek": 16260
+   "plosek": 16260,
+   "maska": [
+    86,
+    1,
+    5
+   ]
   },
   {
    "id": "abo-B07B4D84F8",
@@ -363,7 +478,12 @@
    "hloubka": 0.859,
    "vyska": 0.87,
    "uroven": 0,
-   "plosek": 17188
+   "plosek": 17188,
+   "maska": [
+    18,
+    -8,
+    5
+   ]
   },
   {
    "id": "abo-B07B4DB8K9",
@@ -375,7 +495,12 @@
    "hloubka": 0.905,
    "vyska": 0.746,
    "uroven": 0,
-   "plosek": 40225
+   "plosek": 40225,
+   "maska": [
+    55,
+    2,
+    5
+   ]
   },
   {
    "id": "abo-B07B4G612M",
@@ -387,7 +512,12 @@
    "hloubka": 0.807,
    "vyska": 0.843,
    "uroven": 0,
-   "plosek": 13406
+   "plosek": 13406,
+   "maska": [
+    18,
+    3,
+    4
+   ]
   },
   {
    "id": "abo-B07B4MF2N5",
@@ -399,7 +529,12 @@
    "hloubka": 0.748,
    "vyska": 0.863,
    "uroven": 0,
-   "plosek": 37315
+   "plosek": 37315,
+   "maska": [
+    48,
+    21,
+    30
+   ]
   },
   {
    "id": "abo-B07B4MRJ6F",
@@ -411,7 +546,12 @@
    "hloubka": 0.951,
    "vyska": 0.933,
    "uroven": 0,
-   "plosek": 24312
+   "plosek": 24312,
+   "maska": [
+    16,
+    11,
+    11
+   ]
   },
   {
    "id": "abo-B07B4N29DG",
@@ -423,7 +563,12 @@
    "hloubka": 0.894,
    "vyska": 0.793,
    "uroven": 0,
-   "plosek": 6492
+   "plosek": 6492,
+   "maska": [
+    24,
+    4,
+    -31
+   ]
   },
   {
    "id": "abo-B07BWJCPWV",
@@ -435,7 +580,12 @@
    "hloubka": 1.621,
    "vyska": 0.987,
    "uroven": 0,
-   "plosek": 5362
+   "plosek": 5362,
+   "maska": [
+    23,
+    3,
+    -27
+   ]
   },
   {
    "id": "abo-B07DB8XGY2",
@@ -447,7 +597,12 @@
    "hloubka": 0.828,
    "vyska": 0.961,
    "uroven": 0,
-   "plosek": 49848
+   "plosek": 49848,
+   "maska": [
+    81,
+    2,
+    5
+   ]
   },
   {
    "id": "abo-B07DBDWXM8",
@@ -459,7 +614,12 @@
    "hloubka": 0.888,
    "vyska": 0.984,
    "uroven": 0,
-   "plosek": 46857
+   "plosek": 46857,
+   "maska": [
+    53,
+    2,
+    3
+   ]
   },
   {
    "id": "abo-B07DBDZ56D",
@@ -471,7 +631,12 @@
    "hloubka": 0.842,
    "vyska": 0.942,
    "uroven": 0,
-   "plosek": 32870
+   "plosek": 32870,
+   "maska": [
+    52,
+    1,
+    9
+   ]
   },
   {
    "id": "abo-B07DVSVDTB",
@@ -483,7 +648,12 @@
    "hloubka": 1.013,
    "vyska": 0.976,
    "uroven": 0,
-   "plosek": 54242
+   "plosek": 54242,
+   "maska": [
+    41,
+    2,
+    3
+   ]
   },
   {
    "id": "abo-B07G2FP9VW",
@@ -495,7 +665,12 @@
    "hloubka": 1.121,
    "vyska": 0.93,
    "uroven": 0,
-   "plosek": 24822
+   "plosek": 24822,
+   "maska": [
+    77,
+    1,
+    2
+   ]
   },
   {
    "id": "abo-B07G2H3L4L",
@@ -507,7 +682,12 @@
    "hloubka": 1.023,
    "vyska": 0.759,
    "uroven": 0,
-   "plosek": 37392
+   "plosek": 37392,
+   "maska": [
+    43,
+    1,
+    0
+   ]
   },
   {
    "id": "abo-B07G2RJ6FP",
@@ -519,7 +699,12 @@
    "hloubka": 1.122,
    "vyska": 0.93,
    "uroven": 0,
-   "plosek": 27578
+   "plosek": 27578,
+   "maska": [
+    70,
+    1,
+    2
+   ]
   },
   {
    "id": "abo-B07G2XB4ZL",
@@ -531,7 +716,12 @@
    "hloubka": 0.98,
    "vyska": 0.83,
    "uroven": 0,
-   "plosek": 39484
+   "plosek": 39484,
+   "maska": [
+    69,
+    2,
+    2
+   ]
   },
   {
    "id": "abo-B07G34YCJT",
@@ -543,7 +733,12 @@
    "hloubka": 0.953,
    "vyska": 0.874,
    "uroven": 0,
-   "plosek": 25440
+   "plosek": 25440,
+   "maska": [
+    32,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07HPJ8S3K",
@@ -555,7 +750,12 @@
    "hloubka": 0.973,
    "vyska": 0.765,
    "uroven": 0,
-   "plosek": 5243
+   "plosek": 5243,
+   "maska": [
+    50,
+    5,
+    7
+   ]
   },
   {
    "id": "abo-B07HPLK9YR",
@@ -567,7 +767,12 @@
    "hloubka": 0.833,
    "vyska": 0.892,
    "uroven": 0,
-   "plosek": 43516
+   "plosek": 43516,
+   "maska": [
+    33,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07HPNZC2P",
@@ -579,7 +784,12 @@
    "hloubka": 1.018,
    "vyska": 0.907,
    "uroven": 0,
-   "plosek": 33472
+   "plosek": 33472,
+   "maska": [
+    38,
+    1,
+    1
+   ]
   },
   {
    "id": "abo-B07HPQFNC9",
@@ -591,7 +801,12 @@
    "hloubka": 0.953,
    "vyska": 0.874,
    "uroven": 0,
-   "plosek": 25440
+   "plosek": 25440,
+   "maska": [
+    40,
+    5,
+    11
+   ]
   },
   {
    "id": "abo-B07HPQYW7G",
@@ -603,7 +818,12 @@
    "hloubka": 0.973,
    "vyska": 0.765,
    "uroven": 0,
-   "plosek": 5243
+   "plosek": 5243,
+   "maska": [
+    79,
+    0,
+    7
+   ]
   },
   {
    "id": "abo-B07HZ1M12W",
@@ -615,7 +835,12 @@
    "hloubka": 0.997,
    "vyska": 0.958,
    "uroven": 0,
-   "plosek": 50340
+   "plosek": 50340,
+   "maska": [
+    74,
+    2,
+    15
+   ]
   },
   {
    "id": "abo-B07HZ5RT6C",
@@ -627,7 +852,12 @@
    "hloubka": 1.637,
    "vyska": 1.039,
    "uroven": 0,
-   "plosek": 47518
+   "plosek": 47518,
+   "maska": [
+    19,
+    4,
+    -10
+   ]
   },
   {
    "id": "abo-B07HZ6GF42",
@@ -639,7 +869,12 @@
    "hloubka": 0.903,
    "vyska": 0.944,
    "uroven": 0,
-   "plosek": 48570
+   "plosek": 48570,
+   "maska": [
+    21,
+    1,
+    -17
+   ]
   },
   {
    "id": "abo-B07HZ7634C",
@@ -651,7 +886,12 @@
    "hloubka": 0.987,
    "vyska": 0.971,
    "uroven": 0,
-   "plosek": 25310
+   "plosek": 25310,
+   "maska": [
+    59,
+    3,
+    20
+   ]
   },
   {
    "id": "abo-B07HZ8J1VF",
@@ -663,7 +903,12 @@
    "hloubka": 1.008,
    "vyska": 0.952,
    "uroven": 0,
-   "plosek": 45449
+   "plosek": 45449,
+   "maska": [
+    17,
+    13,
+    10
+   ]
   },
   {
    "id": "abo-B07J2YB48B",
@@ -675,7 +920,12 @@
    "hloubka": 0.849,
    "vyska": 0.837,
    "uroven": 0,
-   "plosek": 57632
+   "plosek": 57632,
+   "maska": [
+    38,
+    1,
+    2
+   ]
   },
   {
    "id": "abo-B07J2Z2DPN",
@@ -687,7 +937,12 @@
    "hloubka": 0.912,
    "vyska": 0.798,
    "uroven": 0,
-   "plosek": 50266
+   "plosek": 50266,
+   "maska": [
+    38,
+    15,
+    27
+   ]
   },
   {
    "id": "abo-B07JD7RFRN",
@@ -699,7 +954,12 @@
    "hloubka": 1.228,
    "vyska": 1.084,
    "uroven": 0,
-   "plosek": 39511
+   "plosek": 39511,
+   "maska": [
+    54,
+    1,
+    7
+   ]
   },
   {
    "id": "abo-B07JW75VPK",
@@ -711,7 +971,12 @@
    "hloubka": 0.903,
    "vyska": 0.899,
    "uroven": 0,
-   "plosek": 37608
+   "plosek": 37608,
+   "maska": [
+    52,
+    1,
+    3
+   ]
   },
   {
    "id": "abo-B07K8YVLGH",
@@ -723,7 +988,12 @@
    "hloubka": 0.9,
    "vyska": 0.74,
    "uroven": 0,
-   "plosek": 19752
+   "plosek": 19752,
+   "maska": [
+    14,
+    3,
+    1
+   ]
   },
   {
    "id": "abo-B07K9JL76J",
@@ -735,7 +1005,12 @@
    "hloubka": 0.956,
    "vyska": 0.875,
    "uroven": 0,
-   "plosek": 33058
+   "plosek": 33058,
+   "maska": [
+    20,
+    1,
+    3
+   ]
   },
   {
    "id": "abo-B07P5LLWKZ",
@@ -747,7 +1022,12 @@
    "hloubka": 0.879,
    "vyska": 0.899,
    "uroven": 0,
-   "plosek": 31988
+   "plosek": 31988,
+   "maska": [
+    15,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07P6JV16D",
@@ -759,7 +1039,12 @@
    "hloubka": 0.869,
    "vyska": 1.002,
    "uroven": 0,
-   "plosek": 37872
+   "plosek": 37872,
+   "maska": [
+    44,
+    -1,
+    3
+   ]
   },
   {
    "id": "abo-B07P6JWDGR",
@@ -771,7 +1056,12 @@
    "hloubka": 0.945,
    "vyska": 0.919,
    "uroven": 0,
-   "plosek": 35238
+   "plosek": 35238,
+   "maska": [
+    57,
+    0,
+    5
+   ]
   },
   {
    "id": "abo-B07P8SV5PV",
@@ -783,7 +1073,12 @@
    "hloubka": 0.91,
    "vyska": 0.76,
    "uroven": 0,
-   "plosek": 56002
+   "plosek": 56002,
+   "maska": [
+    41,
+    15,
+    14
+   ]
   },
   {
    "id": "abo-B07PBZVNVK",
@@ -795,7 +1090,12 @@
    "hloubka": 0.909,
    "vyska": 0.951,
    "uroven": 0,
-   "plosek": 44228
+   "plosek": 44228,
+   "maska": [
+    18,
+    10,
+    20
+   ]
   },
   {
    "id": "abo-B07QBMQ729",
@@ -807,7 +1107,12 @@
    "hloubka": 0.992,
    "vyska": 1.043,
    "uroven": 0,
-   "plosek": 53024
+   "plosek": 53024,
+   "maska": [
+    12,
+    11,
+    1
+   ]
   },
   {
    "id": "abo-B07QFP4M23",
@@ -819,7 +1124,12 @@
    "hloubka": 1.016,
    "vyska": 0.991,
    "uroven": 0,
-   "plosek": 54828
+   "plosek": 54828,
+   "maska": [
+    53,
+    0,
+    2
+   ]
   },
   {
    "id": "abo-B07QGSZ31M",
@@ -831,7 +1141,12 @@
    "hloubka": 1.016,
    "vyska": 0.873,
    "uroven": 0,
-   "plosek": 32264
+   "plosek": 32264,
+   "maska": [
+    64,
+    0,
+    10
+   ]
   },
   {
    "id": "abo-B07QGSZ78G",
@@ -843,7 +1158,12 @@
    "hloubka": 1.016,
    "vyska": 0.873,
    "uroven": 0,
-   "plosek": 32264
+   "plosek": 32264,
+   "maska": [
+    67,
+    -1,
+    10
+   ]
   },
   {
    "id": "abo-B07QXY5X2Z",
@@ -855,7 +1175,12 @@
    "hloubka": 0.83,
    "vyska": 0.825,
    "uroven": 0,
-   "plosek": 51476
+   "plosek": 51476,
+   "maska": [
+    30,
+    -9,
+    -17
+   ]
   },
   {
    "id": "abo-B07R3TWDTM",
@@ -867,7 +1192,12 @@
    "hloubka": 0.82,
    "vyska": 0.84,
    "uroven": 0,
-   "plosek": 47734
+   "plosek": 47734,
+   "maska": [
+    75,
+    3,
+    0
+   ]
   },
   {
    "id": "abo-B07RD76JZY",
@@ -879,7 +1209,12 @@
    "hloubka": 0.887,
    "vyska": 0.845,
    "uroven": 0,
-   "plosek": 55026
+   "plosek": 55026,
+   "maska": [
+    13,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07RG6YHTS",
@@ -891,7 +1226,12 @@
    "hloubka": 0.802,
    "vyska": 0.915,
    "uroven": 0,
-   "plosek": 40420
+   "plosek": 40420,
+   "maska": [
+    27,
+    14,
+    13
+   ]
   },
   {
    "id": "abo-B07RJFG359",
@@ -903,7 +1243,12 @@
    "hloubka": 0.804,
    "vyska": 0.904,
    "uroven": 0,
-   "plosek": 8737
+   "plosek": 8737,
+   "maska": [
+    22,
+    19,
+    22
+   ]
   },
   {
    "id": "abo-B07SSJDRL4",
@@ -915,7 +1260,12 @@
    "hloubka": 0.93,
    "vyska": 0.8,
    "uroven": 0,
-   "plosek": 48016
+   "plosek": 48016,
+   "maska": [
+    59,
+    5,
+    16
+   ]
   },
   {
    "id": "abo-B07VPNXK6Q",
@@ -927,7 +1277,12 @@
    "hloubka": 0.92,
    "vyska": 0.85,
    "uroven": 0,
-   "plosek": 43806
+   "plosek": 43806,
+   "maska": [
+    65,
+    0,
+    4
+   ]
   },
   {
    "id": "abo-B07VRWNYMS",
@@ -939,7 +1294,12 @@
    "hloubka": 0.742,
    "vyska": 0.872,
    "uroven": 0,
-   "plosek": 24894
+   "plosek": 24894,
+   "maska": [
+    26,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B082QCQ6Z8",
@@ -951,7 +1311,12 @@
    "hloubka": 0.953,
    "vyska": 0.782,
    "uroven": 0,
-   "plosek": 37872
+   "plosek": 37872,
+   "maska": [
+    28,
+    2,
+    -14
+   ]
   },
   {
    "id": "abo-B082QDZLRC",
@@ -963,7 +1328,12 @@
    "hloubka": 0.953,
    "vyska": 0.78,
    "uroven": 0,
-   "plosek": 37566
+   "plosek": 37566,
+   "maska": [
+    44,
+    14,
+    25
+   ]
   },
   {
    "id": "abo-B082VLYQWX",
@@ -975,7 +1345,12 @@
    "hloubka": 1.07,
    "vyska": 0.8,
    "uroven": 0,
-   "plosek": 9055
+   "plosek": 9055,
+   "maska": [
+    33,
+    3,
+    8
+   ]
   },
   {
    "id": "abo-B082VMZGDG",
@@ -987,7 +1362,12 @@
    "hloubka": 0.96,
    "vyska": 0.902,
    "uroven": 0,
-   "plosek": 54960
+   "plosek": 54960,
+   "maska": [
+    30,
+    3,
+    -31
+   ]
   },
   {
    "id": "abo-B0831Y2YSC",
@@ -999,7 +1379,12 @@
    "hloubka": 0.965,
    "vyska": 0.94,
    "uroven": 0,
-   "plosek": 37754
+   "plosek": 37754,
+   "maska": [
+    64,
+    3,
+    10
+   ]
   },
   {
    "id": "abo-B084XMKQP5",
@@ -1011,7 +1396,12 @@
    "hloubka": 0.749,
    "vyska": 0.789,
    "uroven": 0,
-   "plosek": 32058
+   "plosek": 32058,
+   "maska": [
+    88,
+    0,
+    6
+   ]
   },
   {
    "id": "abo-B084XMYGBF",
@@ -1023,7 +1413,12 @@
    "hloubka": 1.829,
    "vyska": 0.787,
    "uroven": 0,
-   "plosek": 38718
+   "plosek": 38718,
+   "maska": [
+    35,
+    2,
+    -21
+   ]
   },
   {
    "id": "abo-B071PDYKYB",
@@ -1035,7 +1430,12 @@
    "hloubka": 0.754,
    "vyska": 0.833,
    "uroven": 0,
-   "plosek": 7680
+   "plosek": 7680,
+   "maska": [
+    74,
+    0,
+    10
+   ]
   },
   {
    "id": "abo-B072PZKCMP",
@@ -1047,7 +1447,12 @@
    "hloubka": 0.993,
    "vyska": 1.047,
    "uroven": 0,
-   "plosek": 28920
+   "plosek": 28920,
+   "maska": [
+    53,
+    1,
+    2
+   ]
   },
   {
    "id": "abo-B07B4M6B3B",
@@ -1059,7 +1464,12 @@
    "hloubka": 0.83,
    "vyska": 0.897,
    "uroven": 0,
-   "plosek": 17732
+   "plosek": 17732,
+   "maska": [
+    28,
+    11,
+    9
+   ]
   },
   {
    "id": "abo-B07DBHPK2P",
@@ -1071,7 +1481,12 @@
    "hloubka": 0.755,
    "vyska": 0.88,
    "uroven": 0,
-   "plosek": 14186
+   "plosek": 14186,
+   "maska": [
+    57,
+    -2,
+    3
+   ]
   },
   {
    "id": "abo-B07J2VY555",
@@ -1083,7 +1498,12 @@
    "hloubka": 0.986,
    "vyska": 0.861,
    "uroven": 0,
-   "plosek": 36120
+   "plosek": 36120,
+   "maska": [
+    46,
+    -1,
+    2
+   ]
   },
   {
    "id": "abo-B07JX82ZJV",
@@ -1095,7 +1515,12 @@
    "hloubka": 0.583,
    "vyska": 0.793,
    "uroven": 0,
-   "plosek": 10084
+   "plosek": 10084,
+   "maska": [
+    60,
+    7,
+    46
+   ]
   },
   {
    "id": "abo-B07P9Y5SDP",
@@ -1107,7 +1532,12 @@
    "hloubka": 0.94,
    "vyska": 0.919,
    "uroven": 0,
-   "plosek": 23396
+   "plosek": 23396,
+   "maska": [
+    31,
+    15,
+    16
+   ]
   },
   {
    "id": "abo-B07QBMQH3V",
@@ -1119,7 +1549,12 @@
    "hloubka": 0.775,
    "vyska": 0.952,
    "uroven": 0,
-   "plosek": 45050
+   "plosek": 45050,
+   "maska": [
+    44,
+    -8,
+    -21
+   ]
   },
   {
    "id": "abo-B082QCY5SV",
@@ -1131,7 +1566,12 @@
    "hloubka": 0.888,
    "vyska": 0.933,
    "uroven": 0,
-   "plosek": 19898
+   "plosek": 19898,
+   "maska": [
+    26,
+    -5,
+    -8
+   ]
   },
   {
    "id": "abo-B0831X7B8V",
@@ -1143,7 +1583,12 @@
    "hloubka": 0.965,
    "vyska": 0.942,
    "uroven": 0,
-   "plosek": 45249
+   "plosek": 45249,
+   "maska": [
+    43,
+    -1,
+    0
+   ]
   },
   {
    "id": "ph-mid-century-lounge-chair",
@@ -1155,7 +1600,12 @@
    "hloubka": 1.19,
    "vyska": 1.169,
    "uroven": 0,
-   "plosek": 6148
+   "plosek": 6148,
+   "maska": [
+    21,
+    6,
+    12
+   ]
   },
   {
    "id": "ph-modern-arm-chair-01",
@@ -1167,7 +1617,12 @@
    "hloubka": 0.987,
    "vyska": 1.023,
    "uroven": 0,
-   "plosek": 8916
+   "plosek": 8916,
+   "maska": [
+    43,
+    11,
+    23
+   ]
   },
   {
    "id": "abo-B016ID2V5O",
@@ -1179,7 +1634,12 @@
    "hloubka": 0.78,
    "vyska": 1.145,
    "uroven": 0,
-   "plosek": 47133
+   "plosek": 47133,
+   "maska": [
+    8,
+    1,
+    2
+   ]
   },
   {
    "id": "abo-B07124WN69",
@@ -1191,7 +1651,12 @@
    "hloubka": 0.889,
    "vyska": 0.864,
    "uroven": 0,
-   "plosek": 11100
+   "plosek": 11100,
+   "maska": [
+    38,
+    -4,
+    -2
+   ]
   },
   {
    "id": "abo-B071FMSYZV",
@@ -1203,7 +1668,12 @@
    "hloubka": 0.818,
    "vyska": 0.434,
    "uroven": 0,
-   "plosek": 13904
+   "plosek": 13904,
+   "maska": [
+    51,
+    -1,
+    3
+   ]
   },
   {
    "id": "abo-B071W5V75T",
@@ -1215,7 +1685,12 @@
    "hloubka": 0.91,
    "vyska": 0.92,
    "uroven": 0,
-   "plosek": 32904
+   "plosek": 32904,
+   "maska": [
+    73,
+    1,
+    13
+   ]
   },
   {
    "id": "abo-B071W5VJF4",
@@ -1227,7 +1702,12 @@
    "hloubka": 0.611,
    "vyska": 0.441,
    "uroven": 0,
-   "plosek": 20280
+   "plosek": 20280,
+   "maska": [
+    57,
+    1,
+    3
+   ]
   },
   {
    "id": "abo-B072C8Q4SG",
@@ -1239,7 +1719,12 @@
    "hloubka": 0.64,
    "vyska": 0.846,
    "uroven": 0,
-   "plosek": 25028
+   "plosek": 25028,
+   "maska": [
+    35,
+    31,
+    16
+   ]
   },
   {
    "id": "abo-B072PZ4LQ2",
@@ -1251,7 +1736,12 @@
    "hloubka": 0.889,
    "vyska": 0.865,
    "uroven": 0,
-   "plosek": 16276
+   "plosek": 16276,
+   "maska": [
+    90,
+    1,
+    12
+   ]
   },
   {
    "id": "abo-B073G6GTQP",
@@ -1263,7 +1753,12 @@
    "hloubka": 0.483,
    "vyska": 0.471,
    "uroven": 0,
-   "plosek": 12804
+   "plosek": 12804,
+   "maska": [
+    35,
+    -20,
+    12
+   ]
   },
   {
    "id": "abo-B073G94FRB",
@@ -1275,7 +1770,12 @@
    "hloubka": 0.499,
    "vyska": 0.507,
    "uroven": 0,
-   "plosek": 5504
+   "plosek": 5504,
+   "maska": [
+    32,
+    -30,
+    25
+   ]
   },
   {
    "id": "abo-B073ZRX6T8",
@@ -1287,7 +1787,12 @@
    "hloubka": 0.617,
    "vyska": 0.448,
    "uroven": 0,
-   "plosek": 6644
+   "plosek": 6644,
+   "maska": [
+    68,
+    -1,
+    11
+   ]
   },
   {
    "id": "abo-B0746KJVP2",
@@ -1299,7 +1804,12 @@
    "hloubka": 0.813,
    "vyska": 0.966,
    "uroven": 0,
-   "plosek": 24428
+   "plosek": 24428,
+   "maska": [
+    92,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B075X33RZL",
@@ -1311,7 +1821,12 @@
    "hloubka": 0.87,
    "vyska": 0.939,
    "uroven": 0,
-   "plosek": 22152
+   "plosek": 22152,
+   "maska": [
+    20,
+    1,
+    -25
+   ]
   },
   {
    "id": "abo-B075X33T21",
@@ -1323,7 +1838,12 @@
    "hloubka": 0.954,
    "vyska": 1.068,
    "uroven": 0,
-   "plosek": 15544
+   "plosek": 15544,
+   "maska": [
+    10,
+    1,
+    9
+   ]
   },
   {
    "id": "abo-B075X4J12H",
@@ -1335,7 +1855,12 @@
    "hloubka": 0.968,
    "vyska": 0.382,
    "uroven": 0,
-   "plosek": 13064
+   "plosek": 13064,
+   "maska": [
+    21,
+    0,
+    -1
+   ]
   },
   {
    "id": "abo-B075X4JB1L",
@@ -1347,7 +1872,12 @@
    "hloubka": 0.859,
    "vyska": 0.831,
    "uroven": 0,
-   "plosek": 42712
+   "plosek": 42712,
+   "maska": [
+    23,
+    -1,
+    -25
+   ]
   },
   {
    "id": "abo-B075X4N3J5",
@@ -1359,7 +1889,12 @@
    "hloubka": 0.826,
    "vyska": 0.922,
    "uroven": 0,
-   "plosek": 12888
+   "plosek": 12888,
+   "maska": [
+    2,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B075X4T5R9",
@@ -1371,7 +1906,12 @@
    "hloubka": 0.875,
    "vyska": 0.885,
    "uroven": 0,
-   "plosek": 11912
+   "plosek": 11912,
+   "maska": [
+    34,
+    4,
+    2
+   ]
   },
   {
    "id": "abo-B075X4WBNH",
@@ -1383,7 +1923,12 @@
    "hloubka": 0.681,
    "vyska": 0.494,
    "uroven": 0,
-   "plosek": 24140
+   "plosek": 24140,
+   "maska": [
+    32,
+    -1,
+    -6
+   ]
   },
   {
    "id": "abo-B075X4YDN6",
@@ -1395,7 +1940,12 @@
    "hloubka": 0.874,
    "vyska": 0.869,
    "uroven": 0,
-   "plosek": 14694
+   "plosek": 14694,
+   "maska": [
+    38,
+    12,
+    29
+   ]
   },
   {
    "id": "abo-B075X61W74",
@@ -1407,7 +1957,12 @@
    "hloubka": 0.889,
    "vyska": 1.041,
    "uroven": 0,
-   "plosek": 14958
+   "plosek": 14958,
+   "maska": [
+    50,
+    1,
+    1
+   ]
   },
   {
    "id": "abo-B075YP4WY5",
@@ -1419,7 +1974,12 @@
    "hloubka": 0.64,
    "vyska": 0.934,
    "uroven": 0,
-   "plosek": 14712
+   "plosek": 14712,
+   "maska": [
+    23,
+    5,
+    2
+   ]
   },
   {
    "id": "abo-B07B4DB6Z4",
@@ -1431,7 +1991,12 @@
    "hloubka": 1.002,
    "vyska": 0.972,
    "uroven": 0,
-   "plosek": 9382
+   "plosek": 9382,
+   "maska": [
+    50,
+    6,
+    22
+   ]
   },
   {
    "id": "abo-B07B4G5SY7",
@@ -1443,7 +2008,12 @@
    "hloubka": 0.998,
    "vyska": 0.399,
    "uroven": 0,
-   "plosek": 39988
+   "plosek": 39988,
+   "maska": [
+    41,
+    -23,
+    6
+   ]
   },
   {
    "id": "abo-B07B4GXWZZ",
@@ -1455,7 +2025,12 @@
    "hloubka": 0.754,
    "vyska": 0.888,
    "uroven": 0,
-   "plosek": 26130
+   "plosek": 26130,
+   "maska": [
+    71,
+    -1,
+    10
+   ]
   },
   {
    "id": "abo-B07B4MDDJH",
@@ -1467,7 +2042,12 @@
    "hloubka": 0.965,
    "vyska": 0.667,
    "uroven": 0,
-   "plosek": 28548
+   "plosek": 28548,
+   "maska": [
+    33,
+    20,
+    22
+   ]
   },
   {
    "id": "abo-B07B4MJZN1",
@@ -1479,7 +2059,12 @@
    "hloubka": 0.921,
    "vyska": 0.936,
    "uroven": 0,
-   "plosek": 11922
+   "plosek": 11922,
+   "maska": [
+    49,
+    18,
+    34
+   ]
   },
   {
    "id": "abo-B07B4MMPSW",
@@ -1491,7 +2076,12 @@
    "hloubka": 0.816,
    "vyska": 0.922,
    "uroven": 0,
-   "plosek": 16896
+   "plosek": 16896,
+   "maska": [
+    54,
+    3,
+    3
+   ]
   },
   {
    "id": "abo-B07B4MRV2H",
@@ -1503,7 +2093,12 @@
    "hloubka": 0.861,
    "vyska": 0.823,
    "uroven": 0,
-   "plosek": 26312
+   "plosek": 26312,
+   "maska": [
+    24,
+    -2,
+    1
+   ]
   },
   {
    "id": "abo-B07BLDHK7W",
@@ -1515,7 +2110,12 @@
    "hloubka": 0.508,
    "vyska": 0.444,
    "uroven": 0,
-   "plosek": 14976
+   "plosek": 14976,
+   "maska": [
+    39,
+    -1,
+    2
+   ]
   },
   {
    "id": "abo-B07C8DHX43",
@@ -1527,7 +2127,12 @@
    "hloubka": 0.508,
    "vyska": 0.444,
    "uroven": 0,
-   "plosek": 18952
+   "plosek": 18952,
+   "maska": [
+    1,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07CPQP34D",
@@ -1539,7 +2144,12 @@
    "hloubka": 0.425,
    "vyska": 0.432,
    "uroven": 0,
-   "plosek": 40000
+   "plosek": 40000,
+   "maska": [
+    92,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07D4FS7GY",
@@ -1551,7 +2161,12 @@
    "hloubka": 0.366,
    "vyska": 0.467,
    "uroven": 0,
-   "plosek": 4136
+   "plosek": 4136,
+   "maska": [
+    60,
+    1,
+    0
+   ]
   },
   {
    "id": "abo-B07DB8XJZH",
@@ -1563,7 +2178,12 @@
    "hloubka": 0.6,
    "vyska": 0.453,
    "uroven": 0,
-   "plosek": 33178
+   "plosek": 33178,
+   "maska": [
+    75,
+    1,
+    1
+   ]
   },
   {
    "id": "abo-B07DBB1QXR",
@@ -1575,7 +2195,12 @@
    "hloubka": 0.748,
    "vyska": 0.872,
    "uroven": 0,
-   "plosek": 25081
+   "plosek": 25081,
+   "maska": [
+    59,
+    0,
+    5
+   ]
   },
   {
    "id": "abo-B07DBD9WHX",
@@ -1587,7 +2212,12 @@
    "hloubka": 0.718,
    "vyska": 0.771,
    "uroven": 0,
-   "plosek": 23150
+   "plosek": 23150,
+   "maska": [
+    16,
+    0,
+    -14
+   ]
   },
   {
    "id": "abo-B07DBDQLF2",
@@ -1599,7 +2229,12 @@
    "hloubka": 0.686,
    "vyska": 0.817,
    "uroven": 0,
-   "plosek": 16218
+   "plosek": 16218,
+   "maska": [
+    61,
+    -10,
+    -5
+   ]
   },
   {
    "id": "abo-B07DBDWWGY",
@@ -1611,7 +2246,12 @@
    "hloubka": 0.446,
    "vyska": 0.438,
    "uroven": 0,
-   "plosek": 7218
+   "plosek": 7218,
+   "maska": [
+    62,
+    4,
+    11
+   ]
   },
   {
    "id": "abo-B07DBF73HJ",
@@ -1623,7 +2263,12 @@
    "hloubka": 1.009,
    "vyska": 1.036,
    "uroven": 0,
-   "plosek": 36136
+   "plosek": 36136,
+   "maska": [
+    36,
+    3,
+    4
+   ]
   },
   {
    "id": "abo-B07DBG898M",
@@ -1635,7 +2280,12 @@
    "hloubka": 0.897,
    "vyska": 0.993,
    "uroven": 0,
-   "plosek": 27267
+   "plosek": 27267,
+   "maska": [
+    47,
+    3,
+    6
+   ]
   },
   {
    "id": "abo-B07DBGPV4C",
@@ -1647,7 +2297,12 @@
    "hloubka": 0.819,
    "vyska": 1.132,
    "uroven": 0,
-   "plosek": 12977
+   "plosek": 12977,
+   "maska": [
+    15,
+    6,
+    9
+   ]
   },
   {
    "id": "abo-B07DBHBCXQ",
@@ -1659,7 +2314,12 @@
    "hloubka": 1.025,
    "vyska": 1.133,
    "uroven": 0,
-   "plosek": 19496
+   "plosek": 19496,
+   "maska": [
+    62,
+    -9,
+    -2
+   ]
   },
   {
    "id": "abo-B07DBHGHRV",
@@ -1671,7 +2331,12 @@
    "hloubka": 0.753,
    "vyska": 0.877,
    "uroven": 0,
-   "plosek": 4997
+   "plosek": 4997,
+   "maska": [
+    36,
+    -2,
+    -20
+   ]
   },
   {
    "id": "abo-B07DBK2NXY",
@@ -1683,7 +2348,12 @@
    "hloubka": 1.288,
    "vyska": 0.757,
    "uroven": 0,
-   "plosek": 19204
+   "plosek": 19204,
+   "maska": [
+    37,
+    -1,
+    -18
+   ]
   },
   {
    "id": "abo-B07DYK2CMN",
@@ -1695,7 +2365,12 @@
    "hloubka": 0.483,
    "vyska": 0.483,
    "uroven": 0,
-   "plosek": 16564
+   "plosek": 16564,
+   "maska": [
+    87,
+    2,
+    13
+   ]
   },
   {
    "id": "abo-B07F2X8K62",
@@ -1707,7 +2382,12 @@
    "hloubka": 0.863,
    "vyska": 1.01,
    "uroven": 0,
-   "plosek": 10922
+   "plosek": 10922,
+   "maska": [
+    59,
+    2,
+    6
+   ]
   },
   {
    "id": "abo-B07FK69CKR",
@@ -1719,7 +2399,12 @@
    "hloubka": 0.816,
    "vyska": 0.89,
    "uroven": 0,
-   "plosek": 45584
+   "plosek": 45584,
+   "maska": [
+    34,
+    1,
+    4
+   ]
   },
   {
    "id": "abo-B07HGGJ1V2",
@@ -1731,7 +2416,12 @@
    "hloubka": 0.94,
    "vyska": 1.039,
    "uroven": 0,
-   "plosek": 15606
+   "plosek": 15606,
+   "maska": [
+    33,
+    0,
+    3
+   ]
   },
   {
    "id": "abo-B07HPGHMHM",
@@ -1743,7 +2433,12 @@
    "hloubka": 0.71,
    "vyska": 0.8,
    "uroven": 0,
-   "plosek": 15696
+   "plosek": 15696,
+   "maska": [
+    83,
+    2,
+    16
+   ]
   },
   {
    "id": "abo-B07HYYBHFH",
@@ -1755,7 +2450,12 @@
    "hloubka": 0.693,
    "vyska": 0.474,
    "uroven": 0,
-   "plosek": 37092
+   "plosek": 37092,
+   "maska": [
+    33,
+    1,
+    2
+   ]
   },
   {
    "id": "abo-B07HZ1RWZJ",
@@ -1767,7 +2467,12 @@
    "hloubka": 0.528,
    "vyska": 0.404,
    "uroven": 0,
-   "plosek": 9136
+   "plosek": 9136,
+   "maska": [
+    59,
+    0,
+    2
+   ]
   },
   {
    "id": "abo-B07HZ6HH5Q",
@@ -1779,7 +2484,12 @@
    "hloubka": 0.49,
    "vyska": 0.448,
    "uroven": 0,
-   "plosek": 29208
+   "plosek": 29208,
+   "maska": [
+    26,
+    4,
+    2
+   ]
   },
   {
    "id": "abo-B07HZ7SN4B",
@@ -1791,7 +2501,12 @@
    "hloubka": 0.963,
    "vyska": 1.044,
    "uroven": 0,
-   "plosek": 40984
+   "plosek": 40984,
+   "maska": [
+    9,
+    3,
+    -13
+   ]
   },
   {
    "id": "abo-B07J2R9Y4W",
@@ -1803,7 +2518,12 @@
    "hloubka": 0.912,
    "vyska": 0.797,
    "uroven": 0,
-   "plosek": 33762
+   "plosek": 33762,
+   "maska": [
+    45,
+    12,
+    25
+   ]
   },
   {
    "id": "abo-B07J2W23YZ",
@@ -1815,7 +2535,12 @@
    "hloubka": 1.001,
    "vyska": 0.916,
    "uroven": 0,
-   "plosek": 12484
+   "plosek": 12484,
+   "maska": [
+    65,
+    3,
+    10
+   ]
   },
   {
    "id": "abo-B07JPDHN5P",
@@ -1827,7 +2552,12 @@
    "hloubka": 1.087,
    "vyska": 1.109,
    "uroven": 0,
-   "plosek": 53394
+   "plosek": 53394,
+   "maska": [
+    18,
+    0,
+    3
+   ]
   },
   {
    "id": "abo-B07JVP2C7M",
@@ -1839,7 +2569,12 @@
    "hloubka": 0.68,
    "vyska": 0.66,
    "uroven": 0,
-   "plosek": 17484
+   "plosek": 17484,
+   "maska": [
+    29,
+    -2,
+    -4
+   ]
   },
   {
    "id": "abo-B07K8V2SX3",
@@ -1851,7 +2586,12 @@
    "hloubka": 0.93,
    "vyska": 0.86,
    "uroven": 0,
-   "plosek": 35398
+   "plosek": 35398,
+   "maska": [
+    44,
+    1,
+    2
+   ]
   },
   {
    "id": "abo-B07M8F6P67",
@@ -1875,7 +2615,12 @@
    "hloubka": 0.521,
    "vyska": 0.547,
    "uroven": 0,
-   "plosek": 54764
+   "plosek": 54764,
+   "maska": [
+    52,
+    2,
+    10
+   ]
   },
   {
    "id": "abo-B07N2ZJYH6",
@@ -1887,7 +2632,12 @@
    "hloubka": 0.831,
    "vyska": 1.082,
    "uroven": 0,
-   "plosek": 41240
+   "plosek": 41240,
+   "maska": [
+    83,
+    2,
+    13
+   ]
   },
   {
    "id": "abo-B07P5LM39Q",
@@ -1899,7 +2649,12 @@
    "hloubka": 0.65,
    "vyska": 0.399,
    "uroven": 0,
-   "plosek": 34256
+   "plosek": 34256,
+   "maska": [
+    46,
+    16,
+    40
+   ]
   },
   {
    "id": "abo-B07P5LN3D6",
@@ -1911,7 +2666,12 @@
    "hloubka": 0.966,
    "vyska": 0.967,
    "uroven": 0,
-   "plosek": 37922
+   "plosek": 37922,
+   "maska": [
+    63,
+    0,
+    12
+   ]
   },
   {
    "id": "abo-B07P6JVMJ2",
@@ -1923,7 +2683,12 @@
    "hloubka": 0.843,
    "vyska": 0.88,
    "uroven": 0,
-   "plosek": 13316
+   "plosek": 13316,
+   "maska": [
+    23,
+    -5,
+    -3
+   ]
   },
   {
    "id": "abo-B07P7NW7CQ",
@@ -1935,7 +2700,12 @@
    "hloubka": 0.549,
    "vyska": 0.45,
    "uroven": 0,
-   "plosek": 12410
+   "plosek": 12410,
+   "maska": [
+    10,
+    2,
+    -15
+   ]
   },
   {
    "id": "abo-B07PBZL4SK",
@@ -1947,7 +2717,12 @@
    "hloubka": 0.554,
    "vyska": 0.445,
    "uroven": 0,
-   "plosek": 16158
+   "plosek": 16158,
+   "maska": [
+    31,
+    0,
+    1
+   ]
   },
   {
    "id": "abo-B07Q3WM673",
@@ -1959,7 +2734,12 @@
    "hloubka": 0.985,
    "vyska": 0.892,
    "uroven": 0,
-   "plosek": 31510
+   "plosek": 31510,
+   "maska": [
+    39,
+    5,
+    18
+   ]
   },
   {
    "id": "abo-B07QBMQ543",
@@ -1971,7 +2751,12 @@
    "hloubka": 0.903,
    "vyska": 1.035,
    "uroven": 0,
-   "plosek": 53342
+   "plosek": 53342,
+   "maska": [
+    75,
+    0,
+    1
+   ]
   },
   {
    "id": "abo-B07QBMQMVQ",
@@ -1983,7 +2768,12 @@
    "hloubka": 0.899,
    "vyska": 1.011,
    "uroven": 0,
-   "plosek": 52676
+   "plosek": 52676,
+   "maska": [
+    51,
+    0,
+    -1
+   ]
   },
   {
    "id": "abo-B07QCMB5YK",
@@ -1995,7 +2785,12 @@
    "hloubka": 0.594,
    "vyska": 0.466,
    "uroven": 0,
-   "plosek": 12928
+   "plosek": 12928,
+   "maska": [
+    75,
+    0,
+    8
+   ]
   },
   {
    "id": "abo-B07QDL42GY",
@@ -2007,7 +2802,12 @@
    "hloubka": 0.607,
    "vyska": 0.438,
    "uroven": 0,
-   "plosek": 4992
+   "plosek": 4992,
+   "maska": [
+    35,
+    13,
+    30
+   ]
   },
   {
    "id": "abo-B07QDNRFKJ",
@@ -2019,7 +2819,12 @@
    "hloubka": 0.631,
    "vyska": 0.831,
    "uroven": 0,
-   "plosek": 9672
+   "plosek": 9672,
+   "maska": [
+    42,
+    12,
+    26
+   ]
   },
   {
    "id": "abo-B07QFP4ZHX",
@@ -2031,7 +2836,12 @@
    "hloubka": 0.398,
    "vyska": 0.406,
    "uroven": 0,
-   "plosek": 5140
+   "plosek": 5140,
+   "maska": [
+    35,
+    -4,
+    -17
+   ]
   },
   {
    "id": "abo-B07QGSZ564",
@@ -2043,7 +2853,12 @@
    "hloubka": 0.922,
    "vyska": 1.049,
    "uroven": 0,
-   "plosek": 40200
+   "plosek": 40200,
+   "maska": [
+    68,
+    0,
+    1
+   ]
   },
   {
    "id": "abo-B07QJ23JZG",
@@ -2055,7 +2870,12 @@
    "hloubka": 0.54,
    "vyska": 0.838,
    "uroven": 0,
-   "plosek": 10799
+   "plosek": 10799,
+   "maska": [
+    89,
+    -1,
+    14
+   ]
   },
   {
    "id": "abo-B07QJXK4CD",
@@ -2067,7 +2887,12 @@
    "hloubka": 0.794,
    "vyska": 1.027,
    "uroven": 0,
-   "plosek": 49156
+   "plosek": 49156,
+   "maska": [
+    41,
+    15,
+    27
+   ]
   },
   {
    "id": "abo-B07R15JT8X",
@@ -2079,7 +2904,12 @@
    "hloubka": 0.749,
    "vyska": 0.614,
    "uroven": 0,
-   "plosek": 46183
+   "plosek": 46183,
+   "maska": [
+    78,
+    2,
+    1
+   ]
   },
   {
    "id": "abo-B07RGKYS9K",
@@ -2091,7 +2921,12 @@
    "hloubka": 0.62,
    "vyska": 0.994,
    "uroven": 0,
-   "plosek": 16383
+   "plosek": 16383,
+   "maska": [
+    21,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B082L7ZMZP",
@@ -2103,7 +2938,12 @@
    "hloubka": 1.176,
    "vyska": 0.756,
    "uroven": 0,
-   "plosek": 35222
+   "plosek": 35222,
+   "maska": [
+    6,
+    10,
+    3
+   ]
   },
   {
    "id": "abo-B082Q97M5B",
@@ -2115,7 +2955,12 @@
    "hloubka": 0.964,
    "vyska": 0.961,
    "uroven": 0,
-   "plosek": 16817
+   "plosek": 16817,
+   "maska": [
+    43,
+    -1,
+    5
+   ]
   },
   {
    "id": "abo-B082QC7YKR",
@@ -2127,7 +2972,12 @@
    "hloubka": 0.787,
    "vyska": 0.838,
    "uroven": 0,
-   "plosek": 19768
+   "plosek": 19768,
+   "maska": [
+    28,
+    51,
+    26
+   ]
   },
   {
    "id": "abo-B082QCQ71Q",
@@ -2139,7 +2989,12 @@
    "hloubka": 0.48,
    "vyska": 0.469,
    "uroven": 0,
-   "plosek": 5728
+   "plosek": 5728,
+   "maska": [
+    29,
+    -9,
+    -12
+   ]
   },
   {
    "id": "abo-B082QCWRTW",
@@ -2151,7 +3006,12 @@
    "hloubka": 0.497,
    "vyska": 0.409,
    "uroven": 0,
-   "plosek": 16400
+   "plosek": 16400,
+   "maska": [
+    75,
+    6,
+    3
+   ]
   },
   {
    "id": "abo-B082QD7WY8",
@@ -2163,7 +3023,12 @@
    "hloubka": 0.48,
    "vyska": 0.469,
    "uroven": 0,
-   "plosek": 5728
+   "plosek": 5728,
+   "maska": [
+    6,
+    0,
+    1
+   ]
   },
   {
    "id": "abo-B082QDLG2M",
@@ -2175,7 +3040,12 @@
    "hloubka": 0.888,
    "vyska": 0.933,
    "uroven": 0,
-   "plosek": 19898
+   "plosek": 19898,
+   "maska": [
+    61,
+    0,
+    1
+   ]
   },
   {
    "id": "abo-B082VL4TRV",
@@ -2187,7 +3057,12 @@
    "hloubka": 1.1,
    "vyska": 0.847,
    "uroven": 0,
-   "plosek": 14172
+   "plosek": 14172,
+   "maska": [
+    41,
+    1,
+    3
+   ]
   },
   {
    "id": "abo-B082VLR43G",
@@ -2199,7 +3074,12 @@
    "hloubka": 0.961,
    "vyska": 0.901,
    "uroven": 0,
-   "plosek": 38794
+   "plosek": 38794,
+   "maska": [
+    27,
+    2,
+    8
+   ]
   },
   {
    "id": "abo-B082VLZZ3Y",
@@ -2211,7 +3091,12 @@
    "hloubka": 0.899,
    "vyska": 1.079,
    "uroven": 0,
-   "plosek": 56722
+   "plosek": 56722,
+   "maska": [
+    47,
+    17,
+    29
+   ]
   },
   {
    "id": "abo-B082VML3Q3",
@@ -2223,7 +3108,12 @@
    "hloubka": 0.876,
    "vyska": 0.779,
    "uroven": 0,
-   "plosek": 10712
+   "plosek": 10712,
+   "maska": [
+    36,
+    4,
+    18
+   ]
   },
   {
    "id": "abo-B0831YLF39",
@@ -2235,7 +3125,12 @@
    "hloubka": 0.648,
    "vyska": 0.508,
    "uroven": 0,
-   "plosek": 11848
+   "plosek": 11848,
+   "maska": [
+    71,
+    3,
+    10
+   ]
   },
   {
    "id": "abo-B0853NLYDD",
@@ -2247,7 +3142,12 @@
    "hloubka": 0.394,
    "vyska": 0.391,
    "uroven": 0,
-   "plosek": 24968
+   "plosek": 24968,
+   "maska": [
+    79,
+    0,
+    8
+   ]
   },
   {
    "id": "abo-B0853VFWYX",
@@ -2259,7 +3159,12 @@
    "hloubka": 0.93,
    "vyska": 1.079,
    "uroven": 0,
-   "plosek": 37058
+   "plosek": 37058,
+   "maska": [
+    32,
+    -1,
+    -12
+   ]
   },
   {
    "id": "abo-B0853VPXF3",
@@ -2271,7 +3176,12 @@
    "hloubka": 0.95,
    "vyska": 0.93,
    "uroven": 0,
-   "plosek": 50356
+   "plosek": 50356,
+   "maska": [
+    68,
+    0,
+    13
+   ]
   },
   {
    "id": "abo-B0854SBWPQ",
@@ -2283,7 +3193,12 @@
    "hloubka": 0.767,
    "vyska": 0.698,
    "uroven": 0,
-   "plosek": 6348
+   "plosek": 6348,
+   "maska": [
+    72,
+    6,
+    47
+   ]
   },
   {
    "id": "abo-B085FH8JFG",
@@ -2295,7 +3210,12 @@
    "hloubka": 0.978,
    "vyska": 1.028,
    "uroven": 0,
-   "plosek": 15442
+   "plosek": 15442,
+   "maska": [
+    18,
+    3,
+    6
+   ]
   },
   {
    "id": "abo-B085FHVGWV",
@@ -2307,7 +3227,12 @@
    "hloubka": 0.943,
    "vyska": 1.007,
    "uroven": 0,
-   "plosek": 14744
+   "plosek": 14744,
+   "maska": [
+    70,
+    6,
+    4
+   ]
   },
   {
    "id": "abo-B085FJV33J",
@@ -2319,7 +3244,12 @@
    "hloubka": 1.068,
    "vyska": 1.116,
    "uroven": 0,
-   "plosek": 43021
+   "plosek": 43021,
+   "maska": [
+    47,
+    3,
+    10
+   ]
   },
   {
    "id": "abo-B085GWXXNR",
@@ -2331,7 +3261,12 @@
    "hloubka": 0.941,
    "vyska": 1.021,
    "uroven": 0,
-   "plosek": 40020
+   "plosek": 40020,
+   "maska": [
+    70,
+    1,
+    4
+   ]
   },
   {
    "id": "abo-B085GXXLT2",
@@ -2343,7 +3278,12 @@
    "hloubka": 0.995,
    "vyska": 1.064,
    "uroven": 0,
-   "plosek": 25932
+   "plosek": 25932,
+   "maska": [
+    90,
+    0,
+    2
+   ]
   },
   {
    "id": "abo-B075DN73KR",
@@ -2355,7 +3295,12 @@
    "hloubka": 0.59,
    "vyska": 0.83,
    "uroven": 0,
-   "plosek": 37688
+   "plosek": 37688,
+   "maska": [
+    67,
+    -5,
+    -2
+   ]
   },
   {
    "id": "abo-B075YMN1BC",
@@ -2367,7 +3312,12 @@
    "hloubka": 0.577,
    "vyska": 1.05,
    "uroven": 0,
-   "plosek": 7212
+   "plosek": 7212,
+   "maska": [
+    29,
+    3,
+    -11
+   ]
   },
   {
    "id": "abo-B075YNJQLB",
@@ -2379,7 +3329,12 @@
    "hloubka": 0.583,
    "vyska": 0.849,
    "uroven": 0,
-   "plosek": 21116
+   "plosek": 21116,
+   "maska": [
+    24,
+    6,
+    12
+   ]
   },
   {
    "id": "abo-B075YPTG6M",
@@ -2391,7 +3346,12 @@
    "hloubka": 0.518,
    "vyska": 0.858,
    "uroven": 0,
-   "plosek": 12508
+   "plosek": 12508,
+   "maska": [
+    29,
+    46,
+    26
+   ]
   },
   {
    "id": "abo-B07B83KVGK",
@@ -2403,7 +3363,12 @@
    "hloubka": 0.499,
    "vyska": 0.792,
    "uroven": 0,
-   "plosek": 7230
+   "plosek": 7230,
+   "maska": [
+    49,
+    12,
+    32
+   ]
   },
   {
    "id": "abo-B07HPFP4SZ",
@@ -2415,7 +3380,12 @@
    "hloubka": 0.61,
    "vyska": 0.84,
    "uroven": 0,
-   "plosek": 12682
+   "plosek": 12682,
+   "maska": [
+    68,
+    -1,
+    -1
+   ]
   },
   {
    "id": "abo-B0853KPWHP",
@@ -2427,7 +3397,12 @@
    "hloubka": 0.62,
    "vyska": 0.93,
    "uroven": 0,
-   "plosek": 27852
+   "plosek": 27852,
+   "maska": [
+    33,
+    2,
+    -1
+   ]
   },
   {
    "id": "abo-B085559VGM",
@@ -2439,7 +3414,12 @@
    "hloubka": 0.504,
    "vyska": 0.781,
    "uroven": 0,
-   "plosek": 40072
+   "plosek": 40072,
+   "maska": [
+    70,
+    6,
+    7
+   ]
   },
   {
    "id": "abo-B00EUL2B16",
@@ -2451,7 +3431,12 @@
    "hloubka": 0.584,
    "vyska": 0.965,
    "uroven": 0,
-   "plosek": 13924
+   "plosek": 13924,
+   "maska": [
+    21,
+    16,
+    19
+   ]
   },
   {
    "id": "abo-B072Y2MRY2",
@@ -2463,7 +3448,12 @@
    "hloubka": 0.638,
    "vyska": 0.576,
    "uroven": 0,
-   "plosek": 27488
+   "plosek": 27488,
+   "maska": [
+    16,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B073G947XM",
@@ -2475,7 +3465,12 @@
    "hloubka": 0.505,
    "vyska": 0.501,
    "uroven": 0,
-   "plosek": 6744
+   "plosek": 6744,
+   "maska": [
+    31,
+    -27,
+    26
+   ]
   },
   {
    "id": "abo-B075YMJ25F",
@@ -2487,7 +3482,12 @@
    "hloubka": 0.612,
    "vyska": 0.931,
    "uroven": 0,
-   "plosek": 11032
+   "plosek": 11032,
+   "maska": [
+    53,
+    -1,
+    22
+   ]
   },
   {
    "id": "abo-B075YMW6W9",
@@ -2499,7 +3499,12 @@
    "hloubka": 0.595,
    "vyska": 0.979,
    "uroven": 0,
-   "plosek": 11702
+   "plosek": 11702,
+   "maska": [
+    28,
+    17,
+    27
+   ]
   },
   {
    "id": "abo-B075YMXWZM",
@@ -2511,7 +3516,12 @@
    "hloubka": 0.499,
    "vyska": 0.801,
    "uroven": 0,
-   "plosek": 11642
+   "plosek": 11642,
+   "maska": [
+    43,
+    23,
+    30
+   ]
   },
   {
    "id": "abo-B075YN3HN9",
@@ -2523,7 +3533,12 @@
    "hloubka": 0.561,
    "vyska": 0.889,
    "uroven": 0,
-   "plosek": 9308
+   "plosek": 9308,
+   "maska": [
+    26,
+    5,
+    1
+   ]
   },
   {
    "id": "abo-B075YP32LQ",
@@ -2535,7 +3550,12 @@
    "hloubka": 0.612,
    "vyska": 0.931,
    "uroven": 0,
-   "plosek": 11032
+   "plosek": 11032,
+   "maska": [
+    19,
+    3,
+    -13
+   ]
   },
   {
    "id": "abo-B075YP38V2",
@@ -2547,7 +3567,12 @@
    "hloubka": 0.519,
    "vyska": 0.803,
    "uroven": 0,
-   "plosek": 16560
+   "plosek": 16560,
+   "maska": [
+    35,
+    0,
+    3
+   ]
   },
   {
    "id": "abo-B075YP4WVQ",
@@ -2559,7 +3584,12 @@
    "hloubka": 0.562,
    "vyska": 1.093,
    "uroven": 0,
-   "plosek": 34544
+   "plosek": 34544,
+   "maska": [
+    16,
+    28,
+    18
+   ]
   },
   {
    "id": "abo-B075YPTDT5",
@@ -2571,7 +3601,12 @@
    "hloubka": 0.648,
    "vyska": 1.012,
    "uroven": 0,
-   "plosek": 14386
+   "plosek": 14386,
+   "maska": [
+    85,
+    2,
+    16
+   ]
   },
   {
    "id": "abo-B075YQ8Q2K",
@@ -2583,7 +3618,12 @@
    "hloubka": 0.612,
    "vyska": 0.931,
    "uroven": 0,
-   "plosek": 11032
+   "plosek": 11032,
+   "maska": [
+    62,
+    5,
+    9
+   ]
   },
   {
    "id": "abo-B075YV7SP7",
@@ -2595,7 +3635,12 @@
    "hloubka": 0.609,
    "vyska": 0.988,
    "uroven": 0,
-   "plosek": 31912
+   "plosek": 31912,
+   "maska": [
+    23,
+    4,
+    -13
+   ]
   },
   {
    "id": "abo-B075YVHQVV",
@@ -2607,7 +3652,12 @@
    "hloubka": 0.5,
    "vyska": 0.65,
    "uroven": 0,
-   "plosek": 5876
+   "plosek": 5876,
+   "maska": [
+    52,
+    23,
+    40
+   ]
   },
   {
    "id": "abo-B075Z8THZJ",
@@ -2619,7 +3669,12 @@
    "hloubka": 0.56,
    "vyska": 0.819,
    "uroven": 0,
-   "plosek": 21780
+   "plosek": 21780,
+   "maska": [
+    30,
+    7,
+    15
+   ]
   },
   {
    "id": "abo-B075ZBW1NL",
@@ -2631,7 +3686,12 @@
    "hloubka": 0.473,
    "vyska": 0.83,
    "uroven": 0,
-   "plosek": 8976
+   "plosek": 8976,
+   "maska": [
+    2,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B076NKJCRN",
@@ -2643,7 +3703,12 @@
    "hloubka": 0.641,
    "vyska": 1.016,
    "uroven": 0,
-   "plosek": 19079
+   "plosek": 19079,
+   "maska": [
+    82,
+    1,
+    14
+   ]
   },
   {
    "id": "abo-B07B78LXZJ",
@@ -2655,7 +3720,12 @@
    "hloubka": 0.602,
    "vyska": 0.99,
    "uroven": 0,
-   "plosek": 20992
+   "plosek": 20992,
+   "maska": [
+    83,
+    1,
+    3
+   ]
   },
   {
    "id": "abo-B07B7B21QY",
@@ -2667,7 +3737,12 @@
    "hloubka": 0.569,
    "vyska": 1.032,
    "uroven": 0,
-   "plosek": 23196
+   "plosek": 23196,
+   "maska": [
+    79,
+    1,
+    7
+   ]
   },
   {
    "id": "abo-B07B7B3ZN1",
@@ -2679,7 +3754,12 @@
    "hloubka": 0.638,
    "vyska": 0.916,
    "uroven": 0,
-   "plosek": 10222
+   "plosek": 10222,
+   "maska": [
+    12,
+    32,
+    3
+   ]
   },
   {
    "id": "abo-B07B7B6W64",
@@ -2691,7 +3771,12 @@
    "hloubka": 0.677,
    "vyska": 0.833,
    "uroven": 0,
-   "plosek": 10610
+   "plosek": 10610,
+   "maska": [
+    19,
+    -7,
+    5
+   ]
   },
   {
    "id": "abo-B07B7BGYVB",
@@ -2703,7 +3788,12 @@
    "hloubka": 0.56,
    "vyska": 0.864,
    "uroven": 0,
-   "plosek": 7584
+   "plosek": 7584,
+   "maska": [
+    65,
+    1,
+    6
+   ]
   },
   {
    "id": "abo-B07B8445BB",
@@ -2715,7 +3805,12 @@
    "hloubka": 0.326,
    "vyska": 0.61,
    "uroven": 0,
-   "plosek": 17100
+   "plosek": 17100,
+   "maska": [
+    10,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07BTRTC76",
@@ -2727,7 +3822,12 @@
    "hloubka": 0.636,
    "vyska": 0.916,
    "uroven": 0,
-   "plosek": 8818
+   "plosek": 8818,
+   "maska": [
+    70,
+    3,
+    5
+   ]
   },
   {
    "id": "abo-B07C9W437G",
@@ -2739,7 +3839,12 @@
    "hloubka": 0.567,
    "vyska": 0.82,
    "uroven": 0,
-   "plosek": 11940
+   "plosek": 11940,
+   "maska": [
+    13,
+    5,
+    -11
+   ]
   },
   {
    "id": "abo-B07DBCFM4R",
@@ -2751,7 +3856,12 @@
    "hloubka": 0.513,
    "vyska": 1.13,
    "uroven": 0,
-   "plosek": 19954
+   "plosek": 19954,
+   "maska": [
+    24,
+    3,
+    4
+   ]
   },
   {
    "id": "abo-B07DBDZ4SG",
@@ -2763,7 +3873,12 @@
    "hloubka": 0.363,
    "vyska": 0.453,
    "uroven": 0,
-   "plosek": 17778
+   "plosek": 17778,
+   "maska": [
+    88,
+    0,
+    1
+   ]
   },
   {
    "id": "abo-B07DBFM8T7",
@@ -2775,7 +3890,12 @@
    "hloubka": 0.397,
    "vyska": 0.608,
    "uroven": 0,
-   "plosek": 20764
+   "plosek": 20764,
+   "maska": [
+    7,
+    14,
+    6
+   ]
   },
   {
    "id": "abo-B07DBGHZH5",
@@ -2787,7 +3907,12 @@
    "hloubka": 0.513,
    "vyska": 1.096,
    "uroven": 0,
-   "plosek": 17607
+   "plosek": 17607,
+   "maska": [
+    8,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07DBHCKHY",
@@ -2799,7 +3924,12 @@
    "hloubka": 0.605,
    "vyska": 0.75,
    "uroven": 0,
-   "plosek": 37773
+   "plosek": 37773,
+   "maska": [
+    22,
+    26,
+    8
+   ]
   },
   {
    "id": "abo-B07DVTZLR4",
@@ -2811,7 +3941,12 @@
    "hloubka": 0.366,
    "vyska": 0.76,
    "uroven": 0,
-   "plosek": 14388
+   "plosek": 14388,
+   "maska": [
+    21,
+    0,
+    1
+   ]
   },
   {
    "id": "abo-B07FYHGL58",
@@ -2823,7 +3958,12 @@
    "hloubka": 0.533,
    "vyska": 0.826,
    "uroven": 0,
-   "plosek": 25100
+   "plosek": 25100,
+   "maska": [
+    100,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07GNF6Q9L",
@@ -2835,7 +3975,12 @@
    "hloubka": 0.521,
    "vyska": 0.851,
    "uroven": 0,
-   "plosek": 39240
+   "plosek": 39240,
+   "maska": [
+    100,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07GZY7JFV",
@@ -2847,7 +3992,12 @@
    "hloubka": 0.533,
    "vyska": 0.825,
    "uroven": 0,
-   "plosek": 26684
+   "plosek": 26684,
+   "maska": [
+    23,
+    5,
+    -3
+   ]
   },
   {
    "id": "abo-B07HSBD6TF",
@@ -2859,7 +4009,12 @@
    "hloubka": 0.587,
    "vyska": 0.791,
    "uroven": 0,
-   "plosek": 3953
+   "plosek": 3953,
+   "maska": [
+    32,
+    44,
+    23
+   ]
   },
   {
    "id": "abo-B07HSBJ5D6",
@@ -2871,7 +4026,12 @@
    "hloubka": 0.617,
    "vyska": 0.824,
    "uroven": 0,
-   "plosek": 12898
+   "plosek": 12898,
+   "maska": [
+    71,
+    0,
+    10
+   ]
   },
   {
    "id": "abo-B07HSBN83Z",
@@ -2883,7 +4043,12 @@
    "hloubka": 0.608,
    "vyska": 0.981,
    "uroven": 0,
-   "plosek": 33466
+   "plosek": 33466,
+   "maska": [
+    80,
+    -2,
+    13
+   ]
   },
   {
    "id": "abo-B07HSBRXD4",
@@ -2895,7 +4060,12 @@
    "hloubka": 0.578,
    "vyska": 0.86,
    "uroven": 0,
-   "plosek": 44840
+   "plosek": 44840,
+   "maska": [
+    23,
+    -5,
+    -19
+   ]
   },
   {
    "id": "abo-B07HSDWZ2L",
@@ -2907,7 +4077,12 @@
    "hloubka": 0.637,
    "vyska": 0.987,
    "uroven": 0,
-   "plosek": 18588
+   "plosek": 18588,
+   "maska": [
+    70,
+    1,
+    10
+   ]
   },
   {
    "id": "abo-B07HSF45BX",
@@ -2919,7 +4094,12 @@
    "hloubka": 0.565,
    "vyska": 0.874,
    "uroven": 0,
-   "plosek": 20813
+   "plosek": 20813,
+   "maska": [
+    55,
+    1,
+    6
+   ]
   },
   {
    "id": "abo-B07HSHTMWW",
@@ -2931,7 +4111,12 @@
    "hloubka": 0.562,
    "vyska": 1.065,
    "uroven": 0,
-   "plosek": 17878
+   "plosek": 17878,
+   "maska": [
+    26,
+    2,
+    1
+   ]
   },
   {
    "id": "abo-B07HSJSH2Q",
@@ -2943,7 +4128,12 @@
    "hloubka": 0.597,
    "vyska": 0.933,
    "uroven": 0,
-   "plosek": 7252
+   "plosek": 7252,
+   "maska": [
+    76,
+    1,
+    6
+   ]
   },
   {
    "id": "abo-B07HSLPNLV",
@@ -2955,7 +4145,12 @@
    "hloubka": 0.623,
    "vyska": 0.997,
    "uroven": 0,
-   "plosek": 26555
+   "plosek": 26555,
+   "maska": [
+    66,
+    2,
+    17
+   ]
   },
   {
    "id": "abo-B07K7K7GKC",
@@ -2967,7 +4162,12 @@
    "hloubka": 0.561,
    "vyska": 0.955,
    "uroven": 0,
-   "plosek": 6828
+   "plosek": 6828,
+   "maska": [
+    91,
+    -2,
+    13
+   ]
   },
   {
    "id": "abo-B07L6MD26Y",
@@ -2979,7 +4179,12 @@
    "hloubka": 0.322,
    "vyska": 0.742,
    "uroven": 0,
-   "plosek": 14348
+   "plosek": 14348,
+   "maska": [
+    27,
+    11,
+    12
+   ]
   },
   {
    "id": "abo-B07M6PKCQQ",
@@ -2991,7 +4196,12 @@
    "hloubka": 0.402,
    "vyska": 0.486,
    "uroven": 0,
-   "plosek": 22368
+   "plosek": 22368,
+   "maska": [
+    77,
+    -1,
+    -2
+   ]
   },
   {
    "id": "abo-B07MBFDL34",
@@ -3003,7 +4213,12 @@
    "hloubka": 0.542,
    "vyska": 0.983,
    "uroven": 0,
-   "plosek": 9140
+   "plosek": 9140,
+   "maska": [
+    64,
+    -3,
+    -2
+   ]
   },
   {
    "id": "abo-B07MCBKLYT",
@@ -3015,7 +4230,12 @@
    "hloubka": 0.589,
    "vyska": 0.946,
    "uroven": 0,
-   "plosek": 48932
+   "plosek": 48932,
+   "maska": [
+    36,
+    2,
+    -14
+   ]
   },
   {
    "id": "abo-B07MSWQR39",
@@ -3027,7 +4247,12 @@
    "hloubka": 0.629,
    "vyska": 0.909,
    "uroven": 0,
-   "plosek": 42106
+   "plosek": 42106,
+   "maska": [
+    36,
+    0,
+    -3
+   ]
   },
   {
    "id": "abo-B07PQS4CXS",
@@ -3039,7 +4264,12 @@
    "hloubka": 0.457,
    "vyska": 0.94,
    "uroven": 0,
-   "plosek": 26292
+   "plosek": 26292,
+   "maska": [
+    22,
+    10,
+    -1
+   ]
   },
   {
    "id": "abo-B07QBQCG6J",
@@ -3051,7 +4281,12 @@
    "hloubka": 0.54,
    "vyska": 0.893,
    "uroven": 0,
-   "plosek": 7168
+   "plosek": 7168,
+   "maska": [
+    74,
+    1,
+    1
+   ]
   },
   {
    "id": "abo-B07QCPZTFJ",
@@ -3063,7 +4298,12 @@
    "hloubka": 0.563,
    "vyska": 0.982,
    "uroven": 0,
-   "plosek": 21488
+   "plosek": 21488,
+   "maska": [
+    42,
+    13,
+    28
+   ]
   },
   {
    "id": "abo-B07QCQ3D7F",
@@ -3075,7 +4315,12 @@
    "hloubka": 0.49,
    "vyska": 0.96,
    "uroven": 0,
-   "plosek": 10344
+   "plosek": 10344,
+   "maska": [
+    42,
+    1,
+    4
+   ]
   },
   {
    "id": "abo-B07QDNQSVF",
@@ -3087,7 +4332,12 @@
    "hloubka": 0.57,
    "vyska": 0.859,
    "uroven": 0,
-   "plosek": 19296
+   "plosek": 19296,
+   "maska": [
+    68,
+    2,
+    -1
+   ]
   },
   {
    "id": "abo-B07QDNRFKG",
@@ -3099,7 +4349,12 @@
    "hloubka": 0.629,
    "vyska": 1.091,
    "uroven": 0,
-   "plosek": 47957
+   "plosek": 47957,
+   "maska": [
+    49,
+    13,
+    28
+   ]
   },
   {
    "id": "abo-B07QFRSC8M",
@@ -3111,7 +4366,12 @@
    "hloubka": 0.522,
    "vyska": 0.863,
    "uroven": 0,
-   "plosek": 16396
+   "plosek": 16396,
+   "maska": [
+    22,
+    5,
+    -28
+   ]
   },
   {
    "id": "abo-B07QFRSG35",
@@ -3123,7 +4383,12 @@
    "hloubka": 0.559,
    "vyska": 0.896,
    "uroven": 0,
-   "plosek": 42772
+   "plosek": 42772,
+   "maska": [
+    18,
+    1,
+    -22
+   ]
   },
   {
    "id": "abo-B07QFRSLZB",
@@ -3135,7 +4400,12 @@
    "hloubka": 0.594,
    "vyska": 0.9,
    "uroven": 0,
-   "plosek": 23648
+   "plosek": 23648,
+   "maska": [
+    82,
+    -1,
+    10
+   ]
   },
   {
    "id": "abo-B07QFRSN37",
@@ -3147,7 +4417,12 @@
    "hloubka": 0.563,
    "vyska": 1.092,
    "uroven": 0,
-   "plosek": 21488
+   "plosek": 21488,
+   "maska": [
+    42,
+    16,
+    30
+   ]
   },
   {
    "id": "abo-B07QGWLB9F",
@@ -3159,7 +4434,12 @@
    "hloubka": 0.563,
    "vyska": 0.982,
    "uroven": 0,
-   "plosek": 21488
+   "plosek": 21488,
+   "maska": [
+    55,
+    1,
+    5
+   ]
   },
   {
    "id": "abo-B07QGWM35P",
@@ -3171,7 +4451,12 @@
    "hloubka": 0.635,
    "vyska": 0.952,
    "uroven": 0,
-   "plosek": 12508
+   "plosek": 12508,
+   "maska": [
+    60,
+    0,
+    15
+   ]
   },
   {
    "id": "abo-B07QGWMRVV",
@@ -3183,7 +4468,12 @@
    "hloubka": 0.449,
    "vyska": 0.655,
    "uroven": 0,
-   "plosek": 7616
+   "plosek": 7616,
+   "maska": [
+    17,
+    5,
+    4
+   ]
   },
   {
    "id": "abo-B07QGWNLQX",
@@ -3195,7 +4485,12 @@
    "hloubka": 0.489,
    "vyska": 0.927,
    "uroven": 0,
-   "plosek": 47724
+   "plosek": 47724,
+   "maska": [
+    18,
+    1,
+    -22
+   ]
   },
   {
    "id": "abo-B07QGWNP4C",
@@ -3207,7 +4502,12 @@
    "hloubka": 0.56,
    "vyska": 0.838,
    "uroven": 0,
-   "plosek": 16446
+   "plosek": 16446,
+   "maska": [
+    25,
+    1,
+    2
+   ]
   },
   {
    "id": "abo-B07QJ1X2QB",
@@ -3219,7 +4519,12 @@
    "hloubka": 0.57,
    "vyska": 0.739,
    "uroven": 0,
-   "plosek": 25492
+   "plosek": 25492,
+   "maska": [
+    72,
+    4,
+    21
+   ]
   },
   {
    "id": "abo-B07QJ23T42",
@@ -3231,7 +4536,12 @@
    "hloubka": 0.669,
    "vyska": 1.065,
    "uroven": 0,
-   "plosek": 58364
+   "plosek": 58364,
+   "maska": [
+    42,
+    12,
+    26
+   ]
   },
   {
    "id": "abo-B07QK2JK4K",
@@ -3243,7 +4553,12 @@
    "hloubka": 0.63,
    "vyska": 0.955,
    "uroven": 0,
-   "plosek": 24560
+   "plosek": 24560,
+   "maska": [
+    56,
+    2,
+    9
+   ]
   },
   {
    "id": "abo-B07QTD9VPM",
@@ -3255,7 +4570,12 @@
    "hloubka": 0.549,
    "vyska": 0.863,
    "uroven": 0,
-   "plosek": 47932
+   "plosek": 47932,
+   "maska": [
+    69,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07RKJCGXR",
@@ -3267,7 +4587,12 @@
    "hloubka": 0.3,
    "vyska": 0.561,
    "uroven": 0,
-   "plosek": 4475
+   "plosek": 4475,
+   "maska": [
+    12,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07TF9MY62",
@@ -3279,7 +4604,12 @@
    "hloubka": 0.563,
    "vyska": 0.985,
    "uroven": 0,
-   "plosek": 13423
+   "plosek": 13423,
+   "maska": [
+    4,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B07TGC3432",
@@ -3291,7 +4621,12 @@
    "hloubka": 0.55,
    "vyska": 0.85,
    "uroven": 0,
-   "plosek": 54700
+   "plosek": 54700,
+   "maska": [
+    34,
+    12,
+    18
+   ]
   },
   {
    "id": "abo-B07TTHH4KB",
@@ -3303,7 +4638,12 @@
    "hloubka": 0.5,
    "vyska": 1.037,
    "uroven": 0,
-   "plosek": 22948
+   "plosek": 22948,
+   "maska": [
+    70,
+    -2,
+    7
+   ]
   },
   {
    "id": "abo-B07TYTPQ2K",
@@ -3315,7 +4655,12 @@
    "hloubka": 0.601,
    "vyska": 1.14,
    "uroven": 0,
-   "plosek": 35349
+   "plosek": 35349,
+   "maska": [
+    62,
+    -1,
+    6
+   ]
   },
   {
    "id": "abo-B07TYTR8M3",
@@ -3327,7 +4672,12 @@
    "hloubka": 0.509,
    "vyska": 1.037,
    "uroven": 0,
-   "plosek": 17532
+   "plosek": 17532,
+   "maska": [
+    33,
+    8,
+    23
+   ]
   },
   {
    "id": "abo-B07TZRLNFV",
@@ -3339,7 +4689,12 @@
    "hloubka": 0.509,
    "vyska": 1.037,
    "uroven": 0,
-   "plosek": 17532
+   "plosek": 17532,
+   "maska": [
+    67,
+    0,
+    2
+   ]
   },
   {
    "id": "abo-B084RZVHD2",
@@ -3351,7 +4706,12 @@
    "hloubka": 0.533,
    "vyska": 0.905,
    "uroven": 0,
-   "plosek": 59819
+   "plosek": 59819,
+   "maska": [
+    80,
+    1,
+    9
+   ]
   },
   {
    "id": "abo-B084W24C7S",
@@ -3363,7 +4723,12 @@
    "hloubka": 0.635,
    "vyska": 0.967,
    "uroven": 0,
-   "plosek": 8564
+   "plosek": 8564,
+   "maska": [
+    47,
+    3,
+    12
+   ]
   },
   {
    "id": "abo-B084W2WJH2",
@@ -3375,7 +4740,12 @@
    "hloubka": 0.585,
    "vyska": 1.094,
    "uroven": 0,
-   "plosek": 25390
+   "plosek": 25390,
+   "maska": [
+    14,
+    1,
+    3
+   ]
   },
   {
    "id": "abo-B084W339RK",
@@ -3387,7 +4757,12 @@
    "hloubka": 0.694,
    "vyska": 0.914,
    "uroven": 0,
-   "plosek": 31686
+   "plosek": 31686,
+   "maska": [
+    46,
+    3,
+    8
+   ]
   },
   {
    "id": "abo-B084W368M8",
@@ -3399,7 +4774,12 @@
    "hloubka": 0.596,
    "vyska": 0.972,
    "uroven": 0,
-   "plosek": 12647
+   "plosek": 12647,
+   "maska": [
+    42,
+    3,
+    10
+   ]
   },
   {
    "id": "abo-B0853KX8NG",
@@ -3411,7 +4791,12 @@
    "hloubka": 0.571,
    "vyska": 1.124,
    "uroven": 0,
-   "plosek": 12408
+   "plosek": 12408,
+   "maska": [
+    38,
+    14,
+    22
+   ]
   },
   {
    "id": "abo-B0853L359S",
@@ -3423,7 +4808,12 @@
    "hloubka": 0.572,
    "vyska": 1.125,
    "uroven": 0,
-   "plosek": 12292
+   "plosek": 12292,
+   "maska": [
+    84,
+    -1,
+    4
+   ]
   },
   {
    "id": "abo-B0853L9G5Z",
@@ -3435,7 +4825,12 @@
    "hloubka": 0.568,
    "vyska": 1.069,
    "uroven": 0,
-   "plosek": 7354
+   "plosek": 7354,
+   "maska": [
+    69,
+    0,
+    3
+   ]
   },
   {
    "id": "abo-B08554L385",
@@ -3447,7 +4842,12 @@
    "hloubka": 0.597,
    "vyska": 0.816,
    "uroven": 0,
-   "plosek": 58912
+   "plosek": 58912,
+   "maska": [
+    53,
+    -3,
+    -2
+   ]
   },
   {
    "id": "abo-B085554J7Q",
@@ -3459,7 +4859,12 @@
    "hloubka": 0.556,
    "vyska": 0.795,
    "uroven": 0,
-   "plosek": 10412
+   "plosek": 10412,
+   "maska": [
+    39,
+    4,
+    1
+   ]
   },
   {
    "id": "abo-B08568W12Z",
@@ -3471,7 +4876,12 @@
    "hloubka": 0.587,
    "vyska": 0.889,
    "uroven": 0,
-   "plosek": 36618
+   "plosek": 36618,
+   "maska": [
+    35,
+    1,
+    2
+   ]
   },
   {
    "id": "abo-B0856G5SZH",
@@ -3483,7 +4893,12 @@
    "hloubka": 0.535,
    "vyska": 1.045,
    "uroven": 0,
-   "plosek": 12822
+   "plosek": 12822,
+   "maska": [
+    24,
+    2,
+    -6
+   ]
   },
   {
    "id": "abo-B0857JM2NK",
@@ -3495,7 +4910,12 @@
    "hloubka": 0.495,
    "vyska": 0.762,
    "uroven": 0,
-   "plosek": 47715
+   "plosek": 47715,
+   "maska": [
+    88,
+    0,
+    0
+   ]
   },
   {
    "id": "abo-B0857JQ3BZ",
@@ -3507,7 +4927,12 @@
    "hloubka": 0.569,
    "vyska": 0.85,
    "uroven": 0,
-   "plosek": 63552
+   "plosek": 63552,
+   "maska": [
+    85,
+    5,
+    13
+   ]
   },
   {
    "id": "abo-B0857JWWVP",
@@ -3519,7 +4944,12 @@
    "hloubka": 0.515,
    "vyska": 0.818,
    "uroven": 0,
-   "plosek": 38709
+   "plosek": 38709,
+   "maska": [
+    83,
+    4,
+    15
+   ]
   },
   {
    "id": "abo-B0857JZJPR",
@@ -3531,7 +4961,12 @@
    "hloubka": 0.505,
    "vyska": 0.456,
    "uroven": 0,
-   "plosek": 33159
+   "plosek": 33159,
+   "maska": [
+    88,
+    3,
+    14
+   ]
   },
   {
    "id": "abo-B0861SRJ8T",
@@ -3543,7 +4978,12 @@
    "hloubka": 0.455,
    "vyska": 0.61,
    "uroven": 0,
-   "plosek": 51072
+   "plosek": 51072,
+   "maska": [
+    87,
+    2,
+    3
+   ]
   },
   {
    "id": "abo-B07HSG7KTN",
@@ -3555,7 +4995,12 @@
    "hloubka": 0.457,
    "vyska": 0.633,
    "uroven": 0,
-   "plosek": 5872
+   "plosek": 5872,
+   "maska": [
+    37,
+    -1,
+    1
+   ]
   },
   {
    "id": "abo-B075YMW6VR",

@@ -133,7 +133,7 @@ function server() {
             if (!fs.existsSync(cesta('modely', pol, '.glb'))) continue;
             const r = vysledky.get(pol.id) || stare.get(pol.id);
             if (!r) continue;
-            polozky.push({ id: pol.id, nazev: pol.nazev, kategorie: pol.kategorie, zdroj: pol.zdroj, orig: pol.orig, sirka: r.sirka, hloubka: r.hloubka, vyska: r.vyska, uroven: pol.uroven ?? 0, plosek: r.plosek });
+            polozky.push({ id: pol.id, nazev: pol.nazev, kategorie: pol.kategorie, zdroj: pol.zdroj, orig: pol.orig, sirka: r.sirka, hloubka: r.hloubka, vyska: r.vyska, uroven: pol.uroven ?? 0, plosek: r.plosek, ...(stare.get(pol.id)?.maska ? { maska: stare.get(pol.id).maska } : {}) });
         }
         fs.writeFileSync(path.join(VYSTUP, 'katalog.json'), JSON.stringify({ verze: 1, zdroje: ZDROJE, kategorie: zadani.kategorie, polozky }, null, 1));
         return polozky;

@@ -49,6 +49,7 @@ return [
         'akce_kopie' => 'Kopia obiektu',
         'akce_smazani' => 'Usunięcie obiektu',
         'akce_vyska' => 'Wysokość obiektu nad podłogą',
+        'akce_barva' => 'Kolor obiektu',
     ],
 
     // Kategorie katalogu podle id z public/katalog/katalog.json

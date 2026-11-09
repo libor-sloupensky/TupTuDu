@@ -608,6 +608,18 @@
                                 <div class="flex items-center gap-1">
                                     <button type="button" @click="katalogOtoc()" class="border border-gray-500 rounded px-2 hover:bg-gray-100" data-katalog-otoc>{{ __('ed_sablona.spolecne.otocit_90') }}</button>
                                     <button type="button" @click="katalogKopie()" class="border border-gray-500 rounded px-2 hover:bg-gray-100" data-katalog-kopie>{{ __('ed_sablona.katalog.kopie') }}</button>
+                                    {{-- Paleta potahu se rozbalí přes plochu: panel nesmí změnit výšku, jinak se plocha posune a kus pod myší uteče --}}
+                                    <div x-show="inspector.barvy.length" class="relative" x-data="{ paleta: false }" @click.outside="paleta = false" data-katalog-barvy>
+                                        <button type="button" @click="paleta = !paleta" :aria-expanded="paleta" class="border border-gray-500 rounded px-2 hover:bg-gray-100 flex items-center gap-1" data-katalog-paleta>
+                                            <span class="rounded-full border border-gray-500" :style="'width:11px;height:11px;background:' + (inspector.barvy.find(b => b.klic === inspector.barva)?.css || 'transparent')"></span>{{ __('ed_sablona.katalog.barva') }}
+                                        </button>
+                                        <div x-show="paleta" x-cloak class="absolute z-30 left-0 mt-1 p-1.5 bg-white border border-gray-300 rounded shadow flex flex-wrap gap-1" style="width:146px">
+                                            <template x-for="b in inspector.barvy" :key="b.klic">
+                                                <button type="button" @click="katalogBarva(b.klic); paleta = false" :data-katalog-barva="b.klic" :aria-label="b.nazev" :aria-pressed="inspector.barva === b.klic" :data-tip-below="b.nazev"
+                                                        class="rounded-full border border-gray-500" :style="'width:20px;height:20px;background:' + b.css + (inspector.barva === b.klic ? ';outline:2px solid var(--c-primary);outline-offset:1px' : '')"></button>
+                                            </template>
+                                        </div>
+                                    </div>
                                     <button type="button" @click="katalogSmaz()" class="border border-gray-500 rounded px-2 hover:bg-gray-100 ml-auto" data-katalog-smaz>{{ __('ed_sablona.spolecne.smazat') }}</button>
                                 </div>
                             </div>

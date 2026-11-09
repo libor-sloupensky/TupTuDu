@@ -25,7 +25,7 @@ const XMLNS = 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/"';
 const ADRESY = ['https://tuptudu.com', 'https://*.tuptudu.com', 'http://tuptudu.localhost:*', 'http://*.tuptudu.localhost:8002', 'http://127.0.0.1:*'];
 const TEST = '/_test/pristup.txt';
 const KATALOG = path.resolve(__dirname, '../../public/katalog');
-const SLOZKY = { modely: 'model/gltf-binary', nahledy: 'image/webp', pudorys: 'image/webp' };
+const SLOZKY = { modely: 'model/gltf-binary', nahledy: 'image/webp', pudorys: 'image/webp', masky: 'image/webp', 'masky-pudorys': 'image/webp' };
 const VLAKEN = 8;
 const CACHE = 'public, max-age=2592000';   // hotový kus se skoro nemění, přenos se počítá
 

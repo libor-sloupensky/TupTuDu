@@ -623,7 +623,18 @@
 
     // Půdorysné značky kusů z katalogu: obrázek shora, načte se jednou, po načtení se plátno překreslí
     var znacky = {};
-    function znackaKatalogu(id) {
+    function znackaKatalogu(id, barva) {
+        // Přebarvená značka: do přebarvení se kreslí původní, potom plátno z Katalog3d
+        if (barva && window.Katalog3d) {
+            var klic = id + '|' + barva;
+            if (!znacky[klic]) {
+                znacky[klic] = znackaKatalogu(id);
+                window.Katalog3d.prebarviZnacku(id, barva).then(function (c) {
+                    if (c) { znacky[klic] = c; Konva.stages.forEach(function (s) { s.batchDraw(); }); }
+                }).catch(function (e) { if (window.zalogujChybu) window.zalogujChybu(e, 'Katalog: přebarvení značky', { id: id, barva: barva }); });
+            }
+            return znacky[klic];
+        }
         if (!znacky[id]) {
             var img = new Image();
             // Značka z úložiště jde na plátno, bez CORS by export půdorysu do PNG selhal
@@ -785,8 +796,8 @@
                         ctx.translate(ccx, ccy);
                         ctx.rotate(angRad);
                         if (v.katalog) {
-                            var znacka = znackaKatalogu(v.katalog);
-                            if (znacka.complete && znacka.naturalWidth) ctx.drawImage(znacka, localBb.minX, localBb.minY, localBb.w, localBb.h);
+                            var znacka = znackaKatalogu(v.katalog, v.barva);
+                            if (znacka.getContext || (znacka.complete && znacka.naturalWidth)) ctx.drawImage(znacka, localBb.minX, localBb.minY, localBb.w, localBb.h);
                             else { ctx.beginPath(); ctx.rect(localBb.minX, localBb.minY, localBb.w, localBb.h); ctx.stroke(); }
                             ctx.restore();
                             return;

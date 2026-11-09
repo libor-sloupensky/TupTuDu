@@ -51,12 +51,8 @@ async function zpracuj(id) {
     });
 
     // Značka shora: normály a hloubka
-    const rozsah = Math.max(s.x, s.z);
-    const w = Math.max(16, Math.round(ZNACKA * s.x / rozsah)), h = Math.max(16, Math.round(ZNACKA * s.z / rozsah));
+    const { w, h, c2 } = pohledZnacky(box, s);
     r.setSize(w, h); r.setClearColor(0x000000, 0);
-    const c2 = new THREE.OrthographicCamera(box.min.x, box.max.x, -box.min.z, -box.max.z, 0.01, s.y + 2);
-    c2.position.set(0, box.max.y + 1, 0); c2.up.set(0, 0, -1); c2.lookAt(0, box.min.y, 0);
-    c2.left = box.min.x; c2.right = box.max.x; c2.top = -box.min.z; c2.bottom = -box.max.z; c2.updateProjectionMatrix();
     const cti = (material) => {
         sc.overrideMaterial = material || null;
         r.render(sc, c2);
@@ -103,6 +99,156 @@ async function zpracuj(id) {
     r.forceContextLoss();
     return { ...rozmery, plosek: Math.round(plosek), nahled, znacka };
 }
+// Pohled shora pro značku: stejný pro značku i její masku
+function pohledZnacky(box, s) {
+    const rozsah = Math.max(s.x, s.z);
+    const w = Math.max(16, Math.round(ZNACKA * s.x / rozsah)), h = Math.max(16, Math.round(ZNACKA * s.z / rozsah));
+    const c2 = new THREE.OrthographicCamera(box.min.x, box.max.x, -box.min.z, -box.max.z, 0.01, s.y + 2);
+    c2.position.set(0, box.max.y + 1, 0); c2.up.set(0, 0, -1); c2.lookAt(0, box.min.y, 0);
+    c2.left = box.min.x; c2.right = box.max.x; c2.top = -box.min.z; c2.bottom = -box.max.z; c2.updateProjectionMatrix();
+    return { w, h, c2 };
+}
+
+// ── Maska potahu pro přebarvení (modules/katalog.md, Přebarvování) ──
+// Které texely textury patří hlavní ploše kusu: 20 000 vzorků po povrchu podle skutečné plochy, k-means se 4 shluky
+// v Lab, k největšímu shluku patří i shluky podobné barvy. Každý texel jde k nejbližšímu shluku, nakonec rozmazání 1 px.
+const labZ = (r, g, b) => {
+    const f = c => { c /= 255; return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+    const R = f(r), G = f(g), B = f(b);
+    let X = (.4124 * R + .3576 * G + .1805 * B) / .95047, Y = .2126 * R + .7152 * G + .0722 * B, Z = (.0193 * R + .1192 * G + .9505 * B) / 1.08883;
+    const t = v => v > .008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116;
+    X = t(X); Y = t(Y); Z = t(Z);
+    return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)];
+};
+const VAHA_JASU = 0.35;
+const vzdalLab = (p, c) => { const dl = (p[0] - c[0]) * VAHA_JASU, da = p[1] - c[1], db = p[2] - c[2]; return dl * dl + da * da + db * db; };
+const delitel = (a) => { if (!a.normalized) return 1; const A = a.array; return A instanceof Uint8Array ? 255 : A instanceof Int8Array ? 127 : A instanceof Uint16Array ? 65535 : A instanceof Int16Array ? 32767 : 1; };
+
+function vzorkyPovrchu(model, px, map, kolik) {
+    map.updateMatrix();
+    const M = map.matrix.elements, troj = [];
+    let plocha = 0;
+    const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+    model.updateMatrixWorld(true);
+    model.traverse(o => {
+        if (!o.isMesh || [].concat(o.material)[0].map !== map) return;
+        const g = o.geometry, P = g.attributes.position, U = g.attributes.uv, I = g.index;
+        if (!U) return;
+        const dp = delitel(P), du = delitel(U);
+        const V = (i, v) => v.set(P.getX(i) / dp, P.getY(i) / dp, P.getZ(i) / dp).applyMatrix4(o.matrixWorld);
+        for (let t = 0, n = (I ? I.count : P.count) / 3; t < n; t++) {
+            const i = I ? I.getX(t * 3) : t * 3, j = I ? I.getX(t * 3 + 1) : t * 3 + 1, k = I ? I.getX(t * 3 + 2) : t * 3 + 2;
+            V(i, a); V(j, b); V(k, c);
+            plocha += b.clone().sub(a).cross(c.clone().sub(a)).length() / 2;
+            troj.push({ do: plocha, uv: [[U.getX(i) / du, U.getY(i) / du], [U.getX(j) / du, U.getY(j) / du], [U.getX(k) / du, U.getY(k) / du]] });
+        }
+    });
+    let sem = 12345;
+    const nah = () => (sem = (sem * 16807) % 2147483647) / 2147483647;
+    const ven = [];
+    for (let i = 0; troj.length && i < kolik; i++) {
+        const x = nah() * plocha;
+        let lo = 0, hi = troj.length - 1;
+        while (lo < hi) { const m = (lo + hi) >> 1; if (troj[m].do < x) lo = m + 1; else hi = m; }
+        const T = troj[lo].uv;
+        let r = nah(), q = nah();
+        if (r + q > 1) { r = 1 - r; q = 1 - q; }
+        const u0 = T[0][0] + r * (T[1][0] - T[0][0]) + q * (T[2][0] - T[0][0]), v0 = T[0][1] + r * (T[1][1] - T[0][1]) + q * (T[2][1] - T[0][1]);
+        const u = M[0] * u0 + M[3] * v0 + M[6], v = M[1] * u0 + M[4] * v0 + M[7];
+        const X = Math.floor(((u % 1) + 1) % 1 * px.w), Y = Math.floor(((v % 1) + 1) % 1 * px.h), o = (Y * px.w + X) * 4;
+        ven.push(labZ(px.data[o], px.data[o + 1], px.data[o + 2]));
+    }
+    return ven;
+}
+
+function kmeans(S, k) {
+    const C = [S[0].slice()];
+    while (C.length < k) {
+        let nej = -1, kde = 0;
+        for (let i = 0; i < S.length; i += 7) { const d = Math.min(...C.map(c => vzdalLab(S[i], c))); if (d > nej) { nej = d; kde = i; } }
+        C.push(S[kde].slice());
+    }
+    const P = new Int32Array(S.length);
+    for (let it = 0; it < 14; it++) {
+        const suma = C.map(() => [0, 0, 0, 0]);
+        for (let i = 0; i < S.length; i++) {
+            let b = 0, bd = Infinity;
+            for (let c = 0; c < k; c++) { const d = vzdalLab(S[i], C[c]); if (d < bd) { bd = d; b = c; } }
+            P[i] = b; suma[b][0] += S[i][0]; suma[b][1] += S[i][1]; suma[b][2] += S[i][2]; suma[b][3]++;
+        }
+        suma.forEach((s, c) => { if (s[3]) C[c] = [s[0] / s[3], s[1] / s[3], s[2] / s[3]]; });
+    }
+    const podil = C.map(() => 0);
+    for (const p of P) podil[p]++;
+    return { C, P, podil };
+}
+
+async function vyrobMasku(id) {
+    const model = await window.Katalog3d.nacti(id);
+    let m = null;
+    model.traverse(o => { if (o.isMesh && !m) m = [].concat(o.material).find(x => x.map && x.map.image) || null; });
+    if (!m) return { bez: 'bez textury' };
+    const pw = m.map.image.width, ph = m.map.image.height;
+    const cv = document.createElement('canvas'); cv.width = pw; cv.height = ph;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    g.drawImage(m.map.image, 0, 0);
+    const px = { w: pw, h: ph, data: g.getImageData(0, 0, pw, ph).data };
+    const S = vzorkyPovrchu(model, px, m.map, 20000);
+    if (S.length < 100) return { bez: 'bez povrchu' };
+    const { C, P, podil } = kmeans(S, 4);
+    const hlavni = podil.indexOf(Math.max(...podil));
+    const patri = C.map(c => Math.hypot(c[1] - C[hlavni][1], c[2] - C[hlavni][2]) < 9 && Math.abs(c[0] - C[hlavni][0]) < 28);
+    const vMasce = S.filter((s, i) => patri[P[i]]);
+    const median = [0, 1, 2].map(n => vMasce.map(s => s[n]).sort((x, y) => x - y)[vMasce.length >> 1]);
+    const mc = document.createElement('canvas'); mc.width = pw; mc.height = ph;
+    const mg = mc.getContext('2d'), mi = mg.createImageData(pw, ph);
+    for (let i = 0, n = pw * ph; i < n; i++) {
+        const o = i * 4, l = labZ(px.data[o], px.data[o + 1], px.data[o + 2]);
+        let b = 0, bd = Infinity;
+        for (let c = 0; c < C.length; c++) { const d = vzdalLab(l, C[c]); if (d < bd) { bd = d; b = c; } }
+        mi.data[o] = mi.data[o + 1] = mi.data[o + 2] = patri[b] ? 255 : 0; mi.data[o + 3] = 255;
+    }
+    mg.putImageData(mi, 0, 0);
+    const maska = document.createElement('canvas'); maska.width = pw; maska.height = ph;
+    const g2 = maska.getContext('2d'); g2.filter = 'blur(1px)'; g2.drawImage(mc, 0, 0);
+
+    // Maska značky: stejný pohled shora jako značka, místo barvy maska přes UV modelu
+    const box = model.userData.obal, s = box.getSize(new THREE.Vector3());
+    const { w, h, c2 } = pohledZnacky(box, s);
+    const tm = new THREE.CanvasTexture(maska);
+    for (const k of ['flipY', 'wrapS', 'wrapT', 'rotation']) tm[k] = m.map[k];
+    tm.offset.copy(m.map.offset); tm.repeat.copy(m.map.repeat); tm.center.copy(m.map.center);
+    const r = new THREE.WebGLRenderer({ alpha: true, preserveDrawingBuffer: true });
+    r.setSize(w, h); r.setPixelRatio(1); r.setClearColor(0x000000, 0);
+    const sc = new THREE.Scene();
+    sc.add(model);
+    // Jen díly s texturou masky, ostatní (nožičky jiným materiálem) zůstanou v masce černé
+    sc.overrideMaterial = null;
+    const puvodni = [];
+    model.traverse(o => { if (!o.isMesh) return; puvodni.push([o, o.material]); o.material = [].concat(o.material)[0] === m ? new THREE.MeshBasicMaterial({ map: tm, side: THREE.DoubleSide }) : new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide }); });
+    r.render(sc, c2);
+    const gl = r.getContext(), b = new Uint8Array(w * h * 4);
+    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, b);
+    puvodni.forEach(([o, x]) => { o.material = x; });
+    sc.remove(model); r.dispose(); r.forceContextLoss();
+    const zc = document.createElement('canvas'); zc.width = w; zc.height = h;
+    const zg = zc.getContext('2d'), zi = zg.createImageData(w, h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4, o = ((h - 1 - y) * w + x) * 4;
+        zi.data[o] = zi.data[o + 1] = zi.data[o + 2] = b[i + 3] > 10 ? b[i] : 0; zi.data[o + 3] = 255;
+    }
+    zg.putImageData(zi, 0, 0);
+    return {
+        podil: +(vMasce.length / S.length).toFixed(3),
+        lab: median.map(x => Math.round(x)),
+        maska: maska.toDataURL('image/webp', 0.9),
+        maskaZnacky: zc.toDataURL('image/webp', 0.9),
+    };
+}
+window.maska = async (id) => { window.hotovo = false; window.vysledek = null;
+    try { window.vysledek = await vyrobMasku(id); } catch (e) { window.vysledek = { chyba: String(e && e.stack || e) }; }
+    window.hotovo = true; };
+
 window.vyrob = async (id) => { window.hotovo = false; window.vysledek = null;
     try { window.vysledek = await zpracuj(id); } catch (e) { window.vysledek = { chyba: String(e && e.stack || e) }; }
     window.hotovo = true; };
