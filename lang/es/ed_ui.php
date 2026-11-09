@@ -61,7 +61,7 @@ return [
     'krok_posun_nabytku' => 'Mover mueble',
     'krok_posun_bodu' => 'Mover punto',
     'krok_rotace' => 'Giro de :stupne°',
-    'krok_napojeni_na_celo' => 'Unión al testero de pared',
+    'krok_napojeni_na_celo' => 'Unión al extremo de pared',
     'krok_nova_stena' => 'Pared nueva',
     'krok_novy_otvor' => 'Hueco nuevo',
     'krok_zpet_po_bodech' => 'Atrás punto a punto',
@@ -89,13 +89,13 @@ return [
     'druh_zastavena' => 'Superficie edificada',
     'druh_ostatni' => 'Otra superficie',
     'radon_nizky' => 'bajo',
-    'radon_prechodny' => 'transitorio',
+    'radon_prechodny' => 'de transición',
     'radon_stredni' => 'medio',
     'radon_vysoky' => 'alto',
 
     // Koncepty — výchozí název se ukládá v jazyce při založení
     'novy_koncept' => 'Proyecto nuevo',
     'koncept_s_datem' => 'Proyecto :datum',
-    'koncept_smazat' => '¿Borrar el proyecto ":nazev"?',
+    'koncept_smazat' => '¿Borrar el proyecto «:nazev»?',
     'novy_koncept_chyba' => 'No se ha podido crear el proyecto nuevo. Inténtalo de nuevo.',
 ];

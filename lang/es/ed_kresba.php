@@ -23,13 +23,13 @@ return [
     'typ_otvor_francouzske_okno' => 'Balconera',
     'typ_otvor_pruchod' => 'Paso',
     'kridlo_fix' => 'Fija',
-    'kridlo_pravy' => 'Abatible derecha',
-    'kridlo_levy' => 'Abatible izquierda',
+    'kridlo_pravy' => 'Practicable derecha',
+    'kridlo_levy' => 'Practicable izquierda',
     'kridlo_posuvne' => 'Corredera',
 
     // Venkovní plochy
     'typ_plocha_terasa' => 'Terraza',
-    'typ_plocha_chodnik' => 'Sendero',
+    'typ_plocha_chodnik' => 'Camino',
     'typ_plocha_cesta' => 'Acceso rodado',
     'typ_plocha_travnik' => 'Césped',
     'typ_plocha_zahon' => 'Arriate',
@@ -42,7 +42,7 @@ return [
     'typ_strecha_pultova' => 'Cubierta a un agua',
     'typ_strecha_plocha' => 'Cubierta plana',
     'typ_strecha_valbova' => 'Cubierta a cuatro aguas',
-    'typ_strecha_mansardova' => 'Cubierta mansarda',
+    'typ_strecha_mansardova' => 'Cubierta amansardada',
 
     // Příslušenství
     'typ_prisl_pergola' => 'Pérgola',
@@ -100,7 +100,7 @@ return [
     'podtyp_zasklene' => '(acristalado)',
     'podtyp_otevrena' => '(abierta)',
     'podtyp_s_krbem' => 'con chimenea',
-    'podtyp_olej' => '(aceite)',
+    'podtyp_olej' => '(gasóleo)',
 
     // Vybavení z výkresu (pudorys-icons.js)
     'vybaveni_wc' => 'WC',

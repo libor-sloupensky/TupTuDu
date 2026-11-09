@@ -19,7 +19,7 @@
     <tr>
         <td>El artículo de nuestro sitio web desde el que se realizó el registro</td>
         <td>Averiguar qué artículos ayudan realmente a las personas</td>
-        <td>Interés legítimo (art. 6, apdo. 1, letra f, del RGPD)</td>
+        <td>Interés legítimo (art. 6.1.f) del RGPD)</td>
     </tr>
     <tr>
         <td>Al iniciar sesión con Google: nombre, correo electrónico e identificador de la cuenta de Google</td>
