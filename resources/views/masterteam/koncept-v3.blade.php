@@ -201,11 +201,10 @@
     }
     .kk-posuvnik::-webkit-scrollbar-thumb:hover { background: #6b7280; background-clip: padding-box; }
     @supports (-moz-appearance: none) { .kk-posuvnik { scrollbar-color: #9ca3af #f3f4f6; } }
-    .koncept-k-wrap { width: 100%; overflow: hidden; }
-    .koncept-k-wrap.fullscreen { position: fixed; inset: 0; z-index: 9999; }
-    /* V fullscreen režimu skrýt web navigaci (header + sidebar + footer) */
+    /* Celá obrazovka: editor přes celé okno, web navigace (hlavička, levé menu, patička) pryč. Jen do reloadu nebo dalšího kliku. */
+    .kk-editor.fullscreen { position: fixed; inset: 0; z-index: 9999; }
     body.kk-fullscreen > header,
-    body.kk-fullscreen #kk-sidebar,
+    body.kk-fullscreen .tt-sidebar,
     body.kk-fullscreen > footer,
     body.kk-fullscreen footer { display: none !important; }
     .kk-divider { cursor: col-resize; background: #e5e7eb; position: relative; }
@@ -224,7 +223,7 @@
 
 {{-- komponenta se skládá funkcí, ne rozprostřením — jinak zmrznou gettery --}}
 <div class="kk-editor" x-data="konceptV3Komponenta(_kkInitData)" x-init="init(); podkladInit()" x-cloak
-     class="koncept-k-wrap" :class="{ 'fullscreen': celaObrazovka }"
+     :class="{ 'fullscreen': celaObrazovka }"
      :style="'height:' + editorHeight + 'px'"
      x-effect="document.body.classList.toggle('kk-fullscreen', celaObrazovka)"
      @keydown.window="onKeyDown($event)">
