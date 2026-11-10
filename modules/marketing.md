@@ -92,7 +92,12 @@ proč a co s tím udělat.
 projektu, ukázkový dům po registraci. Úpravy kódu a textů až po souhlasu Libora, rozpočty v Ads vždy jen s potvrzením.
 
 **Kdy:** až bude z čeho soudit. Orientačně 1 až 2 měsíce po zrušení `noindex` a prvních článcích, nebo aspoň 100 registrací.
-První kolo nejspíš v lednu 2027 spolu s kontrolou článků.
+Plné vyhodnocení nejspíš v lednu 2027 spolu s kontrolou článků.
+
+> **Připomínka: první kontrola měření kolem 24. 11. 2026** (Libor 10. 11. 2026: asi 14 dní po nasazení měření, commit
+> `ddd1a5c`; když nasazení přijde později, posunout). Nejde o závěry, jen o kontrolu, že data tečou: `php artisan mereni:cesta
+> --dni=14` na produkci, řádky v `statistika_funkci`, události `sign_up`, `projekt_zalozen` a `editor_*` v GA4 (přehled
+> Události), návštěvy v GA4 a zobrazení v Search Console. Co nesedí, opravit. Výsledek krátce Liborovi, čísla zatím nevyhodnocovat.
 
 **Měření běží od 10. 11. 2026** (Libor: připravit a měřit, vyhodnocovat zatím ne, web je otevřený pár dní):
 - **Cesta k projektu** z dat, která už máme, bez nového sběru: `php artisan mereni:cesta --dni=30` vypíše registrace,
