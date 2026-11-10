@@ -100,6 +100,12 @@ class Uzivatel extends Authenticatable implements MustVerifyEmail, HasLocalePref
         $this->notify(new \App\Notifications\ObnovaHesla($token));
     }
 
+    protected static function booted(): void
+    {
+        // Klíčová událost pro Google Analytics (registrace e-mailem i přes Google), odejde jen se souhlasem
+        static::created(fn () => \App\Support\Mereni::gaUdalost('sign_up'));
+    }
+
     /** Je členem master týmu? (subjekt s IČO = config('app.master_ico')) */
     public function jeMaster(): bool
     {

@@ -216,6 +216,7 @@ Route::middleware(['subdomena:app', 'auth', 'verified'])->name('app.')->group(fu
         Route::post('explain', [KonceptV3Controller::class, 'vysvetleniPojmu'])->middleware('throttle:30,1')->name('vysvetleni');
 
         // Katastr jen v zemích, které ho mají (config/lokalizace.php)
+        Route::post('usage', [KonceptV3Controller::class, 'zmerFunkci'])->middleware('throttle:60,1')->name('mereni');
         Route::middleware('funkce:katastr')->group(function () {
             Route::post('land/parcel', [KonceptV3Controller::class, 'nactiParcelu'])->name('katastr.parcela');
             Route::post('land/buildings', [KonceptV3Controller::class, 'nactiStavby'])->name('katastr.stavby');

@@ -244,6 +244,7 @@
             const u = this._katalogUsad(this._katalogBodKurzoru(pos), 0, p, e);
             const v = this._katalogZaznam(p, u.stred, u.uhel);
             this.engine.vybaveni.push(v);
+            this.zmerFunkci?.('katalog');
             this._katalogZrusVyber();
             this.renderer.setSelection([], [], [], [v.id]);
             this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_vlozeni', { nazev: p.nazev }));

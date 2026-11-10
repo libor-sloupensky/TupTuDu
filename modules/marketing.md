@@ -94,10 +94,19 @@ projektu, ukázkový dům po registraci. Úpravy kódu a textů až po souhlasu 
 **Kdy:** až bude z čeho soudit. Orientačně 1 až 2 měsíce po zrušení `noindex` a prvních článcích, nebo aspoň 100 registrací.
 První kolo nejspíš v lednu 2027 spolu s kontrolou článků.
 
-**Co musí být hotové předem:**
-- Klíčové události v GA4: registrace a založení projektu (pak i jako konverze pro Ads).
-- Kroky cesty k projektu měřené na serveru. GA4 vidí jen lidi se souhlasem s cookies, rozhodují data z DB.
+**Měření běží od 10. 11. 2026** (Libor: připravit a měřit, vyhodnocovat zatím ne, web je otevřený pár dní):
+- **Cesta k projektu** z dat, která už máme, bez nového sběru: `php artisan mereni:cesta --dni=30` vypíše registrace,
+  ověřený e-mail, založený projekt, nakreslené stěny, úpravy aspoň 2 různé dny (`denni_upravy`, drží se 3 měsíce)
+  a platící (`subscriptions`). Master tým se nepočítá.
+- **Funkce editoru** souhrnně po dnech bez vazby na uživatele (`statistika_funkci`, `App\Support\Mereni::FUNKCE`): import
+  výkresu (při nahrání na serveru), 3D, export půdorysu a 3D, sdílení odkazem, kus z katalogu, parcela, podlaží, střecha.
+  Editor volá `zmerFunkci()`, jeden prohlížeč se započte nejvýš jednou za den (localStorage). Adresa `editor/usage` je jen
+  v zákaznické aplikaci, master tým se nepočítá. Nejsou to osobní údaje, zásady soukromí se proto neměnily.
+- **GA4, jen se souhlasem s cookies:** `sign_up` a `projekt_zalozen` (model Uzivatel a KonceptV3 je uloží do session,
+  `partials/cookies-lista` je pošle po načtení gtag) jsou v GA4 klíčové události (`py services/ga4-klicove-udalosti.py`).
+  Funkce editoru jdou do GA4 jako `editor_<funkce>`. Zásady je kryjí řádkem o Google Analytics („použité funkce“).
 - Přehled v Masterteamu: registrace, platící a tržby jsou hotové (`modules/statistiky.md`), návštěvy čekají na přehled z Looker Studia.
+- **Ještě není:** import klíčových událostí do Google Ads jako konverze (až poběží kampaně).
 
 ## GA4 na webu (hotovo 2026-11-01)
 - **ID** z `.env` `GA4_MEASUREMENT_ID` (`config('services.ga4.measurement_id')`); produkce ho má

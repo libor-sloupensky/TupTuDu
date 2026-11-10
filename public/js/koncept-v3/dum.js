@@ -695,6 +695,7 @@
             this.engine.pushUndo();
             const p = this.engine.pridejPodlazi(kam, { kopie: this.podlaziKopie });
             if (!p) { this.engine.undoStack.pop(); return; }
+            this.zmerFunkci?.('podlazi');
             if (kam === 'podkrovi' && !this.engine.dum.strecha) this.engine.dum.strecha = this._novaStrecha();
             this.renderer.clearSelection();
             this.renderer._mistnostiCache = null;
@@ -1835,6 +1836,7 @@
             this.engine.dum.strecha = this._novaStrecha();
             this.zobrazStrechu3d = true;
             this._poZmeneDomu(preloz('ed_dum.strecha'));
+            this.zmerFunkci?.('strecha');
         },
 
         setStrecha(klic, hodnota) {

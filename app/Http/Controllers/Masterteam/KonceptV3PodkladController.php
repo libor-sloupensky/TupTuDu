@@ -35,6 +35,7 @@ class KonceptV3PodkladController extends Controller
             'soubor.max' => __('ed_nastroje.podklad.soubor_velky', ['mb' => $maxMb]),
         ]);
 
+        \App\Support\Mereni::funkce('import_vykresu');
         $soubor = $request->file('soubor');
         $pripona = strtolower($soubor->getClientOriginalExtension());
         $jePdf = $pripona === 'pdf';

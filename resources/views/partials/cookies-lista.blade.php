@@ -40,6 +40,8 @@
 <script>
 (function () {
     var ID = @json($ttGa4);
+    // Události z minulé akce (registrace, nový projekt, App\Support\Mereni) — odejdou až s načteným gtag, tedy jen se souhlasem
+    var FRONTA = @json(array_values((array) session('ga_udalosti', [])));
     var COOKIE = 'tt_cookies';
     var DOMENA = @json($ttCookieDomena);
     var PLATNOST = 365 * 24 * 3600;
@@ -101,6 +103,8 @@
         document.head.appendChild(s);
         gtag('js', new Date());
         gtag('config', ID);
+        FRONTA.forEach(function (u) { gtag('event', u); });
+        FRONTA = [];
     }
 
     function pouzitVolbu(volba) {

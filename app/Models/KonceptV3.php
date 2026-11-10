@@ -54,6 +54,8 @@ class KonceptV3 extends Model
         static::creating(function (KonceptV3 $koncept) {
             $koncept->kod ??= self::novyKod();
         });
+        // Klíčová událost pro Google Analytics, odejde na další stránce jen se souhlasem (App\Support\Mereni)
+        static::created(fn () => \App\Support\Mereni::gaUdalost('projekt_zalozen'));
         // Cizí klíč smaže jen řádek odkazu, soubory by zůstaly na disku
         static::deleting(fn (KonceptV3 $koncept) => KonceptV3Sdileni::where('koncept_id', $koncept->id)->first()?->delete());
     }

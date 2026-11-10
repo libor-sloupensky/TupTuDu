@@ -246,6 +246,7 @@
                 const list = this._listPudorysu(this._kresbyPodlazi(ids, { podlePohledu: true }));
                 if (!list) { this._dumHlaska(preloz('ed_nastroje.export.neni_co_exportovat')); return; }
                 await this._stahni(list, this._nazevSouboru(vsechna ? preloz('ed_nastroje.export.soubor_pudorysy') : preloz('ed_nastroje.export.soubor_pudorys', { podlazi: e.podlaziPodleId(ids[0])?.nazev || ids[0] })));
+                this.zmerFunkci?.('export_pudorys');
             } catch (err) {
                 window.chybaUzivateli?.(err, 'Export půdorysu');
             } finally {
@@ -306,6 +307,7 @@
                 await this._pripravZnacku();
                 const cv = await this._ve3d(async () => { await window.Katalog3d.hotovo(); return this._list3d(this._snimekScény()); });
                 await this._stahni(cv, this._nazevSouboru('3d'));
+                this.zmerFunkci?.('export_3d');
             } catch (err) {
                 window.chybaUzivateli?.(err, 'Export 3D');
             } finally {
@@ -534,6 +536,7 @@
                 }
                 this.sdileni = d;
                 this._dumHlaska(preloz('ed_nastroje.sdileni.odkaz_aktualni'));
+                this.zmerFunkci?.('sdileni');
             } catch (err) {
                 window.chybaUzivateli?.(err, 'Sdílení: uložení', { projekt: this.projektId });
             } finally {

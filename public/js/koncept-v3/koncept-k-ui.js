@@ -559,6 +559,29 @@ function konceptKEditor(initialData) {
             if (this._oddelovacNahled) { this._oddelovacNahled.destroy(); this._oddelovacNahled = null; this.renderer.tempLayer.batchDraw(); }
         },
 
+        /**
+         * Použití funkce editoru: souhrnný počet na serveru (App\Support\Mereni, jen v zákaznické aplikaci)
+         * a událost do Google Analytics (jen se souhlasem). Jeden prohlížeč nejvýš jednou za den.
+         */
+        zmerFunkci(funkce) {
+            try {
+                const klic = 'tt_mereni_' + funkce, den = new Date().toISOString().slice(0, 10);
+                if (localStorage.getItem(klic) === den) return;
+                localStorage.setItem(klic, den);
+            } catch (err) {
+                // Bez úložiště (anonymní okno) se počítá každé použití, měření tím nespadne
+            }
+            window.gtag?.('event', 'editor_' + funkce);
+            const adresa = window._kkInitData?.routes?.mereni;
+            if (!adresa) return;
+            fetch(adresa, {
+                method: 'POST', keepalive: true, body: JSON.stringify({ funkce }),
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': window._kkInitData.csrf, Accept: 'application/json' },
+            }).then(r => {
+                if (!r.ok && r.status !== 429) window.zalogujChybu?.(new Error('Měření funkce: HTTP ' + r.status), 'Měření funkce', { funkce });
+            }).catch(err => window.zalogujChybu?.(err, 'Měření funkce', { funkce }));
+        },
+
         // ─── MÍSTNOSTI ───────────────────────────────────────────
         _vybranaMistnost() {
             const ids = this.renderer ? [...this.renderer.selectedMistnosti] : [];
@@ -5301,6 +5324,7 @@ function konceptKEditor(initialData) {
 
                 this.katastrParcely.push(parcela);
                 this._zalozZaklady();
+                this.zmerFunkci('parcela');
 
                 // Stavby
                 await this.katastrNactiStavbyParcely(parcela);

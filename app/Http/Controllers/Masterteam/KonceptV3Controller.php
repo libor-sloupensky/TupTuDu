@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\KonceptV3 as Koncept;
 use App\Services\Katastr\KatastrService;
 use App\Services\Katastr\Dmr5gService;
+use App\Support\Mereni;
 use App\Support\Tarif;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Client\ConnectionException;
@@ -339,6 +340,15 @@ class KonceptV3Controller extends Controller
      *
      * Termín se normalizuje (trim + lowercase). Kontext upřesní AI prompt.
      */
+    /** Editor hlásí použití funkce (import, 3D, export…), počítá se souhrnně bez uživatele (App\Support\Mereni). */
+    public function zmerFunkci(Request $request)
+    {
+        $request->validate(['funkce' => 'required|string|in:' . implode(',', Mereni::FUNKCE)]);
+        Mereni::funkce($request->input('funkce'));
+
+        return response()->noContent();
+    }
+
     public function vysvetleniPojmu(Request $request)
     {
         $request->validate([

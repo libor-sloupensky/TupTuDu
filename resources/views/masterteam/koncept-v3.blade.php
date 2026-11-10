@@ -254,7 +254,7 @@
             {{-- 2D/3D přepínač --}}
             <div class="kk-skupina kk-skupina-dily">
                 <button @click="rezim3d = false; prepni2d()" :class="!rezim3d && 'kk-tl-aktivni'">2D</button>
-                <button @click="rezim3d = true; prepni3d()" :class="rezim3d && 'kk-tl-aktivni'">3D</button>
+                <button @click="rezim3d = true; prepni3d(); zmerFunkci('pohled_3d')" :class="rezim3d && 'kk-tl-aktivni'">3D</button>
             </div>
             <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="kk-tl text-base" data-tip-below="{{ __('ed_sablona.lista.zpet') }}">&#8630;</button>
             <button @click="redo()" data-historie-vpred :disabled="historiePozice >= historie.length - 1" class="kk-tl text-base" data-tip-below="{{ __('ed_sablona.lista.vpred') }}">&#8631;</button>
@@ -2054,6 +2054,8 @@ var _kkInitData = {
         sdileni: '{{ route($trasaV3 . ".sdileni", ":id") }}',
         ulozit: '{{ route($trasaV3 . ".ulozit", ":id") }}',
         vytvorit: '{{ route($trasaV3 . ".vytvorit") }}',
+        // Jen v zákaznické aplikaci, master tým se nepočítá
+        mereni: '{{ Route::has($trasaV3 . ".mereni") ? route($trasaV3 . ".mereni") : "" }}',
         indexK: '{{ route($trasaV3) }}',
         katastrParcela: '{{ route($trasaV3 . ".katastr.parcela") }}',
         katastrStavby: '{{ route($trasaV3 . ".katastr.stavby") }}',
