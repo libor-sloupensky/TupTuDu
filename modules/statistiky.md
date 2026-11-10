@@ -6,7 +6,7 @@ registrace s počtem platících, výkon ve vyhledávání Google a indexace str
 (7, 30, 90 dní, rok, vše) řídí všechny grafy. Adresa `/masterteam/statistiky` přesměruje na Přehled.
 Jen pro master tým, česky, nepřekládá se.
 
-## Stav (10. 11. 2026, lokálně, nenasazeno)
+## Stav (na webu od 10. 11. 2026, commit 72ead2e)
 - **Návštěvy webu** z GA4 (Data API): návštěvníci, návštěvy, zobrazené stránky po dnech, podíl
   návštěvníků, kteří se registrovali.
 - **Registrace a platící** z vlastní databáze: registrace za den, 7denní a 30denní klouzavý průměr,
@@ -18,7 +18,8 @@ Jen pro master tým, česky, nepřekládá se.
 - **Indexace**: kolik adres ze sitemapy má Google v indexu, denní historie ve vlastní tabulce
   (první kontrola 10. 11. 2026 lokálně: 48 z 51), výpis stránek mimo index se stavem podle Googlu.
 - Klíč servisního účtu je v GitHub Secret `GOOGLE_SA_JSON` (uložen 10. 11. 2026) a v `deploy.yml`.
-  Po nasazení: migrace proběhne sama, cron začne plnit indexaci do hodiny.
+  Na produkci ověřeno cronem: `indexace:kontrola` prošla (45 z 48 posouzených adres v indexu), klíč tedy funguje.
+  Stránku samotnou po nasazení v prohlížeči zkontroloval jen Libor, ne Claude (produkční přihlášení nemá).
 
 ## Soubory
 | Co | Kde |
