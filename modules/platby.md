@@ -11,6 +11,13 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
 - **Výchozí odkaz pokladny nastaven** (`paddle:katalog --odkaz=https://app.tuptudu.com/billing`, ověřeno `GET settings/checkout-url`).
 - **Zbývá:** ostrý test za 0 Kč — slevový kód 100 % (jednorázový, `recurring: false`, `usage_limit: 1`, jen cena Stavebník měsíčně, krátká platnost) založí Libor v dashboardu **Catalog → Discounts** (Claude zápis do ostrého účtu blokuje pojistka); test skutečnou kartou: platba, zprávy z Paddlu, změna tarifu, zrušení; pak předplatné zrušit, kód vypnout, smazat účet „Paddle Review".
 
+## Kontrola 2026-11-10 (jen čtení, bez platby)
+- Libor ostrý test za 0 Kč odložil („budeme doufat, že funguje").
+- Paddle: ostrý účet, obě domény `approved`, výchozí odkaz pokladny nastaven, client-side token `active` a shodný s `.env`, cíl zpráv aktivní (7 událostí), 4 aktivní ceny = ID v `.env`, bez zkušební doby, náhled CZ 249 Kč.
+- Web: app.tuptudu.com 200, `/billing` → login, ceník a právní stránky 200, `cdn.paddle.com` dostupné, webhook bez podpisu 403, žádná CSP hlavička, nenasazené commity 0.
+- Produkce má ostrý API klíč: zákazník `ctm_01m706qt…` (účet „Paddle Review", 9. 11. 14:07) existuje v ostrém účtu. Předplatné ani transakce zatím žádné, bugy kolem plateb jen staré opravené z 30. 10.
+- **Neověřené:** podpis zpráv z Paddlu na produkci (`PADDLE_WEBHOOK_SECRET` v GitHub secrets) — ukáže až první platba nebo simulace v Events → Simulations. Selhání by se zapsalo do bugů (403 + bug z `PaddleJenSPodpisem`).
+
 ## Kontrola 2026-11-09
 - Get started v dashboardu: ověření firmy (02 Verify) **hotové**; 01 a 03 „In progress".
 - `app.tuptudu.com` pořád `action_required` beze změny od 30. 10. 21:02 → Paddle čeká na nás, samo se to nepohne. Libor má v Checkout → Website approval zjistit důvod, případně napsat podpoře.
