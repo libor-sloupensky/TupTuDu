@@ -53,7 +53,7 @@ async function main() {
             await p.vyhodnot(`(async () => { const d = Alpine.$data(document.querySelector('[x-data]'));
                 const r = await fetch(_kkInitData.routes.vytvorit, { method:'POST',
                     headers:{'Content-Type':'application/json','X-CSRF-TOKEN':_kkInitData.csrf,'Accept':'application/json'},
-                    body: JSON.stringify({ nazev: 'Test importu' }) });
+                    body: JSON.stringify({ nazev: 'ClaudeTest import' }) });
                 const j = await r.json(); location.href = j.redirect; })()`);
             await pauza(2500);
             await p.cekej(`location.search.includes('id=')`, 15000, 'přesměrování na koncept');

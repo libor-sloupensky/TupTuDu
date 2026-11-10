@@ -78,7 +78,7 @@ async function main() {
             await p.cekej(`!!(window.Alpine && ${DATA})`, 15000, 'Alpine');
             await p.vyhodnot(`(async () => { const r = await fetch(_kkInitData.routes.vytvorit, { method:'POST',
                 headers:{'Content-Type':'application/json','X-CSRF-TOKEN':_kkInitData.csrf,'Accept':'application/json'},
-                body: JSON.stringify({ nazev: 'Test obvodu ' + new Date().toISOString().slice(11,19) }) });
+                body: JSON.stringify({ nazev: 'ClaudeTest obvod ' + new Date().toISOString().slice(11,19) }) });
                 const j = await r.json(); location.href = j.redirect; })()`);
             await pauza(2500);
             await p.cekej(`!!(window.Alpine && ${DATA})`, 15000, 'Alpine po přesměrování');

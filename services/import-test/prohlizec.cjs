@@ -23,8 +23,20 @@ const CHROME = [
 
 const pauza = (ms) => new Promise(r => setTimeout(r, ms));
 
+/** Na pozadí smaže testovací koncepty ClaudeTest starší než 2 hodiny (koncepty:uklid-testu), jednou za běh. */
+let uklizeno = false;
+function uklidStareKoncepty() {
+    if (uklizeno) return;
+    uklizeno = true;
+    try {
+        spawn('php', ['artisan', 'koncepty:uklid-testu'], { cwd: path.join(__dirname, '../..'), stdio: 'ignore', detached: true, windowsHide: true })
+            .on('error', () => {}).unref();
+    } catch { /* úklid je jen úklid, test kvůli němu nepadá */ }
+}
+
 async function otevriProhlizec({ viditelny = false, port: pevnyPort = Number(process.env.V3_CDP_PORT) || 0, sirka = 1600, vyska = 1000, posuvniky = false, gpu = false } = {}) {
     if (!CHROME) throw new Error('Nenalezen Chrome ani Edge.');
+    uklidStareKoncepty();
 
     // Port 0 = volný port přidělí Chrome. Pevný port býval příčinou nesmyslných pádů: Chrome z předchozího
     // běhu nebo jiného sezení na něm běžel dál, nový se nespustil a test se připojil k cizímu, už přihlášenému.
