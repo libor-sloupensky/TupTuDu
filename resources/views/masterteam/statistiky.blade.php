@@ -247,7 +247,12 @@
                         plugins: {
                             legend: {
                                 position: 'top', align: 'end', reverse: true, // pořadí jako ve výčtu řad
-                                labels: { usePointStyle: true, pointStyleWidth: 28, boxHeight: 8, font: { size: 11 } },
+                                labels: {
+                                    usePointStyle: true, pointStyleWidth: 28, boxHeight: 8, font: { size: 11 },
+                                    // řada s body v grafu (kolečka) má v legendě dál čáru, ne ovál
+                                    generateLabels: (chart) => Chart.defaults.plugins.legend.labels.generateLabels(chart)
+                                        .map(l => ({ ...l, pointStyle: chart.data.datasets[l.datasetIndex].styleLegendy ?? l.pointStyle })),
+                                },
                             },
                             tooltip: { callbacks: {
                                 label: (item) => item.parsed.y === null ? null : popisek(item),
@@ -389,8 +394,8 @@
                         kliknuti: osa('Kliknutí', { position: 'right', grid: { drawOnChartArea: false } }),
                     }, hodnota);
                     kresli('grafIndexace', d.dnu, d.labels, [
-                        cara('V indexu', d.zaindexovano, '--c-ok', { napoveda: 'stránky, které Google uložil a může ukazovat ve vyhledávání', stepped: true, tension: 0, pointRadius: 4, pointStyle: 'circle', fill: true, backgroundColor: barva('--c-ok', 0.15) }),
-                        cara('Adres v sitemapě', d.adres, '--c-text-secondary', { napoveda: 'stránky webu, které Googlu hlásíme v seznamu stránek', stepped: true, tension: 0, pointRadius: 4, pointStyle: 'circle', borderDash: [4, 3] }),
+                        cara('V indexu', d.zaindexovano, '--c-ok', { napoveda: 'stránky, které Google uložil a může ukazovat ve vyhledávání', stepped: true, tension: 0, pointRadius: 2.5, pointStyle: 'circle', styleLegendy: 'line', fill: true, backgroundColor: barva('--c-ok', 0.15) }),
+                        cara('Adres v sitemapě', d.adres, '--c-text-secondary', { napoveda: 'stránky webu, které Googlu hlásíme v seznamu stránek', stepped: true, tension: 0, pointRadius: 2.5, pointStyle: 'circle', styleLegendy: 'line', borderDash: [4, 3] }),
                     ], { y: osa('Stránek') }, hodnota);
                 },
             };
