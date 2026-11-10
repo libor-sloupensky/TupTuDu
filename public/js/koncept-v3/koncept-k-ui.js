@@ -593,8 +593,8 @@ function konceptKEditor(initialData) {
             const n = String(nazev || '').trim().slice(0, 40);
             if (n === m.nazev) return;
             this.engine.pushUndo();
-            m.nazev = n;
-            delete m.auto;    // od teď je to text uživatele, s jazykem se nemění
+            // Vlastní text se s jazykem nemění; prázdný nebo stejný jako výchozí zůstane výchozí a překládá se
+            this.engine.prejmenujMistnost(m, n);
             this._poUpraveOtvoru(preloz('ed_ui.krok_nazev_mistnosti'));
         },
         /** Druh místnosti; výchozí název se přepne s ním, ručně napsaný zůstane (engine.nastavDruhMistnosti). */

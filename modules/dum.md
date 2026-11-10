@@ -81,6 +81,10 @@ kuchyně, jídelna, koupelna, WC, chodba, zádveří, šatna, pracovna, technick
 `engine.nastavDruhMistnosti`).
 - **Název:** výchozí název (`auto`) se převezme z druhu s prvním volným číslem, „Obývák“, „Obývák 2“. Ručně napsaný název
   editor nepřepíše. „Jiná“ vrátí výchozí „Místnost n“. Názvy druhů jsou ve slovníku `ed_kresba.prostor_*` a přepínají se s jazykem.
+- **Starší projekty a vzorový dům:** ručně napsaný název, který je stejný jako výchozí („Ložnice“ u ložnice, „Koupelna 2“,
+  staré „Místnost 3“), se při výběru druhu stane výchozím a od té doby se překládá. Smazaný název vrátí výchozí podle druhu,
+  napsaný výchozí název výchozím zůstane (`engine.prejmenujMistnost`). Vzorový dům pro všechny jazyky = u každé místnosti
+  vybrat druh, u podlaží s ručním názvem název smazat.
 - **Import výkresu:** typ prostoru z rozpoznání (CubiCasa, `DRUH_Z_IMPORTU`) se převede na druh, název z výkresu zůstane.
 - **Zatím jen označení.** Plochy podle druhu (obytná a příslušenství), upozornění podle druhu a barva podle druhu jsou další krok.
 - Test: `node services/import-test/test-druh-mistnosti.cjs`.

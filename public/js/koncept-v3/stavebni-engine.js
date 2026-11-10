@@ -2789,6 +2789,13 @@ class StavebniEngine {
         const klic = DRUHY_MISTNOSTI[druh];
         if (klic) m.druh = druh;
         else delete m.druh;
+        // Ručně napsaný název, který je stejný jako výchozí („Ložnice“ u ložnice, staré „Místnost 3“), se stane
+        // výchozím a od teď se překládá. Tak jde převést starší projekt, třeba vzorový dům pro všechny jazyky.
+        if (!m.auto && klic) {
+            const n = this.cisloVychozihoNazvu(m.nazev, klic);
+            if (n) { m.auto = { k: klic, n }; return; }
+            if (this.cisloVychozihoNazvu(m.nazev, 'mistnost_n')) m.auto = { k: 'mistnost_n', n: 1 };
+        }
         if (!m.auto) return;
         const obsazena = new Set(this.mistnosti.filter(x => x !== m).map(x => x.nazev));
         const k = klic || 'mistnost_n';
@@ -2796,6 +2803,33 @@ class StavebniEngine {
         while (n < 10000 && obsazena.has(autoNazevMistnosti({ k, n }))) n++;
         m.auto = { k, n };
         m.nazev = autoNazevMistnosti(m.auto);
+    }
+
+    /** Číslo, se kterým je název výchozím názvem pro klíč (`prostor_loznice`, `mistnost_n`), jinak 0. */
+    cisloVychozihoNazvu(nazev, k) {
+        const text = String(nazev || '').trim();
+        for (let n = 1; n < 100; n++) if (autoNazevMistnosti({ k, n }) === text) return n;
+        return 0;
+    }
+
+    /**
+     * Název místnosti z panelu. Prázdný nebo stejný jako výchozí (podle druhu, jinak „Místnost n“) zůstane výchozím
+     * a překládá se, jiný text je text uživatele a s jazykem se nemění.
+     */
+    prejmenujMistnost(m, nazev) {
+        const text = String(nazev || '').trim().slice(0, 40);
+        const k = DRUHY_MISTNOSTI[m.druh] || 'mistnost_n';
+        const n = text ? this.cisloVychozihoNazvu(text, k) : 0;
+        if (n) {
+            m.auto = { k, n };
+            m.nazev = text;
+        } else if (!text) {
+            m.auto = { k, n: 1 };
+            this.nastavDruhMistnosti(m, m.druh || '');
+        } else {
+            m.nazev = text;
+            delete m.auto;
+        }
     }
 
     /** Výchozí název místnosti s prvním volným číslem. */

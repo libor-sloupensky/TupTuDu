@@ -68,7 +68,7 @@ const PRETEKA = `(() => {
 
 const CESTINA = { sk: /[ěřů]/, default: /[ěřůčšžďťň]/ };
 // Data projektu (historie, název kusů, data ČGS a katastru z česky uloženého projektu), jména jazyků a skrytý AI panel, ne texty rozhraní
-const VYJIMKY = /^ClaudeTest|Klemov|^(Masterteam|Čeština|Slovenčina|Français|Español|Italiano|Polski|Deutsch|English)$|DB-IP|Sloupensk|Zvýrazňovač|zvýraznění|Přemýšlím|Popiš změnu|kvartér|hlína, písek|^Rajon |^Orná půda|^Ukotvení|^Vložení objektu|^Hrana střechy|^Podlaží \d|^Posun stěny/;
+const VYJIMKY = /^ClaudeTest|Klemov|^(Masterteam|Čeština|Slovenčina|Français|Español|Italiano|Polski|Deutsch|English)$|DB-IP|Sloupensk|Zvýrazňovač|zvýraznění|Přemýšlím|Popiš změnu|kvartér|hlína, písek|^Rajon |^Orná půda|^Ukotvení|^Stěna staticky zajištěna|^Zrušeno zajištění stěny|^Vložení objektu|^Hrana střechy|^Podlaží \d|^Posun stěny/;
 
 async function main() {
     fs.mkdirSync(VYSTUP, { recursive: true });
