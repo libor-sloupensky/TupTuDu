@@ -259,7 +259,7 @@
                         scales: {
                             ...scales,
                             // U delších období zredukovat popisky, ať se nepřekrývají
-                            x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: dnu <= 30 ? 15 : 12 } },
+                            x: { offset: true, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: dnu <= 30 ? 15 : 12 } }, // offset: krajní bod se neořízne
                         },
                     },
                 });
@@ -389,8 +389,8 @@
                         kliknuti: osa('Kliknutí', { position: 'right', grid: { drawOnChartArea: false } }),
                     }, hodnota);
                     kresli('grafIndexace', d.dnu, d.labels, [
-                        cara('V indexu', d.zaindexovano, '--c-ok', { napoveda: 'stránky, které Google uložil a může ukazovat ve vyhledávání', stepped: true, tension: 0, pointRadius: 2, fill: true, backgroundColor: barva('--c-ok', 0.15) }),
-                        cara('Adres v sitemapě', d.adres, '--c-text-secondary', { napoveda: 'stránky webu, které Googlu hlásíme v seznamu stránek', stepped: true, tension: 0, pointRadius: 2, borderDash: [4, 3] }),
+                        cara('V indexu', d.zaindexovano, '--c-ok', { napoveda: 'stránky, které Google uložil a může ukazovat ve vyhledávání', stepped: true, tension: 0, pointRadius: 4, pointStyle: 'circle', fill: true, backgroundColor: barva('--c-ok', 0.15) }),
+                        cara('Adres v sitemapě', d.adres, '--c-text-secondary', { napoveda: 'stránky webu, které Googlu hlásíme v seznamu stránek', stepped: true, tension: 0, pointRadius: 4, pointStyle: 'circle', borderDash: [4, 3] }),
                     ], { y: osa('Stránek') }, hodnota);
                 },
             };
