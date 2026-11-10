@@ -63,12 +63,41 @@ netlačit** (produkt čeká mnoho úprav).
 - **4. 11. 2026 Libor zadal plán SEO článků, viz `modules/blog.md`.** Stav indexace ten den: 0 zobrazení, titulka
   naposledy procházená 1. 11. ještě s `noindex`. Plánovač klíčových slov přes API od 9. 11. 2026 jde (stupeň Basic, `services/klicova-slova.py`).
 - Analýzu zatím nepouštět — data v GA4 se sbírají od 1. 11. 2026, indexace teprve začíná, kampaně
-  žádné. Priorita je dodělat produkt a získat návštěvníky.
+  žádné. Priorita je dodělat produkt a získat návštěvníky. Co bude obsahovat: část „Analýza webu“ níž.
 - Pravidla pro „analyzuj web" do CLAUDE.md (co stáhnout, co smí Claude měnit sám, rozpočty v Ads
   jen s potvrzením).
 - Později: klíčové události v GA4 (registrace, založení projektu) → import do Ads jako konverze;
   Sklik, PageSpeed; placené nástroje (Screaming Frog, Ahrefs/Semrush) jen pokud se ukáže potřeba.
 - Údržba: `pipx upgrade-all`, `uv tool upgrade --all`; kontrola přístupů `py services/google-kontrola.py`.
+
+## Analýza webu (odloženo, návrh 10. 11. 2026)
+
+Samostatný úkol „analyzuj web“, oddělený od článků. Copywriter (`modules/blog.md`) hodnotí jen články: dotazy, zobrazení,
+prokliky a jestli článek vede k registraci. Tahle analýza bere web a aplikaci jako celek.
+
+**Otázka, na kterou odpovídá:** kde ztrácíme lidi na cestě návštěva → registrace → projekt se stěnami → placený tarif,
+proč a co s tím udělat.
+
+| Část | Zdroj | Co zjistit |
+|---|---|---|
+| Návštěvy | GA4 | odkud lidé chodí (hledání, přímo, odkazy, reklama), na které stránky, z jakého zařízení a země. Na telefonu editor nekreslí, podíl telefonů je důležitý |
+| Hledání mimo články | Search Console | na co se zobrazuje titulka, ceník a značka, co je v indexu, chyby procházení |
+| Cesta k projektu | GA4 a DB | titulka → registrace → ověření e-mailu → první projekt → první stěna → návrat další den. Kde je největší propad |
+| Tarify | DB (`denni_upravy`, předplatné), Paddle | kolik lidí narazí na limit 30 úprav denně nebo na jeden projekt a kolik pak zaplatí. Který tarif se kupuje |
+| Editor | serverové měření (zatím není) | které funkce se používají: import výkresu, 3D, export, sdílení, katalog, parcela. Co lidé zkusí a opustí |
+| Technika | PageSpeed, bugy, 404 | rychlost stránek na telefonu i počítači, chyby, mrtvé odkazy |
+| Reklama | Google Ads | až poběží kampaně: cena za registraci a za placený tarif |
+
+**Výstup:** krátká zpráva se závěry a návrhy, ne tabulky čísel. Například přepsat výzvu na titulce, zkrátit cestu k prvnímu
+projektu, ukázkový dům po registraci. Úpravy kódu a textů až po souhlasu Libora, rozpočty v Ads vždy jen s potvrzením.
+
+**Kdy:** až bude z čeho soudit. Orientačně 1 až 2 měsíce po zrušení `noindex` a prvních článcích, nebo aspoň 100 registrací.
+První kolo nejspíš v lednu 2027 spolu s kontrolou článků.
+
+**Co musí být hotové předem:**
+- Klíčové události v GA4: registrace a založení projektu (pak i jako konverze pro Ads).
+- Kroky cesty k projektu měřené na serveru. GA4 vidí jen lidi se souhlasem s cookies, rozhodují data z DB.
+- Přehled v Masterteamu: registrace, platící a tržby jsou hotové (`modules/statistiky.md`), návštěvy čekají na přehled z Looker Studia.
 
 ## GA4 na webu (hotovo 2026-11-01)
 - **ID** z `.env` `GA4_MEASUREMENT_ID` (`config('services.ga4.measurement_id')`); produkce ho má
