@@ -92,10 +92,11 @@ Route::get('/jazyk/{kod}', function (Illuminate\Http\Request $request, string $k
 // členy master týmu (IČO master subjektu). Prefix /masterteam zůstává, ať se
 // nemusí měnit adresy natvrdo v JS editoru.
 Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('masterteam')->name('masterteam.')->group(function () {
-    Route::get('/', fn () => view('masterteam.dashboard'))->name('dashboard');
+    // Přehled = statistiky: návštěvy (Looker Studio) a graf registrací s platícími (modules/statistiky.md)
+    Route::get('/', [StatistikyController::class, 'index'])->name('dashboard');
 
-    // Statistiky — návštěvy (Looker Studio) a graf registrací s platícími (modules/statistiky.md)
-    Route::get('statistiky', [StatistikyController::class, 'index'])->name('statistiky');
+    // Data grafu na Přehledu; samostatná adresa statistik vede na Přehled
+    Route::redirect('statistiky', '/masterteam');
     Route::get('statistiky/registrace', [StatistikyController::class, 'registraceData'])->name('statistiky.registrace');
 
     // Správa uživatelů master týmu

@@ -1,7 +1,8 @@
 # Modul: Statistiky (Masterteam)
 
 ## Co modul dělá
-Stránka `/masterteam/statistiky`: návštěvy webu a graf registrací s počtem platících.
+Úvodní stránka Masterteamu (`/masterteam`, v menu Přehled, zobrazí se po přihlášení): návštěvy webu a graf
+registrací s počtem platících. Adresa `/masterteam/statistiky` na ni přesměruje.
 Jen pro master tým, česky, nepřekládá se.
 
 ## Stav (10. 11. 2026, lokálně)
@@ -18,7 +19,7 @@ Jen pro master tým, česky, nepřekládá se.
 |---|---|
 | Stránka a data grafu | `app/Http/Controllers/Masterteam/StatistikyController.php` |
 | Pohled, Chart.js | `resources/views/masterteam/statistiky.blade.php` |
-| Routy `masterteam.statistiky`, `masterteam.statistiky.registrace` | `routes/web.php` |
+| Routy `masterteam.dashboard`, `masterteam.statistiky.registrace` | `routes/web.php` |
 | Adresa přehledu návštěv | `config/services.php` → `looker.navstevy_url`, `.env` `LOOKER_NAVSTEVY_URL` |
 
 ## Pravidla výpočtu

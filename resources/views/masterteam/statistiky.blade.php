@@ -1,9 +1,9 @@
-<x-layouts.app title="Statistiky — TupTuDu">
+<x-layouts.app title="Přehled — TupTuDu">
     {{-- Chart.js jen na této stránce, ne v layoutu (30 kB gzip). --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
     <div class="space-y-6">
-        <h1 class="text-2xl font-bold text-gray-800">Statistiky</h1>
+        <h1 class="text-2xl font-bold text-gray-800">Přehled</h1>
 
         {{-- Návštěvy — vložený přehled z Looker Studia nad GA4 --}}
         <section class="rounded-lg border border-gray-200 bg-white p-5">
