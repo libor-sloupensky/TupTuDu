@@ -64,10 +64,19 @@ return [
         'measurement_id' => env('GA4_MEASUREMENT_ID'),
     ],
 
-    // Looker Studio — adresa pro vložení přehledu návštěv do Masterteam ▸ Statistiky
-    // (https://lookerstudio.google.com/embed/reporting/…). Není tajná. Prázdné = místo přehledu upozornění.
-    'looker' => [
-        'navstevy_url' => env('LOOKER_NAVSTEVY_URL'),
+    // Čtení z Google Analytics 4 a Search Console servisním účtem pro Masterteam ▸ Přehled
+    // (App\Services\Google\GoogleApi, modules/statistiky.md). Klíč je JSON servisního účtu:
+    // na produkci base64 v GOOGLE_SA_JSON (GitHub Secret), lokálně cesta k souboru v GOOGLE_SA_SOUBOR.
+    // Bez klíče stránka ukáže jen vlastní data. Čísla služeb nejsou tajná.
+    'google_api' => [
+        'klic_json' => env('GOOGLE_SA_JSON'),
+        'klic_soubor' => env('GOOGLE_SA_SOUBOR'),
+        'ga4_sluzba' => env('GA4_SLUZBA', '561796471'),
+        'gsc_web' => env('GSC_WEB', 'sc-domain:tuptudu.com'),
+        // Sitemapa, jejíž adresy se denně kontrolují v indexu (indexace:kontrola)
+        'sitemapa' => env('GSC_SITEMAPA', 'https://www.tuptudu.com/sitemap.xml'),
+        // Od kdy se měří (GA4 nasazené, web povolený vyhledávačům) — začátek „celého období“
+        'mereno_od' => '2026-11-01',
     ],
 
     // Token cron URL (/cron/bugy/{token}, /cron/chyby/{token}). Jen z env — na produkci

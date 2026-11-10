@@ -29,6 +29,10 @@ final class PlanovaneUlohy
 
         // Soubory odkazů po smazání účtu (modules/sdileni.md)
         'sdileni:uklid' => 86400,
+
+        // Počet zaindexovaných adres ze sitemapy pro graf v Masterteamu (modules/statistiky.md).
+        // Každou adresu kontroluje jednou denně; hodinový běh dobere, co se minule nestihlo.
+        'indexace:kontrola' => 3600,
     ];
 
     /** Po neúspěšném běhu dlouhé úlohy to zkusit znovu nejpozději za hodinu, ne až po celém intervalu. */

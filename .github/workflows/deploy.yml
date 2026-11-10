@@ -137,6 +137,9 @@ jobs:
           # Google Analytics 4 (property tuptudu.com) — měřicí ID není tajné, je i v HTML stránek.
           # Měří se jen po souhlasu v cookie liště (modules/marketing.md).
           GA4_MEASUREMENT_ID=G-RZ5R886K95
+          # Čtení z GA4 a Search Console pro Masterteam ▸ Přehled — klíč servisního účtu,
+          # base64 JSON souboru (modules/statistiky.md). Jen čtení.
+          GOOGLE_SA_JSON=${{ secrets.GOOGLE_SA_JSON }}
           MIGRATE_TOKEN=${{ secrets.MIGRATE_TOKEN }}
           CRON_TOKEN=${{ secrets.CRON_TOKEN }}
           # Platby — Paddle (modules/platby.md). Testovací/ostrý účet se pozná z klíče

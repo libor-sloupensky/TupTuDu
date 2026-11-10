@@ -92,12 +92,14 @@ Route::get('/jazyk/{kod}', function (Illuminate\Http\Request $request, string $k
 // členy master týmu (IČO master subjektu). Prefix /masterteam zůstává, ať se
 // nemusí měnit adresy natvrdo v JS editoru.
 Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('masterteam')->name('masterteam.')->group(function () {
-    // Přehled = statistiky: návštěvy (Looker Studio) a graf registrací s platícími (modules/statistiky.md)
+    // Přehled = statistiky: návštěvy, registrace s platícími, vyhledávání a indexace (modules/statistiky.md)
     Route::get('/', [StatistikyController::class, 'index'])->name('dashboard');
 
-    // Data grafu na Přehledu; samostatná adresa statistik vede na Přehled
+    // Data grafů na Přehledu; samostatná adresa statistik vede na Přehled
     Route::redirect('statistiky', '/masterteam');
     Route::get('statistiky/registrace', [StatistikyController::class, 'registraceData'])->name('statistiky.registrace');
+    Route::get('statistiky/navstevy', [StatistikyController::class, 'navstevyData'])->name('statistiky.navstevy');
+    Route::get('statistiky/vyhledavani', [StatistikyController::class, 'vyhledavaniData'])->name('statistiky.vyhledavani');
 
     // Správa uživatelů master týmu
     Route::get('uzivatele', [UzivateleController::class, 'index'])->name('uzivatele.index');
@@ -214,9 +216,9 @@ Route::middleware(['subdomena:app', 'auth', 'verified'])->name('app.')->group(fu
     Route::prefix('editor')->name('projekty.')->group(function () {
         Route::post('create', [KonceptV3Controller::class, 'vytvorit'])->name('vytvorit');
         Route::post('explain', [KonceptV3Controller::class, 'vysvetleniPojmu'])->middleware('throttle:30,1')->name('vysvetleni');
+        Route::post('usage', [KonceptV3Controller::class, 'zmerFunkci'])->middleware('throttle:60,1')->name('mereni');
 
         // Katastr jen v zemích, které ho mají (config/lokalizace.php)
-        Route::post('usage', [KonceptV3Controller::class, 'zmerFunkci'])->middleware('throttle:60,1')->name('mereni');
         Route::middleware('funkce:katastr')->group(function () {
             Route::post('land/parcel', [KonceptV3Controller::class, 'nactiParcelu'])->name('katastr.parcela');
             Route::post('land/buildings', [KonceptV3Controller::class, 'nactiStavby'])->name('katastr.stavby');
