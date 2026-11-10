@@ -428,6 +428,8 @@ return [
     'objekty' => [
         'nadpis' => 'Objets',
         'zadne' => 'Aucun objet',
+        'skryt_tip' => 'Masquer dans le plan pour travailler en dessous (jusqu\'au rechargement de la page, l\'export et la 3D le gardent)',
+        'zobrazit_tip' => 'Afficher de nouveau',
         'steny_tip' => 'Afficher/masquer les murs',
         'steny' => 'Murs',
         'otvory_tip' => 'Afficher/masquer les fenêtres et les portes',

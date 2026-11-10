@@ -428,6 +428,8 @@ return [
     'objekty' => [
         'nadpis' => 'Objetos',
         'zadne' => 'Sin objetos',
+        'skryt_tip' => 'Ocultar en el plano para trabajar debajo (hasta recargar la página; la exportación y el 3D lo mantienen)',
+        'zobrazit_tip' => 'Mostrar de nuevo',
         'steny_tip' => 'Mostrar/ocultar paredes',
         'steny' => 'Paredes',
         'otvory_tip' => 'Mostrar/ocultar ventanas y puertas',

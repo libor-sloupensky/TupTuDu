@@ -428,6 +428,8 @@ return [
     'objekty' => [
         'nadpis' => 'Objekty',
         'zadne' => 'Žádné objekty',
+        'skryt_tip' => 'Skrýt v půdorysu, ať jde pracovat pod ním (do znovunačtení stránky, export a 3D ho mají dál)',
+        'zobrazit_tip' => 'Znovu zobrazit',
         'steny_tip' => 'Zobrazit/skrýt stěny',
         'steny' => 'Stěny',
         'otvory_tip' => 'Zobrazit/skrýt okna a dveře',

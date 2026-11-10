@@ -428,6 +428,8 @@ return [
     'objekty' => [
         'nadpis' => 'Oggetti',
         'zadne' => 'Nessun oggetto',
+        'skryt_tip' => 'Nascondi nella pianta per lavorarci sotto (fino al ricaricamento della pagina; esportazione e 3D lo mantengono)',
+        'zobrazit_tip' => 'Mostra di nuovo',
         'steny_tip' => 'Mostra/nascondi le pareti',
         'steny' => 'Pareti',
         'otvory_tip' => 'Mostra/nascondi finestre e porte',

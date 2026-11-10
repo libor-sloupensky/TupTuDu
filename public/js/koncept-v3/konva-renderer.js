@@ -135,6 +135,8 @@ class KonvaRenderer {
         this.selectedMistnosti = new Set();
         this.selectedSchody = new Set();
         this.selectedPlochy = new Set();
+        // Objekt skrytý okem v seznamu objektů se v půdorysu nekreslí, jde pracovat pod ním (nastavuje editor)
+        this.jeSkryty = () => false;
 
         // Konva objekty mapy (id → Konva shape)
         this._wallShapes = new Map();
@@ -188,7 +190,7 @@ class KonvaRenderer {
             .sort((a, b) => (b.sirka || 0) * (b.hloubka || 0) - (a.sirka || 0) * (a.hloubka || 0));
         const scale = this.stage ? this.stage.scaleX() || 1 : 1;
         for (const v of seznam) {
-            if (!v.polygon || v.polygon.length < 3) continue;
+            if (!v.polygon || v.polygon.length < 3 || this.jeSkryty(v.id)) continue;
             try {
                 const shape = window.PudorysIcons.createFurnitureShape(v, this.PX_PER_M);
                 // Listening = true, aby šlo nábytek kliknout / přetahovat. Hit rectangle
@@ -442,6 +444,7 @@ class KonvaRenderer {
         const v = (px) => this.velikostPopisku(px);
         // Wall IDs
         for (const wall of (this.showSteny && this.citelnePismo(10) ? this.engine.walls.values() : [])) {
+            if (this.jeSkryty(wall.id)) continue;
             const nA = this.engine.nodes.get(wall.nodeA);
             const nB = this.engine.nodes.get(wall.nodeB);
             if (!nA || !nB) continue;
@@ -474,7 +477,7 @@ class KonvaRenderer {
         // Opening IDs
         for (const opening of (this.showOtvory && this.citelnePismo(9) ? this.engine.openings.values() : [])) {
             const wall = this.engine.walls.get(opening.wallId);
-            if (!wall) continue;
+            if (!wall || this.jeSkryty(opening.id) || this.jeSkryty(wall.id)) continue;
             const nA = this.engine.nodes.get(wall.nodeA);
             const nB = this.engine.nodes.get(wall.nodeB);
             if (!nA || !nB) continue;
@@ -501,7 +504,7 @@ class KonvaRenderer {
         }
         // Označení kusů nábytku uprostřed kusu, bílý lem kvůli značce pod ním
         for (const kus of (this.showVybaveni && this.citelnePismo(9) && Array.isArray(this.engine.vybaveni) ? this.engine.vybaveni : [])) {
-            if (!kus.polygon || kus.polygon.length < 3) continue;
+            if (!kus.polygon || kus.polygon.length < 3 || this.jeSkryty(kus.id)) continue;
             const cx = kus.polygon.reduce((s, q) => s + q[0], 0) / kus.polygon.length * this.PX_PER_M;
             const cy = -kus.polygon.reduce((s, q) => s + q[1], 0) / kus.polygon.length * this.PX_PER_M;
             const text = new Konva.Text({
@@ -528,6 +531,7 @@ class KonvaRenderer {
 
         const scale = this.stage ? this.stage.scaleX() : 1;
         for (const wall of this.engine.walls.values()) {
+            if (this.jeSkryty(wall.id)) continue;
             const selected = this.selectedWalls.has(wall.id);
             const polygon = this.engine.getWallPolygon(wall.id);
             if (polygon.length < 3) continue;
@@ -687,6 +691,7 @@ class KonvaRenderer {
         for (const opening of this.engine.openings.values()) {
             const wall = this.engine.walls.get(opening.wallId);
             if (!wall) continue;
+            if (this.jeSkryty(opening.id) || this.jeSkryty(wall.id)) continue;
 
             const nA = this.engine.nodes.get(wall.nodeA);
             const nB = this.engine.nodes.get(wall.nodeB);

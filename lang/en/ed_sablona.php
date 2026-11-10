@@ -428,6 +428,8 @@ return [
     'objekty' => [
         'nadpis' => 'Objects',
         'zadne' => 'No objects',
+        'skryt_tip' => 'Hide in the floor plan so you can work underneath (until the page reloads; export and 3D keep it)',
+        'zobrazit_tip' => 'Show again',
         'steny_tip' => 'Show/hide walls',
         'steny' => 'Walls',
         'otvory_tip' => 'Show/hide windows and doors',

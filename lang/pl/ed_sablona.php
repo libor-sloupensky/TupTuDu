@@ -428,6 +428,8 @@ return [
     'objekty' => [
         'nadpis' => 'Obiekty',
         'zadne' => 'Brak obiektów',
+        'skryt_tip' => 'Ukryj na rzucie, aby pracować pod nim (do przeładowania strony, eksport i 3D go zachowują)',
+        'zobrazit_tip' => 'Pokaż ponownie',
         'steny_tip' => 'Pokaż/ukryj ściany',
         'steny' => 'Ściany',
         'otvory_tip' => 'Pokaż/ukryj okna i drzwi',

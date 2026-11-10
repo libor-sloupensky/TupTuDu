@@ -428,6 +428,8 @@ return [
     'objekty' => [
         'nadpis' => 'Objekte',
         'zadne' => 'Keine Objekte',
+        'skryt_tip' => 'Im Grundriss ausblenden, um darunter zu arbeiten (bis zum Neuladen der Seite, Export und 3D behalten es)',
+        'zobrazit_tip' => 'Wieder anzeigen',
         'steny_tip' => 'Wände ein-/ausblenden',
         'steny' => 'Wände',
         'otvory_tip' => 'Fenster und Türen ein-/ausblenden',

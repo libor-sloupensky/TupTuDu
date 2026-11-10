@@ -2444,7 +2444,7 @@
                 }
             };
             for (const st of this.engine.dum.schodiste) {
-                if (st.odPodlazi === aktivni || st.doPodlazi === aktivni) kresliSchody(st, r.selectedSchody.has(st.id));
+                if ((st.odPodlazi === aktivni || st.doPodlazi === aktivni) && !this.jeObjektSkryty({ type: 'schody', id: st.id })) kresliSchody(st, r.selectedSchody.has(st.id));
             }
             if (this.nastroj === 'schody') {
                 const c = this._kurzorDum;

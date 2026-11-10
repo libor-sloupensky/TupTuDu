@@ -151,6 +151,16 @@ Přepínač Kóty v panelu Objekty, výchozí vypnutý (Libor 4. 11. 2026, ulož
 - **Kóty u výběru** a pole pro přepsání zůstávají vždy, jsou nástrojem, ne popisem plánu.
 - **Export a odkaz** se řídí přepínačem jako všechno ostatní (Libor 4. 11. 2026), viz `modules/sdileni.md`.
 
+## Seznam objektů a skrytí okem (Libor 10. 11. 2026)
+
+Seznam v panelu Objekty (`engine.getObjectList`): stěny, otvory, kusy nábytku a schodiště, která vedou z aktivního podlaží
+nebo do něj (řádek „S1 Schodiště 1.NP → 2.NP“). Klik na řádek schody vybere, křížek je smaže, přejmenovat je nejde.
+- **Oko u řádku** objekt skryje v půdorysu: nekreslí se (`renderer.jeSkryty`, u schodů `jeObjektSkryty` v `dum.js`), nejde
+  trefit ani vybrat, takže jde pracovat pod ním (místnost pod schody). Skrytý vybraný objekt se odznačí. Řádek skrytého je
+  přeškrtnutý, klik na něj objekt zase ukáže a vybere.
+- **Jen pracovní pomůcka:** `skryteObjekty` se neukládá, platí do znovunačtení stránky. Klíč je podlaží a id (`P1:W3`),
+  schody patří domu (`dum:S1`). Export a sdílený odkaz kreslí i skryté (`_kresbaProExport`), 3D se neskrývá.
+
 ## Přepínače zobrazení
 
 `resources/views/masterteam/partials/prepinace-zobrazeni.blade.php`, jedno nastavení na dvou místech: panel Objekty a sekce Export. Stěny (i oddělovače, jejich body a kóty), Otvory, Kóty, Značky (W38, O41), Body, Místnosti, Vybavení; řádek se zalamuje. Stěny a Otvory nahradily společné „Objekty". Kóty, Značky a Body jsou výchozí vypnuté (`kotyVzdy`, `znackyVzdy`, `bodyVzdy`, staré uložené klíče se záměrně nečtou, jinak by změna u nikoho, kdo editor otevřel, neplatila). Klik na stěnu ukáže její konce a konce stěn napojených na ni, klik mimo je skryje. Mřížka, vrstvy parcely, Terén a Mřížka terénu mají vlastní `prepinace-parcely.blade.php`: panel Parcela a samostatný odstavec v sekci Export. Schované se nedá vybrat: přepínač výběr zruší, nástroj Stěna a Otvor si svou vrstvu sám zapne, stejně tak klik na objekt v seznamu.

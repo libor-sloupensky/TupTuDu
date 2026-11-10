@@ -34,6 +34,8 @@ function konceptKEditor(initialData) {
         // začínáme vždy v klasickém zobrazení (nepokračujeme v fullscreenu
         // z minulého sezení). Stav se nepersistuje do kk_state.
         celaObrazovka: false,
+        // Objekty skryté okem v seznamu objektů ('P1:W3', u schodů 'dum:S1'), jen do znovunačtení stránky
+        skryteObjekty: [],
         napovedaOtevrena: false,
         // uložené 2/3 (dřívější rozložení nahoře/dole) se sklopí na vlevo/vpravo
         layoutMode: (_s.layoutMode ?? 0) % 2,
@@ -1470,6 +1472,7 @@ function konceptKEditor(initialData) {
                     showMistnosti: this.showMistnosti,
                     showVybaveni: this.showVybaveni,
                 }));
+                this.renderer.jeSkryty = (id) => this.jeObjektSkryty({ id });
                 // Rotate handle + inspector panel se překreslují při každém render()
                 this.renderer.afterRender = () => {
                     this._updateRotateHandle();
@@ -5932,6 +5935,31 @@ function konceptKEditor(initialData) {
         editObjektId: null,
         editObjektNazev: '',
 
+        /**
+         * Skrytí objektu okem v seznamu: v půdorysu se nekreslí a nejde vybrat, takže jde pracovat pod ním
+         * (třeba místnost pod schody). Jen v editoru do znovunačtení, export a 3D ho mají dál.
+         */
+        _klicSkryti(obj) {
+            return (obj.type === 'schody' ? 'dum' : this.engine?.dum.aktivni) + ':' + obj.id;
+        },
+        jeObjektSkryty(obj) {
+            if (this._kresbaProExport) return false;
+            return this.skryteObjekty.includes(this._klicSkryti(obj));
+        },
+        prepniSkrytiObjektu(obj) {
+            const klic = this._klicSkryti(obj);
+            const i = this.skryteObjekty.indexOf(klic);
+            if (i >= 0) this.skryteObjekty.splice(i, 1);
+            else {
+                this.skryteObjekty.push(klic);
+                // Skryté nesmí zůstat vybrané, jinak by ho šlo posunout nebo smazat naslepo
+                const r = this.renderer;
+                if ([r.selectedWalls, r.selectedOpenings, r.selectedVybaveni, r.selectedSchody].some(v => v.has(obj.id))) r.clearSelection();
+            }
+            this.renderer.render();
+            this._selectionTick++;
+        },
+
         zacniEditObjekt(id, nazev) {
             this.editObjektId = id;
             this.editObjektNazev = nazev;
@@ -5968,6 +5996,12 @@ function konceptKEditor(initialData) {
         },
 
         smazatObjekt(id) {
+            if (this.engine.dum.schodiste.some(s => s.id === id)) {
+                this.renderer.setSelection([]);
+                this.renderer.selectedSchody.add(id);
+                this.smazatSchody();
+                return;
+            }
             this.engine.pushUndo();
             if (this.engine.walls.has(id)) {
                 this.engine.removeWall(id);
@@ -5997,11 +6031,21 @@ function konceptKEditor(initialData) {
         vyberObjekt(id, e) {
             if (this.editObjektId) return; // probíhá editace
             const kus = (this.engine.vybaveni || []).some(v => v.id === id);
-            const typ = this.engine.walls.has(id) ? 'wall' : this.engine.openings.has(id) ? 'opening' : kus ? 'kus' : null;
+            const schody = this.engine.dum.schodiste.some(s => s.id === id);
+            const typ = this.engine.walls.has(id) ? 'wall' : this.engine.openings.has(id) ? 'opening' : kus ? 'kus' : schody ? 'schody' : null;
             if (!typ) return;
             // Kde plánek nevybírá (střecha, posun podkladu), nevybírá ani seznam
             if (this.rezimStrecha || this.posunPodkladu) return;
             if (this.nastroj !== 'vyber') this.nastroj = 'vyber';
+            // Výběr skrytého objektu ho zase ukáže, skrytý by nešel vidět ani upravit
+            if (this.jeObjektSkryty({ type: typ, id })) this.prepniSkrytiObjektu({ type: typ, id });
+            if (typ === 'schody') {
+                this.renderer.setSelection([]);
+                this.renderer.selectedSchody.add(id);
+                this.renderer.render();
+                this._selectionTick++;
+                return;
+            }
             // Na plánku jde kliknout jen na viditelné: řádek schovanou vrstvu zapne, jinak by výběr nebyl vidět
             if (typ === 'wall' && !this.showSteny) { this.showSteny = true; this.toggleSteny(); }
             if (typ === 'opening' && !this.showOtvory) { this.showOtvory = true; this.toggleOtvory(); }

@@ -1528,18 +1528,18 @@
                          :style="hoverObjektId === obj.id && !vybraneIds.includes(obj.id) ? 'background-color: #dbeafe' : ''"
                          :class="vybraneIds.includes(obj.id) ? 'bg-blue-50' : 'hover:bg-gray-50'"
                          @click="vyberObjekt(obj.id, $event)"
-                         @dblclick.stop="zacniEditObjekt(obj.id, obj.nazev)"
+                         @dblclick.stop="obj.type !== 'schody' && zacniEditObjekt(obj.id, obj.nazev)"
                          @mouseenter="zvyrazniObjekt(obj.id)"
                          @mouseleave="zvyrazniObjekt(null)">
                         <div class="flex items-center gap-1 min-w-0">
                             {{-- Označení z výkresu — stejná barva jako popisek na plátně
                                  (stěny fialově, otvory oranžově), ať jde řádek spárovat s kresbou --}}
-                            <span class="kk-oznaceni" :class="obj.type === 'wall' ? 'text-purple-600 bg-purple-50' : obj.type === 'kus' ? 'text-teal-700 bg-teal-50' : 'text-orange-600 bg-orange-50'"
+                            <span class="kk-oznaceni" :class="obj.type === 'wall' ? 'text-purple-600 bg-purple-50' : obj.type === 'kus' ? 'text-teal-700 bg-teal-50' : obj.type === 'schody' ? 'text-gray-700 bg-gray-100' : 'text-orange-600 bg-orange-50'"
                                   x-text="obj.oznaceni || obj.id"></span>
                             <span x-show="editObjektId !== obj.id"
-                                  :class="vybraneIds.includes(obj.id) ? 'font-bold text-blue-700' : 'text-gray-600'"
+                                  :class="[vybraneIds.includes(obj.id) ? 'font-bold text-blue-700' : 'text-gray-600', jeObjektSkryty(obj) ? 'opacity-50 line-through' : '']"
                                   x-text="obj.nazev" class="truncate"></span>
-                            <svg x-show="editObjektId !== obj.id"
+                            <svg x-show="editObjektId !== obj.id && obj.type !== 'schody'"
                                  @click.stop="zacniEditObjekt(obj.id, obj.nazev)"
                                  width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                  class="shrink-0 text-gray-300 hover:text-primary cursor-pointer" style="margin-left:3px">
@@ -1555,6 +1555,12 @@
                         </div>
                         <div class="flex items-center gap-1 shrink-0 ml-1">
                             <span class="text-gray-500 text-[10px]" x-text="obj.info"></span>
+                            <button type="button" @click.stop="prepniSkrytiObjektu(obj)" data-skryt-objekt
+                                    :class="jeObjektSkryty(obj) ? 'text-primary' : 'text-gray-300 hover:text-gray-600'" class="transition"
+                                    :title="jeObjektSkryty(obj) ? preloz('ed_sablona.objekty.zobrazit_tip') : preloz('ed_sablona.objekty.skryt_tip')">
+                                <svg x-show="!jeObjektSkryty(obj)" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg x-show="jeObjektSkryty(obj)" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.9 0 3.5-.6 4.9-1.4M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                            </button>
                             <button @click.stop="smazatObjekt(obj.id)" class="text-gray-300 hover:text-red-500 transition" title="{{ __('ed_sablona.spolecne.smazat') }}">
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <path d="M18 6L6 18M6 6l12 12"/>

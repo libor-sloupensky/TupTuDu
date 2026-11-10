@@ -4051,11 +4051,18 @@ class StavebniEngine {
                 info: Math.round((v.sirka || 0) * 100) + ' × ' + Math.round((v.hloubka || 0) * 100) + ' cm',
             });
         }
+        // Schodiště patří domu, v seznamu jsou ta, která vedou z aktivního podlaží nebo do něj
+        const aktivni = this.dum?.aktivni;
+        for (const st of this.dum?.schodiste || []) {
+            if (st.odPodlazi !== aktivni && st.doPodlazi !== aktivni) continue;
+            const od = this.podlaziPodleId(st.odPodlazi)?.nazev || '', kam = this.podlaziPodleId(st.doPodlazi)?.nazev || '';
+            list.push({ id: st.id, type: 'schody', nazev: tx('ed_dum.krok.schodiste'), info: od === kam ? od : od + ' → ' + kam });
+        }
         // Stěny před otvory, pak podle označení: písmena (D, O…) a číslo
         // číselně (W2 před W10) — ať se v seznamu hledá stejně jako ve výkrese.
         const cislo = (id) => parseInt(String(id).replace(/\D+/g, ''), 10) || 0;
         const pismena = (id) => String(id).replace(/\d+/g, '');
-        const poradi = { wall: 0, opening: 1, kus: 2 };
+        const poradi = { wall: 0, opening: 1, kus: 2, schody: 3 };
         list.sort((a, b) => poradi[a.type] - poradi[b.type]
             || pismena(a.id).localeCompare(pismena(b.id)) || cislo(a.id) - cislo(b.id));
         return list;
