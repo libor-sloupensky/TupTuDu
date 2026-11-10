@@ -16,6 +16,7 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
 - Paddle: ostrý účet, obě domény `approved`, výchozí odkaz pokladny nastaven, client-side token `active` a shodný s `.env`, cíl zpráv aktivní (7 událostí), 4 aktivní ceny = ID v `.env`, bez zkušební doby, náhled CZ 249 Kč.
 - Web: app.tuptudu.com 200, `/billing` → login, ceník a právní stránky 200, `cdn.paddle.com` dostupné, webhook bez podpisu 403, žádná CSP hlavička, nenasazené commity 0.
 - Produkce má ostrý API klíč: zákazník `ctm_01m706qt…` (účet „Paddle Review", 9. 11. 14:07) existuje v ostrém účtu. Předplatné ani transakce zatím žádné, bugy kolem plateb jen staré opravené z 30. 10.
+- Účet „Paddle Review" (`uzivatele.id=3`, Libor Test Sloupenský) Libor 10. 11. rozhodl **nechat** (pro případné dotazy Paddlu). Aplikace mazání účtu nemá.
 - **Neověřené:** podpis zpráv z Paddlu na produkci (`PADDLE_WEBHOOK_SECRET` v GitHub secrets) — ukáže až první platba nebo simulace v Events → Simulations. Selhání by se zapsalo do bugů (403 + bug z `PaddleJenSPodpisem`).
 
 ## Kontrola 2026-11-09
