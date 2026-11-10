@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Masterteam;
 use App\Http\Controllers\Controller;
 use App\Models\Uzivatel;
 use App\Services\Google\GoogleApi;
+use App\Support\Mereni;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -113,6 +114,40 @@ class StatistikyController extends Controller
             ],
             'dnu' => $dnu,
         ]);
+    }
+
+    /** Názvy měřených funkcí editoru (App\Support\Mereni::FUNKCE) pro Přehled. */
+    private const FUNKCE_NAZVY = [
+        'import_vykresu' => 'Import výkresu',
+        'pohled_3d' => '3D pohled',
+        'export_pudorys' => 'Export půdorysu',
+        'export_3d' => 'Export 3D',
+        'sdileni' => 'Sdílení odkazem',
+        'katalog' => 'Kus z katalogu',
+        'parcela' => 'Parcela',
+        'podlazi' => 'Podlaží',
+        'strecha' => 'Střecha',
+    ];
+
+    /**
+     * JSON pro cestu od registrace k placení (uživatelé registrovaní ve zvoleném období)
+     * a použití funkcí editoru. Výpočet sdílí s příkazem `mereni:cesta`.
+     */
+    public function cestaData(Request $r): JsonResponse
+    {
+        $dnu = (int) $r->query('dnu', 30);
+        if (! in_array($dnu, [0, 7, 30, 90, 365], true)) {
+            $dnu = 30;
+        }
+        // 0 = celé období
+        $od = $dnu === 0 ? Carbon::create(2000) : Carbon::now()->subDays($dnu - 1)->startOfDay();
+
+        $funkce = [];
+        foreach (Mereni::pouzitiFunkci($od) as $klic => $pocet) {
+            $funkce[] = [self::FUNKCE_NAZVY[$klic] ?? $klic, $pocet];
+        }
+
+        return response()->json(['kroky' => Mereni::cesta($od), 'funkce' => $funkce]);
     }
 
     /**

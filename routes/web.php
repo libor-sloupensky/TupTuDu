@@ -100,6 +100,7 @@ Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('mastertea
     Route::get('statistiky/registrace', [StatistikyController::class, 'registraceData'])->name('statistiky.registrace');
     Route::get('statistiky/navstevy', [StatistikyController::class, 'navstevyData'])->name('statistiky.navstevy');
     Route::get('statistiky/vyhledavani', [StatistikyController::class, 'vyhledavaniData'])->name('statistiky.vyhledavani');
+    Route::get('statistiky/cesta', [StatistikyController::class, 'cestaData'])->name('statistiky.cesta');
 
     // Správa uživatelů master týmu
     Route::get('uzivatele', [UzivateleController::class, 'index'])->name('uzivatele.index');

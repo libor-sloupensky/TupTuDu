@@ -11,6 +11,9 @@ Jen pro master tým, česky, nepřekládá se.
   návštěvníků, kteří se registrovali.
 - **Registrace a platící** z vlastní databáze: registrace za den, 7denní a 30denní klouzavý průměr,
   počet platících ke konci dne, tržby za období bez DPH podle měny.
+- **Cesta k placení a funkce editoru** z měření pro analýzu webu (`modules/marketing.md`): kam až došli
+  uživatelé registrovaní ve zvoleném období (ověřený e-mail, projekt, stěny, návrat, platba) a kolikrát
+  se použily funkce editoru (`statistika_funkci`). Výpočet je v `App\Support\Mereni` společný s `mereni:cesta`.
 - **Vyhledávání Google** ze Search Console: zobrazení, kliknutí, průměrná pozice.
 - **Indexace**: kolik adres ze sitemapy má Google v indexu, denní historie ve vlastní tabulce
   (první kontrola 10. 11. 2026 lokálně: 48 z 51), výpis stránek mimo index se stavem podle Googlu.
@@ -25,7 +28,7 @@ Jen pro master tým, česky, nepřekládá se.
 | Čtení z GA4 a Search Console | `app/Services/Google/GoogleApi.php` |
 | Denní kontrola indexace | `app/Console/Commands/IndexaceKontrola.php` (`indexace:kontrola`), `App\Support\PlanovaneUlohy` |
 | Tabulky `indexace_url`, `indexace_denne` | `database/migrations/2026_11_10_000001_create_indexace_tables.php` |
-| Routy `masterteam.dashboard`, `masterteam.statistiky.{registrace,navstevy,vyhledavani}` | `routes/web.php` |
+| Routy `masterteam.dashboard`, `masterteam.statistiky.{registrace,navstevy,vyhledavani,cesta}` | `routes/web.php` |
 | Nastavení | `config/services.php` → `google_api` |
 
 ## Přístup ke Googlu

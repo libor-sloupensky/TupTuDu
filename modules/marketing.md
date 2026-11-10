@@ -110,7 +110,8 @@ Plné vyhodnocení nejspíš v lednu 2027 spolu s kontrolou článků.
 - **GA4, jen se souhlasem s cookies:** `sign_up` a `projekt_zalozen` (model Uzivatel a KonceptV3 je uloží do session,
   `partials/cookies-lista` je pošle po načtení gtag) jsou v GA4 klíčové události (`py services/ga4-klicove-udalosti.py`).
   Funkce editoru jdou do GA4 jako `editor_<funkce>`. Zásady je kryjí řádkem o Google Analytics („použité funkce“).
-- Přehled v Masterteamu: registrace, platící a tržby jsou hotové (`modules/statistiky.md`), návštěvy čekají na přehled z Looker Studia.
+- Přehled v Masterteamu (`modules/statistiky.md`) ukazuje návštěvy z GA4, registrace, platící a tržby, cestu k placení,
+  funkce editoru, vyhledávání a indexaci. Cesta a funkce se počítají v `App\Support\Mereni` (`cesta`, `pouzitiFunkci`).
 - **Ještě není:** import klíčových událostí do Google Ads jako konverze (až poběží kampaně).
 
 ## GA4 na webu (hotovo 2026-11-01)

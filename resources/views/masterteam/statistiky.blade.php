@@ -85,6 +85,39 @@
             </p>
         </section>
 
+        {{-- ═══════════════ Cesta k placení a funkce editoru (vlastní data) ═══════════════ --}}
+        <section class="rounded-lg border border-gray-200 bg-white p-5">
+            <div class="grid gap-8 md:grid-cols-2">
+                <div>
+                    <h2 class="mb-1 text-lg font-semibold text-gray-900">Cesta k placení</h2>
+                    <p class="mb-3 text-xs text-gray-500">Uživatelé registrovaní ve zvoleném období a kam až došli.</p>
+                    <template x-for="k in cesta.kroky" :key="k.nazev">
+                        <div class="mb-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-700" x-text="k.nazev"></span>
+                                <span class="text-gray-900"><strong x-text="k.pocet"></strong> <span class="text-xs text-gray-500" x-text="k.podil"></span></span>
+                            </div>
+                            <div class="mt-1 h-2 rounded bg-gray-100"><div class="h-2 rounded bg-primary" :style="`width: ${k.sirka}%`"></div></div>
+                        </div>
+                    </template>
+                </div>
+                <div>
+                    <h2 class="mb-1 text-lg font-semibold text-gray-900">Funkce editoru</h2>
+                    <p class="mb-3 text-xs text-gray-500">Kolikrát se funkce použila, jeden prohlížeč nejvýš jednou za den. Měří se od nasazení měření.</p>
+                    <template x-for="f in cesta.funkce" :key="f.nazev">
+                        <div class="mb-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-700" x-text="f.nazev"></span>
+                                <strong class="text-gray-900" x-text="f.pocet"></strong>
+                            </div>
+                            <div class="mt-1 h-2 rounded bg-gray-100"><div class="h-2 rounded bg-primary/60" :style="`width: ${f.sirka}%`"></div></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <p x-show="chyba.cesta" x-cloak class="mt-2 text-sm text-red-600" x-text="chyba.cesta"></p>
+        </section>
+
         {{-- ═══════════════ Vyhledávání a indexace (Search Console) ═══════════════ --}}
         @if ($googleNastaven)
             <section class="rounded-lg border border-gray-200 bg-white p-5">
@@ -156,6 +189,7 @@
                 registrace: @json(route('masterteam.statistiky.registrace')),
                 navstevy: @json(route('masterteam.statistiky.navstevy')),
                 vyhledavani: @json(route('masterteam.statistiky.vyhledavani')),
+                cesta: @json(route('masterteam.statistiky.cesta')),
             };
 
             // Barvy jen z CSS proměnných značky (public/css/app.css), žádný hex.
@@ -215,7 +249,8 @@
                 ],
                 dnu: 30,
                 nacita: 0,
-                chyba: { navstevy: '', vyhledavani: '' },
+                chyba: { navstevy: '', vyhledavani: '', cesta: '' },
+                cesta: { kroky: [], funkce: [] },
                 nav: { navstevnici: '–', relace: '–', zobrazeni: '–', pocet: null },
                 reg: { celkem: '–', prumer: '–', uzivatelu: '–', platiciTed: '–', podil: '–', trzby: '–', pocet: null },
                 vyh: { zobrazeni: '–', kliknuti: '–', pozice: '–', index: '–', zkontrolovano: '', chybi: [] },
@@ -231,6 +266,7 @@
                     const dnu = this.dnu;
                     this.nav.pocet = this.reg.pocet = null;
                     this.nacti('registrace', dnu, (d) => this.ukazRegistrace(d));
+                    this.nacti('cesta', dnu, (d) => this.ukazCestu(d));
                     if (googleNastaven) {
                         this.nacti('navstevy', dnu, (d) => this.ukazNavstevy(d));
                         this.nacti('vyhledavani', dnu, (d) => this.ukazVyhledavani(d));
@@ -248,7 +284,7 @@
                     } catch (e) {
                         if (co in this.chyba) {
                             // Stránka má vlastní hlášku u grafu → jen tichý zápis do bugů
-                            this.chyba[co] = 'Data z Googlu se teď nepodařilo načíst.';
+                            this.chyba[co] = co === 'cesta' ? 'Data se nepodařilo načíst.' : 'Data z Googlu se teď nepodařilo načíst.';
                             window.zalogujChybu?.(e, 'Přehled: načtení grafu ' + co, { dnu });
                         } else {
                             chybaUzivateli(e, 'Přehled: načtení grafu registrací', { dnu });
@@ -256,6 +292,18 @@
                     } finally {
                         this.nacita--;
                     }
+                },
+
+                ukazCestu(d) {
+                    const registraci = d.kroky[0]?.[1] || 0;
+                    const nejvic = Math.max(1, ...d.funkce.map(([, pocet]) => pocet));
+                    this.cesta = {
+                        kroky: d.kroky.map(([nazev, pocet]) => ({
+                            nazev, pocet, podil: registraci > 0 ? procenta(pocet, registraci) : '',
+                            sirka: registraci > 0 ? pocet / registraci * 100 : 0,
+                        })),
+                        funkce: d.funkce.map(([nazev, pocet]) => ({ nazev, pocet, sirka: pocet / nejvic * 100 })),
+                    };
                 },
 
                 ukazNavstevy(d) {
