@@ -70,6 +70,8 @@ class StatistikyController extends Controller
         try {
             $radky = Cache::remember("statistiky-vyhledavani-{$od->toDateString()}", 3600,
                 fn () => $google->vyhledavani($od->toDateString(), now()->toDateString()));
+            $poStrankach = Cache::remember("statistiky-vyhledavani-stranky-{$od->toDateString()}", 3600,
+                fn () => $google->vyhledavaniPoStrankach($od->toDateString(), now()->toDateString()));
         } catch (\Throwable $e) {
             return $this->chybaGoogle($e, 'vyhledávání');
         }
@@ -104,13 +106,21 @@ class StatistikyController extends Controller
                 'adres' => (clone $stav)->count(),
                 'zaindexovano' => (clone $stav)->where('zaindexovano', true)->count(),
                 'zkontrolovano' => ($cas = (clone $stav)->max('zkontrolovano_v')) ? Carbon::parse($cas)->format('j. n. Y H:i') : null,
-                'chybi' => (clone $stav)->where('zaindexovano', false)->orderBy('adresa')
-                    ->get(['adresa', 'stav', 'prochazeno'])
+                // Všechny adresy ze sitemapy se stavem a výkonem ve vyhledávání za období
+                'stranky' => (clone $stav)->orderBy('adresa')
+                    ->get(['adresa', 'zaindexovano', 'stav', 'prochazeno', 'robot'])
                     ->map(fn ($u) => [
                         'adresa' => $u->adresa,
+                        'zaindexovano' => (bool) $u->zaindexovano,
                         'stav' => $u->stav,
                         'prochazeno' => $u->prochazeno ? Carbon::parse($u->prochazeno)->format('j. n. Y') : null,
-                    ]),
+                        'robot' => ['MOBILE' => 'mobilní', 'DESKTOP' => 'počítačový'][$u->robot] ?? null,
+                        'zobrazeni' => $poStrankach[$u->adresa]['zobrazeni'] ?? 0,
+                        'kliknuti' => $poStrankach[$u->adresa]['kliknuti'] ?? 0,
+                        'pozice' => $poStrankach[$u->adresa]['pozice'] ?? null,
+                    ])
+                    // nejdřív stránky, které se ve vyhledávání ukazují nejvíc
+                    ->sortByDesc('zobrazeni')->values(),
             ],
             'dnu' => $dnu,
         ]);

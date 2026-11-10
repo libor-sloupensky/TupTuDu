@@ -72,6 +72,7 @@ class IndexaceKontrola extends Command
                         'zaindexovano' => $v['zaindexovano'],
                         'stav' => mb_substr($v['stav'], 0, 190),
                         'prochazeno' => $v['prochazeno'] ? Carbon::parse($v['prochazeno'])->setTimezone(config('app.timezone')) : null,
+                        'robot' => $v['robot'] ? mb_substr($v['robot'], 0, 30) : null,
                         'zkontrolovano_v' => now(),
                     ]);
                     $zkontrolovano++;

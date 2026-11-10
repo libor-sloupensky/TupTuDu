@@ -25,6 +25,10 @@ Jen pro master tým, česky, nepřekládá se.
   a Funkce editoru, vysvětlení řady v bublině grafu (vlastnost řady `napoveda`), nad grafem indexace popis
   „Adres v sitemapě“ a „V indexu“. Nová dlaždice nebo řada = doplnit nápovědu.
 
+- **Výpis stránek** (10. 11. 2026, lokálně, nenasazeno): rozbalovací „Stránky v indexu“ se zobrazeními, kliknutími
+  a pozicí každé stránky za období (Search Console podle stránky) a s datem a druhem robota (`indexace_url.robot`),
+  pod ním „Stránky mimo index“ se stavem podle Googlu. Bod v grafu indexace je kolečko, v legendě čára (`styleLegendy`).
+
 ## Soubory
 | Co | Kde |
 |---|---|

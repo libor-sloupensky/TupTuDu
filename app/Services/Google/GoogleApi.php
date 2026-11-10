@@ -82,6 +82,30 @@ class GoogleApi
     }
 
     /**
+     * Výkon jednotlivých stránek ve vyhledávání za období: adresa => zobrazení, kliknutí, pozice.
+     *
+     * @return array<string, array{zobrazeni: int, kliknuti: int, pozice: float}>
+     */
+    public function vyhledavaniPoStrankach(string $od, string $do): array
+    {
+        $odpoved = $this->post(
+            'https://www.googleapis.com/webmasters/v3/sites/' . rawurlencode(config('services.google_api.gsc_web')) . '/searchAnalytics/query',
+            ['startDate' => $od, 'endDate' => $do, 'dimensions' => ['page'], 'dataState' => 'all', 'rowLimit' => 5000]
+        );
+
+        $stranky = [];
+        foreach ($odpoved['rows'] ?? [] as $r) {
+            $stranky[$r['keys'][0]] = [
+                'zobrazeni' => (int) $r['impressions'],
+                'kliknuti' => (int) $r['clicks'],
+                'pozice' => round((float) $r['position'], 1),
+            ];
+        }
+
+        return $stranky;
+    }
+
+    /**
      * Stav adres v indexu Google (URL Inspection). Jeden dotaz trvá kolem 7 s, proto souběžně
      * po 25. Limit Googlu je 2 000 dotazů denně a 600 za minutu na web.
      *
@@ -116,6 +140,7 @@ class GoogleApi
                     'zaindexovano' => ($stav['verdict'] ?? '') === 'PASS',
                     'stav' => (string) ($stav['coverageState'] ?? 'neznámý'),
                     'prochazeno' => $stav['lastCrawlTime'] ?? null,
+                    'robot' => $stav['crawledAs'] ?? null, // MOBILE, DESKTOP
                 ];
             }
         }

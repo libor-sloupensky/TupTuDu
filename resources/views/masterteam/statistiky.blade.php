@@ -174,6 +174,34 @@
                     Počet se zjišťuje jednou denně dotazem na každou adresu, graf se plní ode dne první kontroly.
                 </p>
 
+                <details x-show="vyh.vIndexu.length" x-cloak class="mt-3 text-sm">
+                    <summary class="cursor-pointer text-gray-700">
+                        Stránky v indexu (<span x-text="vyh.vIndexu.length"></span>)
+                    </summary>
+                    <table class="mt-2 w-full text-left text-xs">
+                        <thead class="text-gray-500">
+                            <tr>
+                                <th class="py-1 pr-3 font-medium">Adresa</th>
+                                <th class="py-1 pr-3 text-right font-medium">Zobrazení <span class="tt-tip" tabindex="0" data-tip="Kolikrát se stránka ve zvoleném období ukázala ve výsledcích hledání Google.">?</span></th>
+                                <th class="py-1 pr-3 text-right font-medium">Kliknutí</th>
+                                <th class="py-1 pr-3 text-right font-medium">Pozice <span class="tt-tip" tabindex="0" data-tip="Průměrné místo stránky ve výsledcích hledání. Nižší číslo je lepší.">?</span></th>
+                                <th class="py-1 pr-3 font-medium">Robot naposledy <span class="tt-tip" tabindex="0" data-tip="Kdy Google stránku naposledy navštívil a kterým robotem. Změny na stránce novější než toto datum Google ještě nezná.">?</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="u in vyh.vIndexu" :key="u.adresa">
+                                <tr class="border-t border-gray-100">
+                                    <td class="py-1 pr-3"><a :href="u.adresa" target="_blank" rel="noopener" class="hover:text-primary" x-text="u.adresa.replace('https://www.tuptudu.com', '')"></a></td>
+                                    <td class="py-1 pr-3 text-right text-gray-900" x-text="u.zobrazeni"></td>
+                                    <td class="py-1 pr-3 text-right text-gray-900" x-text="u.kliknuti"></td>
+                                    <td class="py-1 pr-3 text-right text-gray-700" x-text="u.pozice === null ? '–' : String(u.pozice).replace('.', ',')"></td>
+                                    <td class="py-1 pr-3 text-gray-500" x-text="(u.prochazeno || 'ještě ne') + (u.robot ? ', ' + u.robot : '')"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </details>
+
                 <details x-show="vyh.chybi.length" x-cloak class="mt-3 text-sm">
                     <summary class="cursor-pointer text-gray-700">
                         Stránky mimo index (<span x-text="vyh.chybi.length"></span>)
@@ -282,7 +310,7 @@
                 cesta: { kroky: [], funkce: [] },
                 nav: { navstevnici: '–', relace: '–', zobrazeni: '–', pocet: null },
                 reg: { celkem: '–', prumer: '–', uzivatelu: '–', platiciTed: '–', podil: '–', trzby: '–', pocet: null },
-                vyh: { zobrazeni: '–', kliknuti: '–', pozice: '–', index: '–', zkontrolovano: '', chybi: [] },
+                vyh: { zobrazeni: '–', kliknuti: '–', pozice: '–', index: '–', zkontrolovano: '', vIndexu: [], chybi: [] },
 
                 // Kolik návštěvníků se zaregistrovalo — jen když jsou obě čísla ze stejného období.
                 // Víc registrací než změřených návštěvníků (měření jen se souhlasem) nedává smysl → nic.
@@ -384,7 +412,8 @@
                         pozice: d.celkem.pozice === null ? '–' : String(d.celkem.pozice).replace('.', ','),
                         index: i.adres ? `${i.zaindexovano} z ${i.adres}` : '–',
                         zkontrolovano: i.zkontrolovano ? 'kontrola ' + i.zkontrolovano : 'zatím bez kontroly',
-                        chybi: i.chybi,
+                        vIndexu: i.stranky.filter(u => u.zaindexovano),
+                        chybi: i.stranky.filter(u => !u.zaindexovano),
                     };
                     kresli('grafVyhledavani', d.dnu, d.labels, [
                         sloupce('Kliknutí', d.kliknuti, '--c-primary', { order: 1, napoveda: 'příchody z hledání Google (pravá osa)', yAxisID: 'kliknuti' }),
