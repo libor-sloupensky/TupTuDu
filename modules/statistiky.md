@@ -6,7 +6,7 @@ registrace s počtem platících, výkon ve vyhledávání Google a indexace str
 (7, 30, 90 dní, rok, vše) řídí všechny grafy. Adresa `/masterteam/statistiky` přesměruje na Přehled.
 Jen pro master tým, česky, nepřekládá se.
 
-## Stav (na webu od 10. 11. 2026, commit 72ead2e)
+## Stav (na webu od 10. 11. 2026, poslední nasazení commit 124d9e4)
 - **Návštěvy webu** z GA4 (Data API): návštěvníci, návštěvy, zobrazené stránky po dnech, podíl
   návštěvníků, kteří se registrovali.
 - **Registrace a platící** z vlastní databáze: registrace za den, 7denní a 30denní klouzavý průměr,
@@ -21,15 +21,15 @@ Jen pro master tým, česky, nepřekládá se.
   Na produkci ověřeno cronem: `indexace:kontrola` prošla (45 z 48 posouzených adres v indexu), klíč tedy funguje.
   Stránku samotnou na produkci v prohlížeči zatím nikdo neověřil (Claude produkční přihlášení nemá).
 
-- **Nápovědy** (10. 11. 2026, lokálně, nenasazeno): otazník `.tt-tip` s bublinou u každé dlaždice a u nadpisů Cesta k placení
+- **Nápovědy** (na webu od 10. 11. 2026): otazník `.tt-tip` s bublinou u každé dlaždice a u nadpisů Cesta k placení
   a Funkce editoru, vysvětlení řady v bublině grafu (vlastnost řady `napoveda`), nad grafem indexace popis
   „Adres v sitemapě“ a „V indexu“. Nová dlaždice nebo řada = doplnit nápovědu.
 
-- **Výpis stránek** (10. 11. 2026, lokálně, nenasazeno): rozbalovací „Stránky v indexu“ se zobrazeními, kliknutími
+- **Výpis stránek** (na webu od 10. 11. 2026): rozbalovací „Stránky v indexu“ se zobrazeními, kliknutími
   a pozicí každé stránky za období (Search Console podle stránky) a s datem a druhem robota (`indexace_url.robot`),
   pod ním „Stránky mimo index“ se stavem podle Googlu. Bod v grafu indexace je kolečko, v legendě čára (`styleLegendy`).
 
-- **Hledané výrazy** (10. 11. 2026, lokálně, nenasazeno): rozbalovací seznam výrazů se zobrazeními, kliknutími a pozicí.
+- **Hledané výrazy** (na webu od 10. 11. 2026): rozbalovací seznam výrazů se zobrazeními, kliknutími a pozicí.
   Průměrná pozice v dlaždici je průměr přes všechny výrazy vážený zobrazeními, vypovídá jen jako trend; smysl má pozice u výrazu.
 - Po vyřazení právních stránek ze sitemapy klesne v grafu indexace počet adres z 51 na 27, není to výpadek.
 
