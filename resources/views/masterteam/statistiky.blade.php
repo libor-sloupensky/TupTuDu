@@ -2,6 +2,19 @@
     {{-- Chart.js jen na této stránce, ne v layoutu (30 kB gzip). --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
+    {{-- Nápověda u nápisů: otazník, bublina po najetí myší nebo po zaměření klávesnicí. Barvy z proměnných značky. --}}
+    <style>
+        .tt-tip { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 1.1em; height: 1.1em;
+            border: 1px solid var(--c-border-strong); border-radius: 50%; color: var(--c-text-secondary);
+            font-size: .7rem; font-weight: 600; line-height: 1; text-transform: none; letter-spacing: 0; cursor: help; vertical-align: middle; }
+        .tt-tip:hover, .tt-tip:focus { color: var(--c-primary-text); border-color: var(--c-primary); outline: none; }
+        .tt-tip::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%);
+            width: max-content; max-width: 17rem; padding: .5rem .65rem; border-radius: .4rem;
+            background: var(--c-text); color: var(--c-surface); font-size: .75rem; font-weight: 400; line-height: 1.35; text-align: left;
+            white-space: normal; opacity: 0; visibility: hidden; transition: opacity .12s; pointer-events: none; z-index: 20; }
+        .tt-tip:hover::after, .tt-tip:focus::after { opacity: 1; visibility: visible; }
+    </style>
+
     {{-- Jeden přepínač období pro všechny grafy. Každý graf se načítá zvlášť, výpadek jednoho neshodí ostatní. --}}
     <div class="space-y-6" x-data="prehled()" x-init="nactiVse()">
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -25,19 +38,19 @@
             @if ($googleNastaven)
                 <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wider text-gray-500">Návštěvníků</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-500">Návštěvníků <span class="tt-tip" tabindex="0" data-tip="Kolik různých lidí web navštívilo. Jeden člověk se za období počítá jednou, i když přišel víckrát.">?</span></div>
                         <div class="mt-0.5 text-2xl font-bold text-primary-dark" x-text="nav.navstevnici">–</div>
                     </div>
                     <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wider text-gray-500">Návštěv</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-500">Návštěv <span class="tt-tip" tabindex="0" data-tip="Kolikrát lidé na web přišli. Jeden člověk může mít víc návštěv.">?</span></div>
                         <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="nav.relace">–</div>
                     </div>
                     <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wider text-gray-500">Zobrazených stránek</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-500">Zobrazených stránek <span class="tt-tip" tabindex="0" data-tip="Kolik stránek si lidé dohromady otevřeli, včetně opakovaných zobrazení téže stránky.">?</span></div>
                         <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="nav.zobrazeni">–</div>
                     </div>
                     <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wider text-gray-500">Registruje se</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-500">Registruje se <span class="tt-tip" tabindex="0" data-tip="Registrace za období dělené počtem návštěvníků. Měří se jen návštěvníci se souhlasem s cookies, skutečný podíl je proto nižší.">?</span></div>
                         <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="konverze">–</div>
                         <div class="text-xs text-gray-500">návštěvníků</div>
                     </div>
@@ -59,21 +72,21 @@
             <h2 class="mb-3 text-lg font-semibold text-gray-900">Registrace a platící</h2>
             <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                    <div class="text-xs uppercase tracking-wider text-gray-500">Registrace za období</div>
+                    <div class="text-xs uppercase tracking-wider text-gray-500">Registrace za období <span class="tt-tip" tabindex="0" data-tip="Nové účty založené ve zvoleném období, bez master týmu.">?</span></div>
                     <div class="mt-0.5 text-2xl font-bold text-primary-dark" x-text="reg.celkem">–</div>
                     <div class="text-xs text-gray-500">průměr <span x-text="reg.prumer">–</span> denně</div>
                 </div>
                 <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                    <div class="text-xs uppercase tracking-wider text-gray-500">Uživatelů celkem</div>
+                    <div class="text-xs uppercase tracking-wider text-gray-500">Uživatelů celkem <span class="tt-tip" tabindex="0" data-tip="Všechny účty zákazníků od začátku, bez ohledu na zvolené období.">?</span></div>
                     <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="reg.uzivatelu">–</div>
                 </div>
                 <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                    <div class="text-xs uppercase tracking-wider text-gray-500">Platících teď</div>
+                    <div class="text-xs uppercase tracking-wider text-gray-500">Platících teď <span class="tt-tip" tabindex="0" data-tip="Zákazníci s běžícím předplatným k dnešku a jejich podíl ze všech uživatelů.">?</span></div>
                     <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="reg.platiciTed">–</div>
                     <div class="text-xs text-gray-500"><span x-text="reg.podil">–</span> uživatelů</div>
                 </div>
                 <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                    <div class="text-xs uppercase tracking-wider text-gray-500">Tržby za období</div>
+                    <div class="text-xs uppercase tracking-wider text-gray-500">Tržby za období <span class="tt-tip" tabindex="0" data-tip="Zaplacené platby ve zvoleném období bez DPH. Poplatky Paddlu a vrácené platby odečtené nejsou.">?</span></div>
                     <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="reg.trzby">–</div>
                     <div class="text-xs text-gray-500">bez DPH</div>
                 </div>
@@ -89,7 +102,7 @@
         <section class="rounded-lg border border-gray-200 bg-white p-5">
             <div class="grid gap-8 md:grid-cols-2">
                 <div>
-                    <h2 class="mb-1 text-lg font-semibold text-gray-900">Cesta k placení</h2>
+                    <h2 class="mb-1 text-lg font-semibold text-gray-900">Cesta k placení <span class="tt-tip" tabindex="0" data-tip="Každý řádek je krok, kterým uživatel prošel. Procenta jsou podíl ze všech registrací v období. Největší propad mezi dvěma řádky ukazuje, kde lidi ztrácíme.">?</span></h2>
                     <p class="mb-3 text-xs text-gray-500">Uživatelé registrovaní ve zvoleném období a kam až došli.</p>
                     <template x-for="k in cesta.kroky" :key="k.nazev">
                         <div class="mb-2">
@@ -102,7 +115,7 @@
                     </template>
                 </div>
                 <div>
-                    <h2 class="mb-1 text-lg font-semibold text-gray-900">Funkce editoru</h2>
+                    <h2 class="mb-1 text-lg font-semibold text-gray-900">Funkce editoru <span class="tt-tip" tabindex="0" data-tip="Počítá se souhrnně bez vazby na uživatele. Jeden prohlížeč se u každé funkce započte nejvýš jednou za den, master tým se nepočítá.">?</span></h2>
                     <p class="mb-3 text-xs text-gray-500">Kolikrát se funkce použila, jeden prohlížeč nejvýš jednou za den. Měří se od nasazení měření.</p>
                     <template x-for="f in cesta.funkce" :key="f.nazev">
                         <div class="mb-2">
@@ -128,19 +141,19 @@
                 </div>
                 <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wider text-gray-500">Zobrazení ve výsledcích</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-500">Zobrazení ve výsledcích <span class="tt-tip" tabindex="0" data-tip="Kolikrát se některá stránka webu ukázala někomu ve výsledcích hledání Google.">?</span></div>
                         <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="vyh.zobrazeni">–</div>
                     </div>
                     <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wider text-gray-500">Kliknutí</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-500">Kliknutí <span class="tt-tip" tabindex="0" data-tip="Kolikrát někdo ve výsledcích hledání na web klikl.">?</span></div>
                         <div class="mt-0.5 text-2xl font-bold text-primary-dark" x-text="vyh.kliknuti">–</div>
                     </div>
                     <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wider text-gray-500">Průměrná pozice</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-500">Průměrná pozice <span class="tt-tip" tabindex="0" data-tip="Na kolikátém místě ve výsledcích se web průměrně ukazuje. Nižší číslo je lepší, 1 až 10 je první stránka.">?</span></div>
                         <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="vyh.pozice">–</div>
                     </div>
                     <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wider text-gray-500">V indexu Google</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-500">V indexu Google <span class="tt-tip" tabindex="0" data-tip="Kolik stránek ze sitemapy má Google uložených a může je ukazovat ve vyhledávání. Stránka mimo index se nikomu nenajde.">?</span></div>
                         <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="vyh.index">–</div>
                         <div class="text-xs text-gray-500" x-text="vyh.zkontrolovano"></div>
                     </div>
@@ -150,6 +163,12 @@
                 <p class="mt-2 text-xs text-gray-500">Poslední dva až tři dny Search Console teprve dopočítává.</p>
 
                 <h3 class="mb-2 mt-6 text-sm font-semibold text-gray-900">Indexace stránek ze sitemapy</h3>
+                <dl class="mb-3 space-y-1 text-xs text-gray-600">
+                    <div><dt class="inline font-semibold text-gray-800">Adres v sitemapě</dt>
+                        <dd class="inline">= kolik stránek webu Googlu sami hlásíme, že je má znát. Sitemapa je seznam všech veřejných stránek (titulka, ceník, články ve všech jazycích), přibývá s každou novou stránkou.</dd></div>
+                    <div><dt class="inline font-semibold text-gray-800">V indexu</dt>
+                        <dd class="inline">= kolik z nich už Google prošel a uložil, takže se mohou objevit ve vyhledávání. Rozdíl mezi čarami jsou stránky, které Google ještě nezařadil nebo je odmítl. Důvod je v seznamu pod grafem.</dd></div>
+                </dl>
                 <div style="position: relative; height: 200px;"><canvas id="grafIndexace"></canvas></div>
                 <p class="mt-2 text-xs text-gray-500">
                     Počet se zjišťuje jednou denně dotazem na každou adresu, graf se plní ode dne první kontroly.
@@ -230,7 +249,12 @@
                                 position: 'top', align: 'end', reverse: true, // pořadí jako ve výčtu řad
                                 labels: { usePointStyle: true, pointStyleWidth: 28, boxHeight: 8, font: { size: 11 } },
                             },
-                            tooltip: { callbacks: { label: (item) => item.parsed.y === null ? null : popisek(item) } },
+                            tooltip: { callbacks: {
+                                label: (item) => item.parsed.y === null ? null : popisek(item),
+                                // vysvětlení řad, které mají `napoveda` (zalomené po ~45 znacích)
+                                footer: (items) => items.filter(i => i.parsed.y !== null && i.dataset.napoveda)
+                                    .flatMap(i => (i.dataset.label + ': ' + i.dataset.napoveda).match(/.{1,45}(\s|$)/g).map(r => r.trim())),
+                            }, footerFont: { weight: 'normal', size: 11 }, footerMarginTop: 8 },
                         },
                         scales: {
                             ...scales,
@@ -312,8 +336,8 @@
                         zobrazeni: cislo(d.celkem.zobrazeni), pocet: d.celkem.navstevnici,
                     };
                     kresli('grafNavstev', d.dnu, d.labels, [
-                        sloupce('Návštěvníci', d.navstevnici, '--c-primary', { order: 2 }),
-                        cara('Návštěvy', d.relace, '--c-text', { order: 1 }),
+                        sloupce('Návštěvníci', d.navstevnici, '--c-primary', { order: 2, napoveda: 'různí lidé za den' }),
+                        cara('Návštěvy', d.relace, '--c-text', { order: 1, napoveda: 'příchody na web, jeden člověk jich může mít víc' }),
                         cara('Zobrazené stránky', d.zobrazeni, '--c-text-secondary', { order: 0, borderDash: [4, 3], hidden: true }),
                     ], { y: osa('Za den') }, hodnota);
                 },
@@ -331,10 +355,10 @@
                     };
                     kresli('grafRegistraci', d.dnu, d.labels, [
                         sloupce('Registrace', d.registrace, '--c-primary', { order: 3 }),
-                        cara('7denní průměr', d.klouzavy_7, '--c-primary-text', { order: 2 }),
-                        cara('30denní průměr', d.klouzavy_30, '--c-text', { order: 1 }),
+                        cara('7denní průměr', d.klouzavy_7, '--c-primary-text', { order: 2, napoveda: 'průměr registrací za posledních 7 dní, krátkodobý trend' }),
+                        cara('30denní průměr', d.klouzavy_30, '--c-text', { order: 1, napoveda: 'průměr registrací za posledních 30 dní, dlouhodobý trend' }),
                         // schodově: stav ke konci dne, ne plynulá změna
-                        cara('Platící', d.platici, '--c-ok', { order: 0, yAxisID: 'platici', stepped: true, tension: 0 }),
+                        cara('Platící', d.platici, '--c-ok', { napoveda: 'zákazníci s běžícím předplatným ke konci dne (pravá osa)', order: 0, yAxisID: 'platici', stepped: true, tension: 0 }),
                     ], {
                         y: osa('Registrace za den', { ticks: { stepSize: 1, precision: 0 } }),
                         platici: osa('Platících', { position: 'right', grid: { drawOnChartArea: false } }),
@@ -358,15 +382,15 @@
                         chybi: i.chybi,
                     };
                     kresli('grafVyhledavani', d.dnu, d.labels, [
-                        sloupce('Kliknutí', d.kliknuti, '--c-primary', { order: 1, yAxisID: 'kliknuti' }),
-                        cara('Zobrazení', d.zobrazeni, '--c-text', { order: 0 }),
+                        sloupce('Kliknutí', d.kliknuti, '--c-primary', { order: 1, napoveda: 'příchody z hledání Google (pravá osa)', yAxisID: 'kliknuti' }),
+                        cara('Zobrazení', d.zobrazeni, '--c-text', { order: 0, napoveda: 'kolikrát se web ukázal ve výsledcích hledání' }),
                     ], {
                         y: osa('Zobrazení'),
                         kliknuti: osa('Kliknutí', { position: 'right', grid: { drawOnChartArea: false } }),
                     }, hodnota);
                     kresli('grafIndexace', d.dnu, d.labels, [
-                        cara('V indexu', d.zaindexovano, '--c-ok', { stepped: true, tension: 0, pointRadius: 2, fill: true, backgroundColor: barva('--c-ok', 0.15) }),
-                        cara('Adres v sitemapě', d.adres, '--c-text-secondary', { stepped: true, tension: 0, pointRadius: 2, borderDash: [4, 3] }),
+                        cara('V indexu', d.zaindexovano, '--c-ok', { napoveda: 'stránky, které Google uložil a může ukazovat ve vyhledávání', stepped: true, tension: 0, pointRadius: 2, fill: true, backgroundColor: barva('--c-ok', 0.15) }),
+                        cara('Adres v sitemapě', d.adres, '--c-text-secondary', { napoveda: 'stránky webu, které Googlu hlásíme v seznamu stránek', stepped: true, tension: 0, pointRadius: 2, borderDash: [4, 3] }),
                     ], { y: osa('Stránek') }, hodnota);
                 },
             };

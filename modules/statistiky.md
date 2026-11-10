@@ -21,6 +21,10 @@ Jen pro master tým, česky, nepřekládá se.
   Na produkci ověřeno cronem: `indexace:kontrola` prošla (45 z 48 posouzených adres v indexu), klíč tedy funguje.
   Stránku samotnou na produkci v prohlížeči zatím nikdo neověřil (Claude produkční přihlášení nemá).
 
+- **Nápovědy** (10. 11. 2026, lokálně, nenasazeno): otazník `.tt-tip` s bublinou u každé dlaždice a u nadpisů Cesta k placení
+  a Funkce editoru, vysvětlení řady v bublině grafu (vlastnost řady `napoveda`), nad grafem indexace popis
+  „Adres v sitemapě“ a „V indexu“. Nová dlaždice nebo řada = doplnit nápovědu.
+
 ## Soubory
 | Co | Kde |
 |---|---|
