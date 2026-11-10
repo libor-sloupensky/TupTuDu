@@ -19,7 +19,7 @@ Jen pro master tým, česky, nepřekládá se.
   (první kontrola 10. 11. 2026 lokálně: 48 z 51), výpis stránek mimo index se stavem podle Googlu.
 - Klíč servisního účtu je v GitHub Secret `GOOGLE_SA_JSON` (uložen 10. 11. 2026) a v `deploy.yml`.
   Na produkci ověřeno cronem: `indexace:kontrola` prošla (45 z 48 posouzených adres v indexu), klíč tedy funguje.
-  Stránku samotnou po nasazení v prohlížeči zkontroloval jen Libor, ne Claude (produkční přihlášení nemá).
+  Stránku samotnou na produkci v prohlížeči zatím nikdo neověřil (Claude produkční přihlášení nemá).
 
 ## Soubory
 | Co | Kde |
