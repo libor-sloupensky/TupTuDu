@@ -37,6 +37,7 @@ return [
     'krok_uprava' => 'Änderung',
     'krok_oddelovac' => 'Raumtrenner',
     'krok_nazev_mistnosti' => 'Raumname',
+    'krok_druh_mistnosti' => 'Raumart',
     'krok_barva_mistnosti' => 'Raumfarbe',
     'krok_podlaha_mistnosti' => 'Raumboden',
     'krok_smazani_oddelovace' => 'Raumtrenner gelöscht',

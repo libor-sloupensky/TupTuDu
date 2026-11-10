@@ -227,6 +227,9 @@ return [
     // Panel místnosti
     'mistnost' => [
         'nazev' => 'Estancia',
+        'druh_tip' => 'Tipo de estancia. El nombre por defecto cambia con él, el que escribiste se mantiene.',
+        'druh' => 'Tipo',
+        'druh_jina' => 'Otra',
         'dekor_tip' => 'Acabado del suelo de esta estancia en 3D',
         'dekor' => 'Acabado de suelo',
         'barva_podlahy' => 'Color del suelo',

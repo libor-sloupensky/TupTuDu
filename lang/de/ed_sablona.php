@@ -227,6 +227,9 @@ return [
     // Panel místnosti
     'mistnost' => [
         'nazev' => 'Raum',
+        'druh_tip' => 'Raumart. Der Standardname passt sich an, ein selbst eingegebener Name bleibt.',
+        'druh' => 'Art',
+        'druh_jina' => 'Andere',
         'dekor_tip' => 'Bodenbelag dieses Raums in 3D',
         'dekor' => 'Bodenbelag',
         'barva_podlahy' => 'Bodenfarbe',

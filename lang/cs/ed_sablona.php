@@ -227,6 +227,9 @@ return [
     // Panel místnosti
     'mistnost' => [
         'nazev' => 'Místnost',
+        'druh_tip' => 'Druh místnosti. Výchozí název se podle něj přepne, ručně napsaný zůstane.',
+        'druh' => 'Druh',
+        'druh_jina' => 'Jiná',
         'dekor_tip' => 'Povrch podlahy této místnosti ve 3D',
         'dekor' => 'Dekor podlahy',
         'barva_podlahy' => 'Barva podlahy',

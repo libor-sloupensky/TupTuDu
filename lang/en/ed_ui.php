@@ -37,6 +37,7 @@ return [
     'krok_uprava' => 'Edit',
     'krok_oddelovac' => 'Room divider',
     'krok_nazev_mistnosti' => 'Room name',
+    'krok_druh_mistnosti' => 'Room type',
     'krok_barva_mistnosti' => 'Room colour',
     'krok_podlaha_mistnosti' => 'Room floor',
     'krok_smazani_oddelovace' => 'Delete divider',

@@ -37,6 +37,7 @@ return [
     'krok_uprava' => 'Úprava',
     'krok_oddelovac' => 'Oddeľovač miestnosti',
     'krok_nazev_mistnosti' => 'Názov miestnosti',
+    'krok_druh_mistnosti' => 'Druh miestnosti',
     'krok_barva_mistnosti' => 'Farba miestnosti',
     'krok_podlaha_mistnosti' => 'Podlaha miestnosti',
     'krok_smazani_oddelovace' => 'Zmazanie oddeľovača',

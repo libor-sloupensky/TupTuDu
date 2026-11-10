@@ -505,6 +505,9 @@
 
         get krytinyVolby() { return TYPY_KRYTIN; },
         get dekoryPodlahVolby() { return DEKORY_PODLAH; },
+        get druhyMistnostiVolby() {
+            return [{ id: '', nazev: preloz('ed_sablona.mistnost.druh_jina') }, ...Object.entries(window.DRUHY_MISTNOSTI || {}).map(([id, k]) => ({ id, nazev: preloz('ed_kresba.' + k) }))];
+        },
         get typyStrechVolby() { return TYPY_STRECH; },
         get typyPlochVolby() { return TYPY_PLOCH; },
 

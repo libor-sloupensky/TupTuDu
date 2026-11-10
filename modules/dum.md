@@ -73,6 +73,18 @@ Společný nástroj: `public/js/koncept-v3/vyber-barvy.js`, šablona `resources/
 
 „Jinde použité" není historie: `barvyJinde(mimo)` projde dům a vrátí barvy, které na něm teď opravdu jsou, kromě právě upravovaného prvku. Slouží ke sjednocení. Fasáda a otvory se počítají, jen když na domě jsou.
 
+## Druh místnosti (Libor 10. 11. 2026)
+
+Místnost má vedle názvu volitelný druh (`m.druh`, seznam `DRUHY_MISTNOSTI` v `stavebni-engine.js`): obývák, ložnice, pokoj,
+kuchyně, jídelna, koupelna, WC, chodba, zádveří, šatna, pracovna, technická, prádelna, spíž, sklad, garáž. Výchozí je „Jiná“
+(bez druhu, jen vlastní název). Výběr je v panelu místnosti pod názvem, jeden krok Zpět (`setMistnostDruh`,
+`engine.nastavDruhMistnosti`).
+- **Název:** výchozí název (`auto`) se převezme z druhu s prvním volným číslem, „Obývák“, „Obývák 2“. Ručně napsaný název
+  editor nepřepíše. „Jiná“ vrátí výchozí „Místnost n“. Názvy druhů jsou ve slovníku `ed_kresba.prostor_*` a přepínají se s jazykem.
+- **Import výkresu:** typ prostoru z rozpoznání (CubiCasa, `DRUH_Z_IMPORTU`) se převede na druh, název z výkresu zůstane.
+- **Zatím jen označení.** Plochy podle druhu (obytná a příslušenství), upozornění podle druhu a barva podle druhu jsou další krok.
+- Test: `node services/import-test/test-druh-mistnosti.cjs`.
+
 ## Barvy domu a podlahy místností
 
 `dum.barvy` = `fasada`, `oknoVen/oknoDovnitr`, `dvereVen/dvereDovnitr`, `dvereVnitrni`, `vrataVen/vrataDovnitr`. Platí pro celý dům, nastavují se u kteréhokoli podlaží (tužka, „Barva domu") a u kteréhokoli otvoru. Francouzské okno patří k oknům, průchod barvu nemá. Jen otvor v obvodové stěně má dvě barvy, vnitřní dveře mají jednu vlastní (`barvaVnitrniho`), vnitřní okno a vrata sdílejí stranu „uvnitř".

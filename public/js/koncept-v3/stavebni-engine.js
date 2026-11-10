@@ -160,9 +160,26 @@ function autoNazevPodlazi(typ, n) {
  * přepíná se s jazykem, přejmenováním auto zmizí a název je dál text uživatele. Bez slovníku (Node) česky.
  */
 function autoNazevMistnosti(auto) {
-    if (typeof preloz !== 'function') return 'Místnost ' + (auto.n ?? '');
-    return tx('ed_kresba.' + auto.k, auto.n ? { n: auto.n } : undefined);
+    if (auto.k === 'mistnost_n') return typeof preloz === 'function' ? tx('ed_kresba.mistnost_n', { n: auto.n }) : 'Místnost ' + (auto.n ?? '');
+    // Podle druhu: „Obývák“, další stejného druhu „Obývák 2“
+    const zaklad = tx('ed_kresba.' + auto.k);
+    return auto.n > 1 ? zaklad + ' ' + auto.n : zaklad;
 }
+
+/** Druhy místností (Libor 10. 11. 2026): název ze slovníku ed_kresba. Bez druhu = „Jiná“, jen vlastní název. */
+const DRUHY_MISTNOSTI = {
+    obyvak: 'prostor_obyvak', loznice: 'prostor_loznice', pokoj: 'prostor_pokoj', kuchyne: 'prostor_kuchyne',
+    jidelna: 'prostor_jidelna', koupelna: 'prostor_koupelna', wc: 'prostor_wc', chodba: 'prostor_chodba',
+    zadveri: 'prostor_zadveri', satna: 'prostor_satna', pracovna: 'prostor_pracovna', technicka: 'prostor_technicka',
+    pradelna: 'prostor_pradelna', spiz: 'prostor_spiz', sklad: 'prostor_sklad', garaz: 'prostor_garaz',
+};
+
+/** Typ prostoru z importu výkresu (CubiCasa) → druh místnosti. */
+const DRUH_Z_IMPORTU = {
+    LivingRoom: 'obyvak', Bedroom: 'loznice', Room: 'pokoj', Kitchen: 'kuchyne', Dining: 'jidelna', Bath: 'koupelna',
+    Entry: 'zadveri', DraughtLobby: 'zadveri', Hall: 'chodba', Closet: 'satna', DressingRoom: 'satna', Den: 'pracovna',
+    Utility: 'technicka', TechnicalRoom: 'technicka', Storage: 'sklad', Garage: 'garaz',
+};
 
 /** Název kusu z katalogu: slovník podle českého názvu, ten je zdroj a ukládá se vedle. Neznámý kus zůstane, jak je. */
 function nazevKusuKatalogu(rv) {
@@ -2764,6 +2781,23 @@ class StavebniEngine {
         return mapa;
     }
 
+    /**
+     * Druh místnosti. Výchozí název se převezme z druhu s prvním volným číslem („Obývák 2“),
+     * ručně napsaný název zůstane. Bez druhu („Jiná“) dostane výchozí název zpět „Místnost n“.
+     */
+    nastavDruhMistnosti(m, druh) {
+        const klic = DRUHY_MISTNOSTI[druh];
+        if (klic) m.druh = druh;
+        else delete m.druh;
+        if (!m.auto) return;
+        const obsazena = new Set(this.mistnosti.filter(x => x !== m).map(x => x.nazev));
+        const k = klic || 'mistnost_n';
+        let n = 1;
+        while (n < 10000 && obsazena.has(autoNazevMistnosti({ k, n }))) n++;
+        m.auto = { k, n };
+        m.nazev = autoNazevMistnosti(m.auto);
+    }
+
     /** Výchozí název místnosti s prvním volným číslem. */
     dalsiAutoMistnosti() {
         const obsazena = new Set(this.mistnosti.map(m => m.nazev));
@@ -3230,7 +3264,7 @@ class StavebniEngine {
 
         // Místnosti: jméno + barva + kotva (metry, y nahoru); plochy se nepersistují, počítá je rastr
         const mistnosti = (this.mistnosti || []).map(m => ({
-            id: m.id, nazev: m.nazev, ...(m.auto ? { auto: { ...m.auto } } : {}), barva: m.barva, ...(m.podlaha ? { podlaha: { ...m.podlaha } } : {}),
+            id: m.id, nazev: m.nazev, ...(m.auto ? { auto: { ...m.auto } } : {}), ...(m.druh ? { druh: m.druh } : {}), barva: m.barva, ...(m.podlaha ? { podlaha: { ...m.podlaha } } : {}),
             kotva: [Math.round(m.kotva.x / this.PX_PER_M * 1000) / 1000, Math.round(-m.kotva.y / this.PX_PER_M * 1000) / 1000],
         }));
 
@@ -3376,6 +3410,7 @@ class StavebniEngine {
                 id: m.id || this._id('M'),
                 nazev: m.auto?.k && typeof preloz === 'function' ? autoNazevMistnosti(m.auto) : String(m.nazev || ''),
                 ...(m.auto?.k ? { auto: { ...m.auto } } : {}),
+                ...(DRUHY_MISTNOSTI[m.druh] ? { druh: m.druh } : {}),
                 barva: /^#[0-9a-fA-F]{6}$/.test(m.barva || '') ? m.barva : PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length],
                 ...(m.podlaha?.dekor ? { podlaha: { ...m.podlaha } } : {}),
                 kotva: { x: m.kotva[0] * this.PX_PER_M, y: -m.kotva[1] * this.PX_PER_M },
@@ -3549,7 +3584,7 @@ class StavebniEngine {
                 const body = (p.vertices || []).map(v => this.getProstorVertexPx(v)).filter(Boolean);
                 if (body.length < 3) continue;
                 const kotva = { x: body.reduce((a, b) => a + b.x, 0) / body.length, y: body.reduce((a, b) => a + b.y, 0) / body.length };
-                this.mistnosti.push({ id: this._id('M'), nazev: String(p.nazev || p.typ || ''), barva: PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length], kotva });
+                this.mistnosti.push({ id: this._id('M'), nazev: String(p.nazev || p.typ || ''), ...(DRUH_Z_IMPORTU[p.typ] ? { druh: DRUH_Z_IMPORTU[p.typ] } : {}), barva: PALETA_MISTNOSTI[this.mistnosti.length % PALETA_MISTNOSTI.length], kotva });
             }
         }
 
@@ -4004,6 +4039,7 @@ if (typeof window !== 'undefined') {
     // Křídla, výška a parapet otvoru — sdílí je 2D renderer, inspektor i 3D
     window.TYPY_KRIDEL = TYPY_KRIDEL;
     window.PALETA_MISTNOSTI = PALETA_MISTNOSTI;
+    window.DRUHY_MISTNOSTI = DRUHY_MISTNOSTI;
     window.kridlaOtvoru = kridlaOtvoru;
     window.nastavPocetKridel = nastavPocetKridel;
     window.pocetKridelVolby = pocetKridelVolby;

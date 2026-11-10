@@ -37,6 +37,7 @@ return [
     'krok_uprava' => 'Edición',
     'krok_oddelovac' => 'Separador de estancia',
     'krok_nazev_mistnosti' => 'Nombre de estancia',
+    'krok_druh_mistnosti' => 'Tipo de estancia',
     'krok_barva_mistnosti' => 'Color de estancia',
     'krok_podlaha_mistnosti' => 'Suelo de estancia',
     'krok_smazani_oddelovace' => 'Borrar separador',

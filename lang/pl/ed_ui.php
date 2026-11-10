@@ -37,6 +37,7 @@ return [
     'krok_uprava' => 'Edycja',
     'krok_oddelovac' => 'Separator pomieszczenia',
     'krok_nazev_mistnosti' => 'Nazwa pomieszczenia',
+    'krok_druh_mistnosti' => 'Rodzaj pomieszczenia',
     'krok_barva_mistnosti' => 'Kolor pomieszczenia',
     'krok_podlaha_mistnosti' => 'Podłoga pomieszczenia',
     'krok_smazani_oddelovace' => 'Usunięcie separatora',

@@ -227,6 +227,9 @@ return [
     // Panel místnosti
     'mistnost' => [
         'nazev' => 'Stanza',
+        'druh_tip' => 'Tipo di stanza. Il nome predefinito si adegua, quello scritto da te resta.',
+        'druh' => 'Tipo',
+        'druh_jina' => 'Altro',
         'dekor_tip' => 'Finitura del pavimento di questa stanza in 3D',
         'dekor' => 'Finitura',
         'barva_podlahy' => 'Colore pavimento',

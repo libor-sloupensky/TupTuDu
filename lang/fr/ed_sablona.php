@@ -227,6 +227,9 @@ return [
     // Panel místnosti
     'mistnost' => [
         'nazev' => 'Pièce',
+        'druh_tip' => 'Type de pièce. Le nom par défaut s\'adapte, un nom que vous avez saisi reste.',
+        'druh' => 'Type',
+        'druh_jina' => 'Autre',
         'dekor_tip' => 'Revêtement du sol de cette pièce en 3D',
         'dekor' => 'Revêtement',
         'barva_podlahy' => 'Couleur du sol',

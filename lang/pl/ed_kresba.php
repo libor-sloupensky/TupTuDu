@@ -66,6 +66,7 @@ return [
     'prostor_obyvak' => 'Salon',
     'prostor_kuchyne' => 'Kuchnia',
     'prostor_koupelna' => 'Łazienka',
+    'prostor_wc' => 'WC',
     'prostor_jidelna' => 'Jadalnia',
     'prostor_vstup' => 'Wejście',
     'prostor_hala' => 'Hol',

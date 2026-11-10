@@ -227,6 +227,9 @@ return [
     // Panel místnosti
     'mistnost' => [
         'nazev' => 'Room',
+        'druh_tip' => 'Room type. The default name follows it, a name you typed stays.',
+        'druh' => 'Type',
+        'druh_jina' => 'Other',
         'dekor_tip' => 'Floor finish of this room in 3D',
         'dekor' => 'Floor finish',
         'barva_podlahy' => 'Floor colour',

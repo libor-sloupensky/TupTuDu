@@ -874,7 +874,7 @@
                             </div>
                         </template>
 
-                        {{-- MÍSTNOST: název, podlaha ve 3D, barva v půdorysu, plocha jen pro čtení --}}
+                        {{-- MÍSTNOST: název, druh, podlaha ve 3D, barva v půdorysu, plocha jen pro čtení --}}
                         <template x-if="inspector.kind === 'mistnost'">
                             <div class="flex flex-col gap-1 w-full">
                                 <div class="flex items-center gap-2">
@@ -886,6 +886,12 @@
                                            @keydown.enter.prevent="$event.target.blur()">
                                     <span class="text-gray-500 whitespace-nowrap" x-text="inspector.plocha !== null ? prelozCislo(inspector.plocha, 1) + ' m²' : ''"></span>
                                 </div>
+                                <div class="kk-podlazi-pole" title="{{ __('ed_sablona.mistnost.druh_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.mistnost.druh') }}</span>
+                                    <select class="flex-1 min-w-0 border border-gray-500 rounded px-1" data-druh-mistnosti @change="setMistnostDruh($event.target.value)">
+                                        <template x-for="k in druhyMistnostiVolby" :key="k.id">
+                                            <option :value="k.id" :selected="inspector.druh === k.id" x-text="k.nazev"></option>
+                                        </template>
+                                    </select></div>
                                 <div class="kk-podlazi-pole" title="{{ __('ed_sablona.mistnost.dekor_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.mistnost.dekor') }}</span>
                                     <select class="flex-1 min-w-0 border border-gray-500 rounded px-1" data-dekor-podlahy @change="setMistnostPodlaha({ dekor: $event.target.value })">
                                         <template x-for="k in dekoryPodlahVolby" :key="k.id">

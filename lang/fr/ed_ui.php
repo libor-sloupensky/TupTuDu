@@ -37,6 +37,7 @@ return [
     'krok_uprava' => 'Modification',
     'krok_oddelovac' => 'Séparateur de pièce',
     'krok_nazev_mistnosti' => 'Nom de la pièce',
+    'krok_druh_mistnosti' => 'Type de pièce',
     'krok_barva_mistnosti' => 'Couleur de la pièce',
     'krok_podlaha_mistnosti' => 'Sol de la pièce',
     'krok_smazani_oddelovace' => 'Suppression du séparateur',

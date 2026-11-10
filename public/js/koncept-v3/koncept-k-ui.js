@@ -280,7 +280,7 @@ function konceptKEditor(initialData) {
             if (sm.size > 0 && so.size === 0 && sw.size === 0) {
                 const m = this.engine.najdiMistnost([...sm][0]);
                 if (!m) return null;
-                return { kind: 'mistnost', count: 1, id: m.id, nazev: m.nazev, barva: m.barva, podlaha: this.podlahaMistnosti(m),
+                return { kind: 'mistnost', count: 1, id: m.id, nazev: m.nazev, druh: m.druh || '', barva: m.barva, podlaha: this.podlahaMistnosti(m),
                          plocha: this.renderer.plochaMistnosti(m.id), paleta: window.PALETA_MISTNOSTI || [],
                          // Úroveň podlahy a zvýšení přenesená z podlaží níž (dum.js)
                          uroven: this.urovenPanelMistnosti ? this.urovenPanelMistnosti(m) : null,
@@ -573,6 +573,14 @@ function konceptKEditor(initialData) {
             m.nazev = n;
             delete m.auto;    // od teď je to text uživatele, s jazykem se nemění
             this._poUpraveOtvoru(preloz('ed_ui.krok_nazev_mistnosti'));
+        },
+        /** Druh místnosti; výchozí název se přepne s ním, ručně napsaný zůstane (engine.nastavDruhMistnosti). */
+        setMistnostDruh(druh) {
+            const m = this._vybranaMistnost();
+            if (!m || (m.druh || '') === (druh || '')) return;
+            this.engine.pushUndo();
+            this.engine.nastavDruhMistnosti(m, druh);
+            this._poUpraveOtvoru(preloz('ed_ui.krok_druh_mistnosti'));
         },
         setMistnostBarva(hex) {
             const m = this._vybranaMistnost();

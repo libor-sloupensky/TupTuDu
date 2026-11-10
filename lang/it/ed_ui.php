@@ -37,6 +37,7 @@ return [
     'krok_uprava' => 'Modifica',
     'krok_oddelovac' => 'Divisore di stanza',
     'krok_nazev_mistnosti' => 'Nome stanza',
+    'krok_druh_mistnosti' => 'Tipo di stanza',
     'krok_barva_mistnosti' => 'Colore stanza',
     'krok_podlaha_mistnosti' => 'Pavimento stanza',
     'krok_smazani_oddelovace' => 'Eliminazione divisore',
