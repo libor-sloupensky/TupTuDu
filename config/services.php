@@ -64,6 +64,12 @@ return [
         'measurement_id' => env('GA4_MEASUREMENT_ID'),
     ],
 
+    // Looker Studio — adresa pro vložení přehledu návštěv do Masterteam ▸ Statistiky
+    // (https://lookerstudio.google.com/embed/reporting/…). Není tajná. Prázdné = místo přehledu upozornění.
+    'looker' => [
+        'navstevy_url' => env('LOOKER_NAVSTEVY_URL'),
+    ],
+
     // Token cron URL (/cron/bugy/{token}, /cron/chyby/{token}). Jen z env — na produkci
     // GitHub Secret CRON_TOKEN přes deploy.yml. Repo je veřejné → ŽÁDNÁ výchozí hodnota
     // (bez tokenu jsou cron URL zavřené, hash_equals s prázdným řetězcem neprojde).

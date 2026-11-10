@@ -8,6 +8,7 @@ use App\Http\Controllers\Masterteam\KonceptV3Controller;
 use App\Http\Controllers\Masterteam\KonceptV3PodkladController;
 use App\Http\Controllers\Masterteam\PravidlaObjektuController;
 use App\Http\Controllers\Masterteam\Seo404Controller;
+use App\Http\Controllers\Masterteam\StatistikyController;
 use App\Http\Controllers\Masterteam\UzivateleController;
 use App\Support\Domeny;
 use Illuminate\Support\Facades\Route;
@@ -92,6 +93,10 @@ Route::get('/jazyk/{kod}', function (Illuminate\Http\Request $request, string $k
 // nemusí měnit adresy natvrdo v JS editoru.
 Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('masterteam')->name('masterteam.')->group(function () {
     Route::get('/', fn () => view('masterteam.dashboard'))->name('dashboard');
+
+    // Statistiky — návštěvy (Looker Studio) a graf registrací s platícími (modules/statistiky.md)
+    Route::get('statistiky', [StatistikyController::class, 'index'])->name('statistiky');
+    Route::get('statistiky/registrace', [StatistikyController::class, 'registraceData'])->name('statistiky.registrace');
 
     // Správa uživatelů master týmu
     Route::get('uzivatele', [UzivateleController::class, 'index'])->name('uzivatele.index');

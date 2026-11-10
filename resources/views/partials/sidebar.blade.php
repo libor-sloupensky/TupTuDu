@@ -46,6 +46,7 @@
                     <span class="ml-2 inline-block min-w-[1.4rem] text-center text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">{{ $pocetAktivnichBugu }}</span>
                 @endif
             </a>
+            <a href="/masterteam/statistiky" class="{{ request()->is('masterteam/statistiky*') ? 'active' : '' }}">Statistiky</a>
             <a href="/masterteam/uzivatele" class="{{ request()->is('masterteam/uzivatele*') ? 'active' : '' }}">Uživatelé</a>
         </div>
 
