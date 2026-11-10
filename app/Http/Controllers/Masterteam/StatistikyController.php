@@ -72,6 +72,8 @@ class StatistikyController extends Controller
                 fn () => $google->vyhledavani($od->toDateString(), now()->toDateString()));
             $poStrankach = Cache::remember("statistiky-vyhledavani-stranky-{$od->toDateString()}", 3600,
                 fn () => $google->vyhledavaniPoStrankach($od->toDateString(), now()->toDateString()));
+            $poVyrazech = Cache::remember("statistiky-vyhledavani-vyrazy-{$od->toDateString()}", 3600,
+                fn () => $google->vyhledavaniPoVyrazech($od->toDateString(), now()->toDateString()));
         } catch (\Throwable $e) {
             return $this->chybaGoogle($e, 'vyhledávání');
         }
@@ -102,6 +104,9 @@ class StatistikyController extends Controller
                 // Průměrná pozice vážená zobrazeními (jako v Search Console)
                 'pozice' => $zobrazeni > 0 ? round($poDnech->sum(fn ($d) => $d['pozice'] * $d['zobrazeni']) / $zobrazeni, 1) : null,
             ],
+            // Hledané výrazy od nejčastěji zobrazených; pozice má smysl právě u jednotlivého výrazu
+            'vyrazy' => collect($poVyrazech)->map(fn ($v, $vyraz) => ['vyraz' => (string) $vyraz] + $v)
+                ->sortByDesc('zobrazeni')->take(100)->values(),
             'indexace' => [
                 'adres' => (clone $stav)->count(),
                 'zaindexovano' => (clone $stav)->where('zaindexovano', true)->count(),

@@ -1,5 +1,5 @@
 {{-- Uvedení autorů modelů z katalogu, které vyžaduje licence CC BY (modules/katalog.md). --}}
-<x-layouts.web :title="__('pravni.autori_titulek') . ' — TupTuDu'">
+<x-layouts.web :title="__('pravni.autori_titulek') . ' — TupTuDu'" :neindexovat="true">
     <article class="tt-pravni">
         <h1>{{ __('pravni.autori_titulek') }}</h1>
         <p>{{ __('pravni.autori_uvod') }}</p>

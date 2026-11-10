@@ -29,6 +29,10 @@ Jen pro master tým, česky, nepřekládá se.
   a pozicí každé stránky za období (Search Console podle stránky) a s datem a druhem robota (`indexace_url.robot`),
   pod ním „Stránky mimo index“ se stavem podle Googlu. Bod v grafu indexace je kolečko, v legendě čára (`styleLegendy`).
 
+- **Hledané výrazy** (10. 11. 2026, lokálně, nenasazeno): rozbalovací seznam výrazů se zobrazeními, kliknutími a pozicí.
+  Průměrná pozice v dlaždici je průměr přes všechny výrazy vážený zobrazeními, vypovídá jen jako trend; smysl má pozice u výrazu.
+- Po vyřazení právních stránek ze sitemapy klesne v grafu indexace počet adres z 51 na 27, není to výpadek.
+
 ## Soubory
 | Co | Kde |
 |---|---|

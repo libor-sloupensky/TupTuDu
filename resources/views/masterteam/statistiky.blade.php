@@ -149,7 +149,7 @@
                         <div class="mt-0.5 text-2xl font-bold text-primary-dark" x-text="vyh.kliknuti">–</div>
                     </div>
                     <div class="rounded border border-gray-100 bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wider text-gray-500">Průměrná pozice <span class="tt-tip" tabindex="0" data-tip="Na kolikátém místě ve výsledcích se web průměrně ukazuje. Nižší číslo je lepší, 1 až 10 je první stránka.">?</span></div>
+                        <div class="text-xs uppercase tracking-wider text-gray-500">Průměrná pozice <span class="tt-tip" tabindex="0" data-tip="Průměr přes všechny hledané výrazy a stránky, vážený počtem zobrazení. Samo o sobě moc neříká, protože pozice záleží na konkrétním výrazu. Hodí se jen pro sledování, jestli se průměr časem zlepšuje. Pozice u jednotlivých výrazů jsou v seznamu Hledané výrazy pod grafem.">?</span></div>
                         <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="vyh.pozice">–</div>
                     </div>
                     <div class="rounded border border-gray-100 bg-gray-50 p-3">
@@ -162,10 +162,39 @@
                 <div style="position: relative; height: 240px;"><canvas id="grafVyhledavani"></canvas></div>
                 <p class="mt-2 text-xs text-gray-500">Poslední dva až tři dny Search Console teprve dopočítává.</p>
 
+                <details class="mt-3 text-sm">
+                    <summary class="cursor-pointer text-gray-700">
+                        Hledané výrazy (<span x-text="vyh.vyrazy.length"></span>)
+                    </summary>
+                    <p x-show="!vyh.vyrazy.length" class="mt-2 text-xs text-gray-500">
+                        Google zatím žádný výraz neukázal. Výrazy, které hledalo jen pár lidí, z ochrany soukromí zamlčuje.
+                    </p>
+                    <table x-show="vyh.vyrazy.length" class="mt-2 w-full text-left text-xs">
+                        <thead class="text-gray-500">
+                            <tr>
+                                <th class="py-1 pr-3 font-medium">Výraz</th>
+                                <th class="py-1 pr-3 text-right font-medium">Zobrazení</th>
+                                <th class="py-1 pr-3 text-right font-medium">Kliknutí</th>
+                                <th class="py-1 pr-3 text-right font-medium">Pozice <span class="tt-tip" tabindex="0" data-tip="Na kolikátém místě se web průměrně ukázal lidem, kteří hledali tento výraz. 1 až 10 je první stránka výsledků.">?</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="v in vyh.vyrazy" :key="v.vyraz">
+                                <tr class="border-t border-gray-100">
+                                    <td class="py-1 pr-3 text-gray-900" x-text="v.vyraz"></td>
+                                    <td class="py-1 pr-3 text-right text-gray-900" x-text="v.zobrazeni"></td>
+                                    <td class="py-1 pr-3 text-right text-gray-900" x-text="v.kliknuti"></td>
+                                    <td class="py-1 pr-3 text-right text-gray-700" x-text="String(v.pozice).replace('.', ',')"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </details>
+
                 <h3 class="mb-2 mt-6 text-sm font-semibold text-gray-900">Indexace stránek ze sitemapy</h3>
                 <dl class="mb-3 space-y-1 text-xs text-gray-600">
                     <div><dt class="inline font-semibold text-gray-800">Adres v sitemapě</dt>
-                        <dd class="inline">= kolik stránek webu Googlu sami hlásíme, že je má znát. Sitemapa je seznam všech veřejných stránek (titulka, ceník, články ve všech jazycích), přibývá s každou novou stránkou.</dd></div>
+                        <dd class="inline">= kolik stránek webu Googlu sami hlásíme, že je má znát. Sitemapa je seznam všech veřejných stránek (titulka, ceník, kontakt a články v každém jazyce; právní texty v ní nejsou a do vyhledávání nepatří), přibývá s každou novou stránkou.</dd></div>
                     <div><dt class="inline font-semibold text-gray-800">V indexu</dt>
                         <dd class="inline">= kolik z nich už Google prošel a uložil, takže se mohou objevit ve vyhledávání. Rozdíl mezi čarami jsou stránky, které Google ještě nezařadil nebo je odmítl. Důvod je v seznamu pod grafem.</dd></div>
                 </dl>
@@ -184,7 +213,7 @@
                                 <th class="py-1 pr-3 font-medium">Adresa</th>
                                 <th class="py-1 pr-3 text-right font-medium">Zobrazení <span class="tt-tip" tabindex="0" data-tip="Kolikrát se stránka ve zvoleném období ukázala ve výsledcích hledání Google.">?</span></th>
                                 <th class="py-1 pr-3 text-right font-medium">Kliknutí</th>
-                                <th class="py-1 pr-3 text-right font-medium">Pozice <span class="tt-tip" tabindex="0" data-tip="Průměrné místo stránky ve výsledcích hledání. Nižší číslo je lepší.">?</span></th>
+                                <th class="py-1 pr-3 text-right font-medium">Pozice <span class="tt-tip" tabindex="0" data-tip="Průměr přes všechny výrazy, na které se stránka ukázala. Pozice u konkrétního výrazu je v seznamu Hledané výrazy.">?</span></th>
                                 <th class="py-1 pr-3 font-medium">Robot naposledy <span class="tt-tip" tabindex="0" data-tip="Kdy Google stránku naposledy navštívil a kterým robotem. Změny na stránce novější než toto datum Google ještě nezná.">?</span></th>
                             </tr>
                         </thead>
@@ -310,7 +339,7 @@
                 cesta: { kroky: [], funkce: [] },
                 nav: { navstevnici: '–', relace: '–', zobrazeni: '–', pocet: null },
                 reg: { celkem: '–', prumer: '–', uzivatelu: '–', platiciTed: '–', podil: '–', trzby: '–', pocet: null },
-                vyh: { zobrazeni: '–', kliknuti: '–', pozice: '–', index: '–', zkontrolovano: '', vIndexu: [], chybi: [] },
+                vyh: { zobrazeni: '–', kliknuti: '–', pozice: '–', index: '–', zkontrolovano: '', vyrazy: [], vIndexu: [], chybi: [] },
 
                 // Kolik návštěvníků se zaregistrovalo — jen když jsou obě čísla ze stejného období.
                 // Víc registrací než změřených návštěvníků (měření jen se souhlasem) nedává smysl → nic.
@@ -412,6 +441,7 @@
                         pozice: d.celkem.pozice === null ? '–' : String(d.celkem.pozice).replace('.', ','),
                         index: i.adres ? `${i.zaindexovano} z ${i.adres}` : '–',
                         zkontrolovano: i.zkontrolovano ? 'kontrola ' + i.zkontrolovano : 'zatím bez kontroly',
+                        vyrazy: d.vyrazy,
                         vIndexu: i.stranky.filter(u => u.zaindexovano),
                         chybi: i.stranky.filter(u => !u.zaindexovano),
                     };

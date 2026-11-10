@@ -1,5 +1,5 @@
 {{-- Rám právní stránky (PravniController). Obsah = celý dokument v jazyce návštěvníka. --}}
-<x-layouts.web :title="$titulek . ' — TupTuDu'">
+<x-layouts.web :title="$titulek . ' — TupTuDu'" :neindexovat="true">
     <article class="tt-pravni">
         @include($obsah)
     </article>

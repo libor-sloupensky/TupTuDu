@@ -6,6 +6,7 @@
     'prepinac' => null,     // kam vedou odkazy přepínače jazyka, výchozí jsou jazykové verze
     'obrazek' => null,      // náhled při sdílení, cesta od kořene webu
     'ogTyp' => 'website',
+    'neindexovat' => false, // stránka, která do vyhledávačů nepatří (právní texty); odkazy z ní roboti dál sledují
 ])
 {{-- Layout veřejného webu (tuptudu.com): vitrína, právní stránky, kontakt, články.
      Vlastní styly stránky jdou do slotu `hlava`. --}}
@@ -27,7 +28,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {{-- Indexuje se jen tuptudu.com (od 1. 11. 2026). Stejná titulka běží i na app.tuptudu.com (kvůli Paddle)
          a lokálně — tam noindex, ať Google nemá duplicitu. Kanonická adresa vždy na www. --}}
-    @if (Domeny::jeWeb())
+    @if (Domeny::jeWeb() && $neindexovat)
+    <meta name="robots" content="noindex, follow">
+    @elseif (Domeny::jeWeb())
     <link rel="canonical" href="{{ $ttKanonicka }}">
     @if (count($verze) > 1)
     @foreach ($verze as $kod => $adresa)

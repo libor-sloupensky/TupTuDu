@@ -82,15 +82,32 @@ class GoogleApi
     }
 
     /**
+     * Hledané výrazy, na které se web ukázal: výraz => zobrazení, kliknutí, pozice. Google z ochrany
+     * soukromí zamlčí výrazy, které hledalo jen pár lidí, součet proto bývá nižší než zobrazení celkem.
+     *
+     * @return array<string, array{zobrazeni: int, kliknuti: int, pozice: float}>
+     */
+    public function vyhledavaniPoVyrazech(string $od, string $do): array
+    {
+        return $this->vyhledavaniPodle('query', $od, $do);
+    }
+
+    /**
      * Výkon jednotlivých stránek ve vyhledávání za období: adresa => zobrazení, kliknutí, pozice.
      *
      * @return array<string, array{zobrazeni: int, kliknuti: int, pozice: float}>
      */
     public function vyhledavaniPoStrankach(string $od, string $do): array
     {
+        return $this->vyhledavaniPodle('page', $od, $do);
+    }
+
+    /** @return array<string, array{zobrazeni: int, kliknuti: int, pozice: float}> */
+    private function vyhledavaniPodle(string $rozmer, string $od, string $do): array
+    {
         $odpoved = $this->post(
             'https://www.googleapis.com/webmasters/v3/sites/' . rawurlencode(config('services.google_api.gsc_web')) . '/searchAnalytics/query',
-            ['startDate' => $od, 'endDate' => $do, 'dimensions' => ['page'], 'dataState' => 'all', 'rowLimit' => 5000]
+            ['startDate' => $od, 'endDate' => $do, 'dimensions' => [$rozmer], 'dataState' => 'all', 'rowLimit' => 5000]
         );
 
         $stranky = [];

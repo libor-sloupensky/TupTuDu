@@ -49,8 +49,12 @@ netlačit** (produkt čeká mnoho úprav).
 - `App\Http\Controllers\SeoController`: `/robots.txt` a `/sitemap.xml` generované podle části
   (`Domeny::cast()`), protože všechny tři subdomény sdílejí jeden `public/`:
   web → `Disallow: /cron/ /jazyk/ /api/` + odkaz na sitemapu; app a masterteam → `Disallow: /`,
-  sitemapa tam 404. **Nová veřejná stránka = přidat do `STRANKY_WEBU`** (ruční seznam: `/contact`, `/terms`,
-  `/privacy`, `/refunds`). Titulka, ceník a články se doplňují samy v každém jazyce, viz `modules/blog.md` (lokálně, 4. 11. 2026).
+  sitemapa tam 404. **Nová veřejná stránka = přidat do `STRANKY_WEBU`** (ruční seznam: `/`, `/pricing`, `/contact`).
+  **Právní stránky se neindexují** (Libor 10. 11. 2026): `/terms`, `/privacy`, `/refunds` a `/model-credits` mají
+  `noindex, follow` (vlastnost layoutu `neindexovat`) a v sitemapě nejsou. Hledáním na ně nikdo nechodí a v 8 jazycích
+  tvořily 24 z 51 adres. Paddlu stačí, že jsou veřejně dostupné a odkázané z patičky.
+  **Anglická titulka `/en` byla 10. 11. 2026 mimo index**: Google za kanonickou zvolil `https://tuptudu.com/`, kterou
+  naposledy viděl 1. 11. ještě s `noindex`. Značky na stránce jsou správně, čeká se na nové procházení kořene. Titulka, ceník a články se doplňují samy v každém jazyce, viz `modules/blog.md` (lokálně, 4. 11. 2026).
 - Layout `components/layouts/web`: na tuptudu.com `<link rel="canonical">` na www, jinde (app.tuptudu.com
   má stejnou titulku kvůli Paddle, lokál) `noindex`. Layouty app/prihlaseni/zakaznik mají `noindex` dál.
 - `public/.htaccess`: `tuptudu.com` → 301 na `www.tuptudu.com` (dřív obě odpovídaly 200 = duplicita).

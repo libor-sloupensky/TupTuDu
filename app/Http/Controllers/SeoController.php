@@ -27,9 +27,8 @@ class SeoController extends Controller
         '/' => '1.0',
         '/pricing' => '0.8',
         '/contact' => '0.5',
-        '/terms' => '0.3',
-        '/privacy' => '0.3',
-        '/refunds' => '0.3',
+        // Právní stránky (/terms, /privacy, /refunds, /model-credits) v sitemapě nejsou a mají noindex:
+        // hledáním na ně nikdo nechodí a ve 8 jazycích by tvořily polovinu adres webu (Libor 10. 11. 2026).
     ];
 
     public function robots(): Response
