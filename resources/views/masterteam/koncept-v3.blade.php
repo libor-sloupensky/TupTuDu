@@ -1034,7 +1034,7 @@
             {{-- Kompas --}}
             <div style="position:absolute;top:12px;right:12px;z-index:10;cursor:grab;user-select:none;width:56px;height:56px"
                  @mousedown.prevent="kompasStart($event)"
-                 @dblclick.prevent="kompasUhel = 0; aplikujRotaci(); fitView(); _katastrAutosave(); ulozitNastaveni()"
+                 @dblclick.prevent="kompasReset()"
                  data-tip-below="{{ __('ed_sablona.platno.kompas') }}">
                 <svg width="52" height="52" viewBox="0 0 52 52" style="margin:2px"
                      :style="'transform: rotate(' + kompasUhel + 'deg)'">

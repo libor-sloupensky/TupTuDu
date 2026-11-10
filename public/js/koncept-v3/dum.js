@@ -2936,7 +2936,10 @@
                 const geom = new THREE.BufferGeometry();
                 geom.setAttribute('position', new THREE.Float32BufferAttribute(pozice, 3));
                 geom.computeVertexNormals();
-                const m = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ color: 0xa8a29e, roughness: 0.95 }));
+                // Základ nad terénem má barvu fasády domu nad ním (Libor 10. 11. 2026), přebarví ho _nastavBarvy3d
+                const mat = new THREE.MeshStandardMaterial({ color: this.engine.dum.barvy?.fasada || 0xffffff, roughness: 0.85 });
+                mat.userData.barva = 'fasada';
+                const m = new THREE.Mesh(geom, mat);
                 m.castShadow = true;
                 m.receiveShadow = true;
                 m.userData.podlazi = c.id;

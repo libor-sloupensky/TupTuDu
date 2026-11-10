@@ -131,6 +131,16 @@ Klient posílá `verze`, ze které vychází. Když je na serveru jiná, `ulozit
 
 Při otáčení výběru se významný směr stěn (aspoň pětina jejich délky) přitáhne na vodorovnou a svislou obrazovky, ne kompasu (`_magnetRotace`, dosah 3°). Přichycení ukáže čára skrz střed. Alt vypíná.
 
+## Kompas ve 2D i 3D (Libor 10. 11. 2026)
+
+Jeden úhel `kompasUhel` pro obě zobrazení: dům je ve 3D natočený stejně jako půdorys, dolní strana půdorysu je u diváka.
+- **Ve 3D** kompas mění jen směr pohledu: azimut OrbitControls = úhel kompasu (`_kompasDo3d`). Sklon pohledu (shora nebo šikmo)
+  a vzdálenost zůstanou. Tah kompasem otáčí kamerou, dvojklik dá sever nahoru (`kompasReset`).
+- **Otočení pohledu myší** natočí kompas (`_kompasZ3d`, jen při tahu uživatele mezi `start` a `end`, náhled pro odkaz ani export
+  kompas nemění). Po puštění se uloží jako ve 2D.
+- **Po návratu do 2D** se půdorys natočí podle změny ve 3D (`_kompasZmenenV3d`, skryté plátno 2D nemá ve 3D rozměr). Při vstupu
+  do 3D se pohled natočí podle kompasu.
+
 ## Kóty u výběru
 
 `public/js/koncept-v3/koty-vyberu.js`, vlastní vrstva `kotyVyberuLayer`, ve stavu tahu se nekreslí. Rastr bez oddělovačů (`bezOddelovacu`) se po změně kresby počítá až 120 ms po výběru, aby nezdržel stisk myši.

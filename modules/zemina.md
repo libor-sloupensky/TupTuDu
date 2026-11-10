@@ -53,7 +53,7 @@ Rozhodnuto s Liborem 5. 11. 2026. Kde je spodek domu (`kóta − tloušťka zák
 
 - Rýha jde na spáru pod terénem v daném místě, pas sahá od spáry po spodek domu. Sejme se ornice a dosype se od dna výkopu po spodek konstrukce.
 - Panel píše, o kolik základ nejvýš vystupuje nad terén (`zakladNadTerenem`).
-- **Ve 3D** je to šedý pás po obvodu od podlahy do 30 cm pod terén, 1 cm za lícem, aby se nepral s deskou (`_zaklad3d`). Patří podlaží, skryje se s ním a jde i do sdíleného odkazu.
+- **Ve 3D** je to pás po obvodu v barvě fasády (Libor 10. 11. 2026, `userData.barva = 'fasada'`) od podlahy do 30 cm pod terén, 1 cm za lícem, aby se nepral s deskou (`_zaklad3d`). Patří podlaží, skryje se s ním a jde i do sdíleného odkazu.
 - **Zjednodušení:** dno rýhy sleduje terén plynule, stupně se nepočítají. Prostor pod domem se vždy dosype, podlaha na vysokém základu se vzduchem pod ní není. U vysokého základu je množství zásypu proto horní odhad. Dosypání se počítá přes celou plochu domu včetně pasů, u domu 12 × 10 m vyjde 12 m³ místo asi 9,5 m³.
 
 ## Vypnuté prodloužení: dům bez kontaktu se zemí

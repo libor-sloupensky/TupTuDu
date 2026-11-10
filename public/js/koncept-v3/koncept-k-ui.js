@@ -5707,7 +5707,8 @@ function konceptKEditor(initialData) {
                 const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI;
                 // Snap po 0.1° — plynulá rotace, minimální zaokrouhlovací šum
                 this.kompasUhel = Math.round((startKompas + (angle - startAngle)) * 10) / 10;
-                this.aplikujRotaci();
+                if (this.rezim3d) this._kompasDo3d();
+                else this.aplikujRotaci();
             };
             const onUp = () => {
                 document.removeEventListener('mousemove', onMove);
@@ -5717,6 +5718,43 @@ function konceptKEditor(initialData) {
             };
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup', onUp);
+        },
+
+        /** Dvojklik na kompas: sever nahoru, ve 2D i celý dům na obrazovku. */
+        kompasReset() {
+            this.kompasUhel = 0;
+            if (this.rezim3d) this._kompasDo3d();
+            else { this.aplikujRotaci(); this.fitView(); }
+            this._katastrAutosave();
+            this.ulozitNastaveni();
+        },
+
+        /**
+         * Kompas ve 3D: pohled je natočený jako půdorys ve 2D, dolní strana půdorysu je u diváka.
+         * Mění jen směr pohledu (azimut OrbitControls = úhel kompasu), sklon a vzdálenost zůstanou.
+         */
+        _kompasDo3d() {
+            const _3d = window._kk3d;
+            if (!_3d?.controls || !window.THREE) return;
+            const c = _3d.controls, cam = _3d.camera;
+            const posun = cam.position.clone().sub(c.target);
+            const s = new THREE.Spherical().setFromVector3(posun);
+            s.theta = (this.kompasUhel || 0) * Math.PI / 180;
+            posun.setFromSpherical(s);
+            cam.position.copy(c.target).add(posun);
+            c.update();
+            this._kompasZmenenV3d = true;   // 2D se natočí po návratu, skryté plátno nemá rozměr
+        },
+
+        /** Otočení pohledu myší ve 3D natočí kompas, ať 2D a 3D drží stejnou orientaci. */
+        _kompasZ3d() {
+            const c = window._kk3d?.controls;
+            if (!c) return;
+            const uhel = c.getAzimuthalAngle() * 180 / Math.PI;
+            // Nejbližší k dosavadní hodnotě, ať kompas neskočí o 360°
+            const novy = uhel + 360 * Math.round(((this.kompasUhel || 0) - uhel) / 360);
+            this.kompasUhel = Math.round(novy * 10) / 10;
+            this._kompasZmenenV3d = true;
         },
 
         aplikujRotaci(keepPosition = false) {
@@ -6726,6 +6764,7 @@ function konceptKEditor(initialData) {
                     return;
                 }
                 self.resizeKonva(true);
+                if (self._kompasZmenenV3d) { self._kompasZmenenV3d = false; self.aplikujRotaci(); }
                 if (self.renderer) {
                     // Explicitní rebuild všech vrstev
                     self.renderer.renderWalls();
@@ -6760,6 +6799,8 @@ function konceptKEditor(initialData) {
             this._buildTerrain3D();
             this._build3d();
             this._resize3d();
+            this._kompasDo3d();
+            this._kompasZmenenV3d = false;
         },
 
         async _init3d() {
@@ -6809,6 +6850,16 @@ function konceptKEditor(initialData) {
             controls.enableDamping = true;
             controls.dampingFactor = 0.1;
             controls.maxPolarAngle = Math.PI / 2.1;
+
+            // Otočení pohledem myší natočí kompas (jen tah uživatele, ne náhled pro odkaz nebo export)
+            controls.addEventListener('start', () => { this._orbitTah = true; });
+            controls.addEventListener('change', () => { if (this._orbitTah) this._kompasZ3d(); });
+            controls.addEventListener('end', () => {
+                if (!this._orbitTah) return;
+                this._orbitTah = false;
+                this._katastrAutosave();
+                this.ulozitNastaveni();
+            });
 
             // Klik bez tažení vybere kus nábytku (tažení otáčí pohledem)
             this._kus3dKlik?.(renderer.domElement);
