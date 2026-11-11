@@ -39,7 +39,8 @@ synchronizaci je nepřepsat.
 **Zahazuje se jako šum:** roboti, prohlížeče starší než Chrome 107 / Firefox 104 /
 Safari 16, rozšíření prohlížeče, krypto peněženky, `Script error.`, `ResizeObserver
 loop`, síťové výpadky (`Failed to fetch`…), prázdné odmítnutí promise, výjimky
-z `artisan tinker`, 404/419/422/401/403 v `report()`.
+z `artisan tinker` a ze samostatných ladicích skriptů (konzole mimo `artisan`), 404/419/422/401/403
+v `report()`. Vypršené spojení s Googlem ve statistikách (`cURL error 28` aj.) jde jen do `Log::warning`.
 
 ## E-mail
 - `bugy:notifikace` — jen při **vzniku** bugu úrovně `error` (opakování aktivního
@@ -64,7 +65,7 @@ z `artisan tinker`, 404/419/422/401/403 v `report()`.
 ## Odchylky od Kalkulia (nepřepisovat)
 - `ZrcadliLogDoBugu` se **neregistruje ručně** — Laravel ho najde sám (auto-discovery);
   ruční `Event::listen` ho zdvojí. Kontrola: `php artisan event:list`.
-- `report()` přeskakuje výjimky z `artisan tinker`.
+- `report()` přeskakuje výjimky z `artisan tinker` a ze skriptů spuštěných mimo `artisan` (`argv[0]`, bugy 80 a 81, 11. 11. 2026).
 - Cron je routa (`/cron/bugy/{token}` = `/cron/{token}`), ne `public/cron.php`; úlohy a intervaly ve společném `App\Support\PlanovaneUlohy` (2026-10-27).
 - `error-tracker.blade.php` místo bundlu `app.js`; helpery existují i bez CSRF meta.
 - Detail bugu zobrazuje blok „Kontext".
