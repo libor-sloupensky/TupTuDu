@@ -42,7 +42,7 @@ Valbová střecha má šikmou plochu i nad kratšími stranami domu. Působí ni
 
 Pultová střecha má jen jednu plochu, která stoupá od okapu k vysoké stěně. Hodí se k modernímu domu, bungalovu, přístavbě nebo garáži. Vysoká stěna bývá často na jihu, aby se do ní vešla velká okna. Střecha pak míří k severu, pro fotovoltaiku se hodí opačné otočení.
 
-Sklon bývá 5 až 25° a řídí se krytinou. Plech a fólie snesou podle výrobce sklon zhruba od 3 do 7°, asfaltový šindel a tašky potřebují víc. Běžné tašky mají bezpečný sklon 22 až 30° a nejmenší sklon zhruba 12 až 20°. Mezi nimi výrobce předepíše těsnější pojistnou hydroizolaci, pod nejmenším sklonem taška použít nejde. Pod obytným podkrovím je pojistná hydroizolace vždy. Při malém sklonu leží sníh déle a všechnu vodu svede jeden žlab, ten musí být dost velký.
+Sklon bývá 5 až 25° a řídí se krytinou. Plech snese podle výrobce sklon zhruba od 3 do 7°, fólie i méně, asfaltový šindel a tašky potřebují víc. Běžné tašky mají bezpečný sklon 22 až 30° a nejmenší sklon zhruba 12 až 20°. Mezi nimi výrobce předepíše těsnější pojistnou hydroizolaci, pod nejmenším sklonem taška použít nejde. Pod obytným podkrovím je pojistná hydroizolace vždy. Při malém sklonu leží sníh déle a všechnu vodu svede jeden žlab, ten musí být dost velký.
 
 ## Sklon střechy a jeho výpočet
 

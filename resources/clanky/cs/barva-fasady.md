@@ -20,14 +20,14 @@ souvisejici: jak-nakreslit-pudorys-domu, typy-strech
 - Krajský soud v Praze, 48 A 25/2016 (Veltrusy): ochranné pásmo zámku, povolení předepsalo pálenou krytinu, nařízené odstranění černé betonové krytiny potvrzeno | https://vyhledavac.nssoud.cz/DokumentOriginal/Index/452368
 - Zákon 20/1987 Sb., § 14 odst. 2: závazné stanovisko obce s rozšířenou působností v památkové zóně, rezervaci a ochranném pásmu, i k udržovacím pracím | https://www.zakonyprolidi.cz/cs/1987-20
 ---
-::obrazek /img/clanky/barva-fasady/barva-fasady-uvod.webp | Bílý přízemní dům s černou taškovou střechou a antracitovými okny, pohled ze zahrady na velká okna obývacího pokoje. | Světlá fasáda s tmavou střechou a okny: kontrast, který sedí skoro vždy, editor TupTuDu | 1200 | 630
+::obrazek /img/clanky/barva-fasady/barva-fasady-uvod.webp | Bílý přízemní dům s antracitovou taškovou střechou a antracitovými okny, pohled na osluněný štít, vpravo zahradní strana s velkými okny. | Světlá fasáda s tmavou střechou a okny: kontrast, který sedí skoro vždy, editor TupTuDu | 1200 | 630
 
 ## Nejdřív střecha a okna
 
 Krytina a okna vydrží desítky let, fasáda se přetírá častěji. Proto se volí k nim.
 
 - **K červené pálené střeše** sedí klidné teplé tóny: krémová, písková, okrová nebo teplá bílá.
-- **K černé nebo antracitové střeše** se hodí skoro cokoli, nejčastěji bílá a světle šedá. Snese i výraznější barvu, kontrast je tu výhoda. U zatepleného domu si ale ověř HBW, sytý odstín bývá pod hranicí (níž).
+- **K černé nebo antracitové střeše** se hodí skoro cokoli, nejčastěji bílá a světle šedá. Snese i výraznější barvu, kontrast je tu výhoda. U zatepleného domu si ale ověř světelnou odrazivost HBW, sytý odstín bývá pod hranicí.
 - **Bílá okna** snesou jakoukoli fasádu. **Antracitová** snesou i výraznější barvu, nejvíc ale vyniknou na světlé. **Hnědá okna** v dekoru dřeva ladí s krémovou, pískovou, okrovou i bílou.
 
 Stačí tři barvy: fasáda, střecha a okna. Vchodové dveře a vrata dej do barvy oken, nebo ať jsou jediným výraznějším prvkem. Jestli střechu teprve vybíráš, porovnej [typy střech](clanek:typy-strech) na stejném domě.
@@ -54,7 +54,7 @@ Malý čtvereček v obchodě vypadá jinak než celá stěna venku. Odstín měn
 |:---|:---|:---|:---|
 | bílá (RAL 9016) | antracitová (RAL 7016) | antracitová | moderně |
 | krémová (RAL 9001) | cihlově červená | bílá | tradičně |
-| písková | hnědá | hnědá, dekor dřeva | teple |
+| písková | hnědá | hnědá | teple |
 | světle šedá (RAL 7035) | černá | bílá | střídmě |
 
 ::obrazek /img/clanky/barva-fasady/barva-fasady-kombinace.webp | Stejný dům ve čtyřech kombinacích: bílá fasáda s antracitovou střechou a okny, krémová s červenou střechou a bílými okny, písková s hnědou střechou a hnědými okny, světle šedá s černou střechou a bílými okny. | Kombinace z tabulky na stejném domě. Barvy na obrazovce jsou orientační, editor TupTuDu | 1200 | 802

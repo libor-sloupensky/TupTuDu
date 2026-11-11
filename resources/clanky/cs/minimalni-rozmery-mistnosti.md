@@ -29,7 +29,7 @@ souvisejici: jak-nakreslit-pudorys-domu, vypocet-schodiste
 | Ložnice pro dva | předpis 8 m², norma také 8 m² | 3 × 3 m: postel 160 × 200 a dva stolky, skříň ne. 3 × 3,6 až 3,7 m: k tomu skříň a průchod, podle otvírání skříně a polohy dveří. 3 × 4 m: pohodlně |
 | Pokoj pro jedno dítě | předpis 8 m² | 2,6 × 3,1 m: postel 90 × 200, skříň 100 cm, psací stůl 120 cm a volné místo asi 1 × 1,5 m |
 | Obývací pokoj | předpis 8 m², víc nic. Dřívější norma 16 až 24 m² podle velikosti bytu a stolování, šířka 3,3 m | pohovka 220 cm, stolek a stěna s televizí potřebují šířku aspoň 3,3 m |
-| Chodba | předpis pro rodinný dům minimum nemá | 90 cm: projde jeden člověk. 120 cm: minou se dva. 130 až 150 cm: pohodlně i s botníkem |
+| Chodba | předpis pro rodinný dům minimum nemá | 90 cm: projde jeden člověk. 120 cm: minou se dva. 150 cm: minou se i vedle botníku |
 
 **Předpis** je vyhláška o požadavcích na výstavbu a je závazný. **Norma** ČSN 73 4301 je jen doporučení, závazná je, když se na ni odvolá předpis nebo smlouva. Vydání platné od července 2026 už nedoporučuje 12 m² pro ložnici se dvěma lůžky ani nejmenší šířky pokojů. Praha, Brno a Ostrava mají vlastní stavební předpisy a čísla se tam mohou lišit. Sloupec vpravo je náš výpočet z běžného nábytku, ne předpis.
 

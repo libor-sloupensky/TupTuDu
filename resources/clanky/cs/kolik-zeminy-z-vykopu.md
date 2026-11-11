@@ -67,7 +67,7 @@ Pro vlastní odhad sečti v kalkulačce nakypřenou ornici navíc a nakypřený 
 
 Kalkulačka počítá rovinu. Na svahu se [základy dělají po stupních](clanek:zaklady-na-svahu) a dole bývají vyšší. O objemu nejvíc rozhoduje, jak vysoko dům osadíš. Editor terén parcely zná, stupně ale nepočítá a pod domem vždy dosype, u vysokého základu je zásyp spíš horní odhad.
 
-::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | 3D pohled na přízemní dům na svahu s okny a vchodem na horní straně, šedý základ je na dolní straně vyšší | Dům na mírně svažité parcele: základ (pro názornost šedě) se na dolní straně protáhne od terénu až pod podlahu, editor TupTuDu | 1200 | 700
+::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | 3D pohled na přízemní dům na svahu s okny na všech stranách a vchodem na horní straně svahu, šedý základ je na dolní straně vyšší | Dům na mírně svažité parcele: základ (pro názornost šedě) se na dolní straně protáhne od terénu až pod podlahu, editor TupTuDu | 1200 | 700
 
 ::obrazek /img/clanky/kolik-zeminy-z-vykopu/vykop-svah.webp | 3D pohled na výkop pod dům zapuštěný do terénu | Výkop pro stejný dům zapuštěný hlouběji do terénu, dům je skrytý: víc se kope, míň se dosype, editor TupTuDu | 1200 | 700
 

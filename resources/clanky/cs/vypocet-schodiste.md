@@ -40,7 +40,7 @@ Kalkulačka počítá přímé schody, lomené do L a do U s odpočívadly i se 
 | 2,80 m | 16 | 175 mm | 280 mm | 4,20 m | 32,0° |
 | 2,90 m | 17 | 171 mm | 289 mm | 4,62 m | 30,6° |
 | 3,05 m | 18 | 169 mm | 291 mm | 4,95 m | 30,2° |
-| 3,20 m | 19 | 168 mm | 293 mm | 5,28 m | 29,9° |
+| 3,10 m | 18 | 172 mm | 286 mm | 4,85 m | 31,1° |
 
 Při 3,05 m by 17 výšek dalo nášlap jen 271 mm, proto 18. Počet stupňů je počet výšek.
 

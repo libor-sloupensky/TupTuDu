@@ -112,12 +112,13 @@ async function barvaFasady(s) {
     await s.js(`return ${sn('slozit')}('barvy', ['b0', 'b1', 'b2', 'b3'], 2);`);
     await s.uloz('barvy', 'barva-fasady', 'barva-fasady-kombinace', { jpg: false });
 
-    // Úvodní obrázek (i náhled při sdílení): světlá fasáda s tmavou střechou a okny, zahradní strana s velkými okny,
-    // pohled skoro z výšky očí a z jiného místa než mřížka kombinací
+    // Úvodní obrázek (i náhled při sdílení): světlá fasáda s tmavou střechou a okny, pohled skoro z výšky očí na štít,
+    // který je na slunci (slunce v editoru svítí pevně od jihozápadu, zahradní strana s velkými okny by byla ve stínu
+    // a bílá by vyšla šedá), zahradní strana ubíhá vpravo
     await barvy(kombinace[0]);
-    const zahrada = await s.js(`const t = e.smerRastru(), U = [Math.cos(t), Math.sin(t)], V = [-Math.sin(t), Math.cos(t)];
-        return [U[0] - 0.35 * V[0], U[1] - 0.35 * V[1]];`);
-    await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(11, zahrada[0], zahrada[1]))}, pomer: ${OG[0] / OG[1]}, okraj: 0.06 }); return true;`);
+    const stit = await s.js(`const t = e.smerRastru(), U = [Math.cos(t), Math.sin(t)], V = [-Math.sin(t), Math.cos(t)];
+        return [V[0] + 0.55 * U[0], V[1] + 0.55 * U[1]];`);
+    await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(11, stit[0], stit[1]))}, pomer: ${OG[0] / OG[1]}, okraj: 0.06 }); return true;`);
     await S.pauza(800);
     await s.js(`return ${sn('snimek')}('uvod', ${OG[0]}, ${OG[1]});`);
     await s.uloz('uvod', 'barva-fasady', 'barva-fasady-uvod', { jpg: false });
@@ -293,7 +294,13 @@ async function pudorysDomu(s) {
         const kusy = [kusAB('${WC_KOMBI}', -5.165, -3.34 + 0.346 + 0.01, 0), kusAB('${VANA}', -4.68 - 0.9 - 0.02, -4.99 + 0.35 + 0.01, 0),
             kusAB('${UMYVADLO}', -7.89 + 0.23 + 0.01, -2.1, -90)];
         const obyvak = e.mistnosti.find(m => m.druh === 'obyvak'); if (obyvak) { obyvak.nazev = 'Obývák s kuchyní'; delete obyvak.auto; }
-        d.renderer._mistnostiCache = null; d.renderer.render(); d.autoSave('Vybavení'); return { dvereWC: [puvodne, dvereWC?.strana], kusy };`);
+        // Obvodové zdi zděného domu se zateplením 45 cm (vzor má 30 cm, článek před tím přímo varuje); zesílí se kolem osy
+        let obvodovych = 0; for (const w of e.walls.values()) if (w.typ === 'obvodova') { w.tloustka = 0.45; obvodovych++; }
+        // Sloup krytého vstupu drží střechu; na půdorysu a ve 3D bez střechy by stál bez smyslu
+        const sloupu = (e.dum.sloupy || []).length; e.dum.sloupy = [];
+        d.renderer._mistnostiCache = null; d.renderer.render(); d.autoSave('Vybavení');
+        const plochy = Object.fromEntries(e.mistnosti.filter(m => d.renderer.plochaMistnosti(m.id) > 0).map(m => [m.nazev, d.renderer.plochaMistnosti(m.id)]));
+        return { dvereWC: [puvodne, dvereWC?.strana], kusy, obvodovych, sloupu, plochy };`);
     console.log('   úprava kopie', JSON.stringify(uprava));
     await S.pauza(800);
     // Kontrolní půdorys s nábytkem (do článku nejde)

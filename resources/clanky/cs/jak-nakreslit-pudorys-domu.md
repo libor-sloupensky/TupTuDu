@@ -24,7 +24,7 @@ souvisejici: minimalni-rozmery-mistnosti, vypocet-schodiste, typy-strech, barva-
 - ESTAV.cz: Schodiště a jeho základní rozměry (2h + b = 630 mm) | https://www.estav.cz/cz/2581.schodiste-a-jeho-zakladni-rozmery
 - Kalkulačka TupTuDu (článek Výpočet schodiště): 2,90 m mezi podlažími = 17 výšek po 171 mm, nášlap 289 mm, přímé rameno 4,62 m; 3,05 m = 18 výšek, rameno 4,95 m (nášlap aspoň 275 mm podle vyhlášky 146/2024 Sb.) | https://www.tuptudu.com
 ---
-::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Půdorys přízemí rodinného domu s kótami v centimetrech a s názvy a plochami místností: obývák s kuchyní 33,4 m², pokoj 12,1 m², ložnice 10,6 m², koupelna 8,8 m², pracovna 8,1 m², zádveří 5,8 m², WC 1,8 m². | Přízemí vzorového domu 12,54 × 8,23 m s kótami, místnostmi a plochami, editor TupTuDu | 1200 | 857
+::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Půdorys přízemí rodinného domu s kótami v centimetrech a s názvy a plochami místností: obývák s kuchyní 32,3 m², pokoj 11,6 m², ložnice 10,1 m², koupelna 8,5 m², pracovna 7,7 m², zádveří 5,6 m², WC 1,8 m². | Přízemí vzorového domu 12,69 × 8,38 m s obvodovými zdmi 45 cm, kótami, místnostmi a plochami, editor TupTuDu | 1200 | 860
 
 ## Než začneš kreslit
 
@@ -53,7 +53,7 @@ Sepiš místnosti s přibližnou plochou a rozděl je na denní a noční část
 | Dveře do koupelny a na WC | 70 až 80 cm |
 | Vchodové dveře | od 90 cm |
 | Volné místo kolem postele | aspoň 60 cm |
-| Přímé schody do patra | asi 1 × 4,5 až 5 m |
+| Přímé schody do patra | asi 1 × 4 až 5 m |
 
 :::pozor Častá chyba: tenké stěny
 Když u zděného domu při stejném vnějším rozměru nakreslíš obvodovou stěnu 30 cm místo 50 cm, každá místnost u fasády vyjde o 20 cm hlubší, než bude. Napříč domem pak chybí 40 cm a nábytek, který se na výkrese vešel, se do domu nevejde.
