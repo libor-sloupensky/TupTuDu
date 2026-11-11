@@ -48,7 +48,9 @@ Sklon bývá 5 až 25° a řídí se krytinou. Plech snese podle výrobce sklon 
 
 Sklon je úhel mezi střešní plochou a vodorovnou rovinou. Spočítáš ho z výšky hřebene nad místem, kde střecha protíná líc obvodové stěny, a z vodorovné vzdálenosti od toho líce k hřebeni: tg α = výška / vzdálenost.
 
-Příklad: sedlová střecha na domě širokém 10 m má k hřebeni vodorovně 5 m. Při sklonu 38° je hřeben 5 × tg 38° ≈ 3,9 m nad lícem stěny. Sklon v procentech je stejný poměr krát sto, tedy 78 %. Pozor, 45° je 100 %, stupně a procenta se nezaměňují.
+Příklad: sedlová střecha na domě širokém 10 m má k hřebeni vodorovně 5 m. Při sklonu 38° je hřeben 5 × tg 38° ≈ 3,9 m nad lícem stěny.
+
+Sklon se udává i v procentech: kolik střecha stoupne na každý metr vodorovně. Tady stoupá 3,9 m na 5 m, tedy 78 cm na metr, a to je 78 %. Procenta ale nejsou stupně: 45° znamená metr stoupání na metr, tedy 100 %, a 30° jen 58 %. Když výrobce krytiny uvádí nejmenší sklon v procentech, přepočítej ho, než ho porovnáš se stupni.
 
 ::obrazek /img/clanky/typy-strech/sedlova-30-45.webp | Dva pohledy kolmo na štít stejného domu: vlevo sedlová střecha se sklonem 30°, vpravo 45°. | Stejný dům se sedlovou střechou 30° a 45°: strmější sklon zvedne hřeben a dá víc místa v podkroví, editor TupTuDu | 1200 | 500
 
