@@ -9,7 +9,7 @@ revize: 2026-11-09
 autor: Libor z TupTuDu
 stav: zverejneno
 obrazek: /img/clanky/kolik-zeminy-z-vykopu/vykop-svah.jpg
-souvisejici: koeficient-nakypreni-zeminy, zaklady-na-svahu, skryvka-ornice, nezamrzna-hloubka-zakladu
+souvisejici: koeficient-nakypreni-zeminy, jak-nakreslit-pudorys-domu, zaklady-na-svahu, skryvka-ornice, nezamrzna-hloubka-zakladu
 - ČESKÉSTAVBY.cz: Bez kvalitních základů rodinný dům nepostavíme (ornice 25 až 30 cm, deponie, zásyp štěrkem) | https://www.ceskestavby.cz/clanky/bez-kvalitnich-zakladu-rodinny-dum-nepostavime-28882.html
 - ČESKÉSTAVBY.cz: Jak se staví základy domu (pasy, spára, zásypy pod desku) | https://www.ceskestavby.cz/clanky/jak-se-stavi-zaklady-domu-25506.html
 - ČESKÉSTAVBY.cz: Zemní práce při stavbě domu (odvezená zemina, doklad) | https://www.ceskestavby.cz/jak-se-stavi-dum/zemni-prace-5193.html

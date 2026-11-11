@@ -105,7 +105,8 @@ async function main() {
         kontrola('do aplikace vedou aspoň tři cesty', doAplikace >= 3, String(doAplikace));
         kontrola('odkaz na napsaný článek funguje', await p.vyhodnot(`!!document.querySelector('.tt-clanek p a[href$="/cs/clanky/koeficient-nakypreni-zeminy"]')`));
         kontrola('článek, který ještě není, zůstane jen textem', await p.vyhodnot(`!document.querySelector('.tt-clanek a[href*="zaklady-na-svahu"]') && document.querySelector('.tt-clanek').textContent.replace(/\\u00a0/g, ' ').includes('základy dělají po stupních')`));
-        kontrola('související články ukazují jen napsané', await p.vyhodnot(`document.querySelectorAll('.tt-clanky-polozka').length === 1`));
+        kontrola('související články ukazují jen napsané', await p.vyhodnot(`(() => { const a = [...document.querySelectorAll('.tt-clanky-polozka a')].map(x => x.getAttribute('href'));
+            return a.length >= 1 && a.some(h => h.endsWith('/koeficient-nakypreni-zeminy')) && !a.some(h => /zaklady-na-svahu|skryvka-ornice|nezamrzna/.test(h)); })()`));
         await snimekCele(p, path.join(VYSTUP, 'clanek-pocitac-tmavy.png'));
         await p.vyhodnot(`document.documentElement.dataset.theme = 'light'`);
         await pauza(200);

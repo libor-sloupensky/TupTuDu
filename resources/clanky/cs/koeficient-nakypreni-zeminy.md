@@ -8,7 +8,7 @@ overeno: 2026-11-09
 revize: 2026-11-09
 autor: Libor z TupTuDu
 stav: zverejneno
-souvisejici: kolik-zeminy-z-vykopu
+souvisejici: kolik-zeminy-z-vykopu, jak-nakreslit-pudorys-domu
 - Technický dozor Brno: Zemina z výkopu (koeficienty) | https://dozor-brno.cz/poradna-vykopova-zemina.html
 - RTS, HSV 800-1: Zemní práce (nakypření a objemová hmotnost podle tříd, účtování) | https://www.cenovasoustava.cz/files/HSV_800-1.pdf
 - FAST VUT: Zemní práce (nakypření, ornice 20 %) | https://www.fce.vutbr.cz/tst/x_txt_predmet_bw51_1_zemni-prace.pdf
