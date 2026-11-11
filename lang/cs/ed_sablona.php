@@ -268,7 +268,8 @@ return [
     // Kopie vzorového projektu (App\Support\VzorovyProjekt)
     'vzor' => [
         'nadpis' => 'Vzorový projekt na hraní.',
-        'text' => 'Zkoušej cokoli, úpravy tady nic nestojí a nepočítají se do limitu tarifu. Každou noc ve 3:00 se projekt vrátí do výchozího stavu, tvoje změny se smažou. Co si chceš nechat, dělej ve vlastním projektu.',
+        'text' => 'Zkoušej cokoli, úpravy tady nic nestojí a nepočítají se do limitu tarifu.',
+        'obnova' => 'Každou noc ve 3:00 se projekt vrátí do výchozího stavu, tvoje změny se smažou. Co si chceš nechat, dělej ve vlastním projektu.',
         'zavrit' => 'Skrýt do zítřka',
     ],
     'projekt' => [

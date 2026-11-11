@@ -268,7 +268,8 @@ return [
     // Kopie vzorového projektu (App\Support\VzorovyProjekt)
     'vzor' => [
         'nadpis' => 'Sample project to play with.',
-        'text' => 'Try anything: edits here are free and do not count towards your plan limit. Every night at 3:00 the project resets to its original state and your changes are deleted. Keep anything you want in your own project.',
+        'text' => 'Try anything: edits here are free and do not count towards your plan limit.',
+        'obnova' => 'Every night at 3:00 the project resets to its original state and your changes are deleted. Keep anything you want in your own project.',
         'zavrit' => 'Hide until tomorrow',
     ],
     'projekt' => [

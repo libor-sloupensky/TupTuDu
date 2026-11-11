@@ -123,9 +123,11 @@
                        color: #6b7280; border-radius: 6px 0 0 0; cursor: pointer; }
     .kk-panel-zavrit:hover { color: var(--c-surface); background: var(--c-primary); }
     /* Panel „Podlaží a plochy": řádek = podlaží, klik přepíná, tužka rozbalí úpravy právě tohoto řádku */
-    .kk-podlazi-radek { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 8px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--c-text-secondary); }
-    .kk-podlazi-radek:hover { background: var(--c-primary-10); }
-    .kk-podlazi-radek.kk-aktivni { background: var(--c-primary-10); color: var(--c-primary-text); font-weight: 700; box-shadow: inset 3px 0 0 var(--c-primary); }
+    /* Řádek podlaží, střechy a základů; vybraný jako upozornění U1 z grafického manuálu (modules/brand.md) */
+    .kk-podlazi-radek { position: relative; display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 13px; border-radius: var(--s-radius); cursor: pointer; font-size: 12px; color: var(--c-text-secondary); }
+    .kk-podlazi-radek:hover { background: var(--c-bg); }
+    .kk-podlazi-radek.kk-aktivni { background: var(--c-bg); color: var(--c-primary-text); font-weight: 600; }
+    .kk-podlazi-radek.kk-aktivni::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 3px; border-radius: 2px; background: var(--c-primary); }
     .kk-podlazi-radek.kk-skryte { opacity: .45; }
     .kk-podlazi-pozor { min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px; background: var(--c-error); color: var(--c-surface); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; }
     .kk-podlazi-tuzka { flex: none; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; color: #6b7280; }
@@ -245,6 +247,7 @@
                  x-data="{ den: new Date().toLocaleDateString('sv'), get skryta() { try { return this.zavreno || localStorage.getItem('tt_vzor_hlaska_kopie') === this.den } catch (e) { return this.zavreno } }, zavreno: false }" x-show="!skryta">
                 <div class="tt-upozorneni-titulek">{{ __('ed_sablona.vzor.nadpis') }}</div>
                 <p>{{ __('ed_sablona.vzor.text') }}</p>
+                <p>{{ __('ed_sablona.vzor.obnova') }}</p>
                 <button type="button" class="tt-vzor-zavrit" data-vzor-zavrit title="{{ __('ed_sablona.vzor.zavrit') }}" aria-label="{{ __('ed_sablona.vzor.zavrit') }}"
                         @click="zavreno = true; try { localStorage.setItem('tt_vzor_hlaska_kopie', den) } catch (e) {}">&times;</button>
             </div>
@@ -252,7 +255,8 @@
             <div class="tt-upozorneni tt-vzor-hlaska" data-vzor-hlaska role="status" x-cloak
                  x-data="{ den: new Date().toLocaleDateString('sv'), get skryta() { try { return this.zavreno || localStorage.getItem('tt_vzor_hlaska_sablona') === this.den } catch (e) { return this.zavreno } }, zavreno: false }" x-show="!skryta">
                 <div class="tt-upozorneni-titulek">Šablona vzorového projektu.</div>
-                <p>Uživatelé mají její kopii na hraní. Změny tady jim každou noc ve 3:00 jejich času přepíšou kopii. Obrázky do článků se berou odsud.</p>
+                <p>Uživatelé mají její kopii na hraní. Obrázky do článků se berou odsud.</p>
+                <p>Změny tady jim každou noc ve 3:00 jejich času přepíšou kopii.</p>
                 <button type="button" class="tt-vzor-zavrit" data-vzor-zavrit title="{{ __('ed_sablona.vzor.zavrit') }}" aria-label="{{ __('ed_sablona.vzor.zavrit') }}"
                         @click="zavreno = true; try { localStorage.setItem('tt_vzor_hlaska_sablona', den) } catch (e) {}">&times;</button>
             </div>

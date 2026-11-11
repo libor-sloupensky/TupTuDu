@@ -268,7 +268,8 @@ return [
     // Kopie vzorového projektu (App\Support\VzorovyProjekt)
     'vzor' => [
         'nadpis' => 'Progetto di esempio con cui giocare.',
-        'text' => 'Prova quello che vuoi: qui le modifiche sono gratuite e non contano nel limite del tuo piano. Ogni notte alle 3:00 il progetto torna allo stato iniziale e le tue modifiche vengono cancellate. Quello che vuoi tenere, fallo nel tuo progetto.',
+        'text' => 'Prova quello che vuoi: qui le modifiche sono gratuite e non contano nel limite del tuo piano.',
+        'obnova' => 'Ogni notte alle 3:00 il progetto torna allo stato iniziale e le tue modifiche vengono cancellate. Quello che vuoi tenere, fallo nel tuo progetto.',
         'zavrit' => 'Nascondi fino a domani',
     ],
     'projekt' => [
