@@ -204,7 +204,7 @@ function konceptKEditor(initialData) {
         get vybraneIds() {
             // eslint-disable-next-line no-unused-vars
             const _tick = this._selectionTick;
-            return this.renderer ? [...this.renderer.selectedWalls, ...this.renderer.selectedNodes, ...this.renderer.selectedOpenings, ...this.renderer.selectedSchody, ...this.renderer.selectedSloupy] : [];
+            return this.renderer ? [...this.renderer.selectedWalls, ...this.renderer.selectedNodes, ...this.renderer.selectedOpenings, ...this.renderer.selectedSchody, ...this.renderer.selectedSloupy, ...(this.renderer.selectedSestavy || [])] : [];
         },
 
         // Alpine reactivity trigger — bumpuje se po každém render(), aby gettery
@@ -6002,7 +6002,7 @@ function konceptKEditor(initialData) {
          * (třeba místnost pod schody). Jen v editoru do znovunačtení, export a 3D ho mají dál.
          */
         _klicSkryti(obj) {
-            return (obj.type === 'schody' || obj.type === 'sloup' ? 'dum' : this.engine?.dum.aktivni) + ':' + obj.id;
+            return (obj.type === 'schody' || obj.type === 'sloup' || obj.type === 'sestava' ? 'dum' : this.engine?.dum.aktivni) + ':' + obj.id;
         },
         jeObjektSkryty(obj) {
             if (this._kresbaProExport) return false;
@@ -6016,7 +6016,7 @@ function konceptKEditor(initialData) {
                 this.skryteObjekty.push(klic);
                 // Skryté nesmí zůstat vybrané, jinak by ho šlo posunout nebo smazat naslepo
                 const r = this.renderer;
-                if ([r.selectedWalls, r.selectedOpenings, r.selectedVybaveni, r.selectedSchody, r.selectedSloupy].some(v => v.has(obj.id))) r.clearSelection();
+                if ([r.selectedWalls, r.selectedOpenings, r.selectedVybaveni, r.selectedSchody, r.selectedSloupy, r.selectedSestavy].some(v => v?.has(obj.id))) r.clearSelection();
             }
             this.renderer.render();
             this._selectionTick++;
@@ -6070,6 +6070,10 @@ function konceptKEditor(initialData) {
                 this.smazatSloup();
                 return;
             }
+            if ((this.engine.dum.sestavy || []).some(s => s.id === id)) {
+                this.smazatSestavu(id);
+                return;
+            }
             this.engine.pushUndo();
             if (this.engine.walls.has(id)) {
                 this.engine.removeWall(id);
@@ -6101,16 +6105,19 @@ function konceptKEditor(initialData) {
             const kus = (this.engine.vybaveni || []).some(v => v.id === id);
             const schody = this.engine.dum.schodiste.some(s => s.id === id);
             const sloup = (this.engine.dum.sloupy || []).some(s => s.id === id);
-            const typ = this.engine.walls.has(id) ? 'wall' : this.engine.openings.has(id) ? 'opening' : kus ? 'kus' : schody ? 'schody' : sloup ? 'sloup' : null;
+            const sestava = (this.engine.dum.sestavy || []).some(s => s.id === id);
+            const typ = this.engine.walls.has(id) ? 'wall' : this.engine.openings.has(id) ? 'opening' : kus ? 'kus' : schody ? 'schody' : sloup ? 'sloup' : sestava ? 'sestava' : null;
             if (!typ) return;
             // Kde plánek nevybírá (střecha, posun podkladu), nevybírá ani seznam
             if (this.rezimStrecha || this.posunPodkladu) return;
             if (this.nastroj !== 'vyber') this.nastroj = 'vyber';
             // Výběr skrytého objektu ho zase ukáže, skrytý by nešel vidět ani upravit
             if (this.jeObjektSkryty({ type: typ, id })) this.prepniSkrytiObjektu({ type: typ, id });
-            if (typ === 'schody' || typ === 'sloup') {
+            if (typ === 'schody' || typ === 'sloup' || typ === 'sestava') {
+                if (typ === 'sestava' && !this.showVybaveni) { this.showVybaveni = true; this.renderer.showVybaveni = true; }
                 this.renderer.setSelection([]);
-                (typ === 'sloup' ? this.renderer.selectedSloupy : this.renderer.selectedSchody).add(id);
+                (typ === 'sloup' ? this.renderer.selectedSloupy : typ === 'sestava' ? this.renderer.selectedSestavy : this.renderer.selectedSchody).add(id);
+                if (typ === 'sestava') { this.sestavaSloupecKlic = null; this.sestavaDvere = null; }
                 this.renderer.render();
                 this._selectionTick++;
                 return;
@@ -7667,6 +7674,7 @@ function konceptKEditor(initialData) {
                 g.position.y = kory.get(podl.id) ?? 0;
             }
             this._build3dDum?.(group);
+            this._sestavy3d?.(group);
             this._nastavBarvy3d?.();
             this._povrchy3d?.();
             this._nastavViditelnost3d?.();

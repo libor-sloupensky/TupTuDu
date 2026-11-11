@@ -2,6 +2,11 @@
 
 // Editor V3, dům přes podlaží (public/js/koncept-v3/dum.js). Názvy podlaží (:nazev) generuje stavebni-engine.js.
 return [
+    // Nábytková sestava (sestavy.js)
+    'sestava' => [
+        'kuchyn' => 'Kuchyňská linka',
+        'skrin' => 'Vestavěná skříň',
+    ],
     // Obecné, používá se na víc místech
     'strecha' => 'Střecha',
     'strecha_nastavit' => 'nastavit',
@@ -131,12 +136,18 @@ return [
         'smazani_strechy' => 'Smazání střechy',
         'barva_domu' => 'Barva domu',
         'zaklady' => 'Základy',
+        'nova_sestava' => 'Nová nábytková sestava',
+        'sestava' => 'Nábytková sestava',
+        'smazani_sestavy' => 'Smazání nábytkové sestavy',
+        'delka_sestavy' => 'Délka nábytkové sestavy',
+        'presun_skrinky' => 'Přesun skříňky',
     ],
 
     // Kde se barva v domě používá (nabídka použitých barev)
     'barvy' => [
         'schody' => 'Schody',
         'sloup' => 'Sloup',
+        'sestava' => ':nazev, :povrch',
         'podlaha' => 'Podlaha, :nazev',
         'mistnost' => 'místnost',
         'fasada' => 'Fasáda',

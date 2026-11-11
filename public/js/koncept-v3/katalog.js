@@ -99,11 +99,11 @@
         /** Tlačítko nástroje: otevře sekci v pravém panelu, ať je panel zrovna skrytý, nebo ne. */
         async prepniKatalog() {
             // Otevřený katalog při jiném nástroji: tlačítko jen přepne zpět na nábytek, panel nechá
-            if (this.panelOpen.katalog && !['vyber', 'katalog'].includes(this.nastroj)) { this.nastroj = 'vyber'; return; }
+            if (this.panelOpen.katalog && !['vyber', 'katalog', 'sestava'].includes(this.nastroj)) { this.nastroj = 'vyber'; return; }
             const otevrit = !this.panelOpen.katalog;
             this.panelOpen.katalog = otevrit;
             this.ulozitPanely();
-            if (!otevrit) { this._katalogZrusVyber(); return; }
+            if (!otevrit) { this._katalogZrusVyber(); if (this.nastroj === 'sestava') this.nastroj = 'vyber'; return; }
             if (this.nastroj !== 'katalog') this.nastroj = 'vyber';
             this._katalogSkupinaZVyberu();
             await this._katalogNacti();
@@ -632,8 +632,16 @@
                         const vzdalenost = bod.applyMatrix4(o.matrixWorld).distanceTo(paprsek.ray.origin);
                         if (vzdalenost < nejblizsi) { nejblizsi = vzdalenost; kus = o.userData.kus; }
                     });
+                    // Nábytková sestava je součást scény: zásah do ní vybere sestavu, u kuchyně i skříňku (sestavy.js)
+                    const sestava = !kus && zakryti ? this._sestava3dZasah?.(zakryti) : null;
                     if (kus) this.renderer.setSelection([], [], [], [kus]);
-                    else if (this.katalogObjekt) this.renderer.clearSelection();
+                    else if (sestava) {
+                        this.renderer.setSelection([]);
+                        this.renderer.selectedSestavy.add(sestava.id);
+                        this.sestavaSloupecKlic = sestava.sloupec;
+                        this.sestavaDvere = sestava.dvere;
+                        if (sestava.sloupec || sestava.dvere !== null) this.sestavaZalozka = 'skrinky';
+                    } else if (this.katalogObjekt || this._vybranaSestava?.()) this.renderer.clearSelection();
                     else return;
                     this.renderer.render();
                     this._selectionTick++;

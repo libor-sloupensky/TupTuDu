@@ -495,6 +495,7 @@
             });
             // Vybraná místnost přepne nabídku nábytku na svou skupinu (katalog.js)
             this.$watch('_selectionTick', () => this._katalogSkupinaZVyberu?.());
+            this.sestavyInit?.();
             // Nastavení střechy otevřené ve 3D: po návratu do 2D patří k němu půdorys střechy
             this.$watch('rezim3d', (v) => {
                 if (!v && this.podlaziUprava === 'strecha' && !this.rezimStrecha) this._strechaZapni();
@@ -613,6 +614,7 @@
             this.licoBody = [];
             this.posunPodkladu = false;
             this._schodyNahled = null;
+            this._sestavaNahled = null;
             this._oddelovacZrus?.();
             if (this.kreslimStenu || this.stenaUseky?.length) {
                 this.zrusRozkreslenyUsek?.();
@@ -2101,6 +2103,7 @@
             };
             for (const s of d.schodiste) pridej('schody:' + s.id, s.barva || BARVA_SCHODU, preloz('ed_dum.barvy.schody'));
             for (const s of d.sloupy || []) pridej('sloup:' + s.id, s.barva, preloz('ed_dum.barvy.sloup'));
+            this._barvySestav?.(pridej);
             if (d.strecha) {
                 const typ = typKrytiny(d.strecha);
                 pridej('strecha', barvaZobrazena(typ, barvaKrytiny(d.strecha)), preloz('ed_dum.strecha'));
@@ -2368,6 +2371,8 @@
         inspektorDum() {
             if (!this.engine || !this.renderer) return null;
             const r = this.renderer;
+            const sestava = this.inspektorSestavy?.();
+            if (sestava) return sestava;
             const sl = this._vybranySloup();
             if (sl) {
                 const horni = this.engine.horniPodlazi();
@@ -2423,8 +2428,10 @@
                 if (this.podklad) this._domTah = { typ: 'podklad', last: { ...pos }, start: { ...pos }, posun: false };
                 return true;
             }
+            if (this.nastroj === 'sestava') { this._sestavaStisk?.(pos, e); return true; }
             if (this.nastroj === 'schody' || this.nastroj === 'sloup' || this.nastroj === 'lico' || this.nastroj === 'katalog') return true;
             if (this.nastroj !== 'vyber') return false;
+            if (hit.type === 'sestava' || hit.type === 'sestavaKonec') return this._sestavaStiskVyber(pos, e, hit);
             if (hit.type === 'schodyOtoc') {
                 const s = this.engine.dum.schodiste.find(x => x.id === hit.id);
                 if (!s) return true;
@@ -2470,6 +2477,8 @@
 
         domPohyb(pos, e) {
             const t = this._domTah;
+            // Kreslení nové sestavy si posun hlídá samo (krok Zpět vznikne až při založení)
+            if (t && t.typ === 'sestavaNova') { this._sestavaNovaPohyb(t, pos, e); return true; }
             if (t) {
                 if (!t.posun) {
                     if (Math.hypot(pos.x - t.start.x, pos.y - t.start.y) < 5 / (this.stage.scaleX() || 1)) return true;
@@ -2481,6 +2490,10 @@
                 t.last = { ...pos };
                 if (t.typ === 'podklad') {
                     this.podkladPosun(dx, dy);
+                    return true;
+                }
+                if (t.typ === 'sestavaKonec' || t.typ === 'sestavaSloupec') {
+                    this._sestavaTahni(t, pos, e);
                     return true;
                 }
                 if (t.typ === 'schody') {
@@ -2554,6 +2567,10 @@
                 this._renderDum();
                 return false;
             }
+            if (this.nastroj === 'sestava') {
+                this._sestavaPohyb?.(pos, e);
+                return false;
+            }
             return false;
         },
 
@@ -2561,6 +2578,7 @@
             const t = this._domTah;
             if (!t) return false;
             this._domTah = null;
+            if (String(t.typ).startsWith('sestava')) return this._sestavaPusteni(t);
             if (this._snapPreview?.otoceni) { this._snapPreview = null; this.renderer?.prekresliPrekryv?.(); }
             if (!t.posun) return true;
             if (t.typ === 'podklad') { this.podkladUloz?.(); return true; }
@@ -2569,7 +2587,8 @@
             return true;
         },
 
-        domKlik(pos, e) {
+        domKlik(pos, e, hit) {
+            if (this._sestavaKlik?.(pos, e, hit)) return true;
             if (this.rezimStrecha || this.posunPodkladu) return true;
             if (this.nastroj === 'katalog') { this.katalogKlik?.(pos, e); return true; }
             if (this.nastroj === 'schody') { this._schodyKlik(pos, e); return true; }
@@ -2579,6 +2598,7 @@
         },
 
         domEsc() {
+            if (this.sestavaEsc?.()) return true;
             if (this.katalogEsc?.()) return true;
             if (this.schodyStart || this.licoBody.length || this.posunPodkladu
                     || this.nastroj === 'schody' || this.nastroj === 'sloup' || this.nastroj === 'lico') {
@@ -2596,6 +2616,7 @@
         },
 
         domSmazVybrane() {
+            if (this.sestavaSmazVybrane?.()) return true;
             if (this._vybraneSchody()) { this.smazatSchody(); return true; }
             if (this._vybranySloup()) { this.smazatSloup(); return true; }
             return false;
@@ -2787,6 +2808,8 @@
                 const c = this._kurzorDum;
                 kresliSloup({ id: '_nahled', x: c.x / PX, y: -c.y / PX, sirka: SLOUP_SIRKA, tvar: 'ctverec', uhel: c.uhel }, false, true);
             }
+            // ── Nábytková sestava (sestavy.js) ──
+            this._renderSestavy?.(r, popisek, primary);
 
             // Body při usazování plánku
             this.licoBody.forEach((p, i) => {
@@ -3213,6 +3236,7 @@
             window.Svetlo3d.prekresliStiny(_3d.renderer);
             for (const [id, g] of _3d.podlaziSkupiny) g.visible = this._viditelne3d(id);
             for (const m of _3d.maskaZeme?.children || []) m.visible = this._viditelne3d(m.userData.podlazi);
+            this._sestavyViditelnost3d?.();
             this._jama3d();
             const dum = _3d.dumSkupina;
             if (!dum) return;

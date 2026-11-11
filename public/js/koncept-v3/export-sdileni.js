@@ -417,6 +417,8 @@
                 const skupina = u.strecha ? 'strecha' : (u.podlazi || (u.stropPod ? (e.podlaziNad(u.stropPod)?.id ?? 'strecha') : 'strecha'));
                 o.traverse(c => pridej(c, skupina));
             }
+            // Nábytková sestava patří ke svému podlaží (sestavy.js)
+            for (const o of _3d.sestavySkupina?.children || []) o.traverse(c => pridej(c, o.userData.podlazi));
             const prvni = e.dum.podlazi.find(p => p.typ !== 'sklep') || e.dum.podlazi[0];
             return {
                 verze: 1,

@@ -420,7 +420,7 @@
                 <button @click="nastroj === 'sloup' ? (nastroj = 'vyber') : zacniSloup()" class="kk-tl" :class="nastroj === 'sloup' && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.sloup') }}" data-nastroj-sloup>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1"/><path d="M5 5l14 14M19 5 5 19"/></svg>
                 </button>
-                <button @click="prepniKatalog()" class="kk-tl" :class="panelOpen.katalog && ['vyber', 'katalog'].includes(nastroj) && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.katalog') }}" data-katalog-tlacitko>
+                <button @click="prepniKatalog()" class="kk-tl" :class="panelOpen.katalog && ['vyber', 'katalog', 'sestava'].includes(nastroj) && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.katalog') }}" data-katalog-tlacitko>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3"/><path d="M2 13.5a2 2 0 0 1 4 0V16h12v-2.5a2 2 0 0 1 4 0V19H2z"/><path d="M5 19v2M19 19v2"/></svg>
                 </button>
                 {{-- Úroveň podlahy (zvýšená, snížená, bez podlahy) se nastavuje v panelu místnosti, samostatný nástroj není --}}
@@ -544,7 +544,7 @@
             {{-- Panel otvoru — na plátně v levém horním rohu (odsazení 6 px jako nahoře), úchopem vlevo
                  jde přetáhnout jinam (poloha se pamatuje), dvojklik na úchop ho vrátí. Ukazuje buď
                  volby nového otvoru (nástroj zapnutý), nebo vlastnosti výběru. --}}
-            <div id="kk-panel-otvoru" x-show="rezim3d ? ['opening', 'opening_multi', 'mistnost', 'schodiste', 'sloup', 'katalog'].includes(inspector?.kind) : (nastroj === 'otvor' || nastroj === 'stena' || nastroj === 'schody' || nastroj === 'sloup' || nastroj === 'lico' || posunPodkladu || inspector)" x-cloak
+            <div id="kk-panel-otvoru" x-show="rezim3d ? ['opening', 'opening_multi', 'mistnost', 'schodiste', 'sloup', 'katalog', 'sestava'].includes(inspector?.kind) : (nastroj === 'otvor' || nastroj === 'stena' || nastroj === 'schody' || nastroj === 'sloup' || nastroj === 'sestava' || nastroj === 'lico' || posunPodkladu || inspector)" x-cloak
                  class="bg-white rounded-lg shadow-md text-xs flex items-stretch"
                  :style="panelOtvoruStyl"
                  style="position:absolute;z-index:15;width:max-content;min-width:250px;max-width:min(420px,100%);border:1.5px solid var(--c-primary)">
@@ -583,6 +583,13 @@
                     <div class="p-2 flex flex-col gap-1">
                         <span class="text-gray-600 font-medium">{{ __('ed_sablona.sloup.novy') }}</span>
                         <div class="text-gray-500">{{ __('ed_sablona.sloup.klepni') }}</div>
+                    </div>
+                </template>
+                {{-- Nová nábytková sestava (sestavy.js, modules/sestavy.md) --}}
+                <template x-if="nastroj === 'sestava'">
+                    <div class="p-2 flex flex-col gap-1" style="max-width:340px" data-sestava-nastroj>
+                        <span class="text-gray-600 font-medium" x-text="sestavaDruh === 'skrin' ? preloz('ed_sablona.sestava.nova_skrin') : preloz('ed_sablona.sestava.nova_kuchyn')"></span>
+                        <div class="text-gray-500 leading-snug" x-text="sestavaDruh === 'skrin' ? preloz('ed_sablona.sestava.klepni_skrin') : preloz('ed_sablona.sestava.klepni_kuchyn')"></div>
                     </div>
                 </template>
                 <template x-if="nastroj === 'lico'">
@@ -651,7 +658,7 @@
                         <div class="text-orange-700" x-show="otvorZprava" x-cloak x-text="otvorZprava"></div>
                     </div>
                 </template>
-                <template x-if="nastroj !== 'otvor' && nastroj !== 'stena' && nastroj !== 'schody' && nastroj !== 'lico' && !posunPodkladu && inspector">
+                <template x-if="nastroj !== 'otvor' && nastroj !== 'stena' && nastroj !== 'schody' && nastroj !== 'sestava' && nastroj !== 'lico' && !posunPodkladu && inspector">
                     <div class="p-2 flex items-center gap-2 flex-wrap">
                         {{-- Multi-select indikátor --}}
                         <span x-show="inspector.count > 1" class="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-semibold"
@@ -892,6 +899,11 @@
                                 </div>
                                 <button type="button" @click="smazatSloup()" class="self-end kk-smazat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>{{ __('ed_sablona.spolecne.smazat') }}</button>
                             </div>
+                        </template>
+
+                        {{-- NÁBYTKOVÁ SESTAVA (kuchyňská linka, vestavěná skříň) --}}
+                        <template x-if="inspector.kind === 'sestava'">
+                            @include('masterteam.partials.panel-sestavy')
                         </template>
 
                         {{-- SCHODIŠTĚ --}}
@@ -1533,6 +1545,32 @@
             </summary>
             <template x-if="panelOpen.katalog">
                 <div class="px-2 pb-2 flex flex-col gap-2 text-xs">
+                    {{-- Nábytek, nebo nábytková sestava: podvolba křesílka, žádné další tlačítko v liště
+                         (Libor 11. 11. 2026: „na první pohled minimalistické a uživatel najde, co hledá“). Volba se pamatuje. --}}
+                    <div class="kk-dily w-full" role="group" aria-label="{{ __('ed_sablona.sestava.rezim') }}" data-katalog-rezim>
+                        <button type="button" data-katalog-rezim="nabytek" :class="katalogRezim === 'nabytek' && 'kk-zap'" @click="prepniKatalogRezim('nabytek')">{{ __('ed_sablona.sestava.rezim_nabytek') }}</button>
+                        <button type="button" data-katalog-rezim="sestava" :class="katalogRezim === 'sestava' && 'kk-zap'" @click="prepniKatalogRezim('sestava')">{{ __('ed_sablona.sestava.rezim_sestava') }}</button>
+                    </div>
+                    <template x-if="katalogRezim === 'sestava'">
+                        <div class="flex flex-col gap-2" data-sestava-volba>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                                @foreach (['kuchyn', 'skrin'] as $druh)
+                                    <button type="button" data-sestava-druh="{{ $druh }}" @click="zacniSestavu('{{ $druh }}')" class="rounded border p-1.5 flex flex-col items-center gap-1 text-center hover:border-gray-500"
+                                            :style="nastroj === 'sestava' && sestavaDruh === '{{ $druh }}' ? 'border-color:var(--c-primary);box-shadow:0 0 0 1px var(--c-primary)' : 'border-color:var(--c-border)'">
+                                        @if ($druh === 'kuchyn')
+                                            <svg class="text-gray-600" width="52" height="40" viewBox="0 0 44 34" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="12" height="9"/><rect x="30" y="2" width="12" height="9"/><path d="M18 2h8v4l3 4H15l3-4z"/><path d="M1 19h42"/><rect x="2" y="19" width="40" height="13"/><path d="M15 19v13M29 19v13M7 23h3M34 23h3"/><circle cx="19" cy="17" r="1.2"/><circle cx="25" cy="17" r="1.2"/></svg>
+                                        @else
+                                            <svg class="text-gray-600" width="52" height="40" viewBox="0 0 44 34" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="36" height="30"/><path d="M16 2v30M28 2v30"/><path d="M19 9l6-4M19 15l6-4" stroke-width="1"/><path d="M13 16v4M31 16v4"/></svg>
+                                        @endif
+                                        <span class="text-gray-800 font-medium leading-tight">{{ __('ed_sablona.sestava.' . $druh) }}</span>
+                                        <span class="text-gray-500 leading-tight">{{ __('ed_sablona.sestava.' . $druh . '_popis') }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                            <div class="text-gray-500 leading-snug">{{ __('ed_sablona.sestava.volba_tip') }}</div>
+                        </div>
+                    </template>
+                    <div x-show="katalogRezim === 'nabytek'" class="flex flex-col gap-2">
                     {{-- Skupina místností › kategorie: šipka ukazuje, že první výběr zužuje druhý (Libor 11. 11. 2026).
                          Vybraná místnost na plánu nastaví skupinu sama. Hledání jde přes všechny kategorie zvolené skupiny, proto je pod nimi;
                          výběry zůstávají zapnuté (Libor 11. 11. 2026: vypnuté při hledání mátly), změna kategorie hledání vymaže. --}}
@@ -1553,6 +1591,18 @@
                     <div x-show="!katalog" class="text-gray-500">{{ __('ed_sablona.katalog.nacitam') }}</div>
                     <div x-show="katalog && !katalogPolozky.length" class="text-gray-500">{{ __('ed_sablona.katalog.nic') }}</div>
                     <div class="overflow-y-auto" style="max-height:340px;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px">
+                        {{-- Kdo hledá linku nebo vestavěnou skříň mezi nábytkem, najde ji jako první dlaždici své skupiny --}}
+                        <template x-if="!katalogHledat && ['kuchyne', 'nocni', 'vstup'].includes(katalogSkupina)">
+                            <button type="button" data-katalog-sestava @click="prepniKatalogRezim('sestava'); zacniSestavu(katalogSkupina === 'kuchyne' ? 'kuchyn' : 'skrin')"
+                                    class="text-left rounded border p-1 flex flex-col gap-0.5 hover:border-gray-500" style="border-color:var(--c-border)">
+                                <div class="flex items-center justify-center text-gray-600" style="aspect-ratio:4/3;background:#f3f4f6;border-radius:4px">
+                                    <svg x-show="katalogSkupina === 'kuchyne'" width="56" height="44" viewBox="0 0 44 34" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="12" height="9"/><rect x="30" y="2" width="12" height="9"/><path d="M18 2h8v4l3 4H15l3-4z"/><path d="M1 19h42"/><rect x="2" y="19" width="40" height="13"/><path d="M15 19v13M29 19v13M7 23h3M34 23h3"/><circle cx="19" cy="17" r="1.2"/><circle cx="25" cy="17" r="1.2"/></svg>
+                                    <svg x-show="katalogSkupina !== 'kuchyne'" width="56" height="44" viewBox="0 0 44 34" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="36" height="30"/><path d="M16 2v30M28 2v30"/><path d="M19 9l6-4M19 15l6-4" stroke-width="1"/><path d="M13 16v4M31 16v4"/></svg>
+                                </div>
+                                <span class="text-gray-800 leading-tight" x-text="katalogSkupina === 'kuchyne' ? preloz('ed_sablona.sestava.kuchyn') : preloz('ed_sablona.sestava.skrin')"></span>
+                                <span class="text-gray-500 leading-tight">{{ __('ed_sablona.sestava.na_miru') }}</span>
+                            </button>
+                        </template>
                         <template x-for="p in katalogPolozky" :key="p.id">
                             <button type="button" @click="katalogVyber(p)" @pointerdown="katalogTazeniStart($event, p)" @dragstart.prevent class="text-left rounded border p-1 flex flex-col gap-0.5 hover:border-gray-500"
                                     :style="(katalogVybrany?.id === p.id ? 'border-color:var(--c-primary);box-shadow:0 0 0 1px var(--c-primary)' : 'border-color:#e5e7eb') + ';touch-action:pan-y;user-select:none;cursor:grab'" :data-katalog-polozka="p.id">
@@ -1568,6 +1618,7 @@
                     <div class="text-gray-500 leading-snug">
                         <span x-show="katalogVybrany">{{ __('ed_sablona.katalog.klepni') }}</span>
                         <span x-show="!katalogVybrany">{{ __('ed_sablona.katalog.pretahni') }} <a href="{{ \App\Support\Domeny::url('web', '/model-credits') }}" target="_blank" rel="noopener" class="underline">{{ __('ed_sablona.katalog.autori') }}</a></span>
+                    </div>
                     </div>
                 </div>
             </template>
@@ -1702,18 +1753,18 @@
                          :style="hoverObjektId === obj.id && !vybraneIds.includes(obj.id) ? 'background-color: var(--c-primary-10)' : ''"
                          :class="vybraneIds.includes(obj.id) ? 'bg-blue-50' : 'hover:bg-gray-50'"
                          @click="vyberObjekt(obj.id, $event)"
-                         @dblclick.stop="!['schody', 'sloup'].includes(obj.type) && zacniEditObjekt(obj.id, obj.nazev)"
+                         @dblclick.stop="!['schody', 'sloup', 'sestava'].includes(obj.type) && zacniEditObjekt(obj.id, obj.nazev)"
                          @mouseenter="zvyrazniObjekt(obj.id)"
                          @mouseleave="zvyrazniObjekt(null)">
                         <div class="flex items-center gap-1 min-w-0">
                             {{-- Označení z výkresu — stejná barva jako popisek na plátně
                                  (stěny fialově, otvory oranžově), ať jde řádek spárovat s kresbou --}}
-                            <span class="kk-oznaceni" :class="obj.type === 'wall' ? 'text-purple-600 bg-purple-50' : obj.type === 'kus' ? 'text-teal-700 bg-teal-50' : ['schody', 'sloup'].includes(obj.type) ? 'text-gray-700 bg-gray-100' : 'text-orange-600 bg-orange-50'"
+                            <span class="kk-oznaceni" :class="obj.type === 'wall' ? 'text-purple-600 bg-purple-50' : ['kus', 'sestava'].includes(obj.type) ? 'text-teal-700 bg-teal-50' : ['schody', 'sloup'].includes(obj.type) ? 'text-gray-700 bg-gray-100' : 'text-orange-600 bg-orange-50'"
                                   x-text="obj.oznaceni || obj.id"></span>
                             <span x-show="editObjektId !== obj.id"
                                   :class="[vybraneIds.includes(obj.id) ? 'font-bold text-blue-700' : 'text-gray-600', jeObjektSkryty(obj) ? 'opacity-50 line-through' : '']"
                                   x-text="obj.nazev" class="truncate"></span>
-                            <svg x-show="editObjektId !== obj.id && !['schody', 'sloup'].includes(obj.type)"
+                            <svg x-show="editObjektId !== obj.id && !['schody', 'sloup', 'sestava'].includes(obj.type)"
                                  @click.stop="zacniEditObjekt(obj.id, obj.nazev)"
                                  width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                  class="shrink-0 text-gray-300 hover:text-primary cursor-pointer" style="margin-left:3px">
@@ -2216,6 +2267,7 @@ if (!{{ $aktivni?->id ?? 'null' }}) {
 <script src="/js/koncept-v3/dum.js?v={{ filemtime(public_path('js/koncept-v3/dum.js')) }}"></script>
 <script src="/js/koncept-v3/import-pudorysu.js?v={{ filemtime(public_path('js/koncept-v3/import-pudorysu.js')) }}"></script>
 <script src="/js/koncept-v3/katalog.js?v={{ filemtime(public_path('js/koncept-v3/katalog.js')) }}"></script>
+<script src="/js/koncept-v3/sestavy.js?v={{ filemtime(public_path('js/koncept-v3/sestavy.js')) }}"></script>
 <script src="/js/koncept-v3/limit-tarifu.js?v={{ filemtime(public_path('js/koncept-v3/limit-tarifu.js')) }}"></script>
 <script>
 var _kkInitData = {

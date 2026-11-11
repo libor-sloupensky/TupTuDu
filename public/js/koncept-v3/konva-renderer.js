@@ -135,6 +135,7 @@ class KonvaRenderer {
         this.selectedMistnosti = new Set();
         this.selectedSchody = new Set();
         this.selectedSloupy = new Set();
+        this.selectedSestavy = new Set();   // nábytková sestava (sestavy.js)
         this.selectedPlochy = new Set();
         // Objekt skrytý okem v seznamu objektů se v půdorysu nekreslí, jde pracovat pod ním (nastavuje editor)
         this.jeSkryty = () => false;
@@ -1206,6 +1207,7 @@ class KonvaRenderer {
         this.selectedMistnosti = new Set(mistnostiIds);
         this.selectedSchody = new Set();
         this.selectedSloupy = new Set();
+        this.selectedSestavy = new Set();
         this.selectedPlochy = new Set();
         this.render();
     }
@@ -1219,6 +1221,7 @@ class KonvaRenderer {
         this.selectedMistnosti.clear();
         this.selectedSchody.clear();
         this.selectedSloupy.clear();
+        this.selectedSestavy.clear();
         this.selectedPlochy.clear();
         this.render();
     }
@@ -1370,6 +1373,11 @@ class KonvaRenderer {
         if (sloupOtocId) return { type: 'sloupOtoc', id: sloupOtocId };
         const sloupId = konvaTarget?.getAttr?.('_sloupId');
         if (sloupId) return { type: 'sloup', id: sloupId };
+        // Nábytková sestava: úchyt konce, sloupec (skříňka), nebo celá (sestavy.js)
+        const sestavaKonec = konvaTarget?.getAttr?.('_sestavaKonec');
+        if (sestavaKonec) return { type: 'sestavaKonec', klic: sestavaKonec };
+        const sestavaId = konvaTarget?.getAttr?.('_sestavaId');
+        if (sestavaId) return { type: 'sestava', id: sestavaId, sloupec: konvaTarget.getAttr('_sestavaSloupec') || null };
         // Přenesená zvýšená plocha nesmí zakrýt místnost (výběr, přejmenování): kde místnost je, patří klik jí
         const plochaId = konvaTarget?.getAttr?.('_plochaId');
         if (plochaId) {
