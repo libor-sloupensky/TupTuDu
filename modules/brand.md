@@ -138,7 +138,7 @@ vyladěné, mění se jen to, co k sobě nesedí (Libor).
   jako přepínač; nápisy v jednom sloupci. Bez nápověd typu „tah za ↻ otáčí“.
 - **Čtyři druhy tlačítek:** nástroj (lišta), běžné (obrys), hlavní (oranžové, nejvýš jedno v panelu),
   tiché (bez rámečku). **Mazání vždy symbolem křížku**, slovo Smazat podle místa, červené až při najetí.
-- **Nasazeno lokálně 11. 11. 2026 (1a4dcb5):** centrální pravidla v `koncept-v3.blade.php` (blok „Prvky panelů podle
+- **Zavedeno 11. 11. 2026 (1a4dcb5):** centrální pravidla v `koncept-v3.blade.php` (blok „Prvky panelů podle
   grafického manuálu“): pole a seznamy I1, tlačítka `.border` v panelech jako běžná, `.kk-smazat` (křížek),
   ano/ne v plovoucím panelu jako přepínač, `.kk-dily` (díly stejné šířky, zvolený `.kk-zap`), `.kk-mrizka`
   (nápisy ve sloupci), `.kk-pole-jed` (jednotka v poli). Díly: dveře/okno, tvar schodů, tvar sloupu.
