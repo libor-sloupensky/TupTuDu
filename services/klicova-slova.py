@@ -82,7 +82,10 @@ def main():
     radky.sort(key=lambda r: -r['mesicne_prumer'])
     slozka = os.path.join(KOREN, 'storage', 'app', 'klicova-slova')
     os.makedirs(slozka, exist_ok=True)
-    cesta = os.path.join(slozka, f'{datetime.date.today()}-{nazev}-{arg.zeme}.csv')
+    # Čas a první výchozí slovo v názvu: souběžné běhy (víc copywriterů naráz) se nepřepíšou
+    if arg.napady:
+        nazev += '-' + ''.join(c if c.isalnum() else '-' for c in arg.napady[0].lower())[:30].strip('-')
+    cesta = os.path.join(slozka, f'{datetime.date.today()}-{datetime.datetime.now():%H%M%S}-{nazev}-{arg.zeme}.csv')
     with open(cesta, 'w', encoding='utf-8-sig', newline='') as f:
         w = csv.DictWriter(f, fieldnames=list(radky[0].keys()) if radky else ['dotaz'])
         w.writeheader()

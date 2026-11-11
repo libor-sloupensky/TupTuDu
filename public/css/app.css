@@ -290,6 +290,22 @@ ol.tt-postup p { font-size: .93rem; color: var(--c-text-secondary); margin: 0; }
 .tt-kalkulacka-aplikace { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding-top: .9rem; border-top: 1px solid var(--c-border); }
 .tt-kalkulacka-aplikace p { flex: 1 1 18rem; margin: 0; font-size: .93rem; }
 @media (max-width: 640px) { .tt-kalkulacka-sloupce { grid-template-columns: minmax(0, 1fr); } }
+/* Kalkulačka schodiště: stav proti doporučení a nákresy (bokorys a půdorys v měřítku) */
+.tt-schody-stav { display: inline-grid; place-items: center; width: 1.2rem; height: 1.2rem; margin-left: .3rem; border-radius: 50%; font: 700 .75rem/1 var(--s-font-tech); vertical-align: 1px; }
+.tt-schody-stav[data-ok="1"] { color: var(--c-ok); background: color-mix(in srgb, var(--c-ok) 16%, transparent); }
+.tt-schody-stav[data-ok="0"] { color: var(--c-warn); background: color-mix(in srgb, var(--c-warn) 18%, transparent); }
+.tt-schody-stav[data-ok="1"] .ne, .tt-schody-stav[data-ok="0"] .ok, .tt-schody-stav:not([data-ok]) { display: none; }
+.tt-clanek ul.tt-schody-doporuceni { margin: .5rem 0 0; padding-left: 1.1rem; font-size: .82rem; color: var(--c-text-secondary); display: grid; gap: .2rem; }
+.tt-schody-doporuceni li[data-ok="0"] { color: var(--c-warn); }
+.tt-schody-nakresy { margin: 0; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: .75rem; }
+.tt-schody-nakresy svg { display: block; width: 100%; height: auto; border-radius: var(--s-radius); background: var(--c-bg); border: 1px solid var(--c-border); }
+.tt-schody-nakresy figcaption { grid-column: 1 / -1; margin: 0; }
+.tt-schody-stupen { fill: color-mix(in srgb, var(--c-primary) 22%, var(--c-surface)); stroke: var(--c-primary); stroke-width: 1.2; stroke-linejoin: round; }
+.tt-schody-podesta { fill: color-mix(in srgb, var(--c-primary) 40%, var(--c-surface)); stroke: var(--c-primary); stroke-width: 1.2; }
+.tt-schody-podlaha { stroke: var(--c-text-secondary); stroke-width: 2; }
+.tt-schody-kota { stroke: var(--c-text-secondary); stroke-width: 1; stroke-dasharray: 4 3; }
+.tt-schody-text { fill: var(--c-text); font: 500 20px var(--s-font-tech); }
+@media (max-width: 640px) { .tt-schody-nakresy { grid-template-columns: minmax(0, 1fr); } }
 
 /* Schéma výkopu (clanky/bloky/rez-vykopu) */
 .tt-rez { margin: 1.25rem 0 1.5rem; }
