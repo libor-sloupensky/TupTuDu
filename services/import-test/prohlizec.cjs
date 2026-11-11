@@ -23,21 +23,26 @@ const CHROME = [
 
 const pauza = (ms) => new Promise(r => setTimeout(r, ms));
 
-/** Na pozadí smaže testovací koncepty ClaudeTest starší než 2 hodiny (koncepty:uklid-testu), jednou za běh. */
-let uklizeno = false;
-function uklidStareKoncepty() {
-    if (uklizeno) return;
-    uklizeno = true;
+/** Na pozadí spustí `koncepty:uklid-testu` (maže jen ClaudeTest); doběhne i po skončení testu. */
+function spustUklidKonceptu(argy = []) {
     try {
         // COLUMNS a LINES: odpojený proces nemá konzoli a Symfony Console by si rozměry zjišťovalo přes
         // `cmd /c stty` a `cmd /c mode CON`. Ty si založí novou konzoli, která na Windows 11 problikne
         // jako okno Terminalu přes rozepsanou práci (a na okamžik sebere fokus klávesnice).
-        spawn('php', ['artisan', 'koncepty:uklid-testu'], {
+        spawn('php', ['artisan', 'koncepty:uklid-testu', ...argy], {
             cwd: path.join(__dirname, '../..'), stdio: 'ignore', detached: true, windowsHide: true,
             env: { ...process.env, COLUMNS: '120', LINES: '50' },
         })
             .on('error', () => {}).unref();
     } catch { /* úklid je jen úklid, test kvůli němu nepadá */ }
+}
+
+/** Jednou za běh: zbytky po spadlých testech (ClaudeTest neupravované 30 minut) a staré profily Chrome. */
+let uklizeno = false;
+function uklidStareKoncepty() {
+    if (uklizeno) return;
+    uklizeno = true;
+    spustUklidKonceptu();
 
     // Profily Chrome po testech, které spadly nebo byly přerušené dřív než zavri(). Jen starší než 2 hodiny,
     // ať se nesáhne na test běžící v jiném sezení; zamčený profil se přeskočí a smaže se příště.
@@ -213,6 +218,18 @@ async function otevriProhlizec({ viditelny = false, port: pevnyPort = Number(pro
         },
 
         async zavri() {
+            // Testovací koncept, ve kterém test skončil, se smaže hned, ať se v seznamu projektů nehromadí.
+            // Mazání hlídá prefix ClaudeTest na serveru; V3_PONECH_KONCEPT=1 ho nechá pro ruční prohlídku.
+            if (!process.env.V3_PONECH_KONCEPT) {
+                try {
+                    const k = await Promise.race([
+                        cmd('Runtime.evaluate', { expression: 'window._kkInitData ? [_kkInitData.projektId, _kkInitData.projektNazev] : null', returnByValue: true }),
+                        pauza(2000),
+                    ]);
+                    const [id, nazev] = k?.result?.value || [];
+                    if (id && String(nazev).startsWith('ClaudeTest ')) spustUklidKonceptu(['--id=' + Number(id)]);
+                } catch { /* stránka už neodpovídá, koncept smaže obecný úklid po 30 minutách */ }
+            }
             // Celý prohlížeč: proces.kill() ukončí jen spouštěč a zbytek Chromu by běžel dál
             try { await Promise.race([posli('Browser.close'), pauza(2000)]); } catch { /* končíme */ }
             ws.close();
