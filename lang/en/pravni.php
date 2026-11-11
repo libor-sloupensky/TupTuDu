@@ -12,4 +12,6 @@ return [
     'autori_licence' => 'Licence',
     'autori_pocet' => '{1} We use :pocet model.|[2,*] We use :pocet models.',
     'autori_upravy' => 'We changed the models: we reduced the textures and polygon count so they load quickly in a browser, and added a floor plan symbol and a preview. The authors are not connected with our service and do not endorse it. The upholstery colour of upholstered furniture can be changed, such a piece may not exist as a real product.',
+    'autori_dila' => 'Works used and their authors:',
+    'autori_materialy' => 'For bathroom fittings, we replaced the original materials with our own ceramic, chrome, glass and paint.',
 ];

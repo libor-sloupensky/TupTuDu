@@ -67,6 +67,7 @@ return [
         'koberce' => 'Tappeti',
         'obrazy' => 'Quadri',
         'zrcadla' => 'Specchi',
+        'koupelna' => 'Bagno e WC',
         'rostliny' => 'Piante e vasi',
     ],
 

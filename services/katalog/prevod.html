@@ -1,0 +1,95 @@
+<!doctype html><meta charset="utf-8"><title>Převod modelů Sweet Home 3D</title>
+<script src="/js/three/three.min.js"></script>
+<script src="/three-ex/MTLLoader.js"></script>
+<script src="/three-ex/OBJLoader.js"></script>
+<script src="/three-ex/GLTFExporter.js"></script>
+<script>
+// Převod kusu ze Sweet Home 3D (OBJ + MTL v centimetrech, y nahoru) na GLB v metrech pro katalog (sestav.cjs, modules/katalog.md).
+// Sanitární materiály se nahradí našimi: keramika, chrom, sklo a zrcadlo, ať koupelna drží jeden vzhled napříč zdroji.
+// Barvy se zapisují lineárně, Katalog3d.nacti je převede zpět na hodnoty ze vzorku.
+const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear();
+const NASE = {
+    keramika: () => new THREE.MeshStandardMaterial({ name: 'keramika', color: lin('#f3f3f0'), roughness: 0.18, metalness: 0 }),
+    chrom: () => new THREE.MeshStandardMaterial({ name: 'chrom', color: lin('#d6d9dc'), roughness: 0.16, metalness: 1 }),
+    sklo: () => new THREE.MeshStandardMaterial({ name: 'sklo', color: lin('#dcecee'), roughness: 0.05, metalness: 0, transparent: true, opacity: 0.3 }),
+    zrcadlo: () => new THREE.MeshStandardMaterial({ name: 'zrcadlo', color: lin('#e9eef0'), roughness: 0.03, metalness: 1 }),
+    // Bílý lak spotřebičů (pračka, sušička), ne kov
+    lak: () => new THREE.MeshStandardMaterial({ name: 'lak', color: lin('#f0f0ee'), roughness: 0.35, metalness: 0 }),
+};
+// Pořadí rozhoduje: zrcadlo a sklo před kovem, bílý plech před kovem, kov před keramikou. Kus může v zadání přepsat jednotlivé materiály.
+const PRAVIDLA = [
+    [/mirror|miroir|spiegel|espejo/i, 'zrcadlo'],
+    [/glass|verre|vitre|glas\b|vidrio|cristal/i, 'sklo'],
+    [/white.*metal|metal.*white/i, 'lak'],
+    [/chrom|krom|metal|steel|inox|nickel|silver|alumin|faucet|\btap|mixer|robinet/i, 'chrom'],
+    [/fayence|faience|faiance|ceram|porcel|enamel|sanit|crockery|wash_?basin|white_?bath|bath-plastic|blanco/i, 'keramika'],
+];
+
+function nahrad(m, prepis) {
+    const nazev = m.name || '';
+    let druh = prepis?.[nazev] ?? null;
+    if (!druh) for (const [re, d] of PRAVIDLA) if (re.test(nazev)) { druh = d; break; }
+    if (!druh && m.opacity < 0.5) druh = 'sklo';
+    if (druh && druh !== 'puvodni' && NASE[druh]) return { mat: NASE[druh](), druh };
+    // Původní materiál z MTL (Phong) jako PBR: lesk podle Ns, textura a průhlednost zůstanou
+    const lesk = m.shininess ?? 30;
+    const mat = new THREE.MeshStandardMaterial({
+        name: nazev, color: m.color ? m.color.clone() : new THREE.Color(0.8, 0.8, 0.8), map: m.map || null,
+        roughness: Math.min(0.9, Math.max(0.2, Math.sqrt(2 / (lesk + 2)) * 2)), metalness: 0,
+        transparent: m.opacity < 1, opacity: m.opacity ?? 1, side: THREE.FrontSide,
+    });
+    return { mat, druh: 'puvodni' };
+}
+
+window.preved = async function (slozka, obj, mtl, nastaveni = {}) {
+    window.hotovo = false; window.vysledek = null;
+    try {
+        const sprava = new THREE.LoadingManager();
+        const nacteno = new Promise((ok) => { sprava.onLoad = ok; });
+        let materialy = null;
+        if (mtl) {
+            materialy = await new Promise((ok, chyba) => new THREE.MTLLoader(sprava).setPath(slozka + '/').load(encodeURIComponent(mtl), ok, undefined, chyba));
+            materialy.preload();
+        }
+        const ol = new THREE.OBJLoader(sprava);
+        if (materialy) ol.setMaterials(materialy);
+        const objekt = await new Promise((ok, chyba) => ol.load(slozka + '/' + encodeURIComponent(obj), ok, undefined, chyba));
+        await Promise.race([nacteno, new Promise(r => setTimeout(r, 15000))]);
+        // Textura bez obrázku (chybí v zipu nebo se nenačetla) by export shodila, kus pak zůstane bez ní
+        const mapy = new Set();
+        objekt.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.map && mapy.add(m)); });
+        for (let i = 0; i < 50 && [...mapy].some(m => !m.map.image?.width); i++) await new Promise(r => setTimeout(r, 200));
+        const bezObrazku = [];
+        mapy.forEach(m => { if (!m.map.image?.width) { bezObrazku.push(m.name); m.map = null; } });
+
+        // Centimetry na metry a natočení předkem k +z (jako ABO), vše zapečené do geometrie
+        objekt.scale.setScalar(0.01);
+        objekt.rotation.y = (nastaveni.otoc || 0) * Math.PI / 180;
+        objekt.updateMatrixWorld(true);
+        const scena = new THREE.Scene();
+        const pouzite = {};
+        const sezn = [];
+        objekt.traverse(o => { if (o.isMesh) sezn.push(o); });
+        for (const o of sezn) {
+            const g = o.geometry.clone();
+            g.applyMatrix4(o.matrixWorld);
+            if (!g.attributes.normal) g.computeVertexNormals();
+            const zdroje = Array.isArray(o.material) ? o.material : [o.material];
+            const nove = zdroje.map(m => { const r = nahrad(m, nastaveni.materialy); pouzite[m.name || '?'] = r.druh; return r.mat; });
+            const mesh = new THREE.Mesh(g, Array.isArray(o.material) ? nove : nove[0]);
+            mesh.name = o.name;
+            scena.add(mesh);
+        }
+        const box = new THREE.Box3().setFromObject(scena);
+        const s = box.getSize(new THREE.Vector3());
+        const glb = await new Promise((ok) => new THREE.GLTFExporter().parse(scena, ok, { binary: true, maxTextureSize: 1024 }));
+        let bin = '';
+        const b = new Uint8Array(glb);
+        for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+        window.vysledek = { glb: btoa(bin), materialy: pouzite, bezObrazku, rozmery: [s.x, s.z, s.y].map(v => +v.toFixed(3)) };
+    } catch (e) {
+        window.vysledek = { chyba: String(e?.stack || e?.message || e) };
+    }
+    window.hotovo = true;
+};
+</script>

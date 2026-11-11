@@ -29,10 +29,16 @@ class PravniController extends Controller
     public function autoriModelu()
     {
         $katalog = json_decode((string) @file_get_contents(public_path('katalog/katalog.json')), true) ?: [];
-        $pocty = collect($katalog['polozky'] ?? [])->countBy('zdroj');
+        $polozky = collect($katalog['polozky'] ?? []);
+        $pocty = $polozky->countBy('zdroj');
+        // Zdroj s autory po kusech (Blend Swap): každé dílo jednou, i když z něj máme víc kusů
+        $dila = $polozky->filter(fn ($p) => ! empty($p['autor']))->groupBy('zdroj')
+            ->map(fn ($kusy) => $kusy->unique(fn ($p) => ($p['dilo'] ?? '') . '|' . $p['autor'])
+                ->map(fn ($p) => ['dilo' => $p['dilo'] ?? null, 'autor' => $p['autor'], 'odkaz' => $p['odkaz'] ?? null])
+                ->sortBy('autor', SORT_NATURAL | SORT_FLAG_CASE)->values());
         $zdroje = collect($katalog['zdroje'] ?? [])
             ->filter(fn ($z, $klic) => $pocty->has($klic))
-            ->map(fn ($z, $klic) => $z + ['pocet' => $pocty[$klic]])
+            ->map(fn ($z, $klic) => $z + ['pocet' => $pocty[$klic], 'dila' => $dila[$klic] ?? collect()])
             ->values();
 
         return view('pravni.autori-modelu', ['zdroje' => $zdroje]);

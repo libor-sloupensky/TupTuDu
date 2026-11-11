@@ -64,6 +64,7 @@ return [
         'koberce' => 'Koberce',
         'obrazy' => 'Obrazy',
         'zrcadla' => 'Zrkadlá',
+        'koupelna' => 'Kúpeľňa a WC',
         'rostliny' => 'Rastliny a kvetináče',
     ],
 

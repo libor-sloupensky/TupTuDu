@@ -13,4 +13,6 @@ return [
     'autori_licence' => 'Licence',
     'autori_pocet' => '{1} Používáme :pocet model.|[2,4] Používáme :pocet modely.|[5,*] Používáme :pocet modelů.',
     'autori_upravy' => 'Modely jsme upravili: zmenšili jsme texturu i počet plošek, aby se rychle načítaly v prohlížeči, a přidali půdorysnou značku a náhled. Autoři s naší službou nemají nic společného a nepodporují ji. U čalouněného nábytku lze změnit barvu potahu, takový kus nemusí jako výrobek existovat.',
+    'autori_dila' => 'Použitá díla a jejich autoři:',
+    'autori_materialy' => 'U vybavení koupelny jsme původní materiály nahradili vlastní keramikou, chromem, sklem a lakem.',
 ];

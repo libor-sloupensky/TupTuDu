@@ -64,6 +64,7 @@ return [
         'koberce' => 'Alfombras',
         'obrazy' => 'Cuadros',
         'zrcadla' => 'Espejos',
+        'koupelna' => 'Baño y aseo',
         'rostliny' => 'Plantas y macetas',
     ],
 

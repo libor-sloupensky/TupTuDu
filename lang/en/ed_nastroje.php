@@ -61,6 +61,7 @@ return [
         'koberce' => 'Rugs',
         'obrazy' => 'Pictures',
         'zrcadla' => 'Mirrors',
+        'koupelna' => 'Bathroom and WC',
         'rostliny' => 'Plants and pots',
     ],
 

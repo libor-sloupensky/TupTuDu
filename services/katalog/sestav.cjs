@@ -32,17 +32,30 @@ const ABO = 'https://amazon-berkeley-objects.s3.amazonaws.com/3dmodels/original'
 const ZDROJE = {
     abo: { nazev: 'Amazon Berkeley Objects', autor: 'Amazon.com', licence: 'CC BY 4.0', odkaz: 'https://amazon-berkeley-objects.s3.amazonaws.com/index.html', licenceOdkaz: 'https://creativecommons.org/licenses/by/4.0/', upraveno: true },
     polyhaven: { nazev: 'Poly Haven', autor: 'Poly Haven', licence: 'CC0', odkaz: 'https://polyhaven.com/models', licenceOdkaz: 'https://creativecommons.org/publicdomain/zero/1.0/', upraveno: true },
+    // Koupelna a WC ze Sweet Home 3D (Libor 11. 11. 2026). Jen sady CC0 a CC BY, ne Contributions a další pod Free Art License.
+    // Blend Swap má u každého kusu jiného autora: dílo, autor a odkaz jsou u kusu v polozky.json a stránka autorů je vypíše.
+    'bs-cc0': { nazev: 'Sweet Home 3D – Blend Swap CC0', autor: 'Blend Swap', licence: 'CC0', odkaz: 'https://www.sweethome3d.com/freeModels.jsp', licenceOdkaz: 'https://creativecommons.org/publicdomain/zero/1.0/', upraveno: true },
+    'bs-ccby': { nazev: 'Sweet Home 3D – Blend Swap CC BY', autor: 'Blend Swap', licence: 'CC BY 3.0', odkaz: 'https://www.sweethome3d.com/freeModels.jsp', licenceOdkaz: 'https://creativecommons.org/licenses/by/3.0/', upraveno: true },
+    scopia: { nazev: 'Sweet Home 3D – Scopia', autor: 'Space Mushrooms, Scopia Visual Interfaces Systems, s.l. (scopia.es)', licence: 'CC BY 3.0', odkaz: 'https://www.sweethome3d.com/freeModels.jsp', licenceOdkaz: 'https://creativecommons.org/licenses/by/3.0/', upraveno: true },
 };
+const SH3D = new Set(['bs-cc0', 'bs-ccby', 'scopia']);
+const SH3D_URL = 'https://www.sweethome3d.com/wp-content/themes/sweet-home-3d/theme/assets/models';
+const sh3dGlb = (p) => path.join(CACHE, 'sh3d', p.orig + '.glb');
 
-async function stahni(url, cil) {
+async function stahni(url, cil, hlavicky = UA) {
     if (fs.existsSync(cil) && fs.statSync(cil).size > 0) return;
     fs.mkdirSync(path.dirname(cil), { recursive: true });
-    const r = await fetch(url, { headers: UA });
+    const r = await fetch(url, { headers: hlavicky });
     if (!r.ok) throw new Error(r.status + ' ' + url);
     fs.writeFileSync(cil, Buffer.from(await r.arrayBuffer()));
 }
 
 async function zdrojovySoubor(p) {
+    // Kus ze Sweet Home 3D převedl do GLB už pripravSh3d
+    if (SH3D.has(p.zdroj)) {
+        if (!fs.existsSync(sh3dGlb(p))) throw new Error('chybí převedený model ' + sh3dGlb(p));
+        return sh3dGlb(p);
+    }
     if (p.zdroj === 'abo') {
         const cil = path.join(CACHE, 'abo', p.orig + '.glb');
         await stahni(`${ABO}/${p.orig.slice(-1)}/${p.orig}.glb`, cil);
@@ -91,13 +104,59 @@ async function poVlaknech(polozky, n, prace) {
     }));
 }
 
-const TYPY = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.glb': 'model/gltf-binary', '.webp': 'image/webp', '.png': 'image/png' };
+const TYPY = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.glb': 'model/gltf-binary', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.obj': 'text/plain', '.mtl': 'text/plain' };
+
+/**
+ * Kusy ze Sweet Home 3D: stáhne zip kusu, rozbalí ho a v prohlížeči převede OBJ + MTL na GLB v metrech s našimi
+ * materiály (prevod.html). Výsledek zůstane v cache, dál jde stejnou cestou jako ostatní modely.
+ */
+async function pripravSh3d(polozky, port) {
+    const k = polozky.filter(p => SH3D.has(p.zdroj) && (volby.znovu || !fs.existsSync(sh3dGlb(p))));
+    if (!k.length) return;
+    console.log(`Převádím ${k.length} kusů ze Sweet Home 3D`);
+    const q = (s) => (process.platform === 'win32' ? `"${s}"` : s);
+    const prohl = await otevriProhlizec({ sirka: 400, vyska: 300 });
+    try {
+        await prohl.jdiNa(`http://127.0.0.1:${port}/prevod.html`);
+        await prohl.cekej('typeof window.preved==="function"', 30000, 'převodní stránka');
+        for (const p of k) try {
+            const slozka = path.join(CACHE, 'sh3d', p.orig);
+            await stahni(`${SH3D_URL}/${p.orig}.zip`, slozka + '.zip', { 'User-Agent': 'Wget/1.21' });
+            if (!fs.existsSync(slozka)) {
+                fs.mkdirSync(slozka, { recursive: true });
+                // Windows: systémový tar (bsdtar) umí zip, tar z Gitu ne
+                if (process.platform === 'win32') await spust(q(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe')), ['-xf', q(slozka + '.zip'), '-C', q(slozka)]);
+                else await spust('unzip', ['-o', '-q', slozka + '.zip', '-d', slozka]);
+            }
+            const soubory = fs.readdirSync(slozka, { recursive: true }).map(String);
+            const obj = soubory.find(s => s.toLowerCase().endsWith('.obj'));
+            if (!obj) throw new Error('v zipu není OBJ: ' + p.orig);
+            const objCesta = path.join(slozka, obj);
+            const mtl = (fs.readFileSync(objCesta, 'utf8').match(/^mtllib\s+(.+)$/m) || [])[1]?.trim() || null;
+            const url = '/sh3d/' + path.relative(path.join(CACHE, 'sh3d'), path.dirname(objCesta)).split(path.sep).map(encodeURIComponent).join('/');
+            await prohl.vyhodnot(`(window.preved(${JSON.stringify(url)}, ${JSON.stringify(path.basename(obj))}, ${JSON.stringify(mtl)}, ${JSON.stringify({ otoc: p.otoc || 0, materialy: p.materialy || null })}), 1)`);
+            await prohl.cekej('window.hotovo===true', 120000, p.id);
+            const v = JSON.parse(await prohl.vyhodnot('JSON.stringify(window.vysledek)'));
+            if (v.chyba) throw new Error(p.id + ': ' + v.chyba.slice(0, 300));
+            fs.writeFileSync(sh3dGlb(p), Buffer.from(v.glb, 'base64'));
+            console.log(`  ${p.id} ${v.rozmery.join(' × ')} m, materiály ${JSON.stringify(v.materialy)}${v.bezObrazku.length ? ', bez textury ' + v.bezObrazku.join(', ') : ''}`);
+        } catch (e) {
+            // Chyba jednoho kusu nezastaví dávku, kus bez modelu pak nahlásí zmenšení
+            console.log('  CHYBA převodu', p.id, String(e.message).slice(0, 300));
+            await prohl.jdiNa(`http://127.0.0.1:${port}/prevod.html`);
+            await prohl.cekej('typeof window.preved==="function"', 30000, 'převodní stránka');
+        }
+    } finally { await prohl.zavri(); }
+}
 function server() {
     return new Promise((ok) => {
         const s = http.createServer((q, r) => {
             const u = decodeURIComponent(q.url.split('?')[0]);
-            const f = u === '/nahled.html' ? path.join(__dirname, 'nahled.html') : path.join(PUBLIC, u);
-            if (!f.startsWith(PUBLIC) && !f.startsWith(__dirname)) { r.writeHead(403); return r.end(); }
+            const f = u === '/nahled.html' || u === '/prevod.html' ? path.join(__dirname, u)
+                : u.startsWith('/three-ex/') ? path.join(__dirname, 'three', u.slice(10))
+                : u.startsWith('/sh3d/') ? path.join(CACHE, 'sh3d', u.slice(6))
+                : path.join(PUBLIC, u);
+            if (!f.startsWith(PUBLIC) && !f.startsWith(__dirname) && !f.startsWith(path.join(CACHE, 'sh3d'))) { r.writeHead(403); return r.end(); }
             if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { r.writeHead(404); return r.end(); }
             r.writeHead(200, { 'Content-Type': TYPY[path.extname(f)] || 'application/octet-stream' });
             fs.createReadStream(f).pipe(r);
@@ -112,6 +171,8 @@ function server() {
     const vyber = zadani.polozky.filter(p => !filtr || filtr.test(p.id));
     const cesta = (slozka, p, pripona) => path.join(VYSTUP, slozka, p.id + pripona);
 
+    const srv = await server();
+    await pripravSh3d(vyber, srv.address().port);
     console.log(`Zmenšuji ${vyber.length} modelů, ${VLAKEN} vlákna`);
     const chyby = [];
     let hotovo = 0;
@@ -133,7 +194,7 @@ function server() {
             if (!fs.existsSync(cesta('modely', pol, '.glb'))) continue;
             const r = vysledky.get(pol.id) || stare.get(pol.id);
             if (!r) continue;
-            polozky.push({ id: pol.id, nazev: pol.nazev, kategorie: pol.kategorie, zdroj: pol.zdroj, orig: pol.orig, sirka: r.sirka, hloubka: r.hloubka, vyska: r.vyska, uroven: pol.uroven ?? 0, plosek: r.plosek, ...(stare.get(pol.id)?.maska ? { maska: stare.get(pol.id).maska } : {}) });
+            polozky.push({ id: pol.id, nazev: pol.nazev, kategorie: pol.kategorie, zdroj: pol.zdroj, orig: pol.orig, sirka: r.sirka, hloubka: r.hloubka, vyska: r.vyska, uroven: pol.uroven ?? 0, plosek: r.plosek, ...(pol.autor ? { autor: pol.autor, dilo: pol.dilo, odkaz: pol.odkaz } : {}), ...(stare.get(pol.id)?.maska ? { maska: stare.get(pol.id).maska } : {}) });
         }
         fs.writeFileSync(path.join(VYSTUP, 'katalog.json'), JSON.stringify({ verze: 1, zdroje: ZDROJE, kategorie: zadani.kategorie, polozky }, null, 1));
         return polozky;
@@ -143,7 +204,6 @@ function server() {
         if (!fs.existsSync(nahled) || !fs.existsSync(znacka)) return false;
         return !STARSI || fs.statSync(nahled).mtime >= fs.statSync(cesta('modely', pol, '.glb')).mtime;
     };
-    const srv = await server();
     const p = await otevriProhlizec({ sirka: 900, vyska: 700 });
     // Stránka si načtené modely drží (Katalog3d), proto se po pár kusech obnoví, jinak by při stovkách došla paměť.
     // Průběžný zápis katalogu: po pádu se hotové náhledy nepočítají znovu.

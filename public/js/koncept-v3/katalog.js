@@ -16,13 +16,13 @@
     /**
      * Nábytek podle skupiny místností (Libor 11. 11. 2026): volba skupiny nad kategoriemi nechá jen kategorie,
      * které do ní patří, v pořadí od nejtypičtější. Skupiny viz SKUPINY_MISTNOSTI ve stavebni-engine.js.
-     * Až přibude koupelna, kuchyňská linka a vestavěné skříně (modules/katalog.md, Plán), doplnit sem.
+     * Až přibude kuchyňská linka a vestavěné skříně (modules/katalog.md, Plán 2), doplnit sem.
      */
     const KATEGORIE_PODLE_SKUPINY = {
         denni: ['pohovky', 'kresla', 'stolky', 'stoly', 'zidle', 'psaci', 'police', 'skrine', 'svitidla', 'koberce', 'obrazy', 'zrcadla', 'rostliny'],
         nocni: ['postele', 'skrine', 'stolky', 'psaci', 'zidle', 'kresla', 'police', 'zrcadla', 'svitidla', 'koberce', 'obrazy', 'rostliny'],
         kuchyne: ['stoly', 'zidle', 'police', 'skrine', 'svitidla', 'obrazy', 'rostliny'],
-        hygiena: ['zrcadla', 'skrine', 'police', 'svitidla', 'rostliny'],
+        hygiena: ['koupelna', 'zrcadla', 'skrine', 'police', 'svitidla', 'rostliny'],
         vstup: ['skrine', 'police', 'zrcadla', 'zidle', 'stolky', 'svitidla', 'koberce', 'obrazy', 'rostliny'],
         technicke: ['police', 'skrine', 'svitidla'],
     };

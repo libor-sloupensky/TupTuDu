@@ -8,7 +8,7 @@ Kusy z volně licencovaných zdrojů, které si uživatel vloží do půdorysu a
 |---|---|---|
 | Volný nábytek a dekorace | Amazon Berkeley Objects (ABO), Poly Haven | první balík hotový |
 | Podlahy, dlažba, obklady, látky | ambientCG, Poly Haven (CC0) | další krok |
-| Umyvadlo, WC, vana | tvary ze Sweet Home 3D (jen sady CC BY) s naší keramikou a chromem | v plánu, viz Plán 1 |
+| Umyvadlo, WC, vana, pračka, radiátor | Sweet Home 3D (sady Blend Swap CC0 a CC BY, Scopia CC BY) s naší keramikou a chromem | 22 kusů lokálně 11. 11. 2026, viz Koupelna ze Sweet Home 3D |
 | Sprchový kout, kuchyňská linka, vestavěné skříně | vlastní generátor (konfigurátor) | v plánu, viz Plán 2 |
 | Zahrada, obrazy z muzeí | EZ-Tree, Poly Haven, Met | později |
 | Co jinde není, „nafoť svůj gauč" | AI generátor, test až nad hotovým základem | později |
@@ -29,7 +29,8 @@ Kusy z volně licencovaných zdrojů, které si uživatel vloží do půdorysu a
 | `config/katalog.php` | adresa úložiště souborů |
 | `services/katalog/polozky.json` | zadání: co v katalogu je, český název, kategorie, výška nad podlahou |
 | `services/katalog/sestav.cjs` | výroba, viz níž |
-| `services/katalog/s3.cjs` | založení a ověření bucketu, nahrání souborů do S3 |
+| `services/katalog/s3.cjs` | založení a ověření bucketu, nahrání souborů do S3 (`nahraj --jen=^sh3d-` jen vybrané kusy) |
+| `services/katalog/prevod.html`, `services/katalog/three/` | převod OBJ + MTL ze Sweet Home 3D na GLB (three.js r128: OBJLoader, MTLLoader, GLTFExporter), jen pro výrobu |
 | `resources/views/pravni/autori-modelu.blade.php` | stránka `/model-credits` s autory a licencemi |
 | `services/import-test/test-katalog-ui.cjs` | test celé cesty v prohlížeči |
 
@@ -171,10 +172,23 @@ Viděno při prohlídce, zatím neřešeno:
 4. **Dotyk na tabletu** nikdo nezkoušel.
 5. **Stránka analýzy** v nákladech ještě uvádí Cloudflare R2, Libor navrhl AWS.
 
+## Koupelna ze Sweet Home 3D (11. 11. 2026)
+
+Kategorie `koupelna` (Koupelna a WC), 22 kusů: WC, bidet, pisoár, umyvadla, vany, sprchový kout se sedátkem, pračky, sušička, koupelnové radiátory. Ve skupině místností `hygiena` je první.
+
+- **Licence:** jen knihovny Blend Swap CC0, Blend Swap CC BY a Scopia (CC BY 3.0). Contributions, LucaPresidente a další sady jsou pod Free Art License (copyleft), z nich nic. Blend Swap má u každého kusu jiného autora: `autor`, `dilo` a `odkaz` jsou u kusu v `polozky.json` (z `BLENDSWAP_LICENSE.txt`, u HTML licence autor z `creator` v katalogu knihovny) a stránka autorů je vypíše po zdrojích. Kus bez licenčního souboru se nebere (modernToilet).
+- **Stažení:** kus po kusu z `sweethome3d.com/…/assets/models/<orig>.zip`, `orig` je cesta v knihovně (`blendswap-cc-0/toiletsUnit`, `scopia/islandBath`). Zip rozbalí systémový `tar` (na Windows bsdtar ze System32).
+- **Převod (`pripravSh3d` v `sestav.cjs`, stránka `prevod.html`):** OBJ je v centimetrech s y nahoru a předkem k +z, převede se na metry a zapeče. Materiály podle názvu: zrcadlo, sklo, bílý plech na lak, kov na chrom, keramika (`PRAVIDLA`), ostatní zůstanou z MTL. Kus může v zadání přepsat materiály (`materialy: { nazev: 'sklo' }`) a natočení (`otoc` ve stupních). Převedený GLB je v cache `tuptudu-katalog/sh3d`, dál jde stejnou cestou (zmenšení, náhled, značka).
+- **Závěsné kusy** mají `uroven` (výšku spodku nad podlahou): umyvadla 0,26 až 0,58 m, pisoár 0,3 m, radiátory 0,15 m.
+- **Vyřazené po prohlídce archu:** červená miska, nástěnný blok umyvadla se zrcadlem (bathroom1), druhý pisoár, kamenné umyvadlo na desku (bez desky visí), sprchový kout s obkladem (98 tisíc plošek). Pračka Scopia má na předním panelu pruhy přímo v geometrii, místo ní je jako pračka použitý model sušičky (`sh3d-pracka`, stejný `orig`).
+- **Postup:** `node services/katalog/sestav.cjs --jen=^sh3d-`, arch `node services/katalog/kontrola.cjs --archy --kat=koupelna`, potom `node services/katalog/s3.cjs nahraj --jen=^sh3d-`.
+- **Stav 11. 11. 2026:** kusy jsou lokálně, `katalog.json` je commitnutý, **do S3 ještě nenahrané** (automatický režim nahrání nepovolil). Před nasazením na web nejdřív nahrát, jinak se v editoru kusy koupelny nenačtou.
+- **Zbývá z Plánu 1:** závěsné WC, zrcadlová skříňka, samostatná koupelnová skříňka a sprchová vanička nejsou v žádné vyhovující sadě. Vanička a sprchový kout patří do konfigurátoru (Plán 2), závěsné WC a skříňky buď parametricky, nebo z dalšího zdroje CC0 (Sketchfab CC BY jen s kontrolou kus po kusu).
+
 ## Plán: koupelna, WC, kuchyňská linka a vestavěné skříně (Libor 11. 11. 2026)
 
 V katalogu chybí vybavení koupelny a WC, kuchyňská linka a vestavěné skříně. Libor: „dvě sousta, zatím do plánů, ať na ně nezapomeneme.“ Nedělat bez výzvy.
 
-**Plán 1: koupelna a WC.** Umyvadlo, WC (i závěsné), vana, bidet, pisoár, pračka a sušička jako obyčejné kusy katalogu. Tvary ze Sweet Home 3D, jen sady s licencí CC BY (autor do `ZDROJE` v `sestav.cjs`), keramika a chrom naše. Nové kategorie, např. `sanita`, a jejich doplnění do `KATEGORIE_PODLE_SKUPINY` (skupina `hygiena`). Sprchový kout patří do Plánu 2, potřebuje volné rozměry a zástěnu.
+**Plán 1: koupelna a WC.** Rozjeté 11. 11. 2026, stav v oddílu Koupelna ze Sweet Home 3D. Původní zadání: umyvadlo, WC (i závěsné), vana, bidet, pisoár, pračka a sušička jako obyčejné kusy katalogu. Tvary ze Sweet Home 3D, jen sady s licencí CC BY (autor do `ZDROJE` v `sestav.cjs`), keramika a chrom naše. Nové kategorie, např. `sanita`, a jejich doplnění do `KATEGORIE_PODLE_SKUPINY` (skupina `hygiena`). Sprchový kout patří do Plánu 2, potřebuje volné rozměry a zástěnu.
 
 **Plán 2: konfigurátor kuchyňské linky a vestavěných skříní.** Nejde o pevné kusy, rozměr se řídí místností. Společný základ: řada modulů podél zdi (spodní, horní, vysoké), šířky modulů s dorovnáním do rohu nebo k otvoru, pracovní deska, dvířka a úchytky, barva korpusu a dvířek. Linka navíc dřez, varná deska, trouba, digestoř, lednice a myčka jako moduly. Vestavěná skříň výklenek od podlahy ke stropu s posuvnými nebo otočnými dveřmi. Ve 3D generovaná geometrie, v půdorysu značka s rozdělením modulů. Před začátkem rozhodnout s Liborem: tvar linky (rovná, L, U, ostrůvek), jak moc podrobné moduly a jestli půjde do rozpočtu.

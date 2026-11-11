@@ -67,6 +67,7 @@ return [
         'koberce' => 'Dywany',
         'obrazy' => 'Obrazy',
         'zrcadla' => 'Lustra',
+        'koupelna' => 'Łazienka i WC',
         'rostliny' => 'Rośliny i doniczki',
     ],
 

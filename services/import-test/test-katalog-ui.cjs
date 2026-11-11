@@ -73,7 +73,10 @@ const kontrola = (popis, podminka, detail = '') => {
         kontrola('noční zóna nabídne postele první a kategorii přepne na ně', skupiny.nocni.volby[0] === 'postele' && skupiny.nocni.kategorie === 'postele' && skupiny.nocni.vybrana === 'postele' && !skupiny.nocni.volby.includes('pohovky') && skupiny.nocni.karet > 0, JSON.stringify(skupiny.nocni));
         kontrola('denní zóna bez postelí přepne na pohovky', skupiny.denni.kategorie === 'pohovky' && !skupiny.denni.volby.includes('postele'), JSON.stringify(skupiny.denni));
         kontrola('technické a sklady jen police, skříně a svítidla', skupiny.technicke.volby.join() === 'police,skrine,svitidla' && skupiny.technicke.kategorie === 'police', JSON.stringify(skupiny.technicke));
-        kontrola('„Všechny místnosti“ vrátí všech 14 kategorií', skupiny.vse.volby.length === 14, String(skupiny.vse.volby.length));
+        // Koupelna a WC ze Sweet Home 3D (Plán 1, 11. 11. 2026): první ve skupině koupelen, kusy s autorem pro CC BY
+        const koupelna = await p.vyhodnot(`(() => { const d = ${D}; d.katalogNastavSkupinu('hygiena'); const kusy = d.katalog.polozky.filter(x => x.kategorie === 'koupelna'); const r = { prvni: d.katalogKategorieVolby[0]?.id, kategorie: d.katalogKategorie, kusu: kusy.length, sAutorem: kusy.filter(x => x.autor && x.odkaz).length, zavesne: kusy.filter(x => x.uroven > 0).length, nazevEn: kusy.find(x => x.id === 'sh3d-pracka')?.nazevZdroj }; d.katalogNastavSkupinu(''); d.katalogKategorie = 'pohovky'; return r; })()`);
+        kontrola('koupelny a WC: kategorie Koupelna a WC první, přes 20 kusů, autoři Blend Swap, závěsné kusy nad podlahou', koupelna.prvni === 'koupelna' && koupelna.kusu >= 20 && koupelna.sAutorem >= 8 && koupelna.zavesne >= 5 && koupelna.nazevEn === 'Pračka', JSON.stringify(koupelna));
+        kontrola('„Všechny místnosti“ vrátí všech 15 kategorií', skupiny.vse.volby.length === 15, String(skupiny.vse.volby.length));
         // Vybraná místnost s druhem na plánu přepne nabídku na svou skupinu, bez druhu volbu nechá.
         // Panel místnosti má druhy po skupinách (optgroup), Jiná je nahoře zvlášť.
         const zVyberu = await p.vyhodnot(`(async () => { const d = ${D}; const cekej = () => new Promise(r => setTimeout(r, 150));
@@ -400,8 +403,8 @@ const kontrola = (popis, podminka, detail = '') => {
         await p.snimek(path.join(vystup, 'katalog-sdileni.png'));
 
         console.log('\n8) Stránka autorů');
-        const autori = await p.vyhodnot(`(async () => { const r = await fetch('/model-credits'); const t = await r.text(); return { ok: r.ok, abo: t.includes('Amazon Berkeley Objects') && t.includes('Amazon.com') && t.includes('CC BY 4.0'), ph: t.includes('Poly Haven') }; })()`);
-        kontrola('stránka autorů uvádí zdroje a licence', autori.ok && autori.abo && autori.ph, JSON.stringify(autori));
+        const autori = await p.vyhodnot(`(async () => { const r = await fetch('/model-credits'); const t = await r.text(); return { ok: r.ok, abo: t.includes('Amazon Berkeley Objects') && t.includes('Amazon.com') && t.includes('CC BY 4.0'), ph: t.includes('Poly Haven'), sh3d: t.includes('Scopia') && t.includes('Jay-Artist') && t.includes('blendswap.com/blends/view/24948') }; })()`);
+        kontrola('stránka autorů uvádí zdroje a licence i autory koupelny', autori.ok && autori.abo && autori.ph && autori.sh3d, JSON.stringify(autori));
 
         const chybyStranky = (p.chyby || []).filter(c => !/favicon|404/.test(String(c)));
         kontrola('bez chyb v konzoli', chybyStranky.length === 0, chybyStranky.slice(0, 3).join(' | ').slice(0, 300));

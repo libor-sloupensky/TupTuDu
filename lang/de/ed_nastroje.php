@@ -67,6 +67,7 @@ return [
         'koberce' => 'Teppiche',
         'obrazy' => 'Bilder',
         'zrcadla' => 'Spiegel',
+        'koupelna' => 'Bad und WC',
         'rostliny' => 'Pflanzen und Töpfe',
     ],
 

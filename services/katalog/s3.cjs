@@ -4,9 +4,10 @@
  *
  * Spuštění: node services/katalog/s3.cjs zaloz [--bucket=tuptudu-katalog]
  *           node services/katalog/s3.cjs over [--bucket=tuptudu-katalog] [--cizi=bucket]
- *           node services/katalog/s3.cjs nahraj [--bucket=tuptudu-katalog]
+ *           node services/katalog/s3.cjs nahraj [--bucket=tuptudu-katalog] [--jen=regex]
  * zaloz jde pustit znovu, přepíše nastavení. --cizi ověří, že se klíč do jiného bucketu nedostane.
  * nahraj pošle modely, náhledy a značky z public/katalog, jen ty, které v bucketu chybí nebo se liší.
+ * --jen omezí nahrávání na soubory, jejichž název odpovídá regexu (např. ^sh3d-), ať se nepřepíše nic cizího.
  * Vyřazený kus: node services/katalog/s3.cjs smaz abo-xxx
  */
 const crypto = require('crypto');
@@ -125,7 +126,8 @@ async function znovu(prace, pokusu = 3) {
 
 /** Srovná soubory s bucketem. ETag souboru nahraného vcelku je jeho MD5, stejné se neposílají. */
 async function nahraj() {
-    const soubory = Object.keys(SLOZKY).flatMap(s => fs.readdirSync(path.join(KATALOG, s)).map(nazev => ({ slozka: s, nazev })));
+    const soubory = Object.keys(SLOZKY).flatMap(s => fs.readdirSync(path.join(KATALOG, s)).map(nazev => ({ slozka: s, nazev })))
+        .filter(x => !volby.jen || new RegExp(volby.jen).test(x.nazev));
     console.log(`Soubory katalogu: ${soubory.length}`);
     const chyby = [];
     let i = 0, hotovo = 0, nahrano = 0, bajtu = 0;

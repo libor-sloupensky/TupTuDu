@@ -53,6 +53,10 @@
    "nazev": "Zrcadla"
   },
   {
+   "id": "koupelna",
+   "nazev": "Koupelna a WC"
+  },
+  {
    "id": "rostliny",
    "nazev": "Rostliny a květináče"
   }
@@ -6670,6 +6674,220 @@
    "orig": "B0842L95PD",
    "nazev": "Květináč, bílý",
    "kategorie": "rostliny"
+  },
+  {
+   "id": "sh3d-toiletsUnit",
+   "zdroj": "bs-cc0",
+   "orig": "blendswap-cc-0/toiletsUnit",
+   "nazev": "WC kombi",
+   "kategorie": "koupelna",
+   "dilo": "Bathroom set",
+   "autor": "numroud",
+   "odkaz": "https://www.blendswap.com/blends/view/61923"
+  },
+  {
+   "id": "sh3d-toilets-unit-jay-hardy",
+   "zdroj": "bs-ccby",
+   "orig": "blendswap-cc-by/toilets_unit_jay_hardy",
+   "nazev": "WC kombi, oblé",
+   "kategorie": "koupelna",
+   "dilo": "Bathroom-Suite-Cycles",
+   "autor": "Jay-Artist",
+   "odkaz": "https://www.blendswap.com/blends/view/24948"
+  },
+  {
+   "id": "sh3d-bidet",
+   "zdroj": "bs-cc0",
+   "orig": "blendswap-cc-0/bidet",
+   "nazev": "Bidet",
+   "kategorie": "koupelna",
+   "dilo": "Simple Bidet",
+   "odkaz": "https://www.blendswap.com/blends/view/91444",
+   "autor": "Arusano"
+  },
+  {
+   "id": "sh3d-small-urinal",
+   "zdroj": "scopia",
+   "orig": "scopia/small-urinal",
+   "nazev": "Pisoár",
+   "kategorie": "koupelna",
+   "uroven": 0.3
+  },
+  {
+   "id": "sh3d-washbasin",
+   "zdroj": "bs-cc0",
+   "orig": "blendswap-cc-0/washbasin",
+   "nazev": "Umyvadlo se sloupem",
+   "kategorie": "koupelna",
+   "dilo": "Bathroom set",
+   "autor": "numroud",
+   "odkaz": "https://www.blendswap.com/blends/view/61923"
+  },
+  {
+   "id": "sh3d-modernVanity",
+   "zdroj": "bs-cc0",
+   "orig": "blendswap-cc-0/modernVanity",
+   "nazev": "Umyvadlo se skříňkou, bílé",
+   "kategorie": "koupelna",
+   "dilo": "Modern Vanity",
+   "odkaz": "https://www.blendswap.com/blends/view/89459",
+   "autor": "Dobbs"
+  },
+  {
+   "id": "sh3d-bathroom-vanity",
+   "zdroj": "scopia",
+   "orig": "scopia/bathroom_vanity",
+   "nazev": "Umyvadlo se skříňkou a zrcadlem, vínové",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "sh3d-double-vanity",
+   "zdroj": "scopia",
+   "orig": "scopia/double_vanity",
+   "nazev": "Dvojumyvadlo se skříňkou a zrcadlem, tmavé",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "sh3d-hand-washbasin",
+   "zdroj": "scopia",
+   "orig": "scopia/hand-washbasin",
+   "nazev": "Umývátko",
+   "kategorie": "koupelna",
+   "uroven": 0.58
+  },
+  {
+   "id": "sh3d-bathroom3",
+   "zdroj": "scopia",
+   "orig": "scopia/bathroom3",
+   "nazev": "Umyvadlo na skleněné desce",
+   "kategorie": "koupelna",
+   "uroven": 0.37
+  },
+  {
+   "id": "sh3d-bathroom4",
+   "zdroj": "scopia",
+   "orig": "scopia/bathroom4",
+   "nazev": "Umyvadlo hranaté",
+   "kategorie": "koupelna",
+   "uroven": 0.33
+  },
+  {
+   "id": "sh3d-small-lavatory",
+   "zdroj": "scopia",
+   "orig": "scopia/small_lavatory",
+   "nazev": "Umyvadlo malé, oblé",
+   "kategorie": "koupelna",
+   "uroven": 0.51
+  },
+  {
+   "id": "sh3d-ergonomic-washbasin",
+   "zdroj": "scopia",
+   "orig": "scopia/ergonomic-washbasin",
+   "nazev": "Umyvadlo bezbariérové",
+   "kategorie": "koupelna",
+   "uroven": 0.26
+  },
+  {
+   "id": "sh3d-bath-jay-hardy",
+   "zdroj": "bs-ccby",
+   "orig": "blendswap-cc-by/bath_jay_hardy",
+   "nazev": "Vana 180 × 70",
+   "kategorie": "koupelna",
+   "dilo": "Bathroom-Suite-Cycles",
+   "autor": "Jay-Artist",
+   "odkaz": "https://www.blendswap.com/blends/view/24948"
+  },
+  {
+   "id": "sh3d-corner-bathtub",
+   "zdroj": "scopia",
+   "orig": "scopia/corner_bathtub",
+   "nazev": "Vana rohová",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "sh3d-islandBath",
+   "zdroj": "scopia",
+   "orig": "scopia/islandBath",
+   "nazev": "Vana volně stojící",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "sh3d-shower-cabin-with-seat",
+   "zdroj": "scopia",
+   "orig": "scopia/shower-cabin-with-seat",
+   "nazev": "Sprchový kout se sedátkem",
+   "kategorie": "koupelna",
+   "materialy": {
+    "FixedPane": "sklo",
+    "SlidingDoor": "sklo",
+    "BackFixedPane": "sklo",
+    "WallPipes": "chrom",
+    "WallSupport": "chrom",
+    "ShowerHandle": "chrom",
+    "ShowerHose": "chrom",
+    "VerticalGrabBar": "chrom",
+    "SeatHinge": "chrom",
+    "SeatBars": "chrom",
+    "SeatWallSupports": "chrom",
+    "HorizontalGrabBar": "chrom",
+    "Drain": "chrom",
+    "CabinHook": "chrom",
+    "CabinBearings": "chrom",
+    "DoorHandle": "chrom",
+    "CabinRailing": "chrom",
+    "ShowerTap": "chrom",
+    "TopShower": "chrom",
+    "ShowerHook": "chrom",
+    "HookJoin": "chrom",
+    "FixedPaneAttachment": "chrom",
+    "BackFixedPaneAttachment": "chrom"
+   }
+  },
+  {
+   "id": "sh3d-pracka",
+   "zdroj": "scopia",
+   "orig": "scopia/dryer_machine",
+   "nazev": "Pračka",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "sh3d-washing-machine",
+   "zdroj": "bs-ccby",
+   "orig": "blendswap-cc-by/washing_machine",
+   "nazev": "Pračka s horním plněním",
+   "kategorie": "koupelna",
+   "dilo": "Washing Machine",
+   "autor": "Cattail",
+   "odkaz": "https://www.blendswap.com/blends/view/12651"
+  },
+  {
+   "id": "sh3d-dryer-machine",
+   "zdroj": "scopia",
+   "orig": "scopia/dryer_machine",
+   "nazev": "Sušička",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "sh3d-bathroomRadiator",
+   "zdroj": "bs-ccby",
+   "orig": "blendswap-cc-by/bathroomRadiator",
+   "nazev": "Koupelnový radiátor",
+   "kategorie": "koupelna",
+   "dilo": "bath-units",
+   "autor": "nikitron",
+   "odkaz": "https://www.blendswap.com/blends/view/6601",
+   "uroven": 0.15
+  },
+  {
+   "id": "sh3d-radiatorAndTowels",
+   "zdroj": "bs-ccby",
+   "orig": "blendswap-cc-by/radiatorAndTowels",
+   "nazev": "Koupelnový radiátor s ručníky",
+   "kategorie": "koupelna",
+   "dilo": "Heated towel rail",
+   "odkaz": "https://www.blendswap.com/blends/view/81301",
+   "autor": "Gianmariaveronese",
+   "uroven": 0.15
   }
  ]
 }

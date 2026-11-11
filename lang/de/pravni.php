@@ -13,4 +13,6 @@ return [
     'autori_licence' => 'Lizenz',
     'autori_pocet' => '{1} Wir verwenden :pocet Modell.|[2,*] Wir verwenden :pocet Modelle.',
     'autori_upravy' => 'Wir haben die Modelle bearbeitet: Texturen und Polygonzahl haben wir reduziert, damit sie im Browser schnell laden, außerdem ein Grundriss-Symbol und eine Vorschau ergänzt. Die Urheber haben mit unserem Dienst nichts zu tun und unterstützen ihn nicht. Bei Polstermöbeln lässt sich die Bezugsfarbe ändern, ein solches Stück muss es als Produkt nicht geben.',
+    'autori_dila' => 'Verwendete Werke und ihre Urheber:',
+    'autori_materialy' => 'Bei der Badausstattung haben wir die ursprünglichen Materialien durch eigene Keramik, Chrom, Glas und Lack ersetzt.',
 ];
