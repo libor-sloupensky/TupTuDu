@@ -6,6 +6,7 @@ return [
     'strecha' => 'Tetto',
     'strecha_nastavit' => 'imposta',
     'hrana_strechy' => 'Bordo del tetto',
+    'sloup' => 'Colonna',
     'smazat_podlazi_potvrzeni' => 'Eliminare il piano :nazev con il suo disegno?',
     'schody_mezi_urovnemi' => 'tra i livelli, :nazev',
 
@@ -97,6 +98,9 @@ return [
         'smazani_schodiste' => 'Eliminazione scala',
         'posun_schodiste' => 'Spostamento scala',
         'otoceni_schodiste' => 'Rotazione scala',
+        'sloup' => 'Colonna',
+        'posun_sloupu' => 'Spostamento colonna',
+        'smazani_sloupu' => 'Eliminazione colonna',
         'smazani_strechy' => 'Eliminazione tetto',
         'barva_domu' => 'Colore casa',
         'zaklady' => 'Fondazioni',
@@ -105,6 +109,7 @@ return [
     // Kde se barva v domě používá (nabídka použitých barev)
     'barvy' => [
         'schody' => 'Scale',
+        'sloup' => 'Colonna',
         'podlaha' => 'Pavimento, :nazev',
         'mistnost' => 'stanza',
         'fasada' => 'Facciata',

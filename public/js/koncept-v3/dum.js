@@ -229,6 +229,8 @@
     }
 
     const BARVA_SCHODU = '#8b7355';
+    const SLOUP_SIRKA = 0.2;          // výchozí strana nebo průměr sloupu (m)
+    const SLOUP_DOSAH_ROHU = 0.4;     // jak daleko od lícování v rohu výklenku sloup ještě rozšíří střechu (m)
     const MAX_ODCHYLKA_SCHODU = Math.sin(2 * Math.PI / 180);
 
     /**
@@ -1024,11 +1026,14 @@
             // Za tahu celého domu jede aktivní podlaží napřed a ostatní dojedou až po puštění.
             // Výpočet by mezitím hlásil nepodepřené všechny stěny.
             if (this._domPosun || (this.isRotating && this.renderer?.selectedWalls.size === this.engine.walls.size)) return c ? c.vysledek : new Map();
-            const klic = eng.geoPodpis() + '#' + (engDole?.geoPodpis() ?? '') + '#' + (zem?.klic ?? '');
+            const klic = eng.geoPodpis() + '#' + (engDole?.geoPodpis() ?? '') + '#' + (zem?.klic ?? '') + '#' + JSON.stringify((e.dum.sloupy || []).filter(s => s.podlazi === dole?.id));
             if (c && c.klic === klic) return c.vysledek;
             const PX = e.PX_PER_M;
             const nosne = (en) => [...en.walls.values()].filter(w => w.typ === 'obvodova' || w.typ === 'nosna');
             const podpory = nosne(engDole || { walls: new Map() }).map(w => ({ a: engDole.nodes.get(w.nodeA), b: engDole.nodes.get(w.nodeB), pul: w.tloustka * PX / 2 })).filter(s => s.a && s.b);
+            // Sloup dole nese jen to, co stojí přímo na něm
+            const sloupyDole = dole ? (e.dum.sloupy || []).filter(s => s.podlazi === dole.id) : [];
+            for (const s of sloupyDole) podpory.push({ a: { x: s.x * PX, y: -s.y * PX }, b: { x: s.x * PX, y: -s.y * PX }, pul: (s.sirka || SLOUP_SIRKA) * PX / 2 });
             // Vedle sklepu stojí stěna na vlastních základech v zemině, podporu potřebuje jen nad sklepem.
             // Výš to neplatí: přesah patra nad nižším podlažím ve vzduchu opravdu visí.
             const obrysSklepu = dole?.typ === 'sklep' ? this._obrysPodlazi(dole.id)?.map(h => ({ x: h.a.x * PX, y: h.a.y * PX })) : null;
@@ -1048,7 +1053,7 @@
                     const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
                     const naStene = podpory.some(s => {
                         const dx = s.b.x - s.a.x, dy = s.b.y - s.a.y, L2 = dx * dx + dy * dy;
-                        if (!L2) return false;
+                        if (!L2) return Math.hypot(p.x - s.a.x, p.y - s.a.y) <= s.pul + tol;
                         const u = omez(((p.x - s.a.x) * dx + (p.y - s.a.y) * dy) / L2, 0, 1);
                         return Math.hypot(p.x - s.a.x - dx * u, p.y - s.a.y - dy * u) <= s.pul + tol;
                     });
@@ -1761,6 +1766,151 @@
             this._poZmeneDomu(preloz('ed_dum.krok.smazani_schodiste'));
         },
 
+        // ─── Sloupy ───────────────────────────────────────────
+        // Sloup stojí na podlaží (dum.sloupy, souřadnice m s y nahoru jako schody), označení C1, C2…
+        // podle anglického Column. Ve 3D sahá pod strop, na horním podlaží pod střechu. Sloup v rohu
+        // výklenku (krytý vstup, terasa) rozšíří půdorys střechy: okap jde až přes sloup.
+        zacniSloup() {
+            this._zrusRozkreslene();
+            this.nastroj = 'sloup';
+            this.renderer?.clearSelection();
+        },
+
+        _vybranySloup() {
+            const id = this.renderer ? [...(this.renderer.selectedSloupy || [])][0] : null;
+            return id ? (this.engine.dum.sloupy || []).find(s => s.id === id) || null : null;
+        },
+
+        /** Obrys sloupu v px plátna: čtverec natočený podle `uhel`, kulatý jako dvacetiúhelník. */
+        _obrysSloupu(s) {
+            const PX = this.engine.PX_PER_M;
+            const cx = s.x * PX, cy = -s.y * PX, r = (s.sirka || SLOUP_SIRKA) * PX / 2;
+            if (s.tvar === 'kruh') return Array.from({ length: 20 }, (_, i) => ({ x: cx + r * Math.cos(i * Math.PI / 10), y: cy + r * Math.sin(i * Math.PI / 10) }));
+            const c = Math.cos(s.uhel || 0), sn = Math.sin(s.uhel || 0);
+            return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => ({ x: cx + r * (a * c - b * sn), y: cy + r * (a * sn + b * c) }));
+        },
+
+        /**
+         * Rohy výklenků v obrysu (m plátna): průsečík přímek dvou hran, mezi kterými obrys
+         * uhýbá dovnitř (krytý vstup, terasa). Vrací i obrys, ve kterém je výklenek vyplněný
+         * až do rohu, a kam patří střed sloupu, aby lícoval s oběma hranami.
+         */
+        _rohyVyklenku(hrany) {
+            const m = hrany?.length || 0, vysledek = [];
+            if (m < 5) return vysledek;
+            const plocha = (h) => window.Strecha.plochaPolygonu(h.map(x => x.a));
+            const zn = plocha(hrany) > 0 ? 1 : -1;   // při kladné ploše je vnitřek vlevo od hrany
+            const smer = (h) => { const L = Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y) || 1; return { x: (h.b.x - h.a.x) / L, y: (h.b.y - h.a.y) / L }; };
+            for (let i = 0; i < m; i++) {
+                for (let k = 2; k <= 3; k++) {
+                    const j = (i + k) % m;
+                    if (m - k < 2) continue;
+                    const a = hrany[i], b = hrany[j];
+                    const da = smer(a), db = smer(b);
+                    const det = da.x * db.y - da.y * db.x;
+                    if (Math.abs(det) < 0.5) continue;   // aspoň zhruba kolmé
+                    const t = ((b.a.x - a.a.x) * db.y - (b.a.y - a.a.y) * db.x) / det;
+                    const p = { x: a.a.x + da.x * t, y: a.a.y + da.y * t };
+                    // Roh leží za koncem hrany i a před začátkem hrany j
+                    if ((p.x - a.b.x) * da.x + (p.y - a.b.y) * da.y < 0.05) continue;
+                    if ((b.a.x - p.x) * db.x + (b.a.y - p.y) * db.y < 0.05) continue;
+                    const obrys = [{ a: a.a, b: p, klic: a.klic }, { a: p, b: b.b, klic: b.klic }];
+                    for (let q = (j + 1) % m; q !== i; q = (q + 1) % m) obrys.push(hrany[q]);
+                    // Vyplněním výklenku musí obrys narůst, jinak to výklenek nebyl
+                    if (zn * plocha(obrys) <= zn * plocha(hrany) + 0.05) continue;
+                    const na = { x: -da.y * zn, y: da.x * zn }, nb = { x: -db.y * zn, y: db.x * zn };
+                    vysledek.push({
+                        p, odebrano: k - 1, obrys, uhel: Math.atan2(da.y, da.x),
+                        stred: (r) => ({ x: p.x + (na.x + nb.x) * r, y: p.y + (na.y + nb.y) * r }),
+                    });
+                }
+            }
+            return vysledek;
+        },
+
+        /** Roh výklenku, ve kterém sloup stojí (nejvýš SLOUP_DOSAH_ROHU od lícování), nebo null. */
+        _rohSloupu(hrany, s) {
+            const r = (s.sirka || SLOUP_SIRKA) / 2;
+            let nej = null;
+            for (const roh of this._rohyVyklenku(hrany)) {
+                const c = roh.stred(r);
+                const d = Math.hypot(c.x - s.x, c.y + s.y);
+                if (d > SLOUP_DOSAH_ROHU + r) continue;
+                if (!nej || roh.odebrano < nej.roh.odebrano || (roh.odebrano === nej.roh.odebrano && d < nej.d)) nej = { roh, d };
+            }
+            return nej ? nej.roh : null;
+        },
+
+        /** Obrys horního podlaží rozšířený o výklenky se sloupem v rohu: střecha jde přes sloup. */
+        _obrysSeSloupy(hrany, podlaziId) {
+            const sloupy = (this.engine.dum.sloupy || []).filter(s => s.podlazi === podlaziId && s.strecha !== false);
+            let h = hrany;
+            for (const s of sloupy) {
+                const roh = h && this._rohSloupu(h, s);
+                if (roh) h = roh.obrys;
+            }
+            return h;
+        },
+
+        /** Sloup přitažený do rohu výklenku aktivního podlaží (bod v px), jinak natočený podle stěn. */
+        _magnetSloupu(bod, sirka, e) {
+            const PX = this.engine.PX_PER_M;
+            const uhel = this._magnetSmeru(0, Math.PI / 4);
+            if (this._bezMagnetu(e)) return { x: bod.x, y: bod.y, uhel };
+            // Do rohu stejně daleko, odkud sloup rozšíří střechu: co střechu rozšíří, to i lícuje
+            const sila = Math.max(0, Math.min(100, Number(this.magnetSila ?? 100))) / 100;
+            const dosah = Math.max(this._dosahMagnetu(24), (SLOUP_DOSAH_ROHU + sirka / 2) * PX * sila);
+            let nej = null;
+            for (const roh of this._rohyVyklenku(this._obrysPodlazi(this.engine.dum.aktivni))) {
+                const c = roh.stred(sirka / 2);
+                const d = Math.hypot(c.x * PX - bod.x, c.y * PX - bod.y);
+                if (d <= dosah && (!nej || d < nej.d)) nej = { d, x: c.x * PX, y: c.y * PX, uhel: roh.uhel };
+            }
+            return nej || { x: bod.x, y: bod.y, uhel };
+        },
+
+        _sloupKlik(pos, e) {
+            const d = this.engine.dum;
+            if (!d.sloupy) d.sloupy = [];
+            const PX = this.engine.PX_PER_M;
+            const q = this._magnetSloupu(pos, SLOUP_SIRKA, e);
+            let n = 1;
+            while (d.sloupy.some(s => s.id === 'C' + n)) n++;
+            this.engine.pushUndo();
+            d.sloupy.push({ id: 'C' + n, podlazi: d.aktivni, x: q.x / PX, y: -q.y / PX, sirka: SLOUP_SIRKA, tvar: 'ctverec', uhel: q.uhel });
+            this._kurzorDum = null;
+            this.nastroj = 'vyber';
+            this.renderer.setSelection([]);
+            this.renderer.selectedSloupy.add('C' + n);
+            this._poZmeneDomu(preloz('ed_dum.krok.sloup'));
+        },
+
+        setSloup(klic, hodnota) {
+            const s = this._vybranySloup();
+            if (!s) return;
+            const horni = this._obrysPodlazi(s.podlazi);
+            const roh = horni && this._rohSloupu(horni, s);
+            this.engine.pushUndo();
+            if (klic === 'sirka') {
+                s.sirka = Math.round(omez(Number(hodnota) || SLOUP_SIRKA, 0.1, 1) * 100) / 100;
+                // Sloup v rohu zůstane lícovat s oběma hranami
+                if (roh) { const c = roh.stred(s.sirka / 2); s.x = c.x; s.y = -c.y; }
+            }
+            if (klic === 'tvar') s.tvar = hodnota === 'kruh' ? 'kruh' : 'ctverec';
+            if (klic === 'barva') s.barva = hodnota;
+            if (klic === 'strecha') { if (hodnota) delete s.strecha; else s.strecha = false; }
+            this._poZmeneDomu(preloz('ed_dum.krok.sloup'));
+        },
+
+        smazatSloup() {
+            const s = this._vybranySloup();
+            if (!s) return;
+            this.engine.pushUndo();
+            this.engine.dum.sloupy = this.engine.dum.sloupy.filter(x => x !== s);
+            this.renderer.clearSelection();
+            this._poZmeneDomu(preloz('ed_dum.krok.smazani_sloupu'));
+        },
+
         // ─── Střecha ───────────────────────────────────────────
         /** Klik na řádek Střecha: ve 2D ukáže střechu v půdorysu, ve 3D ji ukáže nebo skryje. Bez střechy nabídne vytvoření. */
         prepniStrechu() {
@@ -1907,6 +2057,7 @@
                 mapa.get(k).add(kde);
             };
             for (const s of d.schodiste) pridej('schody:' + s.id, s.barva || BARVA_SCHODU, preloz('ed_dum.barvy.schody'));
+            for (const s of d.sloupy || []) pridej('sloup:' + s.id, s.barva, preloz('ed_dum.barvy.sloup'));
             if (d.strecha) {
                 pridej('strecha', barvaKrytiny(d.strecha), preloz('ed_dum.strecha'));
                 for (const [k, h] of Object.entries(d.strecha.hrany || {})) pridej('hrana:' + k, h.barva, preloz('ed_dum.hrana_strechy'));
@@ -2064,10 +2215,11 @@
             const horni = this.engine.horniPodlazi();
             const eng = this.engine.enginePodlazi(horni.id);
             if (!eng) return null;
-            const klic = eng.geoPodpis() + '#' + JSON.stringify(d.strecha) + '#' + horni.typ + horni.vyska;
+            const sloupy = (d.sloupy || []).filter(s => s.podlazi === horni.id && s.strecha !== false);
+            const klic = eng.geoPodpis() + '#' + JSON.stringify(d.strecha) + '#' + horni.typ + horni.vyska + '#' + JSON.stringify(sloupy);
             if (this._strechaCache && this._strechaCache.klic === klic) return this._strechaCache.vysledek;
             let vysledek = null;
-            const hrany = this._obrysPodlazi(horni.id);
+            const hrany = this._obrysSeSloupy(this._obrysPodlazi(horni.id), horni.id);
             if (hrany && hrany.length >= 3) {
                 const typy = window.Strecha.typyHran(d.strecha, hrany);
                 const zOkap = this._vyskaOkapu();
@@ -2151,7 +2303,9 @@
             if (!st) return 'null';
             const { krytina: _k, barva: _b, hrany, ...zbytek } = st;
             const bezBarev = Object.fromEntries(Object.entries(hrany || {}).map(([k, { barva: _x, ...h }]) => [k, h]));
-            return JSON.stringify({ ...zbytek, hrany: bezBarev });
+            // Sloup v rohu výklenku mění půdorys střechy, a tím i výšku stěn pod ní
+            const sloupy = (this.engine.dum.sloupy || []).filter(s => s.podlazi === this.engine.horniPodlazi().id && s.strecha !== false).map(s => [s.x, s.y, s.sirka]);
+            return JSON.stringify({ ...zbytek, hrany: bezBarev, sloupy });
         },
 
         /** Stěny na obrysu horního podlaží dosáhnou až pod střechu, jinak by pod vyšším okapem zůstala mezera. */
@@ -2166,6 +2320,16 @@
         inspektorDum() {
             if (!this.engine || !this.renderer) return null;
             const r = this.renderer;
+            const sl = this._vybranySloup();
+            if (sl) {
+                const horni = this.engine.horniPodlazi();
+                const strechaVolba = sl.podlazi === horni.id && !!this.engine.dum.strecha;
+                return {
+                    kind: 'sloup', count: 1, id: sl.id, sirka: sl.sirka || SLOUP_SIRKA, tvar: sl.tvar || 'ctverec',
+                    barva: sl.barva || this.engine.dum.barvy.fasada, strechaVolba, strecha: sl.strecha !== false,
+                    vRohu: !!this._rohSloupu(this._obrysPodlazi(sl.podlazi), sl),
+                };
+            }
             const s = this._vybraneSchody();
             if (s) {
                 const g = schodyGeo(s, this._vyskaMeziPodlazimi(s), this.engine.PX_PER_M);
@@ -2210,7 +2374,7 @@
                 if (this.podklad) this._domTah = { typ: 'podklad', last: { ...pos }, start: { ...pos }, posun: false };
                 return true;
             }
-            if (this.nastroj === 'schody' || this.nastroj === 'lico' || this.nastroj === 'katalog') return true;
+            if (this.nastroj === 'schody' || this.nastroj === 'sloup' || this.nastroj === 'lico' || this.nastroj === 'katalog') return true;
             if (this.nastroj !== 'vyber') return false;
             if (hit.type === 'schodyOtoc') {
                 const s = this.engine.dum.schodiste.find(x => x.id === hit.id);
@@ -2219,6 +2383,15 @@
                 const xs = g.obrys.map(p => p.x), ys = g.obrys.map(p => p.y);
                 const stred = { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 };
                 this._domTah = { typ: 'schodyOtoc', id: hit.id, stred, u0: s.uhel || 0, x0: s.x, y0: s.y, a0: Math.atan2(pos.y - stred.y, pos.x - stred.x), last: { ...pos }, start: { ...pos }, posun: false };
+                return true;
+            }
+            if (hit.type === 'sloup') {
+                const s = (this.engine.dum.sloupy || []).find(x => x.id === hit.id);
+                if (!s) return true;
+                this.renderer.setSelection([]);
+                this.renderer.selectedSloupy.add(hit.id);
+                this.renderer.render();
+                this._domTah = { typ: 'sloup', id: hit.id, x0: s.x, y0: s.y, last: { ...pos }, start: { ...pos }, posun: false };
                 return true;
             }
             if (hit.type === 'schodiste') {
@@ -2268,6 +2441,14 @@
                         s.y -= posunY / PX;
                         t.odchylka = { x: chciX - posunX, y: chciY - posunY };
                     }
+                } else if (t.typ === 'sloup') {
+                    const s = (this.engine.dum.sloupy || []).find(x => x.id === t.id);
+                    if (s) {
+                        const q = this._magnetSloupu({ x: t.x0 * PX + pos.x - t.start.x, y: -t.y0 * PX + pos.y - t.start.y }, s.sirka || SLOUP_SIRKA, e);
+                        s.x = q.x / PX;
+                        s.y = -q.y / PX;
+                        if (s.tvar !== 'kruh') s.uhel = q.uhel;
+                    }
                 } else if (t.typ === 'schodyOtoc') {
                     const s = this.engine.dum.schodiste.find(x => x.id === t.id);
                     if (s) {
@@ -2294,6 +2475,11 @@
                 this._renderDum();
                 return false;
             }
+            if (this.nastroj === 'sloup') {
+                this._kurzorDum = { ...this._magnetSloupu(pos, SLOUP_SIRKA, e) };
+                this._renderDum();
+                return false;
+            }
             return false;
         },
 
@@ -2304,7 +2490,7 @@
             if (!t.posun) return true;
             if (t.typ === 'podklad') { this.podkladUloz?.(); return true; }
             this.renderer._mistnostiCache = null;
-            this._poZmeneDomu(preloz(t.typ === 'schody' ? 'ed_dum.krok.posun_schodiste' : 'ed_dum.krok.otoceni_schodiste'));
+            this._poZmeneDomu(preloz(t.typ === 'schody' ? 'ed_dum.krok.posun_schodiste' : t.typ === 'sloup' ? 'ed_dum.krok.posun_sloupu' : 'ed_dum.krok.otoceni_schodiste'));
             return true;
         },
 
@@ -2312,6 +2498,7 @@
             if (this.rezimStrecha || this.posunPodkladu) return true;
             if (this.nastroj === 'katalog') { this.katalogKlik?.(pos, e); return true; }
             if (this.nastroj === 'schody') { this._schodyKlik(pos, e); return true; }
+            if (this.nastroj === 'sloup') { this._sloupKlik(pos, e); return true; }
             if (this.nastroj === 'lico') { this._licoKlik(pos, e); return true; }
             return false;
         },
@@ -2319,7 +2506,7 @@
         domEsc() {
             if (this.katalogEsc?.()) return true;
             if (this.schodyStart || this.licoBody.length || this.posunPodkladu
-                    || this.nastroj === 'schody' || this.nastroj === 'lico') {
+                    || this.nastroj === 'schody' || this.nastroj === 'sloup' || this.nastroj === 'lico') {
                 this._zrusRozkreslene();
                 this.nastroj = 'vyber';
                 this._renderDum();
@@ -2335,6 +2522,7 @@
 
         domSmazVybrane() {
             if (this._vybraneSchody()) { this.smazatSchody(); return true; }
+            if (this._vybranySloup()) { this.smazatSloup(); return true; }
             return false;
         },
 
@@ -2489,6 +2677,27 @@
                     r.schodyLayer.add(new Konva.Circle({ x: c.x, y: c.y, radius: 4 / s, fill: primary, listening: false }));
                 }
             }
+            // ── Sloupy aktivního podlaží: čtverec s úhlopříčkami, kulatý s křížem ──
+            const kresliSloup = (sl, vybrany, nahled = false) => {
+                const obrys = this._obrysSloupu(sl);
+                const barva = vybrany || nahled ? primary : '#374151';
+                const tvar = new Konva.Line({
+                    points: body(obrys), closed: true, fill: nahled ? 'rgba(255,255,255,0.6)' : '#e5e7eb',
+                    stroke: barva, strokeWidth: vybrany ? 2.5 : 1.5, strokeScaleEnabled: false, listening: !nahled,
+                });
+                tvar.setAttr('_sloupId', sl.id);
+                r.schodyLayer.add(tvar);
+                const cary = sl.tvar === 'kruh' ? [[obrys[0], obrys[10]], [obrys[5], obrys[15]]] : [[obrys[0], obrys[2]], [obrys[1], obrys[3]]];
+                for (const [a, b] of cary) r.schodyLayer.add(new Konva.Line({ points: [a.x, a.y, b.x, b.y], stroke: barva, strokeWidth: 1, strokeScaleEnabled: false, listening: false }));
+            };
+            for (const sl of this.engine.dum.sloupy || []) {
+                if (sl.podlazi === aktivni && !this.jeObjektSkryty({ type: 'sloup', id: sl.id })) kresliSloup(sl, r.selectedSloupy.has(sl.id));
+            }
+            if (this.nastroj === 'sloup' && this._kurzorDum && typeof this._kurzorDum.uhel === 'number') {
+                const c = this._kurzorDum;
+                kresliSloup({ id: '_nahled', x: c.x / PX, y: -c.y / PX, sirka: SLOUP_SIRKA, tvar: 'ctverec', uhel: c.uhel }, false, true);
+            }
+
             // Body při usazování plánku
             this.licoBody.forEach((p, i) => {
                 r.schodyLayer.add(new Konva.Circle({ x: p.x, y: p.y, radius: 5 / s, fill: i % 2 ? '#2563eb' : primary, stroke: '#ffffff', strokeWidth: 1 / s, listening: false }));
@@ -3333,6 +3542,21 @@
                     // celou tloušťkou, jinak by se potkaly jen v hraně. První končí na podlaze.
                     dum.add(this._deska3d(naM(u.celo), [], kota + Math.max(0, u.z - g.v - TL_NASLAPU), kota + u.z - TL_NASLAPU, matSvisle, { podlazi: s.odPodlazi, schody: s.id, podstupnice: true }));
                 }
+            }
+
+            // Sloupy: od podlahy pod strop, na horním podlaží až pod střechu
+            for (const s of d.sloupy || []) {
+                const p = e.podlaziPodleId(s.podlazi);
+                if (!p) continue;
+                const kota = kory.get(p.id) ?? 0;
+                let vyska = e.svetlaVyska(p);
+                if (st && p.id === e.horniPodlazi().id) {
+                    const z = st.plocha ? st.zOkap : window.Strecha.vyskaVBode(st.plochy, s.x, -s.y);
+                    if (z !== null && z > 0.3) vyska = z;
+                }
+                const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(s.barva || d.barvy.fasada), roughness: 0.85 });
+                mat.userData.barva = 'sloup:' + s.id;
+                dum.add(this._deska3d(naM(this._obrysSloupu(s)), [], kota, kota + vyska, mat, { podlazi: p.id, sloup: s.id }));
             }
 
             // Střecha

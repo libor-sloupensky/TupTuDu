@@ -776,6 +776,8 @@ class StavebniEngine {
             // stropu nad podlažím. typ: bezne | sklep | podkrovi; data = JSON kresby, u aktivního null.
             podlazi: [{ id: 'P1', nazev: autoNazevPodlazi('bezne', 0), typ: 'bezne', vyska: 3.05, strop: 0.25, data: null }],
             schodiste: [],   // [{id, odPodlazi, doPodlazi, plocha? (schody k výškové ploše), tvar: prime|L|U, x, y (m, y nahoru), uhel (rad), sirka, strana, vyskaStupne?, naslap?, casti?, barva?}]
+            // Sloup stojí na podlaží, označení C1, C2… (Column). strecha: false = nerozšiřuje půdorys střechy.
+            sloupy: [],      // [{id, podlazi, x, y (m, y nahoru), sirka (m), tvar: ctverec|kruh, uhel (rad), barva?, strecha?}]
             plochy: [],      // [{id, podlazi, mistnost, typ: zvysena|snizena|bez_podlahy, dh, body:[[x,y] m] = obrys místnosti z rastru, prenos, vypnuto:[id podlaží]}]
             strecha: null,   // {typ, sklon, presah, presahStit, vyskaOkapu, krytina, hrany:{klíč:{typ,sklon,presah}}}
             zaklady: null,   // {odkop, sirkaPasu, spara, skladba, skladbaDeska, ornice, svah, nakypreni, podDum, prodlouzit, casti:{id podlaží: pasy|deska|stavajici}}; co chybí, bere se z Zemina.VYCHOZI
@@ -803,6 +805,7 @@ class StavebniEngine {
                 data: p.data || null,
             })),
             schodiste: Array.isArray(d.schodiste) ? JSON.parse(JSON.stringify(d.schodiste)) : [],
+            sloupy: (Array.isArray(d.sloupy) ? d.sloupy : []).filter(s => s && s.id && podlazi.some(p => p.id === s.podlazi)).map(s => JSON.parse(JSON.stringify(s))),
             // Výšková plocha patří místnosti (mistnost = id záznamu), obrys si bere z rastru. Starší
             // „prostup" je totéž co bez podlahy; volně kreslené plochy bez místnosti (do 3. 11. 2026)
             // se nepřebírají — neměly by ke komu patřit.
@@ -822,6 +825,7 @@ class StavebniEngine {
             verze: d.verze, aktivni: d.aktivni, posunVysky: d.posunVysky || 0, barvy: { ...d.barvy },
             podlazi: d.podlazi.map(p => ({ ...p })),
             schodiste: JSON.parse(JSON.stringify(d.schodiste || [])),
+            sloupy: JSON.parse(JSON.stringify(d.sloupy || [])),
             plochy: JSON.parse(JSON.stringify(d.plochy || [])),
             strecha: d.strecha ? JSON.parse(JSON.stringify(d.strecha)) : null,
             zaklady: d.zaklady ? JSON.parse(JSON.stringify(d.zaklady)) : null,
@@ -972,6 +976,7 @@ class StavebniEngine {
         this.dum.podlazi = pp.filter(p => p.id !== id);
         this.dum.schodiste = this.dum.schodiste.filter(s => s.odPodlazi !== id && s.doPodlazi !== id);
         this.dum.plochy = this.dum.plochy.filter(p => p.podlazi !== id);
+        this.dum.sloupy = (this.dum.sloupy || []).filter(s => s.podlazi !== id);
         this.dum.schodiste = this.dum.schodiste.filter(s => !s.plocha || this.dum.plochy.some(p => p.id === s.plocha));
         this.prejmenujPodlazi();
         return true;
@@ -1030,11 +1035,15 @@ class StavebniEngine {
         }
     }
 
-    /** Přepočítá objekty domu ležící přes podlaží (schody, výškové plochy) — souřadnice m, y nahoru. */
+    /** Přepočítá objekty domu (schody, sloupy, výškové plochy) — souřadnice m, y nahoru. */
     transformujObjektyDomu(f, rad = 0) {
         const PX = this.PX_PER_M;
         const m = (x, y) => { const q = f({ x: x * PX, y: -y * PX }); return [q.x / PX, -q.y / PX]; };
         for (const s of this.dum.schodiste) {
+            [s.x, s.y] = m(s.x, s.y);
+            s.uhel = (s.uhel || 0) + rad;
+        }
+        for (const s of this.dum.sloupy || []) {
             [s.x, s.y] = m(s.x, s.y);
             s.uhel = (s.uhel || 0) + rad;
         }
@@ -4072,11 +4081,16 @@ class StavebniEngine {
             const od = this.podlaziPodleId(st.odPodlazi)?.nazev || '', kam = this.podlaziPodleId(st.doPodlazi)?.nazev || '';
             list.push({ id: st.id, type: 'schody', nazev: tx('ed_dum.krok.schodiste'), info: od === kam ? od : od + ' → ' + kam });
         }
+        for (const s of this.dum?.sloupy || []) {
+            if (s.podlazi !== aktivni) continue;
+            const cm = Math.round((s.sirka || 0.2) * 100);
+            list.push({ id: s.id, type: 'sloup', nazev: tx('ed_dum.sloup'), info: s.tvar === 'kruh' ? '⌀ ' + cm + ' cm' : cm + ' × ' + cm + ' cm' });
+        }
         // Stěny před otvory, pak podle označení: písmena (D, O…) a číslo
         // číselně (W2 před W10) — ať se v seznamu hledá stejně jako ve výkrese.
         const cislo = (id) => parseInt(String(id).replace(/\D+/g, ''), 10) || 0;
         const pismena = (id) => String(id).replace(/\d+/g, '');
-        const poradi = { wall: 0, opening: 1, kus: 2, schody: 3 };
+        const poradi = { wall: 0, opening: 1, kus: 2, schody: 3, sloup: 4 };
         list.sort((a, b) => poradi[a.type] - poradi[b.type]
             || pismena(a.id).localeCompare(pismena(b.id)) || cislo(a.id) - cislo(b.id));
         return list;

@@ -39,6 +39,7 @@ return [
         'otvor' => 'Vložit otvor do stěny (6 / O)',
         'schody' => 'Schodiště do vyššího podlaží (7)',
         'katalog' => 'Nábytek a vybavení (8)',
+        'sloup' => 'Sloup (9)',
         'magnet' => 'Magnet — přichytávání k bodům, stěnám a úhlům (klik = nastavení · Alt = dočasně bez magnetu)',
         'magnet_sila' => 'Síla přichytávání',
         'vypnuto' => 'vypnuto',
@@ -95,6 +96,18 @@ return [
         'kompas_zapad' => 'Z',
         'uhel_k_osam' => 'k osám domu',
         'uhel_k_vodorovne' => 'k vodorovné',
+    ],
+    // Sloup: nový a panel vybraného
+    'sloup' => [
+        'nazev' => 'Sloup',
+        'novy' => 'Nový sloup',
+        'klepni' => 'Klepni, kam sloup postavit. V rohu výklenku (krytý vstup, terasa) se sám přichytí.',
+        'ctverec' => 'Hranatý',
+        'kruh' => 'Kulatý',
+        'sirka_tip' => 'Strana nebo průměr sloupu',
+        'strecha' => 'Střecha přes sloup',
+        'strecha_tip' => 'Sloup v rohu výklenku rozšíří střechu až k sobě, okap vede přes sloup.',
+        'mimo_roh' => 'Sloup nestojí v rohu výklenku, střechu nerozšíří.',
     ],
     // Schodiště: nové a panel vybraného
     'schody' => [

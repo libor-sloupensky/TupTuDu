@@ -6,6 +6,7 @@ return [
     'strecha' => 'Toit',
     'strecha_nastavit' => 'régler',
     'hrana_strechy' => 'Bord du toit',
+    'sloup' => 'Poteau',
     'smazat_podlazi_potvrzeni' => 'Supprimer le niveau :nazev et tout son dessin ?',
     'schody_mezi_urovnemi' => 'entre deux hauteurs de sol, :nazev',
 
@@ -97,6 +98,9 @@ return [
         'smazani_schodiste' => 'Suppression de l’escalier',
         'posun_schodiste' => 'Déplacement de l’escalier',
         'otoceni_schodiste' => 'Rotation de l’escalier',
+        'sloup' => 'Poteau',
+        'posun_sloupu' => 'Déplacement du poteau',
+        'smazani_sloupu' => 'Suppression du poteau',
         'smazani_strechy' => 'Suppression du toit',
         'barva_domu' => 'Couleur de la maison',
         'zaklady' => 'Fondations',
@@ -105,6 +109,7 @@ return [
     // Kde se barva v domě používá (nabídka použitých barev)
     'barvy' => [
         'schody' => 'Escalier',
+        'sloup' => 'Poteau',
         'podlaha' => 'Sol, :nazev',
         'mistnost' => 'pièce',
         'fasada' => 'Façade',

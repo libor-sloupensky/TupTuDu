@@ -134,6 +134,7 @@ class KonvaRenderer {
         this._oddelovacShapes = [];
         this.selectedMistnosti = new Set();
         this.selectedSchody = new Set();
+        this.selectedSloupy = new Set();
         this.selectedPlochy = new Set();
         // Objekt skrytý okem v seznamu objektů se v půdorysu nekreslí, jde pracovat pod ním (nastavuje editor)
         this.jeSkryty = () => false;
@@ -1204,6 +1205,7 @@ class KonvaRenderer {
         this.selectedOddelovace = new Set(oddelovaceIds);
         this.selectedMistnosti = new Set(mistnostiIds);
         this.selectedSchody = new Set();
+        this.selectedSloupy = new Set();
         this.selectedPlochy = new Set();
         this.render();
     }
@@ -1216,6 +1218,7 @@ class KonvaRenderer {
         this.selectedOddelovace.clear();
         this.selectedMistnosti.clear();
         this.selectedSchody.clear();
+        this.selectedSloupy.clear();
         this.selectedPlochy.clear();
         this.render();
     }
@@ -1363,6 +1366,8 @@ class KonvaRenderer {
         if (schodyOtocId) return { type: 'schodyOtoc', id: schodyOtocId };
         const schodisteId = konvaTarget?.getAttr?.('_schodisteId');
         if (schodisteId) return { type: 'schodiste', id: schodisteId };
+        const sloupId = konvaTarget?.getAttr?.('_sloupId');
+        if (sloupId) return { type: 'sloup', id: sloupId };
         // Přenesená zvýšená plocha nesmí zakrýt místnost (výběr, přejmenování): kde místnost je, patří klik jí
         const plochaId = konvaTarget?.getAttr?.('_plochaId');
         if (plochaId) {

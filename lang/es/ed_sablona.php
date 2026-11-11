@@ -39,6 +39,7 @@ return [
         'otvor' => 'Insertar hueco en pared (6 / O)',
         'schody' => 'Escalera a la planta superior (7)',
         'katalog' => 'Muebles y equipamiento (8)',
+        'sloup' => 'Pilar (9)',
         'magnet' => 'Imán: ajuste a puntos, paredes y ángulos (clic = ajustes · Alt = sin imán temporalmente)',
         'magnet_sila' => 'Fuerza del ajuste',
         'vypnuto' => 'desactivado',
@@ -95,6 +96,18 @@ return [
         'kompas_zapad' => 'O',
         'uhel_k_osam' => 'respecto a los ejes de la casa',
         'uhel_k_vodorovne' => 'respecto a la horizontal',
+    ],
+    // Sloup: nový a panel vybraného
+    'sloup' => [
+        'nazev' => 'Pilar',
+        'novy' => 'Nuevo pilar',
+        'klepni' => 'Haz clic donde quieras colocar el pilar. En la esquina de un entrante (entrada cubierta, terraza) se ajusta solo.',
+        'ctverec' => 'Cuadrado',
+        'kruh' => 'Redondo',
+        'sirka_tip' => 'Lado o diámetro del pilar',
+        'strecha' => 'Cubierta sobre el pilar',
+        'strecha_tip' => 'Un pilar en la esquina de un entrante amplía la cubierta hasta él, el alero pasa por encima del pilar.',
+        'mimo_roh' => 'El pilar no está en la esquina de un entrante, así que no amplía la cubierta.',
     ],
     // Schodiště: nové a panel vybraného
     'schody' => [

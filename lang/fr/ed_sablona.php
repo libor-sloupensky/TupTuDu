@@ -39,6 +39,7 @@ return [
         'otvor' => 'Insérer une ouverture dans un mur (6 / O)',
         'schody' => 'Escalier vers le niveau supérieur (7)',
         'katalog' => 'Mobilier et équipements (8)',
+        'sloup' => 'Poteau (9)',
         'magnet' => 'Accrochage — aux points, aux murs et aux angles (clic = réglages · Alt = désactivé temporairement)',
         'magnet_sila' => 'Force d’accrochage',
         'vypnuto' => 'désactivé',
@@ -95,6 +96,18 @@ return [
         'kompas_zapad' => 'O',
         'uhel_k_osam' => 'par rapport aux axes',
         'uhel_k_vodorovne' => 'par rapport à l’horizontale',
+    ],
+    // Sloup: nový a panel vybraného
+    'sloup' => [
+        'nazev' => 'Poteau',
+        'novy' => 'Nouveau poteau',
+        'klepni' => 'Cliquez à l’endroit où placer le poteau. Dans l’angle d’un renfoncement (entrée couverte, terrasse), il s’accroche tout seul.',
+        'ctverec' => 'Carré',
+        'kruh' => 'Rond',
+        'sirka_tip' => 'Côté ou diamètre du poteau',
+        'strecha' => 'Toit au-dessus du poteau',
+        'strecha_tip' => 'Un poteau dans l’angle d’un renfoncement prolonge le toit jusqu’à lui, l’avant-toit passe au-dessus du poteau.',
+        'mimo_roh' => 'Le poteau n’est pas dans l’angle d’un renfoncement, il ne prolonge donc pas le toit.',
     ],
     // Schodiště: nové a panel vybraného
     'schody' => [

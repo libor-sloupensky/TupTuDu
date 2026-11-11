@@ -6,6 +6,7 @@ return [
     'strecha' => 'Cubierta',
     'strecha_nastavit' => 'ajustar',
     'hrana_strechy' => 'Borde de cubierta',
+    'sloup' => 'Pilar',
     'smazat_podlazi_potvrzeni' => '¿Borrar la planta :nazev y todo su dibujo?',
     'schody_mezi_urovnemi' => 'entre niveles, :nazev',
 
@@ -97,6 +98,9 @@ return [
         'smazani_schodiste' => 'Borrar escalera',
         'posun_schodiste' => 'Mover escalera',
         'otoceni_schodiste' => 'Girar escalera',
+        'sloup' => 'Pilar',
+        'posun_sloupu' => 'Mover pilar',
+        'smazani_sloupu' => 'Eliminar pilar',
         'smazani_strechy' => 'Borrar cubierta',
         'barva_domu' => 'Color de la casa',
         'zaklady' => 'Cimentación',
@@ -105,6 +109,7 @@ return [
     // Kde se barva v domě používá (nabídka použitých barev)
     'barvy' => [
         'schody' => 'Escalera',
+        'sloup' => 'Pilar',
         'podlaha' => 'Suelo, :nazev',
         'mistnost' => 'estancia',
         'fasada' => 'Fachada',

@@ -39,6 +39,7 @@ return [
         'otvor' => 'Inserisci apertura nella parete (6 / O)',
         'schody' => 'Scala verso il piano superiore (7)',
         'katalog' => 'Arredi e dotazioni (8)',
+        'sloup' => 'Colonna (9)',
         'magnet' => 'Aggancio — a punti, pareti e angoli (clic = impostazioni · Alt = temporaneamente senza aggancio)',
         'magnet_sila' => 'Forza di aggancio',
         'vypnuto' => 'disattivato',
@@ -95,6 +96,18 @@ return [
         'kompas_zapad' => 'O',
         'uhel_k_osam' => 'rispetto agli assi della casa',
         'uhel_k_vodorovne' => 'rispetto all’orizzontale',
+    ],
+    // Sloup: nový a panel vybraného
+    'sloup' => [
+        'nazev' => 'Colonna',
+        'novy' => 'Nuova colonna',
+        'klepni' => 'Fai clic dove vuoi mettere la colonna. Nell’angolo di una rientranza (ingresso coperto, terrazza) si aggancia da sola.',
+        'ctverec' => 'Quadrata',
+        'kruh' => 'Rotonda',
+        'sirka_tip' => 'Lato o diametro della colonna',
+        'strecha' => 'Tetto sopra la colonna',
+        'strecha_tip' => 'Una colonna nell’angolo di una rientranza estende il tetto fino a sé, la gronda passa sopra la colonna.',
+        'mimo_roh' => 'La colonna non è nell’angolo di una rientranza, quindi non estende il tetto.',
     ],
     // Schodiště: nové a panel vybraného
     'schody' => [

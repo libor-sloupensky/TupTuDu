@@ -6,6 +6,7 @@ return [
     'strecha' => 'Strecha',
     'strecha_nastavit' => 'nastaviť',
     'hrana_strechy' => 'Hrana strechy',
+    'sloup' => 'Stĺp',
     'smazat_podlazi_potvrzeni' => 'Zmazať podlažie :nazev aj s jeho kresbou?',
     'schody_mezi_urovnemi' => 'medzi úrovňami, :nazev',
 
@@ -97,6 +98,9 @@ return [
         'smazani_schodiste' => 'Zmazanie schodiska',
         'posun_schodiste' => 'Posun schodiska',
         'otoceni_schodiste' => 'Otočenie schodiska',
+        'sloup' => 'Stĺp',
+        'posun_sloupu' => 'Posun stĺpa',
+        'smazani_sloupu' => 'Zmazanie stĺpa',
         'smazani_strechy' => 'Zmazanie strechy',
         'barva_domu' => 'Farba domu',
         'zaklady' => 'Základy',
@@ -105,6 +109,7 @@ return [
     // Kde se barva v domě používá (nabídka použitých barev)
     'barvy' => [
         'schody' => 'Schody',
+        'sloup' => 'Stĺp',
         'podlaha' => 'Podlaha, :nazev',
         'mistnost' => 'miestnosť',
         'fasada' => 'Fasáda',

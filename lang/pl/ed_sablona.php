@@ -39,6 +39,7 @@ return [
         'otvor' => 'Wstaw otwór w ścianie (6 / O)',
         'schody' => 'Schody na wyższą kondygnację (7)',
         'katalog' => 'Meble i wyposażenie (8)',
+        'sloup' => 'Słup (9)',
         'magnet' => 'Magnes — przyciąganie do punktów, ścian i kątów (kliknięcie = ustawienia · Alt = chwilowo bez magnesu)',
         'magnet_sila' => 'Siła przyciągania',
         'vypnuto' => 'wył.',
@@ -95,6 +96,18 @@ return [
         'kompas_zapad' => 'W',
         'uhel_k_osam' => 'do osi domu',
         'uhel_k_vodorovne' => 'do poziomu',
+    ],
+    // Sloup: nový a panel vybraného
+    'sloup' => [
+        'nazev' => 'Słup',
+        'novy' => 'Nowy słup',
+        'klepni' => 'Kliknij, gdzie postawić słup. W narożniku wnęki (zadaszone wejście, taras) sam się przyciągnie.',
+        'ctverec' => 'Kwadratowy',
+        'kruh' => 'Okrągły',
+        'sirka_tip' => 'Bok lub średnica słupa',
+        'strecha' => 'Dach nad słupem',
+        'strecha_tip' => 'Słup w narożniku wnęki poszerza dach aż do siebie, okap biegnie nad słupem.',
+        'mimo_roh' => 'Słup nie stoi w narożniku wnęki, więc nie poszerzy dachu.',
     ],
     // Schodiště: nové a panel vybraného
     'schody' => [

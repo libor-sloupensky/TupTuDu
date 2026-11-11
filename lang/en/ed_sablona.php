@@ -39,6 +39,7 @@ return [
         'otvor' => 'Insert opening in wall (6 / O)',
         'schody' => 'Stairs to the storey above (7)',
         'katalog' => 'Furniture and fittings (8)',
+        'sloup' => 'Column (9)',
         'magnet' => 'Snapping — to points, walls and angles (click = settings · Alt = temporarily off)',
         'magnet_sila' => 'Snap strength',
         'vypnuto' => 'off',
@@ -95,6 +96,18 @@ return [
         'kompas_zapad' => 'W',
         'uhel_k_osam' => 'to house axes',
         'uhel_k_vodorovne' => 'to horizontal',
+    ],
+    // Sloup: nový a panel vybraného
+    'sloup' => [
+        'nazev' => 'Column',
+        'novy' => 'New column',
+        'klepni' => 'Click where to place the column. In the corner of a recess (covered entrance, terrace) it snaps into place.',
+        'ctverec' => 'Square',
+        'kruh' => 'Round',
+        'sirka_tip' => 'Side or diameter of the column',
+        'strecha' => 'Roof over the column',
+        'strecha_tip' => 'A column in the corner of a recess extends the roof up to it, the eave runs over the column.',
+        'mimo_roh' => 'The column is not in the corner of a recess, so it does not extend the roof.',
     ],
     // Schodiště: nové a panel vybraného
     'schody' => [

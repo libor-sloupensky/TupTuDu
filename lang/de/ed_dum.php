@@ -6,6 +6,7 @@ return [
     'strecha' => 'Dach',
     'strecha_nastavit' => 'einstellen',
     'hrana_strechy' => 'Dachkante',
+    'sloup' => 'Säule',
     'smazat_podlazi_potvrzeni' => 'Geschoss :nazev samt Zeichnung löschen?',
     'schody_mezi_urovnemi' => 'zwischen Ebenen, :nazev',
 
@@ -97,6 +98,9 @@ return [
         'smazani_schodiste' => 'Treppe gelöscht',
         'posun_schodiste' => 'Treppe verschoben',
         'otoceni_schodiste' => 'Treppe gedreht',
+        'sloup' => 'Säule',
+        'posun_sloupu' => 'Säule verschoben',
+        'smazani_sloupu' => 'Säule gelöscht',
         'smazani_strechy' => 'Dach gelöscht',
         'barva_domu' => 'Hausfarbe',
         'zaklady' => 'Fundament',
@@ -105,6 +109,7 @@ return [
     // Kde se barva v domě používá (nabídka použitých barev)
     'barvy' => [
         'schody' => 'Treppe',
+        'sloup' => 'Säule',
         'podlaha' => 'Boden, :nazev',
         'mistnost' => 'Raum',
         'fasada' => 'Fassade',

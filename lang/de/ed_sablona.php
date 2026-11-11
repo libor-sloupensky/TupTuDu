@@ -39,6 +39,7 @@ return [
         'otvor' => 'Öffnung in Wand einfügen (6 / O)',
         'schody' => 'Treppe ins obere Geschoss (7)',
         'katalog' => 'Möbel und Ausstattung (8)',
+        'sloup' => 'Säule (9)',
         'magnet' => 'Magnet – Einrasten an Punkten, Wänden und Winkeln (Klick = Einstellungen · Alt = vorübergehend ohne Magnet)',
         'magnet_sila' => 'Einraststärke',
         'vypnuto' => 'aus',
@@ -95,6 +96,18 @@ return [
         'kompas_zapad' => 'W',
         'uhel_k_osam' => 'zu den Hausachsen',
         'uhel_k_vodorovne' => 'zur Waagerechten',
+    ],
+    // Sloup: nový a panel vybraného
+    'sloup' => [
+        'nazev' => 'Säule',
+        'novy' => 'Neue Säule',
+        'klepni' => 'Klicke, wo die Säule stehen soll. In der Ecke einer Nische (überdachter Eingang, Terrasse) rastet sie von selbst ein.',
+        'ctverec' => 'Eckig',
+        'kruh' => 'Rund',
+        'sirka_tip' => 'Seitenlänge oder Durchmesser der Säule',
+        'strecha' => 'Dach über die Säule',
+        'strecha_tip' => 'Eine Säule in der Ecke einer Nische erweitert das Dach bis zu ihr, die Traufe läuft über die Säule.',
+        'mimo_roh' => 'Die Säule steht nicht in der Ecke einer Nische und erweitert das Dach nicht.',
     ],
     // Schodiště: nové a panel vybraného
     'schody' => [

@@ -6,6 +6,7 @@ return [
     'strecha' => 'Dach',
     'strecha_nastavit' => 'ustaw',
     'hrana_strechy' => 'Krawędź dachu',
+    'sloup' => 'Słup',
     'smazat_podlazi_potvrzeni' => 'Usunąć kondygnację :nazev wraz z jej rysunkiem?',
     'schody_mezi_urovnemi' => 'między poziomami, :nazev',
 
@@ -97,6 +98,9 @@ return [
         'smazani_schodiste' => 'Usunięcie schodów',
         'posun_schodiste' => 'Przesunięcie schodów',
         'otoceni_schodiste' => 'Obrót schodów',
+        'sloup' => 'Słup',
+        'posun_sloupu' => 'Przesunięcie słupa',
+        'smazani_sloupu' => 'Usunięcie słupa',
         'smazani_strechy' => 'Usunięcie dachu',
         'barva_domu' => 'Kolor domu',
         'zaklady' => 'Fundamenty',
@@ -105,6 +109,7 @@ return [
     // Kde se barva v domě používá (nabídka použitých barev)
     'barvy' => [
         'schody' => 'Schody',
+        'sloup' => 'Słup',
         'podlaha' => 'Podłoga, :nazev',
         'mistnost' => 'pomieszczenie',
         'fasada' => 'Elewacja',

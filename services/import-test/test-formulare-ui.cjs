@@ -203,6 +203,11 @@ async function main() {
         await js(`d.zacniSchody(); d.schodyTvar = 'U'; const n = 'S1'; e.dum.schodiste.push({ id: n, odPodlazi: 'P1', doPodlazi: e.dum.podlazi.find(p => p.id !== 'P1').id, tvar: 'U', x: 2, y: -2, uhel: 0, sirka: 1, strana: 1 }); d.nastroj = 'vyber'; d.renderer.setSelection([]); d.renderer.selectedSchody.add(n); d.renderer.render(); d._selectionTick++`);
         await zmer('schody do U', PANEL);
         await p.snimek(path.join(vystup, 'formular-schody.png'));
+        await js(`d.renderer.clearSelection(); e.dum.sloupy.push({ id: 'C1', podlazi: 'P1', x: 3, y: -3, sirka: 0.2, tvar: 'ctverec', uhel: 0 }); d.renderer.selectedSloupy.add('C1'); d.renderer.render(); d._selectionTick++`);
+        await zmer('sloup', PANEL);
+        await js(`d.nastroj = 'vyber'; d.zacniSloup(); d._selectionTick++`);
+        await zmer('nástroj sloup', PANEL, true);   // jen nápověda, žádné pole
+        await js(`d.nastroj = 'vyber'; d._selectionTick++`);
         // Úroveň podlahy je v panelu místnosti; přenesenou zvýšenou podlahu vypíše panel místnosti nad ní,
         // vlastní panel má jen tam, kde pod ní uzavřená místnost není
         await js(`d.renderer.setSelection([]); const m = e.mistnosti[0]; d.renderer.setSelection([], [], [], [], [], [], [m.id]); d.setMistnostUroven('typ', 'zvysena'); d._selectionTick++`);

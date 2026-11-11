@@ -355,6 +355,12 @@
                         <path d="M2 14h3v-3h3V8h3V5h3V2"/>
                     </svg>
                 </button>
+                {{-- Sloup --}}
+                <button @click="nastroj === 'sloup' ? (nastroj = 'vyber') : zacniSloup()" class="kk-tl" :class="nastroj === 'sloup' && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.sloup') }}" data-nastroj-sloup>
+                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 2h10M3 14h10M5.5 2v12M10.5 2v12"/>
+                    </svg>
+                </button>
                 <button @click="prepniKatalog()" class="kk-tl" :class="panelOpen.katalog && ['vyber', 'katalog'].includes(nastroj) && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.katalog') }}" data-katalog-tlacitko>
                     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3.5 7.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v2"/><path d="M1.5 9a1.5 1.5 0 0 1 3 0v1.5h7V9a1.5 1.5 0 0 1 3 0v3.5h-13z"/><path d="M3.5 12.5V14M12.5 12.5V14"/>
@@ -481,7 +487,7 @@
             {{-- Panel otvoru — na plátně v levém horním rohu (odsazení 6 px jako nahoře), úchopem vlevo
                  jde přetáhnout jinam (poloha se pamatuje), dvojklik na úchop ho vrátí. Ukazuje buď
                  volby nového otvoru (nástroj zapnutý), nebo vlastnosti výběru. --}}
-            <div id="kk-panel-otvoru" x-show="rezim3d ? ['opening', 'opening_multi', 'mistnost', 'schodiste', 'katalog'].includes(inspector?.kind) : (nastroj === 'otvor' || nastroj === 'stena' || nastroj === 'schody' || nastroj === 'lico' || posunPodkladu || inspector)" x-cloak
+            <div id="kk-panel-otvoru" x-show="rezim3d ? ['opening', 'opening_multi', 'mistnost', 'schodiste', 'sloup', 'katalog'].includes(inspector?.kind) : (nastroj === 'otvor' || nastroj === 'stena' || nastroj === 'schody' || nastroj === 'sloup' || nastroj === 'lico' || posunPodkladu || inspector)" x-cloak
                  class="bg-white rounded-lg shadow-md text-xs flex items-stretch"
                  :style="panelOtvoruStyl"
                  style="position:absolute;z-index:15;width:max-content;min-width:250px;max-width:min(420px,100%);border:1.5px solid var(--c-primary)">
@@ -514,6 +520,12 @@
                             </select>
                         </div>
                         <div class="text-gray-500" x-text="schodyStart ? preloz('ed_sablona.schody.klepni_smer') : preloz('ed_sablona.schody.klepni_zacatek')"></div>
+                    </div>
+                </template>
+                <template x-if="nastroj === 'sloup'">
+                    <div class="p-2 flex flex-col gap-1">
+                        <span class="text-gray-600 font-medium">{{ __('ed_sablona.sloup.novy') }}</span>
+                        <div class="text-gray-500">{{ __('ed_sablona.sloup.klepni') }}</div>
                     </div>
                 </template>
                 <template x-if="nastroj === 'lico'">
@@ -801,6 +813,34 @@
                                         </template>
                                     </div>
                                 </template>
+                            </div>
+                        </template>
+
+                        {{-- SLOUP --}}
+                        <template x-if="inspector.kind === 'sloup'">
+                            <div class="flex flex-col gap-1 w-full" data-panel-sloupu>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.sloup.nazev') }}</span>
+                                    <span class="text-gray-500" x-text="inspector.id"></span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <select class="border border-gray-500 rounded px-1 py-0.5 text-xs" data-sloup-tvar @change="setSloup('tvar', $event.target.value)">
+                                        <option value="ctverec" :selected="inspector.tvar === 'ctverec'">{{ __('ed_sablona.sloup.ctverec') }}</option>
+                                        <option value="kruh" :selected="inspector.tvar === 'kruh'">{{ __('ed_sablona.sloup.kruh') }}</option>
+                                    </select>
+                                    <span class="text-gray-500 ml-1" x-text="inspector.tvar === 'kruh' ? '⌀' : preloz('ed_sablona.spolecne.sirka_zkr')"></span>
+                                    <input type="number" min="10" max="100" step="1" title="{{ __('ed_sablona.sloup.sirka_tip') }}" data-sloup="sirka" class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                           :value="Math.round(inspector.sirka * 100)" @change="setSloup('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()">
+                                    <span class="text-gray-500">cm</span>
+                                </div>
+                                <label x-show="inspector.strechaVolba" class="flex items-center gap-1 text-gray-500" title="{{ __('ed_sablona.sloup.strecha_tip') }}">
+                                    <input type="checkbox" data-sloup-strecha :checked="inspector.strecha" @change="setSloup('strecha', $event.target.checked)"> {{ __('ed_sablona.sloup.strecha') }}
+                                </label>
+                                <div class="text-gray-500" x-show="inspector.strechaVolba && inspector.strecha && !inspector.vRohu">{{ __('ed_sablona.sloup.mimo_roh') }}</div>
+                                <div data-barva-sloupu x-data="vyberBarvy({ hodnota: () => inspector?.barva, nastav: (hex) => setSloup('barva', hex), nahled: (hex) => nahledBarvy3d('sloup:' + inspector?.id, hex), pouzite: () => barvyJinde('sloup:' + inspector?.id) })">
+                                    @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
+                                </div>
+                                <button type="button" @click="smazatSloup()" class="self-end border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400">{{ __('ed_sablona.spolecne.smazat') }}</button>
                             </div>
                         </template>
 
@@ -1555,18 +1595,18 @@
                          :style="hoverObjektId === obj.id && !vybraneIds.includes(obj.id) ? 'background-color: #dbeafe' : ''"
                          :class="vybraneIds.includes(obj.id) ? 'bg-blue-50' : 'hover:bg-gray-50'"
                          @click="vyberObjekt(obj.id, $event)"
-                         @dblclick.stop="obj.type !== 'schody' && zacniEditObjekt(obj.id, obj.nazev)"
+                         @dblclick.stop="!['schody', 'sloup'].includes(obj.type) && zacniEditObjekt(obj.id, obj.nazev)"
                          @mouseenter="zvyrazniObjekt(obj.id)"
                          @mouseleave="zvyrazniObjekt(null)">
                         <div class="flex items-center gap-1 min-w-0">
                             {{-- Označení z výkresu — stejná barva jako popisek na plátně
                                  (stěny fialově, otvory oranžově), ať jde řádek spárovat s kresbou --}}
-                            <span class="kk-oznaceni" :class="obj.type === 'wall' ? 'text-purple-600 bg-purple-50' : obj.type === 'kus' ? 'text-teal-700 bg-teal-50' : obj.type === 'schody' ? 'text-gray-700 bg-gray-100' : 'text-orange-600 bg-orange-50'"
+                            <span class="kk-oznaceni" :class="obj.type === 'wall' ? 'text-purple-600 bg-purple-50' : obj.type === 'kus' ? 'text-teal-700 bg-teal-50' : ['schody', 'sloup'].includes(obj.type) ? 'text-gray-700 bg-gray-100' : 'text-orange-600 bg-orange-50'"
                                   x-text="obj.oznaceni || obj.id"></span>
                             <span x-show="editObjektId !== obj.id"
                                   :class="[vybraneIds.includes(obj.id) ? 'font-bold text-blue-700' : 'text-gray-600', jeObjektSkryty(obj) ? 'opacity-50 line-through' : '']"
                                   x-text="obj.nazev" class="truncate"></span>
-                            <svg x-show="editObjektId !== obj.id && obj.type !== 'schody'"
+                            <svg x-show="editObjektId !== obj.id && !['schody', 'sloup'].includes(obj.type)"
                                  @click.stop="zacniEditObjekt(obj.id, obj.nazev)"
                                  width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                  class="shrink-0 text-gray-300 hover:text-primary cursor-pointer" style="margin-left:3px">

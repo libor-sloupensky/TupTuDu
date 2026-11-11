@@ -6,6 +6,7 @@ return [
     'strecha' => 'Roof',
     'strecha_nastavit' => 'set up',
     'hrana_strechy' => 'Roof edge',
+    'sloup' => 'Column',
     'smazat_podlazi_potvrzeni' => 'Delete storey :nazev and everything drawn on it?',
     'schody_mezi_urovnemi' => 'between levels, :nazev',
 
@@ -97,6 +98,9 @@ return [
         'smazani_schodiste' => 'Delete stairs',
         'posun_schodiste' => 'Move stairs',
         'otoceni_schodiste' => 'Rotate stairs',
+        'sloup' => 'Column',
+        'posun_sloupu' => 'Move column',
+        'smazani_sloupu' => 'Delete column',
         'smazani_strechy' => 'Delete roof',
         'barva_domu' => 'House colour',
         'zaklady' => 'Foundations',
@@ -105,6 +109,7 @@ return [
     // Kde se barva v domě používá (nabídka použitých barev)
     'barvy' => [
         'schody' => 'Stairs',
+        'sloup' => 'Column',
         'podlaha' => 'Floor, :nazev',
         'mistnost' => 'room',
         'fasada' => 'Facade',
