@@ -39,8 +39,16 @@ const SIRKA = 1200, VYSKA = 700;
         id = await p.vyhodnot(`new URLSearchParams(location.search).get('id') || location.pathname.split('/').pop()`);
 
         // Dům 12 × 10 m, nosná stěna uprostřed. Svah 10 % ve směru x, parcela a výšky jen vymyšlené, žádné skutečné místo.
-        await js(`e.addWall(0, 0, 12*X, 0, 0.3, 'obvodova'); e.addWall(12*X, 0, 12*X, 10*X, 0.3, 'obvodova'); e.addWall(12*X, 10*X, 0, 10*X, 0.3, 'obvodova'); e.addWall(0, 10*X, 0, 0, 0.3, 'obvodova');
-            e.addWall(6*X, 0, 6*X, 10*X, 0.2, 'nosna'); d.renderer.render(); d.autoSave('Stěny'); d._selectionTick++; return true;`);
+        // Okna ze všech stran a vchod na horní (východní) straně svahu, kde je podlaha jen 30 cm nad terénem; dům bez oken
+        // a dveří nedává smysl (Libor 11. 11. 2026). Otvory se zadávají od začátku stěny.
+        await js(`const sever = e.addWall(0, 0, 12*X, 0, 0.3, 'obvodova'), vychod = e.addWall(12*X, 0, 12*X, 10*X, 0.3, 'obvodova');
+            const jih = e.addWall(12*X, 10*X, 0, 10*X, 0.3, 'obvodova'), zapad = e.addWall(0, 10*X, 0, 0, 0.3, 'obvodova');
+            e.addWall(6*X, 0, 6*X, 10*X, 0.2, 'nosna');
+            const O = (st, od, sirka, typ, nast = {}) => e.addOpening(st.id, od, sirka, typ, { presnaSirka: true, ...nast });
+            O(jih, 1.0, 1.0, 'dvere', { strana: 'in' }); O(jih, 3.5, 1.5, 'okno'); O(jih, 6.7, 1.5, 'okno'); O(jih, 9.5, 1.5, 'okno');
+            O(zapad, 2.0, 1.2, 'okno'); O(zapad, 6.8, 1.2, 'okno');
+            O(sever, 2.0, 1.2, 'okno'); O(sever, 8.0, 1.2, 'okno'); O(vychod, 4.0, 1.2, 'okno');
+            d.setBarvaDomu('fasada', '#e8e2d6'); d.renderer.render(); d.autoSave('Stěny'); d._selectionTick++; return true;`);
         await pauza(1000);
         await js(`d.katastrParcely = [{ cislo: 'ukázka', label: 'ukázka', polygon_wgs84: [[50 - 0.00025, 15 - 0.00035], [50 + 0.00035, 15 - 0.00035], [50 + 0.00035, 15 + 0.0005], [50 - 0.00025, 15 + 0.0005]] }];
             d._zalozZaklady();

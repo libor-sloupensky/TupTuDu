@@ -182,6 +182,18 @@ Pět kroků: článek v indexu, zobrazení, klik na výzvu, registrace z článk
    Obrazový styl (`modules/brand.md`, Libor 11. 11. 2026): ukazujeme vlastní produkt, nic, co nemáme. Ilustrace
    nebo fotka jen výjimečně, když článek opravdu vylepší a je zřejmé, že ji zákazník od nás nekupuje; žádné
    fotobanky, takové obrázky generovat AI (služba zatím nenapojená, napřed se zeptat Libora).
+12. **Grafika hned na začátku** (Libor 11. 11. 2026). Každý článek má hned pod perexem obrázek, schéma nebo kalkulačku
+   s nákresem, zpříjemní to čtení. Úvodní snímek z editoru může být zároveň náhledem při sdílení (`obrazek`).
+13. **Obrázky musí dávat stavebně smysl** (Libor 11. 11. 2026, po vrácených snímcích schodů a chodby). Než se scéna
+   vyfotí, navrhne se jako skutečný dům a projde se v kontrolním půdorysu s kótami:
+   - do každé místnosti vedou dveře z místnosti, kam patří (ložnice z chodby, ne ven), vchod z ulice do haly nebo zádveří,
+   - chodba je průchozí, má aspoň dvoje dveře, slepá chodba s jedněmi dveřmi je nesmysl,
+   - před oknem nestojí schody ani vysoký nábytek, schody vedou z haly nebo chodby s volným místem před nástupem,
+   - obvodové zdi ve skutečné tloušťce (zděný dům se zateplením 45 cm), příčky 15 cm,
+   - dům má okna a dveře, dveře u nohou postele nebo mezi postelí a skříní, ne přes nábytek,
+   - když je na obrázku vidět něco, co článek doporučuje jinak (dveře WC dovnitř, tenké zdi), upravit scénu, ne text,
+   - výřez z většího půdorysu je lepší než izolovaná místnost, aby bylo vidět, kam dveře vedou.
+   Skript scén: `services/clanky/snimky-clanky-dum.cjs` (kontrolní půdorysy do `services/import-test/vystup`).
 
 ## SEO pravidla (Libor 9. 11. 2026)
 
