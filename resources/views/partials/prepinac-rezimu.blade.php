@@ -1,7 +1,6 @@
 {{-- Přepínač tmavý / světlý režim. Volba v cookie tt_rezim (rok, na celé doméně webu jako u cookie lišty),
      server ji čte v layoutu a nastaví <html data-theme>, takže stránka nebliká. Cookie je nešifrovaná
-     (bootstrap/app.php: encryptCookies except). Zatím jen web a přihlášení — editor čeká na úpravu
-     Tailwind tříd, layouty app/zakaznik drží data-theme="light". --}}
+     (bootstrap/app.php: encryptCookies except). Platí na webu, v aplikaci i v Masterteamu (doména .tuptudu.com). --}}
 @php
     $ttWebDomena = config('domeny.web')[0];
     $ttHost = request()->getHost();

@@ -52,6 +52,9 @@ async function main() {
         kontrola('panel se jmenuje Použité objekty', hlavicky.some(t => t === 'Použité objekty'), JSON.stringify(hlavicky));
 
         console.log('\n2) Přesun tahem za úchyt');
+        // Sbalené panely: s rozbaleným katalogem by Historie byla pod okrajem okna a myš by ji netrefila
+        await p.vyhodnot(`(document.querySelectorAll('details[data-panel]').forEach(d => { d.open = false; }), 1)`);
+        await pauza(300);
         const pred = await poradi();
         const otevrenoPred = await p.vyhodnot(`document.querySelector('details[data-panel=historie]').open`);
         const od = await stred('[data-uchop-panelu=historie]');
@@ -72,6 +75,25 @@ async function main() {
         const poNacteni = await poradi();
         kontrola('pořadí drží i po načtení stránky', poNacteni.join() === po.join(), JSON.stringify(poNacteni));
         await p.vyhodnot(`(localStorage.removeItem('kv3_poradiPanelu'), 1)`);
+
+        console.log('\n3) Tmavý a světlý režim (společná volba s webem, cookie tt_rezim)');
+        const rezim = () => p.vyhodnot(`({ theme: document.documentElement.dataset.theme, cookie: (document.cookie.match(/tt_rezim=(\\w+)/) || [])[1] || null,
+            plocha: getComputedStyle(document.querySelector('#kk-canvas-wrap')).backgroundColor, panel: getComputedStyle(document.querySelector('details[data-panel]')).backgroundColor })`);
+        await p.vyhodnot(`(document.cookie = 'tt_rezim=; Max-Age=0; Path=/', 1)`);
+        await p.jdiNa(url);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        await pauza(600);
+        const vychozi = await rezim();
+        kontrola('výchozí je tmavý režim, kreslicí plocha zůstává bílá', vychozi.theme === 'dark' && vychozi.plocha === 'rgb(255, 255, 255)' && vychozi.panel !== 'rgb(255, 255, 255)', JSON.stringify(vychozi));
+        await p.vyhodnot(`(document.querySelector('[data-rezim]').click(), 1)`);
+        await pauza(300);
+        const svetly = await rezim();
+        await p.jdiNa(url);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        await pauza(600);
+        const poNacteniSvetly = await rezim();
+        kontrola('přepínač zapne světlý, volba drží po načtení', svetly.theme === 'light' && svetly.cookie === 'light' && poNacteniSvetly.theme === 'light' && poNacteniSvetly.panel === 'rgb(255, 255, 255)', JSON.stringify({ svetly, poNacteniSvetly }));
+        await p.vyhodnot(`(document.cookie = 'tt_rezim=; Max-Age=0; Path=/', 1)`);
         kontrola('bez chyb v konzoli', !p.chyby.length, p.chyby.join(' | '));
     } catch (e) {
         chyb++;

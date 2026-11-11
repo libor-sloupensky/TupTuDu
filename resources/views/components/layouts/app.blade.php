@@ -1,8 +1,8 @@
 @props(['title' => 'TupTuDu', 'fullWidth' => false])
 <!DOCTYPE html>
-{{-- Masterteam zatím ve světlém režimu: editor a stránky s Tailwind třídami (bg-white, text-gray-*)
-     nejsou na tmavé pozadí připravené. Tokeny v app.css jsou pro oba režimy, přepne se až po úpravě. --}}
-<html lang="cs" data-theme="light">
+{{-- Režim podle cookie tt_rezim, společné s webem a aplikací (výchozí tmavý). Pevné Tailwind barvy
+     (bg-white, text-gray-*) přemapuje pro tmavý režim app.css, část „Tmavý režim pro Tailwind“. --}}
+<html lang="cs" data-theme="{{ request()->cookie('tt_rezim') === 'light' ? 'light' : 'dark' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

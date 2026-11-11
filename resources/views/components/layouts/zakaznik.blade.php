@@ -2,9 +2,8 @@
 {{-- Layout zákaznické aplikace (app.tuptudu.com). Hlavička místo menu masterteamu;
      Tailwind + Alpine stejně jako layouts.app (editor V3 je potřebuje). --}}
 <!DOCTYPE html>
-{{-- Aplikace zatím ve světlém režimu: editor V3 má Tailwind třídy (bg-white, text-gray-*), které na tmavé
-     pozadí nejsou připravené. Tokeny v app.css jsou pro oba režimy, přepínač přibude po úpravě editoru. --}}
-<html lang="{{ app()->getLocale() }}" data-theme="light">
+{{-- Režim podle cookie tt_rezim: kdo si ho přepne na webu, má ho i tady (výchozí tmavý, Libor 11. 11. 2026) --}}
+<html lang="{{ app()->getLocale() }}" data-theme="{{ request()->cookie('tt_rezim') === 'light' ? 'light' : 'dark' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,6 +31,7 @@
         <a href="{{ route('app.projekty') }}" class="brand-title">@include('partials.znacka')</a>
         <div class="topbar-akce">
             @include('partials.prepinac-jazyka')
+            @include('partials.prepinac-rezimu')
             @if (auth()->user()->jeMaster())
                 <a href="{{ \App\Support\Domeny::url('masterteam', '/masterteam') }}">{{ __('aplikace.do_masterteamu') }}</a>
             @endif

@@ -49,6 +49,7 @@
             <a href="/masterteam/uzivatele" class="{{ request()->is('masterteam/uzivatele*') ? 'active' : '' }}">Uživatelé</a>
         </div>
 
+        <div class="tt-sidebar-rezim">@include('partials.prepinac-rezimu')</div>
         <form method="POST" action="/logout" class="tt-logout">
             @csrf
             <button type="submit" class="btn btn-sm">Odhlásit ({{ auth()->user()->celeJmeno() }})</button>

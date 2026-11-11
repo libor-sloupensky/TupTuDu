@@ -568,3 +568,45 @@ td.cislo, th.cislo { text-align: right; font-family: var(--s-font-tech); font-va
 @media (prefers-reduced-motion: reduce) {
     .tt-arrow, .tt-subsection-body { transition: none; }
 }
+
+/* ── Tmavý režim pro Tailwind (Libor 11. 11. 2026) ─────────────────────────────────────────────
+   Masterteam a editor mají pevné Tailwind barvy (bg-white, text-gray-*), psané pro světlé pozadí.
+   V tmavém režimu je přemapujeme na paletu Noc; :root:not([data-theme=light]) má vyšší prioritu
+   než Tailwind z CDN. Kreslicí plocha editoru má vlastní bílý podklad (#kk-canvas-wrap) a mění se jen
+   ovládání. Nové stránky psát rovnou na proměnné, tohle je most pro starší značkování. */
+:root:not([data-theme="light"]) .bg-white { background-color: var(--c-surface); }
+:root:not([data-theme="light"]) .bg-gray-50 { background-color: var(--c-bg); }
+:root:not([data-theme="light"]) .bg-gray-100 { background-color: color-mix(in srgb, var(--c-text) 7%, var(--c-surface)); }
+:root:not([data-theme="light"]) .bg-gray-200 { background-color: var(--c-border); }
+:root:not([data-theme="light"]) .bg-gray-400 { background-color: var(--c-border-strong); }
+:root:not([data-theme="light"]) .text-gray-900, :root:not([data-theme="light"]) .text-gray-800,
+:root:not([data-theme="light"]) .text-gray-700 { color: var(--c-text); }
+:root:not([data-theme="light"]) .text-gray-600, :root:not([data-theme="light"]) .text-gray-500 { color: var(--c-text-secondary); }
+:root:not([data-theme="light"]) .text-gray-400, :root:not([data-theme="light"]) .text-gray-300 { color: color-mix(in srgb, var(--c-text-secondary) 70%, var(--c-surface)); }
+:root:not([data-theme="light"]) .border-gray-100, :root:not([data-theme="light"]) .border-gray-200,
+:root:not([data-theme="light"]) .border-gray-300 { border-color: var(--c-border); }
+:root:not([data-theme="light"]) .border-gray-400, :root:not([data-theme="light"]) .border-gray-500 { border-color: var(--c-border-strong); }
+:root:not([data-theme="light"]) .divide-gray-100 > * + *, :root:not([data-theme="light"]) .divide-gray-200 > * + * { border-color: var(--c-border); }
+:root:not([data-theme="light"]) .bg-orange-50, :root:not([data-theme="light"]) .bg-orange-100 { background-color: var(--c-primary-10); }
+:root:not([data-theme="light"]) .text-orange-600, :root:not([data-theme="light"]) .text-orange-700 { color: var(--c-primary-text); }
+:root:not([data-theme="light"]) .bg-red-50, :root:not([data-theme="light"]) .bg-red-100 { background-color: color-mix(in srgb, var(--c-error) 14%, transparent); }
+:root:not([data-theme="light"]) .text-red-500, :root:not([data-theme="light"]) .text-red-600,
+:root:not([data-theme="light"]) .text-red-700 { color: color-mix(in srgb, var(--c-error) 70%, white); }
+:root:not([data-theme="light"]) .border-red-200 { border-color: color-mix(in srgb, var(--c-error) 45%, transparent); }
+:root:not([data-theme="light"]) .bg-green-50 { background-color: color-mix(in srgb, var(--c-ok) 14%, transparent); }
+:root:not([data-theme="light"]) .text-green-600, :root:not([data-theme="light"]) .text-green-700 { color: color-mix(in srgb, var(--c-ok) 70%, white); }
+:root:not([data-theme="light"]) .text-amber-700 { color: color-mix(in srgb, var(--c-warn) 80%, white); }
+:root:not([data-theme="light"]) .bg-blue-50 { background-color: color-mix(in srgb, #3b82f6 16%, transparent); }
+:root:not([data-theme="light"]) .text-blue-600, :root:not([data-theme="light"]) .text-blue-700 { color: #8fb4ff; }
+:root:not([data-theme="light"]) .bg-purple-50 { background-color: color-mix(in srgb, #9061f9 18%, transparent); }
+:root:not([data-theme="light"]) .text-purple-600 { color: #c4a8ff; }
+:root:not([data-theme="light"]) .bg-teal-50 { background-color: color-mix(in srgb, #14b8a6 16%, transparent); }
+:root:not([data-theme="light"]) .text-teal-700 { color: #6fdccc; }
+:root:not([data-theme="light"]) .hover\:bg-gray-50:hover, :root:not([data-theme="light"]) .hover\:bg-gray-100:hover,
+:root:not([data-theme="light"]) .hover\:bg-gray-200:hover, :root:not([data-theme="light"]) .hover\:bg-orange-50:hover { background-color: var(--c-primary-10); }
+:root:not([data-theme="light"]) .hover\:bg-red-50:hover { background-color: color-mix(in srgb, var(--c-error) 14%, transparent); }
+:root:not([data-theme="light"]) .hover\:text-gray-600:hover, :root:not([data-theme="light"]) .hover\:text-gray-700:hover { color: var(--c-text); }
+:root:not([data-theme="light"]) .hover\:border-gray-500:hover { border-color: var(--c-text-secondary); }
+/* Kreslicí plocha a výkres zůstávají světlé: podklad papíru a popisky na něm */
+:root:not([data-theme="light"]) #kk-canvas-wrap { color: #1b2330; }
+.tt-sidebar-rezim { display: flex; justify-content: flex-start; margin-bottom: .5rem; }

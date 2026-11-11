@@ -117,17 +117,17 @@
     .kk-oddelovac { width: 1px; height: 16px; margin: 0 4px; background: var(--c-border); }
     /* Rámeček polí a pomocné texty: WCAG 2.1 chce u ovládacích prvků kontrast 3:1 a u textu 4,5:1.
        --c-border (#e5e1dc) má proti bílé 1,3:1 a text-gray-400 2,5:1, proto v editoru gray-500 (4,8:1). */
-    .kk-pole { height: 28px; border: 1px solid #6b7280; border-radius: 6px; background: var(--c-surface);
+    .kk-pole { height: 28px; border: 1px solid var(--c-input-border); border-radius: 6px; background: var(--c-surface);
                padding: 0 6px; font-size: 12px; color: var(--c-text-secondary); }
     .kk-pole:focus { outline: none; border-color: var(--c-primary); }
     /* Úchop panelu otvoru — svislý proužek s tečkami, táhne se myší i prstem (touch-action: none) */
     .kk-panel-uchop { flex: none; width: 16px; display: flex; flex-direction: column; align-items: center;
-                      color: #6b7280; background: #f3f4f6; border-right: 1px solid #e5e7eb; border-radius: 6px 0 0 6px;
+                      color: var(--c-text-secondary); background: var(--c-bg); border-right: 1px solid var(--c-border); border-radius: 6px 0 0 6px;
                       cursor: grab; touch-action: none; user-select: none; }
-    .kk-panel-uchop:active { cursor: grabbing; background: #fdf0e7; color: var(--c-primary); }
+    .kk-panel-uchop:active { cursor: grabbing; background: var(--c-primary-10); color: var(--c-primary); }
     .kk-panel-uchop > svg { margin: auto 0; }
     .kk-panel-zavrit { flex: none; width: 16px; height: 18px; display: flex; align-items: center; justify-content: center;
-                       color: #6b7280; border-radius: 6px 0 0 0; cursor: pointer; }
+                       color: var(--c-text-secondary); border-radius: 6px 0 0 0; cursor: pointer; }
     .kk-panel-zavrit:hover { color: var(--c-surface); background: var(--c-primary); }
     /* Panel „Podlaží a plochy": řádek = podlaží, klik přepíná, tužka rozbalí úpravy právě tohoto řádku */
     /* Řádek podlaží, střechy a základů; vybraný jako upozornění U1 z grafického manuálu (modules/brand.md) */
@@ -146,13 +146,13 @@
     #kk-panel-otvoru .kk-barva-vzorek button { height: auto; line-height: normal; }
     #kk-panel-otvoru label.kk-barva-posuvnik { display: flex; flex-direction: column; align-items: stretch; }
     #kk-panel-otvoru .kk-paleta-krytina { height: 22px; }
-    #kk-panel-otvoru input[type=text] { height: 24px; font-size: 12px; padding: 0 4px; border: 1px solid #6b7280; border-radius: 4px; }
+    #kk-panel-otvoru input[type=text] { height: 24px; font-size: 12px; padding: 0 4px; border: 1px solid var(--c-input-border); border-radius: 4px; }
     .kk-kota-pole { position: absolute; z-index: 14; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 3px; padding: 2px 4px; background: var(--c-surface); border: 1.5px solid var(--c-primary); border-radius: 5px; font-size: 12px; color: var(--c-text-secondary); }
     .kk-kota-pole input { width: 4.5rem; height: 22px; margin: 0; padding: 0 4px; font-size: 12px; color: var(--c-text); border: 0; outline: none; background: transparent; }
-    .kk-barva-symbol { flex: none; width: 24px; height: 24px; border-radius: 5px; border: 1px solid #6b7280; padding: 0; cursor: pointer; }
+    .kk-barva-symbol { flex: none; width: 24px; height: 24px; border-radius: 5px; border: 1px solid var(--c-input-border); padding: 0; cursor: pointer; }
     .kk-barva-symbol[aria-expanded="true"] { outline: 2px solid var(--c-primary); outline-offset: 1px; }
-    .kk-barva-nastroj { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 6px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; color: #6b7280; }
-    .kk-barva-vzorek { display: grid; grid-template-columns: 1fr 2fr; height: 56px; border: 1px solid #6b7280; border-radius: 5px; overflow: hidden; }
+    .kk-barva-nastroj { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 6px; padding: 8px; border: 1px solid var(--c-border); border-radius: 6px; font-size: 12px; color: #6b7280; }
+    .kk-barva-vzorek { display: grid; grid-template-columns: 1fr 2fr; height: 56px; border: 1px solid var(--c-input-border); border-radius: 5px; overflow: hidden; }
     .kk-barva-vzorek > * { display: flex; align-items: flex-end; padding: 0 0 0 4px; border: 0; margin: 0; min-width: 0; }
     .kk-barva-vzorek span { font-size: 10px; line-height: 14px; padding: 0 4px; margin-bottom: 3px; border-radius: 3px; background: rgba(255,255,255,.85); color: #374151; }
     .kk-barva-vzorek button { cursor: pointer; }
@@ -241,13 +241,13 @@
        ::-webkit-scrollbar, takže se tu ZÁMĚRNĚ neuvádí (jinak by se šířka
        ignorovala). Firefox si vezme aspoň barvy níže. */
     .kk-posuvnik::-webkit-scrollbar { width: 18px; }
-    .kk-posuvnik::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 8px; }
+    .kk-posuvnik::-webkit-scrollbar-track { background: var(--c-bg); border-radius: 8px; }
     .kk-posuvnik::-webkit-scrollbar-thumb {
-        background: #9ca3af; border-radius: 8px;
-        border: 3px solid #f3f4f6; background-clip: padding-box;
+        background: var(--c-border-strong); border-radius: 8px;
+        border: 3px solid var(--c-bg); background-clip: padding-box;
     }
-    .kk-posuvnik::-webkit-scrollbar-thumb:hover { background: #6b7280; background-clip: padding-box; }
-    @supports (-moz-appearance: none) { .kk-posuvnik { scrollbar-color: #9ca3af #f3f4f6; } }
+    .kk-posuvnik::-webkit-scrollbar-thumb:hover { background: var(--c-text-secondary); background-clip: padding-box; }
+    @supports (-moz-appearance: none) { .kk-posuvnik { scrollbar-color: var(--c-border-strong) var(--c-bg); } }
     /* Vzorový projekt: výrazná hláška nad plátnem */
     /* Hláška vzorového projektu: upozornění U1 z grafického manuálu (modules/brand.md), křížkem skrytá do dalšího dne */
     .tt-vzor-hlaska { margin: 8px 8px 0; padding-right: 44px; }
@@ -260,11 +260,11 @@
     body.kk-fullscreen .tt-sidebar,
     body.kk-fullscreen > footer,
     body.kk-fullscreen footer { display: none !important; }
-    .kk-divider { cursor: col-resize; background: #e5e7eb; position: relative; }
+    .kk-divider { cursor: col-resize; background: var(--c-border); position: relative; }
     .kk-divider:hover, .kk-divider.dragging { background: var(--c-primary); }
-    .kk-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+    .kk-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--c-bg); border-bottom: 1px solid var(--c-border); font-size: 13px; }
     .kk-toolbar button, .kk-toolbar select { font-size: 12px; }
-    .kk-btn { padding: 4px 10px; border-radius: 4px; border: 1px solid #d1d5db; background: white; cursor: pointer; font-size: 12px; transition: all .15s; }
+    .kk-btn { padding: 4px 10px; border-radius: 4px; border: 1px solid var(--c-border-strong); background: var(--c-surface); color: var(--c-text); cursor: pointer; font-size: 12px; transition: all .15s; }
     .kk-btn:hover { border-color: var(--c-primary); color: var(--c-primary); }
     .kk-btn.active { background: var(--c-primary); color: white; border-color: var(--c-primary); }
     .kk-status-row { position: absolute; bottom: 4px; left: 4px; display: flex; align-items: stretch; gap: 4px; z-index: 10; pointer-events: none; }
@@ -1649,7 +1649,7 @@
             <div class="max-h-48 overflow-y-auto divide-y divide-gray-100">
                 <template x-for="obj in seznamObjektu" :key="obj.id">
                     <div class="flex items-center justify-between px-3 py-1 text-xs cursor-pointer select-none transition-colors"
-                         :style="hoverObjektId === obj.id && !vybraneIds.includes(obj.id) ? 'background-color: #dbeafe' : ''"
+                         :style="hoverObjektId === obj.id && !vybraneIds.includes(obj.id) ? 'background-color: var(--c-primary-10)' : ''"
                          :class="vybraneIds.includes(obj.id) ? 'bg-blue-50' : 'hover:bg-gray-50'"
                          @click="vyberObjekt(obj.id, $event)"
                          @dblclick.stop="!['schody', 'sloup'].includes(obj.type) && zacniEditObjekt(obj.id, obj.nazev)"
