@@ -965,9 +965,74 @@
                     "hloubka": 0.47,
                     "vyska": 1.7
                 }
+            },
+            {
+                "id": "vb84",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "koupelna",
+                "stred": [
+                    -5.592949375305522,
+                    5.291040714645406
+                ],
+                "polygon": [
+                    [
+                        -6.202466107641021,
+                        5.1080397501587225
+                    ],
+                    [
+                        -5.775950339792205,
+                        5.900557446980905
+                    ],
+                    [
+                        -4.983432642970023,
+                        5.474041679132089
+                    ],
+                    [
+                        -5.4099484108188385,
+                        4.681523982309907
+                    ]
+                ],
+                "sirka": 0.9,
+                "hloubka": 0.9,
+                "uhel": -61.711829733573374,
+                "vyska": 2.008,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "tt-sprcha-ctvrtkruh-90",
+                "nazev": "Sprchový kout čtvrtkruhový 90 × 90",
+                "nazevZdroj": "Sprchový kout čtvrtkruhový 90 × 90",
+                "uroven": 0,
+                "zaklad": {
+                    "sirka": 0.9,
+                    "hloubka": 0.9,
+                    "vyska": 2.008
+                }
             }
         ],
-        "oddelovace": [],
+        "oddelovace": [
+            {
+                "id": "R85",
+                "a": {
+                    "x": -0.493,
+                    "y": 2.254,
+                    "host": {
+                        "stena": "W11",
+                        "t": -0.031248897838638323,
+                        "strana": 1
+                    }
+                },
+                "b": {
+                    "x": -3.118,
+                    "y": 3.667,
+                    "host": {
+                        "stena": "W36",
+                        "t": 0.4019832604057316,
+                        "strana": 1
+                    }
+                }
+            }
+        ],
         "mistnosti": [
             {
                 "id": "M59",
@@ -1031,7 +1096,7 @@
                 "barva": "#fbf4d6",
                 "podlaha": {
                     "dekor": "prkna",
-                    "barva": "#ab744f"
+                    "barva": "#b08a5e"
                 },
                 "kotva": [
                     -0.202,
@@ -1138,11 +1203,51 @@
                 {
                     "id": "C1",
                     "podlazi": "P1",
-                    "x": -1.5851303407676094,
-                    "y": -2.836713601776425,
-                    "sirka": 0.2,
+                    "x": -1.618452010163469,
+                    "y": -2.720250790071736,
+                    "sirka": 0.15,
                     "tvar": "ctverec",
-                    "uhel": 2.064518037308803
+                    "uhel": 2.064518037308803,
+                    "barva": "#ab744f"
+                }
+            ],
+            "sestavy": [
+                {
+                    "id": "B1",
+                    "podlazi": "P1",
+                    "druh": "skrin",
+                    "body": [
+                        [
+                            0.0891,
+                            10.0483
+                        ],
+                        [
+                            -1.1811,
+                            7.688
+                        ]
+                    ],
+                    "strana": 1,
+                    "hloubka": 0.62,
+                    "vyska": null,
+                    "dvere": "posuvne",
+                    "pocet": null,
+                    "ram": "stribrna",
+                    "zrcadla": [],
+                    "povrchy": {
+                        "dvere": {
+                            "dekor": "hladky",
+                            "barva": "#f2f1ed",
+                            "lesk": false
+                        },
+                        "korpus": {
+                            "dekor": "hladky",
+                            "barva": "#f2f1ed"
+                        },
+                        "uchytky": {
+                            "typ": "madlo",
+                            "barva": "nerez"
+                        }
+                    }
                 }
             ],
             "plochy": [],
@@ -1152,21 +1257,21 @@
                 "presah": 0.6,
                 "presahStit": 0.2,
                 "vyskaOkapu": 2.6,
-                "krytina": "taska",
+                "krytina": "bridlice",
                 "otocHreben": false,
                 "hrany": {
                     "W12:-1": {
-                        "typ": "okap",
+                        "typ": "stit",
                         "sklon": 60,
                         "presah": 0.5
                     },
                     "W5:-1": {
-                        "typ": "okap",
+                        "typ": "stit",
                         "presah": 0.5,
                         "sklon": 60
                     }
                 },
-                "barva": "#d55d5d"
+                "barva": "#343634"
             },
             "zaklady": []
         }
@@ -1337,7 +1442,7 @@
                 "ok": "Blansko"
             },
             "podklad": "zadny",
-            "kompasUhel": 332,
+            "kompasUhel": -101.6,
             "profil": {
                 "body": [
                     [
