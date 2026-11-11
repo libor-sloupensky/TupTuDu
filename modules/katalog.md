@@ -63,6 +63,7 @@ Kus je obyčejný `engine.vybaveni` s polem `katalog` (ID), `nazev` a `uroven` (
 ## Pravidla
 
 - **Zarážka o zdi (Libor 4. 11. 2026):** nábytek se ke zdi nepřichytává a sám neotáčí, jen nesmí do zdi zasahovat žádnou částí. Počítá se srážka celého obdélníku se všemi zdmi (SAT, nejkratší vytlačení), kus tak po zdi klouže. Když střed přejde přes osu zdi, přeskočí do vedlejší místnosti, jinak by nešel přesunout. Platí i po otočení a změně rozměru. Alt zarážku vypne.
+- **Natočení podle zdi (Libor 11. 11. 2026):** nový kus se vloží rovnoběžně s nejbližší zdí (`_katalogUhelZdi`, z poloh po 90° ta nejbližší nule), v natočeném domě tak nestojí nakřivo. Tlačítko „otočit o 90°“ kus otočí a srovná se zdí. Dřív se vkládalo s úhlem 0 a ve vzorovém domě (natočeném o 28°) to vypadalo, že magnet nefunguje.
 - **Magnet otáčení (Libor 4. 11. 2026):** při otáčení za madlo kus zaskočí, když je do 4° rovnoběžný nebo kolmý k některé zdi podlaží (`katalogMagnetRotace`), čára skrz střed ukáže podél které. Sílu bere z nastavení magnetu, Alt ho vypne.
 - **Obrazy a zrcadla** patří na zeď, jen ty se do 35 cm přichytí a otočí zády k ní (`NA_ZED`), Libor potvrdil.
 - **Tažení** drží volný střed zvlášť od zastaveného, jinak by se kus o zeď zasekl.
@@ -70,7 +71,7 @@ Kus je obyčejný `engine.vybaveni` s polem `katalog` (ID), `nazev` a `uroven` (
 - **Rozměry:** v cm i v % původní velikosti (`zaklad`), druhá hodnota se dopočítá. Spojený řetízek mění šířku, hloubku i výšku ve stejném poměru, rozpojený jen zadaný rozměr. Model se roztáhne (`Katalog3d.vloz`), značka také.
 - **Klik** má přesný tvar kusu, ne obdélník kolem něj. Menší kusy jsou navrchu, stůl jde chytit i na koberci.
 - **Značka v půdorysu** je pohled shora v barvě objektu s tmavou čárou na hranách, ve WebP.
-- **Nábytek podle skupiny místností (Libor 11. 11. 2026):** před kategoriemi je volba skupiny místností, výchozí „Všechny místnosti“. Oba výběry jsou v jednom řádku se šipkou mezi nimi, ať je vidět, že skupina zužuje kategorie (Libor 11. 11. 2026, „a“ mezi nimi mátlo), hledání je pod nimi. Skupina zúží kategorie na ty, které do ní patří, v pořadí od nejtypičtější (`KATEGORIE_PODLE_SKUPINY` v `katalog.js`), a když zvolená kategorie do skupiny nepatří, přepne na první. Vybraná místnost s druhem na plánu nabídku přepne na svou skupinu sama (`_katalogSkupinaZVyberu`, hlídá `_selectionTick`), místnost bez druhu ani zrušený výběr volbu nemění. Hledání jde napříč celým katalogem a volbu dočasně vypne. Novou kategorii doplnit do `KATEGORIE_PODLE_SKUPINY`, test v `test-katalog-ui.cjs`, část 1. Skupiny viz `modules/dum.md`, Druh místnosti.
+- **Nábytek podle skupiny místností (Libor 11. 11. 2026):** před kategoriemi je volba skupiny místností, výchozí „Všechny místnosti“. Oba výběry jsou v jednom řádku se šipkou mezi nimi, ať je vidět, že skupina zužuje kategorie (Libor 11. 11. 2026, „a“ mezi nimi mátlo), hledání je pod nimi. Skupina zúží kategorie na ty, které do ní patří, v pořadí od nejtypičtější (`KATEGORIE_PODLE_SKUPINY` v `katalog.js`), a když zvolená kategorie do skupiny nepatří, přepne na první. Vybraná místnost s druhem na plánu nabídku přepne na svou skupinu sama (`_katalogSkupinaZVyberu`, hlídá `_selectionTick`), místnost bez druhu ani zrušený výběr volbu nemění. Hledání jde přes všechny kategorie zvolené skupiny (bez skupiny přes celý katalog), výběry při něm zůstávají zapnuté a změna kategorie hledání vymaže (Libor 11. 11. 2026, vypnuté výběry mátly). Novou kategorii doplnit do `KATEGORIE_PODLE_SKUPINY`, test v `test-katalog-ui.cjs`, část 1. Skupiny viz `modules/dum.md`, Druh místnosti.
 - **Katalog je sekce v pravém panelu**, ne plovoucí okno (zakrývalo půdorys, klik pod ním nedopadl). Vlastnosti vybraného kusu jsou ve společném panelu vlastností (`inspector.kind === 'katalog'`).
 - **Po vložení** se kus vybere a nástroj skončí, sekce zůstane otevřená pro další. Esc zruší vybraný kus.
 - **Výška ve 3D** počítá se zvýšenou nebo sníženou podlahou místnosti pod kusem (`_nulaBodu`).
@@ -184,6 +185,24 @@ Kategorie `koupelna` (Koupelna a WC), 22 kusů: WC, bidet, pisoár, umyvadla, va
 - **Postup:** `node services/katalog/sestav.cjs --jen=^sh3d-`, arch `node services/katalog/kontrola.cjs --archy --kat=koupelna`, potom `node services/katalog/s3.cjs nahraj --jen=^sh3d-`.
 - **Stav 11. 11. 2026:** 22 kusů je v S3 (Libor nahrání potvrdil), `katalog.json` commitnutý, na web ještě nenasazené.
 - **Zbývá z Plánu 1:** závěsné WC, zrcadlová skříňka, samostatná koupelnová skříňka a sprchová vanička nejsou v žádné vyhovující sadě. Vanička a sprchový kout patří do konfigurátoru (Plán 2), závěsné WC a skříňky buď parametricky, nebo z dalšího zdroje CC0 (Sketchfab CC BY jen s kontrolou kus po kusu).
+
+## Plán: koupelna, 2. etapa (11. 11. 2026, čeká na Liborovo rozhodnutí)
+
+Libor: kritický nedostatek vybavení koupelny, jen jeden sprchový kout. Co v CC0 a CC BY knihovnách není, navrhneme sami.
+
+**A. Generátor vlastních kusů** (nový zdroj `tuptudu`, bez autorů): `services/katalog/generuj.html` sestaví kus v three.js z parametrů a uloží GLB do cache, dál jde stejnou cestou jako ostatní (zmenšení, náhled, značka). Materiály stejné jako u převodu (keramika, chrom, sklo, lak, dekor dřeva).
+1. Sprchové kouty: čtvercový 90, obdélníkový 120 × 90, čtvrtkruhový 90, walk-in zástěna 120 (bez vaničky, se žlábkem), dveře do niky 100. Každý s vaničkou, profily a sklem. Další rozměry dá změna rozměru v cm, krabicové tvary se roztáhnou bez deformace.
+2. Sprchová vanička samostatně 90 × 90 a 120 × 80, zástěna na vanu.
+3. Závěsné WC s instalační předstěnou (v ČR v novostavbách nejčastější), závěsný bidet.
+4. Skříňka pod umyvadlo s umyvadlem 60 a 80 (bílá, dub), samostatná skříňka pod umyvadlo, vysoká koupelnová skříň, zrcadlo s osvětlením, zrcadlová skříňka.
+
+**B. Z knihoven, hned** (Blend Swap CC0): držák toaletního papíru, WC štětka, věšák a držák ručníků, sprchová hlavice s baterií. Sušička na pračku jako druhá položka s `uroven` 0,85 m (sloupec pračka + sušička).
+
+**C. Technická místnost a prádelna** (generátor, jednoduché tvary): ohřívač vody (bojler), závěsný plynový kotel, vnitřní jednotka tepelného čerpadla, rozdělovač podlahového topení, výlevka, koš na prádlo, sušák. Patří do skupiny `technicke` a `hygiena`, nová kategorie `technika`.
+
+**D. Kuchyň (Plán 2):** v Blend Swap CC0 je celá sada kuchyňských skříněk (spodní, horní, rohové, dřezová, vysoká, digestoř, lednice, trouba, varná deska). Hodí se jako výchozí moduly konfigurátoru.
+
+Pořadí podle návrhu: A1 a A3 (sprchy, závěsné WC), B, A4, C, A2.
 
 ## Plán: koupelna, WC, kuchyňská linka a vestavěné skříně (Libor 11. 11. 2026)
 

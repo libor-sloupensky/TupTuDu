@@ -62,6 +62,11 @@ const kontrola = (popis, podminka, detail = '') => {
         kontrola('panel ukáže kategorii a katalog se načte', panel.videt && panel.karet > 0 && panel.kusu >= 100, JSON.stringify(panel));
         const hledani = await p.vyhodnot(`(async () => { const d = ${D}; d.katalogHledat = 'postel'; await new Promise(r => setTimeout(r, 150)); const n = d.katalogPolozky.length, vsechnyPostele = d.katalogPolozky.every(x => x.nazev.toLowerCase().includes('postel')); d.katalogHledat = ''; await new Promise(r => setTimeout(r, 150)); return { n, vsechnyPostele }; })()`);
         kontrola('hledání najde podle názvu napříč kategoriemi', hledani.n >= 5 && hledani.vsechnyPostele, JSON.stringify(hledani));
+        const hledaniSkupina = await p.vyhodnot(`(async () => { const d = ${D}; const cekej = () => new Promise(r => setTimeout(r, 150)); d.katalogNastavSkupinu('technicke'); d.katalogHledat = 'regál'; await cekej();
+            const vysledek = { n: d.katalogPolozky.length, jenPolice: d.katalogPolozky.every(x => ['police', 'skrine', 'svitidla'].includes(x.kategorie)), zapnuto: !document.getElementById('kk-katalog-skupina').disabled && !document.getElementById('kk-katalog-kategorie').disabled };
+            const kat = document.getElementById('kk-katalog-kategorie'); kat.value = 'skrine'; kat.dispatchEvent(new Event('change')); await cekej(); vysledek.poZmene = d.katalogHledat;
+            d.katalogNastavSkupinu(''); d.katalogKategorie = 'pohovky'; await cekej(); const znacka = document.querySelector('[data-katalog-prebarvit]'); vysledek.znacka = znacka ? znacka.style.top + '|' + znacka.style.bottom : null; return vysledek; })()`);
+        kontrola('hledání ve skupině místností, výběry zůstanou zapnuté, kategorie hledání vymaže, značka přebarvení vpravo nahoře', hledaniSkupina.n > 0 && hledaniSkupina.jenPolice && hledaniSkupina.zapnuto && hledaniSkupina.poZmene === '' && hledaniSkupina.znacka === '3px|', JSON.stringify(hledaniSkupina));
         // Skupina místností nad kategoriemi (Libor 11. 11. 2026): volba přes skutečný select, kategorie se zúží
         const skupiny = await p.vyhodnot(`(async () => { const d = ${D}; const cekej = () => new Promise(r => setTimeout(r, 150));
             const sel = document.getElementById('kk-katalog-skupina'); const kat = document.getElementById('kk-katalog-kategorie');
@@ -237,6 +242,9 @@ const kontrola = (popis, podminka, detail = '') => {
         kontrola('mimo zdi se točí volně', Math.abs(volne.uhel - 45) < 1.1 && !volne.cara, JSON.stringify(volne));
         const sAltem = await otocNa(28, true);
         kontrola('s Altem magnet neplatí', Math.abs(sAltem.uhel - 28) < 1.1 && !sAltem.cara, JSON.stringify(sAltem));
+        // Nový kus se natočí podle nejbližší zdi, tlačítko 90° kus stojící nakřivo srovná se zdí (Libor 11. 11. 2026)
+        const podleZdi = await p.vyhodnot(`(() => { const d = ${D}; const u = d._katalogUhelZdi([1.9, -4.85]), rovne = d._katalogUhelZdi([4, -0.6]); const v = d.engine.vybaveni[0]; const u0 = v.uhel; v.stred = [3.5, -2.5]; v.uhel = 10; d.renderer.setSelection([], [], [], [v.id]); d._selectionTick++; d.katalogOtoc(); const po = v.uhel; d.katalogOtoc(); const po2 = v.uhel; v.uhel = u0; return { u: +u.toFixed(2), rovne, po, po2 }; })()`);
+        kontrola('vložení se natočí podle nejbližší zdi, 90° srovná kus nakřivo', Math.abs(podleZdi.u - 30) < 0.01 && podleZdi.rovne === 0 && podleZdi.po === 90 && podleZdi.po2 === 180, JSON.stringify(podleZdi));
         await p.vyhodnot(`(() => { const d = ${D}; d.engine.removeWall(${JSON.stringify(sikmaZed)}); return true; })()`);
         await usad(3.5, 2, 0);
         await p.vyhodnot(`(() => { ${D}._selectionTick++; return true; })()`);

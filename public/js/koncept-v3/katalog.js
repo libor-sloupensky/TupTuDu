@@ -114,7 +114,10 @@
         get katalogPolozky() {
             if (!this.katalog) return [];
             const q = this.katalogHledat.trim().toLowerCase();
-            return this.katalog.polozky.filter(p => (q ? p.nazev.toLowerCase().includes(q) : p.kategorie === this.katalogKategorie));
+            if (!q) return this.katalog.polozky.filter(p => p.kategorie === this.katalogKategorie);
+            // Hledání jde přes všechny kategorie zvolené skupiny místností, bez skupiny přes celý katalog
+            const ids = KATEGORIE_PODLE_SKUPINY[this.katalogSkupina];
+            return this.katalog.polozky.filter(p => p.nazev.toLowerCase().includes(q) && (!ids || ids.includes(p.kategorie)));
         },
 
         /** Volby nad kategoriemi: všechny místnosti, pak skupiny místností. */
@@ -260,6 +263,27 @@
             return { ...this._katalogMimoZdi(stred, kus.sirka, kus.hloubka, uhel), uhel };
         },
 
+        /**
+         * Natočení rovnoběžné s nejbližší zdí (stupně v půdorysu, z poloh po 90° ta nejbližší nule, bez zdí 0).
+         * Nový kus se tak v natočeném domě nevkládá nakřivo (Libor 11. 11. 2026, vzorový dům je natočený o 28°).
+         */
+        _katalogUhelZdi(stred) {
+            const PX = this.engine.PX_PER_M, x = stred[0] * PX, y = -stred[1] * PX;
+            let nej = Infinity, smer = null;
+            for (const w of this.engine.walls.values()) {
+                const a = this.engine.nodes.get(w.nodeA), b = this.engine.nodes.get(w.nodeB);
+                if (!a || !b) continue;
+                const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+                if (L2 < 1) continue;
+                const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / L2));
+                const d = Math.hypot(a.x + t * dx - x, a.y + t * dy - y);
+                if (d < nej) { nej = d; smer = Math.atan2(dy, dx) * 180 / Math.PI; }
+            }
+            if (smer === null) return 0;
+            const u = (((smer % 90) + 135) % 90) - 45;
+            return Math.abs(u) < 1e-6 ? 0 : u;
+        },
+
         _katalogBodKurzoru(pos) {
             const PX = this.engine.PX_PER_M;
             return [pos.x / PX, -pos.y / PX];
@@ -272,7 +296,8 @@
         katalogPohyb(pos, e) {
             const p = this.katalogVybrany;
             if (!p) return;
-            const u = this._katalogUsad(this._katalogBodKurzoru(pos), 0, p, e);
+            const bod = this._katalogBodKurzoru(pos);
+            const u = this._katalogUsad(bod, this._katalogUhelZdi(bod), p, e);
             this._katalogDuchPryc();
             const zaznam = {
                 id: '_duch', typ: 'Katalog', katalog: p.id, nazev: p.nazev, tvar: 'rect', uhel: u.uhel, sirka: p.sirka, hloubka: p.hloubka,
@@ -288,7 +313,8 @@
         katalogKlik(pos, e) {
             const p = this.katalogVybrany;
             if (!p) return;
-            const u = this._katalogUsad(this._katalogBodKurzoru(pos), 0, p, e);
+            const bod = this._katalogBodKurzoru(pos);
+            const u = this._katalogUsad(bod, this._katalogUhelZdi(bod), p, e);
             const v = this._katalogZaznam(p, u.stred, u.uhel);
             this.engine.vybaveni.push(v);
             this.zmerFunkci?.('katalog');
@@ -551,7 +577,9 @@
         katalogOtoc() {
             const v = this.katalogObjekt;
             if (!v) return;
-            v.uhel = (((v.uhel || 0) + 90) % 360);
+            // O 90° a srovnat se zdí: kus stojící nakřivo se tak tlačítkem dorovná (magnet otáčení to dělá madlem)
+            const z = this._katalogUhelZdi(v.stred), u = (v.uhel || 0) + 90;
+            v.uhel = ((z + Math.round((u - z) / 90) * 90) % 360 + 360) % 360;
             this._katalogVytlac(v);
             this.renderer.setSelection([], [], [], [v.id]);
             this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_otoceni'));
