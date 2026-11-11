@@ -82,6 +82,9 @@ async function main() {
             document.querySelector('form').submit(); true`);
         await pauza(3000);
 
+        // Popisy kroků uložené historie zkopírovaného projektu jsou data: zapsaly se v jazyce, ve kterém se projekt
+        // upravoval (česky), a s přepnutím jazyka se nemění. Bere se jen historie z kopie, kroky vzniklé v testu se kontrolují dál.
+        let historieProjektu = null;
         for (const jazyk of JAZYKY) {
             console.log(`\n=== ${jazyk}`);
             const pocetVad = p.chybyDetail.length;
@@ -100,7 +103,8 @@ async function main() {
             const preteka = await p.vyhodnot(PRETEKA);
             kontrola('nápisy v panelech se vejdou', preteka.length === 0, preteka.join(' | '));
             const vzor = CESTINA[jazyk] || CESTINA.default;
-            const cesky = (await p.vyhodnot(TEXTY)).filter(t => vzor.test(t) && !VYJIMKY.test(t));
+            historieProjektu ??= new Set(await p.vyhodnot(`(${D}.historie || []).map(k => k.popis).filter(Boolean)`));
+            const cesky = (await p.vyhodnot(TEXTY)).filter(t => vzor.test(t) && !VYJIMKY.test(t) && !historieProjektu.has(t));
             kontrola('žádná čeština v rozhraní', cesky.length === 0, `${cesky.length}: ` + cesky.slice(0, 25).join(' | '));
             // Výchozí názvy se přepínají s jazykem, ruční zůstávají. Na samostatném enginu, projekt se nemění.
             const n = await p.vyhodnot(`(() => {

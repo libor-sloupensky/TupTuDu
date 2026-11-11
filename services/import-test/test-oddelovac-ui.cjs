@@ -241,8 +241,8 @@ async function main() {
         const retezStart = await p.vyhodnot(`(() => { const o = ${D}._oddelovacStart; return o ? [o.bod.x, o.bod.y] : null; })()`);
         kontrola('po šikmém úseku řetěz pokračuje z jeho konce', retezStart && Math.hypot(retezStart[0] - K.x, retezStart[1] - K.y) < 6, JSON.stringify(retezStart));
         const zacatek = { x: retezStart[0], y: retezStart[1] };
-        const prvni = await stav();
-        const dir = Math.atan2(prvni[0].b[1] - prvni[0].a[1], prvni[0].b[0] - prvni[0].a[0]);
+        // Směr z přesných souřadnic: stav() zaokrouhluje na mm a u 2,5 m úseku to dělá až 0,02°, víc než tolerance kolmice
+        const dir = await p.vyhodnot(`(() => { const e = ${D}.engine; const o = [...e.oddelovace.values()][0]; const a = e.bodKonceOddelovace(o.a), b = e.bodKonceOddelovace(o.b); return Math.atan2(b.y - a.y, b.x - a.x); })()`);
         // O 2° mimo kolmici na předchozí úsek
         const mimo = dir + (90 + 2) * Math.PI / 180;
         await pohyb(await naObr(zacatek.x + 1.6 * PX * Math.cos(mimo), zacatek.y + 1.6 * PX * Math.sin(mimo)));

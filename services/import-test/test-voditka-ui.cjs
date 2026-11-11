@@ -37,7 +37,8 @@ async function main() {
         for (const id of [...e.walls.keys()]) e.removeWall(id); e._cleanOrphanNodes?.();
         const ids = ${JSON.stringify(steny)}.map(w => e.addWall(w[0], w[1], w[2], w[3], 0.3).id);
         const st = d.stage; st.scale({ x: ${s}, y: ${s} }); d.zoom = ${s};
-        st.position({ x: st.width() / 2 - ${cx} * ${s}, y: st.height() / 2 - ${cy} * ${s} });
+        // Celé pixely: při liché výšce plátna by střed padl na půl pixelu a klik myší (celé pixely) by minul o 0,5 px výkresu
+        st.position({ x: Math.round(st.width() / 2 - ${cx} * ${s}), y: Math.round(st.height() / 2 - ${cy} * ${s}) });
         d.renderer.poZmeneZoomu(); d.renderer.render(); d.nastroj = 'vyber'; d.nastroj = 'stena'; return ids; })()`);
     const tazenyUzel = () => p.vyhodnot(`(() => { const d = ${D}; const n = d.engine.nodes.get(d.draggingNodeId); return n ? { x: n.x, y: n.y } : null; })()`);
 

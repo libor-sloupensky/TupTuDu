@@ -162,6 +162,8 @@ async function main() {
         await pauza(800);
         s = await stav();
         kontrola('po obnovení sloup drží a střecha jde přes něj', s.s && s.s.id === 'C1' && blizko(s.s.x, 12.05, 0.01) && s.hran === 4, JSON.stringify(s));
+        // Mazání se potvrzuje oknem prohlížeče (potvrditSmazani), test ho odsouhlasí; po obnovení stránky znovu
+        await p.vyhodnot('window.confirm = () => true; true');
         const smaz = await p.vyhodnot(`(() => { const d = ${D}; d.renderer.setSelection([]); d.renderer.selectedSloupy.add('C1'); d.domSmazVybrane(); const po = d.engine.dum.sloupy.length; const hran = d._strechaVypocet().hrany.length; d.undo(); return { po, hran, zpet: d.engine.dum.sloupy.length }; })()`);
         kontrola('Delete sloup smaže, střecha je zase bez rozšíření, Zpět ho vrátí', smaz.po === 0 && smaz.hran === 6 && smaz.zpet === 1, JSON.stringify(smaz));
 
