@@ -91,6 +91,9 @@
 {{-- Vzhledy střešních krytin, vyrábí services/krytiny/sestav.py (modules/dum.md, část Krytiny) --}}
 <script>window.KRYTINY_VZHLEDY = @json(json_decode(file_get_contents(public_path('textury/krytiny/vzhledy.json')))); window.KRYTINY_VERZE = {{ filemtime(public_path('textury/krytiny/vzhledy.json')) }};</script>
 <script src="/js/krytiny-3d.js?v={{ filemtime(public_path('js/krytiny-3d.js')) }}"></script>
+{{-- Omítka, skla a nejnižší pohled kamery (modules/dum.md, část Fasáda, skla a pohled) --}}
+<script>window.POVRCHY_VERZE = {{ filemtime(public_path('textury/omitka/normala.webp')) }};</script>
+<script src="/js/povrchy-3d.js?v={{ filemtime(public_path('js/povrchy-3d.js')) }}"></script>
 <script src="/js/sdileni-prohlizec.js?v={{ filemtime(public_path('js/sdileni-prohlizec.js')) }}"></script>
 </body>
 </html>

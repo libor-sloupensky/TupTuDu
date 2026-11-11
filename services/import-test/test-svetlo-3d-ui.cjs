@@ -145,7 +145,8 @@ const zHexu = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
             d._build3d(); d._build3d(); d._build3d();
             const poStavbe = r.shadowMap.needsUpdate;
             d.zobrazStrechu3d = d.zobrazStrechu3d;
-            let kresleni = 0; const puvodni = r.render.bind(r); r.render = (...a) => { kresleni++; return puvodni(...a); };
+            // Jen kreslení na obrazovku: zachycení odrazů do skel kreslí do textury a smyčku nezdvojuje
+            let kresleni = 0; const puvodni = r.render.bind(r); r.render = (...a) => { if (!r.getRenderTarget()) kresleni++; return puvodni(...a); };
             const snimku = 30; for (let i = 0; i < snimku; i++) await new Promise(q => requestAnimationFrame(q));
             r.render = puvodni;
             r.shadowMap.needsUpdate = false; d._nastavViditelnost3d();
@@ -166,6 +167,8 @@ const zHexu = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
         // Sonda z bodu 2 to nezachytí, proto se tu měří opravdové stěny na všech stranách.
         const dum = await p.vyhodnot(`(() => { const d = ${D}, _3d = window._kk3d, T = window.THREE, r = _3d.renderer, gl = r.getContext();
             d.skryte3d = []; d._nastavViditelnost3d();
+            // Zrno omítky by rozptyl jasu zvedlo samo, šikmý vzor stínu se měří na hladké stěně
+            window.Povrchy3d?.silaOmitky(0);
             for (const m of (() => { const a = []; _3d.scene.traverse(o => { if (o.isMesh) a.push(...[].concat(o.material)); }); return a; })()) if (m.userData?.barva === 'fasada') m.color.set('#e8cfa8');
             const obal = new T.Box3(); for (const g of _3d.podlaziSkupiny.values()) obal.expandByObject(g);
             const st = obal.getCenter(new T.Vector3());
@@ -193,6 +196,7 @@ const zHexu = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
                 };
                 vys[nazev] = { dole: blok(obal.min.y + 1, obal.min.y + 2), pas: blok(pas.min.y + 0.04, pas.max.y - 0.04), nahore: blok(pas.max.y + 0.5, pas.max.y + 1.2), podOkapem: blok(okap - 0.8, okap - 0.6) };
             }
+            window.Povrchy3d?.silaOmitky(1);
             return vys; })()`);
         for (const [n, x] of Object.entries(dum)) {
             kontrola(`${n}: stěna má barvu boku desky`, Math.abs(x.dole.R - x.pas.R) <= 2 && Math.abs(x.nahore.R - x.pas.R) <= 2, `dole ${x.dole.R}, pás ${x.pas.R}, nahoře ${x.nahore.R}`);

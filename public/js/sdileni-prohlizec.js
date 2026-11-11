@@ -60,12 +60,15 @@
             // Střešní krytina: stejný materiál jako v editoru, textury se dotáhnou a scéna se překreslí
             const krytina = m.krytina && window.Krytiny3d ? window.Krytiny3d.material(m.krytina, m.barva, () => { window.Svetlo3d.prekresliStiny(renderer); vykresli(); }) : null;
             if (krytina) return krytina;
+            if (m.povrch === 'sklo' && window.Povrchy3d) return window.Povrchy3d.sklo();
             const mapa = m.mapa ? texturaZ(m.mapa) : null;
-            return new THREE.MeshStandardMaterial({
+            const material = new THREE.MeshStandardMaterial({
                 color: new THREE.Color(m.barva), roughness: m.drsnost ?? 0.8, metalness: m.kov ?? 0,
                 transparent: (m.pruhlednost ?? 1) < 1, opacity: m.pruhlednost ?? 1, depthWrite: (m.pruhlednost ?? 1) >= 1,
                 side: THREE.DoubleSide, map: mapa, bumpMap: m.reliefMapa ? mapa : null, bumpScale: m.relief ?? 0,
             });
+            if (m.povrch === 'omitka' && window.Povrchy3d) window.Povrchy3d.omitka(material, () => { window.Svetlo3d.prekresliStiny(renderer); vykresli(); });
+            return material;
         });
 
         const skupiny = new Map();
@@ -156,12 +159,22 @@
         skupiny.forEach((g) => window.Svetlo3d.stinyObjektu(g));
         window.Svetlo3d.usadSlunce(slunce, obal);
         window.Svetlo3d.prekresliStiny(renderer);
+        // Skla odrážejí terén a oblohu jako v editoru, kamera nejde pohledem pod terén (povrchy-3d.js)
+        const zemObjekt = teren ? teren.plocha : (!data.bezZeme ? zeme : null);
+        if (window.Povrchy3d) {
+            try {
+                window.Povrchy3d.zachytOdrazy(renderer, scene, new THREE.Vector3(stred.x, (data.zeme ?? 0) + 1.5, stred.z), [zemObjekt].filter(Boolean), scene);
+            } catch (e) {
+                window.zalogujChybu?.(e, 'Sdílení 3D: odrazy ve sklech', {});
+            }
+        }
 
         const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -500, 1000);
         camera.position.set(stred.x + rozmer, stred.y + rozmer * 0.9, stred.z + rozmer);
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.target.copy(stred);
         controls.enableDamping = false;
+        controls.maxPolarAngle = window.Povrchy3d && zemObjekt ? window.Povrchy3d.nejnizsiPohled(obal, new THREE.Box3().setFromObject(zemObjekt), data.zeme ?? 0) : Math.PI / 2.1;
 
         let kresliSe = false;
         function vykresli() {

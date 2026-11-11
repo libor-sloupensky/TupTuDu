@@ -1,5 +1,5 @@
 """
-Výroba textur střešních krytin (modules/dum.md, část Krytiny).
+Výroba textur střešních krytin a fasádní omítky (modules/dum.md, části Krytiny a Fasáda).
 
 Zdroje jsou Poly Haven a ambientCG, oba CC0. Stažené mapy 1K se ukládají do services/krytiny/zdroje/
 (mimo git), hotové textury do public/textury/krytiny/<id>/ a seznam vzhledů do vzhledy.json, který
@@ -11,7 +11,10 @@ Pro každý vzhled vznikne:
   arm.webp      R = zastínění spár, G = drsnost, B = 0 (kovovost řeší materiál)
   nahled.webp   vzorek 96 px se stínováním z normál, pro volbu v panelu
 
-Spuštění: python services/krytiny/sestav.py [--znovu]
+Omítka (public/textury/omitka/, povrchy-3d.js): kresba.webp má v R jemné zrno a v G velké skvrny tónu,
+obojí kolem 0,5 (v shaderu násobek 1 + (x − 0,5) · 2, průměr 1, barva ze vzorku se nemění), normala.webp reliéf.
+
+Spuštění: python services/krytiny/sestav.py [--znovu] [--jen-omitka]
 """
 import io, json, os, sys, urllib.request, zipfile
 from PIL import Image, ImageFilter
@@ -179,7 +182,52 @@ def zpracuj(v):
     return zaznam
 
 
+# Omítka: jemná zrnitá (silikonová, akrylátová) jako na dnešním rodinném domě, dlaždice 2 m
+OMITKA = {'zdroj': 'ph', 'orig': 'white_stucco'}
+OMITKA_VYSTUP = os.path.join(KOREN, 'public', 'textury', 'omitka')
+OMITKA_ZRNO = 0.05      # směrodatná odchylka jasu zrna (5 %)
+OMITKA_SKVRNY = 0.02    # skvrny tónu na ploše několika metrů (2 %)
+
+
+def rozmaz_dokola(obr, polomer):
+    """Rozmazání s navázáním přes okraje: dlaždice zůstane bez švů."""
+    w, h = obr.size
+    velky = Image.new(obr.mode, (w * 3, h * 3))
+    for i in range(3):
+        for j in range(3):
+            velky.paste(obr, (i * w, j * h))
+    return velky.filter(ImageFilter.GaussianBlur(polomer)).crop((w, h, 2 * w, 2 * h))
+
+
+def normuj(obr, odchylka):
+    """Kanál L na průměr 128 a danou směrodatnou odchylku (v násobku 1 + (x − 0,5) · 2)."""
+    from PIL import ImageStat
+    st = ImageStat.Stat(obr)
+    prumer, sd = st.mean[0], max(st.stddev[0], 1e-3)
+    k = odchylka * 127.5 / sd
+    return obr.point(lambda p: max(0, min(255, int(round(128 + (p - prumer) * k)))))
+
+
+def omitka():
+    d = zdroj(OMITKA)
+    nacti = lambda j, rezim: Image.open(os.path.join(d, j + '.jpg')).convert(rezim).resize((VELIKOST, VELIKOST), Image.LANCZOS)
+    jas = nacti('color', 'L')
+    ao = nacti('ao', 'L')
+    from PIL import ImageChops
+    zrno = ImageChops.multiply(jas, ao)
+    skvrny = rozmaz_dokola(jas, 48)
+    kresba = Image.merge('RGB', (normuj(zrno, OMITKA_ZRNO), normuj(skvrny, OMITKA_SKVRNY), Image.new('L', zrno.size, 128)))
+    os.makedirs(OMITKA_VYSTUP, exist_ok=True)
+    kresba.save(os.path.join(OMITKA_VYSTUP, 'kresba.webp'), quality=90, method=6)
+    nacti('normal', 'RGB').save(os.path.join(OMITKA_VYSTUP, 'normala.webp'), quality=88, method=6)
+    velikost = sum(os.path.getsize(os.path.join(OMITKA_VYSTUP, f)) for f in os.listdir(OMITKA_VYSTUP))
+    print('omitka %d kB' % (velikost // 1024), flush=True)
+
+
 def main():
+    omitka()
+    if '--jen-omitka' in sys.argv:
+        return
     os.makedirs(VYSTUP, exist_ok=True)
     vysledek = []
     for v in VZHLEDY:
