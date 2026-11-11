@@ -28,6 +28,10 @@
                 <div class="rounded" style="border:1px solid var(--c-border);cursor:pointer;background:var(--c-surface)" x-html="inspector.nakres" data-sestava-nakres-obal
                      @pointerdown.prevent="sestavaNakresStisk($event)" @pointermove="sestavaNakresPohyb($event)" @pointerup="sestavaNakresPusteni($event)" @pointercancel="sestavaNakresPusteni($event)"></div>
                 <div class="text-gray-500 leading-snug" x-show="inspector.druh === 'kuchyn' && !inspector.sloupec">{{ __('ed_sablona.sestava.nakres_tip') }}</div>
+                {{-- Volné místo u konců po stěnu nebo překážku: podle něj jde vybrat skříňky z nabídky --}}
+                <template x-for="v in inspector.volno" :key="v.kde">
+                    <div class="text-gray-500 leading-snug" :data-sestava-volno="v.kde" x-text="preloz('ed_sablona.sestava.volno_' + v.kde, { cm: v.cm })"></div>
+                </template>
                 <template x-for="(t, i) in inspector.varovani" :key="i">
                     <div class="leading-snug" style="color:var(--c-warning-text, #b45309)" x-text="'⚠ ' + t"></div>
                 </template>
@@ -54,8 +58,8 @@
                             <button type="button" class="kk-smazat" @click="sestavaOdeberSloupec()" data-sestava-odebrat>{!! $krizek !!}{{ __('ed_sablona.sestava.odebrat') }}</button>
                         </div>
                         <div class="kk-mrizka">
-                            <span class="text-gray-500">{{ __('ed_sablona.sestava.sirka') }}</span>
-                            <span class="kk-pole-jed"><input type="number" min="15" max="120" step="1" list="kk-sestava-sirky" data-sestava-sloupec="sirka"
+                            <span class="text-gray-500" title="{{ __('ed_sablona.sestava.sirka_tip') }}">{{ __('ed_sablona.sestava.sirka') }}</span>
+                            <span class="kk-pole-jed" title="{{ __('ed_sablona.sestava.sirka_tip') }}"><input type="number" min="15" max="120" step="1" list="kk-sestava-sirky" data-sestava-sloupec="sirka"
                                    :value="inspector.sloupec.sirkaCm" @change="setSloupec('sirka', $event.target.value)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                             <template x-if="!inspector.sloupec.lista">
                                 <div style="display:contents">
@@ -200,6 +204,9 @@
                             <div class="kk-mrizka pt-1.5" style="border-top:1px solid var(--c-border)" data-sestava-dvere-panel>
                                 <span class="text-gray-700 font-medium" x-text="preloz('ed_sablona.sestava.dvere_cislo', { cislo: inspector.dvereVybrane.cislo })"></span>
                                 <span></span>
+                                <span class="text-gray-500" title="{{ __('ed_sablona.sestava.sirka_tip') }}">{{ __('ed_sablona.sestava.sirka') }}</span>
+                                <span class="kk-pole-jed" title="{{ __('ed_sablona.sestava.sirka_tip') }}"><input type="number" min="20" max="150" step="1" list="kk-sestava-sirky" data-sestava-dvere-sirka
+                                       :value="inspector.dvereVybrane.sirkaCm" @change="setDilSkrine($event.target.value)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                 <span class="text-gray-500">{{ __('ed_sablona.sestava.povrch_dveri') }}</span>
                                 <select data-sestava-dvere-povrch @change="setDvereSkrine($event.target.value)">
                                     <option value="" :selected="!inspector.dvereVybrane.zrcadlo">{{ __('ed_sablona.sestava.jako_ostatni') }}</option>
@@ -231,24 +238,27 @@
                     <span></span>
                     <label title="{{ __('ed_sablona.sestava.ke_stropu_tip') }}"><input type="checkbox" data-sestava="vysky.keStropu" :checked="inspector.vysky.keStropu" @change="setSestava('vysky.keStropu', $event.target.checked)">{{ __('ed_sablona.sestava.ke_stropu') }}</label>
                 </div>
-                <template x-if="inspector.roh">
-                    <div class="flex flex-col gap-1.5 pt-1.5" style="border-top:1px solid var(--c-border)">
-                        <div class="kk-mrizka">
-                            <span class="text-gray-500">{{ __('ed_sablona.sestava.roh_dole') }}</span>
-                            <select data-sestava="roh.spodni" @change="setSestava('roh.spodni', $event.target.value)">
-                                <template x-for="o in sestavaVolby.rohSpodni" :key="o.id"><option :value="o.id" :selected="o.id === inspector.roh.spodni" x-text="o.nazev"></option></template>
-                            </select>
-                            <span class="text-gray-500">{{ __('ed_sablona.sestava.roh_nahore') }}</span>
-                            <select data-sestava="roh.horni" @change="setSestava('roh.horni', $event.target.value)">
-                                <template x-for="o in sestavaVolby.rohHorni" :key="o.id"><option :value="o.id" :selected="o.id === inspector.roh.horni" x-text="o.nazev"></option></template>
-                            </select>
-                        </div>
-                        <button type="button" @click="sestavaZrusRoh()" class="border rounded px-2 self-start" data-sestava-zrusit-roh>{{ __('ed_sablona.sestava.zrusit_roh') }}</button>
+                {{-- Rohy: u L jeden, u U dva, každý s vlastní volbou dole a nahoře --}}
+                <template x-for="r in inspector.rohy" :key="r.i">
+                    <div class="kk-mrizka pt-1.5" style="border-top:1px solid var(--c-border)" :data-sestava-roh="r.i">
+                        <span class="text-gray-700 font-medium" x-text="inspector.rohy.length > 1 ? preloz('ed_sablona.sestava.roh_cislo', { cislo: r.cislo }) : preloz('ed_sablona.sestava.roh')"></span>
+                        <span></span>
+                        <span class="text-gray-500">{{ __('ed_sablona.sestava.roh_dole') }}</span>
+                        <select :data-sestava="'roh.' + r.i + '.spodni'" @change="setSestava('roh.' + r.i + '.spodni', $event.target.value)">
+                            <template x-for="o in sestavaVolby.rohSpodni" :key="o.id"><option :value="o.id" :selected="o.id === r.spodni" x-text="o.nazev"></option></template>
+                        </select>
+                        <span class="text-gray-500">{{ __('ed_sablona.sestava.roh_nahore') }}</span>
+                        <select :data-sestava="'roh.' + r.i + '.horni'" @change="setSestava('roh.' + r.i + '.horni', $event.target.value)">
+                            <template x-for="o in sestavaVolby.rohHorni" :key="o.id"><option :value="o.id" :selected="o.id === r.horni" x-text="o.nazev"></option></template>
+                        </select>
                     </div>
                 </template>
-                <div class="flex items-center gap-1 flex-wrap" x-show="!inspector.roh && (inspector.ramenoVlevo || inspector.ramenoVpravo)">
+                {{-- Ramena: z rovné L, z L tvar U; odebráním krajního ramene zpět --}}
+                <div class="flex items-center gap-1 flex-wrap pt-1.5" style="border-top:1px solid var(--c-border)" x-show="inspector.ramenoVlevo || inspector.ramenoVpravo || inspector.odebratRameno">
                     <button type="button" x-show="inspector.ramenoVlevo" @click="sestavaPridejRameno('vlevo')" class="border rounded px-2" data-sestava-rameno="vlevo">{{ __('ed_sablona.sestava.rameno_vlevo') }}</button>
                     <button type="button" x-show="inspector.ramenoVpravo" @click="sestavaPridejRameno('vpravo')" class="border rounded px-2" data-sestava-rameno="vpravo">{{ __('ed_sablona.sestava.rameno_vpravo') }}</button>
+                    <button type="button" x-show="inspector.odebratRameno" @click="sestavaOdeberRameno('vlevo')" class="kk-smazat" data-sestava-odebrat-rameno="vlevo">{!! $krizek !!}{{ __('ed_sablona.sestava.odebrat_vlevo') }}</button>
+                    <button type="button" x-show="inspector.odebratRameno" @click="sestavaOdeberRameno('vpravo')" class="kk-smazat" data-sestava-odebrat-rameno="vpravo">{!! $krizek !!}{{ __('ed_sablona.sestava.odebrat_vpravo') }}</button>
                 </div>
             </div>
         </template>

@@ -589,8 +589,16 @@
                 </template>
                 {{-- Nová nábytková sestava (sestavy.js, modules/sestavy.md) --}}
                 <template x-if="nastroj === 'sestava'">
-                    <div class="p-2 flex flex-col gap-1" style="max-width:340px" data-sestava-nastroj>
-                        <span class="text-gray-600 font-medium" x-text="sestavaDruh === 'skrin' ? preloz('ed_sablona.sestava.nova_skrin') : preloz('ed_sablona.sestava.nova_kuchyn')"></span>
+                    <div class="p-2 flex flex-col gap-1" style="max-width:360px" data-sestava-nastroj>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-600 font-medium whitespace-nowrap" x-text="sestavaDruh === 'skrin' ? preloz('ed_sablona.sestava.nova_skrin') : preloz('ed_sablona.sestava.nova_kuchyn')"></span>
+                            {{-- Tvar kuchyně jako u schodů: rovná, do L, do U (Libor 11. 11. 2026: „mám kuchyň do U“) --}}
+                            <div class="kk-dily ml-auto" role="group" x-show="sestavaDruh === 'kuchyn'" aria-label="{{ __('ed_sablona.sestava.tvar') }}" data-sestava-tvar>
+                                <button type="button" data-sestava-tvar="rovna" :class="sestavaTvar === 'rovna' && 'kk-zap'" @click="nastavTvarSestavy('rovna')">{{ __('ed_sablona.sestava.tvar_rovna') }}</button>
+                                <button type="button" data-sestava-tvar="L" :class="sestavaTvar === 'L' && 'kk-zap'" @click="nastavTvarSestavy('L')">{{ __('ed_sablona.sestava.tvar_l') }}</button>
+                                <button type="button" data-sestava-tvar="U" :class="sestavaTvar === 'U' && 'kk-zap'" @click="nastavTvarSestavy('U')">{{ __('ed_sablona.sestava.tvar_u') }}</button>
+                            </div>
+                        </div>
                         <div class="text-gray-500 leading-snug" x-text="sestavaDruh === 'skrin' ? preloz('ed_sablona.sestava.klepni_skrin') : preloz('ed_sablona.sestava.klepni_kuchyn')"></div>
                     </div>
                 </template>

@@ -103,37 +103,51 @@ async function main() {
         kontrola('v seznamu objektů je K1 Kuchyňská linka', objekty.length === 1 && objekty[0] === 'K1 Kuchyňská linka', JSON.stringify(objekty));
         await p.snimek(path.join(vystup, 'sestava-1-kuchyn.png'));
 
-        console.log('\n4) Skříňka z nákresu: šířka 80 cm, ostatní se dorovnají; posun doprava');
+        console.log('\n4) Šířka skříňky platí přesně: ostatní zůstanou, linka se zkrátí; víc, než je místa, nejde');
         await p.vyhodnot(`(() => { const d = ${D}; d.sestavaVyberSloupec('0:1'); return true; })()`);
         await pauza(250);
         const panelSl = await p.vyhodnot(`!!document.querySelector('[data-sestava-sloupec-panel]')`);
+        const predZmenou = (await sestava('K1')).sl[0].map(c => c.sirka);
         await pole('[data-sestava-sloupec="sirka"]', 80);
         await pauza(250);
         k = await sestava('K1');
-        kontrola('panel skříňky je vidět, šířka 80 cm platí a součet drží délku', panelSl && blizko(k.sl[0][1].sirka, 0.8, 0.001) && k.sl[0][1].upraveno && blizko(k.soucty[0], k.delky[0], 0.002), JSON.stringify(k.sl[0].map(c => c.sirka)));
-        const predPosunem = k.sl[0].map(c => c.sirka);
+        const hlaska80 = await p.vyhodnot(`${D}.dumZprava`);
+        kontrola('linka vede přes celou stěnu, 80 cm se nevejde: nic se nezmění a hláška to řekne', panelSl && blizko(k.sl[0][1].sirka, 0.6, 0.001) && blizko(k.delky[0], 4.7, 0.003) && /0 cm/.test(hlaska80 || ''), JSON.stringify({ sirky: k.sl[0].map(c => c.sirka), hlaska80 }));
+        await pole('[data-sestava-sloupec="sirka"]', 40);
+        await pauza(300);
+        k = await sestava('K1');
+        const ostatni = k.sl[0].every((c, i) => i === 1 || blizko(c.sirka, predZmenou[i], 0.0005));
+        const volno = await p.vyhodnot(`document.querySelector('[data-sestava-volno="konec"]')?.innerText || ''`);
+        kontrola('40 cm: ostatní skříňky stejné, linka o 20 cm kratší, panel ukáže volné místo', blizko(k.sl[0][1].sirka, 0.4, 0.001) && ostatni && blizko(k.delky[0], 4.5, 0.003) && blizko(k.soucty[0], k.delky[0], 0.002) && /20/.test(volno), JSON.stringify({ sirky: k.sl[0].map(c => c.sirka), delky: k.delky, volno }));
+        await pole('[data-sestava-sloupec="sirka"]', 80);
+        await pauza(300);
+        k = await sestava('K1');
+        kontrola('zpátky na 80 cm: vejde se jen 60, linka zase po stěnu', blizko(k.sl[0][1].sirka, 0.6, 0.001) && blizko(k.delky[0], 4.7, 0.003), JSON.stringify({ sirky: k.sl[0].map(c => c.sirka), delky: k.delky }));
+        await pole('[data-sestava-sloupec="sirka"]', 40);
+        await pauza(300);
+        const predPosunem = (await sestava('K1')).sl[0].map(c => c.sirka);
         await p.vyhodnot(`(() => { document.querySelector('[data-sestava-vpravo]').click(); return true; })()`);
         await pauza(250);
         k = await sestava('K1');
-        kontrola('posun doprava prohodí skříňky, výběr jde se skříňkou', blizko(k.sl[0][2].sirka, 0.8, 0.001) && blizko(k.sl[0][1].sirka, predPosunem[2], 0.001) && (await p.vyhodnot(`${D}.sestavaSloupecKlic`)) === '0:2', JSON.stringify(k.sl[0].map(c => c.sirka)));
+        kontrola('posun doprava prohodí skříňky, výběr jde se skříňkou', blizko(k.sl[0][2].sirka, 0.4, 0.001) && blizko(k.sl[0][1].sirka, predPosunem[2], 0.001) && (await p.vyhodnot(`${D}.sestavaSloupecKlic`)) === '0:2', JSON.stringify(k.sl[0].map(c => c.sirka)));
 
         console.log('\n5) Tah skříňky myší v půdorysu na začátek linky');
-        const t0 = k.sl[0].slice(0, 2).reduce((a, c) => a + c.sirka, 0) + 0.4;
+        const t0 = k.sl[0].slice(0, 2).reduce((a, c) => a + c.sirka, 0) + 0.2;
         await p.vyhodnot(`(() => { const d = ${D}; d.renderer.setSelection([]); d.renderer.render(); return true; })()`);
         await tah(await obr(0.15 + t0, 0.45), await obr(0.17, 0.45));
         k = await sestava('K1');
-        kontrola('80cm skříňka je teď první, součet sedí', blizko(k.sl[0][0].sirka, 0.8, 0.001) && blizko(k.soucty[0], k.delky[0], 0.002), JSON.stringify(k.sl[0].map(c => c.sirka)));
+        kontrola('40cm skříňka je teď první, součet sedí', blizko(k.sl[0][0].sirka, 0.4, 0.001) && blizko(k.soucty[0], k.delky[0], 0.002), JSON.stringify(k.sl[0].map(c => c.sirka)));
 
         console.log('\n6) Tah za pravý konec o metr kratší, Zpět vrátí');
         await p.vyhodnot(`(() => { const d = ${D}; d.renderer.setSelection([]); d.renderer.selectedSestavy.add('K1'); d.sestavaSloupecKlic = null; d.renderer.render(); d._selectionTick++; return true; })()`);
         await pauza(250);
-        await tah(await obr(4.85, 0.45), await obr(3.85, 0.45));
+        await tah(await obr(4.65, 0.45), await obr(3.65, 0.45));
         k = await sestava('K1');
-        kontrola('linka je 3,7 m a skříňky ji vyplní', blizko(k.delky[0], 3.7, 0.03) && blizko(k.soucty[0], k.delky[0], 0.002), JSON.stringify({ delky: k.delky, soucty: k.soucty }));
+        kontrola('linka je 3,5 m a skříňky ji vyplní', blizko(k.delky[0], 3.5, 0.03) && blizko(k.soucty[0], k.delky[0], 0.002), JSON.stringify({ delky: k.delky, soucty: k.soucty }));
         await p.vyhodnot(`(() => { ${D}.undo(); return true; })()`);
         await pauza(300);
         k = await sestava('K1');
-        kontrola('Zpět vrátí 4,7 m', blizko(k.delky[0], 4.7, 0.03), JSON.stringify(k.delky));
+        kontrola('Zpět vrátí 4,5 m', blizko(k.delky[0], 4.5, 0.03), JSON.stringify(k.delky));
 
         console.log('\n7) Rameno vpravo do L (podél pravé stěny)');
         await p.vyhodnot(`(() => { const d = ${D}; d.renderer.setSelection([]); d.renderer.selectedSestavy.add('K1'); d.sestavaSloupecKlic = null; d.sestavaZalozka = 'rozmery'; d.renderer.render(); d._selectionTick++; return true; })()`);
@@ -142,9 +156,25 @@ async function main() {
         await pauza(300);
         k = await sestava('K1');
         kontrola('tlačítko přidá rameno: tři body, roh, obě ramena vyplněná', tlacitkoL && k.body.length === 3 && k.rohy.length === 1 && k.soucty.every((x, i) => blizko(x, k.delky[i] - 0.9, 0.003)), JSON.stringify({ delky: k.delky, soucty: k.soucty }));
-        st = await p.vyhodnot(`(() => { const d = ${D}; const rv = d._sestavaRozvrh(d.engine.dum.sestavy[0]); return { desky: rv.desky.length, roh: JSON.parse(JSON.stringify(d.inspector?.roh || null)) }; })()`);
-        kontrola('pracovní deska jde přes roh, v panelu je volba rohu', st.desky >= 2 && st.roh && st.roh.spodni === 'L', JSON.stringify(st));
+        st = await p.vyhodnot(`(() => { const d = ${D}; const rv = d._sestavaRozvrh(d.engine.dum.sestavy[0]); return { desky: rv.desky.length, rohy: JSON.parse(JSON.stringify(d.inspector?.rohy || [])) }; })()`);
+        kontrola('pracovní deska jde přes roh, v panelu je volba rohu', st.desky >= 2 && st.rohy.length === 1 && st.rohy[0].spodni === 'L', JSON.stringify(st));
         await p.snimek(path.join(vystup, 'sestava-2-L.png'));
+
+        console.log('\n7b) Z L tvar U: rameno vlevo, levé rameno se zastaví před dveřmi v dolní stěně');
+        const tlacitkoU = await p.vyhodnot(`(() => { const b = document.querySelector('[data-sestava-rameno="vlevo"]'); const videt = !!b && b.offsetParent !== null; b?.click(); return videt; })()`);
+        await pauza(300);
+        k = await sestava('K1');
+        kontrola('tlačítko přidá třetí rameno: čtyři body, dva rohy', tlacitkoU && k.body.length === 4 && k.rohy.length === 2, JSON.stringify({ body: k.body.length, rohy: k.rohy }));
+        kontrola('ramena vyplněná: krajní bez rohu, prostřední bez dvou rohů', blizko(k.soucty[0], k.delky[0] - 0.9, 0.003) && blizko(k.soucty[1], k.delky[1] - 1.8, 0.003) && blizko(k.soucty[2], k.delky[2] - 0.9, 0.003), JSON.stringify({ delky: k.delky, soucty: k.soucty }));
+        // Dveře v dolní stěně x 0,4–1,3 m: před nimi zůstane místo, levé rameno končí zhruba 1 m nad stěnou
+        kontrola('levé rameno nevjede do dveří v dolní stěně', k.delky[0] < 3.0 && k.delky[0] > 2.3, JSON.stringify(k.delky));
+        st = await p.vyhodnot(`JSON.parse(JSON.stringify((${D}.inspector?.rohy || []).length))`);
+        kontrola('panel ukazuje oba rohy', st === 2, String(st));
+        await p.snimek(path.join(vystup, 'sestava-2b-U.png'));
+        await p.vyhodnot(`(() => { document.querySelector('[data-sestava-odebrat-rameno="vlevo"]').click(); return true; })()`);
+        await pauza(300);
+        k = await sestava('K1');
+        kontrola('odebrání levého ramene vrátí L', k.body.length === 3 && k.rohy.length === 1, JSON.stringify({ body: k.body.length }));
 
         console.log('\n8) Vestavěná skříň vpravo od dveří u dolní stěny');
         await p.vyhodnot(`(() => { const d = ${D}; d.renderer.clearSelection(); document.querySelector('[data-sestava-druh="skrin"]')?.click(); return true; })()`);
@@ -162,6 +192,13 @@ async function main() {
         await pauza(250);
         const b2 = await sestava('B1');
         kontrola('první dveře zrcadlové, dveře otočné', b2.zrcadla?.[0] === 'stribrne' && b2.dvere === 'otocne', JSON.stringify({ zrcadla: b2.zrcadla, dvere: b2.dvere }));
+        // Šířka jedněch dveří: ostatní zůstanou, skříň se zkrátí (šest otočných dveří po 48 cm)
+        await p.vyhodnot(`(() => { const d = ${D}; d.sestavaVyberDvere(0); return true; })()`);
+        await pauza(250);
+        await pole('[data-sestava-dvere-sirka]', 40);
+        await pauza(300);
+        const b3 = await sestava('B1');
+        kontrola('dveře 40 cm: ostatní po 48 cm, skříň o 8 cm kratší', Array.isArray(b3.dily) && b3.dily.length === 6 && blizko(b3.dily[0], 0.4, 0.001) && b3.dily.slice(1).every(w => blizko(w, 0.48, 0.002)) && blizko(b3.delky[0], b2.delky[0] - 0.08, 0.003), JSON.stringify({ dily: b3.dily, delky: [b2.delky[0], b3.delky[0]] }));
 
         console.log('\n9) 3D a sdílený odkaz');
         await p.vyhodnot(`(async () => { const d = ${D}; if (!d.rezim3d) await d.prepni3d(); return true; })()`);
@@ -182,6 +219,9 @@ async function main() {
         await p.vyhodnot('location.reload(); true');
         await pauza(3500);
         await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor po obnovení');
+        // Po obnovení stejný výřez plánu jako na začátku, jinak by kliky dál padaly mimo plátno
+        await p.vyhodnot(`(() => { const d = ${D}; d.panelOtvoruPoz = { x: 6, y: 6 }; d.stage.scale({ x: 0.65, y: 0.65 }); d.stage.position({ x: 440, y: 120 }); d.renderer.render(); return true; })()`);
+        await pauza(300);
         const po = await p.vyhodnot(`JSON.stringify(${D}.engine.dum.sestavy)`);
         kontrola('sestavy se uložily beze změny', pred === po && JSON.parse(po).length === 2, `${pred.length} / ${po.length}`);
 
@@ -190,6 +230,22 @@ async function main() {
         await pauza(300);
         const zbyva = await p.vyhodnot(`${D}.engine.dum.sestavy.map(s => s.id)`);
         kontrola('zůstala jen kuchyně', JSON.stringify(zbyva) === '["K1"]', JSON.stringify(zbyva));
+
+        console.log('\n12) Nástroj s tvarem: do L klik u pravého konce, do U oba rohy');
+        await p.vyhodnot(`(() => { const d = ${D}; d.smazatObjekt('K1'); d.zacniSestavu('kuchyn'); d.nastavTvarSestavy('L'); return true; })()`);
+        await pauza(250);
+        const tlacitkaTvaru = await p.vyhodnot(`document.querySelectorAll('[data-sestava-nastroj] button[data-sestava-tvar]').length`);
+        await pohyb(await obr(4.2, 0.6));
+        await klik(await obr(4.2, 0.6));
+        k = await sestava('K1');
+        kontrola('panel nástroje má tři tvary, klik u pravého konce dá L po pravé stěně', tlacitkaTvaru === 3 && k && k.body.length === 3 && blizko(k.body[1][0], 4.85, 0.01) && blizko(k.delky[1], 2.4, 0.01), JSON.stringify(k && { body: k.body, delky: k.delky }));
+        await p.vyhodnot(`(() => { const d = ${D}; d.smazatObjekt('K1'); d.zacniSestavu('kuchyn'); d.nastavTvarSestavy('U'); return true; })()`);
+        await pauza(250);
+        await pohyb(await obr(2.5, 0.6));
+        await klik(await obr(2.5, 0.6));
+        k = await sestava('K1');
+        kontrola('do U: tři ramena, zadní přes celou stěnu, boční po 2,4 m', k && k.body.length === 4 && blizko(k.delky[1], 4.7, 0.01) && blizko(k.delky[0], 2.4, 0.01) && blizko(k.delky[2], 2.4, 0.01) && k.soucty.every((x, i) => blizko(x, k.delky[i] - (i === 1 ? 1.8 : 0.9), 0.003)), JSON.stringify(k && { delky: k.delky, soucty: k.soucty }));
+        await p.vyhodnot(`(() => { ${D}.nastavTvarSestavy('rovna'); return true; })()`);
 
         const chybyKonzole = p.chyby.filter(t => !/favicon|ERR_|net::/.test(t));
         kontrola('konzole bez chyb', chybyKonzole.length === 0, chybyKonzole.slice(0, 5).join(' | '));

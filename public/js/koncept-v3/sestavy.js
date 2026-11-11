@@ -387,11 +387,32 @@
         };
     }
 
-    function dvereSkrine(s, L) {
+    /**
+     * Šířky dílů (dveří) skříně. Vlastní šířky (`s.dily`, Libor 11. 11. 2026: „člověk se musí přizpůsobit tomu, co
+     * je v nabídce“) platí přesně a délka skříně je jejich součet; bez nich rovným dílem podle počtu.
+     */
+    function dilySkrine(s, L) {
         const druh = s.dvere || 'posuvne';
         const auto = druh === 'posuvne' ? omez(Math.ceil(L / 1.2 - 1e-6), 2, 6) : omez(Math.round(L / 0.5), 1, 12);
-        const n = druh === 'zadne' ? 0 : omez(Math.round(s.pocet || auto), druh === 'posuvne' ? 2 : 1, druh === 'posuvne' ? 6 : 12);
-        return { druh, auto, n };
+        if (druh === 'zadne') return { druh, auto, sirky: [] };
+        if (Array.isArray(s.dily) && s.dily.length) {
+            const sirky = s.dily.map(x => Math.max(0.1, Number(x) || 0.5));
+            // Součet má sedět na délku; rozjetý záznam dorovná poslední díl
+            const rozdil = L - sirky.reduce((a, x) => a + x, 0);
+            if (Math.abs(rozdil) > 0.0005) sirky[sirky.length - 1] = Math.max(0.1, sirky[sirky.length - 1] + rozdil);
+            return { druh, auto, sirky };
+        }
+        const n = omez(Math.round(s.pocet || auto), druh === 'posuvne' ? 2 : 1, druh === 'posuvne' ? 6 : 12);
+        return { druh, auto, sirky: Array(n).fill(L / n) };
+    }
+
+    /** Který konec ramene je volný (jde ho posunout): u rovné konec, u L a U krajní konce, prostřední rameno U žádný. */
+    function volnyKonecRamene(s, ri) {
+        const n = Math.max(1, (s.body || []).length - 1);
+        if (n === 1) return 'konec';
+        if (ri === 0) return 'zacatek';
+        if (ri === n - 1) return 'konec';
+        return null;
     }
 
     function rozvrhSkrine(s, ctx) {
@@ -401,15 +422,16 @@
         const hl = omez(s.hloubka || 0.62, 0.3, 0.9);
         const r = ramena[0];
         const L = r ? r.L : 0;
-        const { druh, auto, n } = dvereSkrine(s, L);
+        const { druh, auto, sirky } = dilySkrine(s, L);
         const dvere = [];
-        if (druh === 'posuvne') {
-            const pr = 0.03, w = (L + (n - 1) * pr) / n;
-            for (let i = 0; i < n; i++) dvere.push({ i, t0: i * (w - pr), t1: i * (w - pr) + w, vrstva: i % 2, zrcadlo: (s.zrcadla || [])[i] || null });
-        } else if (druh === 'otocne') {
-            const w = L / n;
-            for (let i = 0; i < n; i++) dvere.push({ i, t0: i * w, t1: (i + 1) * w, vrstva: 0, zrcadlo: (s.zrcadla || [])[i] || null });
-        }
+        // Posuvné díly se v kolejnicích překrývají o 3 cm, otočné dveře stojí vedle sebe
+        const pr = druh === 'posuvne' ? 0.03 : 0;
+        let t = 0;
+        sirky.forEach((w, i) => {
+            const t0 = Math.max(0, t - pr / 2), t1 = Math.min(L, t + w + pr / 2);
+            dvere.push({ i, t0, t1, dil: [t, t + w], vrstva: druh === 'posuvne' ? i % 2 : 0, zrcadlo: (s.zrcadla || [])[i] || null });
+            t += w;
+        });
         const varovani = [];
         for (const o of ctx?.otvory?.[0] || []) {
             if (Math.min(L, o.t1) - Math.max(0, o.t0) > 0.02) varovani.push(o.typ === 'okno' ? 'okno_vysoka' : 'dvere');
@@ -615,13 +637,16 @@
      */
     function nakres(s, rv, ctx, stav) {
         const W = NAKRES_SIRKA, MEZERA = 0.3;
-        const delka = rv.ramena.reduce((a, r) => a + r.L, 0) + MEZERA * Math.max(0, rv.ramena.length - 1);
+        // Volné místo u konců (po stěnu nebo překážku) je v nákresu taky, čárkovaně s rozměrem
+        const pred = (stav.volno || []).find(v => v.kde === 'zacatek')?.m || 0;
+        const za = (stav.volno || []).find(v => v.kde === 'konec')?.m || 0;
+        const delka = rv.ramena.reduce((a, r) => a + r.L, 0) + MEZERA * Math.max(0, rv.ramena.length - 1) + pred + za;
         const vyska = s.druh === 'skrin' ? Math.max(rv.H, 2) + 0.12 : Math.max(rv.vys.vysokaDo, rv.vys.horniDo, 2.2) + 0.15;
         const k = Math.min((W - 12) / Math.max(delka, 0.5), 150 / vyska);
         const H = Math.round(vyska * k + 18);
         const zem = H - 14;
         const ox = [];
-        let x = 6;
+        let x = 6 + pred * k;
         for (const r of rv.ramena) { ox.push(x); x += r.L * k + MEZERA * k; }
         const X = (ri, t) => ox[ri] + t * k, Y = (y) => zem - y * k;
         const el = [];
@@ -639,7 +664,14 @@
             cara(X(ri, 0), Y(rv.vys.strop), X(ri, r.L), Y(rv.vys.strop), 'stroke="#9ca3af" stroke-width="0.6" stroke-dasharray="4 3"');
             cara(X(ri, 0), zem, X(ri, r.L), zem, 'stroke="#6b7280" stroke-width="0.8"');
         });
-        if (s.druh === 'skrin') nakresSkrine(s, rv, stav, { obd, cara, X, Y, k, obrys, primary, mapa, el });
+        const posledni = rv.ramena.length - 1;
+        for (const [ri, t0, t1] of [[0, -pred, 0], [posledni, rv.ramena[posledni]?.L || 0, (rv.ramena[posledni]?.L || 0) + za]]) {
+            if (t1 - t0 < 0.005) continue;
+            const x0 = X(ri, t0), x1 = X(ri, t1), vy = Y(s.druh === 'skrin' ? Math.min(rv.H, 1) : rv.vys.deska);
+            obd(x0 + 0.5, vy, x1 - 0.5, zem, 'fill="none" stroke="#9ca3af" stroke-width="0.8" stroke-dasharray="3 2"');
+            if (x1 - x0 > 12) el.push(`<text x="${((x0 + x1) / 2).toFixed(1)}" y="${(zem + 10).toFixed(1)}" font-size="8.5" text-anchor="middle" fill="#9ca3af">${Math.round((t1 - t0) * 100)}</text>`);
+        }
+        if (s.druh === 'skrin') nakresSkrine(s, rv, stav, { obd, cara, X, Y, k, obrys, primary, mapa, el, zem });
         else nakresKuchyne(s, rv, stav, { obd, cara, X, Y, k, obrys, primary, mapa, el, zem });
         if (stav.tah && typeof stav.tah.x === 'number') cara(stav.tah.x, 4, stav.tah.x, zem, `stroke="${primary}" stroke-width="2.5"`);
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="100%" style="display:block;touch-action:none;user-select:none" data-sestava-nakres>${el.join('')}</svg>`;
@@ -806,12 +838,15 @@
             if (rv.druhDveri === 'otocne') { const xu = d.i % 2 ? x0 + 3 : x1 - 3; cara(xu, Y(1.1), xu, Y(0.9), 'stroke="#374151" stroke-width="1.2"'); }
             if (vybrane) obd(x0 + 1, Y(rv.H) + 3, x1 - 1, Y(0) - 3, `fill="none" stroke="${primary}" stroke-width="2"`);
             el.push('</g>');
-            mapa.push({ dvere: d.i, x0, x1, ri: 0 });
+            // Klik a šířka podle dílu (posuvné díly se o 3 cm překrývají, rozměr platí bez překrytí)
+            const a = X(0, d.dil[0]), b2 = X(0, d.dil[1]);
+            mapa.push({ dvere: d.i, x0: a, x1: b2, ri: 0 });
+            if (b2 - a > 14) el.push(`<text x="${((a + b2) / 2).toFixed(1)}" y="${(n.zem + 10).toFixed(1)}" font-size="8.5" text-anchor="middle" fill="${vybrane ? primary : '#6b7280'}">${Math.round((d.dil[1] - d.dil[0]) * 100)}</text>`);
         }
         mapa.sort((a, b) => a.x0 - b.x0);
     }
 
-    window.SestavyGeo = { ramenaSestavy, rozvrh, vybavKuchyn, dorovnejRameno, dorovnej, useky, delkaRohu, obrysySestavy, VOLBY };
+    window.SestavyGeo = { ramenaSestavy, rozvrh, vybavKuchyn, dorovnejRameno, dorovnej, useky, delkaRohu, obrysySestavy, dilySkrine, volnyKonecRamene, VOLBY };
 
     // ─── Mixin editoru ────────────────────────────────────
     window.KonceptSestavy = {
@@ -820,6 +855,7 @@
         sestavaSloupecKlic: null,    // vybraný sloupec 'rameno:index'
         sestavaDvere: null,          // vybrané dveře skříně (index)
         sestavaZalozka: 'skrinky',
+        sestavaTvar: 'rovna',        // tvar nové kuchyně: 'rovna' | 'L' | 'U' (pamatuje se)
         _sestavaNahled: null,
         _sestavaNakresTah: null,
         _sestavaKlikDo: 0,
@@ -828,7 +864,9 @@
             try {
                 const r = localStorage.getItem('kv3_katalog_rezim');
                 if (r === 'sestava' || r === 'nabytek') this.katalogRezim = r;
-            } catch (e) { /* soukromý režim: výchozí nábytek */ }
+                const t = localStorage.getItem('kv3_sestava_tvar');
+                if (['rovna', 'L', 'U'].includes(t)) this.sestavaTvar = t;
+            } catch (e) { /* soukromý režim: výchozí nábytek a rovná linka */ }
         },
 
         prepniKatalogRezim(rezim) {
@@ -990,6 +1028,17 @@
                     dvere.push([Math.min(a, b) - 0.05 * PX, Math.max(a, b) + 0.05 * PX]);
                 }
             }
+            // Dveře v ostatních stěnách: před nimi musí zůstat místo na průchod a otevření (šířka dveří na obě strany).
+            // Jinak by rameno do L nebo U v rohu vjelo do dveří v sousední stěně.
+            for (const o of e.openings.values()) {
+                if (o.wallId === lice.wallId || o.typ === 'okno') continue;
+                const w2 = e.walls.get(o.wallId), A2 = w2 && e.nodes.get(w2.nodeA), B2 = w2 && e.nodes.get(w2.nodeB);
+                if (!A2 || !B2) continue;
+                const osa2 = V.norm(V.sub(B2, A2)), kolmo = V.perp(osa2);
+                const p0 = V.add(A2, V.mul(osa2, o.pozice * PX)), p1 = V.add(A2, V.mul(osa2, (o.pozice + o.sirka) * PX));
+                const h = (o.typ === 'garazova_vrata' ? 0.5 : o.sirka + 0.05) * PX;
+                sestavyPoly.push([V.add(p0, V.mul(kolmo, h)), V.add(p1, V.mul(kolmo, h)), V.add(p1, V.mul(kolmo, -h)), V.add(p0, V.mul(kolmo, -h))]);
+            }
             const blok = (tt) => this._sestavaBlokovano(tt, lice, cache, sestavyPoly, dvere, hloubky);
             const t0 = omez(t, 0, lice.L);
             if (blok(t0)) return null;
@@ -1055,16 +1104,64 @@
             return this.sestavaDruh === 'skrin' ? 0.62 : HLOUBKY.spodni + PRESAH;
         },
 
-        /** Náhled pod kurzorem: celý volný úsek líce. */
+        /** Náhled pod kurzorem: celý volný úsek líce, u kuchyně do L nebo U i ramena po stěnách v rozích. */
         _sestavaPohyb(pos) {
             const u = this._sestavaLiceUKurzoru(pos);
             let nahled = null;
             if (u) {
                 const usek = this._sestavaVolnyUsek(u.lice, u.t);
-                if (usek && usek.t1 - usek.t0 >= 0.3 * this.engine.PX_PER_M) nahled = { body: this._sestavaBodyUseku(u.lice, usek.t0, usek.t1) };
+                if (usek && usek.t1 - usek.t0 >= 0.3 * this.engine.PX_PER_M) nahled = { body: this._sestavaTvarBody(u.lice, usek, u.t) };
             }
             this._sestavaNahled = nahled;
             this._renderDum();
+        },
+
+        /** Tvar nové kuchyně v panelu nástroje: rovná, do L, do U (jako u schodů). Pamatuje se. */
+        nastavTvarSestavy(tvar) {
+            this.sestavaTvar = ['rovna', 'L', 'U'].includes(tvar) ? tvar : 'rovna';
+            try { localStorage.setItem('kv3_sestava_tvar', this.sestavaTvar); } catch (e) { /* jen do obnovení stránky */ }
+            this._sestavaNahled = null;
+            this._renderDum();
+        },
+
+        /**
+         * Body nové sestavy pro klik na úsek líce (m, y nahoru) podle zvoleného tvaru. Do L pokračuje v rohu blíž
+         * kurzoru (když tam roh není, v druhém), do U v obou. Rameno po boční stěně vede do první překážky (dveře,
+         * jiná sestava), nejvýš 2,4 m; delší jde vytáhnout za úchyt. Kde roh chybí, zůstane tvar menší.
+         */
+        _sestavaTvarBody(lice, usek, tKurzor) {
+            const PX = this.engine.PX_PER_M;
+            const tvar = this.sestavaDruh === 'kuchyn' ? this.sestavaTvar : 'rovna';
+            if (tvar === 'rovna') return this._sestavaBodyUseku(lice, usek.t0, usek.t1);
+            const vpravo = V.mul(V.perp(lice.m), -1);   // směr čtení při pohledu ke stěně
+            const body = [V.add(lice.p, V.mul(lice.d, usek.t0)), V.add(lice.p, V.mul(lice.d, usek.t1))];
+            const tt = [usek.t0, usek.t1];
+            if (V.dot(V.sub(body[1], body[0]), vpravo) < 0) { body.reverse(); tt.reverse(); }
+            const [levy, pravy] = body;
+            const rameno = (E, smer) => {
+                const zaRohem = this._sestavaLiceZaRohem(lice, E, smer);
+                if (!zaRohem) return null;
+                const volno = this._sestavaUsekZaRohem(zaRohem, lice.m, null);
+                if (!volno || volno < 1.2 * PX) return null;
+                return { roh: zaRohem.roh, delka: Math.min(volno, 2.4 * PX) };
+            };
+            const kandidati = { levy: rameno(levy, V.mul(vpravo, -1)), pravy: rameno(pravy, vpravo) };
+            let pouzit = [];
+            if (tvar === 'U') pouzit = ['levy', 'pravy'].filter(k => kandidati[k]);
+            else {
+                const bliz = Math.abs(tKurzor - tt[0]) <= Math.abs(tKurzor - tt[1]) ? 'levy' : 'pravy';
+                pouzit = [bliz, bliz === 'levy' ? 'pravy' : 'levy'].filter(k => kandidati[k]).slice(0, 1);
+            }
+            // Prostřední rameno musí unést oba rohy a kus skříňky
+            const L = kandidati.levy && pouzit.includes('levy') ? kandidati.levy : null;
+            const R = kandidati.pravy && pouzit.includes('pravy') ? kandidati.pravy : null;
+            const a = L ? L.roh : levy, b = R ? R.roh : pravy;
+            const potreba = (L ? 0.9 : 0) + (R ? 0.9 : 0) + 0.3;
+            if (V.len(V.sub(b, a)) < potreba * PX) return this._sestavaBodyUseku(lice, usek.t0, usek.t1);
+            const pts = [];
+            if (L) pts.push(V.add(L.roh, V.mul(lice.m, L.delka)), L.roh); else pts.push(levy);
+            if (R) pts.push(R.roh, V.add(R.roh, V.mul(lice.m, R.delka))); else pts.push(pravy);
+            return pts.map(q => [q.x / PX, -q.y / PX]);
         },
 
         /** Body rovné sestavy na líci (px → m, y nahoru), vždy zleva doprava při pohledu z místnosti. */
@@ -1134,7 +1231,7 @@
 
         _sestavaVytvor(t) {
             const e = this.engine, d = e.dum, PX = e.PX_PER_M;
-            const body = t.posun ? t.body : this._sestavaBodyUseku(t.lice, t.usek.t0, t.usek.t1);
+            const body = t.posun ? t.body : this._sestavaTvarBody(t.lice, t.usek, t.tStart);
             const delka = body ? ramenaSestavy({ body, strana: 1 }).reduce((a, r) => a + r.L, 0) : 0;
             if (!body || delka < 0.3) { this._sestavaNahled = null; this._dumHlaska?.(preloz('ed_sablona.sestava.kratka')); this._renderDum(); return; }
             const druh = this.sestavaDruh;
@@ -1144,7 +1241,7 @@
             while (d.sestavy.some(s => s.id === pref + n)) n++;
             const s = { id: pref + n, podlazi: d.aktivni, druh, body: body.map(b => [zaokr(b[0], 10000), zaokr(b[1], 10000)]), strana: 1 };
             if (druh === 'kuchyn') {
-                Object.assign(s, { vysky: { ...VYSKY }, hloubky: { ...HLOUBKY }, povrchy: klon(POVRCHY_KUCHYN), rohy: body.length > 2 ? [{ ...ROH }] : [] });
+                Object.assign(s, { vysky: { ...VYSKY }, hloubky: { ...HLOUBKY }, povrchy: klon(POVRCHY_KUCHYN), rohy: Array.from({ length: Math.max(0, body.length - 2) }, () => ({ ...ROH })) });
                 s.ramena = vybavKuchyn(s, this._sestavaKontext(s));
             } else {
                 Object.assign(s, { hloubka: 0.62, vyska: null, dvere: 'posuvne', pocet: null, ram: 'stribrna', zrcadla: [], povrchy: klon(POVRCHY_SKRIN) });
@@ -1188,7 +1285,7 @@
                 const [id, kde] = String(hit.klic).split(':');
                 const s = this._sestavaPodleId(id);
                 if (!s) return true;
-                this._domTah = { typ: 'sestavaKonec', id, konec: kde === '0' ? 0 : 1, start: { ...pos }, last: { ...pos }, posun: false, puvodni: klon(s.body) };
+                this._domTah = { typ: 'sestavaKonec', id, konec: kde === '0' ? 0 : 1, start: { ...pos }, last: { ...pos }, posun: false, puvodni: klon(s.body), puvodniDily: Array.isArray(s.dily) ? [...s.dily] : null };
                 return true;
             }
             const s = this._sestavaPodleId(hit.id);
@@ -1219,7 +1316,8 @@
                 const r = t.konec === 0 ? ramena[0] : ramena[ramena.length - 1];
                 const bodM = { x: pos.x / PX, y: pos.y / PX };
                 // Nejkratší délka ramene: s rohem roh a kus skříňky, jinak 30 cm
-                const minL = (ramena.length > 1 ? delkaRohu(s, 0) : 0) + 0.3;
+                // Nejkratší délka ramene: s rohem roh a kus skříňky, jinak 30 cm (u U má každé krajní rameno svůj roh)
+                const minL = (ramena.length > 1 ? delkaRohu(s, t.konec === 0 ? 0 : ramena.length - 2) : 0) + 0.3;
                 if (!t.mez) t.mez = this._sestavaMezKonce(s, t.konec, ramena);
                 let L;
                 if (t.konec === 0) L = V.dot(V.sub(r.b, bodM), r.d);
@@ -1229,6 +1327,14 @@
                 if (t.konec === 0) { const q = V.sub(r.b, V.mul(r.d, L)); body[0] = [q.x, -q.y]; } else { const q = V.add(r.a, V.mul(r.d, L)); body[posledni] = [q.x, -q.y]; }
                 s.body = body.map(b => [zaokr(b[0], 10000), zaokr(b[1], 10000)]);
                 dorovnej(s, t.konec === 0);
+                // Skříň s vlastními šířkami dveří: rozdíl délky vezme krajní díl u taženého konce, mimo rozumné meze
+                // se skříň zase rozdělí rovným dílem
+                if (s.druh === 'skrin' && t.puvodniDily) {
+                    const delta = L - (t.konec === 0 ? ramenaSestavy({ ...s, body: t.puvodni })[0].L : ramenaSestavy({ ...s, body: t.puvodni }).slice(-1)[0].L);
+                    const dily = [...t.puvodniDily], k = t.konec === 0 ? 0 : dily.length - 1;
+                    dily[k] = zaokr(dily[k] + delta);
+                    if (dily[k] >= 0.2 && dily[k] <= 1.5) s.dily = dily; else delete s.dily;
+                }
                 this._renderDum();
                 return;
             }
@@ -1379,9 +1485,12 @@
                     dorovnej(s);
                     return;
                 }
+                // Roh podle pořadí: 'roh.0.spodni' (u U jsou rohy dva)
                 if (a === 'roh') {
-                    s.rohy = s.rohy || [];
-                    s.rohy[0] = { ...ROH, ...(s.rohy[0] || {}), [b]: hodnota };
+                    const i = Number(b), pocetRohu = Math.max(0, (s.body || []).length - 2);
+                    if (!Number.isInteger(i) || i < 0 || i >= pocetRohu || !['spodni', 'horni'].includes(c)) return false;
+                    s.rohy = Array.from({ length: pocetRohu }, (_, k) => ({ ...ROH, ...((s.rohy || [])[k] || {}) }));
+                    s.rohy[i][c] = hodnota;
                     dorovnej(s);
                     return;
                 }
@@ -1400,13 +1509,46 @@
                     return;
                 }
                 // Skříň
-                if (a === 'dvere') { s.dvere = VOLBY.dvere.includes(hodnota) ? hodnota : 'posuvne'; s.pocet = null; this.sestavaDvere = null; return; }
-                if (a === 'pocet') { const x = cislo(hodnota); s.pocet = Number.isFinite(x) && x > 0 ? Math.round(x) : null; return; }
+                // Druh dveří nebo počet dílů rozdělí skříň znovu rovným dílem (vlastní šířky dílů se zahodí)
+                if (a === 'dvere') { s.dvere = VOLBY.dvere.includes(hodnota) ? hodnota : 'posuvne'; s.pocet = null; delete s.dily; this.sestavaDvere = null; return; }
+                if (a === 'pocet') { const x = cislo(hodnota); s.pocet = Number.isFinite(x) && x > 0 ? Math.round(x) : null; delete s.dily; return; }
                 if (a === 'ram') { s.ram = hodnota; return; }
                 if (a === 'vyska') { if (hodnota === null || hodnota === '' || hodnota === true) { s.vyska = null; return; } const x = cm(60, 350); if (x === null) return false; s.vyska = x; return; }
                 if (a === 'hloubka') { const x = cm(30, 90); if (x === null) return false; s.hloubka = x; return; }
                 return false;
             });
+        },
+
+        /**
+         * Posune volný konec ramene o `delta` (m). Prodloužit jde jen po volném úseku líce, když se nevejde, vrací
+         * { ok: false, volno } se zbývajícím místem. Prostřední rameno U volný konec nemá.
+         */
+        _sestavaZmenDelkuRamene(s, ri, delta) {
+            const ramena = ramenaSestavy(s), r = ramena[ri];
+            const kde = volnyKonecRamene(s, ri);
+            if (!r || !kde) return { ok: false, volno: 0 };
+            if (Math.abs(delta) < 0.0005) return { ok: true };
+            const novaL = r.L + delta;
+            if (delta > 0) {
+                const mez = this._sestavaMezKonce(s, kde === 'zacatek' ? 0 : 1, ramena);
+                if (mez !== null && novaL > mez + 0.0005) return { ok: false, volno: Math.max(0, zaokr(mez - r.L)) };
+            }
+            const q = kde === 'zacatek' ? V.sub(r.b, V.mul(r.d, novaL)) : V.add(r.a, V.mul(r.d, novaL));
+            s.body[kde === 'zacatek' ? 0 : s.body.length - 1] = [zaokr(q.x, 10000), zaokr(-q.y, 10000)];
+            return { ok: true };
+        },
+
+        /** Nová šířka dílu na rameni s volným koncem: rameno se posune; když se díl nevejde, bude co nejširší a hláška
+         *  řekne, kolik místa zbylo. Vrací platnou šířku, nebo null (nic se nemění). */
+        _sestavaZmenaSirky(s, ri, stara, nova) {
+            if (!volnyKonecRamene(s, ri)) return nova;
+            let vysledek = this._sestavaZmenDelkuRamene(s, ri, nova - stara);
+            if (vysledek.ok) return nova;
+            this._dumHlaska?.(preloz('ed_sablona.sestava.nevejde', { cm: Math.round(vysledek.volno * 100) }));
+            const lze = zaokr(stara + vysledek.volno);
+            if (lze - stara < 0.005) return null;
+            vysledek = this._sestavaZmenDelkuRamene(s, ri, lze - stara);
+            return vysledek.ok ? lze : null;
         },
 
         _sestavaVybranySloupec(s) {
@@ -1425,10 +1567,16 @@
                 if (a === 'sirka') {
                     const x = cislo(hodnota);
                     if (!Number.isFinite(x)) return false;
-                    sl.sirka = zaokr(omez(x, MIN_SL * 100, MAX_SL * 100) / 100);
+                    const nova = zaokr(omez(x, MIN_SL * 100, MAX_SL * 100) / 100);
+                    // Šířka platí přesně a ostatní skříňky zůstávají (Libor 11. 11. 2026: „mělo by být možné měnit každou
+                    // šířku dílu samostatně“). Rameno s volným koncem se o rozdíl zkrátí nebo prodlouží; prostřední rameno U
+                    // mezi dvěma rohy délku změnit nemůže, tam se dál dorovnává.
+                    const sirka = this._sestavaZmenaSirky(s, v.ri, sl.sirka, nova);
+                    if (sirka === null) return false;
+                    sl.sirka = sirka;
                     sl.upraveno = true;
                     if (sl.skladba === 'lista' && sl.sirka >= LISTA_DO) { Object.assign(sl, novySloupec(sl.sirka)); sl.upraveno = true; }
-                    dorovnej(s);
+                    if (!volnyKonecRamene(s, v.ri)) dorovnej(s);
                     return;
                 }
                 if (a === 'skladba') {
@@ -1493,25 +1641,45 @@
             });
         },
 
+        /** Odebraná skříňka: ostatní zůstanou a rameno s volným koncem se o její šířku zkrátí (místo zbude volné). */
         sestavaOdeberSloupec() {
             this._sestavaUprav((s) => {
                 const v = this._sestavaVybranySloupec(s);
                 if (!v) return false;
-                s.ramena[v.ri].sloupce.splice(v.i, 1);
-                dorovnej(s);
+                const sloupce = s.ramena[v.ri].sloupce;
+                if (volnyKonecRamene(s, v.ri)) {
+                    if (sloupce.length < 2) return false;   // poslední skříňka ramene: odebrat jde rameno nebo celá sestava
+                    sloupce.splice(v.i, 1);
+                    this._sestavaZmenDelkuRamene(s, v.ri, -v.sl.sirka);
+                } else {
+                    sloupce.splice(v.i, 1);
+                    dorovnej(s);
+                }
                 this.sestavaSloupecKlic = null;
             });
         },
 
+        /** Nová skříňka za vybranou (bez výběru na konec): 60 cm, když se vejde, jinak co zbývá; ostatní zůstanou. */
         sestavaPridejSloupec() {
             this._sestavaUprav((s) => {
                 const v = this._sestavaVybranySloupec(s);
-                const ri = v ? v.ri : 0, i = v ? v.i + 1 : (s.ramena?.[0]?.sloupce?.length || 0);
+                const posledni = Math.max(0, (s.ramena?.length || 1) - 1);
+                const ri = v ? v.ri : posledni, i = v ? v.i + 1 : (s.ramena?.[ri]?.sloupce?.length || 0);
                 if (!s.ramena?.[ri]) return false;
-                const novy = novySloupec(KROK_SL);
+                let sirka = KROK_SL;
+                if (volnyKonecRamene(s, ri)) {
+                    let vysledek = this._sestavaZmenDelkuRamene(s, ri, sirka);
+                    if (!vysledek.ok) {
+                        if (vysledek.volno < MIN_SL) { this._dumHlaska?.(preloz('ed_sablona.sestava.neni_misto')); return false; }
+                        sirka = vysledek.volno;
+                        vysledek = this._sestavaZmenDelkuRamene(s, ri, sirka);
+                        if (!vysledek.ok) return false;
+                    }
+                }
+                const novy = novySloupec(sirka);
                 novy.upraveno = true;
                 s.ramena[ri].sloupce.splice(i, 0, novy);
-                dorovnej(s);
+                if (!volnyKonecRamene(s, ri)) dorovnej(s);
                 const idx = s.ramena[ri].sloupce.indexOf(novy);
                 this.sestavaSloupecKlic = idx >= 0 ? ri + ':' + idx : null;
             });
@@ -1525,20 +1693,33 @@
             });
         },
 
-        /** Rameno za rohem k rovné kuchyni (tvar L), vlevo nebo vpravo. */
+        /**
+         * Rameno za rohem na volném konci kuchyně, vlevo nebo vpravo: z rovné vznikne L, z L tvar U (Libor 11. 11. 2026:
+         * „mám kuchyň do U“). Nejvýš tři ramena. Rameno vede do první překážky na boční stěně, nejvýš 3,6 m.
+         */
         _sestavaMoznaRamena(s) {
-            if (!s || s.druh !== 'kuchyn' || (s.body || []).length !== 2) return {};
+            if (!s || s.druh !== 'kuchyn' || (s.body || []).length < 2 || s.body.length >= 4) return {};
             const PX = this.engine.PX_PER_M;
-            const r = ramenaSestavy(s)[0];
+            const ramena = ramenaSestavy(s), prvni = ramena[0], posledni = ramena[ramena.length - 1];
             const naPx = (q) => ({ x: q.x * PX, y: q.y * PX });
             const out = {};
-            for (const [kde, E, smer] of [['vpravo', r.b, r.d], ['vlevo', r.a, V.mul(r.d, -1)]]) {
+            for (const [kde, r, smer] of [['vpravo', posledni, posledni.d], ['vlevo', prvni, V.mul(prvni.d, -1)]]) {
                 const u = this._sestavaLiceUKurzoru(naPx(bodRamene(r, kde === 'vpravo' ? r.L - 0.1 : 0.1, 0.05)));
                 if (!u) continue;
-                const zaRohem = this._sestavaLiceZaRohem(u.lice, naPx(E), smer);
+                // Roh hledat na konci volného úseku: linka zkrácená skříňkami z nabídky do rohu nedosahuje, rameno ji tam dotáhne
+                const usek = this._sestavaVolnyUsek(u.lice, u.t, s.id, hloubkaSestavy(s));
+                if (!usek) continue;
+                const a = V.add(u.lice.p, V.mul(u.lice.d, usek.t0)), b = V.add(u.lice.p, V.mul(u.lice.d, usek.t1));
+                const kraj = V.dot(V.sub(b, a), smer) > 0 ? b : a;
+                const zaRohem = this._sestavaLiceZaRohem(u.lice, kraj, smer);
                 if (!zaRohem) continue;
                 const volno = this._sestavaUsekZaRohem(zaRohem, u.lice.m, s.id);
-                if (!volno || volno / PX < delkaRohu(s, 0) + 0.3) continue;
+                if (!volno || volno / PX < 0.9 + 0.3) continue;
+                // Rameno, na které se přidává, musí unést i nový roh (délka až do rohu)
+                const rohuNaRameni = (ramena.length > 1 ? 1 : 0) + 1;
+                const pevny = kde === 'vpravo' ? r.a : r.b;
+                const delkaDoRohu = V.len(V.sub({ x: zaRohem.roh.x / PX, y: zaRohem.roh.y / PX }, pevny));
+                if (delkaDoRohu < rohuNaRameni * 0.9 + 0.3) continue;
                 out[kde] = { roh: zaRohem.roh, delka: Math.min(volno / PX, 3.6), m: u.lice.m };
             }
             return out;
@@ -1552,22 +1733,36 @@
                 const roh = { x: moznost.roh.x / PX, y: moznost.roh.y / PX };
                 const konec = V.add(roh, V.mul(moznost.m, moznost.delka));
                 const naBod = (q) => [zaokr(q.x, 10000), zaokr(-q.y, 10000)];
-                if (kde === 'vpravo') { s.body = [s.body[0], naBod(roh), naBod(konec)]; s.ramena = [s.ramena?.[0] || { sloupce: [] }, { sloupce: [] }]; }
-                else { s.body = [naBod(konec), naBod(roh), s.body[1]]; s.ramena = [{ sloupce: [] }, s.ramena?.[0] || { sloupce: [] }]; }
-                s.rohy = [{ ...ROH }];
+                const ramena = (s.ramena || []).map(r => r || { sloupce: [] });
+                const rohy = Array.from({ length: Math.max(0, s.body.length - 2) }, (_, k) => ({ ...ROH, ...((s.rohy || [])[k] || {}) }));
+                if (kde === 'vpravo') {
+                    s.body = [...s.body.slice(0, -1), naBod(roh), naBod(konec)];
+                    s.ramena = [...ramena, { sloupce: [] }];
+                    s.rohy = [...rohy, { ...ROH }];
+                } else {
+                    s.body = [naBod(konec), naBod(roh), ...s.body.slice(1)];
+                    s.ramena = [{ sloupce: [] }, ...ramena];
+                    s.rohy = [{ ...ROH }, ...rohy];
+                }
                 dorovnej(s);
                 this.sestavaSloupecKlic = null;
             });
         },
 
-        sestavaZrusRoh() {
+        /** Odebere krajní rameno vlevo nebo vpravo (z U zbude L, z L rovná linka). */
+        sestavaOdeberRameno(kde) {
             this._sestavaUprav((s) => {
                 if ((s.body || []).length < 3) return false;
-                const r = ramenaSestavy(s);
-                const nechat = r[0].L >= r[1].L ? 0 : 1;
-                s.body = nechat === 0 ? [s.body[0], s.body[1]] : [s.body[1], s.body[2]];
-                s.ramena = [s.ramena?.[nechat] || { sloupce: [] }];
-                s.rohy = [];
+                const rohy = Array.from({ length: s.body.length - 2 }, (_, k) => ({ ...ROH, ...((s.rohy || [])[k] || {}) }));
+                if (kde === 'vlevo') {
+                    s.body = s.body.slice(1);
+                    s.ramena = (s.ramena || []).slice(1);
+                    s.rohy = rohy.slice(1);
+                } else {
+                    s.body = s.body.slice(0, -1);
+                    s.ramena = (s.ramena || []).slice(0, -1);
+                    s.rohy = rohy.slice(0, -1);
+                }
                 dorovnej(s);
                 this.sestavaSloupecKlic = null;
             });
@@ -1606,6 +1801,25 @@
                 while (s.zrcadla.length <= this.sestavaDvere) s.zrcadla.push(null);
                 s.zrcadla[this.sestavaDvere] = zrcadlo && ZRCADLA[zrcadlo] ? zrcadlo : null;
                 while (s.zrcadla.length && !s.zrcadla[s.zrcadla.length - 1]) s.zrcadla.pop();
+            });
+        },
+
+        /** Šířka vybraných dveří skříně (cm): ostatní dveře zůstanou a skříň se o rozdíl zkrátí nebo prodlouží. */
+        setDilSkrine(hodnota) {
+            this._sestavaUprav((s) => {
+                const i = this.sestavaDvere;
+                if (s.druh !== 'skrin' || i === null) return false;
+                const x = cislo(hodnota);
+                if (!Number.isFinite(x)) return false;
+                const r = ramenaSestavy(s)[0];
+                if (!r) return false;
+                const sirky = dilySkrine(s, r.L).sirky.map(w => zaokr(w));
+                if (sirky[i] === undefined) return false;
+                const sirka = this._sestavaZmenaSirky(s, 0, sirky[i], zaokr(omez(x, 20, 150) / 100));
+                if (sirka === null) return false;
+                sirky[i] = sirka;
+                s.dily = sirky;
+                s.pocet = null;
             });
         },
 
@@ -1666,10 +1880,12 @@
             const ctx = this._sestavaKontext(s);
             const rv = rozvrh(s, ctx);
             const css = getComputedStyle(document.documentElement);
+            const volno = this._sestavaVolno(s, rv);
             const n = nakres(s, rv, ctx, {
                 vybrany: this.sestavaSloupecKlic, dvere: this.sestavaDvere,
                 tah: this._sestavaNakresTah?.cil ? { x: this._sestavaNakresTah.cil.x } : null,
                 primary: css.getPropertyValue('--c-primary').trim() || '#e8590c',
+                volno,
             });
             this._sestavaNakresMapa = n.mapa;
             const delka = rv.ramena.reduce((a, r) => a + r.L, 0);
@@ -1677,16 +1893,17 @@
             if (s.druh === 'kuchyn' && !this._sestavaUSteny(s)) varovani.push(preloz('ed_sablona.sestava.varovani.stena'));
             const zaklad = {
                 kind: 'sestava', count: 1, id: s.id, druh: s.druh, nazev: preloz('ed_dum.sestava.' + s.druh),
-                delka: prelozCislo(delka, 2) + ' m', tvar: rv.ramena.length > 1 ? 'L' : 'rovna',
+                delka: prelozCislo(delka, 2) + ' m', tvar: rv.ramena.length > 2 ? 'U' : rv.ramena.length > 1 ? 'L' : 'rovna',
                 nakres: n.svg, varovani, odSteny: varovani.includes(preloz('ed_sablona.sestava.varovani.stena')),
+                volno: volno.map(v => ({ kde: v.kde, cm: Math.round(v.m * 100) })),
             };
             const p = (k) => { const x = povrchSestavy(s, k); return x && typeof x === 'object' ? { dekor: x.dekor, barva: x.barva, lesk: !!x.lesk } : x; };
             if (s.druh === 'skrin') {
                 const d = rv.dvere.find(x => x.i === this.sestavaDvere);
                 return {
-                    ...zaklad, dvereDruh: rv.druhDveri, pocet: s.pocet || null, pocetAuto: rv.pocetAuto, pocetDveri: rv.dvere.length, ram: s.ram || 'stribrna',
+                    ...zaklad, dvereDruh: rv.druhDveri, pocet: Array.isArray(s.dily) && s.dily.length ? s.dily.length : (s.pocet || null), pocetAuto: rv.pocetAuto, pocetDveri: rv.dvere.length, ram: s.ram || 'stribrna',
                     keStropu: !s.vyska, vyskaCm: Math.round(rv.H * 100), hloubkaCm: Math.round(rv.hl * 100),
-                    dvereVybrane: d ? { i: d.i, cislo: d.i + 1, zrcadlo: d.zrcadlo || '' } : null,
+                    dvereVybrane: d ? { i: d.i, cislo: d.i + 1, zrcadlo: d.zrcadlo || '', sirkaCm: Math.round((d.dil[1] - d.dil[0]) * 100) } : null,
                     pocetVolby: rv.druhDveri === 'posuvne' ? [2, 3, 4, 5, 6] : Array.from({ length: 12 }, (_, i) => i + 1),
                     povrchy: { dvere: p('dvere'), korpus: p('korpus'), uchytky: { ...POVRCHY_SKRIN.uchytky, ...(s.povrchy?.uchytky || {}) } },
                 };
@@ -1713,8 +1930,8 @@
                 ...zaklad, sloupec, pocetSloupcu: rv.sloupce.length,
                 vysky: { deskaCm: Math.round(v.deska * 100), soklCm: Math.round(v.sokl * 100), horniCm: Math.round((hodnotyKuchyne(s).v.horni) * 100), mezeraCm: Math.round((v.horniOd - v.deska) * 100), keStropu: !!hodnotyKuchyne(s).v.keStropu },
                 hloubky: { spodniCm: Math.round(h.spodni * 100), horniCm: Math.round(h.horni * 100) },
-                roh: rv.rohy[0] ? { spodni: rv.rohy[0].spodni, horni: rv.rohy[0].horni } : null,
-                ramenoVlevo: !!ramena.vlevo, ramenoVpravo: !!ramena.vpravo,
+                rohy: rv.rohy.map(r => ({ i: r.i, cislo: r.i + 1, spodni: r.spodni, horni: r.horni })),
+                ramenoVlevo: !!ramena.vlevo, ramenoVpravo: !!ramena.vpravo, odebratRameno: rv.ramena.length > 1,
                 povrchy: {
                     cela: p('cela'), celaHorniJinak: !!s.povrchy?.celaHorni, celaHorni: p('celaHorni'), korpus: p('korpus'), deska: p('deska'),
                     sokl: povrchSestavy(s, 'sokl'), uchytky: { ...POVRCHY_KUCHYN.uchytky, ...(s.povrchy?.uchytky || {}) },
@@ -1722,6 +1939,19 @@
                     drez: povrchSestavy(s, 'drez'), spotrebice: povrchSestavy(s, 'spotrebice'),
                 },
             };
+        },
+
+        /** Volné místo u volných konců sestavy (m): kolik ještě zbývá po stěně do první překážky (roh, dveře, jiná sestava). */
+        _sestavaVolno(s, rv) {
+            if (s.podlazi !== this.engine.dum.aktivni) return [];
+            const ramena = rv.ramena, out = [];
+            for (const [kde, konec, ri] of [['zacatek', 0, 0], ['konec', 1, ramena.length - 1]]) {
+                const r = ramena[ri];
+                if (!r) continue;
+                const mez = this._sestavaMezKonce(s, konec, ramena);
+                if (mez !== null && mez - r.L > 0.005) out.push({ kde, ri, m: zaokr(mez - r.L) });
+            }
+            return out;
         },
 
         /** Stojí rovná kuchyně u stěny? Záda ramene do 4 cm od souběžného líce. */
@@ -1913,8 +2143,9 @@
 
         _sestavaZnacka2d(r, s, rv, P, popisek) {
             if (!r.showIds || !r.citelnePismo?.(9)) return;
-            const ra = rv.ramena[0];
-            const q = P(0, ra.L / 2, (s.druh === 'skrin' ? rv.hl : rv.D) / 2);
+            // Uprostřed prostředního ramene (u U zadní stěna)
+            const ri = Math.floor(rv.ramena.length / 2), ra = rv.ramena[ri];
+            const q = P(ri, ra.L / 2, (s.druh === 'skrin' ? rv.hl : rv.D) / 2);
             popisek(r.schodyLayer, q.x, q.y, s.id, '#0f766e', 11);
         },
 
