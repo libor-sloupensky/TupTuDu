@@ -201,6 +201,10 @@
     }
     .kk-posuvnik::-webkit-scrollbar-thumb:hover { background: #6b7280; background-clip: padding-box; }
     @supports (-moz-appearance: none) { .kk-posuvnik { scrollbar-color: #9ca3af #f3f4f6; } }
+    /* Vzorový projekt: výrazná hláška nad plátnem */
+    .tt-vzor-hlaska { display: flex; flex-wrap: wrap; gap: .25rem .5rem; align-items: baseline; padding: .5rem .75rem; font-size: .8rem; line-height: 1.4;
+        background: var(--c-chip); color: var(--c-text); border-left: 4px solid var(--c-primary); border-bottom: 1px solid var(--c-border); }
+    .tt-vzor-hlaska strong { color: var(--c-primary-text); }
     /* Celá obrazovka: editor přes celé okno, web navigace (hlavička, levé menu, patička) pryč. Jen do reloadu nebo dalšího kliku. */
     .kk-editor.fullscreen { position: fixed; inset: 0; z-index: 9999; }
     body.kk-fullscreen > header,
@@ -233,6 +237,18 @@
     {{-- ═══ PANEL A — Canvas (grafika) ═══ --}}
     <div class="flex flex-col bg-white" :class="celaObrazovka ? '' : 'rounded-lg border border-gray-200'"
          :style="'order:' + (obracene ? 2 : 0) + ';min-width:0;min-height:0'">
+        {{-- Vzorový projekt (App\Support\VzorovyProjekt): kopie uživatele je na hraní a v noci se vrátí, šablona se propisuje všem --}}
+        @if (($aktivni->vzor ?? null) === 'kopie')
+            <div class="tt-vzor-hlaska" data-vzor-hlaska role="status">
+                <strong>{{ __('ed_sablona.vzor.nadpis') }}</strong>
+                <span>{{ __('ed_sablona.vzor.text') }}</span>
+            </div>
+        @elseif (($aktivni->vzor ?? null) === 'sablona')
+            <div class="tt-vzor-hlaska" data-vzor-hlaska role="status">
+                <strong>Šablona vzorového projektu.</strong>
+                <span>Uživatelé mají její kopii na hraní. Změny tady jim každou noc ve 3:00 jejich času přepíšou kopii. Obrázky do článků se berou odsud.</span>
+            </div>
+        @endif
         {{-- Toolbar — řádek 1: název, 2D/3D, zoom, layout, fullscreen --}}
         <div class="kk-lista flex items-center px-3 py-1.5 border-b border-gray-200 gap-1.5">
             <span class="text-sm font-medium text-gray-700 truncate max-w-[200px]" x-text="projektNazev || preloz('ed_sablona.lista.novy_nazev')"></span>
@@ -1079,13 +1095,13 @@
                         </template>
                     </select>
                     {{-- Přejmenování double-click --}}
-                    <button x-show="projektId" @click="zahajPreimenovaniKonceptu()"
+                    <button x-show="projektId && !jeVzorKopie" @click="zahajPreimenovaniKonceptu()"
                             class="p-0.5 text-gray-500 hover:text-gray-600"
                             title="{{ __('ed_sablona.projekt.prejmenovat') }}">
                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 1.5l3.5 3.5L5 14.5H1.5V11z"/></svg>
                     </button>
                     {{-- Smazat --}}
-                    <button x-show="projektId" @click="smazatKoncept()"
+                    <button x-show="projektId && !jeVzorKopie" @click="smazatKoncept()"
                             class="p-0.5 text-gray-500 hover:text-red-500"
                             title="{{ __('ed_sablona.projekt.smazat') }}">
                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>
@@ -2045,7 +2061,7 @@ var _kkInitData = {
     // Seznam konceptů do nabídky. Musí jít z dat (ne ze statického HTML) —
     // po přejmenování Alpine nabídku překreslí ze šablony a ručně opravený
     // text v DOM by se ztratil (ukázal by se starý název).
-    koncepty: @json($koncepty->map(fn ($k) => ['id' => $k->id, 'nazev' => $k->nazev])->values()),
+    koncepty: @json($koncepty->map(fn ($k) => ['id' => $k->id, 'nazev' => $k->nazev, 'vzor' => $k->vzor])->values()),
     projektId: {{ $aktivni?->id ?? 'null' }},
     projektNazev: @json($aktivni?->nazev ?? ''),
     projektData: @json($aktivni?->data ?? []),

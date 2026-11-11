@@ -249,6 +249,11 @@ return [
         'pudorys' => 'sur le plan :',
     ],
     // Výběr projektu v pravém panelu
+    // Kopie vzorového projektu (App\Support\VzorovyProjekt)
+    'vzor' => [
+        'nadpis' => 'Projet exemple pour s\'exercer.',
+        'text' => 'Essayez tout ce que vous voulez : les modifications ici sont gratuites et ne comptent pas dans la limite de votre formule. Chaque nuit à 3 h, le projet revient à son état d\'origine et vos modifications sont supprimées. Ce que vous voulez garder, faites-le dans votre propre projet.',
+    ],
     'projekt' => [
         'novy_volba' => '— Créer un nouveau projet —',
         'prejmenovat' => 'Renommer',

@@ -249,6 +249,11 @@ return [
         'pudorys' => 'im Grundriss:',
     ],
     // Výběr projektu v pravém panelu
+    // Kopie vzorového projektu (App\Support\VzorovyProjekt)
+    'vzor' => [
+        'nadpis' => 'Beispielprojekt zum Ausprobieren.',
+        'text' => 'Probier alles aus: Änderungen hier kosten nichts und zählen nicht zum Limit deines Tarifs. Jede Nacht um 3:00 wird das Projekt zurückgesetzt und deine Änderungen werden gelöscht. Was du behalten willst, machst du im eigenen Projekt.',
+    ],
     'projekt' => [
         'novy_volba' => '– Neues Projekt erstellen –',
         'prejmenovat' => 'Umbenennen',

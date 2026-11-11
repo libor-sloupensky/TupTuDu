@@ -183,6 +183,10 @@ function konceptKEditor(initialData) {
         get layoutTip() {
             return this.layoutMode === 0 ? preloz('ed_ui.rozlozeni_text_vlevo') : preloz('ed_ui.rozlozeni_grafika_vlevo');
         },
+        /** Otevřená kopie vzorového projektu: nejde smazat ani přejmenovat (App\Support\VzorovyProjekt). */
+        get jeVzorKopie() {
+            return this.koncepty?.find(k => String(k.id) === String(this.projektId))?.vzor === 'kopie';
+        },
         get seznamObjektu() {
             // eslint-disable-next-line no-unused-vars
             const _tick = this._selectionTick;   // engine je mimo reaktivitu, změnu hlásí tick
@@ -1505,6 +1509,8 @@ function konceptKEditor(initialData) {
                 if (_saved.stageX !== undefined && _saved.stageY !== undefined) {
                     this.stage.position({ x: _saved.stageX, y: _saved.stageY });
                 }
+                // Vzorový projekt: uložený pohled patří jinému projektu, ukázat celý dům (až po natočení kompasem)
+                if (this.jeVzorKopie) setTimeout(() => this.fitView(), 400);
 
                 // Mřížka
                 this.renderer.renderGrid();

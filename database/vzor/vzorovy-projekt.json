@@ -1,0 +1,1373 @@
+{
+    "nazev": "Vzorový projekt",
+    "faze": "rozhovor",
+    "data": {
+        "steny": [
+            {
+                "id": "W3",
+                "od": [
+                    -8.589289093817126,
+                    0.9895531943482467
+                ],
+                "do": [
+                    -2.7888362180924355,
+                    11.767493660137513
+                ],
+                "tloustka": 0.3,
+                "typ": "obvodova"
+            },
+            {
+                "id": "W5",
+                "od": [
+                    -2.7888362180924355,
+                    11.767493660137513
+                ],
+                "do": [
+                    4.194989094458559,
+                    8.008950945383447
+                ],
+                "tloustka": 0.3,
+                "typ": "obvodova"
+            },
+            {
+                "id": "W7",
+                "od": [
+                    4.194989094458559,
+                    8.008950945383447
+                ],
+                "do": [
+                    0.6693672119806241,
+                    1.4579206088972454
+                ],
+                "tloustka": 0.3,
+                "typ": "obvodova"
+            },
+            {
+                "id": "W9",
+                "od": [
+                    0.6693672119806241,
+                    1.4579206088972454
+                ],
+                "do": [
+                    -0.4321638832963828,
+                    2.0507406592195205
+                ],
+                "tloustka": 0.3,
+                "typ": "obvodova"
+            },
+            {
+                "id": "W11",
+                "od": [
+                    -0.4321638832963828,
+                    2.0507406592195205
+                ],
+                "do": [
+                    -2.706994876543137,
+                    -2.1761694700835443
+                ],
+                "tloustka": 0.3,
+                "typ": "obvodova"
+            },
+            {
+                "id": "W12",
+                "od": [
+                    -2.706994876543137,
+                    -2.1761694700835443
+                ],
+                "do": [
+                    -8.589289093817126,
+                    0.9895531943482467
+                ],
+                "tloustka": 0.3,
+                "typ": "obvodova"
+            },
+            {
+                "id": "W18",
+                "od": [
+                    -0.9785038758006401,
+                    7.704679133696049
+                ],
+                "do": [
+                    2.7743694215512007,
+                    5.684964441547693
+                ],
+                "tloustka": 0.14,
+                "typ": "pricka",
+                "od_constraint": {
+                    "host": "W36",
+                    "t": 0.7847190331943051
+                },
+                "do_constraint": {
+                    "host": "W7",
+                    "t": 0.365574222570561
+                }
+            },
+            {
+                "id": "W21",
+                "od": [
+                    -1.7304998542984482,
+                    6.667218332817735
+                ],
+                "do": [
+                    -4.546357460781667,
+                    8.1826515830756
+                ],
+                "tloustka": 0.14,
+                "typ": "pricka",
+                "od_constraint": {
+                    "host": "W36",
+                    "t": 0.6783576472093074
+                },
+                "do_constraint": {
+                    "host": "W3",
+                    "t": 0.6740412741697117
+                }
+            },
+            {
+                "id": "W27",
+                "od": [
+                    -7.153394990566879,
+                    3.3380790499134427
+                ],
+                "do": [
+                    -4.317127620112052,
+                    1.811661709095997
+                ],
+                "tloustka": 0.14,
+                "typ": "pricka",
+                "od_constraint": {
+                    "host": "W3",
+                    "t": 0.22455961150758702
+                },
+                "do_constraint": {
+                    "host": "W36",
+                    "t": 0.21758915486145214
+                }
+            },
+            {
+                "id": "W30",
+                "od": [
+                    -3.430907850962902,
+                    5.720212057869723
+                ],
+                "do": [
+                    -4.3088303931329675,
+                    4.0889261745409735
+                ],
+                "tloustka": 0.14,
+                "typ": "pricka",
+                "do_constraint": {
+                    "host": "W35",
+                    "t": 0.6672128715358467
+                }
+            },
+            {
+                "id": "W32",
+                "od": [
+                    -3.430907850962902,
+                    5.720212057869723
+                ],
+                "do": [
+                    -2.472245183000869,
+                    5.204280684257051
+                ],
+                "tloustka": 0.14,
+                "typ": "pricka",
+                "do_constraint": {
+                    "host": "W36",
+                    "t": 0.5410237771921727
+                }
+            },
+            {
+                "id": "W35",
+                "od": [
+                    -6.234435463575826,
+                    5.045751468390661
+                ],
+                "do": [
+                    -3.3981118096909064,
+                    3.519303837056674
+                ],
+                "tloustka": 0.14,
+                "typ": "pricka",
+                "od_constraint": {
+                    "host": "W3",
+                    "t": 0.3829982420957759
+                },
+                "do_constraint": {
+                    "host": "W36",
+                    "t": 0.380006301121444
+                }
+            },
+            {
+                "id": "W36",
+                "od": [
+                    -5.480838814950257,
+                    -0.5123755444330232
+                ],
+                "do": [
+                    0.1775281221834213,
+                    10.001552124429868
+                ],
+                "tloustka": 0.2,
+                "typ": "nosna",
+                "od_constraint": {
+                    "host": "W12",
+                    "t": 0.4836874861930245
+                },
+                "do_constraint": {
+                    "host": "W5",
+                    "t": 0.4348765867346129
+                }
+            }
+        ],
+        "otvory": [
+            {
+                "id": "O41",
+                "stena": "W12",
+                "pozice": 3.761471631959259,
+                "sirka": 2.1,
+                "typ": "okno",
+                "strana": "in",
+                "parapet": 0.9,
+                "kridla": [
+                    {
+                        "sirka": 0.85,
+                        "otv": "levy",
+                        "sklopne": true
+                    },
+                    {
+                        "sirka": 1.25,
+                        "otv": "pravy",
+                        "sklopne": true
+                    }
+                ]
+            },
+            {
+                "id": "O43",
+                "stena": "W3",
+                "pozice": 5.900559991749589,
+                "sirka": 1.3,
+                "typ": "okno",
+                "strana": "in",
+                "vyska": 0.65,
+                "parapet": 1.55,
+                "kridla": [
+                    {
+                        "sirka": 1.3,
+                        "otv": "fix",
+                        "sklopne": true
+                    }
+                ]
+            },
+            {
+                "id": "O44",
+                "stena": "W12",
+                "pozice": 0.5925222940802453,
+                "sirka": 2.1,
+                "typ": "okno",
+                "strana": "in",
+                "kridla": [
+                    {
+                        "sirka": 0.85,
+                        "otv": "levy",
+                        "sklopne": true
+                    },
+                    {
+                        "sirka": 1.25,
+                        "otv": "pravy",
+                        "sklopne": true
+                    }
+                ]
+            },
+            {
+                "id": "O45",
+                "stena": "W5",
+                "pozice": 0.6100632697263579,
+                "sirka": 2.1,
+                "typ": "okno",
+                "strana": "in",
+                "parapet": 1.1,
+                "kridla": [
+                    {
+                        "sirka": 1.25,
+                        "otv": "levy",
+                        "sklopne": true
+                    },
+                    {
+                        "sirka": 0.85,
+                        "otv": "pravy",
+                        "sklopne": true
+                    }
+                ]
+            },
+            {
+                "id": "O46",
+                "stena": "W7",
+                "pozice": 0.4780649519038538,
+                "sirka": 2.1,
+                "typ": "okno",
+                "strana": "in",
+                "vyska": 2.3,
+                "parapet": 0,
+                "kridla": [
+                    {
+                        "sirka": 1.2,
+                        "otv": "fix",
+                        "parapet": 0.9
+                    },
+                    {
+                        "sirka": 0.9,
+                        "otv": "posuvne",
+                        "sklopne": true
+                    }
+                ]
+            },
+            {
+                "id": "O47",
+                "stena": "W7",
+                "pozice": 4.409651474503567,
+                "sirka": 2.5,
+                "typ": "okno",
+                "strana": "in",
+                "vyska": 2.3,
+                "parapet": 0,
+                "kridla": [
+                    {
+                        "sirka": 1.6,
+                        "otv": "fix"
+                    },
+                    {
+                        "sirka": 0.9,
+                        "otv": "pravy",
+                        "sklopne": true
+                    }
+                ]
+            },
+            {
+                "id": "O48",
+                "stena": "W11",
+                "pozice": 0.5500235545713927,
+                "sirka": 2.5,
+                "typ": "okno",
+                "strana": "in",
+                "vyska": 2.3,
+                "parapet": 0,
+                "kridla": [
+                    {
+                        "sirka": 1.6,
+                        "otv": "fix"
+                    },
+                    {
+                        "sirka": 0.9,
+                        "otv": "pravy",
+                        "sklopne": true
+                    }
+                ]
+            },
+            {
+                "id": "D49",
+                "stena": "W27",
+                "pozice": 2.22173214852859,
+                "sirka": 0.9,
+                "typ": "dvere",
+                "smer": "pravy",
+                "strana": "in"
+            },
+            {
+                "id": "D50",
+                "stena": "W35",
+                "pozice": 0.9654472310252716,
+                "sirka": 0.8,
+                "typ": "dvere",
+                "smer": "levy",
+                "strana": "in"
+            },
+            {
+                "id": "D51",
+                "stena": "W35",
+                "pozice": 2.295463518077318,
+                "sirka": 0.8,
+                "typ": "dvere",
+                "smer": "levy",
+                "strana": "out"
+            },
+            {
+                "id": "D52",
+                "stena": "W36",
+                "pozice": 8.308721417591887,
+                "sirka": 0.9,
+                "typ": "dvere",
+                "smer": "levy",
+                "strana": "out",
+                "kridla": [
+                    {
+                        "sirka": 0.9,
+                        "otv": "levy"
+                    }
+                ]
+            },
+            {
+                "id": "D53",
+                "stena": "W36",
+                "pozice": 3.403538608946821,
+                "sirka": 0.9,
+                "typ": "dvere",
+                "smer": "posuvne",
+                "strana": "in"
+            },
+            {
+                "id": "D55",
+                "stena": "W18",
+                "pozice": 0.497153959452341,
+                "sirka": 0.9,
+                "typ": "dvere",
+                "smer": "levy",
+                "strana": "out"
+            },
+            {
+                "id": "D56",
+                "stena": "W3",
+                "pozice": 3.4544448983302933,
+                "sirka": 1,
+                "typ": "dvere",
+                "smer": "pravy",
+                "strana": "in"
+            }
+        ],
+        "vybaveni": [
+            {
+                "id": "vb67",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "stoly",
+                "stred": [
+                    -1.5848178213972144,
+                    1.681545589869085
+                ],
+                "polygon": [
+                    [
+                        -1.9340700043967338,
+                        2.3907866720619246
+                    ],
+                    [
+                        -0.7980314000488855,
+                        1.7587927722247556
+                    ],
+                    [
+                        -1.235565638397695,
+                        0.9723045076762453
+                    ],
+                    [
+                        -2.3716042427455433,
+                        1.6042984075134143
+                    ]
+                ],
+                "sirka": 1.3,
+                "hloubka": 0.9,
+                "uhel": 29.087789298980244,
+                "vyska": 0.75,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B07SJ75Y1M",
+                "nazev": "Jídelní stůl, dřevo, menší",
+                "nazevZdroj": "Jídelní stůl, dřevo, menší",
+                "uroven": 0
+            },
+            {
+                "id": "vb69",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "stolky",
+                "stred": [
+                    0.43378265801656474,
+                    5.06870435081974
+                ],
+                "polygon": [
+                    [
+                        0.07990163792570479,
+                        5.667804278727808
+                    ],
+                    [
+                        1.1294265331732167,
+                        5.083939145109008
+                    ],
+                    [
+                        0.7876636781074247,
+                        4.469604422911671
+                    ],
+                    [
+                        -0.26186121714008737,
+                        5.053469556530471
+                    ]
+                ],
+                "sirka": 1.201,
+                "hloubka": 0.703,
+                "uhel": 29.087789298980244,
+                "vyska": 0.404,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B072ZN4NDS",
+                "nazev": "Konferenční stolek, nízký",
+                "nazevZdroj": "Konferenční stolek, nízký",
+                "uroven": 0
+            },
+            {
+                "id": "vb71",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "zidle",
+                "stred": [
+                    -2.5151867556155443,
+                    1.1173298829541594
+                ],
+                "polygon": [
+                    [
+                        -2.5389002102707603,
+                        0.7293122647094268
+                    ],
+                    [
+                        -2.894449867987008,
+                        1.202649819629654
+                    ],
+                    [
+                        -2.4914733009603283,
+                        1.505347501198892
+                    ],
+                    [
+                        -2.1359236432440807,
+                        1.0320099462786647
+                    ]
+                ],
+                "sirka": 0.592,
+                "hloubka": 0.504,
+                "uhel": -126.91221070101976,
+                "vyska": 0.781,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B085559VGM",
+                "nazev": "Židle skořepinová, růžová",
+                "nazevZdroj": "Židle skořepinová, růžová",
+                "uroven": 0
+            },
+            {
+                "id": "vb72",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "zidle",
+                "stred": [
+                    -1.5287240280033503,
+                    2.725091194758825
+                ],
+                "polygon": [
+                    [
+                        -1.83714481678158,
+                        2.961727238187155
+                    ],
+                    [
+                        -1.2459093538249975,
+                        2.9918042616854232
+                    ],
+                    [
+                        -1.2203032392251205,
+                        2.488455151330495
+                    ],
+                    [
+                        -1.811538702181703,
+                        2.4583781278322268
+                    ]
+                ],
+                "sirka": 0.592,
+                "hloubka": 0.504,
+                "uhel": -2.912210701019755,
+                "vyska": 0.781,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B085559VGM",
+                "nazev": "Židle skořepinová, růžová",
+                "nazevZdroj": "Židle skořepinová, růžová",
+                "uroven": 0
+            },
+            {
+                "id": "vb73",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "zidle",
+                "stred": [
+                    -0.9248083176441351,
+                    2.267582238421846
+                ],
+                "polygon": [
+                    [
+                        -0.8409215455041756,
+                        2.6475549472575444
+                    ],
+                    [
+                        -0.5633274831135857,
+                        2.123541076710696
+                    ],
+                    [
+                        -1.0086950897840945,
+                        1.8876095295861473
+                    ],
+                    [
+                        -1.2862891521746842,
+                        2.4116234001329957
+                    ]
+                ],
+                "sirka": 0.593,
+                "hloubka": 0.504,
+                "uhel": 62.08778929898025,
+                "vyska": 0.781,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B085559VGM",
+                "nazev": "Židle skořepinová, růžová",
+                "nazevZdroj": "Židle skořepinová, růžová",
+                "uroven": 0
+            },
+            {
+                "id": "vb74",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "zidle",
+                "stred": [
+                    -1.720501681346192,
+                    0.8037335612624297
+                ],
+                "polygon": [
+                    [
+                        -1.4079979981403408,
+                        0.5725162436091512
+                    ],
+                    [
+                        -1.9986184966336864,
+                        0.5321253193875896
+                    ],
+                    [
+                        -2.033005364552043,
+                        1.034950878915708
+                    ],
+                    [
+                        -1.4423848660586975,
+                        1.07534180313727
+                    ]
+                ],
+                "sirka": 0.592,
+                "hloubka": 0.504,
+                "uhel": -183.91221070101975,
+                "vyska": 0.781,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B085559VGM",
+                "nazev": "Židle skořepinová, růžová",
+                "nazevZdroj": "Židle skořepinová, růžová",
+                "uroven": 0
+            },
+            {
+                "id": "vb75",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "pohovky",
+                "stred": [
+                    1.2846514112548013,
+                    5.486783656954482
+                ],
+                "polygon": [
+                    [
+                        0.5966522267664206,
+                        6.777470924321493
+                    ],
+                    [
+                        2.740852884279769,
+                        5.62350881908609
+                    ],
+                    [
+                        1.9726505957431817,
+                        4.1960963895874706
+                    ],
+                    [
+                        -0.1715500617701663,
+                        5.350058494822874
+                    ]
+                ],
+                "sirka": 2.435,
+                "hloubka": 1.621,
+                "uhel": 28.288170266426526,
+                "vyska": 0.987,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B07BWJCPWV",
+                "nazev": "Pohovka trojsed, tmavě modrá",
+                "nazevZdroj": "Pohovka trojsed, tmavě modrá",
+                "barva": "seda",
+                "uroven": 0,
+                "zaklad": {
+                    "sirka": 2.435,
+                    "hloubka": 1.621,
+                    "vyska": 0.987
+                }
+            },
+            {
+                "id": "vb76",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "postele",
+                "stred": [
+                    2.150310678023529,
+                    7.7693191794660175
+                ],
+                "polygon": [
+                    [
+                        1.8811395909315358,
+                        9.08387116621805
+                    ],
+                    [
+                        3.3957289670805926,
+                        8.268752143218087
+                    ],
+                    [
+                        2.4194817651155223,
+                        6.454767192713986
+                    ],
+                    [
+                        0.9048923889664655,
+                        7.269886215713947
+                    ]
+                ],
+                "sirka": 1.72,
+                "hloubka": 2.06,
+                "uhel": 28.28817026642672,
+                "vyska": 0.8,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B0154VUESC",
+                "nazev": "Postel, dřevěná",
+                "nazevZdroj": "Postel, dřevěná",
+                "uroven": 0,
+                "zaklad": {
+                    "sirka": 1.72,
+                    "hloubka": 2.06,
+                    "vyska": 0.8
+                }
+            },
+            {
+                "id": "vb77",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "skrine",
+                "stred": [
+                    0.23521942877353266,
+                    9.401858894178162
+                ],
+                "polygon": [
+                    [
+                        -0.2086689519793796,
+                        9.07293929088192
+                    ],
+                    [
+                        0.2652374567415283,
+                        9.95351450957323
+                    ],
+                    [
+                        0.6791078095264449,
+                        9.730778497474404
+                    ],
+                    [
+                        0.20520140080553698,
+                        8.850203278783093
+                    ]
+                ],
+                "sirka": 1,
+                "hloubka": 0.47000000000000003,
+                "uhel": -61.711829733573275,
+                "vyska": 1.7000000000000002,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B079TYF1GK",
+                "nazev": "Šatní skříň, bílá",
+                "nazevZdroj": "Šatní skříň, bílá",
+                "uroven": 0,
+                "zaklad": {
+                    "sirka": 0.76,
+                    "hloubka": 0.47,
+                    "vyska": 1.7
+                }
+            },
+            {
+                "id": "vb78",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "skrine",
+                "stred": [
+                    -0.5323600003980977,
+                    7.975603812441506
+                ],
+                "polygon": [
+                    [
+                        -0.919379612104501,
+                        7.75235323538822
+                    ],
+                    [
+                        -0.559210741476611,
+                        8.421590401593617
+                    ],
+                    [
+                        -0.14534038869169444,
+                        8.198854389494791
+                    ],
+                    [
+                        -0.5055092593195845,
+                        7.529617223289394
+                    ]
+                ],
+                "sirka": 0.76,
+                "hloubka": 0.47,
+                "uhel": -61.711829733573275,
+                "vyska": 1.7,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B079TYF1GK",
+                "nazev": "Šatní skříň, bílá",
+                "nazevZdroj": "Šatní skříň, bílá",
+                "uroven": 0,
+                "zaklad": {
+                    "sirka": 0.76,
+                    "hloubka": 0.47,
+                    "vyska": 1.7
+                }
+            },
+            {
+                "id": "vb79",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "skrine",
+                "stred": [
+                    -0.1718705137114673,
+                    8.645436721922046
+                ],
+                "polygon": [
+                    [
+                        -0.5588901254178706,
+                        8.42218614486876
+                    ],
+                    [
+                        -0.19872125478998054,
+                        9.091423311074157
+                    ],
+                    [
+                        0.21514909799493598,
+                        8.868687298975331
+                    ],
+                    [
+                        -0.1450197726329541,
+                        8.199450132769934
+                    ]
+                ],
+                "sirka": 0.76,
+                "hloubka": 0.47,
+                "uhel": -61.711829733573275,
+                "vyska": 1.7,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B079TYF1GK",
+                "nazev": "Šatní skříň, bílá",
+                "nazevZdroj": "Šatní skříň, bílá",
+                "uroven": 0,
+                "zaklad": {
+                    "sirka": 0.76,
+                    "hloubka": 0.47,
+                    "vyska": 1.7
+                }
+            },
+            {
+                "id": "vb80",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "skrine",
+                "stred": [
+                    -6.858909211986845,
+                    2.8332287108283465
+                ],
+                "polygon": [
+                    [
+                        -7.187828815283088,
+                        3.2771170915812586
+                    ],
+                    [
+                        -6.307253596591775,
+                        2.803210682860351
+                    ],
+                    [
+                        -6.5299896086906015,
+                        2.3893403300754343
+                    ],
+                    [
+                        -7.410564827381914,
+                        2.863246738796342
+                    ]
+                ],
+                "sirka": 1,
+                "hloubka": 0.47,
+                "uhel": 28.28817026642672,
+                "vyska": 1.7,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B079TYF1GK",
+                "nazev": "Šatní skříň, bílá",
+                "nazevZdroj": "Šatní skříň, bílá",
+                "uroven": 0,
+                "zaklad": {
+                    "sirka": 0.76,
+                    "hloubka": 0.47,
+                    "vyska": 1.7
+                }
+            },
+            {
+                "id": "vb81",
+                "typ": "Katalog",
+                "podtyp": null,
+                "kategorie": "skrine",
+                "stred": [
+                    -5.978036210456432,
+                    2.3591620418674712
+                ],
+                "polygon": [
+                    [
+                        -6.306955813752675,
+                        2.8030504226203834
+                    ],
+                    [
+                        -5.426380595061363,
+                        2.3291440138994757
+                    ],
+                    [
+                        -5.649116607160189,
+                        1.915273661114559
+                    ],
+                    [
+                        -6.5296918258515015,
+                        2.389180069835467
+                    ]
+                ],
+                "sirka": 1,
+                "hloubka": 0.47,
+                "uhel": 28.28817026642672,
+                "vyska": 1.7,
+                "tvar": "rect",
+                "zadni_strana": null,
+                "katalog": "abo-B079TYF1GK",
+                "nazev": "Šatní skříň, bílá",
+                "nazevZdroj": "Šatní skříň, bílá",
+                "uroven": 0,
+                "zaklad": {
+                    "sirka": 0.76,
+                    "hloubka": 0.47,
+                    "vyska": 1.7
+                }
+            }
+        ],
+        "oddelovace": [],
+        "mistnosti": [
+            {
+                "id": "M59",
+                "nazev": "Pokoj",
+                "auto": {
+                    "k": "prostor_pokoj",
+                    "n": 1
+                },
+                "druh": "pokoj",
+                "barva": "#fbe9dc",
+                "podlaha": {
+                    "dekor": "prkna"
+                },
+                "kotva": [
+                    -2.196,
+                    9.139
+                ]
+            },
+            {
+                "id": "M60",
+                "nazev": "Ložnice",
+                "auto": {
+                    "k": "prostor_loznice",
+                    "n": 1
+                },
+                "druh": "loznice",
+                "barva": "#f8e6ea",
+                "podlaha": {
+                    "dekor": "prkna"
+                },
+                "kotva": [
+                    1.521,
+                    7.856
+                ]
+            },
+            {
+                "id": "M61",
+                "nazev": "Koupelna",
+                "auto": {
+                    "k": "prostor_koupelna",
+                    "n": 1
+                },
+                "druh": "koupelna",
+                "barva": "#e4eefb",
+                "podlaha": {
+                    "dekor": "dlazba30"
+                },
+                "kotva": [
+                    -4.106,
+                    6.135
+                ]
+            },
+            {
+                "id": "M62",
+                "nazev": "Obývák",
+                "auto": {
+                    "k": "prostor_obyvak",
+                    "n": 1
+                },
+                "druh": "obyvak",
+                "barva": "#fbf4d6",
+                "podlaha": {
+                    "dekor": "prkna",
+                    "barva": "#ab744f"
+                },
+                "kotva": [
+                    -0.202,
+                    4.657
+                ]
+            },
+            {
+                "id": "M63",
+                "nazev": "WC",
+                "auto": {
+                    "k": "prostor_wc",
+                    "n": 1
+                },
+                "druh": "wc",
+                "barva": "#e5f3e4",
+                "podlaha": {
+                    "dekor": "dlazba30"
+                },
+                "kotva": [
+                    -3.382,
+                    4.597
+                ]
+            },
+            {
+                "id": "M64",
+                "nazev": "Zádveří",
+                "auto": {
+                    "k": "prostor_zadveri",
+                    "n": 1
+                },
+                "druh": "zadveri",
+                "barva": "#e0f3f1",
+                "podlaha": {
+                    "dekor": "prkna"
+                },
+                "kotva": [
+                    -5.271,
+                    3.425
+                ]
+            },
+            {
+                "id": "M65",
+                "nazev": "Kuchyně",
+                "auto": {
+                    "k": "prostor_kuchyne",
+                    "n": 1
+                },
+                "druh": "kuchyne",
+                "barva": "#e4eefb",
+                "podlaha": {
+                    "dekor": "dlazba30",
+                    "barva": "#ab744f"
+                },
+                "kotva": [
+                    -2.957,
+                    0.853
+                ]
+            },
+            {
+                "id": "M66",
+                "nazev": "Pracovna",
+                "auto": {
+                    "k": "prostor_pracovna",
+                    "n": 1
+                },
+                "druh": "pracovna",
+                "barva": "#ececec",
+                "podlaha": {
+                    "dekor": "prkna"
+                },
+                "kotva": [
+                    -6.361,
+                    1.398
+                ]
+            }
+        ],
+        "dum": {
+            "verze": 1,
+            "aktivni": "P1",
+            "posunVysky": 0.4,
+            "barvy": {
+                "fasada": "#ffe2b8",
+                "oknoVen": "#ab744f",
+                "oknoDovnitr": "#f3f4f6",
+                "dvereVen": "#ab744f",
+                "dvereDovnitr": "#ab744f",
+                "dvereVnitrni": "#ab744f",
+                "vrataVen": "#8a8a8a",
+                "vrataDovnitr": "#8a8a8a"
+            },
+            "podlazi": [
+                {
+                    "id": "P1",
+                    "nazev": "1.NP",
+                    "typ": "bezne",
+                    "vyska": 3.05,
+                    "strop": 0.25,
+                    "vlastniNazev": true,
+                    "data": null
+                }
+            ],
+            "schodiste": [],
+            "plochy": [],
+            "strecha": {
+                "typ": "sedlova",
+                "sklon": 38,
+                "presah": 0.6,
+                "presahStit": 0.2,
+                "vyskaOkapu": 2.6,
+                "krytina": "taska",
+                "otocHreben": false,
+                "hrany": {
+                    "W12:-1": {
+                        "typ": "okap",
+                        "sklon": 60,
+                        "presah": 0.5
+                    },
+                    "W5:-1": {
+                        "typ": "okap",
+                        "presah": 0.5,
+                        "sklon": 60
+                    }
+                },
+                "barva": "#d55d5d"
+            },
+            "zaklady": []
+        }
+    },
+    "metadata": {
+        "podklad": {
+            "url": "\/masterteam\/koncept-v3\/podklad\/e687fe2ed9df7ed326be9ce240a0440286df2593\/obrazek\/1\/150",
+            "vektor": "\/masterteam\/koncept-v3\/podklad\/e687fe2ed9df7ed326be9ce240a0440286df2593\/vektor\/1",
+            "otisk": "e687fe2ed9df7ed326be9ce240a0440286df2593",
+            "strana": 1,
+            "nazev": "vzorovy-projekt.pdf",
+            "metryNaPx": 0.00846955658649707,
+            "zmerenoMm": 4800,
+            "vyrez": null,
+            "sirkaM": 29.710145810858407,
+            "vyskaM": 21.00714707094601,
+            "stredX": 1.2600955603603552,
+            "stredY": -610.7825529418786,
+            "uhel": -61.67334430848749,
+            "pruhlednost": 0.5,
+            "viditelny": true,
+            "zobrazeni": "pod"
+        },
+        "katastr": {
+            "parcely": [
+                {
+                    "cislo": "240\/8",
+                    "typ": "pozemkova",
+                    "label": "240\/8",
+                    "polygon_wgs84": [
+                        [
+                            49.441771,
+                            16.619203
+                        ],
+                        [
+                            49.441735,
+                            16.619179
+                        ],
+                        [
+                            49.441556,
+                            16.619031
+                        ],
+                        [
+                            49.441529,
+                            16.619152
+                        ],
+                        [
+                            49.44174,
+                            16.619341
+                        ],
+                        [
+                            49.441752,
+                            16.61929
+                        ],
+                        [
+                            49.441771,
+                            16.619203
+                        ]
+                    ],
+                    "polygon_sjtsk": [
+                        [
+                            -594405.6,
+                            -1133569.22
+                        ],
+                        [
+                            -594407.74,
+                            -1133572.93
+                        ],
+                        [
+                            -594420.56,
+                            -1133591.64
+                        ],
+                        [
+                            -594412.18,
+                            -1133595.59
+                        ],
+                        [
+                            -594396,
+                            -1133573.65
+                        ],
+                        [
+                            -594399.57,
+                            -1133572
+                        ],
+                        [
+                            -594405.6,
+                            -1133569.22
+                        ]
+                    ],
+                    "centroid_wgs84": {
+                        "lat": 49.4416496,
+                        "lon": 16.6191864
+                    },
+                    "vymera": 232,
+                    "druh_pozemku": "Grassland",
+                    "druh_pozemku_cz": "Trvalý travní porost"
+                },
+                {
+                    "cislo": "239\/11",
+                    "typ": "pozemkova",
+                    "label": "239\/11",
+                    "polygon_wgs84": [
+                        [
+                            49.44174,
+                            16.619341
+                        ],
+                        [
+                            49.441529,
+                            16.619152
+                        ],
+                        [
+                            49.441437,
+                            16.619557
+                        ],
+                        [
+                            49.441672,
+                            16.619654
+                        ],
+                        [
+                            49.441679,
+                            16.61962
+                        ],
+                        [
+                            49.44174,
+                            16.619341
+                        ]
+                    ],
+                    "polygon_sjtsk": [
+                        [
+                            -594396,
+                            -1133573.65
+                        ],
+                        [
+                            -594412.18,
+                            -1133595.59
+                        ],
+                        [
+                            -594384.07,
+                            -1133608.86
+                        ],
+                        [
+                            -594374.29,
+                            -1133583.68
+                        ],
+                        [
+                            -594376.63,
+                            -1133582.6
+                        ],
+                        [
+                            -594396,
+                            -1133573.65
+                        ]
+                    ],
+                    "centroid_wgs84": {
+                        "lat": 49.4415887,
+                        "lon": 16.6194031
+                    },
+                    "vymera": 767,
+                    "druh_pozemku": "ArableGround",
+                    "druh_pozemku_cz": "Orná půda",
+                    "_sousedi": true
+                }
+            ],
+            "ku": {
+                "k": 631337,
+                "n": "Klemov",
+                "o": "Doubravice nad Svitavou",
+                "ok": "Blansko"
+            },
+            "podklad": "zadny",
+            "kompasUhel": 401.4
+        }
+    },
+    "podklad_strany": {
+        "1": {
+            "kalibBody": [
+                [
+                    275.99420934146303,
+                    163.24019238753232
+                ],
+                [
+                    548.0273407657509,
+                    163.24019238753232
+                ]
+            ],
+            "kalibMm": 4800,
+            "obrys": [
+                [
+                    269.7596123008944,
+                    335.7463385953034
+                ],
+                [
+                    981.5779447021589,
+                    335.43382265967466
+                ],
+                [
+                    981.581851548302,
+                    802.7356347498128
+                ],
+                [
+                    542.9255959804724,
+                    802.7356347498128
+                ],
+                [
+                    542.9255959804724,
+                    732.7108654969284
+                ],
+                [
+                    269.7596123008944,
+                    731.8932674351281
+                ]
+            ]
+        }
+    }
+}

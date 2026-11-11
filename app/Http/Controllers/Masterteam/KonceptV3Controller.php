@@ -69,7 +69,8 @@ class KonceptV3Controller extends Controller
         // Dávka se přijme celá, dokud dnes něco zbývá — limit přeteče nanejvýš o pár
         // kroků, ale rozdělaná práce se neztratí. Editor hlídá zbytek sám (limit-tarifu.js).
         $uzivatel = $request->user();
-        $novychUprav = $request->filled('kroky')
+        // Kopie vzorového projektu je na hraní, úpravy v ní se nepočítají (App\Support\VzorovyProjekt)
+        $novychUprav = $request->filled('kroky') && $koncept->vzor !== 'kopie'
             ? max(0, count($request->input('kroky')) - ($request->input('po') === null ? 1 : 0))
             : 0;
         $zbyva = Tarif::zbyvaUprav($uzivatel);
@@ -190,6 +191,10 @@ class KonceptV3Controller extends Controller
     public function smazat(Koncept $koncept)
     {
         $this->autorizuj($koncept);
+        // Kopie vzorového projektu se nemaže, každou noc se sama vrací do výchozího stavu
+        if ($koncept->vzor === 'kopie') {
+            return response()->json(['ok' => false, 'error' => __('projekty.vzor_nemazat')], 422);
+        }
         $koncept->delete();
         return response()->json(['ok' => true]);
     }

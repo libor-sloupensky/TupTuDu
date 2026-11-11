@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Aplikace;
 use App\Http\Controllers\Controller;
 use App\Models\KonceptV3;
 use App\Support\Tarif;
+use App\Support\VzorovyProjekt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,6 +23,7 @@ class ProjektyController extends Controller
      */
     public function index(Request $request)
     {
+        $vzor = VzorovyProjekt::zajistiKopii(Auth::user());
         $projekty = $this->mojeProjekty();
 
         if ($request->filled('id')) {
@@ -32,11 +34,13 @@ class ProjektyController extends Controller
             }
         }
 
-        if ($projekty->isNotEmpty()) {
-            return redirect()->route('app.projekty.editor', $projekty->first()->kod);
+        // Vlastní projekt má přednost, vzorový je jen na hraní
+        $vlastni = $projekty->firstWhere('vzor', '!==', 'kopie');
+        if ($vlastni) {
+            return redirect()->route('app.projekty.editor', $vlastni->kod);
         }
 
-        return view('aplikace.prvni-projekt');
+        return view('aplikace.prvni-projekt', ['vzor' => $vzor]);
     }
 
     public function editor(string $kod)
@@ -51,8 +55,11 @@ class ProjektyController extends Controller
             'trasaV3' => 'app.projekty',
             'layoutV3' => 'layouts.zakaznik',
             'titulekV3' => $aktivni->nazev . ' — TupTuDu',
-            // limity tarifu pro editor (limit-tarifu.js); masterteam je nepředává = bez omezení
-            'limitTarifu' => Tarif::stav(Auth::user()),
+            // limity tarifu pro editor (limit-tarifu.js); masterteam je nepředává = bez omezení.
+            // Ve vzorovém projektu se úpravy nepočítají, projektů se limit týká dál.
+            'limitTarifu' => $aktivni->vzor === 'kopie'
+                ? ['kroku_denne' => null, 'zbyva' => null] + Tarif::stav(Auth::user())
+                : Tarif::stav(Auth::user()),
         ]);
     }
 

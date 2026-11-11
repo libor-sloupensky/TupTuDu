@@ -7,5 +7,9 @@
             @csrf
             <button type="submit" class="btn btn-primary">{{ __('projekty.prvni_tlacitko') }}</button>
         </form>
+        @if ($vzor ?? null)
+            <p class="tt-prvni-vzor">{{ __('projekty.vzor_popis') }}
+                <a href="{{ route('app.projekty.editor', $vzor->kod) }}">{{ __('projekty.vzor_otevrit') }}</a></p>
+        @endif
     </div>
 </x-layouts.zakaznik>

@@ -30,6 +30,9 @@ final class PlanovaneUlohy
         // Soubory odkazů po smazání účtu (modules/sdileni.md)
         'sdileni:uklid' => 86400,
 
+        // Kopie vzorového projektu zpět do výchozího stavu ve 3:00 místního času uživatele (modules/aplikace.md)
+        'vzor:obnovit' => 0,
+
         // Počet zaindexovaných adres ze sitemapy pro graf v Masterteamu (modules/statistiky.md).
         // Každou adresu kontroluje jednou denně; hodinový běh dobere, co se minule nestihlo.
         'indexace:kontrola' => 3600,

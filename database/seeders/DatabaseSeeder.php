@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             MasterTeamSeeder::class,
             PravidlaObjektuSeeder::class,
+            VzorovyProjektSeeder::class,
         ]);
     }
 }

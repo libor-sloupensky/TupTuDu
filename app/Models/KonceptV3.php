@@ -36,6 +36,7 @@ class KonceptV3 extends Model
             'metadata' => 'array',
             'historie' => 'array',
             'chat' => 'array',
+            'vzor_obnoveno_v' => 'datetime',
         ];
     }
 

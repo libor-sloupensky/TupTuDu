@@ -330,6 +330,7 @@ ol.tt-postup p { font-size: .93rem; color: var(--c-text-secondary); margin: 0; }
 /* Úvod bez projektů (aplikace/prvni-projekt) */
 .tt-prvni-projekt { text-align: center; padding: 4rem 0; }
 .tt-prvni-projekt p { color: var(--c-text-secondary); margin: 1rem 0 2rem; }
+.tt-prvni-projekt .tt-prvni-vzor { margin: 2rem 0 0; }
 
 /* Přepínač jazyka (partials/prepinac-jazyka) */
 .tt-jazyky { position: relative; font-size: .85rem; color: var(--c-text-secondary); font-family: var(--s-font-tech); font-weight: 500; }

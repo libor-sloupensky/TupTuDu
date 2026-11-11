@@ -167,6 +167,12 @@ Pět kroků: článek v indexu, zobrazení, klik na výzvu, registrace z článk
 - **Strukturovaná data** (Article, drobečková navigace) a kanonickou adresu dává šablona `clanky/detail` sama, ručně nic.
 - **Aktuálnost:** hodnoty z předpisů znovu ověřit nejpozději po roce a posunout `overeno`.
 
+## Vzorový projekt pro obrázky (Libor 11. 11. 2026)
+
+Obrázky a snímky z editoru do článků se berou z šablony „Vzorový projekt“ (`modules/aplikace.md`). Co bude na snímku vidět
+(podlaží, nábytek, kóty, 3D, terén), rozhoduje copywriter podle potřeby článku. Stejný projekt má každý uživatel na hraní,
+proto může článek čtenáře poslat, ať si to zkusí na něm.
+
 ## Data z Googlu a Seznamu (nástroje MCP)
 
 Copywriter s daty pracuje sám, Liborovi předává závěr, ne čísla k vyhodnocení. Nastavení je v `modules/marketing.md`.

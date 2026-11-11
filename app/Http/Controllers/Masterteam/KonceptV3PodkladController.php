@@ -334,6 +334,10 @@ class KonceptV3PodkladController extends Controller
                 return $rel;
             }
         }
+        // Podklad vzorového projektu leží u autora šablony, kopie ho čtou odtamtud
+        if ($rel = \App\Support\VzorovyProjekt::cestaPodkladu($otisk)) {
+            return $rel;
+        }
 
         abort(404, __('ed_nastroje.podklad.nenalezen'));
     }

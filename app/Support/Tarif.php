@@ -101,7 +101,8 @@ final class Tarif
 
     public static function pocetProjektu(Uzivatel $uzivatel): int
     {
-        return KonceptV3::where('uzivatel_id', $uzivatel->id)->count();
+        // Kopie vzorového projektu do limitu nepatří (App\Support\VzorovyProjekt)
+        return KonceptV3::where('uzivatel_id', $uzivatel->id)->where(fn ($q) => $q->whereNull('vzor')->orWhere('vzor', '!=', 'kopie'))->count();
     }
 
     public static function muzeZalozitProjekt(Uzivatel $uzivatel): bool

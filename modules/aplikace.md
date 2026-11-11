@@ -51,6 +51,25 @@ Všechny zákaznické routy: `subdomena:app`, `auth`, `verified`.
   routy, přes kterou přišel request. Uložené adresy podkladu jsou proto vázané na
   subdoménu, kde vznikly (projekt z masterteamu otevřený v app podklad nenačte).
 
+## Vzorový projekt (Libor 11. 11. 2026)
+
+Hotový dům na hraní pro každého uživatele a zdroj obrázků do článků. `App\Support\VzorovyProjekt`, sloupce `koncepty_v3.vzor`
+(`sablona` nebo `kopie`) a `vzor_obnoveno_v`.
+- **Šablona** je jeden projekt master týmu „Vzorový projekt“: 1.NP rodinného domu (z Klemova, bez sklepa, podkroví a schodů),
+  nábytek, střecha, základy, parcela a terén. Podklad je výkres bez pravého sloupce (legenda, poznámky, razítko s osobními
+  údaji), obsah PDF je opravdu odstraněný, ne zakrytý. Šablonu jde upravovat v Masterteamu, nad plátnem to připomíná hláška.
+  Na produkci ji při prvním nasazení založí `VzorovyProjektSeeder` z `database/vzor` (jen když žádná není).
+- **Kopie** vznikne uživateli při první návštěvě `/projects` (`zajistiKopii`). Úpravy v ní se nepočítají do denního limitu
+  (`KonceptV3Controller::ulozit`, editor dostane `zbyva: null`), kopie se nepočítá do limitu projektů (`Tarif::pocetProjektu`),
+  nejde smazat ani přejmenovat. Nad plátnem je výrazná hláška (`ed_sablona.vzor`). Uživatel bez vlastního projektu má na
+  úvodní obrazovce odkaz na ni, vlastní projekt má při otevření `/projects` přednost. Při otevření se ukáže celý dům.
+- **Noční obnova** `vzor:obnovit` (plánovač, každých 15 minut): kopie, u které místně minula 3:00 a od té doby se neobnovila,
+  dostane znovu data a metadata šablony, prázdnou historii a vyšší verzi (otevřený editor zastaví dialog konfliktu). Pásmo
+  podle země uživatele, u zemí s více pásmy evropské (`casovaZona`), bez země pásmo aplikace.
+- **Podklad šablony** leží u jejího autora, kopie ostatních ho čtou přes `VzorovyProjekt::cestaPodkladu` v `najdiOriginal`.
+- Kopie nevolá událost `projekt_zalozen` (GA4), vzniká bez událostí modelu.
+- Test: `node services/import-test/test-vzorovy-projekt-ui.cjs`.
+
 ## Kód projektu
 `koncepty_v3.kod` — 5 znaků z abecedy bez zaměnitelných znaků (`abcdefghjkmnpqrstuvwxyz23456789`,
 ~28 mil. kombinací), generuje `KonceptV3::novyKod()` při vytvoření. Když se po 10 pokusech
