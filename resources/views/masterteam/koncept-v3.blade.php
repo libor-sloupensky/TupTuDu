@@ -214,10 +214,12 @@
     .kk-mrizka { display: grid; grid-template-columns: max-content max-content; gap: 6px 10px; align-items: center; }
     .kk-mrizka > * { justify-self: start; }
     /* Pole s jednotkou uvnitř (I1) */
-    .kk-pole-jed { display: inline-flex; align-items: center; height: 24px; border: 1px solid var(--c-input-border); border-radius: var(--s-radius);
-        background: var(--c-input); overflow: hidden; }
-    .kk-pole-jed:focus-within { border-color: var(--c-primary); box-shadow: 0 0 0 1px var(--c-primary); }
-    #kk-panel-otvoru .kk-pole-jed input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]), .kk-section .kk-pole-jed input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]) { width: 48px; height: 22px; border: 0; border-radius: 0; background: none; box-shadow: none; padding: 0 2px 0 8px; }
+    .kk-pole-jed { display: inline-flex; align-items: center; height: 24px; border-radius: var(--s-radius); flex-shrink: 0;
+        background: var(--c-input); box-shadow: inset 0 0 0 1px var(--c-input-border); }
+    .kk-pole-jed:focus-within { box-shadow: inset 0 0 0 1px var(--c-primary), 0 0 0 1px var(--c-primary); }
+    #kk-panel-otvoru .kk-pole-jed input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]), .kk-section .kk-pole-jed input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]), .kk-pole-jed input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]) {
+        width: 48px; height: 24px; border: 0; border-radius: var(--s-radius); background: transparent; box-shadow: none; padding: 0 2px 0 8px; }
+    .kk-pole-jed input:disabled { color: var(--c-text-secondary); }
     .kk-pole-jed > span { padding: 0 8px 0 2px; color: var(--c-text-secondary); }
     @keyframes kk-blik {
         0%  { animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
@@ -514,7 +516,7 @@
             <div id="kk-3d-container" x-ref="threeContainer" style="position:absolute;inset:0;" x-show="rezim3d" x-cloak></div>
             {{-- Přepsání kóty u vybrané stěny nebo otvoru: pole na místě čísla --}}
             <div class="kk-kota-pole" x-show="kotaEdit && !rezim3d" x-cloak :style="kotaEdit ? { left: kotaEdit.x + 'px', top: kotaEdit.y + 'px' } : {}" data-kota-pole>
-                <input type="number" min="0" step="1" x-ref="kotaInput" title="{{ __('ed_sablona.platno.kota_tip') }}" @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="kotaEdit = null" @blur="kotaPotvrd($event.target.value)"><span>cm</span>
+                <span class="kk-pole-jed"><input type="number" min="0" step="1" x-ref="kotaInput" title="{{ __('ed_sablona.platno.kota_tip') }}" @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="kotaEdit = null" @blur="kotaPotvrd($event.target.value)"><span>cm</span></span>
             </div>
             <div class="kk-status-row">
                 <div class="kk-coords" x-text="'X: ' + kurzorX.toFixed(2) + ' Y: ' + kurzorY.toFixed(2)"></div>
@@ -606,12 +608,11 @@
                                 <span class="flex items-center gap-1">
                                     <span class="text-gray-500">{{ __('ed_sablona.spolecne.tloustka_zkr') }}</span>
                                     {{-- Tloušťka v cm (v enginu zůstávají metry) --}}
-                                    <input type="number" min="5" max="60" step="1"
+                                    <span class="kk-pole-jed"><input type="number" min="5" max="60" step="1"
                                            :value="Math.round(tloustkaSteny * 100)"
                                            @change="tloustkaSteny = Math.min(0.6, Math.max(0.05, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
                                            @keydown.enter.prevent="$event.target.blur()"
-                                           class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs">
-                                    <span class="text-gray-500">cm</span>
+                                           class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"><span>cm</span></span>
                                 </span>
                             </template>
                         </div>
@@ -629,12 +630,11 @@
                             </div>
                             <span class="text-gray-500">{{ __('ed_sablona.spolecne.sirka_zkr') }}</span>
                             {{-- Šířka v cm (v enginu zůstávají metry) --}}
-                            <input type="number" min="40" max="300" step="5"
+                            <span class="kk-pole-jed"><input type="number" min="40" max="300" step="5"
                                    :value="Math.round(otvorSirka * 100)"
                                    @change="otvorSirka = Math.min(3, Math.max(0.4, (parseFloat($event.target.value) || 0) / 100)); ulozitNastaveni()"
                                    @keydown.enter.prevent="$event.target.blur()"
-                                   class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs">
-                            <span class="text-gray-500">cm</span>
+                                   class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"><span>cm</span></span>
                         </div>
                         <div class="text-gray-500" x-show="!otvorZprava">{{ __('ed_sablona.otvor.klepni') }}</div>
                         <div class="text-orange-700" x-show="otvorZprava" x-cloak x-text="otvorZprava"></div>
@@ -666,15 +666,15 @@
                                 <template x-for="r in inspector.rozmery" :key="r.osa">
                                     <div class="flex items-center gap-1 text-gray-600" :data-katalog-rozmer="r.osa">
                                         <span style="width:52px" x-text="r.nazev"></span>
-                                        <input type="number" min="1" step="1" :aria-label="preloz('ed_sablona.katalog.v_cm', { nazev: r.nazev })" class="border border-gray-500 rounded px-1 py-0.5 text-xs" style="width:56px" data-jednotka="cm"
-                                               :value="r.cm" @change="katalogRozmer(r.osa, $event.target.value, 'cm')" @keydown.enter.prevent="$event.target.blur()"> cm
-                                        <input type="number" min="1" step="1" :aria-label="preloz('ed_sablona.katalog.v_procentech', { nazev: r.nazev })" class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-1" style="width:56px" data-jednotka="procenta"
-                                               :value="r.procenta" @change="katalogRozmer(r.osa, $event.target.value, '%')" @keydown.enter.prevent="$event.target.blur()"> %
+                                        <span class="kk-pole-jed"><input type="number" min="1" step="1" :aria-label="preloz('ed_sablona.katalog.v_cm', { nazev: r.nazev })" class="border border-gray-500 rounded px-1 py-0.5 text-xs" style="width:56px" data-jednotka="cm"
+                                               :value="r.cm" @change="katalogRozmer(r.osa, $event.target.value, 'cm')" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
+                                        <span class="kk-pole-jed"><input type="number" min="1" step="1" :aria-label="preloz('ed_sablona.katalog.v_procentech', { nazev: r.nazev })" class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-1" style="width:56px" data-jednotka="procenta"
+                                               :value="r.procenta" @change="katalogRozmer(r.osa, $event.target.value, '%')" @keydown.enter.prevent="$event.target.blur()"><span>%</span></span>
                                     </div>
                                 </template>
                                 <label class="flex items-center gap-1 text-gray-600" for="kk-katalog-uroven">{{ __('ed_sablona.katalog.nad_podlahou') }}
-                                    <input id="kk-katalog-uroven" type="number" min="0" max="300" step="5" class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto" style="width:56px"
-                                           :value="inspector.urovenCm" @change="katalogUroven($event.target.value)" @keydown.enter.prevent="$event.target.blur()"> cm
+                                    <span class="kk-pole-jed"><input id="kk-katalog-uroven" type="number" min="0" max="300" step="5" class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto" style="width:56px"
+                                           :value="inspector.urovenCm" @change="katalogUroven($event.target.value)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                 </label>
                                 <div class="flex items-center gap-1">
                                     <button type="button" @click="katalogOtoc()" class="border border-gray-500 rounded px-2 hover:bg-gray-100" data-katalog-otoc>{{ __('ed_sablona.spolecne.otocit_90') }}</button>
@@ -717,12 +717,11 @@
                                         <span class="text-gray-500">{{ __('ed_sablona.spolecne.sirka_zkr') }}</span>
                                         <template x-if="inspector.typ === 'okno'">
                                             <span class="flex items-center gap-1">
-                                                <input type="number" min="10" max="600" step="1"
+                                                <span class="kk-pole-jed"><input type="number" min="10" max="600" step="1"
                                                        class="w-16 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                        :value="inspector.sirka !== null ? Math.round(inspector.sirka * 100) : ''"
                                                        @change="setOpeningSirka(parseFloat($event.target.value) / 100)"
-                                                       @keydown.enter.prevent="$event.target.blur()">
-                                                <span class="text-gray-500">cm</span>
+                                                       @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                             </span>
                                         </template>
                                         <template x-if="inspector.typ !== 'okno'">
@@ -740,22 +739,20 @@
                                         {{-- Výška a parapet otvoru hned vedle šířky — Libor 1. 11. 2026.
                                              Parapet posune celý otvor (výška zůstane); díl zvlášť jen v řádcích dílů. --}}
                                         <span class="text-gray-500 ml-1">{{ __('ed_sablona.spolecne.vyska_zkr') }}</span>
-                                        <input type="number" min="30" max="400" step="1"
+                                        <span class="kk-pole-jed"><input type="number" min="30" max="400" step="1"
                                                class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                :value="inspector.vyska !== null ? Math.round(inspector.vyska * 100) : ''"
                                                @change="setOpeningVyska(parseFloat($event.target.value) / 100)"
-                                               @keydown.enter.prevent="$event.target.blur()">
-                                        <span class="text-gray-500">cm</span>
+                                               @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                         {{-- Parapet jen u oken; dveře, vrata a průchod ho nemají --}}
                                         <template x-if="!inspector.jeDvere">
                                             <span class="flex items-center gap-1">
                                                 <span class="text-gray-500 ml-1">{{ __('ed_sablona.spolecne.parapet_zkr') }}</span>
-                                                <input type="number" min="0" max="300" step="1"
+                                                <span class="kk-pole-jed"><input type="number" min="0" max="300" step="1"
                                                        class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                                        :value="inspector.parapet !== null ? Math.round(inspector.parapet * 100) : ''"
                                                        @change="setOpeningParapet(parseFloat($event.target.value) / 100)"
-                                                       @keydown.enter.prevent="$event.target.blur()">
-                                                <span class="text-gray-500">cm</span>
+                                                       @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                             </span>
                                         </template>
                                     </div>
@@ -818,13 +815,12 @@
                                                     <div class="flex items-center gap-1">
                                                         <span class="text-gray-500 w-3" x-text="(i + 1) + '.'"></span>
                                                         {{-- Šířka dílu má smysl až od dvou dílů; u jednoho je rovna šířce otvoru --}}
-                                                        <input type="number" min="20" max="300" step="1"
+                                                        <span class="kk-pole-jed"><input type="number" min="20" max="300" step="1"
                                                                class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs disabled:bg-gray-100 disabled:text-gray-500"
                                                                :value="Math.round(k.sirka * 100)"
                                                                :disabled="inspector.kridla.length < 2"
                                                                @change="setKridloSirka(i, parseFloat($event.target.value) / 100)"
-                                                               @keydown.enter.prevent="$event.target.blur()">
-                                                        <span class="text-gray-500">cm</span>
+                                                               @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                                         <select class="border border-gray-500 rounded px-1 py-0.5 text-xs flex-1"
                                                                 @change="setKridloTyp(i, $event.target.value)">
                                                             <template x-for="v in inspector.kridlaVolby" :key="v.key">
@@ -873,8 +869,8 @@
                                         <button type="button" data-sloup-tvar="kruh" :class="inspector.tvar === 'kruh' && 'kk-zap'" @click="setSloup('tvar', 'kruh')">{{ __('ed_sablona.sloup.kruh') }}</button>
                                     </div>
                                     <span class="text-gray-500" x-text="inspector.tvar === 'kruh' ? preloz('ed_sablona.sloup.prumer') : preloz('ed_sablona.sloup.strana')"></span>
-                                    <span class="kk-pole-jed" title="{{ __('ed_sablona.sloup.sirka_tip') }}"><input type="number" min="10" max="100" step="1" data-sloup="sirka"
-                                           :value="Math.round(inspector.sirka * 100)" @change="setSloup('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
+                                    <span class="kk-pole-jed" title="{{ __('ed_sablona.sloup.sirka_tip') }}"><span class="kk-pole-jed"><input type="number" min="10" max="100" step="1" data-sloup="sirka"
+                                           :value="Math.round(inspector.sirka * 100)" @change="setSloup('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></span>
                                 </div>
                                 <label x-show="inspector.strechaVolba" class="flex items-center gap-1 text-gray-500" title="{{ __('ed_sablona.sloup.strecha_tip') }}">
                                     <input type="checkbox" data-sloup-strecha :checked="inspector.strecha" @change="setSloup('strecha', $event.target.checked)"> {{ __('ed_sablona.sloup.strecha') }}
@@ -901,18 +897,17 @@
                                         <button type="button" data-schody-tvar="U" :class="inspector.tvar === 'U' && 'kk-zap'" @click="setSchody('tvar', 'U')">{{ __('ed_sablona.schody.tvar_u') }}</button>
                                     </div>
                                     <span class="text-gray-500 ml-1">{{ __('ed_sablona.spolecne.sirka_zkr') }}</span>
-                                    <input type="number" min="60" max="250" step="5" title="{{ __('ed_sablona.schody.sirka_tip') }}" class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
-                                           :value="Math.round(inspector.sirka * 100)" @change="setSchody('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()">
-                                    <span class="text-gray-500">cm</span>
+                                    <span class="kk-pole-jed"><input type="number" min="60" max="250" step="5" title="{{ __('ed_sablona.schody.sirka_tip') }}" class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
+                                           :value="Math.round(inspector.sirka * 100)" @change="setSchody('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                     <button type="button" @click="setSchody('otoc')" class="border border-gray-500 rounded px-2 py-0.5 text-xs ml-auto hover:bg-orange-50" title="{{ __('ed_sablona.spolecne.otocit_90') }}">⟳</button>
                                     <button type="button" x-show="inspector.tvar !== 'prime'" @click="setSchody('strana')" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.schody.zrcadlit') }}">⇄</button>
                                 </div>
                                 <div class="text-gray-500" title="{{ __('ed_sablona.schody.vypocet_tip') }}" x-text="preloz('ed_sablona.schody.souhrn', { stupnu: prelozPocet('ed_sablona.schody.stupnu', inspector.n), vyska: Math.round(inspector.v * 1000), sirka: Math.round(inspector.b * 1000), delka: prelozCislo(inspector.delka, 2) })"></div>
                                 <div class="flex items-center gap-1" title="{{ __('ed_sablona.schody.rucne_tip') }}">
                                     <span class="text-gray-500">{{ __('ed_sablona.schody.vyska_stupne') }}</span>
-                                    <input type="number" min="100" max="250" step="1" data-schody="vyska" :value="Math.round(inspector.v * 1000)" @change="setSchody('vyska', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span class="text-gray-500">mm</span>
+                                    <span class="kk-pole-jed"><input type="number" min="100" max="250" step="1" data-schody="vyska" :value="Math.round(inspector.v * 1000)" @change="setSchody('vyska', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>mm</span></span>
                                     <span class="text-gray-500 ml-2">{{ __('ed_sablona.schody.naslap') }}</span>
-                                    <input type="number" min="150" max="500" step="1" data-schody="naslap" :value="Math.round(inspector.b * 1000)" @change="setSchody('naslap', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span class="text-gray-500">mm</span>
+                                    <span class="kk-pole-jed"><input type="number" min="150" max="500" step="1" data-schody="naslap" :value="Math.round(inspector.b * 1000)" @change="setSchody('naslap', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>mm</span></span>
                                 </div>
                                 <template x-if="inspector.tvar !== 'prime'">
                                     <div class="flex items-center gap-1" title="{{ __('ed_sablona.schody.casti_tip') }}">
@@ -1091,22 +1086,20 @@
                                     <span class="text-gray-500">{{ __('ed_sablona.spolecne.tloustka_zkr') }}</span>
                                     {{-- Volně psaná tloušťka v cm (jako šířka okna) — stěny bývají
                                          i atypické, přichytávání na normovou řadu tu překáželo. --}}
-                                    <input type="number" min="2" max="100" step="1"
+                                    <span class="kk-pole-jed"><input type="number" min="2" max="100" step="1"
                                            class="w-16 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                            :value="inspector.tloustka !== null ? Math.round(inspector.tloustka * 100) : ''"
                                            :disabled="inspector.typ === null"
                                            @change="setWallTloustka(parseFloat($event.target.value) / 100, true)"
-                                           @keydown.enter.prevent="$event.target.blur()">
-                                    <span class="text-gray-500">cm</span>
+                                           @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                     {{-- Výška: prázdné = podle podlaží --}}
                                     <span class="text-gray-500 ml-1">{{ __('ed_sablona.spolecne.vyska_zkr') }}</span>
-                                    <input type="number" min="10" max="1200" step="1"
+                                    <span class="kk-pole-jed"><input type="number" min="10" max="1200" step="1"
                                            class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                            :placeholder="Math.round(inspector.vyskaAuto * 100)"
                                            :value="inspector.vyskaVlastni !== null ? Math.round(inspector.vyskaVlastni * 100) : ''"
                                            @change="setWallVyska($event.target.value === '' ? 0 : parseFloat($event.target.value) / 100)"
-                                           @keydown.enter.prevent="$event.target.blur()">
-                                    <span class="text-gray-500">cm</span>
+                                           @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                 </div>
                             </div>
                         </template>
@@ -1260,17 +1253,17 @@
                                         <button type="button" x-show="strechaPanel.st.typ === 'sedlova'" @click="setStrecha('otocHreben')" class="kk-btn" title="{{ __('ed_sablona.strecha.otocit_hreben') }}">⟳</button>
                                     </div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.sklon_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.sklon') }}</span>
-                                        <input type="number" min="1" max="75" step="1" class="w-16" :value="strechaPanel.st.sklon" :disabled="strechaPanel.st.typ === 'plocha'"
-                                               @change="setStrecha('sklon', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>°</span></div>
+                                        <span class="kk-pole-jed"><input type="number" min="1" max="75" step="1" class="w-16" :value="strechaPanel.st.sklon" :disabled="strechaPanel.st.typ === 'plocha'"
+                                               @change="setStrecha('sklon', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>°</span></span></div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.presah_okapu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.presah_okapu') }}</span>
-                                        <input type="number" min="0" max="300" step="5" class="w-16" :value="Math.round((strechaPanel.st.presah || 0) * 100)"
-                                               @change="setStrecha('presah', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                        <span class="kk-pole-jed"><input type="number" min="0" max="300" step="5" class="w-16" :value="Math.round((strechaPanel.st.presah || 0) * 100)"
+                                               @change="setStrecha('presah', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.presah_stitu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.presah_stitu') }}</span>
-                                        <input type="number" min="0" max="300" step="5" class="w-16" :value="Math.round((strechaPanel.st.presahStit || 0) * 100)"
-                                               @change="setStrecha('presahStit', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                        <span class="kk-pole-jed"><input type="number" min="0" max="300" step="5" class="w-16" :value="Math.round((strechaPanel.st.presahStit || 0) * 100)"
+                                               @change="setStrecha('presahStit', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.vyska_okapu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.vyska_okapu') }}</span>
-                                        <input type="number" min="0" max="1200" step="5" class="w-16" :value="Math.round(strechaPanel.zOkap * 100)"
-                                               @change="setStrecha('vyskaOkapu', $event.target.value === '' ? null : parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span>
+                                        <span class="kk-pole-jed"><input type="number" min="0" max="1200" step="5" class="w-16" :value="Math.round(strechaPanel.zOkap * 100)"
+                                               @change="setStrecha('vyskaOkapu', $event.target.value === '' ? null : parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                         <span class="ml-auto whitespace-nowrap" title="{{ __('ed_sablona.strecha.hreben_tip') }}" x-show="strechaPanel.zMax !== null" x-text="strechaPanel.zMax !== null ? preloz('ed_sablona.strecha.hreben', { vyska: prelozCislo(strechaPanel.zMax, 2) }) : ''"></span></div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.krytina_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.krytina') }}</span>
                                         <select class="flex-1 min-w-0" data-krytina @change="setStrecha('krytina', $event.target.value)">
@@ -1292,16 +1285,16 @@
                                                 </select></div>
                                             <template x-if="strechaPanel.hrana.typ === 'okap'">
                                                 <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.sklon_plochy_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.sklon') }}</span>
-                                                    <input type="number" min="1" max="75" step="1" class="w-16" data-hrana="sklon" :value="strechaPanel.hrana.sklon"
-                                                           @change="setHranaStrechy(strechaPanel.hrana.klic, { sklon: parseFloat($event.target.value) })" @keydown.enter.prevent="$event.target.blur()"><span>°</span></div>
+                                                    <span class="kk-pole-jed"><input type="number" min="1" max="75" step="1" class="w-16" data-hrana="sklon" :value="strechaPanel.hrana.sklon"
+                                                           @change="setHranaStrechy(strechaPanel.hrana.klic, { sklon: parseFloat($event.target.value) })" @keydown.enter.prevent="$event.target.blur()"><span>°</span></span></div>
                                             </template>
                                             <div class="kk-podlazi-pole" :title="strechaPanel.hrana.typ === 'okap' ? preloz('ed_sablona.strecha.hrana_presah_okap_tip') : preloz('ed_sablona.strecha.hrana_presah_stit_tip')"><span class="w-24 shrink-0" data-hrana-popisek="presah" x-text="strechaPanel.hrana.typ === 'okap' ? preloz('ed_sablona.strecha.presah_okapu') : preloz('ed_sablona.strecha.presah_stitu')"></span>
-                                                <input type="number" min="0" max="300" step="5" class="w-16" data-hrana="presah" :value="Math.round(strechaPanel.hrana.presah * 100)"
-                                                       @change="setHranaStrechy(strechaPanel.hrana.klic, { presah: $event.target.value === '' ? null : parseFloat($event.target.value) / 100 })" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                                <span class="kk-pole-jed"><input type="number" min="0" max="300" step="5" class="w-16" data-hrana="presah" :value="Math.round(strechaPanel.hrana.presah * 100)"
+                                                       @change="setHranaStrechy(strechaPanel.hrana.klic, { presah: $event.target.value === '' ? null : parseFloat($event.target.value) / 100 })" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                             <template x-if="strechaPanel.hrana.typ === 'okap'">
                                                 <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.hrana_vyska_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.vyska_okapu') }}</span>
-                                                    <input type="number" min="0" max="1200" step="5" class="w-16" data-hrana="vyskaOkapu" :value="Math.round(strechaPanel.hrana.z * 100)"
-                                                           @change="setHranaStrechy(strechaPanel.hrana.klic, { vyskaOkapu: $event.target.value === '' ? null : parseFloat($event.target.value) / 100 })" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                                    <span class="kk-pole-jed"><input type="number" min="0" max="1200" step="5" class="w-16" data-hrana="vyskaOkapu" :value="Math.round(strechaPanel.hrana.z * 100)"
+                                                           @change="setHranaStrechy(strechaPanel.hrana.klic, { vyskaOkapu: $event.target.value === '' ? null : parseFloat($event.target.value) / 100 })" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                             </template>
                                             <template x-if="strechaPanel.hrana.typ === 'okap'">
                                                 <div x-data="vyberBarvy({ hodnota: () => strechaPanel?.hrana?.barva || strechaPanel?.barva, nastav: (hex) => setHranaStrechy(strechaPanel.hrana.klic, { barva: hex }), nahled: (hex) => nahledBarvyStrechy(hex, strechaPanel.hrana.klic), pouzite: () => barvyJinde('hrana:' + strechaPanel?.hrana?.klic) })">
@@ -1343,14 +1336,14 @@
                                         <input type="text" class="flex-1 min-w-0" maxlength="30" :value="p.nazev"
                                                @change="setPodlazi(p.id, 'nazev', $event.target.value)" @keydown.enter.prevent="$event.target.blur()"></div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.podlazi.konstr_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.podlazi.konstr') }}</span>
-                                        <input type="number" class="w-16" min="150" max="1200" step="1" :value="Math.round(p.vyska * 100)"
-                                               @change="setPodlazi(p.id, 'vyska', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                        <span class="kk-pole-jed"><input type="number" class="w-16" min="150" max="1200" step="1" :value="Math.round(p.vyska * 100)"
+                                               @change="setPodlazi(p.id, 'vyska', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.podlazi.strop_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.podlazi.strop') }}</span>
-                                        <input type="number" class="w-16" min="0" max="150" step="1" :value="Math.round(p.strop * 100)"
-                                               @change="setPodlazi(p.id, 'strop', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                        <span class="kk-pole-jed"><input type="number" class="w-16" min="0" max="150" step="1" :value="Math.round(p.strop * 100)"
+                                               @change="setPodlazi(p.id, 'strop', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.podlazi.kota_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.podlazi.kota') }}</span>
-                                        <input type="number" class="w-16" step="1" :value="Math.round(p.kota * 100)" :data-kota="p.id"
-                                               @change="setPodlazi(p.id, 'kota', $event.target.value === '' ? null : parseFloat($event.target.value) / 100); $event.target.value = Math.round(engine.kotaPodlazi(p.id) * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span>
+                                        <span class="kk-pole-jed"><input type="number" class="w-16" step="1" :value="Math.round(p.kota * 100)" :data-kota="p.id"
+                                               @change="setPodlazi(p.id, 'kota', $event.target.value === '' ? null : parseFloat($event.target.value) / 100); $event.target.value = Math.round(engine.kotaPodlazi(p.id) * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                         <button type="button" x-show="posunDomu !== 0" class="underline whitespace-nowrap hover:text-primary" title="{{ __('ed_sablona.podlazi.kota_nula_tip') }}" data-kota-nula @click="kotaNaNulu()">{{ __('ed_sablona.podlazi.kota_nula') }}</button></div>
                                     <div title="{{ __('ed_sablona.podlazi.fasada_tip') }}" data-barva-fasady
                                          x-data="vyberBarvy({ hodnota: () => barvaDomu('fasada'), nastav: (hex) => setBarvaDomu('fasada', hex), nahled: (hex) => nahledBarvy3d('fasada', hex), pouzite: () => barvyJinde('fasada') })">
@@ -1387,17 +1380,17 @@
                                             </select></div>
                                     </template>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.nad_terenem_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.nad_terenem') }}</span>
-                                        <input type="number" min="-500" max="500" step="5" class="w-16" data-zaklad="nadTerenem" :value="Math.round(posunDomu * 100)"
-                                               @change="setNadTerenem(parseFloat($event.target.value) / 100); $event.target.value = Math.round(posunDomu * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                        <span class="kk-pole-jed"><input type="number" min="-500" max="500" step="5" class="w-16" data-zaklad="nadTerenem" :value="Math.round(posunDomu * 100)"
+                                               @change="setNadTerenem(parseFloat($event.target.value) / 100); $event.target.value = Math.round(posunDomu * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.odkop_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.odkop') }}</span>
-                                        <input type="number" min="0" max="300" step="10" class="w-16" data-zaklad="odkop" :value="Math.round(zakladyHodnota('odkop') * 100)"
-                                               @change="setZaklady('odkop', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('odkop') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                        <span class="kk-pole-jed"><input type="number" min="0" max="300" step="10" class="w-16" data-zaklad="odkop" :value="Math.round(zakladyHodnota('odkop') * 100)"
+                                               @change="setZaklady('odkop', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('odkop') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.sirka_pasu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.sirka_pasu') }}</span>
-                                        <input type="number" min="20" max="200" step="5" class="w-16" data-zaklad="sirkaPasu" :value="Math.round(zakladyHodnota('sirkaPasu') * 100)"
-                                               @change="setZaklady('sirkaPasu', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('sirkaPasu') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                        <span class="kk-pole-jed"><input type="number" min="20" max="200" step="5" class="w-16" data-zaklad="sirkaPasu" :value="Math.round(zakladyHodnota('sirkaPasu') * 100)"
+                                               @change="setZaklady('sirkaPasu', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('sirkaPasu') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                     <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.spara_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.spara') }}</span>
-                                        <input type="number" min="40" max="300" step="5" class="w-16" data-zaklad="spara" :value="Math.round(zakladyHodnota('spara') * 100)"
-                                               @change="setZaklady('spara', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('spara') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                        <span class="kk-pole-jed"><input type="number" min="40" max="300" step="5" class="w-16" data-zaklad="spara" :value="Math.round(zakladyHodnota('spara') * 100)"
+                                               @change="setZaklady('spara', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('spara') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                     <label class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.prodlouzit_tip') }}"><input type="checkbox" data-zaklad-volba="prodlouzit" :checked="zakladyHodnota('prodlouzit')" @change="setVolbuZakladu('prodlouzit', $event.target.checked)"><span>{{ __('ed_sablona.zaklady.prodlouzit') }}</span></label>
                                     <div x-show="zakladNadTerenemPopis" class="text-gray-500" data-zaklad-nad-terenem x-text="zakladNadTerenemPopis"></div>
                                     <details>
@@ -1409,14 +1402,14 @@
                                                     <option value="sterk" :selected="zakladyHodnota('podDum') === 'sterk'">{{ __('ed_sablona.zaklady.pod_dum_sterk') }}</option>
                                                 </select></div>
                                             <div class="kk-podlazi-pole" x-show="zemina?.casti.some(c => c.typ === 'deska')" title="{{ __('ed_sablona.zaklady.skladba_deska_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.skladba_deska') }}</span>
-                                                <input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladbaDeska" :value="Math.round(zakladyHodnota('skladbaDeska') * 100)"
-                                                       @change="setZaklady('skladbaDeska', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('skladbaDeska') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                                <span class="kk-pole-jed"><input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladbaDeska" :value="Math.round(zakladyHodnota('skladbaDeska') * 100)"
+                                                       @change="setZaklady('skladbaDeska', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('skladbaDeska') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                             <div class="kk-podlazi-pole" x-show="zemina?.casti.some(c => c.typ === 'pasy')" title="{{ __('ed_sablona.zaklady.skladba_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.skladba') }}</span>
-                                                <input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladba" :value="Math.round(zakladyHodnota('skladba') * 100)"
-                                                       @change="setZaklady('skladba', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('skladba') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                                <span class="kk-pole-jed"><input type="number" min="0" max="200" step="5" class="w-16" data-zaklad="skladba" :value="Math.round(zakladyHodnota('skladba') * 100)"
+                                                       @change="setZaklady('skladba', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('skladba') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                             <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.ornice_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.zaklady.ornice') }}</span>
-                                                <input type="number" min="0" max="100" step="5" class="w-16" data-zaklad="ornice" :value="Math.round(zakladyHodnota('ornice') * 100)"
-                                                       @change="setZaklady('ornice', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('ornice') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></div>
+                                                <span class="kk-pole-jed"><input type="number" min="0" max="100" step="5" class="w-16" data-zaklad="ornice" :value="Math.round(zakladyHodnota('ornice') * 100)"
+                                                       @change="setZaklady('ornice', parseFloat($event.target.value) / 100); $event.target.value = Math.round(zakladyHodnota('ornice') * 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                             <div class="kk-podlazi-pole" title="{{ __('ed_sablona.zaklady.svah_tip') }}"><span class="w-24 shrink-0 whitespace-nowrap">{{ __('ed_sablona.zaklady.svah') }}</span>
                                                 <input type="number" min="0" max="3" step="0.05" class="w-16" data-zaklad="svah" :value="zakladyHodnota('svah')"
                                                        @change="setZaklady('svah', parseFloat($event.target.value)); $event.target.value = zakladyHodnota('svah')" @keydown.enter.prevent="$event.target.blur()"></div>
@@ -2065,10 +2058,9 @@
                         <template x-if="impKalibBody.length === 2">
                             <span class="flex items-center gap-1">
                                 <span :class="impChybiRozmer() && 'text-orange-700 font-medium'">{{ __('ed_sablona.import.vzdalenost') }}</span>
-                                <input type="number" x-model.number="impKalibMm" min="10" step="10" placeholder="{{ __('ed_sablona.import.priklad_mm') }}"
+                                <span class="kk-pole-jed"><input type="number" x-model.number="impKalibMm" min="10" step="10" placeholder="{{ __('ed_sablona.import.priklad_mm') }}"
                                        class="w-28 rounded px-1 py-0.5 border"
-                                       :class="impChybiRozmer() ? 'border-orange-500 bg-orange-50' : 'border-gray-200'">
-                                <span>mm</span>
+                                       :class="impChybiRozmer() ? 'border-orange-500 bg-orange-50' : 'border-gray-200'"><span>mm</span></span>
                                 <button @click="impKalibZnovu()" class="text-gray-500 hover:text-gray-600 underline">{{ __('ed_sablona.import.zmerit_znovu') }}</button>
                                 <span x-show="impChybiRozmer()" class="text-orange-700">{{ __('ed_sablona.import.dopln') }}</span>
                             </span>
