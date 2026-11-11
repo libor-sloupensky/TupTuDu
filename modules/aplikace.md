@@ -61,7 +61,7 @@ Hotový dům na hraní pro každého uživatele a zdroj obrázků do článků. 
   Na produkci ji při prvním nasazení založí `VzorovyProjektSeeder` z `database/vzor` (jen když žádná není).
 - **Kopie** vznikne uživateli při první návštěvě `/projects` (`zajistiKopii`). Úpravy v ní se nepočítají do denního limitu
   (`KonceptV3Controller::ulozit`, editor dostane `zbyva: null`), kopie se nepočítá do limitu projektů (`Tarif::pocetProjektu`),
-  nejde smazat ani přejmenovat. Nad plátnem je výrazná hláška (`ed_sablona.vzor`). Uživatel bez vlastního projektu má na
+  nejde smazat ani přejmenovat. Nad plátnem je výrazná hláška (`ed_sablona.vzor`, upozornění U1 z manuálu), křížkem se skryje do dalšího dne (localStorage `tt_vzor_hlaska_kopie` = dnešní datum, jen ten prohlížeč). Uživatel bez vlastního projektu má na
   úvodní obrazovce odkaz na ni, vlastní projekt má při otevření `/projects` přednost. Při otevření se ukáže celý dům.
 - **Noční obnova, šetrně k serveru** (Libor 11. 11. 2026: většina kopií se nikdy nepoužije). `vzor:obnovit` (plánovač,
   každých 15 minut) načte jen kopie, které uživatel od poslední obnovy změnil (`upraveno > vzor_obnoveno_v`), a z nich ty, kde
