@@ -305,6 +305,12 @@ ol.tt-postup p { font-size: .93rem; color: var(--c-text-secondary); margin: 0; }
 .tt-schody-podlaha { stroke: var(--c-text-secondary); stroke-width: 2; }
 .tt-schody-kota { stroke: var(--c-text-secondary); stroke-width: 1; stroke-dasharray: 4 3; }
 .tt-schody-text { fill: var(--c-text); font: 500 20px var(--s-font-tech); }
+.tt-schody-vystupni { fill: none; stroke: var(--c-text-secondary); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.tt-schody-vystupni-znacka { fill: var(--c-text-secondary); }
+.tt-schody-nad { fill: none; stroke: var(--c-primary); stroke-width: 1; stroke-dasharray: 3 3; opacity: .55; }
+.tt-schody-obrys { fill: none; stroke: var(--c-border); stroke-width: 1; }
+.tt-schody-sloupek { fill: var(--c-surface); stroke: var(--c-primary); stroke-width: 1.5; }
+.tt-clanek p.tt-schody-nelze { margin: 0; font-size: .88rem; color: var(--c-warn); }
 @media (max-width: 640px) { .tt-schody-nakresy { grid-template-columns: minmax(0, 1fr); } }
 
 /* Schéma výkopu (clanky/bloky/rez-vykopu) */

@@ -1,74 +1,244 @@
 /**
  * Veřejná kalkulačka schodiště (článek Výpočet schodiště, modules/blog.md).
  *
- * Záměrně samostatný kód, veřejná stránka nesmí načítat nic z js/koncept-v3. Počítá stejně jako schody
- * v editoru (DumGeo.schodyGeo a castiSchodu v koncept-v3/dum.js): počet výšek z cílové výšky stupně,
- * nášlap ze vztahu 2h + b = 630 mm omezený na 220 až 320 mm, u L a U s odpočívadlem uprostřed.
- * Shodu hlídá services/import-test/test-kalkulacka-schodiste.cjs. Texty jsou v šabloně
- * clanky/bloky/kalkulacka-schodiste, tady se jen dosazují čísla a kreslí nákres.
+ * Záměrně samostatný kód, veřejná stránka nesmí načítat nic z js/koncept-v3. Přímé schody, do L, do U a do U
+ * se dvěma odpočívadly počítá stejně jako editor (DumGeo.schodyGeo a castiSchodu v koncept-v3/dum.js): počet výšek
+ * z cílové výšky stupně, nášlap ze vztahu 2h + b = 630 mm omezený na 220 až 320 mm. Shodu hlídá
+ * services/import-test/test-kalkulacka-schodiste.cjs.
  *
- * Délky v metrech.
+ * Zabíhající stupně (do L a do U) a točité schody editor zatím nemá, kalkulačka je tu napřed (Libor 11. 11. 2026:
+ * nejdřív doladit tady, pak přenést do projektu). Pravidla pro zakřivená ramena:
+ *  - výstupní čára je blíž k vnějšímu okraji: u ramene do 900 mm 300 mm od něj, do 1 200 mm 400 mm, do 1 800 mm
+ *    třetina šířky, širší v polovině (výklad ČSN 73 4130, VUT a ČKAIT TS 02),
+ *  - na výstupní čáře mají všechny stupně stejný nášlap jako u přímých schodů,
+ *  - zabíhající stupně v nejužším místě aspoň 130 mm. Zúžení se rozloží rovnoměrně na tolik stupňů kolem zatáčky,
+ *    aby vyšlo aspoň 150 mm (vnitřní hrana se dělí stejnoměrně, hrana stupně spojuje bod na vnitřní hraně s bodem
+ *    na výstupní čáře),
+ *  - točité: podchodná výška pod stupněm o otáčku výš aspoň 2 100 mm.
+ * Texty jsou v šabloně clanky/bloky/kalkulacka-schodiste, tady se jen dosazují čísla a kreslí nákres.
+ *
+ * Délky v metrech. Půdorys: první rameno ve směru x od nástupu v [0, 0], zatáčí se ke kladnému y.
  */
 (function (koren) {
-    const VYCHOZI = { vyska: 2.9, tvar: 'prime', sirka: 1.0, cilova: 0.175 };   // šířka 1 m jako v editoru
+    const VYCHOZI = { vyska: 2.9, tvar: 'prime', sirka: 1.0, cilova: 0.175, prumer: 2.0 };   // šířka 1 m jako v editoru
     // Doporučení v Česku (ČSN 73 4130 jen doporučuje, modules/stavebni-parametry.md); verze pro jinou zemi je
     // přepíše parametry bloku (data-limity)
-    const LIMITY = { vyskaMin: 0.15, vyskaMax: 0.18, krokMin: 0.6, krokMax: 0.65, sirkaMin: 0.9, rameno: 18 };
+    const LIMITY = { vyskaMin: 0.15, vyskaMax: 0.18, krokMin: 0.6, krokMax: 0.65, sirkaMin: 0.9, rameno: 18, nejuzsi: 0.13, podchod: 2.1 };
+    const TVARY = ['prime', 'L', 'Lz', 'U', 'U2', 'Uz', 'tocite'];
+    const SLOUPEK = 0.12;      // průměr středového sloupku točitých schodů
+    const TL_STUPNE = 0.05;    // tloušťka stupně, ubírá z podchodné výšky točitých schodů
+    const CIL_UZKY = 0.15;     // zabíhající stupně: na kolik se nejvýš zúží, než se zúžení rozloží na další stupně
     const omez = (x, a, b) => Math.min(b, Math.max(a, x));
+    const obd = (x, y, w, h, podesta) => ({ body: [[x, y], [x + w, y], [x + w, y + h], [x, y + h]], podesta: !!podesta });
 
-    /** Stupně v půdorysu: obdélníky {x, y, w, h, podesta} v m, nástup v [0, 0], první rameno ve směru x. */
-    function pudorys(n, b, sir, tvar) {
-        const obdelniky = [];
-        const rameno = (pocet, poloha) => { for (let i = 0; i < pocet; i++) obdelniky.push(poloha(i)); };
-        let casti;
+    /** Vzdálenost výstupní čáry od vnějšího okraje zakřiveného ramene. */
+    function odstupVystupni(sir) {
+        if (sir <= 0.9 + 1e-9) return Math.min(0.3, sir / 2);
+        if (sir <= 1.2 + 1e-9) return 0.4;
+        if (sir <= 1.8 + 1e-9) return sir / 3;
+        return sir / 2;
+    }
+
+    /** Stupně v částech (jako castiSchodu v editoru): odpočívadlo i poslední krok na podlahu se počítají mezi stupně. */
+    function castiSchodu(n, tvar) {
         if (tvar === 'L') {
-            const F = Math.max(1, n - 2);
-            const t1 = Math.max(1, Math.floor(F / 2)), t2 = F - t1;
-            const L1 = t1 * b;
-            rameno(t1, (i) => ({ x: i * b, y: 0, w: b, h: sir }));
-            obdelniky.push({ x: L1, y: 0, w: sir, h: sir, podesta: true });
-            rameno(t2, (i) => ({ x: L1, y: sir + i * b, w: sir, h: b }));
-            casti = [t1, t2];
-        } else if (tvar === 'U') {
-            const F = Math.max(1, n - 2);
-            const t1 = Math.max(1, Math.floor(F / 2)), t3 = F - t1;
-            const L1 = t1 * b;
-            rameno(t1, (i) => ({ x: i * b, y: 0, w: b, h: sir }));
-            obdelniky.push({ x: L1, y: 0, w: sir, h: 2 * sir, podesta: true });
-            rameno(t3, (i) => ({ x: L1 - (i + 1) * b, y: sir, w: b, h: sir }));
-            casti = [t1, t3];   // jedno široké odpočívadlo přes obě ramena (editor: prostřední část 0)
-        } else {
-            rameno(n - 1, (i) => ({ x: i * b, y: 0, w: b, h: sir }));
-            casti = [n - 1];
+            const F = Math.max(1, n - 2), a = Math.max(1, Math.floor(F / 2));
+            return [a, F - a];
         }
-        const x0 = Math.min(...obdelniky.map((o) => o.x)), y0 = Math.min(...obdelniky.map((o) => o.y));
-        const x1 = Math.max(...obdelniky.map((o) => o.x + o.w)), y1 = Math.max(...obdelniky.map((o) => o.y + o.h));
-        return { obdelniky, casti, minX: x0, minY: y0, delka: x1 - x0, sirka: y1 - y0 };
+        if (tvar === 'U') {
+            const F = Math.max(1, n - 2), a = Math.max(1, Math.floor(F / 2));
+            return [a, F - a];   // jedno široké odpočívadlo přes obě ramena (editor: prostřední část 0)
+        }
+        if (tvar === 'U2') {
+            // Krátké prostřední rameno mezi dvěma odpočívadly, zhruba čtvrtina stupňů
+            const m = Math.max(1, Math.min(Math.round((n - 3) / 4), n - 5));
+            const F = Math.max(1, n - 3) - m, a = Math.max(1, Math.floor(F / 2));
+            return [a, m, F - a];
+        }
+        return [Math.max(1, n - 1)];
+    }
+
+    /** Přímé schody a lomené s odpočívadly. */
+    function sOdpocivadly(n, b, sir, tvar) {
+        const casti = castiSchodu(n, tvar);
+        const polygony = [];
+        const pul = sir / 2;
+        let vystupni;
+        if (tvar === 'L') {
+            const [t1, t2] = casti, L1 = t1 * b;
+            for (let i = 0; i < t1; i++) polygony.push(obd(i * b, 0, b, sir));
+            polygony.push(obd(L1, 0, sir, sir, true));
+            for (let i = 0; i < t2; i++) polygony.push(obd(L1, sir + i * b, sir, b));
+            vystupni = [[0, pul], [L1 + pul, pul], [L1 + pul, sir + t2 * b]];
+        } else if (tvar === 'U') {
+            const [t1, t3] = casti, L1 = t1 * b;
+            for (let i = 0; i < t1; i++) polygony.push(obd(i * b, 0, b, sir));
+            polygony.push(obd(L1, 0, sir, 2 * sir, true));
+            for (let i = 0; i < t3; i++) polygony.push(obd(L1 - (i + 1) * b, sir, b, sir));
+            vystupni = [[0, pul], [L1 + pul, pul], [L1 + pul, sir + pul], [L1 - t3 * b, sir + pul]];
+        } else if (tvar === 'U2') {
+            const [t1, t2, t3] = casti, L1 = t1 * b, L2 = t2 * b;
+            for (let i = 0; i < t1; i++) polygony.push(obd(i * b, 0, b, sir));
+            polygony.push(obd(L1, 0, sir, sir, true));
+            for (let i = 0; i < t2; i++) polygony.push(obd(L1, sir + i * b, sir, b));
+            polygony.push(obd(L1, sir + L2, sir, sir, true));
+            for (let i = 0; i < t3; i++) polygony.push(obd(L1 - (i + 1) * b, sir + L2, b, sir));
+            vystupni = [[0, pul], [L1 + pul, pul], [L1 + pul, sir + L2 + pul], [L1 - t3 * b, sir + L2 + pul]];
+        } else {
+            for (let i = 0; i < casti[0]; i++) polygony.push(obd(i * b, 0, b, sir));
+            vystupni = [[0, pul], [casti[0] * b, pul]];
+        }
+        return { polygony, casti, vystupni, ...obalka(polygony) };
+    }
+
+    function obalka(polygony) {
+        const xs = polygony.flatMap((p) => p.body.map((q) => q[0])), ys = polygony.flatMap((p) => p.body.map((q) => q[1]));
+        const minX = Math.min(...xs), minY = Math.min(...ys);
+        return { minX, minY, delka: Math.max(...xs) - minX, sirka: Math.max(...ys) - minY };
+    }
+
+    /** Průsečík polopřímky P + t·D (t ≥ 1) s lomenou čarou; vrací bod a vzdálenost po čáře od jejího začátku. */
+    function prusecik(P, D, cara) {
+        let nej = null, delka = 0;
+        for (let i = 0; i + 1 < cara.length; i++) {
+            const A = cara[i], B = cara[i + 1];
+            const ex = B[0] - A[0], ey = B[1] - A[1], seg = Math.hypot(ex, ey);
+            const det = D[0] * -ey - D[1] * -ex;
+            if (Math.abs(det) > 1e-12) {
+                const rx = A[0] - P[0], ry = A[1] - P[1];
+                const t = (rx * -ey - ry * -ex) / det;
+                const u = (D[0] * ry - D[1] * rx) / det;
+                if (t >= 1 - 1e-9 && u >= -1e-9 && u <= 1 + 1e-9 && (!nej || t < nej.t)) {
+                    nej = { t, bod: [P[0] + D[0] * t, P[1] + D[1] * t], param: delka + omez(u, 0, 1) * seg };
+                }
+            }
+            delka += seg;
+        }
+        return nej;
+    }
+
+    /**
+     * Zabíhající stupně do L (čtvrtobrat) a do U (půlobrat), bez odpočívadla. Výstupní čára je v zatáčce oblouk kolem
+     * vnitřního rohu. Vrací null, když se zatáčka do schodů nevejde (moc široké rameno na málo stupňů).
+     */
+    function zabihajici(N, b, sir, tvar) {
+        const U = tvar === 'Uz';
+        const d = odstupVystupni(sir), r = sir - d;
+        const T = (U ? Math.PI : Math.PI / 2) * r;          // délka výstupní čáry v zatáčce
+        const rovne = N * b - T;
+        if (rovne < -1e-9) return null;
+        const a1 = Math.max(0, rovne) / 2, a2 = a1;
+        // Bod výstupní čáry a vnitřní hrany podle délky od nástupu
+        const W = (s) => {
+            if (s <= a1) return [s, d];
+            if (s <= a1 + T) { const t = (s - a1) / r; return [a1 + r * Math.sin(t), sir - r * Math.cos(t)]; }
+            const z = s - a1 - T;
+            return U ? [a1 - z, sir + r] : [a1 + r, sir + z];
+        };
+        const I = (u) => (u <= a1 ? [u, sir] : U ? [a1 - (u - a1), sir] : [a1, sir + (u - a1)]);
+        const vnejsi = U ? [[0, 0], [a1 + sir, 0], [a1 + sir, 2 * sir], [a1 - a2, 2 * sir]] : [[0, 0], [a1 + sir, 0], [a1 + sir, sir + a2]];
+        const rohyVen = U ? [[a1 + sir, [a1 + sir, 0]], [a1 + 3 * sir, [a1 + sir, 2 * sir]]] : [[a1 + sir, [a1 + sir, 0]]];
+
+        // Zúžení na vnitřní hraně: m stupňů kolem zatáčky, každý tam má šířku c = b − T / m
+        let m = Math.min(N, Math.ceil(T / Math.max(1e-6, b - CIL_UZKY) - 1e-9));
+        let iA;
+        for (;;) {
+            iA = omez(Math.round((a1 + T / 2) / b - m / 2), 0, N - m);
+            if ((iA * b <= a1 + 1e-9 && (iA + m) * b >= a1 + T - 1e-9) || m >= N) break;
+            m++;
+        }
+        const sA = iA * b, sB = (iA + m) * b, uA = sA, uB = sB - T;
+        const u = (s) => (s <= sA ? s : s >= sB ? s - T : uA + (s - sA) * (uB - uA) / (sB - sA));
+
+        const hrany = [];
+        for (let k = 0; k <= N; k++) {
+            const s = k * b, uk = u(s), Pi = I(uk), Pw = W(s);
+            const o = prusecik(Pi, [Pw[0] - Pi[0], Pw[1] - Pi[1]], vnejsi);
+            if (!o) return null;
+            hrany.push({ u: uk, vnitrni: Pi, venku: o.bod, param: o.param });
+        }
+        const polygony = [];
+        let nejuzsi = Infinity, poradi = true;
+        for (let k = 0; k < N; k++) {
+            const h0 = hrany[k], h1 = hrany[k + 1];
+            const body = [h0.vnitrni];
+            if (h0.u < a1 - 1e-9 && h1.u > a1 + 1e-9) body.push([a1, sir]);
+            body.push(h1.vnitrni, h1.venku);
+            rohyVen.filter(([p]) => p > h0.param + 1e-9 && p < h1.param - 1e-9).reverse().forEach(([, bod]) => body.push(bod));
+            body.push(h0.venku);
+            polygony.push({ body });
+            nejuzsi = Math.min(nejuzsi, h1.u - h0.u);
+            if (h1.param <= h0.param + 1e-6) poradi = false;
+        }
+        const vystupni = [];
+        for (let i = 0; i <= 60; i++) vystupni.push(W(N * b * i / 60));
+        return { polygony, casti: [N], vystupni, nejuzsi, zabihaStupnu: m, platne: poradi, ...obalka(polygony) };
+    }
+
+    /** Točité (vřetenové) schody kolem sloupku, průměr D. Stupně nad první otáčkou jsou v půdorysu nad prvními. */
+    function tocite(N, b, D) {
+        const R = D / 2, r0 = SLOUPEK / 2, sir = R - r0;
+        const rv = R - odstupVystupni(sir);
+        const alfa = b / rv;
+        const bod = (rho, fi) => [R + rho * Math.cos(fi), R + rho * Math.sin(fi)];
+        const ZACATEK = Math.PI / 2;   // nástup dole uprostřed
+        const polygony = [];
+        for (let k = 0; k < N; k++) {
+            const f0 = ZACATEK + k * alfa, f1 = f0 + alfa;
+            const body = [bod(r0, f0), bod(r0, f1)];
+            for (let j = 6; j >= 0; j--) body.push(bod(R, f0 + alfa * j / 6));
+            polygony.push({ body, nad: (k + 0.5) * alfa > 2 * Math.PI });
+        }
+        const vystupni = [];
+        const uhel = N * alfa;
+        for (let i = 0; i <= 90; i++) vystupni.push(bod(rv, ZACATEK + uhel * i / 90));
+        return {
+            polygony, casti: [N], vystupni, kruh: { cx: R, cy: R, R, r0 }, sir, nejuzsi: null,
+            otacka: 2 * Math.PI / alfa, uhel: uhel * 180 / Math.PI, minX: 0, minY: 0, delka: D, sirka: D,
+        };
     }
 
     function spocitej(vstup, limity) {
         const v = { ...VYCHOZI, ...(vstup || {}) };
         const L = { ...LIMITY, ...(limity || {}) };
+        const tvar = TVARY.includes(v.tvar) ? v.tvar : 'prime';
         const H = v.vyska;
         const n = Math.max(2, Math.round(H / (v.cilova || 0.175)));
         const h = H / n;
         const b = omez(0.63 - 2 * h, 0.22, 0.32);
-        const p = pudorys(n, b, v.sirka, v.tvar);
-        // Vodorovné úseky po výstupní čáře: nášlapy a odpočívadlo (počítá se jako jeden stupeň, editor stejně)
+        let p = null, sirka = v.sirka, nelze = false;
+        if (tvar === 'tocite') {
+            p = tocite(n - 1, b, v.prumer);
+            sirka = p.sir;
+        } else if (tvar === 'Lz' || tvar === 'Uz') {
+            p = zabihajici(n - 1, b, v.sirka, tvar);
+            // Zatáčka se nevejde: nákres ukáže schody s odpočívadlem a výsledek upozorní
+            if (!p) { nelze = true; p = sOdpocivadly(n, b, v.sirka, tvar === 'Lz' ? 'L' : 'U'); }
+        } else {
+            p = sOdpocivadly(n, b, v.sirka, tvar);
+        }
+        // Vodorovné úseky po výstupní čáře: nášlapy a odpočívadla (počítá se jako jeden stupeň, editor stejně)
         const useky = p.casti.flatMap((c, i) => [...(i > 0 ? [v.sirka] : []), ...Array(c).fill(b)]).filter((x) => x > 0);
+        const rameno = Math.max(...p.casti) + 1;   // výšek v nejdelším rameni: jeho nášlapy a krok na odpočívadlo nebo podlahu
+        const podchod = p.otacka ? p.otacka * h - TL_STUPNE : null;
+        const nejuzsi = nelze ? null : p.nejuzsi ?? null;
         return {
             useky,
-            n, h, b, sirka: v.sirka, tvar: v.tvar, H,
+            n, h, b, sirka, tvar, H, nelze,
             krok: 2 * h + b,
             sklon: Math.atan(h / b) * 180 / Math.PI,
             naslapu: p.casti.reduce((s, c) => s + c, 0),
-            // Výšek v nejdelším rameni: jeho nášlapy a krok na odpočívadlo nebo podlahu
-            rameno: Math.max(...p.casti) + 1,
+            rameno,
             pudorys: p,
+            nejuzsi,
+            otacka: p.otacka ?? null,
+            podchod,
             vyskaOk: h >= L.vyskaMin - 1e-9 && h <= L.vyskaMax + 1e-9,
             krokOk: 2 * h + b >= L.krokMin - 1e-9 && 2 * h + b <= L.krokMax + 1e-9,
-            sirkaOk: v.sirka >= L.sirkaMin - 1e-9,
-            ramenoOk: Math.max(...p.casti) + 1 <= L.rameno,
+            sirkaOk: sirka >= L.sirkaMin - 1e-9,
+            ramenoOk: rameno <= L.rameno,
+            nejuzsiOk: nejuzsi === null || nejuzsi >= L.nejuzsi - 1e-9,
+            podchodOk: podchod === null || podchod >= L.podchod - 1e-9,
         };
     }
 
@@ -80,7 +250,7 @@
         return e;
     };
 
-    /** Bokorys: rozvinuté schodiště, všechny stupně za sebou, v měřítku. */
+    /** Bokorys: rozvinuté schodiště po výstupní čáře, všechny stupně za sebou, v měřítku. */
     function kresliBokorys(svg, r, popisky) {
         svg.replaceChildren();
         const sirkaObr = 640, vyskaObr = 320, vlevo = 100, okraj = 40;
@@ -106,20 +276,27 @@
         t3.textContent = popisky.stupen;
     }
 
-    /** Půdorys: stupně a odpočívadlo v měřítku, šipka nástupu. */
+    /** Půdorys: stupně a odpočívadla v měřítku, výstupní čára s kroužkem na nástupu a šipkou na výstupu. */
     function kresliPudorys(svg, r, popisky) {
         svg.replaceChildren();
         const p = r.pudorys;
         const sirkaObr = 420, vyskaObr = 320, okraj = 30;
-        const m = Math.min((sirkaObr - 2 * okraj) / p.delka, (vyskaObr - 2 * okraj) / p.sirka);
-        const ox = (sirkaObr - p.delka * m) / 2 - p.minX * m, oy = (vyskaObr - p.sirka * m) / 2 - p.minY * m;
-        p.obdelniky.forEach((o) => prvek('rect', {
-            class: o.podesta ? 'tt-schody-podesta' : 'tt-schody-stupen',
-            x: ox + o.x * m, y: oy + o.y * m, width: o.w * m, height: o.h * m,
-        }, svg));
-        const sipka = prvek('text', { class: 'tt-schody-text', x: ox + 4, y: oy + r.sirka * m / 2 + 7 }, svg);
-        sipka.textContent = '↑';
-        sipka.setAttribute('transform', `rotate(90 ${ox + 10} ${oy + r.sirka * m / 2})`);
+        const m = Math.min((sirkaObr - 2 * okraj) / p.delka, (vyskaObr - 2 * okraj - 10) / p.sirka);
+        const ox = (sirkaObr - p.delka * m) / 2 - p.minX * m, oy = (vyskaObr - 10 - p.sirka * m) / 2 - p.minY * m;
+        const B = (q) => [ox + q[0] * m, oy + q[1] * m];
+        const body = (pole) => pole.map((q) => B(q).map((c) => c.toFixed(1)).join(',')).join(' ');
+        if (p.kruh) prvek('circle', { class: 'tt-schody-obrys', cx: B([p.kruh.cx, 0])[0], cy: B([0, p.kruh.cy])[1], r: p.kruh.R * m }, svg);
+        // Stupně nad první otáčkou točitých schodů jen obrysem, aby byly vidět ty pod nimi
+        p.polygony.filter((o) => !o.nad).forEach((o) => prvek('polygon', { class: o.podesta ? 'tt-schody-podesta' : 'tt-schody-stupen', points: body(o.body) }, svg));
+        p.polygony.filter((o) => o.nad).forEach((o) => prvek('polygon', { class: 'tt-schody-nad', points: body(o.body) }, svg));
+        if (p.kruh) prvek('circle', { class: 'tt-schody-sloupek', cx: B([p.kruh.cx, 0])[0], cy: B([0, p.kruh.cy])[1], r: Math.max(3, p.kruh.r0 * m) }, svg);
+        // Výstupní čára
+        const v = p.vystupni.map(B);
+        prvek('polyline', { class: 'tt-schody-vystupni', points: v.map((q) => q.map((c) => c.toFixed(1)).join(',')).join(' ') }, svg);
+        prvek('circle', { class: 'tt-schody-vystupni-znacka', cx: v[0][0], cy: v[0][1], r: 5 }, svg);
+        const [a, z] = [v[v.length - 2], v[v.length - 1]];
+        const dl = Math.hypot(z[0] - a[0], z[1] - a[1]) || 1, ux = (z[0] - a[0]) / dl, uy = (z[1] - a[1]) / dl;
+        prvek('polygon', { class: 'tt-schody-vystupni-znacka', points: `${z[0]},${z[1]} ${z[0] - 12 * ux - 6 * uy},${z[1] - 12 * uy + 6 * ux} ${z[0] - 12 * ux + 6 * uy},${z[1] - 12 * uy - 6 * ux}` }, svg);
         const t = prvek('text', { class: 'tt-schody-text', x: sirkaObr / 2, y: vyskaObr - 4, 'text-anchor': 'middle' }, svg);
         t.textContent = popisky.pudorys;
     }
@@ -129,8 +306,9 @@
         const cislo = (x, des = 0) => new Intl.NumberFormat(jazyk, { minimumFractionDigits: des, maximumFractionDigits: des }).format(x);
         const zapis = (klic, text) => blok.querySelectorAll(`[data-v="${klic}"]`).forEach((e) => { e.textContent = text; });
         const stav = (klic, ok) => blok.querySelectorAll(`[data-stav="${klic}"]`).forEach((e) => { e.dataset.ok = ok ? '1' : '0'; });
+        const cteni = (pole) => parseFloat(String(pole.value).replace(',', '.'));
         const hodnota = (pole) => {
-            const x = parseFloat(String(pole.value).replace(',', '.'));
+            const x = cteni(pole);
             const meritko = parseFloat(pole.dataset.meritko || '1');
             if (!Number.isFinite(x)) return VYCHOZI[pole.dataset.pole];
             return omez(x, parseFloat(pole.min), parseFloat(pole.max)) * meritko;
@@ -144,6 +322,11 @@
                 vstup[pole.dataset.pole] = pole.tagName === 'SELECT' ? pole.value : hodnota(pole);
             });
             const r = spocitej(vstup, limity);
+            // Pole, řádky výsledku a doporučení jen pro některé tvary
+            blok.querySelectorAll('[data-jen]').forEach((e) => { e.hidden = !e.dataset.jen.split(' ').includes(r.tvar); });
+            blok.querySelectorAll('[data-nelze]').forEach((e) => { e.hidden = !r.nelze; });
+            // Zatáčka se nevejde: nejužší místo nemá smysl ukazovat
+            if (r.nelze) blok.querySelectorAll('[data-jen="Lz Uz"]').forEach((e) => { e.hidden = true; });
             const mm = (x) => cislo(x * 1000);
             zapis('n', cislo(r.n));
             zapis('h', mm(r.h));
@@ -152,11 +335,16 @@
             zapis('sklon', cislo(r.sklon));
             zapis('naslapu', cislo(r.naslapu));
             zapis('rameno', cislo(r.rameno));
-            stav('rameno', r.ramenoOk);
+            zapis('nejuzsi', r.nejuzsi === null ? '–' : mm(r.nejuzsi));
+            zapis('otacka', r.otacka === null ? '–' : cislo(r.otacka, 1));
+            zapis('podchod', r.podchod === null ? '–' : cislo(r.podchod, 2));
             zapis('pudorys', `${cislo(r.pudorys.delka, 2)} × ${cislo(r.pudorys.sirka, 2)}`);
+            stav('rameno', r.ramenoOk);
             stav('vyska', r.vyskaOk);
             stav('krok', r.krokOk);
             stav('sirka', r.sirkaOk);
+            stav('nejuzsi', r.nejuzsiOk);
+            stav('podchod', r.podchodOk);
             const d = blok.dataset;
             kresliBokorys(blok.querySelector('[data-nakres="bokorys"]'), r, {
                 vyska: `${cislo(r.H, 2)} m`, delka: `${cislo(r.useky.reduce((s, u) => s + u, 0), 2)} m`, stupen: `${mm(r.h)} / ${mm(r.b)} mm`,
@@ -175,12 +363,21 @@
             window.gtag?.('event', 'kalkulacka_pouzita', { kalkulacka: 'schodiste', clanek: blok.dataset.clanek || '' });
         };
         blok.addEventListener('input', priZmene);
-        blok.addEventListener('change', priZmene);
+        blok.addEventListener('change', (e) => {
+            // Hodnota mimo rozsah pole se počítá s mezí, po odchodu z pole se mez ukáže i v něm
+            const pole = e.target.closest?.('input[data-pole]');
+            const x = pole ? cteni(pole) : NaN;
+            if (Number.isFinite(x)) {
+                const mez = omez(x, parseFloat(pole.min), parseFloat(pole.max));
+                if (mez !== x) pole.value = String(mez);
+            }
+            priZmene();
+        });
         blok.addEventListener('submit', (e) => e.preventDefault());
         prepocet();
     }
 
-    const Kalkulacka = { VYCHOZI, LIMITY, spocitej };
+    const Kalkulacka = { VYCHOZI, LIMITY, TVARY, spocitej, castiSchodu, odstupVystupni };
     koren.KalkulackaSchodiste = Kalkulacka;
     if (typeof document !== 'undefined') {
         document.querySelectorAll('[data-kalkulacka="schodiste"]').forEach((blok) => {
