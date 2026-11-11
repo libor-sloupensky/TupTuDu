@@ -271,37 +271,19 @@ async function rozmeryMistnosti(s) {
 }
 
 /**
- * Vzorový dům v článku o půdorysu (Libor 11. 11. 2026: obrázky musí dávat smysl). Kopie dostane vybavenou koupelnu
- * a WC, dveře WC se otvírají ven do zádveří (článek pod obrázkem radí otvírat je ven) a obývák se jmenuje
- * „Obývák s kuchyní“ (kuchyňskou linku katalog zatím nemá). Šablona vzorového projektu se nemění.
+ * Vzorový dům v článku o půdorysu je Liborův skutečný dům: nízkoenergetická dřevostavba s obvodovými zdmi 30 cm
+ * (tabulka článku: dřevostavba 26 až 35 cm), dveře WC dovnitř odpovídají normě (ven jen u malého WC). Dům ukazuje
+ * přesně tak, jak ho Libor ve vzoru má, nic se nepřidává ani nemění (Libor 11. 11. 2026, vzor sám vybavuje). Šablona
+ * vzorového projektu se nemění, fotí se kopie.
  * Polohy v osách domu (a dolů, b doleva v natočeném půdorysu) ze sondy místností vzorového domu.
  */
 async function pudorysDomu(s) {
     console.log('\nJak nakreslit půdorys domu');
     await s.otevri(s.kopieVzoru('snímky půdorys'));
     await s.jsA(`await d._katalogNacti(); return true;`);
-    const uprava = await s.js(`const t = e.smerRastru(), U = [Math.cos(t), Math.sin(t)], V = [-Math.sin(t), Math.cos(t)], tDeg = t * 180 / Math.PI;
-        const kusAB = (id, a, b, lokalni, sirka, hloubka) => { const p = d.katalog.polozky.find(q => q.id === id); if (!p) return null;
-            const x = a * U[0] + b * V[0], y = a * U[1] + b * V[1];
-            const v = d._katalogZaznam(p, [x, -y], tDeg + lokalni); if (sirka) v.sirka = sirka; if (hloubka) v.hloubka = hloubka;
-            v.polygon = d._katalogPolygon(v.stred, v.sirka, v.hloubka, v.uhel); e.vybaveni.push(v); return p.nazev; };
-        const ab = (op) => { const w = e.walls.get(op.wallId); const A = e.nodes.get(w.nodeA), B = e.nodes.get(w.nodeB);
-            const L = Math.hypot(B.x - A.x, B.y - A.y), k = (op.pozice + op.sirka / 2) * X / L; const x = A.x + (B.x - A.x) * k, y = A.y + (B.y - A.y) * k;
-            return [(x * U[0] + y * U[1]) / X, (x * V[0] + y * V[1]) / X]; };
-        const dvereWC = [...e.openings.values()].find(op => { if (op.typ !== 'dvere') return false; const [a, b] = ab(op); return Math.abs(a + 5.19) < 0.15 && Math.abs(b + 1.49) < 0.15; });
-        const puvodne = dvereWC?.strana;
-        if (dvereWC) dvereWC.strana = dvereWC.strana === 'out' ? 'in' : 'out';
-        const kusy = [kusAB('${WC_KOMBI}', -5.165, -3.34 + 0.346 + 0.01, 0), kusAB('${VANA}', -4.68 - 0.9 - 0.02, -4.99 + 0.35 + 0.01, 0),
-            kusAB('${UMYVADLO}', -7.89 + 0.23 + 0.01, -2.1, -90)];
-        const obyvak = e.mistnosti.find(m => m.druh === 'obyvak'); if (obyvak) { obyvak.nazev = 'Obývák s kuchyní'; delete obyvak.auto; }
-        // Obvodové zdi zděného domu se zateplením 45 cm (vzor má 30 cm, článek před tím přímo varuje); zesílí se kolem osy
-        let obvodovych = 0; for (const w of e.walls.values()) if (w.typ === 'obvodova') { w.tloustka = 0.45; obvodovych++; }
-        // Sloup krytého vstupu drží střechu; na půdorysu a ve 3D bez střechy by stál bez smyslu
-        const sloupu = (e.dum.sloupy || []).length; e.dum.sloupy = [];
-        d.renderer._mistnostiCache = null; d.renderer.render(); d.autoSave('Vybavení');
-        const plochy = Object.fromEntries(e.mistnosti.filter(m => d.renderer.plochaMistnosti(m.id) > 0).map(m => [m.nazev, d.renderer.plochaMistnosti(m.id)]));
-        return { dvereWC: [puvodne, dvereWC?.strana], kusy, obvodovych, sloupu, plochy };`);
-    console.log('   úprava kopie', JSON.stringify(uprava));
+    const plochy = await s.js(`d.renderer._mistnostiCache = null; d.renderer.render();
+        return Object.fromEntries(e.mistnosti.filter(m => d.renderer.plochaMistnosti(m.id) > 0).map(m => [m.nazev, d.renderer.plochaMistnosti(m.id)]));`);
+    console.log('   plochy', JSON.stringify(plochy));
     await S.pauza(800);
     // Kontrolní půdorys s nábytkem (do článku nejde)
     await s.js(`d.showGrid = false; d.toggleGrid(); d.showKoty = true; d.toggleKoty();

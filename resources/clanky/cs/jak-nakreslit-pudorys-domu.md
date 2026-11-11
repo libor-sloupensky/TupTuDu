@@ -7,7 +7,7 @@ publikovano: 2026-11-11
 overeno: 2026-11-11
 revize: 2026-11-11
 autor: Libor z TupTuDu
-stav: koncept
+stav: zverejneno
 obrazek: /img/clanky/jak-nakreslit-pudorys-domu/jak-nakreslit-pudorys-domu.jpg
 souvisejici: minimalni-rozmery-mistnosti, vypocet-schodiste, typy-strech, barva-fasady
 - Vyhláška č. 146/2024 Sb. o požadavcích na výstavbu, § 11 (odstup rodinného domu od hranice pozemku 2 m) | https://www.zakonyprolidi.cz/cs/2024-146
@@ -24,7 +24,7 @@ souvisejici: minimalni-rozmery-mistnosti, vypocet-schodiste, typy-strech, barva-
 - ESTAV.cz: Schodiště a jeho základní rozměry (2h + b = 630 mm) | https://www.estav.cz/cz/2581.schodiste-a-jeho-zakladni-rozmery
 - Kalkulačka TupTuDu (článek Výpočet schodiště): 2,90 m mezi podlažími = 17 výšek po 171 mm, nášlap 289 mm, přímé rameno 4,62 m; 3,05 m = 18 výšek, rameno 4,95 m (nášlap aspoň 275 mm podle vyhlášky 146/2024 Sb.) | https://www.tuptudu.com
 ---
-::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Půdorys přízemí rodinného domu s kótami v centimetrech a s názvy a plochami místností: obývák s kuchyní 32,3 m², pokoj 11,6 m², ložnice 10,1 m², koupelna 8,5 m², pracovna 7,7 m², zádveří 5,6 m², WC 1,8 m². | Přízemí vzorového domu 12,69 × 8,38 m s obvodovými zdmi 45 cm, kótami, místnostmi a plochami, editor TupTuDu | 1200 | 860
+::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Půdorys přízemí rodinného domu s kótami v centimetrech a s názvy a plochami místností: obývák 19,0 m², kuchyně 14,3 m², pokoj 12,1 m², ložnice 10,6 m², koupelna 8,8 m², pracovna 8,1 m², zádveří 5,8 m², WC 1,8 m². | Přízemí vzorového domu 12,54 × 8,23 m, nízkoenergetické dřevostavby s obvodovými zdmi 30 cm, s kótami, místnostmi a plochami, editor TupTuDu | 1200 | 857
 
 ## Než začneš kreslit
 
@@ -38,7 +38,7 @@ Sepiš místnosti s přibližnou plochou a rozděl je na denní a noční část
 2. **Vnitřní nosné stěny.** Spolu s obvodovými nesou strop a patro. Nosné stěny v patře proto kresli nad nosnými stěnami přízemí.
 3. **Schody.** U patrového domu je umísti dřív než příčky. Nad schody musí být ve stropě nad přízemím otvor dost dlouhý na podchodnou výšku 2,1 m a před nástupem i za výstupem volné místo. Počet a výšku stupňů ti spočítá článek [výpočet schodiště](clanek:vypocet-schodiste).
 4. **Příčky.** Dělí místnosti, strop nenesou a jsou tenčí.
-5. **Okna a dveře.** Okna rozmísti podle světových stran a mysli na nábytek, který pod nimi bude stát. V Česku je otvor ve zdi kvůli zárubni asi o 10 cm širší než dveře. Dveře nedávej úplně do rohu a hlídej, kam se křídlo otevírá. Dveře WC a malé koupelny otevírej ven.
+5. **Okna a dveře.** Okna rozmísti podle světových stran a mysli na nábytek, který pod nimi bude stát. V Česku je otvor ve zdi kvůli zárubni asi o 10 cm širší než dveře. Dveře nedávej úplně do rohu a hlídej, kam se křídlo otevírá. Dveře malého WC a malé koupelny otevírej ven.
 6. **Místnosti.** Každý uzavřený prostor pojmenuj a porovnej jeho plochu se seznamem.
 7. **Nábytek.** Postel, stůl a skříně vlož ve skutečné velikosti. Teprve tady se ukáže, jestli je ložnice opravdu dost velká.
 8. **Kontrola.** Projdi cestu od vchodu do kuchyně a do koupelny, žádná by neměla vést přes jiný pokoj. Zkontroluj vnější rozměry a odstupy od hranic.
