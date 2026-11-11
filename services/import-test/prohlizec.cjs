@@ -38,6 +38,19 @@ function uklidStareKoncepty() {
         })
             .on('error', () => {}).unref();
     } catch { /* úklid je jen úklid, test kvůli němu nepadá */ }
+
+    // Profily Chrome po testech, které spadly nebo byly přerušené dřív než zavri(). Jen starší než 2 hodiny,
+    // ať se nesáhne na test běžící v jiném sezení; zamčený profil se přeskočí a smaže se příště.
+    fs.promises.readdir(os.tmpdir(), { withFileTypes: true }).then(async (polozky) => {
+        const hranice = Date.now() - 2 * 3600 * 1000;
+        for (const p of polozky) {
+            if (!p.isDirectory() || !p.name.startsWith('v3-test-')) continue;
+            const cesta = path.join(os.tmpdir(), p.name);
+            try {
+                if ((await fs.promises.stat(cesta)).mtimeMs < hranice) await fs.promises.rm(cesta, { recursive: true, force: true });
+            } catch { /* zamčený nebo už smazaný */ }
+        }
+    }).catch(() => {});
 }
 
 async function otevriProhlizec({ viditelny = false, port: pevnyPort = Number(process.env.V3_CDP_PORT) || 0, sirka = 1600, vyska = 1000, posuvniky = false, gpu = false } = {}) {
@@ -57,6 +70,10 @@ async function otevriProhlizec({ viditelny = false, port: pevnyPort = Number(pro
         `--user-data-dir=${profil}`,
         `--window-size=${sirka},${vyska}`,
         '--no-first-run', '--no-default-browser-check',
+        // Čerstvý profil by si pokaždé stahoval a rozbaloval komponenty, synchronizaci a rozšíření
+        // (desítky pomocných procesů na pozadí). Testy nic z toho nepotřebují.
+        '--disable-component-update', '--disable-background-networking', '--disable-sync',
+        '--disable-default-apps', '--disable-extensions', '--disable-component-extensions-with-background-pages',
         // gpu: měření výkonu na skutečné grafice, jinak kreslí procesor
         ...(gpu ? ['--use-angle=d3d11', '--ignore-gpu-blocklist'] : ['--disable-gpu']),
         // posuvníky se běžně schovávají (kvůli čistým snímkům), při jejich
