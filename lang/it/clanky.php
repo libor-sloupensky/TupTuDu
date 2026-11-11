@@ -67,6 +67,11 @@ return [
     'rez_sklep_dole' => '0,8 m',
     'rez_sklep_hloubka' => '3,2 m',
     'rez_sklep_sirka' => '12 m',
+    'nakyp_popis' => 'Terra in posto e sul cumulo dopo lo scavo, non in scala',
+    'nakyp_v_zemi' => '1 m³',
+    'nakyp_na_hromade' => '1,25 m³',
+    'nakyp_1' => 'In posto: 1 m³ di terra comune, pesa circa 1,8 t.',
+    'nakyp_2' => 'Scavata, sul cassone o sul cumulo: circa 1,25 m³, perché le zolle lasciano vuoti tra loro. La linea tratteggiata indica 1 m³. Pesa sempre circa 1,8 t.',
 
     'schod_nadpis' => 'Calcola la tua scala',
     'schod_uvod' => 'Inserisci l’altezza da pavimento a pavimento. I controlli seguono le norme e la prassi per :zeme. Le scale dritte e con pianerottolo risultano uguali all’editor TupTuDu.',

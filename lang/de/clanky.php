@@ -67,6 +67,11 @@ return [
     'rez_sklep_dole' => '0,8 m',
     'rez_sklep_hloubka' => '3,2 m',
     'rez_sklep_sirka' => '12 m',
+    'nakyp_popis' => 'Erde im Boden und nach dem Aushub auf der Halde, nicht maßstäblich',
+    'nakyp_v_zemi' => '1 m³',
+    'nakyp_na_hromade' => '1,25 m³',
+    'nakyp_1' => 'Im Boden: 1 m³ gewöhnlicher Erde, wiegt etwa 1,8 t.',
+    'nakyp_2' => 'Ausgehoben auf der Ladefläche oder auf der Halde: etwa 1,25 m³, weil zwischen den Brocken Lücken bleiben. Die gestrichelte Linie zeigt 1 m³. Sie wiegt weiterhin etwa 1,8 t.',
 
     'schod_nadpis' => 'Berechne deine Treppe',
     'schod_uvod' => 'Gib die Höhe von Fußboden zu Fußboden ein. Die Prüfungen folgen den Vorschriften und der üblichen Praxis für :zeme. Gerade Treppen und Treppen mit Podest werden genauso berechnet wie im TupTuDu-Editor.',

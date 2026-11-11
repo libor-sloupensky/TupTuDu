@@ -67,6 +67,11 @@ return [
     'rez_sklep_dole' => '0,8 m',
     'rez_sklep_hloubka' => '3,2 m',
     'rez_sklep_sirka' => '12 m',
+    'nakyp_popis' => 'Tierra en el terreno y amontonada tras la excavación, sin escala',
+    'nakyp_v_zemi' => '1 m³',
+    'nakyp_na_hromade' => '1,25 m³',
+    'nakyp_1' => 'En el terreno: 1 m³ de tierra común, pesa unas 1,8 t.',
+    'nakyp_2' => 'Excavada, en la caja del camión o en el montón: unos 1,25 m³, porque los terrones dejan huecos entre sí. La línea discontinua marca 1 m³. Sigue pesando unas 1,8 t.',
 
     'schod_nadpis' => 'Calcula tu escalera',
     'schod_uvod' => 'Introduce la altura de suelo a suelo. Los controles siguen las normas y la práctica habitual para :zeme. Las escaleras rectas y con descansillo salen igual que en el editor de TupTuDu.',

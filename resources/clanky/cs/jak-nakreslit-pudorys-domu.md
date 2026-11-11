@@ -24,6 +24,8 @@ souvisejici: minimalni-rozmery-mistnosti, vypocet-schodiste, typy-strech, barva-
 - ESTAV.cz: Schodiště a jeho základní rozměry (2h + b = 630 mm) | https://www.estav.cz/cz/2581.schodiste-a-jeho-zakladni-rozmery
 - Kalkulačka TupTuDu (článek Výpočet schodiště): 2,90 m mezi podlažími = 17 výšek po 171 mm, nášlap 289 mm, přímé rameno 4,62 m; 3,05 m = 18 výšek, rameno 4,95 m (nášlap aspoň 275 mm podle vyhlášky 146/2024 Sb.) | https://www.tuptudu.com
 ---
+::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Půdorys přízemí rodinného domu s kótami v centimetrech a s názvy a plochami místností: obývák s kuchyní 33,4 m², pokoj 12,1 m², ložnice 10,6 m², koupelna 8,8 m², pracovna 8,1 m², zádveří 5,8 m², WC 1,8 m². | Přízemí vzorového domu 12,54 × 8,23 m s kótami, místnostmi a plochami, editor TupTuDu | 1200 | 857
+
 ## Než začneš kreslit
 
 Připrav si rozměry pozemku a světové strany. V Česku má rodinný dům od hranice pozemku obvykle stát aspoň 2 m, měří se k líci stěny, ale i k terase nebo balkonu. Další podmínky určuje územní plán.
@@ -40,8 +42,6 @@ Sepiš místnosti s přibližnou plochou a rozděl je na denní a noční část
 6. **Místnosti.** Každý uzavřený prostor pojmenuj a porovnej jeho plochu se seznamem.
 7. **Nábytek.** Postel, stůl a skříně vlož ve skutečné velikosti. Teprve tady se ukáže, jestli je ložnice opravdu dost velká.
 8. **Kontrola.** Projdi cestu od vchodu do kuchyně a do koupelny, žádná by neměla vést přes jiný pokoj. Zkontroluj vnější rozměry a odstupy od hranic.
-
-::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Půdorys přízemí rodinného domu s kótami v centimetrech a s názvy a plochami místností: obývák 33,4 m², pokoj 12,1 m², ložnice 10,6 m², koupelna 8,8 m², pracovna 8,1 m², zádveří 5,8 m², WC 1,8 m². | Přízemí vzorového domu 12,54 × 8,23 m s kótami, místnostmi a plochami, editor TupTuDu | 1200 | 857
 
 | Prvek | Běžně v Česku |
 |:---|---:|

@@ -19,6 +19,8 @@ souvisejici: jak-nakreslit-pudorys-domu, barva-fasady
 - Nejřemeslníci: Typy střech pro rodinné domy | https://www.nejremeslnici.cz/blog/typy-strech-pro-rodinne-domy/
 - Vyhláška 146/2024 Sb., § 38 (plocha podkroví od 1,2 m) | https://www.zakonyprolidi.cz/cs/2024-146
 ---
+::obrazek /img/clanky/typy-strech/typy-strech-porovnani.webp | Stejný rodinný dům ve 3D se čtyřmi typy střechy: sedlovou, valbovou, pultovou a plochou. | Jeden dům, čtyři střechy: sedlová 38°, valbová 30°, pultová 15° a plochá. Takhle si je porovnáš i na svém domě, editor TupTuDu | 1200 | 802
+
 ## Typy střech podle tvaru
 
 | Typ | Tvar | Obvyklý sklon | Podkroví | Na co myslet |
@@ -29,8 +31,6 @@ souvisejici: jak-nakreslit-pudorys-domu, barva-fasady
 | Plochá | vodorovná se spádem | do 5° | žádné | hydroizolace a vpusti chtějí pravidelnou kontrolu |
 
 Sklony jsou běžná praxe v Česku, ne předpis. Konečný sklon určí krytina a projektant.
-
-::obrazek /img/clanky/typy-strech/typy-strech-porovnani.webp | Stejný rodinný dům ve 3D se čtyřmi typy střechy: sedlovou, valbovou, pultovou a plochou. | Jeden dům, čtyři střechy: sedlová 38°, valbová 30°, pultová 15° a plochá. Takhle si je porovnáš i na svém domě, editor TupTuDu | 1200 | 802
 
 ## Sedlová, nebo valbová
 

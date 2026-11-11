@@ -68,6 +68,11 @@ return [
     'rez_sklep_dole' => '0,8 m',
     'rez_sklep_hloubka' => '3,2 m',
     'rez_sklep_sirka' => '12 m',
+    'nakyp_popis' => 'Zemina v zemi a po vykopání na hromadě, bez měřítka',
+    'nakyp_v_zemi' => '1 m³',
+    'nakyp_na_hromade' => '1,25 m³',
+    'nakyp_1' => 'V zemi: 1 m³ běžné hlíny, váží asi 1,8 t.',
+    'nakyp_2' => 'Po vykopání na korbě nebo na hromadě: asi 1,25 m³, hrudky mezi sebou nechají mezery. Čárkovaně je úroveň 1 m³. Váží pořád asi 1,8 t.',
 
     // Kalkulačka schodiště (clanky/bloky/kalkulacka-schodiste)
     'schod_nadpis' => 'Spočítej si schodiště',

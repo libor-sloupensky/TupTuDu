@@ -15,6 +15,8 @@ souvisejici: kolik-zeminy-z-vykopu, jak-nakreslit-pudorys-domu
 - Kolik materiálu: Kalkulačka výkopu (nakypření 1,25) | https://kolikmaterialu.cz/vykop/
 - Ceník odvozu (příklad, účtování podle jízd a hodin) | https://dovoz-odvoz.cz/cenik/
 ---
+::nakypreni
+
 ## Koeficient nakypření pro běžné zeminy
 
 | Druh zeminy | Koeficient nakypření |

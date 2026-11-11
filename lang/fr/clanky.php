@@ -67,6 +67,11 @@ return [
     'rez_sklep_dole' => '0,8 m',
     'rez_sklep_hloubka' => '3,2 m',
     'rez_sklep_sirka' => '12 m',
+    'nakyp_popis' => 'Terre en place et en tas après terrassement, sans échelle',
+    'nakyp_v_zemi' => '1 m³',
+    'nakyp_na_hromade' => '1,25 m³',
+    'nakyp_1' => 'En place : 1 m³ de terre ordinaire, qui pèse environ 1,8 t.',
+    'nakyp_2' => 'Une fois extraite, dans la benne ou en tas : environ 1,25 m³, car les mottes laissent des vides entre elles. Le pointillé marque le niveau de 1 m³. Elle pèse toujours environ 1,8 t.',
 
     'schod_nadpis' => 'Calculez votre escalier',
     'schod_uvod' => 'Saisissez la hauteur de sol à sol. Les contrôles suivent les règles et les usages pour :zeme. Les escaliers droits et avec palier sont calculés comme dans l’éditeur TupTuDu.',

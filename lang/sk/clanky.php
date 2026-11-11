@@ -67,6 +67,11 @@ return [
     'rez_sklep_dole' => '0,8 m',
     'rez_sklep_hloubka' => '3,2 m',
     'rez_sklep_sirka' => '12 m',
+    'nakyp_popis' => 'Zemina v zemi a po vykopaní na kope, bez mierky',
+    'nakyp_v_zemi' => '1 m³',
+    'nakyp_na_hromade' => '1,25 m³',
+    'nakyp_1' => 'V zemi: 1 m³ bežnej hliny, váži asi 1,8 t.',
+    'nakyp_2' => 'Po vykopaní na korbe alebo na kope: asi 1,25 m³, hrudy medzi sebou nechajú medzery. Čiarkovane je úroveň 1 m³. Váži stále asi 1,8 t.',
 
     'schod_nadpis' => 'Vypočítaj si schodisko',
     'schod_uvod' => 'Zadaj výšku od podlahy k podlahe. Kontroly zodpovedajú predpisom a zvyklostiam pre :zeme. Priame schody a schody s medzipodestami vyjdú rovnako ako v editore TupTuDu.',

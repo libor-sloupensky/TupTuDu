@@ -1,7 +1,7 @@
 /**
  * Obrázky z editoru do článků o domě: typy střech, barva fasády, minimální rozměry místností,
  * jak nakreslit půdorys a výpočet schodiště. Dům je kopie vzorového projektu (bez parcely a podkladu),
- * ložnice a chodby jsou nový koncept. Koncepty mají prefix ClaudeTest a na konci se smažou.
+ * noční část domu (ložnice, chodba) a dům se schodištěm jsou nové koncepty. Koncepty mají prefix ClaudeTest a na konci se smažou.
  *
  * Spuštění: node services/clanky/snimky-clanky-dum.cjs [článek …]   (bez argumentu všechny)
  *           články: typy-strech, barva-fasady, minimalni-rozmery-mistnosti, jak-nakreslit-pudorys-domu, vypocet-schodiste
@@ -84,109 +84,212 @@ async function barvaFasady(s) {
         { fasada: '#D8C8A8', strecha: KRYTINA.hneda, okna: RAL[8003] },
         { fasada: RAL[7035], strecha: RAL[9011], okna: RAL[9016] },
     ];
+    const barvy = (k) => s.js(`d.setBarvaDomu('fasada', '${k.fasada}'); d.setBarvaDomu('oknoVen', '${k.okna}'); d.setBarvaDomu('dvereVen', '${k.okna}'); d.setStrecha('barva', '${k.strecha}'); return true;`);
     await strecha(s, { typ: 'sedlova', sklon: 38, presah: 0.5, krytina: 'taska' });
     for (const [i, k] of kombinace.entries()) {
-        await s.js(`d.setBarvaDomu('fasada', '${k.fasada}'); d.setBarvaDomu('oknoVen', '${k.okna}'); d.setBarvaDomu('dvereVen', '${k.okna}'); d.setStrecha('barva', '${k.strecha}'); return true;`);
+        await barvy(k);
         await s.prestav3d();
-        if (i === 0) {
-            await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(20, 0.29, 0.96))}, pomer: ${OG[0] / OG[1]}, okraj: 0.05 }); return true;`);
-            await S.pauza(600);
-            await s.js(`return ${sn('snimek')}('og', ${OG[0]}, ${OG[1]});`);
-            await s.uloz('og', 'barva-fasady', 'barva-fasady', { webp: false });
-            await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(20, 0.29, 0.96))}, pomer: 597 / 398, okraj: 0.05 }); return true;`);
-        }
+        await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(20, 0.29, 0.96))}, pomer: 597 / 398, okraj: 0.05 }); return true;`);
         await S.pauza(600);
         await s.js(`return ${sn('snimek')}('b${i}', 597, 398);`);
     }
     await s.js(`return ${sn('slozit')}('barvy', ['b0', 'b1', 'b2', 'b3'], 2);`);
     await s.uloz('barvy', 'barva-fasady', 'barva-fasady-kombinace', { jpg: false });
+
+    // Úvodní obrázek (i náhled při sdílení): světlá fasáda s tmavou střechou a okny, zahradní strana s velkými okny,
+    // pohled skoro z výšky očí a z jiného místa než mřížka kombinací
+    await barvy(kombinace[0]);
+    await s.prestav3d();
+    const zahrada = await s.js(`const t = e.smerRastru(), U = [Math.cos(t), Math.sin(t)], V = [-Math.sin(t), Math.cos(t)];
+        return [U[0] - 0.35 * V[0], U[1] - 0.35 * V[1]];`);
+    await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(11, zahrada[0], zahrada[1]))}, pomer: ${OG[0] / OG[1]}, okraj: 0.06 }); return true;`);
+    await S.pauza(800);
+    await s.js(`return ${sn('snimek')}('uvod', ${OG[0]}, ${OG[1]});`);
+    await s.uloz('uvod', 'barva-fasady', 'barva-fasady-uvod', { jpg: false });
+    await s.uloz('uvod', 'barva-fasady', 'barva-fasady', { webp: false });
 }
 
-/** Kus z katalogu v půdorysu: střed v metrech plátna (y dolů), úhel 0 = záda nahoru, vlastní rozměr. */
+/** Kus z katalogu v půdorysu: střed v metrech plátna (y dolů), úhel 0 = záda nahoru (−90 k západu, 90 k východu), vlastní rozměr. */
 const kus = (id, x, y, uhel, sirka, hloubka) => `{ const p = d.katalog.polozky.find(q => q.id === '${id}'); const v = d._katalogZaznam(p, [${x}, ${-y}], ${uhel});
     ${sirka ? `v.sirka = ${sirka};` : ''} ${hloubka ? `v.hloubka = ${hloubka};` : ''} v.polygon = d._katalogPolygon(v.stred, v.sirka, v.hloubka, v.uhel); e.vybaveni.push(v); }`;
 const POSTEL = 'abo-B07H93GTMN', STOLEK = 'abo-B07RR3K7M8', SKRIN = 'abo-B07JGY5LPJ', BOTNIK = 'abo-B07GFS1R7X';
+const WC_KOMBI = 'sh3d-toiletsUnit', UMYVADLO = 'sh3d-washbasin', VANA = 'sh3d-bath-jay-hardy';
+
+/**
+ * Noční část malého domu (Libor 11. 11. 2026: chodba je vždy průchozí, dveře nesmí vést ven z ložnice do nikam,
+ * obvodové zdi ve skutečné tloušťce). Obvodové stěny 45 cm, příčky 15 cm, světlé rozměry:
+ *   sever  ložnice 3,00 × 3,00 m | ložnice 4,00 × 3,00 m | hala 3,00 m se vchodem a botníkem
+ *          chodba široká `w` mezi ložnicemi, koupelnou a halou, na západním konci okno
+ *   jih    koupelna 2,60 m s vanou, WC a umyvadlem | obývák
+ * Postele hlavou ke stěně, dveře do ložnic ve volném místě u nohou postele, v ložnici 3 × 4 m skříň naproti posteli.
+ * Vrací svislé rozměry pro výřezy.
+ */
+async function nocniZona(s, w, nazev) {
+    await s.otevri(s.novy(nazev));
+    await s.jsA(`await d._katalogNacti(); return true;`);
+    const Ych = 3.15 + w;                       // jižní líc chodby
+    const Yin = Ych + 0.15 + 3.6;               // jižní vnitřní líc koupelny a obýváku
+    const Yjih = Yin + 0.225;                   // osa jižní obvodové stěny
+    await s.js(`e.dum.podlazi[0].vyska = 2.75;
+        const W = (x1, y1, x2, y2, typ) => e.addWall(x1 * X, y1 * X, x2 * X, y2 * X, typ === 'obvodova' ? 0.45 : 0.15, typ);
+        const O = (st, od, sirka, typ, nast = {}) => e.addOpening(st.id, od, sirka, typ, { presnaSirka: true, ...nast });
+        const sever = W(-0.225, -0.225, 10.525, -0.225, 'obvodova'), vychod = W(10.525, -0.225, 10.525, ${Yjih}, 'obvodova');
+        const jih = W(10.525, ${Yjih}, -0.225, ${Yjih}, 'obvodova'), zapad = W(-0.225, ${Yjih}, -0.225, -0.225, 'obvodova');
+        W(3.075, -0.225, 3.075, 3.075, 'pricka');
+        const chodbaS = W(-0.225, 3.075, 7.225, 3.075, 'pricka');
+        const hala = W(7.225, -0.225, 7.225, ${Ych + 0.075}, 'pricka');
+        const chodbaJ = W(-0.225, ${Ych + 0.075}, 10.525, ${Ych + 0.075}, 'pricka');
+        W(2.675, ${Ych + 0.075}, 2.675, ${Yjih}, 'pricka');
+        // Dveře: do ložnic u nohou postele (otvírají se do ložnice), do koupelny, z chodby do haly, vchod, z haly do obýváku
+        O(chodbaS, 2.375, 0.8, 'dvere', { strana: 'out' }); O(chodbaS, 5.725, 0.8, 'dvere', { strana: 'out' });
+        O(chodbaJ, 1.225, 0.8, 'dvere', { strana: 'in' }); O(hala, ${(w >= 1.1 ? 3.25 : 3.2) + 0.225}, 0.8, 'dvere', { strana: 'out' });
+        O(sever, 8.525, 1.0, 'dvere', { strana: 'in' }); O(chodbaJ, 8.825, 0.8, 'dvere', { strana: 'in' });
+        // Okna: ložnice na sever vedle postele, chodba na západ, hala na východ, koupelna, obývák na jih a východ
+        O(sever, 1.125, 1.2, 'okno'); O(sever, 4.225, 1.2, 'okno');
+        O(zapad, ${Yjih - (3.15 + w / 2 + 0.3)}, 0.6, 'okno'); O(vychod, 1.225, 1.2, 'okno');
+        O(zapad, ${Yjih - (Ych + 2.0)}, 0.8, 'okno');
+        O(jih, 4.125, 2.4, 'okno'); O(jih, 0.925, 2.4, 'okno'); O(vychod, ${Ych + 1.225}, 1.5, 'okno');
+        // Ložnice: postel 160 × 200 (s rámem 165 × 210) hlavou ke stěně, stolky, ve větší skříň naproti
+        ${kus(POSTEL, 1.05, 1.5, -90, 1.65, 2.10)} ${kus(STOLEK, 0.2, 0.425, -90)} ${kus(STOLEK, 0.2, 2.575, -90)}
+        ${kus(POSTEL, 4.20, 1.5, -90, 1.65, 2.10)} ${kus(STOLEK, 3.35, 0.425, -90)} ${kus(STOLEK, 3.35, 2.575, -90)}
+        ${kus(SKRIN, 7.15 - 0.3, 1.5, 90, 1.83, 0.6)}
+        // Hala: botník u vchodu. Koupelna: vana u jižní stěny, WC v rohu, umyvadlo naproti dveřím
+        ${kus(BOTNIK, 7.775, 0.15, 0, 0.75, 0.30)}
+        ${kus(VANA, 0.95, Yin - 0.36, 180)} ${kus(WC_KOMBI, 0.36, Ych + 0.7, -90)} ${kus(UMYVADLO, 2.6 - 0.24, Ych + 1.75, 90)}
+        d.setBarvaDomu('fasada', '#e8e2d6'); d.showGrid = false; d.toggleGrid(); d.showKoty = true; d.toggleKoty();
+        d.nastroj = 'vyber'; d.fitView(); d.renderer.render(); d.autoSave('Noční část'); return true;`);
+    await S.pauza(1500);
+    const mistnosti = await s.js(`d.renderer._mistnostiCache = null; d.renderer.render(); const out = {};
+        for (const [klic, druh, nazev, dekor, x, y] of [['A', 'loznice', 'Ložnice', 'prkna', 1.5, 1.5], ['B', 'loznice', 'Ložnice', 'prkna', 5.0, 1.5],
+            ['chodba', 'chodba', 'Chodba', 'dlazba60', 3.6, ${3.15 + w / 2}], ['hala', 'zadveri', 'Hala', 'dlazba60', 8.8, 2.0],
+            ['koupelna', 'koupelna', 'Koupelna', 'dlazba30', 1.3, ${Ych + 2.0}], ['obyvak', 'obyvak', 'Obývák', 'prkna', 6.5, ${Ych + 2.0}]]) {
+            const id = d.renderer.mistnostVBode(x * X, y * X); const m = e.najdiMistnost(id);
+            if (m) { e.nastavDruhMistnosti(m, druh); m.nazev = nazev; delete m.auto; m.podlaha = { dekor }; }
+            out[klic] = { id, plocha: d.renderer.plochaMistnosti(id) };
+        }
+        d.renderer._mistnostiCache = null; d.renderer.render(); return out;`);
+    // Popisky ložnic doprostřed postelí a nad nábytek: volný pruh u nohou postele, o kterém je článek, zůstane čistý.
+    // Renderer kreslí nábytek přes popisky, proto se po každém překreslení přesunou do vlastní vrstvy navrch.
+    await s.js(`${sn('popisky')}({ '${mistnosti.A.id}': [1.05, 1.5], '${mistnosti.B.id}': [4.2, 1.5], '${mistnosti.hala.id}': [9.0, 1.55] });
+        const r = d.renderer; const L = new Konva.Layer({ listening: false }); d.stage.add(L);
+        const puvodni = r.renderMistnosti;
+        r.renderMistnosti = function (...a) { const v = puvodni.apply(this, a); L.destroyChildren(); for (const t of this._mistnostiPopisky || []) t.moveTo(L); L.moveToTop(); L.batchDraw(); return v; };
+        r._mistnostiCache = null; r.render(); return true;`);
+    console.log(`   chodba ${w} m, místnosti`, JSON.stringify(Object.fromEntries(Object.entries(mistnosti).map(([k, v]) => [k, v.plocha]))));
+    // Kontrola z modelu: u nohou postele v menší ložnici, mezi postelí a skříní a po stranách postele ve větší
+    const miry = await s.js(`const v = e.vybaveni; const xs = (k) => k.polygon.map(q => q[0]), ys = (k) => k.polygon.map(q => -q[1]);
+        const [pA, , , pB, , , sk] = v; return { nohyA: +(3 - Math.max(...xs(pA))).toFixed(3), mezi: +(Math.min(...xs(sk)) - Math.max(...xs(pB))).toFixed(3),
+            bokB: +(Math.min(...ys(pB))).toFixed(3), skrin: [sk.sirka, sk.hloubka], postel: [pA.sirka, pA.hloubka] };`);
+    console.log('   míry', JSON.stringify(miry));
+    return { Ych, Yjih, mistnosti };
+}
+
+/**
+ * Půdorys aktivního podlaží a převod metrů plátna na pixely snímku podle vnějších líců obvodových zdí. Zdi se hledají
+ * jako nejtmavší pixely (kóty, popisky kót, dveře a okna jsou světlejší), se zapnutými kótami tak obálka nesedí.
+ */
+async function planSMeritkem(s, nazev, Yjih) {
+    const r = await s.js(`return ${sn('plan')}('${nazev}');`);
+    const o = await s.js(`const v = ${sn('platna')}['${nazev}'], b = v.getContext('2d').getImageData(0, 0, v.width, v.height).data;
+        let x0 = v.width, y0 = v.height, x1 = 0, y1 = 0;
+        for (let y = 0; y < v.height; y++) for (let x = 0; x < v.width; x++) {
+            const i = (y * v.width + x) * 4;
+            if (Math.max(b[i], b[i + 1], b[i + 2]) <= 105) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        }
+        return { x0, y0, x1, y1 };`);
+    // Vnější líce: x od −0,45 do 10,75 m, y od −0,45 do Yjih + 0,225 m
+    const m = { x0: -0.45, x1: 10.75, y0: -0.45, y1: Yjih + 0.225 };
+    const kx = (o.x1 - o.x0) / (m.x1 - m.x0), ky = (o.y1 - o.y0) / (m.y1 - m.y0);
+    return { r, o, px: (x) => o.x0 + (x - m.x0) * kx, py: (y) => o.y0 + (y - m.y0) * ky, k: (kx + ky) / 2 };
+}
+
+/** Lidé shora (ramena 55 cm, hlava) do snímku: [x, y] v metrech plátna, jdou podél osy x. */
+async function lide(s, nazev, mapa, body) {
+    const px = body.map(([x, y]) => [mapa.px(x), mapa.py(y)]);
+    await s.js(`const g = ${sn('platna')}['${nazev}'].getContext('2d'); const k = ${mapa.k};
+        for (const [x, y] of ${JSON.stringify(px)}) {
+            g.fillStyle = 'rgba(71, 85, 105, 0.88)'; g.beginPath(); g.ellipse(x, y, 0.15 * k, 0.275 * k, 0, 0, 2 * Math.PI); g.fill();
+            g.fillStyle = '#1e293b'; g.beginPath(); g.arc(x, y, 0.105 * k, 0, 2 * Math.PI); g.fill();
+        } return true;`);
+}
 
 async function rozmeryMistnosti(s) {
     console.log('\nMinimální rozměry místností');
-    await s.otevri(s.novy('snímky ložnice'));
-    await s.jsA(`await d._katalogNacti(); return true;`);
-    // Dvě ložnice vedle sebe, stěny 20 cm (osy o 10 cm za lícem): vlevo světle 3,00 × 3,00 m, vpravo 3,00 × 4,00 m
-    await s.js(`const W = (x1, y1, x2, y2, typ = 'obvodova') => e.addWall(x1 * X, y1 * X, x2 * X, y2 * X, 0.2, typ);
-        const horniA = W(-0.1, -0.1, 3.1, -0.1), horniB = W(3.1, -0.1, 6.3, -0.1);
-        const levaA = W(-0.1, -0.1, -0.1, 3.1), dolniA = W(-0.1, 3.1, 3.1, 3.1);
-        W(3.1, -0.1, 3.1, 3.1, 'pricka'); W(3.1, 3.1, 3.1, 4.1);
-        const pravaB = W(6.3, -0.1, 6.3, 4.1), dolniB = W(3.1, 4.1, 6.3, 4.1);
-        e.addOpening(dolniA.id, 2.0, 0.8, 'dvere', { presnaSirka: true, strana: 'out' });
-        e.addOpening(dolniB.id, 2.15, 0.8, 'dvere', { presnaSirka: true, strana: 'out' });
-        e.addOpening(levaA.id, 1.0, 1.2, 'okno', { presnaSirka: true });
-        e.addOpening(pravaB.id, 1.5, 1.2, 'okno', { presnaSirka: true });
-        ${kus(POSTEL, 1.5, 1.05, 0, 1.65, 2.10)} ${kus(STOLEK, 0.45, 0.19, 0)} ${kus(STOLEK, 2.55, 0.19, 0)}
-        ${kus(POSTEL, 4.7, 1.05, 0, 1.65, 2.10)} ${kus(STOLEK, 3.65, 0.19, 0)} ${kus(STOLEK, 5.75, 0.19, 0)}
-        ${kus(SKRIN, 3.2 + 1.83 / 2, 3.7, 180)}
-        d.showGrid = false; d.toggleGrid(); d.showKoty = true; d.toggleKoty(); d.nastroj = 'vyber'; d.fitView(); d.renderer.render(); d.autoSave('Ložnice'); return true;`);
-    await S.pauza(1500);
-    const mistnosti = await s.js(`d.renderer.render(); const out = [];
-        for (const [x, y] of [[1.5, 2.5], [4.7, 2.5]]) { const id = d.renderer.mistnostVBode(x * X, y * X); const m = e.najdiMistnost(id); if (m) { e.nastavDruhMistnosti(m, 'loznice'); m.nazev = 'Ložnice'; delete m.auto; m.podlaha = { dekor: 'prkna' }; } out.push({ id, plocha: d.renderer.plochaMistnosti(id) }); }
-        d.setBarvaDomu('fasada', '#e8e2d6'); d.renderer._mistnostiCache = null; d.renderer.render(); return out;`);
-    // Popisky do volného místa u nohou postelí (nábytek se kreslí přes ně)
-    await s.js(`${sn('popisky')}({ '${mistnosti[0].id}': [1.15, 2.55], '${mistnosti[1].id}': [4.7, 2.75] }); return true;`);
-    console.log('   místnosti', JSON.stringify(mistnosti));
-    // Kontrola vzdáleností z modelu: u nohou postele, mezi postelí a skříní, po stranách postele
-    const miry = await s.js(`const v = e.vybaveni; const y = (k) => k.polygon.map(q => -q[1]); const x = (k) => k.polygon.map(q => q[0]);
-        const [pA, , , pB, , , sk] = v; return { nohyA: 3 - Math.max(...y(pA)), mezi: Math.min(...y(sk)) - Math.max(...y(pB)), bokA: Math.min(...x(pA)), postel: [pA.sirka, pA.hloubka], skrin: [sk.sirka, sk.hloubka] };`);
-    console.log('   míry', JSON.stringify(miry));
-    const r = await s.js(`return ${sn('plan')}('plan');`);
-    console.log('   půdorys', JSON.stringify(r));
-    await s.js(`const o = ${sn('obalka')}('plan'); const k = 24; const w = o.x1 - o.x0 + 2 * k, h = o.y1 - o.y0 + 2 * k; const W = 1200, H = Math.round(W * h / w);
-        return ${sn('vyrez')}('plan2', 'plan', o.x0 - k, o.y0 - k, w, h, W, H);`);
-    await s.uloz('plan2', 'minimalni-rozmery-mistnosti', 'loznice-pudorys', { jpg: false, kvalitaWebp: 0.9 });
+    const z = await nocniZona(s, 1.2, 'snímky noční část 120');
+    // Ložnice: výřez severní části (ložnice, chodba, hala) bez kót, rozměry jsou v popiscích místností
+    const mapa = await planSMeritkem(s, 'plan', z.Yjih);
+    const okraj = 0.25;
+    const [x0, y0, x1, y1] = [mapa.px(-0.45 - okraj), mapa.py(-0.45 - okraj), mapa.px(10.75 + okraj), mapa.py(z.Ych + 1.0)];
+    await s.js(`const W = 1200, H = Math.round(W * ${(y1 - y0) / (x1 - x0)}); return ${sn('vyrez')}('loznice', 'plan', ${x0}, ${y0}, ${x1 - x0}, ${y1 - y0}, W, H);`);
+    await s.uloz('loznice', 'minimalni-rozmery-mistnosti', 'loznice-pudorys', { jpg: false, kvalitaWebp: 0.9 });
+    // Chodba 120 cm: výřez kolem chodby, dva lidé vedle sebe
+    const vyrezChodby = async (mapaCh, Ych, nazev, osoby) => {
+        await lide(s, 'plan', mapaCh, osoby);
+        const [a0, b0, a1, b1] = [mapaCh.px(-0.45 - 0.15), mapaCh.py(2.2), mapaCh.px(8.4), mapaCh.py(2.2 + 3.25)];
+        await s.js(`return ${sn('vyrez')}('${nazev}', 'plan', ${a0}, ${b0}, ${a1 - a0}, ${b1 - b0}, 1200, ${Math.round(1200 * (b1 - b0) / (a1 - a0))});`);
+    };
+    await vyrezChodby(mapa, z.Ych, 'ch120', [[4.45, 3.15 + 0.3], [4.45, 3.15 + 0.9]]);
 
-    // Ložnice 3 × 4 m ve 3D šikmo shora
+    // Úvodní obrázek: noční část ve 3D shora, s nábytkem; obývák se do záběru nevejde
     await s.do3d();
-    const B = `${sn('body')}().filter(b => b.x > 3.05 && b.x < 6.45 && b.z > -0.15 && b.z < 4.2)`;
-    await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(72, 1, 0.1))}, pomer: 1200 / 700, okraj: 0.04, B: ${B} }); return true;`);
-    await S.pauza(800);
-    await s.js(`return ${sn('snimek')}('loz3d', 1200, 700);`);
-    await s.uloz('loz3d', 'minimalni-rozmery-mistnosti', 'loznice-3x4-3d', { jpg: false });
-    await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(72, 1, 0.1))}, pomer: ${OG[0] / OG[1]}, okraj: 0.04, B: ${B} }); return true;`);
-    await S.pauza(800);
-    await s.js(`return ${sn('snimek')}('og', ${OG[0]}, ${OG[1]});`);
+    const B = `${sn('body')}().filter(b => b.z < ${z.Ych + 0.25})`;
+    for (const [nazev, W, H] of [['uvod', 1200, 700], ['og', ...OG]]) {
+        await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(64, 0.22, 1))}, pomer: ${W / H}, okraj: 0.03, B: ${B} }); return true;`);
+        await S.pauza(800);
+        await s.js(`return ${sn('snimek')}('${nazev}', ${W}, ${H});`);
+    }
+    await s.uloz('uvod', 'minimalni-rozmery-mistnosti', 'minimalni-rozmery-mistnosti-uvod', { jpg: false });
     await s.uloz('og', 'minimalni-rozmery-mistnosti', 'minimalni-rozmery-mistnosti', { webp: false });
-    return { mistnosti, miry };
+
+    // Stejná část s chodbou 90 cm: jeden člověk, druhý se nevyhne. Nový koncept znovu načte stránku, výřez se 120 cm
+    // se proto přenese jako obrázek.
+    const ch120 = await s.p.vyhodnot(`${sn('platna')}.ch120.toDataURL('image/png')`);
+    const z90 = await nocniZona(s, 0.9, 'snímky noční část 90');
+    await s.jsA(`const img = new Image(); await new Promise((ok, chyba) => { img.onload = ok; img.onerror = chyba; img.src = ${JSON.stringify(ch120)}; });
+        const v = document.createElement('canvas'); v.width = img.width; v.height = img.height; v.getContext('2d').drawImage(img, 0, 0);
+        ${sn('platna')}.ch120 = v; return [v.width, v.height];`);
+    const mapa90 = await planSMeritkem(s, 'plan', z90.Yjih);
+    await vyrezChodby(mapa90, z90.Ych, 'ch90', [[4.45, 3.15 + 0.45]]);
+    await s.js(`return ${sn('slozit')}('chodby', ['ch90', 'ch120'], 1, 10);`);
+    await s.uloz('chodby', 'minimalni-rozmery-mistnosti', 'chodba-90-120', { jpg: false, kvalitaWebp: 0.9 });
 }
 
-async function chodby(s) {
-    console.log('\nChodby 90 a 120 cm');
-    await s.otevri(s.novy('snímky chodby'));
-    await s.jsA(`await d._katalogNacti(); return true;`);
-    // Dvě chodby nad sebou, dlouhé 3 m, světle 0,90 a 1,20 m, stěny 20 cm; botník hluboký 30 cm jen v širší
-    await s.js(`const W = (x1, y1, x2, y2, typ = 'obvodova') => e.addWall(x1 * X, y1 * X, x2 * X, y2 * X, 0.2, typ);
-        const horni = W(-0.1, -0.1, 3.1, -0.1); W(3.1, -0.1, 3.1, 1.0); W(3.1, 1.0, 3.1, 2.4); const dolni = W(-0.1, 2.4, 3.1, 2.4);
-        W(-0.1, 2.4, -0.1, 1.0); W(-0.1, 1.0, -0.1, -0.1);
-        // Střední stěna ze dvou půlek od krajů: z obou stran pak vznikne stejné napojení do T
-        W(-0.1, 1.0, 1.5, 1.0); W(3.1, 1.0, 1.5, 1.0);
-        e.addOpening(horni.id, 2.1, 0.8, 'dvere', { presnaSirka: true, strana: 'out' }); e.addOpening(dolni.id, 2.1, 0.8, 'dvere', { presnaSirka: true });
-        ${kus(BOTNIK, 1.2, 2.3 - 0.15, 180, 0.75, 0.30)}
-        d.showGrid = false; d.toggleGrid(); d.showKoty = true; d.toggleKoty(); d.nastroj = 'vyber'; d.fitView(); d.renderer.render(); d.autoSave('Chodby'); return true;`);
-    await S.pauza(1500);
-    const ids = await s.js(`d.renderer.render(); const out = []; for (const [x, y] of [[1.5, 0.45], [1.5, 1.4]]) { const id = d.renderer.mistnostVBode(x * X, y * X); const m = e.najdiMistnost(id); if (m) { e.nastavDruhMistnosti(m, 'chodba'); m.nazev = 'Chodba'; delete m.auto; } out.push(id); }
-        d.renderer._mistnostiCache = null; d.renderer.render(); return out;`);
-    await s.js(`${sn('popisky')}({ '${ids[1]}': [1.9, 1.6] }); return true;`);
-    await s.js(`return ${sn('plan')}('plan', 420);`);
-    await s.js(`const o = ${sn('obalka')}('plan'); const k = 24; const w = o.x1 - o.x0 + 2 * k, h = o.y1 - o.y0 + 2 * k; const W = Math.min(1200, w), H = Math.round(W * h / w);
-        return ${sn('vyrez')}('plan2', 'plan', o.x0 - k, o.y0 - k, w, h, W, H);`);
-    await s.uloz('plan2', 'minimalni-rozmery-mistnosti', 'chodba-90-120', { jpg: false, kvalitaWebp: 0.9 });
-}
-
+/**
+ * Vzorový dům v článku o půdorysu (Libor 11. 11. 2026: obrázky musí dávat smysl). Kopie dostane vybavenou koupelnu
+ * a WC, dveře WC se otvírají ven do zádveří (článek pod obrázkem radí otvírat je ven) a obývák se jmenuje
+ * „Obývák s kuchyní“ (kuchyňskou linku katalog zatím nemá). Šablona vzorového projektu se nemění.
+ * Polohy v osách domu (a dolů, b doleva v natočeném půdorysu) ze sondy místností vzorového domu.
+ */
 async function pudorysDomu(s) {
     console.log('\nJak nakreslit půdorys domu');
-    await vzorovyDum(s, 'snímky půdorys');
-    await s.js(`d.prepni2d(); d.rezim3d = false; return true;`);
+    await s.otevri(s.kopieVzoru('snímky půdorys'));
+    await s.jsA(`await d._katalogNacti(); return true;`);
+    const uprava = await s.js(`const t = e.smerRastru(), U = [Math.cos(t), Math.sin(t)], V = [-Math.sin(t), Math.cos(t)], tDeg = t * 180 / Math.PI;
+        const kusAB = (id, a, b, lokalni, sirka, hloubka) => { const p = d.katalog.polozky.find(q => q.id === id); if (!p) return null;
+            const x = a * U[0] + b * V[0], y = a * U[1] + b * V[1];
+            const v = d._katalogZaznam(p, [x, -y], tDeg + lokalni); if (sirka) v.sirka = sirka; if (hloubka) v.hloubka = hloubka;
+            v.polygon = d._katalogPolygon(v.stred, v.sirka, v.hloubka, v.uhel); e.vybaveni.push(v); return p.nazev; };
+        const ab = (op) => { const w = e.walls.get(op.wallId); const A = e.nodes.get(w.nodeA), B = e.nodes.get(w.nodeB);
+            const L = Math.hypot(B.x - A.x, B.y - A.y), k = (op.pozice + op.sirka / 2) * X / L; const x = A.x + (B.x - A.x) * k, y = A.y + (B.y - A.y) * k;
+            return [(x * U[0] + y * U[1]) / X, (x * V[0] + y * V[1]) / X]; };
+        const dvereWC = [...e.openings.values()].find(op => { if (op.typ !== 'dvere') return false; const [a, b] = ab(op); return Math.abs(a + 5.19) < 0.15 && Math.abs(b + 1.49) < 0.15; });
+        const puvodne = dvereWC?.strana;
+        if (dvereWC) dvereWC.strana = dvereWC.strana === 'out' ? 'in' : 'out';
+        const kusy = [kusAB('${WC_KOMBI}', -5.165, -3.34 + 0.346 + 0.01, 0), kusAB('${VANA}', -4.68 - 0.9 - 0.02, -4.99 + 0.35 + 0.01, 0),
+            kusAB('${UMYVADLO}', -7.89 + 0.23 + 0.01, -2.1, -90)];
+        const obyvak = e.mistnosti.find(m => m.druh === 'obyvak'); if (obyvak) { obyvak.nazev = 'Obývák s kuchyní'; delete obyvak.auto; }
+        d.renderer._mistnostiCache = null; d.renderer.render(); d.autoSave('Vybavení'); return { dvereWC: [puvodne, dvereWC?.strana], kusy };`);
+    console.log('   úprava kopie', JSON.stringify(uprava));
+    await S.pauza(800);
+    // Kontrolní půdorys s nábytkem (do článku nejde)
+    await s.js(`d.showGrid = false; d.toggleGrid(); d.showKoty = true; d.toggleKoty();
+        d.kompasUhel = Math.round((90 - e.smerRastru() * 180 / Math.PI) * 10) / 10; d.aplikujRotaci(); d.fitView(); d.renderer.render(); return true;`);
     await S.pauza(500);
-    // Půdorys natočený tak, aby stěny byly vodorovně a svisle, s kótami a místnostmi, bez nábytku (jinak zakryje názvy)
-    await s.js(`d.showGrid = false; d.toggleGrid(); d.showKoty = true; d.toggleKoty(); d.showVybaveni = false; d.renderer.showVybaveni = false;
-        d.kompasUhel = Math.round((90 - e.smerRastru() * 180 / Math.PI) * 10) / 10; d.aplikujRotaci(); d.fitView(); d.renderer.render(); return d.kompasUhel;`);
+    await s.js(`return ${sn('plan')}('kontrola');`);
+    const kontrola = await s.p.vyhodnot(`${sn('platna')}.kontrola.toDataURL('image/png')`);
+    require('fs').writeFileSync(require('path').join(__dirname, '../import-test/vystup/pudorys-kontrola.png'), Buffer.from(kontrola.split(',')[1], 'base64'));
+    // Půdorys do článku: s kótami a místnostmi, bez nábytku (jinak zakryje názvy)
+    await s.js(`d.showVybaveni = false; d.renderer.showVybaveni = false; d.renderer.render(); return true;`);
     await S.pauza(500);
     const r = await s.js(`return ${sn('plan')}('plan');`);
     console.log('   půdorys', JSON.stringify(r));
@@ -289,7 +392,7 @@ async function schodiste(s) {
 const CLANKY = {
     'typy-strech': typyStrech,
     'barva-fasady': barvaFasady,
-    'minimalni-rozmery-mistnosti': async (s) => { await rozmeryMistnosti(s); await chodby(s); },
+    'minimalni-rozmery-mistnosti': rozmeryMistnosti,
     'jak-nakreslit-pudorys-domu': pudorysDomu,
     'vypocet-schodiste': schodiste,
 };

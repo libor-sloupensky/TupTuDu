@@ -67,6 +67,11 @@ return [
     'rez_sklep_dole' => '0.8 m',
     'rez_sklep_hloubka' => '3.2 m',
     'rez_sklep_sirka' => '12 m',
+    'nakyp_popis' => 'Soil in the ground and on a heap after digging, not to scale',
+    'nakyp_v_zemi' => '1 m³',
+    'nakyp_na_hromade' => '1.25 m³',
+    'nakyp_1' => 'In the ground: 1 m³ of ordinary soil, weighing about 1.8 t.',
+    'nakyp_2' => 'Dug out, in a truck or on a heap: about 1.25 m³, because the clods leave gaps between them. The dashed line marks 1 m³. It still weighs about 1.8 t.',
 
     'schod_nadpis' => 'Calculate your staircase',
     'schod_uvod' => 'Enter the height from floor to floor. The checks follow the rules and common practice for :zeme. Straight stairs and stairs with landings come out the same as in the TupTuDu editor.',

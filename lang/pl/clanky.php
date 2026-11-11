@@ -67,6 +67,11 @@ return [
     'rez_sklep_dole' => '0,8 m',
     'rez_sklep_hloubka' => '3,2 m',
     'rez_sklep_sirka' => '12 m',
+    'nakyp_popis' => 'Ziemia w gruncie i po wykopaniu na hałdzie, bez skali',
+    'nakyp_v_zemi' => '1 m³',
+    'nakyp_na_hromade' => '1,25 m³',
+    'nakyp_1' => 'W gruncie: 1 m³ zwykłej ziemi, waży około 1,8 t.',
+    'nakyp_2' => 'Po wykopaniu na skrzyni lub na hałdzie: około 1,25 m³, bo grudy zostawiają między sobą szczeliny. Linia przerywana to poziom 1 m³. Waży nadal około 1,8 t.',
 
     'schod_nadpis' => 'Policz swoje schody',
     'schod_uvod' => 'Wpisz wysokość od podłogi do podłogi. Kontrole odpowiadają przepisom i praktyce dla :zeme. Schody proste i schody ze spocznikami wychodzą tak samo jak w edytorze TupTuDu.',
