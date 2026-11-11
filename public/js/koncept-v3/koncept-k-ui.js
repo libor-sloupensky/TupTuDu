@@ -633,6 +633,7 @@ function konceptKEditor(initialData) {
             if (!m) return;
             const nova = { dekor: 'hladka', ...(m.podlaha || {}), ...nastav };
             if (!nova.barva) delete nova.barva;
+            if (!nova.otoceni) delete nova.otoceni;   // 90 = vzor napříč místností, 0 se neukládá
             if (JSON.stringify(nova) === JSON.stringify(m.podlaha || null)) return;
             this.engine.pushUndo();
             m.podlaha = nova;

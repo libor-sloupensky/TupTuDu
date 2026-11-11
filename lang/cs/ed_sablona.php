@@ -249,6 +249,7 @@ return [
         'druh_jina' => 'Jiná',
         'dekor_tip' => 'Povrch podlahy této místnosti ve 3D',
         'dekor' => 'Dekor podlahy',
+        'dekor_otocit' => 'Otočit vzor podlahy o 90°',
         'barva_podlahy' => 'Barva podlahy',
         'podle_dekoru_tip' => 'Podlaha znovu převezme barvu vybraného dekoru',
         'podle_dekoru' => 'barva podle dekoru',

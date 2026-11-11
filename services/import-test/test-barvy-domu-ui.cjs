@@ -182,6 +182,12 @@ async function main() {
             const hex3d = '#' + najdi().material.color.getHexString();
             return { zaznam, plocha, textura, zacatek, zaTahu, poPusteni, hex3d, mistnost: d.renderer.plochaMistnosti(id) }; })()`);
         kontrola('dekor se zapíše a ve 3D má plochu místnosti s texturou (navíc jen pruh pod stěnami)', /prkna/.test(podl.zaznam) && podl.textura && podl.plocha >= podl.mistnost && podl.plocha - podl.mistnost < 1.1, JSON.stringify({ zaznam: podl.zaznam, plocha: podl.plocha, mistnost: podl.mistnost }));
+        // Směr vzoru (Libor 11. 11. 2026): podél stěn, prkna po delší straně místnosti, tlačítko 90° napříč
+        const smer = await p.vyhodnot(`(async () => { const d = ${D}; const eng = { walls: new Map(), nodes: new Map(), PX_PER_M: 100, smerRastru: () => 0 };
+            const sirsi = d._smerDekoru([{ x0: 0, x1: 400, y0: 0, y1: 200 }], 0, 0, 1, eng, null), hlubsi = d._smerDekoru([{ x0: 0, x1: 200, y0: 0, y1: 400 }], 0, 0, 1, eng, null), otocena = d._smerDekoru([{ x0: 0, x1: 400, y0: 0, y1: 200 }], 0, 0, 1, eng, { podlaha: { otoceni: 90 } });
+            const btn = document.querySelector('[data-dekor-otocit]'); const videt = !!btn && btn.offsetParent !== null; btn?.click(); await new Promise(r => setTimeout(r, 400)); const m = d.engine.mistnosti.find(x => x.podlaha?.dekor === 'prkna'); const po = m?.podlaha?.otoceni;
+            btn?.click(); await new Promise(r => setTimeout(r, 400)); return { sirsi: +sirsi.toFixed(4), hlubsi: +hlubsi.toFixed(4), otocena: +otocena.toFixed(4), videt, po, zpet: m?.podlaha?.otoceni ?? 0 }; })()`);
+        kontrola('vzor podél stěn, prkna po delší straně, tlačítko 90° je otočí napříč a zpět', smer.sirsi === 0 && Math.abs(smer.hlubsi - 1.5708) < 1e-3 && Math.abs(smer.otocena - 1.5708) < 1e-3 && smer.videt && smer.po === 90 && smer.zpet === 0, JSON.stringify(smer));
         kontrola('tah mění podlahu bez kroku, po puštění jeden krok; barva v půdorysu zůstane', podl.zaTahu.kroku === 0 && podl.zaTahu.hex !== podl.zacatek && podl.poPusteni.kroku === 1 && podl.hex3d === podl.poPusteni.barva && podl.poPusteni.barva2d === pan.barva2d, JSON.stringify(podl));
         await p.vyhodnot(`(() => { const d = ${D}; d.skryte3d = ['P2']; d.zobrazStrechu3d = false; d._nastavViditelnost3d(); return true; })()`);
         await pauza(400);

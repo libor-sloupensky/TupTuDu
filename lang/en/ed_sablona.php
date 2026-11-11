@@ -249,6 +249,7 @@ return [
         'druh_jina' => 'Other',
         'dekor_tip' => 'Floor finish of this room in 3D',
         'dekor' => 'Floor finish',
+        'dekor_otocit' => 'Rotate the floor pattern by 90°',
         'barva_podlahy' => 'Floor colour',
         'podle_dekoru_tip' => 'The floor takes the colour of the selected finish again',
         'podle_dekoru' => 'colour from finish',

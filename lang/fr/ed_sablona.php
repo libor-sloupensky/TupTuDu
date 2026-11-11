@@ -249,6 +249,7 @@ return [
         'druh_jina' => 'Autre',
         'dekor_tip' => 'Revêtement du sol de cette pièce en 3D',
         'dekor' => 'Revêtement',
+        'dekor_otocit' => 'Faire pivoter le motif du sol de 90°',
         'barva_podlahy' => 'Couleur du sol',
         'podle_dekoru_tip' => 'Le sol reprend la couleur du revêtement choisi',
         'podle_dekoru' => 'couleur du revêtement',

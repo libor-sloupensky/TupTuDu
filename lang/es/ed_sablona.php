@@ -249,6 +249,7 @@ return [
         'druh_jina' => 'Otra',
         'dekor_tip' => 'Acabado del suelo de esta estancia en 3D',
         'dekor' => 'Acabado de suelo',
+        'dekor_otocit' => 'Girar el patrón del suelo 90°',
         'barva_podlahy' => 'Color del suelo',
         'podle_dekoru_tip' => 'El suelo vuelve a tomar el color del acabado elegido',
         'podle_dekoru' => 'color del acabado',

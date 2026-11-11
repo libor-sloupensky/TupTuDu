@@ -249,6 +249,7 @@ return [
         'druh_jina' => 'Inne',
         'dekor_tip' => 'Wykończenie podłogi tego pomieszczenia w 3D',
         'dekor' => 'Dekor podłogi',
+        'dekor_otocit' => 'Obróć wzór podłogi o 90°',
         'barva_podlahy' => 'Kolor podłogi',
         'podle_dekoru_tip' => 'Podłoga znów przejmie kolor wybranego dekoru',
         'podle_dekoru' => 'kolor wg dekoru',

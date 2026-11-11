@@ -2205,7 +2205,7 @@
 
         /** Podlaha místnosti pro panel: bez nastavení vypadá jako hladká deska. */
         podlahaMistnosti(m) {
-            return { dekor: dekorPodlahy(m.podlaha?.dekor).id, barva: barvaPodlahy(m.podlaha), vlastni: !!m.podlaha?.barva };
+            return { dekor: dekorPodlahy(m.podlaha?.dekor).id, barva: barvaPodlahy(m.podlaha), vlastni: !!m.podlaha?.barva, otoceni: m.podlaha?.otoceni || 0 };
         },
 
         /** Za tahu posuvníkem se ve 3D mění jen materiály, krok historie vznikne po puštění. */
@@ -3443,12 +3443,15 @@
                 const dekor = dekorPodlahy(m?.podlaha.dekor);
                 const pozice = new Float32Array(obdelniky.length * 18);
                 const uv = new Float32Array(obdelniky.length * 12);
+                // Vzor podél stěn místnosti, prkna po delší straně (_smerDekoru), dřív podle os plátna
+                const smer = dekor.id === 'hladka' ? 0 : this._smerDekoru(obdelniky, x0, y0, krok, eng, m);
+                const cs = Math.cos(smer), sn = Math.sin(smer);
                 obdelniky.forEach((r, i) => {
                     const ax = (x0 + r.x0 * krok) / pxM, bx = (x0 + r.x1 * krok) / pxM;
                     const az = (y0 + r.y0 * krok) / pxM, bz = (y0 + r.y1 * krok) / pxM;
                     [[ax, az], [ax, bz], [bx, bz], [ax, az], [bx, bz], [bx, az]].forEach(([x, z], j) => {
                         pozice.set([x, VYSKA + uroven, z], i * 18 + j * 3);
-                        uv.set([x / dekor.metru, z / dekor.metru], i * 12 + j * 2);
+                        uv.set([(x * cs + z * sn) / dekor.metru, (z * cs - x * sn) / dekor.metru], i * 12 + j * 2);
                     });
                 });
                 const geom = new THREE.BufferGeometry();
@@ -3464,6 +3467,43 @@
                 }
                 group.add(mesh);
             }
+        },
+
+        /**
+         * Natočení dekoru podlahy v radiánech (Libor 11. 11. 2026: prkna šla napříč místností a dlažba v natočeném domě
+         * šikmo). Směr podle stěn kolem místnosti (váha délkou, po 90°), bez nich podle domu. Prkna vedou po delší
+         * straně místnosti, `podlaha.otoceni` (tlačítko 90° v panelu místnosti) je otočí napříč.
+         */
+        _smerDekoru(obdelniky, x0, y0, krok, eng, m) {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const r of obdelniky) {
+                minX = Math.min(minX, x0 + r.x0 * krok); maxX = Math.max(maxX, x0 + r.x1 * krok);
+                minY = Math.min(minY, y0 + r.y0 * krok); maxY = Math.max(maxY, y0 + r.y1 * krok);
+            }
+            const okraj = 0.3 * eng.PX_PER_M, ctvrt = Math.PI / 2, vahy = new Map();
+            let nej = 0, smer = null;
+            for (const w of eng.walls.values()) {
+                const a = eng.nodes.get(w.nodeA), b = eng.nodes.get(w.nodeB);
+                if (!a || !b) continue;
+                const sx = (a.x + b.x) / 2, sy = (a.y + b.y) / 2, L = Math.hypot(b.x - a.x, b.y - a.y);
+                if (L < 1 || sx < minX - okraj || sx > maxX + okraj || sy < minY - okraj || sy > maxY + okraj) continue;
+                const k = ((Math.atan2(b.y - a.y, b.x - a.x) % ctvrt) + ctvrt) % ctvrt;
+                const klic = Math.round(k * 180 / Math.PI) % 90;
+                const v = (vahy.get(klic) || 0) + L;
+                vahy.set(klic, v);
+                if (v > nej) { nej = v; smer = k; }
+            }
+            if (smer === null) smer = (eng.smerRastru?.() ?? 0) * Math.PI / 180;
+            // Delší strana místnosti v osách podél stěn
+            const cs = Math.cos(smer), sn = Math.sin(smer);
+            let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+            for (const r of obdelniky) for (const x of [r.x0, r.x1]) for (const y of [r.y0, r.y1]) {
+                const px = x0 + x * krok, py = y0 + y * krok, u = px * cs + py * sn, v = py * cs - px * sn;
+                u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v);
+            }
+            if (v1 - v0 > u1 - u0) smer += ctvrt;
+            if ((m?.podlaha?.otoceni || 0) % 180) smer += ctvrt;
+            return smer;
         },
 
         /**

@@ -249,6 +249,7 @@ return [
         'druh_jina' => 'Altro',
         'dekor_tip' => 'Finitura del pavimento di questa stanza in 3D',
         'dekor' => 'Finitura',
+        'dekor_otocit' => 'Ruota il motivo del pavimento di 90°',
         'barva_podlahy' => 'Colore pavimento',
         'podle_dekoru_tip' => 'Il pavimento riprende il colore della finitura scelta',
         'podle_dekoru' => 'colore da finitura',

@@ -965,7 +965,13 @@
                                         <template x-for="k in dekoryPodlahVolby" :key="k.id">
                                             <option :value="k.id" :selected="inspector.podlaha.dekor === k.id" x-text="k.nazev"></option>
                                         </template>
-                                    </select></div>
+                                    </select>
+                                    {{-- Vzor vede podél stěn, prkna po delší straně; tlačítko ho otočí napříč (Libor 11. 11. 2026) --}}
+                                    <button type="button" x-show="inspector.podlaha.dekor !== 'hladka'" data-dekor-otocit @click="setMistnostPodlaha({ otoceni: inspector.podlaha.otoceni ? 0 : 90 })"
+                                            :aria-pressed="inspector.podlaha.otoceni ? 'true' : 'false'" title="{{ __('ed_sablona.mistnost.dekor_otocit') }}" aria-label="{{ __('ed_sablona.mistnost.dekor_otocit') }}"
+                                            class="shrink-0 flex items-center gap-0.5 border border-gray-500 rounded px-1.5 hover:bg-gray-100">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>90°
+                                    </button></div>
                                 <div data-barva-podlahy x-data="vyberBarvy({ hodnota: () => inspector?.podlaha?.barva, nastav: (hex) => setMistnostPodlaha({ barva: hex }), nahled: (hex) => nahledBarvy3d('podlaha:' + inspector?.id, hex), pouzite: () => barvyJinde('podlaha:' + inspector?.id) })">
                                     @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.mistnost.barva_podlahy')])
                                     <button type="button" x-show="inspector.podlaha.vlastni" @click="setMistnostPodlaha({ barva: null })" class="underline text-gray-500 hover:text-primary" title="{{ __('ed_sablona.mistnost.podle_dekoru_tip') }}">{{ __('ed_sablona.mistnost.podle_dekoru') }}</button>

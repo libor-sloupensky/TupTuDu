@@ -249,6 +249,7 @@ return [
         'druh_jina' => 'Andere',
         'dekor_tip' => 'Bodenbelag dieses Raums in 3D',
         'dekor' => 'Bodenbelag',
+        'dekor_otocit' => 'Bodenmuster um 90° drehen',
         'barva_podlahy' => 'Bodenfarbe',
         'podle_dekoru_tip' => 'Der Boden übernimmt wieder die Farbe des gewählten Belags',
         'podle_dekoru' => 'Farbe vom Belag',
