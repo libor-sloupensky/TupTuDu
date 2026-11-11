@@ -1,7 +1,7 @@
 /**
- * Fasáda, skla a pohled ve 3D (povrchy-3d.js): omítka na všem v barvě fasády bez změny průměrné barvy,
- * skla s odrazem okolí podle úhlu pohledu, kamera skoro vodorovně, ale ne pod terén, a přenos do
- * sdíleného odkazu. Ukládá snímky k prohlídce.
+ * Fasáda a pohled ve 3D (povrchy-3d.js): omítka na všem v barvě fasády bez změny průměrné barvy,
+ * sklo jako dřív (odlesk Libor 11. 11. 2026 nechtěl), kamera skoro vodorovně, ale ne pod terén,
+ * a přenos do sdíleného odkazu. Ukládá snímky k prohlídce.
  *
  * Spuštění: node services/import-test/test-fasada-3d-ui.cjs [složka snímků]
  *           V3_URL=http://127.0.0.1:8017 (výchozí 8002)
@@ -82,16 +82,15 @@ const kamera = (azimut, polar, cilY = 2, zoom = 1, posun = [0, 0]) => {
             d.strechaVytvor();
             d.engine.dum.barvy.fasada = '#f2f0eb';
             await d.prepni3d(); await new Promise(r => setTimeout(r, 800)); return true; })()`);
-        await p.cekej(`window.Povrchy3d.stav().omitka === 1 && !!window.Povrchy3d.stav().odrazy`, 30000, 'omítka a odrazy');
-        const fas = await p.vyhodnot(`(() => { let fasada = 0, sOmitkou = 0, skel = 0, fyzikalni = 0, sOdrazy = 0;
-            const odrazy = window.Povrchy3d.stav().odrazy;
+        await p.cekej(`window.Povrchy3d.stav().omitka === 1`, 30000, 'omítka');
+        const fas = await p.vyhodnot(`(() => { let fasada = 0, sOmitkou = 0, skel = 0, puvodnich = 0;
             window._kk3d.wallGroup.traverse(o => { for (const m of [].concat(o.material || [])) {
                 if (m.userData?.barva === 'fasada') { fasada++; if (m.userData.omitka) sOmitkou++; }
-                if (m.userData?.sklo) { skel++; if (m.isMeshPhysicalMaterial) fyzikalni++; if (m.envMap === odrazy) sOdrazy++; }
+                if (m.transparent && Math.abs(m.opacity - 0.45) < 1e-6) { skel++; if (!m.isMeshPhysicalMaterial && !m.envMap) puvodnich++; }
             } });
-            return { fasada, sOmitkou, skel, fyzikalni, sOdrazy }; })()`);
+            return { fasada, sOmitkou, skel, puvodnich }; })()`);
         kontrola('všechno v barvě fasády má omítku', fas.fasada > 0 && fas.sOmitkou === fas.fasada, JSON.stringify(fas));
-        kontrola('skla jsou fyzikální materiál s odrazem okolí domu', fas.skel > 0 && fas.fyzikalni === fas.skel && fas.sOdrazy === fas.skel, JSON.stringify(fas));
+        kontrola('sklo je původní světlé poloprůhledné, bez odlesku okolí', fas.skel > 0 && fas.puvodnich === fas.skel, JSON.stringify(fas));
 
         console.log('\n2) Omítka nemění průměrnou barvu fasády');
         // Pohled kolmo na jižní stěnu (z = 7 m, okna jsou na ní), střed plátna mezi okny
@@ -112,31 +111,12 @@ const kamera = (azimut, polar, cilY = 2, zoom = 1, posun = [0, 0]) => {
         await p.vyhodnot(`(() => { ${KAMERA} return kamera(70, 80, 2, 9, [2.5, 3.4]); })()`);
         await snimek3d('02-fasada-detail-okna.png');
 
-        console.log('\n3) Odraz ve skle podle úhlu pohledu');
-        // Sklo okna na jižní stěně nejblíž středu domu, cíl kamery je střed jeho skla
-        const cil = await p.vyhodnot(`(() => { const T = window.THREE; let nej = null;
-            window._kk3d.wallGroup.traverse(o => { if (!o.isMesh || !o.material?.userData?.sklo) return;
-                const c = new T.Box3().setFromObject(o).getCenter(new T.Vector3());
-                if (c.z > 6.5 && (!nej || Math.abs(c.x - 5) < Math.abs(nej.x - 5))) nej = c; });
-            return nej && [nej.x, nej.y, nej.z]; })()`);
-        const skloZ = async (azimut, polar) => {
-            await p.vyhodnot(`(() => { const _3d = window._kk3d, [x, y, z] = ${JSON.stringify(cil)}, u = ${azimut} * Math.PI / 180, f = ${polar} * Math.PI / 180;
-                _3d.controls.target.set(x, y, z); _3d.camera.position.set(x + Math.sin(f) * Math.cos(u) * 30, y + Math.cos(f) * 30, z + Math.sin(f) * Math.sin(u) * 30);
-                _3d.camera.zoom = 9; _3d.camera.updateProjectionMatrix(); _3d.controls.update(); _3d.camera.updateMatrixWorld(); return true; })()`);
-            await pauza(300);
-            return stredPlatna(3);
-        };
-        const kolmo = await skloZ(90, 88);
-        const shora = await skloZ(90, 45);
-        const sikmo = await skloZ(45, 86);
-        const vzd = (a, b) => Math.max(...a.map((v, i) => Math.abs(v - b[i])));
-        kontrola('sklo vypadá jinak zepředu, shora a šikmo (odráží okolí podle pohledu)', vzd(kolmo, shora) > 8 && vzd(kolmo, sikmo) > 8, JSON.stringify({ kolmo, shora, sikmo }));
         await p.vyhodnot(`(() => { ${KAMERA} return kamera(60, 75, 2, 1.6); })()`);
         await snimek3d('03-okna-shora.png');
         await p.vyhodnot(`(() => { ${KAMERA} return kamera(120, 87, 2, 1.6); })()`);
         await snimek3d('04-okna-zdola.png');
 
-        console.log('\n4) Kamera skoro vodorovně, ne pod terén');
+        console.log('\n3) Kamera skoro vodorovně, ne pod terén');
         const mez = await p.vyhodnot(`(() => ({ max: window._kk3d.controls.maxPolarAngle * 180 / Math.PI }))()`);
         kontrola('nejnižší pohled je níž než dřív (85,7°), ale nad vodorovnou rovinou', mez.max > 86 && mez.max < 90, mez.max.toFixed(2) + '°');
         await p.vyhodnot(`(() => { ${KAMERA} kamera(60, 120, 2, 1.6); window._kk3d.controls.update(); return true; })()`);
@@ -148,19 +128,19 @@ const kamera = (azimut, polar, cilY = 2, zoom = 1, posun = [0, 0]) => {
             return window._kk3d.controls.maxPolarAngle * 180 / Math.PI; })()`);
         kontrola('se sklepem je nejnižší pohled o něco výš (terén musí zakrýt hlubší stavbu)', sklep < mez.max && sklep >= 85.7, sklep.toFixed(2) + '° proti ' + mez.max.toFixed(2) + '°');
 
-        console.log('\n5) Sdílený odkaz nese sklo a omítku');
+        console.log('\n4) Sdílený odkaz nese omítku');
         const model = await p.vyhodnot(`(() => { const m = ${D}._zapecModel(); return [...new Set(m.materialy.map(x => x.povrch).filter(Boolean))]; })()`);
-        kontrola('pečený model má povrch sklo i omítka', model.includes('sklo') && model.includes('omitka'), JSON.stringify(model));
+        kontrola('pečený model má povrch omítka', model.includes('omitka') && !model.includes('sklo'), JSON.stringify(model));
         await p.vyhodnot(`(async () => { const d = ${D}; d.prepni2d?.(); d.rezim3d = false; document.querySelector('[data-sekce-export]').open = true;
             await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-sdileni=vytvorit]').click(); return true; })()`);
         await p.cekej(`!!(${D}.sdileni && ${D}.sdileni.aktivni)`, 40000, 'odkaz');
         const adresa = await p.vyhodnot(`${D}.sdileni.url`);
         await p.jdiNa(adresa);
-        await p.cekej(`!!window.__sdileniScena && window.Povrchy3d.stav().omitka === 1 && !!window.Povrchy3d.stav().odrazy`, 30000, 'prohlížeč s omítkou a odrazy');
-        const prohlizec = await p.vyhodnot(`(() => { const sc = window.__sdileniScena, odrazy = window.Povrchy3d.stav().odrazy; let skel = 0, sOdrazy = 0, omitky = 0;
-            sc.scene.traverse(o => { for (const m of [].concat(o.material || [])) { if (m.userData?.sklo) { skel++; if (m.envMap === odrazy) sOdrazy++; } if (m.userData?.omitka) omitky++; } });
-            sc.renderer.render(sc.scene, sc.camera); return { skel, sOdrazy, omitky }; })()`);
-        kontrola('prohlížeč odkazu má skla s odrazem okolí a omítku', prohlizec.skel > 0 && prohlizec.sOdrazy === prohlizec.skel && prohlizec.omitky > 0, JSON.stringify(prohlizec));
+        await p.cekej(`!!window.__sdileniScena && window.Povrchy3d.stav().omitka === 1`, 30000, 'prohlížeč s omítkou');
+        const prohlizec = await p.vyhodnot(`(() => { const sc = window.__sdileniScena; let omitky = 0, fyzikalni = 0;
+            sc.scene.traverse(o => { for (const m of [].concat(o.material || [])) { if (m.userData?.omitka) omitky++; if (m.isMeshPhysicalMaterial) fyzikalni++; } });
+            sc.renderer.render(sc.scene, sc.camera); return { omitky, fyzikalni }; })()`);
+        kontrola('prohlížeč odkazu má omítku a sklo bez odlesku', prohlizec.omitky > 0 && prohlizec.fyzikalni === 0, JSON.stringify(prohlizec));
         await pauza(500);
         await p.snimek(path.join(vystup, '06-odkaz.png'));
 

@@ -371,9 +371,8 @@
                 };
                 // Střešní krytina jde jako vzhled, prohlížeč si textury stáhne sám (krytiny-3d.js)
                 if (m.userData?.krytinaVzhled) popis.krytina = m.userData.krytinaVzhled;
-                // Sklo a omítka (povrchy-3d.js)
-                if (m.userData?.sklo) popis.povrch = 'sklo';
-                else if (m.userData?.omitka) popis.povrch = 'omitka';
+                // Omítka (povrchy-3d.js)
+                if (m.userData?.omitka) popis.povrch = 'omitka';
                 const klic = JSON.stringify(popis);
                 if (!klicMaterialu.has(klic)) { klicMaterialu.set(klic, materialy.length); materialy.push(popis); }
                 return klicMaterialu.get(klic);

@@ -145,8 +145,7 @@ const zHexu = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
             d._build3d(); d._build3d(); d._build3d();
             const poStavbe = r.shadowMap.needsUpdate;
             d.zobrazStrechu3d = d.zobrazStrechu3d;
-            // Jen kreslení na obrazovku: zachycení odrazů do skel kreslí do textury a smyčku nezdvojuje
-            let kresleni = 0; const puvodni = r.render.bind(r); r.render = (...a) => { if (!r.getRenderTarget()) kresleni++; return puvodni(...a); };
+            let kresleni = 0; const puvodni = r.render.bind(r); r.render = (...a) => { kresleni++; return puvodni(...a); };
             const snimku = 30; for (let i = 0; i < snimku; i++) await new Promise(q => requestAnimationFrame(q));
             r.render = puvodni;
             r.shadowMap.needsUpdate = false; d._nastavViditelnost3d();

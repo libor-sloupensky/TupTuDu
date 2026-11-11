@@ -32,7 +32,7 @@ dum = {
 | `public/js/koncept-v3/dum.js` | mixin editoru: přepínač, podepření, podklad po podlažích, schody, plochy, střecha, 2D a 3D domu |
 | `public/js/koncept-v3/strecha.js` | čistá geometrie střechy, bez kresby; test `services/import-test/test-strecha.cjs` |
 | `public/js/krytiny-3d.js` | vzhledy a materiály střešních krytin, společné s prohlížečem sdílení; test `test-strecha-3d-ui` |
-| `public/js/povrchy-3d.js` | omítka fasády, skla s odrazy a nejnižší pohled kamery, společné s prohlížečem sdílení; test `test-fasada-3d-ui` |
+| `public/js/povrchy-3d.js` | omítka fasády a nejnižší pohled kamery, společné s prohlížečem sdílení; test `test-fasada-3d-ui` |
 | `services/krytiny/sestav.py` | výroba textur krytin do `public/textury/krytiny/`, viz Krytiny a tloušťka ve 3D |
 | `public/js/koncept-v3/mistnosti.js` | rastr místností, výřezy a plocha pod limitem výšky |
 | `public/js/koncept-v3/koty-vyberu.js` | kóty u vybrané stěny a otvoru |
@@ -88,14 +88,14 @@ Cíl je 3D blíž fotografii. **Střecha je deska:** rovina výpočtu je spodní
 - **Nový vzhled:** řádek do `VZHLEDY` v `services/krytiny/sestav.py`, `python services/krytiny/sestav.py` (surové mapy stáhne do `services/krytiny/zdroje/`, mimo git), název do `lang/*/ed_dum.php`, skupina `vzhled_krytiny`. Zdrojová textura musí jít plynule navázat (roof_slates_03 má nahoře hřebenovou řadu a dělala švy). Průměrné barvy musí být různé, skript to hlídá.
 - **Sdílený odkaz** dostane u materiálu krytiny jen `krytina` (id vzhledu), prohlížeč si materiál postaví přes `Krytiny3d` stejně jako editor.
 
-### Fasáda, skla a pohled ve 3D (Libor 11. 11. 2026)
+### Fasáda a pohled ve 3D (Libor 11. 11. 2026)
 
 Další krok k 3D blíž fotografii (`public/js/povrchy-3d.js`, editor i sdílený odkaz).
 
 - **Omítka:** všechno v barvě fasády (stěny, štíty, boky desek, sloupy, podbití, atika) dostane jemnou zrnitou omítku jako dnešní rodinný dům (Poly Haven white_stucco, CC0). Stěny nemají souřadnice textury, kresba se promítá podle polohy ve světě, u svislé plochy podél ní, proto sedí i v natočeném domě. Zrno má skutečnou velikost (dlaždice 2 m): zblízka je vidět, zdálky splyne. K tomu nenápadné skvrny tónu přes několik metrů (2 %). Průměr kresby je 1, barva ze vzorku platí dál. Textura `public/textury/omitka/` z `services/krytiny/sestav.py --jen-omitka`. Dokud nedorazí, síla omítky je 0 (nenačtená textura by stěnu zčernala).
-- **Skla** odrážejí okolí podle úhlu pohledu: fyzikální materiál s odrazivostí dvojskla (F0 0,16), Fresnel. Okolí se zachytí do krychle 256 px z výšky 1,5 m nad podlahou přízemí uprostřed domu, bez domu samotného (terén, země a modrá obloha), po každé přestavbě scény a terénu s odstupem 250 ms. Scéna má terén kvůli čitelnosti světlý, odraz země se proto ztlumí a odraz oblohy zesílí podle směru odraženého paprsku. Shora jsou okna tmavá jako na snímcích z dronu, nízký pohled je rozjasní obzorem.
+- **Sklo zůstává světle modré poloprůhledné** (barva typu otvoru, `koncept-k-ui.js`). Odlesk okolí ve skle (tmavé dvojsklo s odrazem terénu a oblohy zachycených z domu podle úhlu pohledu) byl hotový v ff2bfde, Libor ho 11. 11. 2026 zamítl („nelíbí se mi, nech to jak bylo“). Bez výslovné výzvy nevracet.
 - **Nejnižší pohled:** ortografická kamera nemá polohu oka, každý pohled zespodu jde pod terén. Mez je proto skoro vodorovně, jen tak vysoko, aby šikmý pohled dopadl na terén dřív než na základy a sklep: `atan(hloubka pod podlahou 1.NP / vzdálenost k okraji terénu)`, nikdy výš než dřívějších 85,7°. Bez sklepu typicky 89,5°, se sklepem 88°. Sdílený odkaz má stejnou mez (dřív žádnou). Skutečný pohled zespodu (podbití, okna proti obloze) by potřeboval perspektivní kameru.
-- **Testy:** omítka mění rozptyl jasu stěny, měření šikmého vzoru stínu v `test-svetlo-3d-ui` ji vypíná (`Povrchy3d.silaOmitky(0)`). Zachycení odrazů kreslí do textury, kontrola jedné smyčky počítá jen kreslení na obrazovku.
+- **Testy:** omítka mění rozptyl jasu stěny, měření šikmého vzoru stínu v `test-svetlo-3d-ui` ji vypíná (`Povrchy3d.silaOmitky(0)`).
 
 Podkroví: šrafa pod 1,2 m, čáry 1,20 · 1,80 · 2,30 m, započitatelná plocha nad 1,2 m (česká vyhláška, `modules/stavebni-parametry.md`), stěny ve 3D končí pod střechou.
 
@@ -253,6 +253,7 @@ Změna domu v režimu 3D přestaví scénu hned (`_obnov3dPozdeji` z `afterRende
 - Tečkovaná čára u T-napojení ve 3D (stejné plochy dvou stěn), patří ke kroku barev.
 - Ovládání dotykem: panely ano, tažení na plátně je zatím jen myší jako celý editor.
 - Limit podlaží v tarifu.
+- **Pohled okem** (Libor 11. 11. 2026: „vyřešíme příště, je to širší věc“): perspektivní kamera s okem nad terénem, aby šlo koukat na dům zespodu (podbití, okap) a pohled přitom nikdy nešel pod terén. Dnešní ortografická kamera polohu oka nemá a sklopí se jen skoro vodorovně. Dotkne se kamery, přiblížení svázaného s 2D, exportu obrázku, sdíleného odkazu a kompasu.
 
 ## Světlo
 

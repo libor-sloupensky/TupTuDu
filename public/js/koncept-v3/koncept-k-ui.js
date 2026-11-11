@@ -7117,9 +7117,8 @@ function konceptKEditor(initialData) {
             _3d.terrainStep = STEP;
             _3d.terrainMinH = minH;
             this._jama3d();
-            // Nový terén mění odrazy ve sklech i to, jak nízko jde kamera
+            // Nový terén mění, jak nízko jde kamera
             this._mezPohledu3d?.();
-            this._odrazy3dPozdeji?.();
 
             // Odstranit tube outlines + overlays (nahrazeny shader maskou)
             for (const key of ['parcelOutlines', 'parcelOverlays']) {
@@ -7514,10 +7513,15 @@ function konceptKEditor(initialData) {
                 }
                 return matOtvoru.get(k);
             };
-            // Sklo odráží okolí podle úhlu pohledu, stejné pro všechny typy otvorů (povrchy-3d.js)
             const matSklo = new Map();
             const skloTypu = (typ) => {
-                if (!matSklo.has(typ)) matSklo.set(typ, window.Povrchy3d.sklo());
+                if (!matSklo.has(typ)) {
+                    const otvorDef = (typeof TYPY_OTVORU !== 'undefined' && TYPY_OTVORU[typ]) || {};
+                    matSklo.set(typ, new THREE.MeshStandardMaterial({
+                        color: otvorDef.barva3d || 0xa3d5f7, transparent: true, opacity: 0.45,
+                        roughness: 0.1, metalness: 0.1, side: THREE.DoubleSide,
+                    }));
+                }
                 return matSklo.get(typ);
             };
 

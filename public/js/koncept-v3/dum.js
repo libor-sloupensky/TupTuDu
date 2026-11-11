@@ -3527,8 +3527,8 @@
         },
 
         /**
-         * Povrchy po přestavbě scény (povrchy-3d.js): omítka na všechno v barvě fasády, odrazy ve sklech
-         * a nejnižší pohled kamery. Volá _build3d.
+         * Povrchy po přestavbě scény (povrchy-3d.js): omítka na všechno v barvě fasády a nejnižší pohled
+         * kamery. Volá _build3d.
          */
         _povrchy3d() {
             const _3d = window._kk3d;
@@ -3538,7 +3538,6 @@
                 for (const m of [].concat(o.material || [])) if (m.userData?.barva === 'fasada') window.Povrchy3d.omitka(m, prekresli);
             });
             this._mezPohledu3d();
-            this._odrazy3dPozdeji();
         },
 
         /** Nejnižší sklon kamery: skoro vodorovně, terén ale pořád zakryje základy a sklep. */
@@ -3553,32 +3552,6 @@
             const prvni = d.podlazi.find(p => p.typ !== 'sklep') || d.podlazi[0];
             const zeme = _3d.wallGroup.position.y + (prvni ? this.engine.kotaPodlazi(prvni.id) : 0);
             _3d.controls.maxPolarAngle = window.Povrchy3d.nejnizsiPohled(dum, teren, zeme);
-        },
-
-        /** Odrazy ve sklech se zachytí jednou po sérii změn: krychle okolí stojí desítky milisekund. */
-        _odrazy3dPozdeji() {
-            clearTimeout(this._odrazyCasovac);
-            this._odrazyCasovac = setTimeout(() => this._odrazy3d(), 250);
-        },
-
-        /** Okolí domu (terén a obloha) do mapy prostředí pro skla, z výšky očí v přízemí uprostřed domu. */
-        _odrazy3d() {
-            const _3d = window._kk3d;
-            if (!this.rezim3d || !_3d?.renderer || !_3d.wallGroup || !window.Povrchy3d) return;
-            const THREE = window.THREE;
-            try {
-                const obal = new THREE.Box3().setFromObject(_3d.wallGroup);
-                if (obal.isEmpty()) return;
-                const d = this.engine.dum;
-                const prvni = d.podlazi.find(p => p.typ !== 'sklep') || d.podlazi[0];
-                const stred = obal.getCenter(new THREE.Vector3());
-                stred.y = _3d.wallGroup.position.y + (prvni ? this.engine.kotaPodlazi(prvni.id) : 0) + 1.5;
-                const nechat = [_3d.terrain, _3d.ground].filter(Boolean);
-                window.Povrchy3d.zachytOdrazy(_3d.renderer, _3d.scene, stred, nechat, _3d.wallGroup);
-                _3d.kresliDo = performance.now() + 300;
-            } catch (e) {
-                window.zalogujChybu?.(e, '3D: odrazy ve sklech', { podlazi: this.engine?.dum?.podlazi?.length });
-            }
         },
 
         /** Svislá tloušťka střešní desky (m): kolmo k rovině u základního sklonu vyjde TLOUSTKA_STRECHY. */
