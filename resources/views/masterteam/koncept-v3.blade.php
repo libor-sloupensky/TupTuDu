@@ -1435,20 +1435,22 @@
             </summary>
             <template x-if="panelOpen.katalog">
                 <div class="px-2 pb-2 flex flex-col gap-2 text-xs">
-                    {{-- Skupina místností zúží kategorie na ty, které do ní patří; vybraná místnost na plánu ji nastaví sama --}}
-                    <select id="kk-katalog-skupina" :value="katalogSkupina" @change="katalogNastavSkupinu($event.target.value)" :disabled="katalogHledat.trim() !== ''" aria-label="{{ __('ed_sablona.katalog.mistnost') }}" title="{{ __('ed_sablona.katalog.mistnost_tip') }}" class="border border-gray-400 rounded px-1 py-1 text-xs w-full">
-                        <template x-for="d in katalogSkupinyVolby" :key="d.id">
-                            <option :value="d.id" x-text="d.nazev" :selected="d.id === katalogSkupina"></option>
-                        </template>
-                    </select>
+                    {{-- Skupina místností › kategorie: šipka ukazuje, že první výběr zužuje druhý (Libor 11. 11. 2026).
+                         Vybraná místnost na plánu nastaví skupinu sama. Hledání jde přes celý katalog, proto je pod nimi. --}}
                     <div class="flex items-center gap-1">
+                        <select id="kk-katalog-skupina" :value="katalogSkupina" @change="katalogNastavSkupinu($event.target.value)" :disabled="katalogHledat.trim() !== ''" aria-label="{{ __('ed_sablona.katalog.mistnost') }}" title="{{ __('ed_sablona.katalog.mistnost_tip') }}" class="border border-gray-400 rounded px-1 py-1 text-xs flex-1 min-w-0">
+                            <template x-for="d in katalogSkupinyVolby" :key="d.id">
+                                <option :value="d.id" x-text="d.nazev" :selected="d.id === katalogSkupina"></option>
+                            </template>
+                        </select>
+                        <svg data-katalog-zuzeni class="shrink-0 text-gray-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                         <select id="kk-katalog-kategorie" x-model="katalogKategorie" :disabled="katalogHledat.trim() !== ''" aria-label="{{ __('ed_sablona.katalog.kategorie') }}" class="border border-gray-400 rounded px-1 py-1 text-xs flex-1 min-w-0">
                             <template x-for="k in katalogKategorieVolby" :key="k.id">
                                 <option :value="k.id" x-text="k.nazev" :selected="k.id === katalogKategorie"></option>
                             </template>
                         </select>
-                        <input id="kk-katalog-hledat" type="search" x-model="katalogHledat" placeholder="{{ __('ed_sablona.katalog.hledat') }}" aria-label="{{ __('ed_sablona.katalog.hledat_aria') }}" class="border border-gray-400 rounded px-1 py-1 text-xs" style="width:110px">
                     </div>
+                    <input id="kk-katalog-hledat" type="search" x-model="katalogHledat" placeholder="{{ __('ed_sablona.katalog.hledat') }}" aria-label="{{ __('ed_sablona.katalog.hledat_aria') }}" class="border border-gray-400 rounded px-1 py-1 text-xs w-full">
                     <div x-show="!katalog" class="text-gray-500">{{ __('ed_sablona.katalog.nacitam') }}</div>
                     <div x-show="katalog && !katalogPolozky.length" class="text-gray-500">{{ __('ed_sablona.katalog.nic') }}</div>
                     <div class="overflow-y-auto" style="max-height:340px;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px">

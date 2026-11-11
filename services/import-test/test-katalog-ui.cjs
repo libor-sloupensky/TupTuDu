@@ -77,6 +77,12 @@ const kontrola = (popis, podminka, detail = '') => {
         const koupelna = await p.vyhodnot(`(() => { const d = ${D}; d.katalogNastavSkupinu('hygiena'); const kusy = d.katalog.polozky.filter(x => x.kategorie === 'koupelna'); const r = { prvni: d.katalogKategorieVolby[0]?.id, kategorie: d.katalogKategorie, kusu: kusy.length, sAutorem: kusy.filter(x => x.autor && x.odkaz).length, zavesne: kusy.filter(x => x.uroven > 0).length, nazevEn: kusy.find(x => x.id === 'sh3d-pracka')?.nazevZdroj }; d.katalogNastavSkupinu(''); d.katalogKategorie = 'pohovky'; return r; })()`);
         kontrola('koupelny a WC: kategorie Koupelna a WC první, přes 20 kusů, autoři Blend Swap, závěsné kusy nad podlahou', koupelna.prvni === 'koupelna' && koupelna.kusu >= 20 && koupelna.sAutorem >= 8 && koupelna.zavesne >= 5 && koupelna.nazevEn === 'Pračka', JSON.stringify(koupelna));
         kontrola('„Všechny místnosti“ vrátí všech 15 kategorií', skupiny.vse.volby.length === 15, String(skupiny.vse.volby.length));
+        // Chybějící model: srozumitelná chyba s adresou místo {"isTrusted":true} a další pokus stahuje znovu
+        const chybPred = (p.chyby || []).length;
+        const chybi = await p.vyhodnot(`(async () => { const a = window.Katalog3d.nacti('sh3d-neexistuje'); const zprava = await a.then(() => '', e => e.message); const b = window.Katalog3d.nacti('sh3d-neexistuje'); await b.catch(() => {}); return { zprava, znovu: a !== b }; })()`);
+        kontrola('chybějící model hlásí adresu a zkusí se znovu', /Model se nestáhl.*sh3d-neexistuje/.test(chybi.zprava) && chybi.znovu, JSON.stringify(chybi));
+        // Očekávané 403 z S3 u neexistujícího modelu nejsou chyba stránky
+        await pauza(300); if (p.chyby) p.chyby.splice(chybPred);
         // Vybraná místnost s druhem na plánu přepne nabídku na svou skupinu, bez druhu volbu nechá.
         // Panel místnosti má druhy po skupinách (optgroup), Jiná je nahoře zvlášť.
         const zVyberu = await p.vyhodnot(`(async () => { const d = ${D}; const cekej = () => new Promise(r => setTimeout(r, 150));

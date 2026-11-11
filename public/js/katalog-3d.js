@@ -181,7 +181,13 @@
                         const hloubka = model.userData.obal.max.z - model.userData.obal.min.z;
                         if (id.startsWith('abo-') && hloubka >= TENKY_KUS) for (const m of videno) m.onBeforeCompile = omezLesk;
                         hotovo(model);
-                    }, undefined, chyba);
+                    }, undefined, (e) => {
+                        // Nepovedené stažení se nepamatuje, další pokus model stáhne znovu. GLTFLoader vrací místo
+                        // chyby událost prohlížeče ({"isTrusted":true}), do hlášení proto jde adresa a stav.
+                        modely.delete(id);
+                        const stav = e?.target?.status;
+                        chyba(e instanceof Error ? e : new Error(`Model se nestáhl${stav ? ' (HTTP ' + stav + ')' : ''}: ${this.adresa(id)}`));
+                    });
                 }));
             }
             return modely.get(id);
