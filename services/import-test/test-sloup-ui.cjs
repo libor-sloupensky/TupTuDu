@@ -144,8 +144,15 @@ async function main() {
             const s = d.engine.dum.sloupy[0]; const PX = d.engine.PX_PER_M;
             const z = Math.min(...d._obrysSloupu(s).map(q => window.Strecha.vyskaVBode(st.plochy, q.x / PX, q.y / PX)));
             const stred = window.Strecha.vyskaVBode(st.plochy, s.x, -s.y);
-            d.rezim3d = false; await d.prepni2d?.(); return { vyska: +(b.max.z - b.min.z).toFixed(3), strecha: +z.toFixed(3), stred: +stred.toFixed(3) }; })()`);
+            // Výklenek pod střechou: podhled ve výšce okapu a zeď od něj pod střechu na otevřených stranách
+            const podhled = sk.children.filter(o => o.userData.podhled).length;
+            const vyklenky = (st.vyklenky || []).length, zOkap = st.zOkap;
+            const pod = sk.children.find(o => o.userData.podhled && o.geometry.type === 'ExtrudeGeometry');
+            let vyskaPodhledu = null;
+            if (pod) { pod.geometry.computeBoundingBox(); vyskaPodhledu = +(pod.geometry.boundingBox.max.z).toFixed(3); }
+            d.rezim3d = false; await d.prepni2d?.(); return { vyska: +(b.max.z - b.min.z).toFixed(3), strecha: +z.toFixed(3), stred: +stred.toFixed(3), podhled, vyklenky, zOkap, vyskaPodhledu }; })()`);
         kontrola('ve 3D sahá sloup pod nejnižší roh střechy, nevyčuhuje', d3 && blizko(d3.vyska, d3.strecha, 0.01) && d3.strecha < d3.stred, JSON.stringify(d3));
+        kontrola('nad výklenkem je podhled ve výšce okapu a zeď pod střechu, skrz není vidět', d3 && d3.vyklenky === 1 && d3.podhled >= 1 && d3.vyskaPodhledu !== null, JSON.stringify(d3));
 
         console.log('\n6) Uložení a obnovení');
         await p.vyhodnot(`${D}.ulozit()`);

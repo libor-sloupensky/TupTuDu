@@ -1879,8 +1879,13 @@
                     // Vyplněním výklenku musí obrys narůst, jinak to výklenek nebyl
                     if (zn * plocha(obrys) <= zn * plocha(hrany) + 0.05) continue;
                     const na = { x: -da.y * zn, y: da.x * zn }, nb = { x: -db.y * zn, y: db.x * zn };
+                    // Vyplněná plocha výklenku a jeho otevřené strany (od konce hrany i k rohu a od rohu k hraně j)
+                    const retez = [];
+                    for (let q = (i + 1) % m; q !== j; q = (q + 1) % m) retez.push(hrany[q].a);
+                    retez.push(b.a);
+                    const vyklenek = { poly: [...retez, p], otevrene: [[a.b, p], [p, b.a]] };
                     vysledek.push({
-                        p, odebrano: k - 1, obrys, uhel: Math.atan2(da.y, da.x),
+                        p, odebrano: k - 1, obrys, vyklenek, uhel: Math.atan2(da.y, da.x),
                         stred: (r) => ({ x: p.x + (na.x + nb.x) * r, y: p.y + (na.y + nb.y) * r }),
                     });
                 }
@@ -1902,12 +1907,12 @@
         },
 
         /** Obrys horního podlaží rozšířený o výklenky se sloupem v rohu: střecha jde přes sloup. */
-        _obrysSeSloupy(hrany, podlaziId) {
+        _obrysSeSloupy(hrany, podlaziId, vyklenky = null) {
             const sloupy = (this.engine.dum.sloupy || []).filter(s => s.podlazi === podlaziId && s.strecha !== false);
             let h = hrany;
             for (const s of sloupy) {
                 const roh = h && this._rohSloupu(h, s);
-                if (roh) h = roh.obrys;
+                if (roh) { h = roh.obrys; vyklenky?.push(roh.vyklenek); }
             }
             return h;
         },
@@ -2280,7 +2285,8 @@
             const klic = eng.geoPodpis() + '#' + JSON.stringify(d.strecha) + '#' + horni.typ + horni.vyska + '#' + JSON.stringify(sloupy);
             if (this._strechaCache && this._strechaCache.klic === klic) return this._strechaCache.vysledek;
             let vysledek = null;
-            const hrany = this._obrysSeSloupy(this._obrysPodlazi(horni.id), horni.id);
+            const vyklenky = [];
+            const hrany = this._obrysSeSloupy(this._obrysPodlazi(horni.id), horni.id, vyklenky);
             if (hrany && hrany.length >= 3) {
                 const typy = window.Strecha.typyHran(d.strecha, hrany);
                 const zOkap = this._vyskaOkapu();
@@ -2293,6 +2299,7 @@
                         });
                         vysledek.hrany = typy;
                         vysledek.zOkap = zOkap;
+                        vysledek.vyklenky = vyklenky;
                     } catch (e) {
                         window.zalogujChybu?.(e, 'Výpočet střechy', { typ: d.strecha.typ, hran: hrany.length });
                     }
@@ -3738,6 +3745,31 @@
                         const matStit = new THREE.MeshStandardMaterial({ color: TYPY_STEN?.obvodova?.barva3d || 0x6b6b6b, roughness: 0.85, side: THREE.DoubleSide });
                         matStit.userData.barva = 'fasada';
                         dum.add(this._troj3d(stity, kota, matStit, { strecha: true }));
+                    }
+                    // Výklenek pod střechou přes sloup (krytý vstup): podhled ve výšce, kde se zbytek střechy
+                    // potkává se zdí, a nad otevřenými stranami zeď od podhledu až pod střechu. Jinak by mezi
+                    // nižší zdí výklenku a střechou bylo vidět skrz (Libor 11. 11. 2026).
+                    for (const v of st.vyklenky || []) {
+                        const zP = st.zOkap;
+                        const matPodhled = () => {
+                            const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(d.barvy.fasada), roughness: 0.9, side: THREE.DoubleSide });
+                            m.userData.barva = 'fasada';
+                            return m;
+                        };
+                        dum.add(this._deska3d(v.poly, [], kota + zP - 0.04, kota + zP, matPodhled(), { strecha: true, podhled: true }));
+                        const troj = [];
+                        for (const [u, w] of v.otevrene) {
+                            const n = Math.max(1, Math.ceil(Math.hypot(w.x - u.x, w.y - u.y) / 0.25));
+                            const bod = (t) => ({ x: u.x + (w.x - u.x) * t, y: u.y + (w.y - u.y) * t });
+                            for (let k = 0; k < n; k++) {
+                                const a = bod(k / n), b = bod((k + 1) / n);
+                                const za = Math.max(zP, window.Strecha.vyskaVBode(st.plochy, a.x, a.y) ?? zP);
+                                const zb = Math.max(zP, window.Strecha.vyskaVBode(st.plochy, b.x, b.y) ?? zP);
+                                if (Math.max(za, zb) - zP < 0.005) continue;
+                                troj.push([{ ...a, z: zP }, { ...b, z: zP }, { ...b, z: zb }], [{ ...a, z: zP }, { ...b, z: zb }, { ...a, z: za }]);
+                            }
+                        }
+                        if (troj.length) dum.add(this._troj3d(troj, kota, matPodhled(), { strecha: true, podhled: true }));
                     }
                 }
             }
