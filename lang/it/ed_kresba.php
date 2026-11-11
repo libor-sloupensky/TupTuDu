@@ -96,6 +96,14 @@ return [
     'prostor_kuchynsky_kout' => 'Angolo cottura',
     'prostor_spiz' => 'Dispensa',
     'prostor_sklep' => 'Cantina',
+
+    // Skupiny druhů místností (SKUPINY_MISTNOSTI)
+    'skupina_denni' => 'Zona giorno',
+    'skupina_nocni' => 'Zona notte',
+    'skupina_kuchyne' => 'Cucina e dispensa',
+    'skupina_hygiena' => 'Bagni e WC',
+    'skupina_vstup' => 'Ingresso e corridoi',
+    'skupina_technicke' => 'Locali tecnici e ripostigli',
     'prostor_kotelna' => 'Locale caldaia',
 
     // Upřesnění za názvem prostoru

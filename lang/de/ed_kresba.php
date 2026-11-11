@@ -96,6 +96,14 @@ return [
     'prostor_kuchynsky_kout' => 'Kochnische',
     'prostor_spiz' => 'Speisekammer',
     'prostor_sklep' => 'Keller',
+
+    // Skupiny druhů místností (SKUPINY_MISTNOSTI)
+    'skupina_denni' => 'Tagbereich',
+    'skupina_nocni' => 'Nachtbereich',
+    'skupina_kuchyne' => 'Küche und Speisekammer',
+    'skupina_hygiena' => 'Bad und WC',
+    'skupina_vstup' => 'Eingang und Flure',
+    'skupina_technicke' => 'Technik und Lager',
     'prostor_kotelna' => 'Heizraum',
 
     // Upřesnění za názvem prostoru

@@ -96,6 +96,14 @@ return [
     'prostor_kuchynsky_kout' => 'Aneks kuch.',
     'prostor_spiz' => 'Spiżarnia',
     'prostor_sklep' => 'Piwnica',
+
+    // Skupiny druhů místností (SKUPINY_MISTNOSTI)
+    'skupina_denni' => 'Strefa dzienna',
+    'skupina_nocni' => 'Strefa nocna',
+    'skupina_kuchyne' => 'Kuchnia i spiżarnia',
+    'skupina_hygiena' => 'Łazienki i WC',
+    'skupina_vstup' => 'Wejście i korytarze',
+    'skupina_technicke' => 'Techniczne i schowki',
     'prostor_kotelna' => 'Kotłownia',
 
     // Upřesnění za názvem prostoru

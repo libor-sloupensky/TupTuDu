@@ -96,6 +96,14 @@ return [
     'prostor_kuchynsky_kout' => 'Kuch. kout',
     'prostor_spiz' => 'Spíž',
     'prostor_sklep' => 'Sklep',
+
+    // Skupiny druhů místností (SKUPINY_MISTNOSTI)
+    'skupina_denni' => 'Denní zóna',
+    'skupina_nocni' => 'Noční zóna',
+    'skupina_kuchyne' => 'Kuchyně a spíž',
+    'skupina_hygiena' => 'Koupelny a WC',
+    'skupina_vstup' => 'Vstup a chodby',
+    'skupina_technicke' => 'Technické a sklady',
     'prostor_kotelna' => 'Kotelna',
 
     // Upřesnění za názvem prostoru

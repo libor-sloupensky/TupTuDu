@@ -96,6 +96,14 @@ return [
     'prostor_kuchynsky_kout' => 'Coin cuisine',
     'prostor_spiz' => 'Cellier',
     'prostor_sklep' => 'Cave',
+
+    // Skupiny druhů místností (SKUPINY_MISTNOSTI)
+    'skupina_denni' => 'Espace jour',
+    'skupina_nocni' => 'Espace nuit',
+    'skupina_kuchyne' => 'Cuisine et cellier',
+    'skupina_hygiena' => 'Salles de bains et WC',
+    'skupina_vstup' => 'Entrée et couloirs',
+    'skupina_technicke' => 'Technique et rangement',
     'prostor_kotelna' => 'Chaufferie',
 
     // Upřesnění za názvem prostoru

@@ -96,6 +96,14 @@ return [
     'prostor_kuchynsky_kout' => 'Zona de cocina',
     'prostor_spiz' => 'Despensa',
     'prostor_sklep' => 'Bodega',
+
+    // Skupiny druhů místností (SKUPINY_MISTNOSTI)
+    'skupina_denni' => 'Zona de día',
+    'skupina_nocni' => 'Zona de noche',
+    'skupina_kuchyne' => 'Cocina y despensa',
+    'skupina_hygiena' => 'Baños y aseos',
+    'skupina_vstup' => 'Entrada y pasillos',
+    'skupina_technicke' => 'Técnicas y almacenaje',
     'prostor_kotelna' => 'Sala de calderas',
 
     // Upřesnění za názvem prostoru

@@ -505,8 +505,13 @@
 
         get krytinyVolby() { return TYPY_KRYTIN; },
         get dekoryPodlahVolby() { return DEKORY_PODLAH; },
-        get druhyMistnostiVolby() {
-            return [{ id: '', nazev: preloz('ed_sablona.mistnost.druh_jina') }, ...Object.entries(window.DRUHY_MISTNOSTI || {}).map(([id, k]) => ({ id, nazev: preloz('ed_kresba.' + k) }))];
+        /** Druhy místností po skupinách pro <optgroup>; „Jiná“ (bez druhu) je zvlášť nahoře. */
+        get skupinyDruhuVolby() {
+            const druhy = window.DRUHY_MISTNOSTI || {};
+            return Object.entries(window.SKUPINY_MISTNOSTI || {}).map(([id, seznam]) => ({
+                id, nazev: preloz('ed_kresba.skupina_' + id),
+                druhy: seznam.filter(d => druhy[d]).map(d => ({ id: d, nazev: preloz('ed_kresba.' + druhy[d]) })),
+            }));
         },
         get typyStrechVolby() { return TYPY_STRECH; },
         get typyPlochVolby() { return TYPY_PLOCH; },
@@ -535,8 +540,8 @@
                 this.posunPodkladu = false;
                 if (this.rezimStrecha) this._strechaVypni();
             });
-            // Vybraná místnost přepne nabídku nábytku na svůj druh (katalog.js)
-            this.$watch('_selectionTick', () => this._katalogMistnostZVyberu?.());
+            // Vybraná místnost přepne nabídku nábytku na svou skupinu (katalog.js)
+            this.$watch('_selectionTick', () => this._katalogSkupinaZVyberu?.());
             // Nastavení střechy otevřené ve 3D: po návratu do 2D patří k němu půdorys střechy
             this.$watch('rezim3d', (v) => {
                 if (!v && this.podlaziUprava === 'strecha' && !this.rezimStrecha) this._strechaZapni();

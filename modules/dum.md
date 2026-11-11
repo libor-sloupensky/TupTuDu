@@ -86,7 +86,8 @@ kuchyně, jídelna, koupelna, WC, chodba, zádveří, šatna, pracovna, technick
   napsaný výchozí název výchozím zůstane (`engine.prejmenujMistnost`). Vzorový dům pro všechny jazyky = u každé místnosti
   vybrat druh, u podlaží s ručním názvem název smazat.
 - **Import výkresu:** typ prostoru z rozpoznání (CubiCasa, `DRUH_Z_IMPORTU`) se převede na druh, název z výkresu zůstane.
-- **Nábytek podle druhu** nabízí katalog (`modules/katalog.md`, Pravidla). Plochy podle druhu (obytná a příslušenství), upozornění podle druhu a barva podle druhu jsou další krok.
+- **Skupiny (Libor 11. 11. 2026):** `SKUPINY_MISTNOSTI` dělí druhy na denní zónu (obývák, jídelna, pracovna), noční zónu (ložnice, pokoj), kuchyni a spíž, koupelny a WC (i prádelna), vstup a chodby (zádveří, chodba, šatna) a technické a sklady (technická, sklad, sklep, garáž). Výběr druhu je po skupinách (`<optgroup>`, `skupinyDruhuVolby`), „Jiná“ zvlášť nahoře. Názvy `ed_kresba.skupina_*`.
+- **Nábytek podle skupiny** nabízí katalog (`modules/katalog.md`, Pravidla). Plochy podle druhu (obytná a příslušenství), upozornění podle druhu a barva podle druhu jsou další krok.
 - Test: `node services/import-test/test-druh-mistnosti.cjs`.
 
 ## Barvy domu a podlahy místností

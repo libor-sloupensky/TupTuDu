@@ -903,8 +903,13 @@
                                 </div>
                                 <div class="kk-podlazi-pole" title="{{ __('ed_sablona.mistnost.druh_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.mistnost.druh') }}</span>
                                     <select class="flex-1 min-w-0 border border-gray-500 rounded px-1" data-druh-mistnosti @change="setMistnostDruh($event.target.value)">
-                                        <template x-for="k in druhyMistnostiVolby" :key="k.id">
-                                            <option :value="k.id" :selected="inspector.druh === k.id" x-text="k.nazev"></option>
+                                        <option value="" :selected="!inspector.druh">{{ __('ed_sablona.mistnost.druh_jina') }}</option>
+                                        <template x-for="s in skupinyDruhuVolby" :key="s.id">
+                                            <optgroup :label="s.nazev">
+                                                <template x-for="k in s.druhy" :key="k.id">
+                                                    <option :value="k.id" :selected="inspector.druh === k.id" x-text="k.nazev"></option>
+                                                </template>
+                                            </optgroup>
                                         </template>
                                     </select></div>
                                 <div class="kk-podlazi-pole" title="{{ __('ed_sablona.mistnost.dekor_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.mistnost.dekor') }}</span>
@@ -1381,7 +1386,7 @@
         </details>
 
         {{-- Katalog nábytku a vybavení, modules/katalog.md --}}
-        <details id="kk-sekce-katalog" class="kk-section" :open="panelOpen.katalog" @toggle="panelOpen.katalog = $el.open; ulozitPanely(); if ($el.open) { _katalogMistnostZVyberu(); _katalogNacti(); } else _katalogZrusVyber()">
+        <details id="kk-sekce-katalog" class="kk-section" :open="panelOpen.katalog" @toggle="panelOpen.katalog = $el.open; ulozitPanely(); if ($el.open) { _katalogSkupinaZVyberu(); _katalogNacti(); } else _katalogZrusVyber()">
             <summary class="kk-section-hlava">
                 <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="scale(1.5)" stroke-width="1.13"><path d="M3.5 7.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v2"/><path d="M1.5 9a1.5 1.5 0 0 1 3 0v1.5h7V9a1.5 1.5 0 0 1 3 0v3.5h-13z"/><path d="M3.5 12.5V14M12.5 12.5V14"/></g></svg>
                 <span>{{ __('ed_sablona.katalog.nadpis') }}</span>
@@ -1390,10 +1395,10 @@
             </summary>
             <template x-if="panelOpen.katalog">
                 <div class="px-2 pb-2 flex flex-col gap-2 text-xs">
-                    {{-- Místnost zúží kategorie na ty, které do ní patří; vybraná místnost na plánu ji nastaví sama --}}
-                    <select id="kk-katalog-mistnost" :value="katalogMistnost" @change="katalogNastavMistnost($event.target.value)" :disabled="katalogHledat.trim() !== ''" aria-label="{{ __('ed_sablona.katalog.mistnost') }}" title="{{ __('ed_sablona.katalog.mistnost_tip') }}" class="border border-gray-400 rounded px-1 py-1 text-xs w-full">
-                        <template x-for="d in katalogMistnostiVolby" :key="d.id">
-                            <option :value="d.id" x-text="d.nazev" :selected="d.id === katalogMistnost"></option>
+                    {{-- Skupina místností zúží kategorie na ty, které do ní patří; vybraná místnost na plánu ji nastaví sama --}}
+                    <select id="kk-katalog-skupina" :value="katalogSkupina" @change="katalogNastavSkupinu($event.target.value)" :disabled="katalogHledat.trim() !== ''" aria-label="{{ __('ed_sablona.katalog.mistnost') }}" title="{{ __('ed_sablona.katalog.mistnost_tip') }}" class="border border-gray-400 rounded px-1 py-1 text-xs w-full">
+                        <template x-for="d in katalogSkupinyVolby" :key="d.id">
+                            <option :value="d.id" x-text="d.nazev" :selected="d.id === katalogSkupina"></option>
                         </template>
                     </select>
                     <div class="flex items-center gap-1">

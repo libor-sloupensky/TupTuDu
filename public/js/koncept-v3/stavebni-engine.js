@@ -174,6 +174,20 @@ const DRUHY_MISTNOSTI = {
     pradelna: 'prostor_pradelna', spiz: 'prostor_spiz', sklad: 'prostor_sklad', sklep: 'prostor_sklep', garaz: 'prostor_garaz',
 };
 
+/**
+ * Skupiny druhů místností (Libor 11. 11. 2026): přehlednější výběr druhu a společná nabídka nábytku pro celou skupinu.
+ * Denní a noční zóna jsou oddělené kvůli nábytku (pohovky × postele). Název ze slovníku ed_kresba.skupina_*.
+ */
+const SKUPINY_MISTNOSTI = {
+    denni: ['obyvak', 'jidelna', 'pracovna'],
+    nocni: ['loznice', 'pokoj'],
+    kuchyne: ['kuchyne', 'spiz'],
+    hygiena: ['koupelna', 'wc', 'pradelna'],
+    vstup: ['zadveri', 'chodba', 'satna'],
+    technicke: ['technicka', 'sklad', 'sklep', 'garaz'],
+};
+const skupinaDruhu = (druh) => Object.keys(SKUPINY_MISTNOSTI).find(s => SKUPINY_MISTNOSTI[s].includes(druh)) || null;
+
 /** Typ prostoru z importu výkresu (CubiCasa) → druh místnosti. */
 const DRUH_Z_IMPORTU = {
     LivingRoom: 'obyvak', Bedroom: 'loznice', Room: 'pokoj', Kitchen: 'kuchyne', Dining: 'jidelna', Bath: 'koupelna',
@@ -4081,6 +4095,8 @@ if (typeof window !== 'undefined') {
     window.TYPY_KRIDEL = TYPY_KRIDEL;
     window.PALETA_MISTNOSTI = PALETA_MISTNOSTI;
     window.DRUHY_MISTNOSTI = DRUHY_MISTNOSTI;
+    window.SKUPINY_MISTNOSTI = SKUPINY_MISTNOSTI;
+    window.skupinaDruhu = skupinaDruhu;
     window.kridlaOtvoru = kridlaOtvoru;
     window.nastavPocetKridel = nastavPocetKridel;
     window.pocetKridelVolby = pocetKridelVolby;

@@ -96,6 +96,14 @@ return [
     'prostor_kuchynsky_kout' => 'Kitchenette',
     'prostor_spiz' => 'Pantry',
     'prostor_sklep' => 'Cellar',
+
+    // Skupiny druhů místností (SKUPINY_MISTNOSTI)
+    'skupina_denni' => 'Day zone',
+    'skupina_nocni' => 'Night zone',
+    'skupina_kuchyne' => 'Kitchen and pantry',
+    'skupina_hygiena' => 'Bathrooms and WC',
+    'skupina_vstup' => 'Entrance and hallways',
+    'skupina_technicke' => 'Utility and storage',
     'prostor_kotelna' => 'Boiler room',
 
     // Upřesnění za názvem prostoru
