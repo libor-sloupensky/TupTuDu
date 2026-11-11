@@ -324,6 +324,36 @@ statiku a bezpečnost (základy, výkopy, opěrné zdi) je dobré jednou za čas
 - Popisek a popis pro nevidomé jsou v textu článku, překládají se s ním. Nově vytvořené snímky vždy skriptem, nikdy ručně.
 - Jednotky jsou zatím jen metrické, řešení odloženo (Libor 5. 11. 2026).
 
+## Obrázky článků: recepty (Libor 11. 11. 2026)
+
+Obrázky z editoru se přegenerovávají, kdykoli se změní vzhled editoru („aby držely styl s realitou“), jedním příkazem:
+
+    node services/clanky/snimky-vse.cjs            # všechny články
+    node services/clanky/snimky-vse.cjs typy-strech barva-fasady   # jen vybrané
+
+Scény jsou uložené jako kód (`snimky-clanky-dum.cjs`, `snimky-zemina.cjs`, společné kroky `snimky-editor.cjs`), ne jako
+projekty: pokaždé se postaví z aktuálního editoru a testovací koncepty ClaudeTest se hned mažou, v seznamu projektů
+nepřekáží. Skript čeká na nábytek, fotografické textury krytin a omítku fasády (`Povrchy3d.stav().omitka`), když editor
+přidá další asynchronně načítaný povrch, doplnit čekání do `snimky-editor.cjs` (`povrchy`). Po přegenerování obrázky
+projít očima (pravidlo 13), kontrolní půdorysy jsou v `services/import-test/vystup`, a commitnout.
+
+| Článek | Obrázek | Scéna a záběr |
+|---|---|---|
+| typy-strech | `typy-strech-porovnani` (úvod), `typy-strech.jpg` (náhled) | Kopie vzorového projektu, sedlová 38° a valbová 30° s taškou `taska-cervena`, pultová 15° a plochá s plechem antracit, pohled od zadní strany `smer(30, −1, −1)`, společný záběr všech čtyř střech, mřížka 2 × 2 |
+| typy-strech | `sedlova-30-45` | Stejný dům kolmo na štít, sedlová 30° a 45° vedle sebe ve stejném měřítku |
+| barva-fasady | `barva-fasady-uvod` (úvod i náhled) | Kopie vzoru, bílá RAL 9016 s taškou `taska-cerna` a okny RAL 7016, pohled skoro z výšky očí (11°) na osluněný západní štít (slunce v editoru svítí pevně od jihozápadu, zahradní strana je ve stínu a bílá by vyšla šedá) |
+| barva-fasady | `barva-fasady-kombinace` | Čtyři kombinace z tabulky článku (bílá + `taska-cerna`, krémová + `taska-cervena`, písková + `betonova-hneda-mech` + hnědá okna, světle šedá + `betonova-cerna`), stejný pohled `smer(20, 0,29, 0,96)` |
+| minimalni-rozmery-mistnosti | `minimalni-rozmery-mistnosti-uvod` (úvod i náhled) | Nová scéna `nocniZona`: noční část domu, obvodové zdi 45 cm, příčky 15 cm, ložnice 3 × 3 a 4 × 3 m s postelí 165 × 210, stolky a skříní, chodba 120 cm, hala se vchodem a botníkem, koupelna s vanou, WC a umyvadlem, obývák; 3D shora bez obýváku |
+| minimalni-rozmery-mistnosti | `loznice-pudorys` | Stejná scéna, výřez severní části s kótami (rozměry v popiscích), popisky ložnic nad postelí a nad nábytkem, aby pruh u nohou postele zůstal volný |
+| minimalni-rozmery-mistnosti | `chodba-90-120` | Scéna dvakrát s chodbou 90 a 120 cm, výřez kolem chodby, nakreslení lidé (ramena 55 cm): v užší jeden, v širší dva vedle sebe |
+| jak-nakreslit-pudorys-domu | `pudorys-prizemi` (úvod), `dum-3d-bez-strechy`, náhled | Kopie vzoru upravená jen pro obrázky: obvodové zdi 45 cm, dveře WC ven do zádveří, mísa, vana a umyvadlo, obývák „Obývák s kuchyní“, bez sloupu; půdorys natočený do os s kótami a bez nábytku, 3D bez střechy s nábytkem |
+| vypocet-schodiste | `schodiste-v-hale-3d`, náhled | Nová scéna: patrový dům 11 × 9 m, přímé schody 2,90 m v hale podél nosné stěny, vchod z ulice, dveře do pracovny, na WC a do obýváku, okna mimo schody; 3D přízemí bez patra a střechy od severu |
+| kolik-zeminy-z-vykopu | `vykop-svah`, `zaklad-svah` (+ náhled `vykop-svah.jpg`) | `snimky-zemina.cjs`: dům 12 × 10 m na svahu 10 %, okna ze všech stran, vchod na horní straně, střecha `taska-cervena`; jáma bez domu a dům se základem protaženým k zemi, základ pro názornost šedě (v editoru má barvu fasády) |
+
+Nový obrázek: navrhnout scénu jako skutečný dům (pravidlo 13), přidat funkci do `snimky-clanky-dum.cjs` a do `CLANKY`,
+článek do seznamu v `snimky-vse.cjs` a řádek do této tabulky. Bez obrázků z editoru je `koeficient-nakypreni-zeminy`
+(nákres `::nakypreni` je SVG v šabloně).
+
 ## Příklad výpočtu pro články
 
 Dům 12 × 10 m ze `Zemina.spocitej` při výchozím nastavení (pracovní prostor 0,8 m, ornice 25 cm, spára 1 m, nakypření
