@@ -135,7 +135,15 @@ vyladěné, mění se jen to, co k sobě nesedí (Libor).
   jako přepínač; nápisy v jednom sloupci. Bez nápověd typu „tah za ↻ otáčí“.
 - **Čtyři druhy tlačítek:** nástroj (lišta), běžné (obrys), hlavní (oranžové, nejvýš jedno v panelu),
   tiché (bez rámečku). **Mazání vždy symbolem křížku**, slovo Smazat podle místa, červené až při najetí.
-- Převod panelů zbývá, dělat zároveň s tmavým režimem aplikace.
+- **Nasazeno lokálně 11. 11. 2026 (1a4dcb5):** centrální pravidla v `koncept-v3.blade.php` (blok „Prvky panelů podle
+  grafického manuálu“): pole a seznamy I1, tlačítka `.border` v panelech jako běžná, `.kk-smazat` (křížek),
+  ano/ne v plovoucím panelu jako přepínač, `.kk-dily` (díly stejné šířky, zvolený `.kk-zap`), `.kk-mrizka`
+  (nápisy ve sloupci), `.kk-pole-jed` (jednotka v poli). Díly: dveře/okno, tvar schodů, tvar sloupu. Celý nový
+  rozvrh (mřížka a jednotka v poli) zatím jen u sloupu, ostatní panely mají nové prvky ve stávajícím rozvržení.
+  Dlouhé volby (druh základů, okap/štít) zůstávají seznamem.
+- Panely vpravo: šestitečkový úchyt mění pořadí (localStorage `kv3_poradiPanelu`), hlavičky bez počtů,
+  „Použité objekty“ (Libor 11. 11. 2026).
+- Zbývá: tmavý režim aplikace (Tailwind třídy `text-gray-*`, `bg-white` v editoru).
 
 ## Co ještě není rozhodnuto / zbývá
 1. **Články:** pipeline Markdown → Blade bloky (třídy už existují), `modules/blog.md`.
