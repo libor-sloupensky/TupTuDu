@@ -7,7 +7,7 @@ publikovano: 2026-11-11
 overeno: 2026-11-11
 revize: 2026-11-11
 autor: Libor z TupTuDu
-stav: koncept
+stav: zverejneno
 obrazek: /img/clanky/minimalni-rozmery-mistnosti/minimalni-rozmery-mistnosti.jpg
 souvisejici: jak-nakreslit-pudorys-domu, vypocet-schodiste
 - Vyhláška 146/2024 Sb. ve znění 97/2026 Sb. (§ 3 písm. b obytný prostor 8 m², § 38 světlá výška 2,5 m, 2,2 m, podkroví, 1,2 m) | https://www.zakonyprolidi.cz/cs/2024-146

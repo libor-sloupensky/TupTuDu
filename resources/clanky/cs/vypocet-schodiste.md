@@ -7,7 +7,7 @@ publikovano: 2026-11-11
 overeno: 2026-11-11
 revize: 2026-11-11
 autor: Libor z TupTuDu
-stav: koncept
+stav: zverejneno
 obrazek: /img/clanky/vypocet-schodiste/vypocet-schodiste.jpg
 souvisejici: jak-nakreslit-pudorys-domu, minimalni-rozmery-mistnosti
 - Vyhláška 146/2024 Sb. o požadavcích na výstavbu ve znění 97/2026 Sb., § 31 odst. 3 (stejná výška stupňů v rameni hlavního schodiště), § 94 (splnění přes normy) | https://www.zakonyprolidi.cz/cs/2024-146

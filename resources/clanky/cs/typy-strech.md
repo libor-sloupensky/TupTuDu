@@ -7,7 +7,7 @@ publikovano: 2026-11-11
 overeno: 2026-11-11
 revize: 2026-11-11
 autor: Libor z TupTuDu
-stav: koncept
+stav: zverejneno
 obrazek: /img/clanky/typy-strech/typy-strech.jpg
 souvisejici: jak-nakreslit-pudorys-domu, barva-fasady
 - eStav: Střešní krytina (nejmenší doporučené sklony krytin podle ČSN 73 1901:1999, zrušená, platnost do 10 m délky a 600 m n. m.) | https://www.estav.cz/cz/103.stresni-krytina
