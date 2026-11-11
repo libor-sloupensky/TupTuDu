@@ -184,7 +184,7 @@ Kategorie `koupelna` (Koupelna a WC), 22 kusů: WC, bidet, pisoár, umyvadla, va
 - **Vyřazené po prohlídce archu:** červená miska, nástěnný blok umyvadla se zrcadlem (bathroom1), druhý pisoár, kamenné umyvadlo na desku (bez desky visí), sprchový kout s obkladem (98 tisíc plošek). Pračka Scopia má na předním panelu pruhy přímo v geometrii, místo ní je jako pračka použitý model sušičky (`sh3d-pracka`, stejný `orig`).
 - **Postup:** `node services/katalog/sestav.cjs --jen=^sh3d-`, arch `node services/katalog/kontrola.cjs --archy --kat=koupelna`, potom `node services/katalog/s3.cjs nahraj --jen=^sh3d-`.
 - **Stav 11. 11. 2026:** 22 kusů je v S3 (Libor nahrání potvrdil), `katalog.json` commitnutý, na web ještě nenasazené.
-- **Zbývá z Plánu 1:** závěsné WC, zrcadlová skříňka, samostatná koupelnová skříňka a sprchová vanička nejsou v žádné vyhovující sadě. Vanička a sprchový kout patří do konfigurátoru (Plán 2), závěsné WC a skříňky buď parametricky, nebo z dalšího zdroje CC0 (Sketchfab CC BY jen s kontrolou kus po kusu).
+- **Zbývá z Plánu 1:** zrcadlová skříňka, samostatná koupelnová skříňka a sprchová vanička nejsou v žádné vyhovující sadě. Sprchové kouty a závěsné WC už dělá generátor (2. etapa, A1 a A3), skříňky a vanička čekají v bodech A2 a A4.
 
 ## Plán: koupelna, 2. etapa (11. 11. 2026, čeká na Liborovo rozhodnutí)
 
@@ -201,7 +201,7 @@ Libor: kritický nedostatek vybavení koupelny, jen jeden sprchový kout. Co v C
 
 **C. Technická místnost a prádelna** (generátor, jednoduché tvary): ohřívač vody (bojler), závěsný plynový kotel, vnitřní jednotka tepelného čerpadla, rozdělovač podlahového topení, výlevka, koš na prádlo, sušák. Patří do skupiny `technicke` a `hygiena`, nová kategorie `technika`.
 
-**D. Kuchyň (Plán 2):** v Blend Swap CC0 je celá sada kuchyňských skříněk (spodní, horní, rohové, dřezová, vysoká, digestoř, lednice, trouba, varná deska). Hodí se jako výchozí moduly konfigurátoru.
+**D. Kuchyň (Plán 2):** v Blend Swap CC0 je celá sada kuchyňských skříněk (spodní, horní, rohové, dřezová, vysoká, digestoř, lednice, trouba, varná deska). Nábytková sestava se staví z parametrů, sada poslouží jen jako vzor proporcí.
 
 Pořadí podle návrhu: A1 a A3 (sprchy, závěsné WC), B, A4, C, A2.
 
@@ -211,21 +211,126 @@ V katalogu chybí vybavení koupelny a WC, kuchyňská linka a vestavěné skř�
 
 **Plán 1: koupelna a WC.** Rozjeté 11. 11. 2026, stav v oddílu Koupelna ze Sweet Home 3D. Původní zadání: umyvadlo, WC (i závěsné), vana, bidet, pisoár, pračka a sušička jako obyčejné kusy katalogu. Tvary ze Sweet Home 3D, jen sady s licencí CC BY (autor do `ZDROJE` v `sestav.cjs`), keramika a chrom naše. Nové kategorie, např. `sanita`, a jejich doplnění do `KATEGORIE_PODLE_SKUPINY` (skupina `hygiena`). Sprchový kout patří do Plánu 2, potřebuje volné rozměry a zástěnu.
 
-**Plán 2: konfigurátor kuchyňské linky a vestavěných skříní** (návrh 11. 11. 2026, čeká na Liborova rozhodnutí níž).
+**Plán 2: Nábytková sestava** (kuchyňská linka a vestavěná skříň), samostatný oddíl níž.
 
-*Proč ne kusy z katalogu:* linka i vestavěná skříň se měří podle místnosti. Pevné skříňky by uživatel skládal vedle sebe po jedné a dorovnával ručně. Proto vlastní objekt **sestava**, jako schodiště: leží podél stěny, rozdělí se na moduly sama a ve 3D se staví přímo v editoru (three.js), ne jako hotový GLB.
+## Plán 2: Nábytková sestava – kuchyňská linka a vestavěná skříň (Libor 11. 11. 2026)
 
-*Záznam:* `dum.sestavy` = [{ id (K1, K2… kuchyň, V1… skříň), podlazi, druh: kuchyn | skrin, body (lomená čára po líci stěny: rovná = 2 body, L = 3, U = 4), hloubka, vyska, moduly: [{ typ, sirka }], barvy: { korpus, dvirka, deska, uchytky } }]. Uložení, Zpět, výběr, mazání, Objekty (značka K a V), skrytí okem jako u schodů a sloupu.
+Stav: upřesněný koncept, čeká na Liborovo schválení bodů na konci oddílu. Neprogramovat bez výzvy.
 
-*Etapy:*
-1. **Základ sestavy (rovná linka).** Nástroj v liště: tah po líci stěny od rohu k rohu, magnet na líc a do rohu. Délka se rozdělí na spodní skříňky po 60 cm, zbytek dorovná užší modul (30 až 50 cm) nebo krycí lišta. Pracovní deska průběžná, sokl, úchytky. 2D značka (obrys, dělení modulů, horní skříňky čárkovaně). Panel: délka, hloubka, výška, barvy korpusu, dvířek a desky (stejný výběr barvy jako fasáda). Sdílený odkaz a export.
-2. **Kuchyň.** Moduly se spotřebiči: dřez s baterií, varná deska, trouba, myčka, lednice vestavná i volně stojící, digestoř. Horní skříňky (výška 72 cm, 55 cm nad deskou), vysoká skříň s lednicí nebo troubou. Tvar L a U s rohovým modulem. Ostrůvek a barový pult jako volně stojící sestava. Okno ve stěně: horní skříňky pod ním vynechá, deska zůstane pod parapetem (hlídat výšku parapetu, varování, když je nízko).
-3. **Vestavěná skříň.** Do výklenku nebo podél stěny, od podlahy ke stropu podle výšky podlaží (strop i podkroví). Dveře posuvné (2 až 4 díly) nebo otočné, zrcadlové dveře, vnitřek ve 3D zavřený. Šatna (průchozí) jako police a tyč bez dveří.
-4. **Úprava modulů.** Klik na modul v 2D nebo 3D: změna typu a šířky, přesun v řadě (tažením), smazání. Ostatní moduly se dorovnají. Hlídání kolizí s dveřmi a okny (otevírání).
-5. **Volitelně později:** seznam modulů (kusovník) do exportu, orientační cena, typ dvířek (hladká, rámová), osvětlení pod horními skříňkami.
+**Rozhodnuto (Libor 11. 11. 2026):**
+- Název **Nábytková sestava**, druhy Kuchyňská linka a Vestavěná skříň.
+- **Podvolba nástroje Nábytek a vybavení** (křesílko v liště), žádné nové tlačítko: po kliknutí se nabídne Nábytek, nebo Nábytková sestava. „Na první pohled minimalistické a uživatel najde, co hledá.“
+- Vlastní objekt sestava místo skříněk v katalogu. Linka i skříň se měří podle místnosti, pevné skříňky by uživatel skládal po jedné a dorovnával ručně. Sestava se jako schodiště staví ve 3D přímo v editoru z parametrů, ne jako hotový GLB.
+- První vlna: rovná linka a tvar L. Tvar U, ostrůvek a barový pult později.
+- Pro všechny tarify, úpravy se počítají do denního limitu jako ostatní.
+- **Kusovník ani cena ne:** složité a národně neudržitelné.
+- Libor doplnil: volba povrchů, výšky, počet šuplíků a dvířek, rohové skříňky. Skříňka bývá jen spodní, spodní a horní (každá s jinou hloubkou), nebo po celé výšce (lednice). Spotřebiče musí být vidět. Šatní skříň je jednodušší: dveře posuvné nebo otočné, materiály a zrcadla.
 
-*Materiály:* stejné jako generátor koupelny (lak, dekor dřeva, keramika na dřez, chrom, sklo), barvy přes `_nastavBarvy3d`, ať je přebarvení okamžité. Spotřebiče jednoduché vlastní tvary (nerez, černé sklo varné desky), ne modely z knihoven: konzistentní vzhled a libovolná šířka. Sada kuchyňských skříněk z Blend Swap CC0 jen jako vzor proporcí.
+**Ovládání**
+- Panel Nábytek a vybavení má nahoře přepínač **Nábytek | Sestava**, pamatuje si poslední volbu. V Sestavě jsou dvě dlaždice (Kuchyňská linka, Vestavěná skříň) a nápověda ke kreslení.
+- Katalog ve skupině Kuchyně ukáže jako první dlaždici Kuchyňskou linku, v noční zóně a ve vstupu Vestavěnou skříň. Je to odkaz do Sestavy, ať ji najde i ten, kdo hledá v nábytku.
+- **Kreslení:** klik na líc stěny vyplní celý volný úsek mezi rohy a dveřmi. Tah od bodu k bodu udělá sestavu jen v délce tahu. Klik do rohu pokračuje po sousední stěně (L). Magnet na líc, do rohu a k hraně dveří a okna, Alt vypíná. Konce jdou posunout úchyty.
+- Nová sestava je vybraná a panel ukáže její nastavení. Výběr klikem ve 2D i 3D a v Objektech, oko skryje, Delete smaže.
+- **Nákres zepředu v panelu:** rozvinutý pohled na celou sestavu (SVG) se sloupci, dvířky, šuplíky, spotřebiči, okny ve stěně za ní a zlomem rohu u L. Klik na sloupec ho vybere a pod nákresem jsou jeho volby, tažením se sloupec přesune. U skříně klik na dveře přepne dekor a zrcadlo. Nákres je hlavní místo úprav, výběr sloupce kliknutím ve 3D přijde později.
 
-*Odhad:* etapa 1 jedno větší sezení, etapa 2 jedno až dvě, etapa 3 jedno, etapa 4 jedno.
+**Kuchyňská linka**
+- *Sloupce:* linka se dělí na sloupce, každý má šířku a skladbu:
+  - jen spodní skříňka (třeba pod oknem),
+  - spodní a horní skříňka,
+  - vysoká skříň (lednice, trouba, potraviny),
+  - volně stojící spotřebič nebo volné místo, nad nimi může být horní skříňka.
+  Horní skříňka má šířku sloupce, dělení nahoře a dole se kryje (zjednodušení, viz K rozhodnutí).
+- *Šířky:* nabídka 30, 40, 45, 50, 60, 80, 90 a 100 cm a vlastní (15 až 120). Nová linka se dělí po 60 cm. Zbytek do 15 cm vyplní krycí lišta, od 15 do 45 cm úzká skříňka, větší běžná. Upravený sloupec zůstává, při změně délky se přepočítají jen neupravené sloupce a dorovnání.
+- *Výšky a hloubky* platí pro celou sestavu, u horní a vysoké skříňky jde výška změnit zvlášť (třeba nižší nad lednicí). Pracovní deska 90 cm (85 až 100), sokl 10 cm. Spodní a vysoké skříňky hloubka 60 cm, deska 62 cm s přesahem. Horní skříňky hloubka 35 cm, výška 72 cm (36 až 96), 55 cm nad deskou. Vysoké skříně končí v horní hraně horních. Volba **Ke stropu** protáhne horní a vysoké skříně ke stropu podle výšky podlaží a přepočítá se sama.
+- *Čela:*
+  - spodní: dvířka (1 nebo 2), šuplíky (2, 3, 4), šuplík a dvířka, otevřená police;
+  - horní: dvířka (1 nebo 2), výklopná (1 nebo 2 nad sebou), prosklená, otevřená police;
+  - vysoká: dvířka 2 nebo 3 nad sebou, vedle sebe jedna nebo dvoje.
+  Dvoje dvířka vedle sebe se nabídnou sama od šířky 70 cm.
+- *Rohy (tvar L), spodní a horní zvlášť:* rohová skříňka L (dole 90 × 90, nahoře 60 × 60, lomená dvířka), nebo slepý roh (skříňka zajede za roh). U slepého rohu je krycí lišta 5 cm, aby šla otevřít dvířka a šuplíky. Nahoře navíc otevřená rohová police nebo nic. Deska a sokl jdou rohem průběžně.
+- *Spotřebiče* jsou vlastní jednoduché tvary, ne modely. V půdorysu mají značku bez písmen, ta platí ve všech jazycích.
+  - v desce: dřez (jednodřez, s odkapem, dvojdřez; nerez, granit černý, šedý, bílý; baterie), varná deska indukční (černé sklo se zónami) nebo plynová (hořáky s mřížkou), 60, 80 a 90 cm;
+  - ve spodní skříňce: trouba (pod varnou deskou nebo samostatně), myčka 45 a 60 cm (plně vestavná s čelem jako dvířka, nebo s viditelným panelem);
+  - ve vysoké skříni: vestavná lednice (jedno čelo, nebo lednice a mraznička), trouba s mikrovlnkou ve výšce očí, samotná trouba;
+  - nad deskou: digestoř komínová (místo horní skříňky, komín ke stropu), vestavná (výsuvný panel ve spodku horní skříňky), nebo žádná;
+  - volně stojící: lednice 60 cm a americká 90 cm. Sporák, pračka a vinotéka později.
+- *Automatické vybavení:* nová linka se sama vybaví podle zvyklostí. Dřez je pod oknem (jinak blízko středu), vedle něj myčka. Varná deska s troubou a digestoří je aspoň o skříňku dál od dřezu. Lednice stojí na kraji dál od varné desky (u linky nad 2,4 m). Ostatní skříňky mají šuplíky a dvířka. Všechno jde změnit, „Vybavit znovu“ vrátí výchozí rozvržení.
+- *Kontroly (varování, ne zákaz):*
+  - varná deska má aspoň 30 cm desky od vysoké skříně a od dřezu;
+  - digestoř je nad varnou deskou (65 cm nad indukcí, 75 cm nad plynem);
+  - parapet okna je níž než deska;
+  - sloupec stojí přes dveře nebo okno do podlahy;
+  - sestava odstoupí od stěny nebo do ní zajede.
 
-*K rozhodnutí s Liborem:* (a) přístup sestavou místo kusů v katalogu, (b) které tvary v první vlně (rovná a L), (c) zda konfigurátor jen pro placené tarify, (d) zda kusovník a cena patří do plánu.
+**Vestavěná skříň**
+- Kreslí se stejně jako linka. Ve výklenku převezme jeho šířku i hloubku (do 70 cm). Rovná, v L později.
+- Výška ke stropu (s horní krycí lištou), nebo vlastní. Hloubka 62 cm u posuvných dveří, 58 cm u otočných.
+- Dveře:
+  - **posuvné**: 2 až 4 díly podle šířky, ve 3D se překrývají ve dvou kolejnicích, rám stříbrný, černý, bílý nebo zlatý;
+  - **otočné**: po 40 až 60 cm, s úchytkami;
+  - volitelně bez dveří: otevřená, s policemi a tyčí.
+- Povrch má každé dveře zvlášť: dekor, nebo zrcadlo (stříbrné, bronzové, grafitové). Korpus a boky mají vlastní povrch, viditelný bok na volném konci se doplní sám.
+- Vnitřek zavřené skříně se nekreslí. Dělené dveře (příčky, dekor se zrcadlem) a zkosení v podkroví později.
+
+**Povrchy**
+- Kuchyň:
+  - čela (horní můžou mít jiná než spodní, tedy dvoubarevná kuchyň);
+  - korpus (vidět na hranách a v otevřených policích);
+  - pracovní deska;
+  - sokl (jako čela, jako korpus, nerez, nebo černý);
+  - úchytky (madlo, knopka, úchytový profil, bez úchytek; nerez, černá, zlatá, bílá);
+  - zástěna za linkou (nic, sklo v barvě, obklad, jako deska).
+- Skříň: dveře, rám, korpus.
+- Druhy:
+  - jednobarevné (společný výběr barvy s RAL, matné i lesklé);
+  - dřevodekory (dub, ořech, jasan…);
+  - kámen a beton pro desku (mramor, šedý kámen, černý granit, beton, terrazzo);
+  - nerez, černý kov, mosaz, sklo, zrcadlo.
+- Dřevo a kámen jsou ze skutečných textur CC0 (Poly Haven, ambientCG), stejným postupem jako textury krytin (`services/krytiny/sestav.py`: barva, normála, drsnost, náhled). Jednobarevné jsou bez textury. „Jinde použité“ nabídne povrchy z ostatních sestav.
+
+**Záznam:** `dum.sestavy` = [{ id, podlazi, druh: kuchyn | skrin, body (po líci stěny, rovná 2, L 3), strana, vysky, hloubky, povrchy, ramena: [{ sloupce: [{ sirka, skladba, spodni, horni, vysoka, upraveno }] }], rohy: [{ spodni, horni }] }].
+- Skříň má místo ramen `dvere` (druh, počet, povrch každých dveří), `ram`, `vyska` (null = ke stropu) a `hloubku`.
+- Co jde spočítat, se neukládá a počítá se při vykreslení: okna, výška stropu, viditelné boky, krycí lišty.
+
+**Označení** podle angličtiny: **K1** kuchyňská linka (Kitchen), **B1** vestavěná skříň (Built-in). W mají stěny, M nábytek.
+
+**Souvislosti (stav a invalidace)**
+- Sestava stojí v souřadnicích jako nábytek a schody, posun stěny ji neposune. Když od stěny odstoupí nebo do ní zajede, panel varuje a nabídne Přitáhnout ke stěně.
+- Okna se čtou při každém vykreslení. Horní skříňky pod oknem se vynechají samy, posun okna se projeví hned. Ručně přidaná horní skříňka pod oknem zůstane, s varováním.
+- Výška ke stropu sleduje výšku podlaží. Smazání podlaží smaže i jeho sestavy.
+- Každá úprava je jeden krok Zpět a jedna úprava do limitu tarifu. Pole platí ihned (`_poleIhnedInit`), nový panel patří do `test-formulare-ui.cjs`.
+- 2D:
+  - spodní skříňky plnou čarou s dělením sloupců;
+  - horní skříňky čárkovaně (nad rovinou řezu);
+  - vysoké s úhlopříčkou;
+  - skříň s čarou dveří (posuvné dvojitě);
+  - spotřebiče značkou;
+  - výplň v barvě čel, barvy i pro tmavý režim.
+  Export a sdílený odkaz kreslí sestavy stejně.
+- 3D se staví živě z parametrů: kvádry, deska s výřezy pro dřez a varnou desku, válce.
+  - Mezi čely jsou spáry 3 mm. Geometrie je sloučená podle materiálu kvůli výkonu notebooku.
+  - Přestavuje se jen změněná sestava, ne celá scéna.
+  - Funkce sdílí s generátorem koupelny (`generuj.html`: deska, kvádr, válec, madlo), materiály jsou stejné.
+- Překlady ed_* ve všech osmi jazycích. Nový test `test-sestava-ui.cjs`: kreslení, dělení, dorovnání, okno, L, Zpět, uložení, 2D, 3D, sdílený odkaz.
+
+**Etapy**
+1. **Základ:** přepínač v panelu, kreslení rovné sestavy, sloupce po 60 cm s dorovnáním, spodní a horní skříňky. K tomu deska, sokl, dvířka, úchytky, výšky a hloubky a jednobarevné povrchy. Funguje 2D, 3D, Objekty, Zpět, uložení, sdílení a export. Jedno větší sezení.
+2. **Nákres a sloupce:** nákres zepředu, výběr sloupce, šířka, skladba (spodní, spodní a horní, vysoká, volné místo), čela, přidání, smazání, přesun, dorovnání, okna a dveře. Jedno sezení.
+3. **Vestavěná skříň:** posuvné a otočné dveře, zrcadla, rám, výška ke stropu, výklenek. Jedno sezení.
+4. **Spotřebiče:** všechny výše, značky v půdorysu, automatické vybavení, kontroly. Jedno až dvě sezení.
+5. **Tvar L a rohy:** kreslení přes roh, rohové skříňky dole i nahoře, deska a sokl dokola. Jedno sezení.
+6. **Povrchy z textur:** dřevo, kámen, beton, lesk, dvoubarevná kuchyň, zástěna. Jedno sezení.
+
+Později:
+- tvar U, ostrůvek a barový pult;
+- dělené dveře skříně, otevřená šatna, zkosení v podkroví;
+- osvětlení pod skříňkami;
+- výběr sloupce ve 3D.
+
+Stejný nástroj se hodí i na koupelnový nábytek (koupelna A4) a obývací stěnu.
+
+**K rozhodnutí s Liborem (11. 11. 2026):**
+- (a) Horní skříňky se stejným dělením jako spodní. Doporučeno, ovládání je jednodušší. Nezávislé dělení až ve chvíli, kdy bude chybět.
+- (b) Automatické vybavení nové linky. Doporučeno.
+- (c) Pořadí etap: vestavěná skříň hned po nákresu (doporučeno, je rychlá), nebo až po kuchyni.
+- (d) Označení K1 a B1.
