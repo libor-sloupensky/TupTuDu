@@ -74,7 +74,7 @@ return [
     'nakyp_2' => 'Dug out, in a truck or on a heap: about 1.25 m³, because the clods leave gaps between them. The dashed line marks 1 m³. It still weighs about 1.8 t.',
 
     'schod_nadpis' => 'Calculate your staircase',
-    'schod_uvod' => 'Enter the height from floor to floor. The checks follow the rules and common practice for :zeme. Straight stairs and stairs with landings come out the same as in the TupTuDu editor.',
+    'schod_uvod' => 'Enter the height from floor to floor. The checks follow the rules and common practice for :zeme. The result is the same as for stairs in the TupTuDu editor.',
     'schod_uvod_obecny' => 'Enter the height from floor to floor. The recommended values are only an example, check them against the rules in your country.',
     'schod_vyska' => 'Height from floor to floor (cm)',
     'schod_tvar' => 'Shape',
@@ -96,7 +96,6 @@ return [
     'schod_merena' => 'Tread depth where it is measured',
     'schod_dop_naslap' => 'Main stair tread in a family house at least :od mm (building regulations); if it comes out narrower, the calculator adds a step',
     'schod_dop_merena' => 'Curved flight up to 110 cm: tread at least :od mm at 40 cm from the outer edge, wider flights at least :vnitrni mm at 30 cm from the inner edge (building regulations)',
-    'schod_aplikace_jen_kalk' => 'Winders and spiral stairs are only in the calculator for now. In TupTuDu you place straight stairs or L- and U-shaped stairs with landings in your house and see how much space they take in the plan and in 3D.',
     'schod_nelze' => 'The winder turn does not fit into this number of steps. Make the flight narrower or choose stairs with a landing.',
     'schod_sirka' => 'Flight width (cm)',
     'schod_cilova' => 'Target riser height (mm)',

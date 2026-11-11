@@ -74,7 +74,7 @@ return [
     'nakyp_2' => 'Ausgehoben auf der Ladefläche oder auf der Halde: etwa 1,25 m³, weil zwischen den Brocken Lücken bleiben. Die gestrichelte Linie zeigt 1 m³. Sie wiegt weiterhin etwa 1,8 t.',
 
     'schod_nadpis' => 'Berechne deine Treppe',
-    'schod_uvod' => 'Gib die Höhe von Fußboden zu Fußboden ein. Die Prüfungen folgen den Vorschriften und der üblichen Praxis für :zeme. Gerade Treppen und Treppen mit Podest werden genauso berechnet wie im TupTuDu-Editor.',
+    'schod_uvod' => 'Gib die Höhe von Fußboden zu Fußboden ein. Die Prüfungen folgen den Vorschriften und der üblichen Praxis für :zeme. Das Ergebnis stimmt mit den Treppen im TupTuDu-Editor überein.',
     'schod_uvod_obecny' => 'Gib die Höhe von Fußboden zu Fußboden ein. Die empfohlenen Werte sind nur ein Beispiel, prüfe sie nach den Vorschriften in deinem Land.',
     'schod_vyska' => 'Höhe von Fußboden zu Fußboden (cm)',
     'schod_tvar' => 'Form',
@@ -96,7 +96,6 @@ return [
     'schod_merena' => 'Auftritt an der Messstelle',
     'schod_dop_naslap' => 'Auftritt der Haupttreppe im Einfamilienhaus mindestens :od mm (Bauvorschrift); wird er schmaler, fügt der Rechner eine Stufe hinzu',
     'schod_dop_merena' => 'Gewendelter Lauf bis 110 cm: Auftritt mindestens :od mm 40 cm vom äußeren Rand, breitere Läufe mindestens :vnitrni mm 30 cm vom inneren Rand (Bauvorschrift)',
-    'schod_aplikace_jen_kalk' => 'Gewendelte Treppen und Wendeltreppen gibt es vorerst nur im Rechner. In TupTuDu baust du gerade Treppen oder L- und U-Treppen mit Podest in dein Haus und siehst, wie viel Platz sie im Grundriss und in 3D brauchen.',
     'schod_nelze' => 'Die gewendelte Kurve passt nicht in so wenige Stufen. Mach den Lauf schmaler oder wähle eine Treppe mit Podest.',
     'schod_sirka' => 'Laufbreite (cm)',
     'schod_cilova' => 'Gewünschte Steigungshöhe (mm)',

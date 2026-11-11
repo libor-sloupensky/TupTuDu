@@ -74,7 +74,7 @@ return [
     'nakyp_2' => 'Excavada, en la caja del camión o en el montón: unos 1,25 m³, porque los terrones dejan huecos entre sí. La línea discontinua marca 1 m³. Sigue pesando unas 1,8 t.',
 
     'schod_nadpis' => 'Calcula tu escalera',
-    'schod_uvod' => 'Introduce la altura de suelo a suelo. Los controles siguen las normas y la práctica habitual para :zeme. Las escaleras rectas y con descansillo salen igual que en el editor de TupTuDu.',
+    'schod_uvod' => 'Introduce la altura de suelo a suelo. Los controles siguen las normas y la práctica habitual para :zeme. El resultado es el mismo que en las escaleras del editor de TupTuDu.',
     'schod_uvod_obecny' => 'Introduce la altura de suelo a suelo. Los valores recomendados son solo un ejemplo, compruébalos según las normas de tu país.',
     'schod_vyska' => 'Altura de suelo a suelo (cm)',
     'schod_tvar' => 'Forma',
@@ -96,7 +96,6 @@ return [
     'schod_merena' => 'Huella en el punto de medición',
     'schod_dop_naslap' => 'Huella de la escalera principal de una vivienda unifamiliar de al menos :od mm (normativa); si sale más estrecha, la calculadora añade un peldaño',
     'schod_dop_merena' => 'Tramo curvo de hasta 110 cm: huella de al menos :od mm a 40 cm del borde exterior; tramos más anchos, al menos :vnitrni mm a 30 cm del borde interior (normativa)',
-    'schod_aplikace_jen_kalk' => 'Los peldaños compensados y las escaleras de caracol, de momento, solo están en la calculadora. En TupTuDu colocas en tu casa escaleras rectas o en L y en U con descansillo y ves cuánto espacio ocupan en planta y en 3D.',
     'schod_nelze' => 'El giro con peldaños compensados no cabe en tantos peldaños. Reduce el ancho del tramo o elige una escalera con descansillo.',
     'schod_sirka' => 'Ancho del tramo (cm)',
     'schod_cilova' => 'Altura de contrahuella deseada (mm)',

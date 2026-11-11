@@ -121,8 +121,7 @@
         <figcaption class="tt-clanek-meta">{{ __('clanky.schod_nakres_popis') }}</figcaption>
     </figure>
     <div class="tt-kalkulacka-aplikace" data-vyzva>
-        {{-- Zabíhající a točité schody editor zatím nemá, výzva to řekne --}}
-        <p class="tt-jen-mys"><span data-jen="prime L U U2">{{ __('clanky.schod_aplikace') }}</span><span data-jen="Lz Uz tocite" hidden>{{ __('clanky.schod_aplikace_jen_kalk') }}</span></p>
+        <p class="tt-jen-mys">{{ __('clanky.schod_aplikace') }}</p>
         <p class="tt-jen-dotyk">{{ __('clanky.vyzva_dotyk') }}</p>
         <a class="btn btn-primary tt-jen-mys" href="{{ \App\Support\Clanky::adresaRegistrace($clanek) }}" data-vyzva-klik>{{ __('clanky.schod_aplikace_tlacitko') }}</a>
         <button type="button" class="btn btn-primary tt-jen-dotyk" data-poslat-odkaz>{{ __('clanky.vyzva_poslat') }}</button>

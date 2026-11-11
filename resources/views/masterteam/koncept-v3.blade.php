@@ -31,6 +31,8 @@
 {{-- Vzhledy střešních krytin, vyrábí services/krytiny/sestav.py (modules/dum.md, část Krytiny) --}}
 <script>window.KRYTINY_VZHLEDY = @json(json_decode(file_get_contents(public_path('textury/krytiny/vzhledy.json')))); window.KRYTINY_VERZE = {{ filemtime(public_path('textury/krytiny/vzhledy.json')) }};</script>
 <script src="/js/krytiny-3d.js?v={{ filemtime(public_path('js/krytiny-3d.js')) }}"></script>
+{{-- Geometrie zabíhajících a točitých schodů, stejný kód jako veřejná kalkulačka (modules/dum.md, část Schody) --}}
+<script src="/js/kalkulacka-schodiste.js?v={{ filemtime(public_path('js/kalkulacka-schodiste.js')) }}"></script>
 {{-- Omítka fasády a nejnižší pohled kamery (modules/dum.md, část Fasáda a pohled) --}}
 <script>window.POVRCHY_VERZE = {{ filemtime(public_path('textury/omitka/normala.webp')) }};</script>
 <script src="/js/povrchy-3d.js?v={{ filemtime(public_path('js/povrchy-3d.js')) }}"></script>
@@ -567,14 +569,14 @@
                 <div class="flex-1 min-w-0">
                 {{-- Nástroje domu: schody, usazení plánku, posun plánku --}}
                 <template x-if="nastroj === 'schody'">
-                    <div class="p-2 flex flex-col gap-1">
-                        <div class="flex items-center gap-2">
+                    <div class="p-2 flex flex-col gap-2">
+                        <div class="kk-mrizka">
                             <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.schody.nove') }}</span>
-                            <div class="kk-dily ml-auto" role="group">
-                                <button type="button" :class="schodyTvar === 'prime' && 'kk-zap'" @click="schodyTvar = 'prime'">{{ __('ed_sablona.schody.tvar_prime') }}</button>
-                                <button type="button" :class="schodyTvar === 'L' && 'kk-zap'" @click="schodyTvar = 'L'">{{ __('ed_sablona.schody.tvar_l') }}</button>
-                                <button type="button" :class="schodyTvar === 'U' && 'kk-zap'" @click="schodyTvar = 'U'">{{ __('ed_sablona.schody.tvar_u') }}</button>
-                            </div>
+                            <select data-schody-novy-tvar style="max-width: 11rem" title="{{ __('ed_sablona.schody.tvar_tip') }}" @change="schodyTvar = $event.target.value">
+                                @foreach (['prime' => 'tvar_prime', 'L' => 'tvar_l', 'Lz' => 'tvar_lz', 'U' => 'tvar_u', 'Uz' => 'tvar_uz', 'tocite' => 'tvar_tocite'] as $hodnota => $klic)
+                                    <option value="{{ $hodnota }}" :selected="schodyTvar === '{{ $hodnota }}'">{{ __('ed_sablona.schody.' . $klic) }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="text-gray-500" x-text="schodyStart ? preloz('ed_sablona.schody.klepni_smer') : preloz('ed_sablona.schody.klepni_zacatek')"></div>
                     </div>
@@ -906,54 +908,62 @@
                             @include('masterteam.partials.panel-sestavy')
                         </template>
 
-                        {{-- SCHODIŠTĚ --}}
+                        {{-- SCHODIŠTĚ: hlavička s označením a nápisy ve sloupci (grafický manuál), tvar seznamem (šest tvarů),
+                             pole jen pro zvolený tvar, souhrn a upozornění pod nimi (Libor 11. 11. 2026: „děsně nahečmané“) --}}
                         <template x-if="inspector.kind === 'schodiste'">
-                            <div class="flex flex-col gap-1 w-full">
+                            <div class="flex flex-col gap-1 w-full" data-panel-schodu>
                                 <div class="flex items-center gap-2">
+                                    <span class="kk-oznaceni text-gray-700 bg-gray-100" x-text="inspector.id"></span>
                                     <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.schody.nazev') }}</span>
-                                    <span class="text-gray-500" x-text="inspector.trasa"></span>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <div class="kk-dily" role="group" title="{{ __('ed_sablona.schody.tvar_tip') }}">
-                                        <button type="button" data-schody-tvar="prime" :class="inspector.tvar === 'prime' && 'kk-zap'" @click="setSchody('tvar', 'prime')">{{ __('ed_sablona.schody.tvar_prime') }}</button>
-                                        <button type="button" data-schody-tvar="L" :class="inspector.tvar === 'L' && 'kk-zap'" @click="setSchody('tvar', 'L')">{{ __('ed_sablona.schody.tvar_l') }}</button>
-                                        <button type="button" data-schody-tvar="U" :class="inspector.tvar === 'U' && 'kk-zap'" @click="setSchody('tvar', 'U')">{{ __('ed_sablona.schody.tvar_u') }}</button>
-                                    </div>
-                                    <span class="text-gray-500 ml-1">{{ __('ed_sablona.spolecne.sirka_zkr') }}</span>
-                                    <span class="kk-pole-jed"><input type="number" min="60" max="250" step="5" title="{{ __('ed_sablona.schody.sirka_tip') }}" class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
-                                           :value="Math.round(inspector.sirka * 100)" @change="setSchody('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
+                                    <span class="text-gray-500 whitespace-nowrap" x-text="inspector.trasa"></span>
                                     <button type="button" @click="setSchody('otoc')" class="border border-gray-500 rounded px-2 py-0.5 text-xs ml-auto hover:bg-orange-50" title="{{ __('ed_sablona.spolecne.otocit_90') }}">⟳</button>
-                                    <button type="button" x-show="inspector.tvar !== 'prime'" @click="setSchody('strana')" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.schody.zrcadlit') }}">⇄</button>
+                                    <button type="button" x-show="inspector.smiZrcadlit" @click="setSchody('strana')" class="border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-orange-50" title="{{ __('ed_sablona.schody.zrcadlit') }}">⇄</button>
                                 </div>
-                                <div class="text-gray-500" title="{{ __('ed_sablona.schody.vypocet_tip') }}" x-text="preloz('ed_sablona.schody.souhrn', { stupnu: prelozPocet('ed_sablona.schody.stupnu', inspector.n), vyska: Math.round(inspector.v * 1000), sirka: Math.round(inspector.b * 1000), delka: prelozCislo(inspector.delka, 2) })"></div>
-                                <div class="flex items-center gap-1" title="{{ __('ed_sablona.schody.rucne_tip') }}">
-                                    <span class="text-gray-500">{{ __('ed_sablona.schody.vyska_stupne') }}</span>
-                                    <span class="kk-pole-jed"><input type="number" min="100" max="250" step="1" data-schody="vyska" :value="Math.round(inspector.v * 1000)" @change="setSchody('vyska', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>mm</span></span>
-                                    <span class="text-gray-500 ml-2">{{ __('ed_sablona.schody.naslap') }}</span>
-                                    <span class="kk-pole-jed"><input type="number" min="150" max="500" step="1" data-schody="naslap" :value="Math.round(inspector.b * 1000)" @change="setSchody('naslap', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>mm</span></span>
-                                </div>
-                                <template x-if="inspector.tvar !== 'prime'">
-                                    <div class="flex items-center gap-1" title="{{ __('ed_sablona.schody.casti_tip') }}">
-                                        <span class="text-gray-500">{{ __('ed_sablona.schody.casti') }}</span>
+                                <div class="kk-mrizka">
+                                    <span class="text-gray-500">{{ __('ed_sablona.schody.tvar') }}</span>
+                                    <select data-schody-tvar style="max-width: 11rem" title="{{ __('ed_sablona.schody.tvar_tip') }}" @change="setSchody('tvar', $event.target.value)">
+                                        @foreach (['prime' => 'tvar_prime', 'L' => 'tvar_l', 'Lz' => 'tvar_lz', 'U' => 'tvar_u', 'Uz' => 'tvar_uz', 'tocite' => 'tvar_tocite'] as $hodnota => $klic)
+                                            <option value="{{ $hodnota }}" :selected="inspector.tvar === '{{ $hodnota }}'">{{ __('ed_sablona.schody.' . $klic) }}</option>
+                                        @endforeach
+                                    </select>
+                                    <span class="text-gray-500" x-show="inspector.tvar === 'Lz' || inspector.tvar === 'Uz'">{{ __('ed_sablona.schody.zatacka') }}</span>
+                                    <div class="kk-dily" role="group" x-show="inspector.tvar === 'Lz' || inspector.tvar === 'Uz'" title="{{ __('ed_sablona.schody.zatacka_tip') }}">
+                                        <button type="button" data-schody-zatacka="osa" :class="inspector.zatacka === 'osa' && 'kk-zap'" @click="setSchody('zatacka', 'osa')">{{ __('ed_sablona.schody.zatacka_osa') }}</button>
+                                        <button type="button" data-schody-zatacka="rozlozene" :class="inspector.zatacka === 'rozlozene' && 'kk-zap'" @click="setSchody('zatacka', 'rozlozene')">{{ __('ed_sablona.schody.zatacka_rozlozene') }}</button>
+                                    </div>
+                                    <span class="text-gray-500" x-text="inspector.tvar === 'tocite' ? preloz('ed_sablona.schody.prumer') : preloz('ed_sablona.schody.sirka')"></span>
+                                    <span class="kk-pole-jed" x-show="inspector.tvar !== 'tocite'" title="{{ __('ed_sablona.schody.sirka_tip') }}"><input type="number" min="60" max="250" step="5" data-schody="sirka"
+                                           :value="Math.round(inspector.sirka * 100)" @change="setSchody('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
+                                    <span class="kk-pole-jed" x-show="inspector.tvar === 'tocite'" title="{{ __('ed_sablona.schody.prumer_tip') }}"><input type="number" min="120" max="300" step="10" data-schody="prumer"
+                                           :value="Math.round(inspector.prumer * 100)" @change="setSchody('prumer', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
+                                    <span class="text-gray-500" title="{{ __('ed_sablona.schody.rucne_tip') }}">{{ __('ed_sablona.schody.vyska') }}</span>
+                                    <span class="kk-pole-jed" title="{{ __('ed_sablona.schody.rucne_tip') }}"><input type="number" min="100" max="250" step="1" data-schody="vyska"
+                                           :value="Math.round(inspector.v * 1000)" @change="setSchody('vyska', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>mm</span></span>
+                                    <span class="text-gray-500" title="{{ __('ed_sablona.schody.rucne_tip') }}">{{ __('ed_sablona.schody.naslap_popisek') }}</span>
+                                    <span class="kk-pole-jed" title="{{ __('ed_sablona.schody.rucne_tip') }}"><input type="number" min="150" max="500" step="1" data-schody="naslap"
+                                           :value="Math.round(inspector.b * 1000)" @change="setSchody('naslap', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>mm</span></span>
+                                    <span class="text-gray-500" x-show="inspector.tvar === 'L' || inspector.tvar === 'U'" title="{{ __('ed_sablona.schody.casti_tip') }}">{{ __('ed_sablona.schody.casti_popisek') }}</span>
+                                    <div class="flex items-center gap-1" x-show="inspector.tvar === 'L' || inspector.tvar === 'U'" title="{{ __('ed_sablona.schody.casti_tip') }}">
                                         <template x-for="(c, i) in inspector.casti" :key="i">
                                             <input type="number" min="0" step="1" :data-schody-cast="i" :value="c" @change="setSchodyCast(i, parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()">
                                         </template>
                                     </div>
-                                </template>
+                                    <span class="text-gray-500" x-show="inspector.otvorMa" title="{{ __('ed_sablona.schody.otvor_tip') }}">{{ __('ed_sablona.schody.otvor_od') }}</span>
+                                    <input type="number" min="1" step="1" data-schody="otvor" x-show="inspector.otvorMa" title="{{ __('ed_sablona.schody.otvor_tip') }}"
+                                           :max="inspector.otvorMax + 1" :value="inspector.otvorOd + 1" @change="setSchody('otvor', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()">
+                                </div>
+                                <div class="text-gray-500" data-schody-souhrn title="{{ __('ed_sablona.schody.vypocet_tip') }}"
+                                     x-text="preloz('ed_sablona.schody.souhrn_kratky', { stupnu: prelozPocet('ed_sablona.schody.stupnu', inspector.n), delka: prelozCislo(inspector.delka, 2), sklon: Math.round(inspector.sklon) })"></div>
+                                <div class="text-gray-500" data-schody-podchod x-show="inspector.podchod !== undefined"
+                                     x-text="preloz(inspector.podOtackou ? 'ed_sablona.schody.podchod_otacka' : 'ed_sablona.schody.podchod', { vyska: prelozCislo(inspector.podchod || 0, 2) })"></div>
+                                <div class="text-orange-700" x-show="inspector.nelze" data-schody-varovani="nelze">{{ __('ed_sablona.schody.nelze') }}</div>
+                                <div class="text-orange-700" x-show="inspector.podchod !== undefined && !inspector.podchodOk" data-schody-varovani="podchod"
+                                     x-text="preloz(inspector.podOtackou ? 'ed_sablona.schody.podchod_otacka_malo' : 'ed_sablona.schody.podchod_malo')"></div>
+                                <div class="text-orange-700" x-show="!inspector.naslapOk" data-schody-varovani="naslap" x-text="preloz('ed_sablona.schody.naslap_vyhlaska', { naslap: Math.round(inspector.b * 1000), min: Math.round(inspector.naslapMin * 1000) })"></div>
+                                <div class="text-orange-700" x-show="!inspector.pohodlne">{{ __('ed_sablona.schody.mimo_rozsah') }}</div>
                                 <div data-barva-schodu x-data="vyberBarvy({ hodnota: () => inspector?.barva, nastav: (hex) => setSchody('barva', hex), nahled: (hex) => nahledBarvy3d('schody:' + inspector?.id, hex), pouzite: () => barvyJinde('schody:' + inspector?.id) })" title="{{ __('ed_sablona.schody.barva_tip') }}">
                                     @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
                                 </div>
-                                {{-- Otvor ve stropu nad schody: může začít až nad některým stupněm, strop nad začátkem schodů zůstane --}}
-                                <template x-if="inspector.otvorMa">
-                                    <div class="flex items-center gap-1 flex-wrap" title="{{ __('ed_sablona.schody.otvor_tip') }}">
-                                        <span class="text-gray-500">{{ __('ed_sablona.schody.otvor_od') }}</span>
-                                        <input type="number" min="1" step="1" data-schody="otvor" :max="inspector.otvorMax + 1" :value="inspector.otvorOd + 1" @change="setSchody('otvor', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()">
-                                        <span class="text-gray-500 ml-2" data-schody-podchod x-text="preloz('ed_sablona.schody.podchod', { vyska: prelozCislo(inspector.podchod, 2) })"></span>
-                                    </div>
-                                </template>
-                                <div class="text-orange-700" x-show="inspector.otvorMa && !inspector.podchodOk" data-schody-varovani="podchod">{{ __('ed_sablona.schody.podchod_malo') }}</div>
-                                <div class="text-orange-700" x-show="!inspector.naslapOk" data-schody-varovani="naslap" x-text="preloz('ed_sablona.schody.naslap_vyhlaska', { naslap: Math.round(inspector.b * 1000), min: Math.round(inspector.naslapMin * 1000) })"></div>
-                                <div class="text-orange-700" x-show="!inspector.pohodlne">{{ __('ed_sablona.schody.mimo_rozsah') }}</div>
                                 <button type="button" @click="smazatSchody()" class="self-end kk-smazat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>{{ __('ed_sablona.spolecne.smazat') }}</button>
                             </div>
                         </template>

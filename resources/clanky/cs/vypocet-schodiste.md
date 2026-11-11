@@ -68,6 +68,6 @@ Nad schody musí být v patře otvor ve stropu (prostup) tak dlouhý, aby vyšla
 
 ## Výpočet schodiště přímo v půdorysu
 
-V [editoru TupTuDu](aplikace:) nakreslíš schodiště do svého půdorysu: přímé, do L nebo do U s odpočívadly. Stupně spočítá z výšky mezi podlažími stejně jako kalkulačka, v horním podlaží vyřízne otvor přes celé schody a ve 3D uvidíš, kam schody vedou. Výšku stupně, nášlap i počet stupňů v ramenech můžeš změnit ručně. Zabíhající a točité schody editor zatím nemá a podchodnou výšku nepočítá. Jak začít s domem, popisuje článek [jak nakreslit půdorys domu](clanek:jak-nakreslit-pudorys-domu).
+V [editoru TupTuDu](aplikace:) nakreslíš do svého půdorysu všechny tvary z kalkulačky: přímé, do L a do U s odpočívadly i se zabíhajícími stupni a točité. Stupně spočítá z výšky mezi podlažími stejně jako kalkulačka, v horním podlaží vyřízne otvor ve stropu a ve 3D uvidíš, kam schody vedou. Výšku stupně i nášlap můžeš změnit ručně a otvor ve stropu zkrátit, editor pak ukáže podchodnou výšku. Jak začít s domem, popisuje článek [jak nakreslit půdorys domu](clanek:jak-nakreslit-pudorys-domu).
 
 ::vyzva Zkus schody ve svém domě | Přidej patro, vrať se do přízemí, vyber nástroj Schodiště a klepni na začátek a ve směru výstupu. Uvidíš stupně, prostup v patře i 3D. Verze zdarma má 30 úprav denně a jeden projekt.

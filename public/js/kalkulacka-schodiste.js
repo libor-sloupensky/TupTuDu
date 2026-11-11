@@ -11,8 +11,8 @@
  * 18 výšek po 169 mm místo 17 po 179 mm s nášlapem 271 mm. Editor stejně (NASLAP_MIN_ZEME v dum.js, jen bez ruční
  * výšky stupně a nášlapu).
  *
- * Zabíhající stupně (do L a do U) a točité schody editor zatím nemá, kalkulačka je tu napřed (Libor 11. 11. 2026:
- * nejdřív doladit tady, pak přenést do projektu). Pravidla pro zakřivená ramena:
+ * Zabíhající stupně (do L a do U) a točité schody počítá pro editor stejný kód (proEditor, Libor 11. 11. 2026:
+ * nejdřív doladit tady, pak přenést do projektu; přeneseno týž den). Pravidla pro zakřivená ramena:
  *  - výstupní čára (stupně na ní mají nášlap b jako přímé schody) je u ramene do 1,2 m 0,4 m od vnějšího okraje,
  *    tam vyhláška měří nášlap ramene do 1,1 m. Širší: třetina šířky od vnějšího okraje, nad 1,8 m polovina
  *    (výklad ČSN 73 4130, VUT a ČKAIT TS 02),
@@ -155,6 +155,7 @@
         const rohyVen = U ? [[a1 + sir, [a1 + sir, 0]], [a1 + 3 * sir, [a1 + sir, 2 * sir]]] : [[a1 + sir, [a1 + sir, 0]]];
 
         let u, m;
+        let rovnych = Math.floor(a1 / b + 1e-9);   // kolik stupňů na začátku je kolmých (zbytek už zabíhá)
         if (zatacka === 'rozlozene') {
             // Zúžení na vnitřní hraně: m stupňů kolem zatáčky, každý tam má šířku c = b − T / m
             m = Math.min(N, Math.ceil(T / Math.max(1e-6, b - CIL_UZKY) - 1e-9));
@@ -164,6 +165,7 @@
                 if ((iA * b <= a1 + 1e-9 && (iA + m) * b >= a1 + T - 1e-9) || m >= N) break;
                 m++;
             }
+            rovnych = Math.min(rovnych, iA);
             const sA = iA * b, sB = (iA + m) * b, uA = sA, uB = sB - T;
             u = (s) => (s <= sA ? s : s >= sB ? s - T : uA + (s - sA) * (uB - uA) / (sB - sA));
         } else {
@@ -206,7 +208,7 @@
         const odVnitrniho = Math.min(...naCare.slice(1).map((P, k) => Math.hypot(P[0] - naCare[k][0], P[1] - naCare[k][1])));
         const vystupni = [];
         for (let i = 0; i <= 60; i++) vystupni.push(W(N * b * i / 60));
-        return { polygony, casti: [N], vystupni, nejuzsi, odVnitrniho, zabihaStupnu: m, platne: poradi, ...obalka(polygony) };
+        return { polygony, casti: [N], vystupni, nejuzsi, odVnitrniho, zabihaStupnu: m, platne: poradi, hrany, a1, sir, U, rovnych, ...obalka(polygony) };
     }
 
     /** Točité (vřetenové) schody kolem sloupku, průměr D. Stupně nad první otáčkou jsou v půdorysu nad prvními. */
@@ -216,19 +218,71 @@
         const alfa = b / rv;
         const bod = (rho, fi) => [R + rho * Math.cos(fi), R + rho * Math.sin(fi)];
         const ZACATEK = Math.PI / 2;   // nástup dole uprostřed
-        const polygony = [];
+        const polygony = [], hrany = [];
         for (let k = 0; k < N; k++) {
             const f0 = ZACATEK + k * alfa, f1 = f0 + alfa;
             const body = [bod(r0, f0), bod(r0, f1)];
             for (let j = 6; j >= 0; j--) body.push(bod(R, f0 + alfa * j / 6));
             polygony.push({ body, nad: (k + 0.5) * alfa > 2 * Math.PI });
+            hrany.push({ vnitrni: bod(r0, f0), venku: bod(R, f0) });
         }
         const vystupni = [];
         const uhel = N * alfa;
         for (let i = 0; i <= 90; i++) vystupni.push(bod(rv, ZACATEK + uhel * i / 90));
         return {
-            polygony, casti: [N], vystupni, kruh: { cx: R, cy: R, R, r0 }, sir, nejuzsi: null, odVnitrniho: alfa * (r0 + OD_VNITRNIHO),
+            polygony, hrany, casti: [N], vystupni, kruh: { cx: R, cy: R, R, r0 }, sir, nejuzsi: null, odVnitrniho: alfa * (r0 + OD_VNITRNIHO),
             otacka: 2 * Math.PI / alfa, uhel: uhel * 180 / Math.PI, minX: 0, minY: 0, delka: D, sirka: D,
+        };
+    }
+
+    /**
+     * Zabíhající stupně do L a do U a točité schody pro editor (koncept-v3/dum.js, schodyGeo), stejný výpočet jako
+     * kalkulačka. Souřadnice editoru v metrech: a podél chůze od přední hrany prvního stupně, c napříč, kladně ke straně
+     * zatáčky, 0 uprostřed prvního stupně. Editor body jen natočí, zrcadlí stranou a převede na px.
+     *   stupne: [{ body, celo }] – nášlap a podstupnice (pás tloušťky `tlPodstupnice` za přední hranou),
+     *   obrys, otvorOd(z): obrys a obrys bez začátku do vzdálenosti z (otvor ve stropu nechá strop nad prvními stupni),
+     *   rovnych: kolik stupňů na začátku je kolmých (jen ty mohou zůstat pod stropem), vystupni, nastup, uchop, delka.
+     * null = zatáčka se do tolika stupňů nevejde.
+     */
+    function proEditor(tvar, N, b, { sirka = 1, prumer = 2, zatacka = 'osa', tlPodstupnice = 0.02 } = {}) {
+        const spirala = tvar === 'tocite';
+        const p = spirala ? tocite(N, b, prumer) : zabihajici(N, b, sirka, tvar === 'Uz' ? 'Uz' : 'Lz', zatacka);
+        if (!p) return null;
+        let T, obrys, otvorOd, nastup, uchop, rovnych;
+        if (spirala) {
+            const { R, r0 } = p.kruh, Y0 = R + (r0 + R) / 2, pul = (R - r0) / 2;
+            T = ([x, y]) => [R - x, Y0 - y];
+            obrys = Array.from({ length: 48 }, (_, i) => T([R + R * Math.cos(i * Math.PI / 24), R + R * Math.sin(i * Math.PI / 24)]));
+            otvorOd = () => obrys;
+            nastup = [[0, -pul], [0, pul]];
+            uchop = [0, -pul - 0.35];
+            rovnych = 0;
+        } else {
+            const { a1, sir, U } = p, pul = sir / 2;
+            T = ([x, y]) => [x, y - pul];
+            const od = (z) => (U ? [[z, 0], [a1 + sir, 0], [a1 + sir, 2 * sir], [0, 2 * sir], [0, sir], [z, sir]]
+                : [[z, 0], [a1 + sir, 0], [a1 + sir, sir + a1], [a1, sir + a1], [a1, sir], [z, sir]]).map(T);
+            obrys = U ? [[0, 0], [a1 + sir, 0], [a1 + sir, 2 * sir], [0, 2 * sir]].map(T) : od(0);
+            otvorOd = (z) => (z > 1e-9 ? od(Math.min(z, a1)) : obrys);
+            nastup = [[0, -pul], [0, pul]];
+            uchop = [-0.45, 0];
+            rovnych = p.rovnych;
+        }
+        // Podstupnice: pás za přední hranou stupně, na stranu nášlapu
+        const stupne = p.polygony.map((o, k) => {
+            const body = o.body.map(T);
+            const I = T(p.hrany[k].vnitrni), O = T(p.hrany[k].venku);
+            const tx = O[0] - I[0], ty = O[1] - I[1], dl = Math.hypot(tx, ty) || 1;
+            let nx = -ty / dl, ny = tx / dl;
+            const cx = body.reduce((s, q) => s + q[0], 0) / body.length, cy = body.reduce((s, q) => s + q[1], 0) / body.length;
+            if ((cx - (I[0] + O[0]) / 2) * nx + (cy - (I[1] + O[1]) / 2) * ny < 0) { nx = -nx; ny = -ny; }
+            const t = tlPodstupnice;
+            return { body, celo: [I, O, [O[0] + nx * t, O[1] + ny * t], [I[0] + nx * t, I[1] + ny * t]], nad: !!o.nad };
+        });
+        return {
+            stupne, obrys, otvorOd, rovnych, nastup, uchop, vystupni: p.vystupni.map(T), delka: N * b, casti: [N],
+            sirka: spirala ? p.sir : sirka, nejuzsi: p.nejuzsi ?? null, odVnitrniho: p.odVnitrniho, otacka: p.otacka ?? null,
+            uhel: p.uhel ?? null, kruh: p.kruh || null,
         };
     }
 
@@ -430,7 +484,7 @@
         prepocet();
     }
 
-    const Kalkulacka = { VYCHOZI, LIMITY, TVARY, spocitej, castiSchodu, odstupVystupni };
+    const Kalkulacka = { VYCHOZI, LIMITY, TVARY, spocitej, castiSchodu, odstupVystupni, proEditor, TL_STUPNE, LIMITY_CZ: LIMITY };
     koren.KalkulackaSchodiste = Kalkulacka;
     if (typeof document !== 'undefined') {
         document.querySelectorAll('[data-kalkulacka="schodiste"]').forEach((blok) => {

@@ -199,7 +199,8 @@ async function main() {
         kontrola('schodiště vzniklo, směr dorovnaný na osu domu (90°), stupně spočítané z výšky 3,30 m', sch && sch.od === 'P1' && sch.do === 'P2' && blizko(sch.uhel, 90, 0.1) && sch.n === 19 && blizko(sch.v, 3.3 / 19, 0.001) && sch.inspektor === 'schodiste', JSON.stringify(sch));
         await pauza(200);
         await p.snimek(path.join(vystup, 'dum-schody-dole.png'));
-        await tah(await m(1, 2), await m(1.5, 2));
+        // Chytit schody pod panelem schodiště, který zakryje jejich horní část
+        await tah(await m(1, 4), await m(1.5, 4));
         sch = await p.vyhodnot(`(() => { const s = ${D}.engine.dum.schodiste[0]; return { x: +s.x.toFixed(2), y: +s.y.toFixed(2) }; })()`);
         kontrola('schodiště jde přetáhnout', blizko(sch.x, 1.5, 0.1), JSON.stringify(sch));
         const L = await p.vyhodnot(`(() => { const d = ${D}; d.setSchody('tvar', 'L'); const s = d.engine.dum.schodiste[0]; const g = window.DumGeo.schodyGeo(s, d._vyskaMeziPodlazimi(s), 80); return { body: g.obrys.length, stupne: g.stupne.length, podesta: g.stupne.some(u => u.podesta), pohodlne: g.pohodlne }; })()`);

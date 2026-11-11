@@ -137,5 +137,20 @@ const sirokeOk = siroke.nelze && siroke.nejuzsi === null && siroke.pudorys.polyg
 console.log(`   ${sirokeOk ? 'OK  ' : 'CHYBA'} rameno 2,5 m do U na 2 m výšky: zatáčka se nevejde, upozornění`);
 if (!sirokeOk) chyb++;
 
+// Editor staví zabíhající a točité schody ze stejné geometrie (KalkulackaSchodiste.proEditor): stejný počet
+// stupňů a nášlap, plocha stupňů rovná obrysu (u točitých stupně nad otáčkou plochu zdvojí, proto jen počet)
+let parita = 0;
+const plochaPx = (o) => Math.abs(o.reduce((s, q, i) => { const r = o[(i + 1) % o.length]; return s + q.x * r.y - r.x * q.y; }, 0)) / 2;
+for (const tvar of ['Lz', 'Uz', 'tocite']) {
+    for (const vyska of [2.6, 2.9, 3.05]) {
+        const k = Kalkulacka.spocitej({ vyska, tvar });
+        const e = schodyGeo({ x: 0, y: 0, uhel: 0, sirka: 1, tvar, strana: 1 }, vyska, 100);
+        const plochaOk = tvar === 'tocite' || Math.abs(e.stupne.reduce((s, u) => s + plochaPx(u.poly), 0) - plochaPx(e.obrys)) < 1;
+        if (!(e.zakrivene && e.n === k.n && e.stupne.length === k.n - 1 && Math.abs(e.b - k.b) < 1e-9 && plochaOk)) parita++;
+    }
+}
+console.log(`   ${parita ? 'CHYBA' : 'OK  '} editor staví zabíhající a točité schody z geometrie kalkulačky (9 kombinací)`);
+chyb += parita;
+
 console.log(chyb ? `\nCHYBY: ${chyb} z ${pripadu} případů` : `\nVše v pořádku, ${pripadu} případů shodných s editorem`);
 process.exit(chyb ? 1 : 0);

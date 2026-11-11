@@ -74,7 +74,7 @@ return [
     'nakyp_2' => 'Po vykopaní na korbe alebo na kope: asi 1,25 m³, hrudy medzi sebou nechajú medzery. Čiarkovane je úroveň 1 m³. Váži stále asi 1,8 t.',
 
     'schod_nadpis' => 'Vypočítaj si schodisko',
-    'schod_uvod' => 'Zadaj výšku od podlahy k podlahe. Kontroly zodpovedajú predpisom a zvyklostiam pre :zeme. Priame schody a schody s medzipodestami vyjdú rovnako ako v editore TupTuDu.',
+    'schod_uvod' => 'Zadaj výšku od podlahy k podlahe. Kontroly zodpovedajú predpisom a zvyklostiam pre :zeme. Výsledok vyjde rovnako ako pri schodoch v editore TupTuDu.',
     'schod_uvod_obecny' => 'Zadaj výšku od podlahy k podlahe. Odporúčané hodnoty sú len príklad, over si ich podľa predpisov vo svojej krajine.',
     'schod_vyska' => 'Výška od podlahy k podlahe (cm)',
     'schod_tvar' => 'Tvar',
@@ -96,7 +96,6 @@ return [
     'schod_merena' => 'Šírka stupňa v mieste merania',
     'schod_dop_naslap' => 'Šírka stupňa hlavného schodiska v rodinnom dome aspoň :od mm (predpis), pri užšej kalkulačka pridá stupeň',
     'schod_dop_merena' => 'Zakrivené rameno do 110 cm: stupeň aspoň :od mm 40 cm od vonkajšieho okraja, širšie aspoň :vnitrni mm 30 cm od vnútorného okraja (predpis)',
-    'schod_aplikace_jen_kalk' => 'Zabiehajúce a točité schody zatiaľ spočíta len kalkulačka. V TupTuDu postavíš do svojho domu priame schody alebo schody do L a do U s medzipodestami a uvidíš, koľko miesta zaberú v pôdoryse aj v 3D.',
     'schod_nelze' => 'Zákruta so zabiehajúcimi stupňami sa do toľkých stupňov nezmestí. Zmenši šírku ramena alebo zvoľ schody s medzipodestou.',
     'schod_sirka' => 'Šírka ramena (cm)',
     'schod_cilova' => 'Cieľová výška stupňa (mm)',

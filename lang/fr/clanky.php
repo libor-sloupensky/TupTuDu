@@ -74,7 +74,7 @@ return [
     'nakyp_2' => 'Une fois extraite, dans la benne ou en tas : environ 1,25 m³, car les mottes laissent des vides entre elles. Le pointillé marque le niveau de 1 m³. Elle pèse toujours environ 1,8 t.',
 
     'schod_nadpis' => 'Calculez votre escalier',
-    'schod_uvod' => 'Saisissez la hauteur de sol à sol. Les contrôles suivent les règles et les usages pour :zeme. Les escaliers droits et avec palier sont calculés comme dans l’éditeur TupTuDu.',
+    'schod_uvod' => 'Saisissez la hauteur de sol à sol. Les contrôles suivent les règles et les usages pour :zeme. Le résultat est le même que pour les escaliers de l’éditeur TupTuDu.',
     'schod_uvod_obecny' => 'Saisissez la hauteur de sol à sol. Les valeurs recommandées ne sont qu’un exemple, vérifiez-les selon les règles de votre pays.',
     'schod_vyska' => 'Hauteur de sol à sol (cm)',
     'schod_tvar' => 'Forme',
@@ -96,7 +96,6 @@ return [
     'schod_merena' => 'Giron à l’endroit de mesure',
     'schod_dop_naslap' => 'Giron de l’escalier principal d’une maison individuelle d’au moins :od mm (réglementation) ; s’il est plus étroit, le calculateur ajoute une marche',
     'schod_dop_merena' => 'Volée tournante jusqu’à 110 cm : giron d’au moins :od mm à 40 cm du bord extérieur, volée plus large au moins :vnitrni mm à 30 cm du bord intérieur (réglementation)',
-    'schod_aplikace_jen_kalk' => 'Les marches balancées et les escaliers en colimaçon ne sont pour l’instant que dans le calculateur. Dans TupTuDu, vous placez un escalier droit ou en L et en U avec palier dans votre maison et voyez la place qu’il prend en plan et en 3D.',
     'schod_nelze' => 'Le tournant à marches balancées ne tient pas dans ce nombre de marches. Réduisez la largeur de la volée ou choisissez un escalier avec palier.',
     'schod_sirka' => 'Largeur de la volée (cm)',
     'schod_cilova' => 'Hauteur de marche visée (mm)',

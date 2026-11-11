@@ -74,7 +74,7 @@ return [
     'nakyp_2' => 'Po wykopaniu na skrzyni lub na hałdzie: około 1,25 m³, bo grudy zostawiają między sobą szczeliny. Linia przerywana to poziom 1 m³. Waży nadal około 1,8 t.',
 
     'schod_nadpis' => 'Policz swoje schody',
-    'schod_uvod' => 'Wpisz wysokość od podłogi do podłogi. Kontrole odpowiadają przepisom i praktyce dla :zeme. Schody proste i schody ze spocznikami wychodzą tak samo jak w edytorze TupTuDu.',
+    'schod_uvod' => 'Wpisz wysokość od podłogi do podłogi. Kontrole odpowiadają przepisom i praktyce dla :zeme. Wynik wychodzi tak samo jak dla schodów w edytorze TupTuDu.',
     'schod_uvod_obecny' => 'Wpisz wysokość od podłogi do podłogi. Zalecane wartości to tylko przykład, sprawdź je według przepisów w swoim kraju.',
     'schod_vyska' => 'Wysokość od podłogi do podłogi (cm)',
     'schod_tvar' => 'Kształt',
@@ -96,7 +96,6 @@ return [
     'schod_merena' => 'Szerokość stopnia w miejscu pomiaru',
     'schod_dop_naslap' => 'Szerokość stopnia schodów głównych w domu jednorodzinnym co najmniej :od mm (przepisy), przy węższym kalkulator doda stopień',
     'schod_dop_merena' => 'Bieg zakrzywiony do 110 cm: stopień co najmniej :od mm w odległości 40 cm od zewnętrznej krawędzi, szerszy co najmniej :vnitrni mm 30 cm od wewnętrznej krawędzi (przepisy)',
-    'schod_aplikace_jen_kalk' => 'Schody zabiegowe i kręcone policzy na razie tylko kalkulator. W TupTuDu wstawisz do swojego domu schody proste albo w kształcie L i U ze spocznikami i zobaczysz, ile miejsca zajmą w rzucie i w 3D.',
     'schod_nelze' => 'Zakręt ze stopniami zabiegowymi nie zmieści się w tylu stopniach. Zmniejsz szerokość biegu albo wybierz schody ze spocznikiem.',
     'schod_sirka' => 'Szerokość biegu (cm)',
     'schod_cilova' => 'Docelowa wysokość stopnia (mm)',

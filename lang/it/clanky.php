@@ -74,7 +74,7 @@ return [
     'nakyp_2' => 'Scavata, sul cassone o sul cumulo: circa 1,25 m³, perché le zolle lasciano vuoti tra loro. La linea tratteggiata indica 1 m³. Pesa sempre circa 1,8 t.',
 
     'schod_nadpis' => 'Calcola la tua scala',
-    'schod_uvod' => 'Inserisci l’altezza da pavimento a pavimento. I controlli seguono le norme e la prassi per :zeme. Le scale dritte e con pianerottolo risultano uguali all’editor TupTuDu.',
+    'schod_uvod' => 'Inserisci l’altezza da pavimento a pavimento. I controlli seguono le norme e la prassi per :zeme. Il risultato è lo stesso delle scale nell’editor TupTuDu.',
     'schod_uvod_obecny' => 'Inserisci l’altezza da pavimento a pavimento. I valori consigliati sono solo un esempio, verificali secondo le norme del tuo paese.',
     'schod_vyska' => 'Altezza da pavimento a pavimento (cm)',
     'schod_tvar' => 'Forma',
@@ -96,7 +96,6 @@ return [
     'schod_merena' => 'Pedata nel punto di misura',
     'schod_dop_naslap' => 'Pedata della scala principale in una casa unifamiliare di almeno :od mm (norma); se risulta più stretta, il calcolatore aggiunge un gradino',
     'schod_dop_merena' => 'Rampa curva fino a 110 cm: pedata di almeno :od mm a 40 cm dal bordo esterno; rampe più larghe almeno :vnitrni mm a 30 cm dal bordo interno (norma)',
-    'schod_aplikace_jen_kalk' => 'I gradini a ventaglio e le scale a chiocciola per ora ci sono solo nel calcolatore. In TupTuDu metti nella tua casa scale dritte o a L e a U con pianerottolo e vedi quanto spazio occupano in pianta e in 3D.',
     'schod_nelze' => 'La curva con gradini a ventaglio non sta in così pochi gradini. Riduci la larghezza della rampa o scegli una scala con pianerottolo.',
     'schod_sirka' => 'Larghezza della rampa (cm)',
     'schod_cilova' => 'Alzata desiderata (mm)',

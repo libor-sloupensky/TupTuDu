@@ -35,6 +35,7 @@ async function main() {
     const klik = async (b) => { await pohyb(b); await stisk(b); await pust(b); await pauza(250); };
     const tah = async (od, kam) => { await pohyb(od); await stisk(od); await pauza(40); for (let i = 1; i <= 10; i++) await pohyb({ x: od.x + (kam.x - od.x) * i / 10, y: od.y + (kam.y - od.y) * i / 10 }, true); };
     const geo = (s = 'S1') => p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.schodiste.find(x => x.id === ${JSON.stringify(s)}); const g = window.DumGeo.schodyGeo(s, d._vyskaMeziPodlazimi(s), 80); return { tvar: s.tvar, n: g.n, v: g.v, b: g.b, casti: g.casti, stupnu: g.stupne.length, podest: g.stupne.filter(u => u.podesta).length, zPosl: g.stupne[g.stupne.length - 1].z, H: d._vyskaMeziPodlazimi(s), obrys: g.obrys.length, delka: g.delka, pohodlne: g.pohodlne, uhel: s.uhel, x: s.x, y: s.y }; })()`);
+    const tvarSchodu = (tvar) => p.vyhodnot(`(() => { const s = document.querySelector('[data-schody-tvar]'); s.value = ${JSON.stringify(tvar)}; s.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`);
     const pole = (sel, hod) => p.vyhodnot(`(() => { const n = document.querySelector(${JSON.stringify(sel)}); n.value = ${JSON.stringify(String(hod))}; n.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`);
 
     try {
@@ -120,7 +121,7 @@ async function main() {
         kontrola('otvor zpět přes celé schody', o.od === 0 && blizko(o.otvor, o.obrys, 1e-6), JSON.stringify(o));
 
         console.log('\n3) Do L a do U s částmi');
-        await p.vyhodnot(`(document.querySelector('[data-schody-tvar=L]').click(), 1)`);
+        await tvarSchodu('L');
         await pauza(200);
         g = await geo();
         kontrola('L: součet částí n − 2, jedno odpočívadlo, poslední stupeň pod podlahou', g.casti.length === 2 && g.casti[0] + g.casti[1] === g.n - 2 && g.podest === 1 && blizko(g.zPosl + g.v, g.H, 1e-6), JSON.stringify(g));
@@ -132,7 +133,7 @@ async function main() {
         await pauza(200);
         g = await geo();
         kontrola('L: první část 5, zbytek do druhé', g.casti[0] === 5 && g.casti[1] === g.n - 7, JSON.stringify(g.casti));
-        await p.vyhodnot(`(document.querySelector('[data-schody-tvar=U]').click(), 1)`);
+        await tvarSchodu('U');
         await pauza(200);
         g = await geo();
         kontrola('U výchozí: prostřední 0, jedno široké odpočívadlo, stupně vyjdou na podlahu', g.casti.length === 3 && g.casti[1] === 0 && g.casti[0] + g.casti[2] === g.n - 2 && g.podest === 1 && blizko(g.zPosl + g.v, g.H, 1e-6) && g.obrys >= 4, JSON.stringify(g));
@@ -159,6 +160,53 @@ async function main() {
             const out = { naMistnosti: mistnost.some(b => prekryv(q, b)), naSchodech: s.tvar === 'prime' ? prekryv(q, obr) : false }; s.x = puvodni.x; s.y = puvodni.y; r.render(); return out; })()`);
         kontrola('štítek schodů neleží na názvu místnosti ani na stupních', !stitek.naMistnosti && !stitek.naSchodech, JSON.stringify(stitek));
 
+        console.log('\n3b) Zabíhající stupně a točité schody');
+        const videt = (sel) => p.vyhodnot(`(() => { const e = document.querySelector(${JSON.stringify(sel)}); return !!e && e.getClientRects().length > 0; })()`);
+        const plochy = () => p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.schodiste[0]; const g = window.DumGeo.schodyGeo(s, d._vyskaMeziPodlazimi(s), 80);
+            const pl = (o) => { let a = 0; o.forEach((q, i) => { const r = o[(i + 1) % o.length]; a += q.x * r.y - r.x * q.y; }); return Math.abs(a) / 2 / 6400; };
+            return { stupne: g.stupne.reduce((v, u) => v + pl(u.poly), 0), obrys: pl(g.obrys), zakrivene: !!g.zakrivene, sloupek: !!g.sloupek, prvni: JSON.stringify(g.stupne[Math.floor(g.stupne.length / 2)].poly) }; })()`);
+        await tvarSchodu('Lz');
+        await pauza(250);
+        g = await geo();
+        let pl = await plochy();
+        kontrola('do L se zabíhajícími stupni: bez odpočívadla n − 1 stupňů, stupně vyplní obrys L, poslední pod podlahou', g.tvar === 'Lz' && g.stupnu === g.n - 1 && g.podest === 0 && pl.zakrivene && blizko(pl.stupne, pl.obrys, 0.01) && blizko(g.zPosl + g.v, g.H, 1e-6), JSON.stringify({ ...g, pl }));
+        kontrola('panel: volba zatáčky a šířka ramene, bez částí a průměru', await videt('[data-schody-zatacka="osa"]') && await videt('[data-schody=sirka]') && !(await videt('[data-schody=prumer]')) && !(await videt('[data-schody-cast="0"]')));
+        const osa = pl.prvni;
+        await p.vyhodnot(`(document.querySelector('[data-schody-zatacka="rozlozene"]').click(), 1)`);
+        await pauza(250);
+        pl = await plochy();
+        const rozl = await p.vyhodnot(`${D}.engine.dum.schodiste[0].zatacka`);
+        kontrola('rozložené stupně: jiný tvar stupňů v zatáčce, plocha stejná', rozl === 'rozlozene' && pl.prvni !== osa && blizko(pl.stupne, pl.obrys, 0.01), JSON.stringify({ rozl, stupne: pl.stupne, obrys: pl.obrys }));
+        await p.snimek(path.join(vystup, 'schody-lz.png'));
+        await tvarSchodu('Uz');
+        await pauza(250);
+        g = await geo();
+        pl = await plochy();
+        kontrola('do U se zabíhajícími stupni: n − 1 stupňů, obrys obdélník, stupně ho vyplní', g.tvar === 'Uz' && g.stupnu === g.n - 1 && g.obrys === 4 && blizko(pl.stupne, pl.obrys, 0.01), JSON.stringify({ ...g, pl }));
+        await tvarSchodu('tocite');
+        await pauza(250);
+        g = await geo();
+        pl = await plochy();
+        kontrola('točité: n − 1 stupňů kolem sloupku, panel s průměrem místo šířky', g.tvar === 'tocite' && g.stupnu === g.n - 1 && pl.sloupek && await videt('[data-schody=prumer]') && !(await videt('[data-schody=sirka]')), JSON.stringify(g));
+        await pole('[data-schody=prumer]', 160);
+        await pauza(250);
+        const toc160 = await p.vyhodnot(`(() => { const i = ${D}.inspektorDum(); return { podchod: i.podchod, ok: i.podchodOk, podOtackou: i.podOtackou, prumer: i.prumer }; })()`);
+        kontrola('točité ø 160 cm: pod otáčkou málo místa nad hlavou, panel varuje', toc160.podOtackou && !toc160.ok && toc160.prumer === 1.6 && await videt('[data-schody-varovani="podchod"]'), JSON.stringify(toc160));
+        await pole('[data-schody=prumer]', 200);
+        await pauza(250);
+        const toc200 = await p.vyhodnot(`(() => { const i = ${D}.inspektorDum(); return { podchod: i.podchod, ok: i.podchodOk }; })()`);
+        kontrola('točité ø 200 cm: podchodná výška pod otáčkou aspoň 2,1 m', toc200.ok && toc200.podchod >= 2.1, JSON.stringify(toc200));
+        await p.snimek(path.join(vystup, 'schody-tocite.png'));
+        // Široké rameno na málo stupňů: zatáčka se nevejde, schody se postaví s odpočívadlem a panel to řekne
+        await tvarSchodu('Uz');
+        await pole('[data-schody=sirka]', 250);
+        await pauza(250);
+        const nelze = await p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.schodiste[0]; const g = window.DumGeo.schodyGeo({ ...s, vyskaStupne: 0.21 }, 2.0, 80); return { nelze: !!g.nelze, podest: g.stupne.filter(u => u.podesta).length }; })()`);
+        kontrola('zabíhající do U se nevejdou (rameno 2,5 m, 2 m výšky): schody s odpočívadlem, příznak pro panel', nelze.nelze && nelze.podest === 1, JSON.stringify(nelze));
+        await pole('[data-schody=sirka]', 100);
+        await tvarSchodu('U');
+        await pauza(250);
+
         console.log('\n4) Půdorys z horního podlaží');
         await p.vyhodnot(`(() => { const d = ${D}; d.naPodlazi('P2'); d.fitView(); d.renderer.render(); return true; })()`);
         await pauza(400);
@@ -170,7 +218,7 @@ async function main() {
         await pauza(400);
 
         console.log('\n5) Otáčení a tah schodů');
-        await p.vyhodnot(`(document.querySelector('[data-schody-tvar=prime]').click(), 1)`);
+        await tvarSchodu('prime');
         await pauza(250);
         const uchop = await p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.schodiste[0]; const g = window.DumGeo.schodyGeo(s, d._vyskaMeziPodlazimi(s), 80); const xs = g.obrys.map(q => q.x), ys = g.obrys.map(q => q.y); return { u: g.uchop, stred: { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 } }; })()`);
         // Tah úchopem po kružnici kolem středu tak, aby výsledný úhel vyšel kousek vedle šikmé stěny (25°)
@@ -194,11 +242,12 @@ async function main() {
         // Tah o kousek od cíle: obrys má skončit na líci 0,15 m, kurzor dorazí 4 cm vedle
         const posun = (0.15 + 0.04) * PX - ob.min;
         const a1 = await obr(ob.sx + 60, ob.sy), a2 = await obr(ob.sx + 60, ob.sy + posun);
+
         await tah(a1, a2);
         await pust(a2);
         await pauza(300);
         const poTahu = await p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.schodiste[0]; const g = window.DumGeo.schodyGeo(s, d._vyskaMeziPodlazimi(s), 80); return { min: Math.min(...g.obrys.map(q => q.y)) / 80 }; })()`);
-        kontrola('hrana schodů se přichytí na líc stěny', blizko(poTahu.min, 0.15, 0.003), JSON.stringify({ poTahu, pred: pred.y }));
+        kontrola('hrana schodů se přichytí na líc stěny', blizko(poTahu.min, 0.15, 0.003), JSON.stringify({ poTahu, pred: pred.y, tvar: pred.tvar, obrys: pred.obrys }));
 
         console.log('\n6) Barva a 3D');
         const barva = await p.vyhodnot(`(async () => { const d = ${D}; const cek = (t = 250) => new Promise(r => setTimeout(r, t)); d.setSchody('tvar', 'U'); await cek(); await d.prepni3d(); await cek(700);
@@ -214,6 +263,10 @@ async function main() {
         kontrola('barva z nástroje, svislé části tmavší, podstupnice ke každému stupni, panel i ve 3D', barva.panel && barva.zapis === '#293133' && barva.naslap === '#293133' && blizko(barva.pomer, 0.7, 0.01) && barva.podstupnic === barva.stupnu && barva.podstupnic > 5 && barva.jinde, JSON.stringify(barva));
         const spoj = await p.vyhodnot(`(() => { const m = window._kk3d.dumSkupina.children.filter(o => o.userData.schody === 'S1'); const vysky = (o) => { o.geometry.computeBoundingBox(); return [o.position.y + o.geometry.boundingBox.min.z, o.position.y + o.geometry.boundingBox.max.z]; }; const stupne = m.filter(o => !o.userData.podstupnice).map(vysky), celo = m.filter(o => o.userData.podstupnice).map(vysky); const vady = []; for (let i = 1; i < stupne.length; i++) { if (Math.abs(celo[i][0] - stupne[i - 1][0]) > 1e-6 || Math.abs(celo[i][1] - stupne[i][0]) > 1e-6) vady.push(i); } return { vady, prvniOd: celo[0][0], kota: window._kk3d.dumSkupina.parent ? 0 : null }; })()`);
         kontrola('podstupnice sahá po spodek předchozího stupně, spoj je zavřený i zespodu', spoj.vady.length === 0 && spoj.prvniOd >= -1e-6, JSON.stringify(spoj));
+        const toc3d = await p.vyhodnot(`(async () => { const d = ${D}; const cek = (t = 400) => new Promise(r => setTimeout(r, t)); d.setSchody('tvar', 'tocite'); await cek();
+            const m = window._kk3d.dumSkupina.children.filter(o => o.userData.schody === 'S1'); const s = d.engine.dum.schodiste[0]; const g = window.DumGeo.schodyGeo(s, d._vyskaMeziPodlazimi(s), 80);
+            const out = { dilu: m.length, stupnu: g.stupne.length, podstupnic: m.filter(o => o.userData.podstupnice).length }; d.setSchody('tvar', 'U'); await cek(); return out; })()`);
+        kontrola('točité ve 3D: nášlap a podstupnice ke každému stupni a sloupek', toc3d.podstupnic === toc3d.stupnu && toc3d.dilu === 2 * toc3d.stupnu + 1, JSON.stringify(toc3d));
         await p.vyhodnot(`(() => { const d = ${D}; d.skryte3d = ['P2']; d.zobrazStrechu3d = false; d._nastavViditelnost3d(); d.setSchody('barva', '#b08a5e'); const _3d = window._kk3d; _3d.camera.position.set(14, 12, 18); _3d.controls.target.set(6, 1, 4); _3d.camera.zoom = 1.6; _3d.camera.updateProjectionMatrix(); _3d.controls.update(); return true; })()`);
         await pauza(600);
         await p.snimek(path.join(vystup, 'schody-3d.png'));
