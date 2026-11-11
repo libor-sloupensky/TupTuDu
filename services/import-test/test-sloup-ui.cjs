@@ -122,6 +122,12 @@ async function main() {
         const o87 = await otoc(59);
         const zbytek = ((o87.u % (Math.PI / 2)) + Math.PI / 2) % (Math.PI / 2);
         kontrola('k 89° od stěny se přichytí přesně na její směr', Math.min(zbytek, Math.PI / 2 - zbytek) < 1e-6, JSON.stringify(o87));
+        // Společný magnet otáčení (nábytek, sloup, schody): při přichycení čára podél nejbližší stěny, po puštění zmizí
+        const cara = await p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.sloupy[0], PX = d.engine.PX_PER_M; const stred = { x: s.x * PX, y: -s.y * PX }; const r = 600;
+            d._domTah = { typ: 'sloupOtoc', id: s.id, stred, u0: s.uhel, a0: 0, last: { x: stred.x + r, y: stred.y }, start: { x: stred.x + r, y: stred.y }, posun: false };
+            const a = 2 * Math.PI / 180; d.domPohyb({ x: stred.x + Math.cos(a) * r, y: stred.y + Math.sin(a) * r }, null); const pri = d._snapPreview ? { otoceni: !!d._snapPreview.otoceni, cara: !!d._snapPreview.line } : null;
+            d.domPusteni(); return { pri, po: d._snapPreview }; })()`);
+        kontrola('při přichycení ukáže čáru magnetu, po puštění zmizí', cara.pri && cara.pri.otoceni && cara.pri.cara && !cara.po, JSON.stringify(cara));
         const poTahu = await p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.sloupy[0]; return { u: s.uhel, hran: d._strechaVypocet().hrany.length }; })()`);
         kontrola('otočený sloup v rohu dál nese střechu', poTahu.hran === 4, JSON.stringify(poTahu));
         await p.vyhodnot(`(() => { const d = ${D}; d.undo(); d.undo(); return 1; })()`);

@@ -125,13 +125,13 @@ Světla scény jsou nastavená tak, aby vodorovná plocha vyšla zhruba 1,07× b
 
 Půdorys: ze spodního podlaží stupně, šipka a „↑ počet × výška/nášlap"; z horního přerušovaný obrys otvoru, stupně tmavší s hloubkou a „↓ dolů". Šrafování zmizelo, Libor ho měl za matoucí; bílá výplň obrysu také (3. 11. 2026), výplň místnosti pod schody zůstává vidět, podklad štítku je jen při pohledu shora na tmavé stupně. 3D: nášlap plná barva, podstupnice a boky 0,7× téže barvy.
 
-Magnet: při založení i otáčení (kolečko ↻ u vybraných schodů) na směry stěn aktivního a spodního podlaží, i vzdálených, na osy domu a na vodorovnou a svislou obrazovky (`_magnetSmeru`). Při tažení hrana schodů na rovnoběžný líc stěny (`_magnetSchodu`). Alt vypíná.
+Magnet: při založení (`_magnetSmeru`) i otáčení (kolečko ↻ u vybraných schodů, společný `_magnetOtoceni` s čárou podél nejbližší stěny) na směry stěn aktivního a spodního podlaží, i vzdálených, na osy domu a na vodorovnou a svislou obrazovky (`_magnetSmeru`). Při tažení hrana schodů na rovnoběžný líc stěny (`_magnetSchodu`). Alt vypíná.
 
 ## Sloup (Libor 11. 11. 2026)
 
 Nástroj Sloup (klávesa 9) postaví sloup 20 × 20 cm na aktivní podlaží. Označení **C1, C2…** podle anglického Column: označení objektů se bere přednostně z angličtiny (Libor 11. 11. 2026, schody S = Stairs). Panel: hranatý nebo kulatý, strana nebo průměr 10–100 cm, barva (bez vlastní barvy fasáda), Střecha přes sloup, smazat. V seznamu objektů jako schody: šedé označení, oko, nepřejmenovává se. Klíč skrytí `dum:C1`.
 - **Roh výklenku** (`_rohyVyklenku`): průsečík přímek dvou hran obrysu, mezi kterými obrys uhýbá dovnitř (1–2 hrany mezi nimi, zhruba kolmé). Při zakládání i tažení se sloup do rohu přichytí a lícuje s oběma hranami (dosah 0,4 m + polovina sloupu, podle síly magnetu, Alt vypíná). Změna rozměru v rohu drží lícování. Mimo roh si sloup při tahu drží své natočení.
-- **Otáčení:** vybraný hranatý sloup má kolečko ↻ za rohem, tahem se otáčí kolem středu, magnet ho přitáhne na směry stěn, os domu a obrazovky (`_magnetSmeru`, 5°), Alt vypíná.
+- **Otáčení:** vybraný hranatý sloup má kolečko ↻ za rohem, tahem se otáčí kolem středu. Magnet je společný s nábytkem a schody (`_magnetOtoceni`, 5°, Libor 11. 11. 2026): přednost má nejbližší stěna a čára magnetu vede podél ní, osy domu a obrazovky platí, jen když žádná stěna nesedí. Nový sloup se natočí podle nejbližší stěny jako kus nábytku (`_uhelNejblizsiZdi`), Alt vypíná.
 - **Střecha přes sloup:** sloup v rohu výklenku na horním podlaží vyplní výklenek v obrysu střechy (`_obrysSeSloupy`), okap jde rovně až přes sloup. Vynechané hrany přestanou být hranami střechy, krajní se prodlouží a nesou své nastavení dál. Sloup jinde střechu nemění, panel to řekne. Jde vypnout (`strecha: false`).
 - **3D:** od podlahy pod strop, na horním podlaží pod nejnižší roh střechy. Na nejnižším podlaží stojí na terénu (dům bývá nad ním), stejně hluboko jako základ.
 - **Podepření:** sloup dole nese jen to, co stojí přímo na něm. Stěna nad ním je dál nepodepřená mimo sloup (průvlak se označí jako staticky zajištěno).

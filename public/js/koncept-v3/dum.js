@@ -1524,6 +1524,66 @@
             return nej;
         },
 
+        /**
+         * Směr nejbližší stěny aktivního podlaží k bodu (px), z poloh po 90° ten nejbližší nule (rad), bez stěn null.
+         * Výchozí natočení nového kusu nábytku i sloupu (Libor 11. 11. 2026).
+         */
+        _uhelNejblizsiZdi(bod) {
+            const e = this.engine;
+            let nej = Infinity, smer = null;
+            for (const w of e.walls.values()) {
+                const a = e.nodes.get(w.nodeA), b = e.nodes.get(w.nodeB);
+                if (!a || !b) continue;
+                const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+                if (L2 < 1) continue;
+                const t = Math.max(0, Math.min(1, ((bod.x - a.x) * dx + (bod.y - a.y) * dy) / L2));
+                const d = Math.hypot(a.x + t * dx - bod.x, a.y + t * dy - bod.y);
+                if (d < nej) { nej = d; smer = Math.atan2(dy, dx); }
+            }
+            if (smer === null) return null;
+            const ctvrt = Math.PI / 2;
+            const u = smer - Math.round(smer / ctvrt) * ctvrt;
+            return Math.abs(u) < 1e-9 ? 0 : u;
+        },
+
+        /**
+         * Jeden magnet otáčení pro kus nábytku, sloup i schody (Libor 11. 11. 2026). Úhel `u` (rad, souřadnice
+         * plátna) zaskočí rovnoběžně nebo kolmo ke stěně do `tol`. Ze stěn, které úhel splňují stejně (do 0,5°),
+         * vyhraje ta nejbližší k `stred` (px) a čára magnetu vede podél ní: v pravoúhlém domě tak při otáčení
+         * zůstává stále stejná, dřív přeskakovala mezi vodorovnou a svislou. Stěny podlaží pod ním, osa domu
+         * a obrazovka platí, jen když žádná stěna podlaží nesedí. Vrací { uhel, smer } nebo null.
+         */
+        _magnetOtoceni(u, stred, tol) {
+            const e = this.engine, PX = e.PX_PER_M, ctvrt = Math.PI / 2, shoda = 0.5 * Math.PI / 180;
+            const kandidati = [];
+            const spodek = e.spodekAktivniho?.();
+            for (const [eng, navic] of [[e, 0], [spodek?.engine, 1e6]]) {
+                for (const w of eng ? eng.walls.values() : []) {
+                    const a = eng.nodes.get(w.nodeA), b = eng.nodes.get(w.nodeB);
+                    if (!a || !b) continue;
+                    const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+                    if (L2 < (0.5 * PX) ** 2) continue;
+                    const t = Math.max(0, Math.min(1, ((stred.x - a.x) * dx + (stred.y - a.y) * dy) / L2));
+                    kandidati.push({ smer: Math.atan2(dy, dx), d: navic + Math.hypot(a.x + t * dx - stred.x, a.y + t * dy - stred.y) });
+                }
+            }
+            kandidati.push({ smer: (e.smerRastru?.() ?? 0) * Math.PI / 180, d: 1e9 }, { smer: -((this.stage?.rotation() || 0) * Math.PI / 180), d: 2e9 });
+            let nej = null;
+            for (const k of kandidati) {
+                const z = Math.round((u - k.smer) / ctvrt) * ctvrt + k.smer;
+                const odch = Math.abs(u - z);
+                if (odch >= tol) continue;
+                if (!nej || odch < nej.odch - shoda || (Math.abs(odch - nej.odch) <= shoda && k.d < nej.d)) nej = { uhel: z, smer: k.smer, odch, d: k.d };
+            }
+            return nej ? { uhel: nej.uhel, smer: nej.smer } : null;
+        },
+
+        /** Čára magnetu otáčení skrz střed (px) podél směru stěny, stejná pro nábytek, sloup i schody. */
+        _caraOtoceni(stred, smer) {
+            const dosah = 8 * this.engine.PX_PER_M, hx = Math.cos(smer) * dosah, hy = Math.sin(smer) * dosah;
+            return { otoceni: true, line: { a: { x: stred.x - hx, y: stred.y - hy }, b: { x: stred.x + hx, y: stred.y + hy } } };
+        },
+
         /** Směr schodů z tahu. */
         _schodySmer(od, kam) {
             const u = Math.atan2(kam.y - od.y, kam.x - od.x);
@@ -1855,7 +1915,8 @@
         /** Sloup přitažený do rohu výklenku aktivního podlaží (bod v px), jinak natočený podle stěn. */
         _magnetSloupu(bod, sirka, e) {
             const PX = this.engine.PX_PER_M;
-            const uhel = this._magnetSmeru(0, Math.PI / 4);
+            // Natočení podle nejbližší stěny, stejně jako nový kus nábytku; bez stěn podle os domu a obrazovky
+            const uhel = this._uhelNejblizsiZdi(bod) ?? this._magnetSmeru(0, Math.PI / 4);
             if (this._bezMagnetu(e)) return { x: bod.x, y: bod.y, uhel };
             // Do rohu stejně daleko, odkud sloup rozšíří střechu: co střechu rozšíří, to i lícuje
             const sila = Math.max(0, Math.min(100, Number(this.magnetSila ?? 100))) / 100;
@@ -2464,8 +2525,10 @@
                     if (s) {
                         const otoceni = Math.atan2(pos.y - t.stred.y, pos.x - t.stred.x) - t.a0;
                         let u = t.u0 + Math.atan2(Math.sin(otoceni), Math.cos(otoceni));   // bez skoku přes ±180°
-                        // Magnet na směry stěn, os domu a obrazovky (čtverec je souměrný po 90°)
-                        if (!this._bezMagnetu(e)) u = this._magnetSmeru(u, this._silaUhlu(5));
+                        // Společný magnet otáčení: k nejbližší stěně, s čarou (čtverec je souměrný po 90°)
+                        const m = this._bezMagnetu(e) ? null : this._magnetOtoceni(u, t.stred, this._silaUhlu(5));
+                        if (m) u = m.uhel;
+                        this._snapPreview = m ? this._caraOtoceni(t.stred, m.smer) : null;
                         s.uhel = u;
                     }
                 } else if (t.typ === 'schodyOtoc') {
@@ -2473,7 +2536,9 @@
                     if (s) {
                         const otoceni = Math.atan2(pos.y - t.stred.y, pos.x - t.stred.x) - t.a0;
                         let u = t.u0 + Math.atan2(Math.sin(otoceni), Math.cos(otoceni));   // bez skoku přes ±180°
-                        if (!this._bezMagnetu(e)) u = this._magnetSmeru(u, this._silaUhlu(5));
+                        const m = this._bezMagnetu(e) ? null : this._magnetOtoceni(u, t.stred, this._silaUhlu(5));
+                        if (m) u = m.uhel;
+                        this._snapPreview = m ? this._caraOtoceni(t.stred, m.smer) : null;
                         const d = u - t.u0;
                         const rx = t.x0 * PX - t.stred.x, ry = -t.y0 * PX - t.stred.y;
                         s.uhel = u;
@@ -2483,6 +2548,8 @@
                     }
                 }
                 this._renderDum();
+                // Čára magnetu otáčení je v překryvu, _renderDum ho nepřekresluje
+                if (t.typ === 'sloupOtoc' || t.typ === 'schodyOtoc') this.renderer?.prekresliPrekryv?.();
                 return true;
             }
             if (this.nastroj === 'katalog') {
@@ -2506,6 +2573,7 @@
             const t = this._domTah;
             if (!t) return false;
             this._domTah = null;
+            if (this._snapPreview?.otoceni) { this._snapPreview = null; this.renderer?.prekresliPrekryv?.(); }
             if (!t.posun) return true;
             if (t.typ === 'podklad') { this.podkladUloz?.(); return true; }
             this.renderer._mistnostiCache = null;

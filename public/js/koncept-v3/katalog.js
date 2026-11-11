@@ -268,20 +268,9 @@
          * Nový kus se tak v natočeném domě nevkládá nakřivo (Libor 11. 11. 2026, vzorový dům je natočený o 28°).
          */
         _katalogUhelZdi(stred) {
-            const PX = this.engine.PX_PER_M, x = stred[0] * PX, y = -stred[1] * PX;
-            let nej = Infinity, smer = null;
-            for (const w of this.engine.walls.values()) {
-                const a = this.engine.nodes.get(w.nodeA), b = this.engine.nodes.get(w.nodeB);
-                if (!a || !b) continue;
-                const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
-                if (L2 < 1) continue;
-                const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / L2));
-                const d = Math.hypot(a.x + t * dx - x, a.y + t * dy - y);
-                if (d < nej) { nej = d; smer = Math.atan2(dy, dx) * 180 / Math.PI; }
-            }
-            if (smer === null) return 0;
-            const u = (((smer % 90) + 135) % 90) - 45;
-            return Math.abs(u) < 1e-6 ? 0 : u;
+            const PX = this.engine.PX_PER_M;
+            const u = this._uhelNejblizsiZdi({ x: stred[0] * PX, y: -stred[1] * PX });
+            return u === null ? 0 : u * 180 / Math.PI;
         },
 
         _katalogBodKurzoru(pos) {
@@ -446,7 +435,7 @@
         },
 
         /**
-         * Magnet otáčení: kus zaskočí, když je rovnoběžný nebo kolmý k některé zdi podlaží. Vrací nové otočení
+         * Magnet otáčení: kus zaskočí, když je rovnoběžný nebo kolmý k některé zdi podlaží (nejbližší vyhrává). Vrací nové otočení
          * v radiánech, null když k žádné zdi nemíří, undefined když se neotáčí jeden kus z katalogu.
          */
         katalogMagnetRotace(delta) {
@@ -455,24 +444,12 @@
             const [id, puvodni] = [...snimek][0];
             const v = (this.engine.vybaveni || []).find(x => x.id === id);
             if (!v || !v.katalog) return undefined;
-            const smery = [];
-            for (const w of this.engine.walls.values()) {
-                const a = this.engine.nodes.get(w.nodeA), b = this.engine.nodes.get(w.nodeB);
-                if (a && b && Math.hypot(b.x - a.x, b.y - a.y) > 1) smery.push(Math.atan2(b.y - a.y, b.x - a.x));
-            }
-            if (!smery.length) smery.push(0);
-            const ctvrt = Math.PI / 2, uhel = (puvodni.uhel || 0) * Math.PI / 180 + delta;
-            let nej = null, nejD = this._silaUhlu(4);
-            for (const a of smery) {
-                const r = uhel - a;
-                const d = Math.round(r / ctvrt) * ctvrt - r;
-                if (Math.abs(d) < nejD) {
-                    nejD = Math.abs(d);
-                    nej = delta + d;
-                    this._katalogSmerMagnetu = a;
-                }
-            }
-            return nej;
+            // Společný magnet otáčení (dum.js): k nejbližší stěně, čára stále podél téže stěny
+            const uhel = (puvodni.uhel || 0) * Math.PI / 180 + delta;
+            const m = this._magnetOtoceni(uhel, { x: this._rotateCx, y: this._rotateCy }, this._silaUhlu(5));
+            if (!m) return null;
+            this._katalogSmerMagnetu = m.smer;
+            return delta + (m.uhel - uhel);
         },
 
         katalogPoOtoceni() {
