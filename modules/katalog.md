@@ -215,7 +215,7 @@ V katalogu chybí vybavení koupelny a WC, kuchyňská linka a vestavěné skř�
 
 ## Plán 2: Nábytková sestava – kuchyňská linka a vestavěná skříň (Libor 11. 11. 2026)
 
-Stav: upřesněný koncept, čeká na Liborovo schválení bodů na konci oddílu. Neprogramovat bez výzvy.
+Stav: **hotovo lokálně 11. 11. 2026** (fe28def), popis v `modules/sestavy.md`. Libor schválil body (a) až (d) a řekl „udělej to celé a pak to odladíme“; všechny etapy jsou v jednom, povrchy zatím kreslené na plátně (fotky dřeva a kamene jsou další krok).
 
 **Rozhodnuto (Libor 11. 11. 2026):**
 - Název **Nábytková sestava**, druhy Kuchyňská linka a Vestavěná skříň.
