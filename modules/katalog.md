@@ -191,6 +191,7 @@ Kategorie `koupelna` (Koupelna a WC), 22 kusů: WC, bidet, pisoár, umyvadla, va
 Libor: kritický nedostatek vybavení koupelny, jen jeden sprchový kout. Co v CC0 a CC BY knihovnách není, navrhneme sami.
 
 **A. Generátor vlastních kusů** (nový zdroj `tuptudu`, bez autorů): `services/katalog/generuj.html` sestaví kus v three.js z parametrů a uloží GLB do cache, dál jde stejnou cestou jako ostatní (zmenšení, náhled, značka). Materiály stejné jako u převodu (keramika, chrom, sklo, lak, dekor dřeva).
+**Hotovo 11. 11. 2026 (A1, A3):** generátor běží (`pripravVlastni` v `sestav.cjs`, kus v zadání má `zdroj: tuptudu`, `orig` = klíč kusu v `KUSY` a `parametry`, cache podle id). Sedm kusů: sprchový kout čtvercový 90, obdélníkový 120 × 90 s posuvnými dveřmi, čtvrtkruhový 90 (R 550), dveře do niky 100, walk-in 120 × 90 se žlábkem, závěsné WC a závěsný bidet s předstěnou 60 × 20 cm. Kouty stojí stěnami vzadu a vlevo, sklo je vpředu a vpravo, otočením po 90° jdou do každého rohu. Do S3 nahrané. Po změně generátoru `sestav.cjs --jen=^tt- --znovu` a `s3.cjs nahraj --jen=^tt-`.
 1. Sprchové kouty: čtvercový 90, obdélníkový 120 × 90, čtvrtkruhový 90, walk-in zástěna 120 (bez vaničky, se žlábkem), dveře do niky 100. Každý s vaničkou, profily a sklem. Další rozměry dá změna rozměru v cm, krabicové tvary se roztáhnou bez deformace.
 2. Sprchová vanička samostatně 90 × 90 a 120 × 80, zástěna na vanu.
 3. Závěsné WC s instalační předstěnou (v ČR v novostavbách nejčastější), závěsný bidet.

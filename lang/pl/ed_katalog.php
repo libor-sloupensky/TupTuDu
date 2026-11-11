@@ -358,4 +358,12 @@ return [
     'Sušička' => 'Suszarka',
     'Koupelnový radiátor' => 'Grzejnik łazienkowy',
     'Koupelnový radiátor s ručníky' => 'Grzejnik łazienkowy z ręcznikami',
+    // Vlastní kusy koupelny (generátor, 11. 11. 2026)
+    'Sprchový kout čtvercový 90 × 90' => 'Kabina prysznicowa kwadratowa 90 × 90',
+    'Sprchový kout obdélníkový 120 × 90' => 'Kabina prysznicowa prostokątna 120 × 90',
+    'Sprchový kout čtvrtkruhový 90 × 90' => 'Kabina prysznicowa półokrągła 90 × 90',
+    'Sprchové dveře do niky 100' => 'Drzwi prysznicowe do wnęki 100',
+    'Walk-in sprcha 120 × 90' => 'Prysznic walk-in 120 × 90',
+    'Závěsné WC s předstěnou' => 'WC podwieszane ze stelażem',
+    'Závěsný bidet s předstěnou' => 'Bidet podwieszany ze stelażem',
 ];

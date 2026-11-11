@@ -1,0 +1,209 @@
+<!doctype html><meta charset="utf-8"><title>Generátor vlastních kusů katalogu</title>
+<script src="/js/three/three.min.js"></script>
+<script src="/three-ex/GLTFExporter.js"></script>
+<script>
+// Vlastní kusy katalogu, které ve volně licencovaných knihovnách nejsou (Libor 11. 11. 2026): sprchové kouty a závěsné
+// WC a bidet s předstěnou. Kus se sestaví v metrech, y nahoru, předek k +z (stěna vzadu u -z), a uloží jako GLB.
+// Dál jde stejnou cestou jako ostatní modely (sestav.cjs: zmenšení, náhled, značka). Barvy lineárně jako v prevod.html.
+const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear();
+const MAT = {
+    keramika: new THREE.MeshStandardMaterial({ name: 'keramika', color: lin('#f3f3f0'), roughness: 0.18, metalness: 0 }),
+    chrom: new THREE.MeshStandardMaterial({ name: 'chrom', color: lin('#d6d9dc'), roughness: 0.16, metalness: 1 }),
+    sklo: new THREE.MeshStandardMaterial({ name: 'sklo', color: lin('#dcecee'), roughness: 0.05, metalness: 0, transparent: true, opacity: 0.3, side: THREE.DoubleSide }),
+    lak: new THREE.MeshStandardMaterial({ name: 'lak', color: lin('#f0f0ee'), roughness: 0.35, metalness: 0 }),
+    plast: new THREE.MeshStandardMaterial({ name: 'plast', color: lin('#f7f7f5'), roughness: 0.4, metalness: 0 }),
+    tmava: new THREE.MeshStandardMaterial({ name: 'tmava', color: lin('#3a3d40'), roughness: 0.5, metalness: 0.3 }),
+};
+const SKLO_TL = 0.006, PROFIL = 0.02, VYSKA_KOUTU = 2.0;
+
+function kvadr(g, sx, sy, sz, mat, x, y, z) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
+    m.position.set(x, y, z);
+    g.add(m);
+    return m;
+}
+function valec(g, r, h, mat, x, y, z, osa = 'y', segmentu = 20) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, segmentu), mat);
+    if (osa === 'x') m.rotation.z = Math.PI / 2;
+    if (osa === 'z') m.rotation.x = Math.PI / 2;
+    m.position.set(x, y, z);
+    g.add(m);
+    return m;
+}
+/** Obrys v půdorysu (body [x, z]) vytažený nahoru od y0 o výšku, se zaoblenou hranou. Díry jako další obrysy. */
+function deska(g, obrys, y0, vyska, mat, zaobleni = 0.004, diry = []) {
+    const tvar = new THREE.Shape(obrys.map(([x, z]) => new THREE.Vector2(x, -z)));
+    for (const d of diry) tvar.holes.push(new THREE.Path(d.map(([x, z]) => new THREE.Vector2(x, -z))));
+    const b = Math.min(zaobleni, vyska / 3);
+    const geo = new THREE.ExtrudeGeometry(tvar, { depth: Math.max(0.0005, vyska - 2 * b), bevelEnabled: b > 0, bevelThickness: b, bevelSize: b, bevelOffset: -b, bevelSegments: 2, curveSegments: 24 });
+    geo.rotateX(-Math.PI / 2);
+    geo.translate(0, y0 + b, 0);
+    const m = new THREE.Mesh(geo, mat);
+    g.add(m);
+    return m;
+}
+function obdelnik(sx, sz, cx = 0, cz = 0) {
+    return [[cx - sx / 2, cz - sz / 2], [cx + sx / 2, cz - sz / 2], [cx + sx / 2, cz + sz / 2], [cx - sx / 2, cz + sz / 2]];
+}
+/** Sklo s horní a krajními profily mezi body a, b (x, z) v půdorysu. */
+function steneSkla(g, a, b, y0, vyska, kraje = [true, true]) {
+    const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz), u = Math.atan2(dz, dx);
+    const s = new THREE.Group();
+    s.position.set((a[0] + b[0]) / 2, 0, (a[1] + b[1]) / 2);
+    s.rotation.y = -u;
+    kvadr(s, L, vyska, SKLO_TL, MAT.sklo, 0, y0 + vyska / 2, 0);
+    kvadr(s, L, PROFIL * 0.75, PROFIL, MAT.chrom, 0, y0 + vyska - PROFIL * 0.375, 0);
+    if (kraje[0]) kvadr(s, PROFIL, vyska, PROFIL, MAT.chrom, -L / 2 + PROFIL / 2, y0 + vyska / 2, 0);
+    if (kraje[1]) kvadr(s, PROFIL, vyska, PROFIL, MAT.chrom, L / 2 - PROFIL / 2, y0 + vyska / 2, 0);
+    g.add(s);
+    return s;
+}
+function madlo(g, x, z, y = 1.05) { valec(g, 0.009, 0.28, MAT.chrom, x, y, z); }
+/** Sprchová souprava na zadní stěně: tyč, hlavová sprcha na rameni, baterie. */
+function sprchovaSouprava(g, x, zStena) {
+    valec(g, 0.011, 1.05, MAT.chrom, x, 1.48, zStena + 0.045);
+    kvadr(g, 0.14, 0.06, 0.05, MAT.chrom, x, 1.05, zStena + 0.03);
+    valec(g, 0.008, 0.3, MAT.chrom, x, 2.0, zStena + 0.19, 'z');
+    valec(g, 0.11, 0.008, MAT.chrom, x, 1.99, zStena + 0.34, 'y', 32);
+}
+function vanicka(g, obrys) {
+    deska(g, obrys, 0, 0.04, MAT.keramika, 0.012);
+    const sx = obrys.reduce((s, p) => s + p[0], 0) / obrys.length, sz = obrys.reduce((s, p) => s + p[1], 0) / obrys.length;
+    valec(g, 0.045, 0.004, MAT.chrom, sx, 0.041, sz, 'y', 24);
+}
+
+const KUSY = {
+    /** Rohový kout: stěny vzadu a vlevo, sklo vpředu a vpravo, vpředu dveře s madlem. */
+    'sprcha-roh'({ sirka = 0.9, hloubka = 0.9 }) {
+        const g = new THREE.Group(), x2 = sirka / 2, z2 = hloubka / 2, o = 0.015;
+        vanicka(g, obdelnik(sirka, hloubka));
+        const y0 = 0.04, h = VYSKA_KOUTU - y0;
+        if (sirka > 1.05) {
+            // Široký: posuvné dveře, pevný díl a křídlo se překrývají
+            steneSkla(g, [-x2, z2 - o], [0.06, z2 - o], y0, h, [true, false]);
+            steneSkla(g, [-0.06, z2 - o - 0.03], [x2 - o, z2 - o - 0.03], y0, h, [false, true]);
+            madlo(g, -0.02, z2 - o - 0.045);
+        } else {
+            steneSkla(g, [-x2, z2 - o], [x2 - o, z2 - o], y0, h);
+            madlo(g, x2 - 0.12, z2 - o + 0.02);
+        }
+        steneSkla(g, [x2 - o, -z2], [x2 - o, z2 - o], y0, h);
+        sprchovaSouprava(g, -x2 + 0.25, -z2);
+        return g;
+    },
+    /** Čtvrtkruhový kout R 550: stěny vzadu a vlevo, oblouk vpředu vpravo. */
+    'sprcha-ctvrtkruh'({ sirka = 0.9, polomer = 0.55 }) {
+        const g = new THREE.Group(), x2 = sirka / 2, o = 0.015;
+        const c = x2 - polomer, obrys = [[-x2, -x2], [x2, -x2], [x2, c]];
+        for (let i = 1; i < 24; i++) { const a = i / 24 * Math.PI / 2; obrys.push([c + Math.cos(a) * polomer, c + Math.sin(a) * polomer]); }
+        obrys.push([c, x2], [-x2, x2]);
+        vanicka(g, obrys);
+        const y0 = 0.04, h = VYSKA_KOUTU - y0, R = polomer - o;
+        steneSkla(g, [x2 - o, -x2], [x2 - o, c], y0, h, [true, false]);
+        steneSkla(g, [-x2, x2 - o], [c, x2 - o], y0, h, [true, false]);
+        const oblouk = new THREE.Mesh(new THREE.CylinderGeometry(R, R, h, 32, 1, true, 0, Math.PI / 2), MAT.sklo);
+        oblouk.position.set(c, y0 + h / 2, c);
+        g.add(oblouk);
+        const lista = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.01, R + 0.01, PROFIL * 0.75, 32, 1, true, 0, Math.PI / 2), MAT.chrom);
+        lista.position.set(c, y0 + h - PROFIL * 0.375, c);
+        g.add(lista);
+        madlo(g, c + Math.cos(Math.PI / 4) * (R + 0.02), c + Math.sin(Math.PI / 4) * (R + 0.02));
+        sprchovaSouprava(g, -x2 + 0.25, -x2);
+        return g;
+    },
+    /** Dveře do niky: stěny vzadu, vlevo i vpravo, vpředu posuvné dveře. */
+    'sprcha-nika'({ sirka = 1.0, hloubka = 0.9 }) {
+        const g = new THREE.Group(), x2 = sirka / 2, z2 = hloubka / 2, o = 0.015, y0 = 0.04, h = VYSKA_KOUTU - y0;
+        vanicka(g, obdelnik(sirka, hloubka));
+        steneSkla(g, [-x2, z2 - o], [0.05, z2 - o], y0, h, [true, false]);
+        steneSkla(g, [-0.05, z2 - o - 0.03], [x2, z2 - o - 0.03], y0, h, [false, true]);
+        madlo(g, -0.01, z2 - o - 0.045);
+        sprchovaSouprava(g, 0, -z2);
+        return g;
+    },
+    /** Walk-in: podlaha v úrovni koupelny se žlábkem, pevná zástěna vpředu se vzpěrou ke stěně, vstup vpravo. */
+    'sprcha-walkin'({ sirka = 1.2, hloubka = 0.9, zastena = 0.9 }) {
+        const g = new THREE.Group(), x2 = sirka / 2, z2 = hloubka / 2;
+        deska(g, obdelnik(sirka, hloubka), 0, 0.006, MAT.lak, 0.002);
+        kvadr(g, sirka - 0.2, 0.004, 0.06, MAT.tmava, 0, 0.007, -z2 + 0.08);
+        steneSkla(g, [-x2, z2 - 0.02], [-x2 + zastena, z2 - 0.02], 0.006, VYSKA_KOUTU - 0.006, [true, false]);
+        valec(g, 0.008, hloubka - 0.04, MAT.chrom, -x2 + zastena - 0.03, VYSKA_KOUTU - 0.03, 0, 'z');
+        sprchovaSouprava(g, -x2 + 0.35, -z2);
+        return g;
+    },
+    /** Závěsné WC nebo bidet na instalační předstěně (stěna u z = 0), předstěna 60 × 20 cm. */
+    'zavesne'({ druh = 'wc' }) {
+        const g = new THREE.Group(), wc = druh === 'wc';
+        const pred = { sirka: 0.6, hloubka: 0.2, vyska: wc ? 1.15 : 0.82 };
+        kvadr(g, pred.sirka, pred.vyska, pred.hloubka, MAT.lak, 0, pred.vyska / 2, pred.hloubka / 2);
+        if (wc) {
+            kvadr(g, 0.25, 0.16, 0.012, MAT.chrom, 0, 1.0, pred.hloubka + 0.006);
+            kvadr(g, 0.1, 0.12, 0.006, MAT.lak, -0.055, 1.0, pred.hloubka + 0.014);
+            kvadr(g, 0.1, 0.12, 0.006, MAT.lak, 0.055, 1.0, pred.hloubka + 0.014);
+        }
+        // Obrys mísy shora: rovný zadní díl u předstěny a půlelipsa dopředu, délka 53 cm, šířka 36 cm
+        const z0 = pred.hloubka, delka = 0.53, pul = 0.18, zr = z0 + 0.13;
+        // k < 1 je o kousek menší obrys (sedátko, víko), přední okraj ustoupí o 4 cm na k = 0
+        const obrys = (k) => {
+            const pz = z0 + delka - zr - (1 - k) * 0.04;
+            const b = [[-pul * k, z0], [pul * k, z0], [pul * k, zr]];
+            for (let i = 1; i < 32; i++) { const a = i / 32 * Math.PI; b.push([Math.cos(a) * pul * k, zr + Math.sin(a) * pz]); }
+            b.push([-pul * k, zr]);
+            return b;
+        };
+        const horni = wc ? 0.38 : 0.40, spodni = 0.13;
+        const telo = deska(g, obrys(1), spodni, (wc ? horni : horni - 0.1) - spodni, MAT.keramika, 0.02);
+        // Mísa se ke spodku zužuje k předstěně
+        const p = telo.geometry.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+            const t = Math.max(0, Math.min(1, (p.getY(i) - spodni) / (horni - spodni)));
+            const s = 0.7 + 0.3 * Math.pow(t, 0.6);
+            p.setX(i, p.getX(i) * s);
+            p.setZ(i, z0 + (p.getZ(i) - z0) * s);
+        }
+        p.needsUpdate = true;
+        telo.geometry.computeVertexNormals();
+        if (wc) {
+            deska(g, obrys(0.985), horni, 0.025, MAT.plast, 0.008);
+            deska(g, obrys(0.97), horni + 0.025, 0.018, MAT.plast, 0.008);
+        } else {
+            // Bidet: okraj s otvorem, uvnitř mísa o 10 cm níž, baterie vzadu
+            const vnitrni = obrys(0.72).map(([x, z]) => [x, z0 + 0.03 + (z - z0) * 0.9]);
+            deska(g, obrys(1), horni - 0.1, 0.1, MAT.keramika, 0.012, [vnitrni]);
+            valec(g, 0.014, 0.08, MAT.chrom, 0, horni + 0.04, z0 + 0.06);
+            valec(g, 0.008, 0.09, MAT.chrom, 0, horni + 0.075, z0 + 0.1, 'z');
+        }
+        return g;
+    },
+};
+
+window.generuj = async function (klic, parametry = {}) {
+    window.hotovo = false; window.vysledek = null;
+    try {
+        const tvorba = KUSY[klic];
+        if (!tvorba) throw new Error('Neznámý kus generátoru: ' + klic);
+        const kus = tvorba(parametry);
+        kus.updateMatrixWorld(true);
+        const scena = new THREE.Scene();
+        // Geometrie zapečená do světových souřadnic, ať model nenese zbytečné uzly
+        kus.traverse(o => {
+            if (!o.isMesh) return;
+            const geo = o.geometry.clone();
+            geo.applyMatrix4(o.matrixWorld);
+            const m = new THREE.Mesh(geo, o.material);
+            m.name = o.material.name;
+            scena.add(m);
+        });
+        const box = new THREE.Box3().setFromObject(scena);
+        const s = box.getSize(new THREE.Vector3());
+        const glb = await new Promise((ok) => new THREE.GLTFExporter().parse(scena, ok, { binary: true }));
+        let bin = '';
+        const b = new Uint8Array(glb);
+        for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+        window.vysledek = { glb: btoa(bin), rozmery: [s.x, s.z, s.y].map(v => +v.toFixed(3)) };
+    } catch (e) {
+        window.vysledek = { chyba: String(e?.stack || e?.message || e) };
+    }
+    window.hotovo = true;
+};
+</script>

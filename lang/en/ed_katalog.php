@@ -358,4 +358,12 @@ return [
     'Sušička' => 'Tumble dryer',
     'Koupelnový radiátor' => 'Towel radiator',
     'Koupelnový radiátor s ručníky' => 'Towel radiator with towels',
+    // Vlastní kusy koupelny (generátor, 11. 11. 2026)
+    'Sprchový kout čtvercový 90 × 90' => 'Square shower enclosure 90 × 90',
+    'Sprchový kout obdélníkový 120 × 90' => 'Rectangular shower enclosure 120 × 90',
+    'Sprchový kout čtvrtkruhový 90 × 90' => 'Quadrant shower enclosure 90 × 90',
+    'Sprchové dveře do niky 100' => 'Shower door for a recess 100',
+    'Walk-in sprcha 120 × 90' => 'Walk-in shower 120 × 90',
+    'Závěsné WC s předstěnou' => 'Wall-hung toilet with frame',
+    'Závěsný bidet s předstěnou' => 'Wall-hung bidet with frame',
 ];

@@ -6696,6 +6696,26 @@
    "odkaz": "https://www.blendswap.com/blends/view/24948"
   },
   {
+   "id": "tt-wc-zavesne",
+   "zdroj": "tuptudu",
+   "orig": "zavesne",
+   "parametry": {
+    "druh": "wc"
+   },
+   "nazev": "Závěsné WC s předstěnou",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "tt-bidet-zavesny",
+   "zdroj": "tuptudu",
+   "orig": "zavesne",
+   "parametry": {
+    "druh": "bidet"
+   },
+   "nazev": "Závěsný bidet s předstěnou",
+   "kategorie": "koupelna"
+  },
+  {
    "id": "sh3d-bidet",
    "zdroj": "bs-cc0",
    "orig": "blendswap-cc-0/bidet",
@@ -6809,6 +6829,62 @@
    "zdroj": "scopia",
    "orig": "scopia/islandBath",
    "nazev": "Vana volně stojící",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "tt-sprcha-roh-90",
+   "zdroj": "tuptudu",
+   "orig": "sprcha-roh",
+   "parametry": {
+    "sirka": 0.9,
+    "hloubka": 0.9
+   },
+   "nazev": "Sprchový kout čtvercový 90 × 90",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "tt-sprcha-roh-120",
+   "zdroj": "tuptudu",
+   "orig": "sprcha-roh",
+   "parametry": {
+    "sirka": 1.2,
+    "hloubka": 0.9
+   },
+   "nazev": "Sprchový kout obdélníkový 120 × 90",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "tt-sprcha-ctvrtkruh-90",
+   "zdroj": "tuptudu",
+   "orig": "sprcha-ctvrtkruh",
+   "parametry": {
+    "sirka": 0.9,
+    "polomer": 0.55
+   },
+   "nazev": "Sprchový kout čtvrtkruhový 90 × 90",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "tt-sprcha-nika-100",
+   "zdroj": "tuptudu",
+   "orig": "sprcha-nika",
+   "parametry": {
+    "sirka": 1,
+    "hloubka": 0.9
+   },
+   "nazev": "Sprchové dveře do niky 100",
+   "kategorie": "koupelna"
+  },
+  {
+   "id": "tt-sprcha-walkin-120",
+   "zdroj": "tuptudu",
+   "orig": "sprcha-walkin",
+   "parametry": {
+    "sirka": 1.2,
+    "hloubka": 0.9,
+    "zastena": 0.9
+   },
+   "nazev": "Walk-in sprcha 120 × 90",
    "kategorie": "koupelna"
   },
   {

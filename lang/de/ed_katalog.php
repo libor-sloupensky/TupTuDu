@@ -358,4 +358,12 @@ return [
     'Sušička' => 'Wäschetrockner',
     'Koupelnový radiátor' => 'Badheizkörper',
     'Koupelnový radiátor s ručníky' => 'Badheizkörper mit Handtüchern',
+    // Vlastní kusy koupelny (generátor, 11. 11. 2026)
+    'Sprchový kout čtvercový 90 × 90' => 'Quadratische Duschkabine 90 × 90',
+    'Sprchový kout obdélníkový 120 × 90' => 'Rechteckige Duschkabine 120 × 90',
+    'Sprchový kout čtvrtkruhový 90 × 90' => 'Viertelkreis-Duschkabine 90 × 90',
+    'Sprchové dveře do niky 100' => 'Nischentür für Dusche 100',
+    'Walk-in sprcha 120 × 90' => 'Walk-in-Dusche 120 × 90',
+    'Závěsné WC s předstěnou' => 'Wand-WC mit Vorwand',
+    'Závěsný bidet s předstěnou' => 'Wand-Bidet mit Vorwand',
 ];

@@ -358,4 +358,12 @@ return [
     'Sušička' => 'Asciugatrice',
     'Koupelnový radiátor' => 'Scaldasalviette',
     'Koupelnový radiátor s ručníky' => 'Scaldasalviette con asciugamani',
+    // Vlastní kusy koupelny (generátor, 11. 11. 2026)
+    'Sprchový kout čtvercový 90 × 90' => 'Box doccia quadrato 90 × 90',
+    'Sprchový kout obdélníkový 120 × 90' => 'Box doccia rettangolare 120 × 90',
+    'Sprchový kout čtvrtkruhový 90 × 90' => 'Box doccia semicircolare 90 × 90',
+    'Sprchové dveře do niky 100' => 'Porta doccia per nicchia 100',
+    'Walk-in sprcha 120 × 90' => 'Doccia walk-in 120 × 90',
+    'Závěsné WC s předstěnou' => 'WC sospeso con controparete',
+    'Závěsný bidet s předstěnou' => 'Bidet sospeso con controparete',
 ];

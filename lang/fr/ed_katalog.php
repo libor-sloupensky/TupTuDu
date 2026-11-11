@@ -358,4 +358,12 @@ return [
     'Sušička' => 'Sèche-linge',
     'Koupelnový radiátor' => 'Sèche-serviettes',
     'Koupelnový radiátor s ručníky' => 'Sèche-serviettes avec serviettes',
+    // Vlastní kusy koupelny (generátor, 11. 11. 2026)
+    'Sprchový kout čtvercový 90 × 90' => 'Cabine de douche carrée 90 × 90',
+    'Sprchový kout obdélníkový 120 × 90' => 'Cabine de douche rectangulaire 120 × 90',
+    'Sprchový kout čtvrtkruhový 90 × 90' => 'Cabine de douche quart de cercle 90 × 90',
+    'Sprchové dveře do niky 100' => 'Porte de douche pour niche 100',
+    'Walk-in sprcha 120 × 90' => 'Douche à l’italienne 120 × 90',
+    'Závěsné WC s předstěnou' => 'WC suspendu avec bâti',
+    'Závěsný bidet s předstěnou' => 'Bidet suspendu avec bâti',
 ];

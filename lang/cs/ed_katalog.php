@@ -358,4 +358,12 @@ return [
     'Sušička' => 'Sušička',
     'Koupelnový radiátor' => 'Koupelnový radiátor',
     'Koupelnový radiátor s ručníky' => 'Koupelnový radiátor s ručníky',
+    // Vlastní kusy koupelny (generátor, 11. 11. 2026)
+    'Sprchový kout čtvercový 90 × 90' => 'Sprchový kout čtvercový 90 × 90',
+    'Sprchový kout obdélníkový 120 × 90' => 'Sprchový kout obdélníkový 120 × 90',
+    'Sprchový kout čtvrtkruhový 90 × 90' => 'Sprchový kout čtvrtkruhový 90 × 90',
+    'Sprchové dveře do niky 100' => 'Sprchové dveře do niky 100',
+    'Walk-in sprcha 120 × 90' => 'Walk-in sprcha 120 × 90',
+    'Závěsné WC s předstěnou' => 'Závěsné WC s předstěnou',
+    'Závěsný bidet s předstěnou' => 'Závěsný bidet s předstěnou',
 ];

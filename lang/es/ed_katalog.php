@@ -358,4 +358,12 @@ return [
     'Sušička' => 'Secadora',
     'Koupelnový radiátor' => 'Toallero radiador',
     'Koupelnový radiátor s ručníky' => 'Toallero radiador con toallas',
+    // Vlastní kusy koupelny (generátor, 11. 11. 2026)
+    'Sprchový kout čtvercový 90 × 90' => 'Mampara de ducha cuadrada 90 × 90',
+    'Sprchový kout obdélníkový 120 × 90' => 'Mampara de ducha rectangular 120 × 90',
+    'Sprchový kout čtvrtkruhový 90 × 90' => 'Mampara de ducha semicircular 90 × 90',
+    'Sprchové dveře do niky 100' => 'Puerta de ducha para hueco 100',
+    'Walk-in sprcha 120 × 90' => 'Ducha walk-in 120 × 90',
+    'Závěsné WC s předstěnou' => 'Inodoro suspendido con bastidor',
+    'Závěsný bidet s předstěnou' => 'Bidé suspendido con bastidor',
 ];

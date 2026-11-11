@@ -46,6 +46,8 @@ const kontrola = (popis, podminka, detail = '') => {
         await pauza(3000);
         await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
         const url = await p.vyhodnot('location.href');
+        // Kontrola úložiště čte stažené soubory z měření prohlížeče, výchozích 250 záznamů zaplní náhledy katalogu
+        await p.vyhodnot('performance.setResourceTimingBufferSize(5000), true');
 
         console.log('\n1) Panel katalogu');
         await p.vyhodnot(`(() => { const d = ${D}; const e = d.engine; const X = e.PX_PER_M;
@@ -79,8 +81,8 @@ const kontrola = (popis, podminka, detail = '') => {
         kontrola('denní zóna bez postelí přepne na pohovky', skupiny.denni.kategorie === 'pohovky' && !skupiny.denni.volby.includes('postele'), JSON.stringify(skupiny.denni));
         kontrola('technické a sklady jen police, skříně a svítidla', skupiny.technicke.volby.join() === 'police,skrine,svitidla' && skupiny.technicke.kategorie === 'police', JSON.stringify(skupiny.technicke));
         // Koupelna a WC ze Sweet Home 3D (Plán 1, 11. 11. 2026): první ve skupině koupelen, kusy s autorem pro CC BY
-        const koupelna = await p.vyhodnot(`(() => { const d = ${D}; d.katalogNastavSkupinu('hygiena'); const kusy = d.katalog.polozky.filter(x => x.kategorie === 'koupelna'); const r = { prvni: d.katalogKategorieVolby[0]?.id, kategorie: d.katalogKategorie, kusu: kusy.length, sAutorem: kusy.filter(x => x.autor && x.odkaz).length, zavesne: kusy.filter(x => x.uroven > 0).length, nazevEn: kusy.find(x => x.id === 'sh3d-pracka')?.nazevZdroj }; d.katalogNastavSkupinu(''); d.katalogKategorie = 'pohovky'; return r; })()`);
-        kontrola('koupelny a WC: kategorie Koupelna a WC první, přes 20 kusů, autoři Blend Swap, závěsné kusy nad podlahou', koupelna.prvni === 'koupelna' && koupelna.kusu >= 20 && koupelna.sAutorem >= 8 && koupelna.zavesne >= 5 && koupelna.nazevEn === 'Pračka', JSON.stringify(koupelna));
+        const koupelna = await p.vyhodnot(`(() => { const d = ${D}; d.katalogNastavSkupinu('hygiena'); const kusy = d.katalog.polozky.filter(x => x.kategorie === 'koupelna'); const r = { prvni: d.katalogKategorieVolby[0]?.id, kategorie: d.katalogKategorie, kusu: kusy.length, sAutorem: kusy.filter(x => x.autor && x.odkaz).length, zavesne: kusy.filter(x => x.uroven > 0).length, nazevEn: kusy.find(x => x.id === 'sh3d-pracka')?.nazevZdroj, vlastni: kusy.filter(x => x.zdroj === 'tuptudu').length }; d.katalogNastavSkupinu(''); d.katalogKategorie = 'pohovky'; return r; })()`);
+        kontrola('koupelny a WC: kategorie Koupelna a WC první, aspoň 29 kusů (7 vlastních), autoři Blend Swap, závěsné kusy nad podlahou', koupelna.prvni === 'koupelna' && koupelna.kusu >= 29 && koupelna.vlastni >= 7 && koupelna.sAutorem >= 8 && koupelna.zavesne >= 5 && koupelna.nazevEn === 'Pračka', JSON.stringify(koupelna));
         kontrola('„Všechny místnosti“ vrátí všech 15 kategorií', skupiny.vse.volby.length === 15, String(skupiny.vse.volby.length));
         // Chybějící model: srozumitelná chyba s adresou místo {"isTrusted":true} a další pokus stahuje znovu
         const chybPred = (p.chyby || []).length;

@@ -41,6 +41,9 @@ const ZDROJE = {
 const SH3D = new Set(['bs-cc0', 'bs-ccby', 'scopia']);
 const SH3D_URL = 'https://www.sweethome3d.com/wp-content/themes/sweet-home-3d/theme/assets/models';
 const sh3dGlb = (p) => path.join(CACHE, 'sh3d', p.orig + '.glb');
+// Vlastní kusy z generátoru (generuj.html): sprchové kouty, závěsné WC a bidet. Autor je TupTuDu, na stránku autorů nejdou,
+// proto zdroj 'tuptudu' v ZDROJE není. orig = klíč kusu v generátoru, parametry = rozměry. Cache podle id, parametry se liší.
+const vlastniGlb = (p) => path.join(CACHE, 'tuptudu', p.id + '.glb');
 
 async function stahni(url, cil, hlavicky = UA) {
     if (fs.existsSync(cil) && fs.statSync(cil).size > 0) return;
@@ -52,6 +55,10 @@ async function stahni(url, cil, hlavicky = UA) {
 
 async function zdrojovySoubor(p) {
     // Kus ze Sweet Home 3D převedl do GLB už pripravSh3d
+    if (p.zdroj === 'tuptudu') {
+        if (!fs.existsSync(vlastniGlb(p))) throw new Error('chybí vygenerovaný model ' + vlastniGlb(p));
+        return vlastniGlb(p);
+    }
     if (SH3D.has(p.zdroj)) {
         if (!fs.existsSync(sh3dGlb(p))) throw new Error('chybí převedený model ' + sh3dGlb(p));
         return sh3dGlb(p);
@@ -110,6 +117,27 @@ const TYPY = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.
  * Kusy ze Sweet Home 3D: stáhne zip kusu, rozbalí ho a v prohlížeči převede OBJ + MTL na GLB v metrech s našimi
  * materiály (prevod.html). Výsledek zůstane v cache, dál jde stejnou cestou jako ostatní modely.
  */
+/** Vlastní kusy: generuj.html je sestaví z parametrů v zadání. Generátor se mění častěji než zdroj, --znovu je vždy přegeneruje. */
+async function pripravVlastni(polozky, port) {
+    const k = polozky.filter(p => p.zdroj === 'tuptudu' && (volby.znovu || !fs.existsSync(vlastniGlb(p))));
+    if (!k.length) return;
+    console.log(`Generuji ${k.length} vlastních kusů`);
+    fs.mkdirSync(path.join(CACHE, 'tuptudu'), { recursive: true });
+    const prohl = await otevriProhlizec({ sirka: 400, vyska: 300 });
+    try {
+        await prohl.jdiNa(`http://127.0.0.1:${port}/generuj.html`);
+        await prohl.cekej('typeof window.generuj==="function"', 30000, 'generátor');
+        for (const p of k) {
+            await prohl.vyhodnot(`(window.generuj(${JSON.stringify(p.orig)}, ${JSON.stringify(p.parametry || {})}), 1)`);
+            await prohl.cekej('window.hotovo===true', 60000, p.id);
+            const v = JSON.parse(await prohl.vyhodnot('JSON.stringify(window.vysledek)'));
+            if (v.chyba) { console.log('  CHYBA generátoru', p.id, v.chyba.slice(0, 300)); continue; }
+            fs.writeFileSync(vlastniGlb(p), Buffer.from(v.glb, 'base64'));
+            console.log(`  ${p.id} ${v.rozmery.join(' × ')} m`);
+        }
+    } finally { await prohl.zavri(); }
+}
+
 async function pripravSh3d(polozky, port) {
     const k = polozky.filter(p => SH3D.has(p.zdroj) && (volby.znovu || !fs.existsSync(sh3dGlb(p))));
     if (!k.length) return;
@@ -152,7 +180,7 @@ function server() {
     return new Promise((ok) => {
         const s = http.createServer((q, r) => {
             const u = decodeURIComponent(q.url.split('?')[0]);
-            const f = u === '/nahled.html' || u === '/prevod.html' ? path.join(__dirname, u)
+            const f = u === '/nahled.html' || u === '/prevod.html' || u === '/generuj.html' ? path.join(__dirname, u)
                 : u.startsWith('/three-ex/') ? path.join(__dirname, 'three', u.slice(10))
                 : u.startsWith('/sh3d/') ? path.join(CACHE, 'sh3d', u.slice(6))
                 : path.join(PUBLIC, u);
@@ -173,6 +201,7 @@ function server() {
 
     const srv = await server();
     await pripravSh3d(vyber, srv.address().port);
+    await pripravVlastni(vyber, srv.address().port);
     console.log(`Zmenšuji ${vyber.length} modelů, ${VLAKEN} vlákna`);
     const chyby = [];
     let hotovo = 0;
