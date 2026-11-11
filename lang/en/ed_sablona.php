@@ -5,6 +5,7 @@
 return [
     // Společné texty panelů
     'spolecne' => [
+        'presunout_panel' => 'Drag to move the panel up or down',
         'smazat' => 'Delete',
         'hotovo' => 'Done',
         'schody' => 'Stairs',
@@ -449,7 +450,7 @@ return [
     ],
     // Seznam objektů a přepínače zobrazení (partials/prepinace-zobrazeni)
     'objekty' => [
-        'nadpis' => 'Objects',
+        'nadpis' => 'Used objects',
         'zadne' => 'No objects',
         'skryt_tip' => 'Hide in the floor plan so you can work underneath (until the page reloads; export and 3D keep it)',
         'zobrazit_tip' => 'Show again',

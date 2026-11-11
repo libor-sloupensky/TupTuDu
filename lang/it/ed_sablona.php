@@ -5,6 +5,7 @@
 return [
     // Společné texty panelů
     'spolecne' => [
+        'presunout_panel' => 'Trascina per spostare il pannello su o giù',
         'smazat' => 'Elimina',
         'hotovo' => 'Fatto',
         'schody' => 'Scale',
@@ -449,7 +450,7 @@ return [
     ],
     // Seznam objektů a přepínače zobrazení (partials/prepinace-zobrazeni)
     'objekty' => [
-        'nadpis' => 'Oggetti',
+        'nadpis' => 'Oggetti usati',
         'zadne' => 'Nessun oggetto',
         'skryt_tip' => 'Nascondi nella pianta per lavorarci sotto (fino al ricaricamento della pagina; esportazione e 3D lo mantengono)',
         'zobrazit_tip' => 'Mostra di nuovo',

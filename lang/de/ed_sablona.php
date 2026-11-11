@@ -5,6 +5,7 @@
 return [
     // Společné texty panelů
     'spolecne' => [
+        'presunout_panel' => 'Ziehen, um das Panel nach oben oder unten zu verschieben',
         'smazat' => 'Löschen',
         'hotovo' => 'Fertig',
         'schody' => 'Treppe',
@@ -449,7 +450,7 @@ return [
     ],
     // Seznam objektů a přepínače zobrazení (partials/prepinace-zobrazeni)
     'objekty' => [
-        'nadpis' => 'Objekte',
+        'nadpis' => 'Verwendete Objekte',
         'zadne' => 'Keine Objekte',
         'skryt_tip' => 'Im Grundriss ausblenden, um darunter zu arbeiten (bis zum Neuladen der Seite, Export und 3D behalten es)',
         'zobrazit_tip' => 'Wieder anzeigen',

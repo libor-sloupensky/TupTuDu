@@ -5,6 +5,7 @@
 return [
     // Společné texty panelů
     'spolecne' => [
+        'presunout_panel' => 'Przeciągnij, aby przesunąć panel wyżej lub niżej',
         'smazat' => 'Usuń',
         'hotovo' => 'Gotowe',
         'schody' => 'Schody',
@@ -449,7 +450,7 @@ return [
     ],
     // Seznam objektů a přepínače zobrazení (partials/prepinace-zobrazeni)
     'objekty' => [
-        'nadpis' => 'Obiekty',
+        'nadpis' => 'Użyte obiekty',
         'zadne' => 'Brak obiektów',
         'skryt_tip' => 'Ukryj na rzucie, aby pracować pod nim (do przeładowania strony, eksport i 3D go zachowują)',
         'zobrazit_tip' => 'Pokaż ponownie',

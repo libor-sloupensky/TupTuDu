@@ -66,6 +66,13 @@
     }
     .kk-section-hlava::-webkit-details-marker { display: none; }
     .kk-sekce-ik { flex-shrink: 0; margin-right: -2px; color: var(--c-text-secondary); }
+    /* Šestitečkový úchyt v hlavičce panelu: tahem nahoru a dolů se mění pořadí panelů (uloží se v prohlížeči) */
+    .kk-uchop { display: inline-flex; align-items: center; margin: -4px -2px -4px -6px; padding: 4px 3px; border-radius: 4px;
+        color: var(--c-text-secondary); opacity: .45; cursor: grab; touch-action: none; }
+    .kk-section-hlava:hover .kk-uchop, .kk-uchop:focus-visible { opacity: 1; }
+    .kk-uchop:hover { color: var(--c-primary); background: var(--c-primary-10); }
+    .kk-section.kk-presouva { border-color: var(--c-primary); box-shadow: 0 6px 18px rgba(0,0,0,.18); position: relative; z-index: 2; }
+    body.kk-presun-panelu, body.kk-presun-panelu * { cursor: grabbing !important; user-select: none; }
     .kk-sipka { margin-left: auto; flex-shrink: 0; color: var(--c-text-secondary); transition: transform .2s; }
     .kk-section[open] > .kk-section-hlava .kk-sipka { transform: rotate(180deg); }
     .kk-section[open] > .kk-section-hlava { border-bottom: 1px solid var(--c-border); }
@@ -1131,7 +1138,7 @@
     <div class="kk-panel-b flex flex-col overflow-y-auto"
          :style="'order:' + (obracene ? 0 : 2) + ';min-width:0;min-height:0'">
         {{-- Projekt select + přejmenování --}}
-        <div class="kk-karta flex items-center gap-1 px-2 py-1.5">
+        <div class="kk-karta flex items-center gap-1 px-2 py-1.5" style="order:-1">
             <template x-if="!_prejmenovaniKonceptu">
                 <div class="flex items-center gap-1 flex-1 min-w-0 group">
                     <select x-model="projektId" @change="prepniProjekt()" class="kk-btn flex-1 truncate text-sm">
@@ -1170,8 +1177,12 @@
         {{-- Parcela (Katastr) --}}
         {{-- Podlaží a plochy: jediné místo pro přepínání, přidání a úpravu podlaží. Klik na řádek přepne,
              tužka rozbalí úpravy právě toho řádku, přidání je oddělené a podlaží vzniká až potvrzením. --}}
-        <details class="kk-section" :open="panelOpen.plochy !== false" @toggle="panelOpen.plochy = $el.open; ulozitPanely()">
+        <details data-panel="plochy" :style="{ order: poradiPanelu.indexOf('plochy') }" :class="presouvanyPanel === 'plochy' && 'kk-presouva'" class="kk-section" :open="panelOpen.plochy !== false" @toggle="panelOpen.plochy = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
+                <span class="kk-uchop" data-uchop-panelu="plochy" title="{{ __('ed_sablona.spolecne.presunout_panel') }}" aria-hidden="true"
+                      @pointerdown.stop.prevent="zacniPresunPanelu($event, 'plochy')" @click.stop.prevent>
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="6" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="6" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="6" cy="12" r="1.3"/></svg>
+                </span>
                 <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21 8.5l-9 5-9-5z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 16.5 9 5 9-5"/></svg>
                 <span>{{ __('ed_sablona.podlazi.nadpis') }}</span>
                 <span x-show="seznamPodlazi.length > 1 && panelOpen.plochy === false" class="kk-pocet" x-text="nazevAktivniho"></span>
@@ -1427,11 +1438,14 @@
         </details>
 
         {{-- Katalog nábytku a vybavení, modules/katalog.md --}}
-        <details id="kk-sekce-katalog" class="kk-section" :open="panelOpen.katalog" @toggle="panelOpen.katalog = $el.open; ulozitPanely(); if ($el.open) { _katalogSkupinaZVyberu(); _katalogNacti(); } else _katalogZrusVyber()">
+        <details data-panel="katalog" :style="{ order: poradiPanelu.indexOf('katalog') }" :class="presouvanyPanel === 'katalog' && 'kk-presouva'" id="kk-sekce-katalog" class="kk-section" :open="panelOpen.katalog" @toggle="panelOpen.katalog = $el.open; ulozitPanely(); if ($el.open) { _katalogSkupinaZVyberu(); _katalogNacti(); } else _katalogZrusVyber()">
             <summary class="kk-section-hlava">
+                <span class="kk-uchop" data-uchop-panelu="katalog" title="{{ __('ed_sablona.spolecne.presunout_panel') }}" aria-hidden="true"
+                      @pointerdown.stop.prevent="zacniPresunPanelu($event, 'katalog')" @click.stop.prevent>
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="6" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="6" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="6" cy="12" r="1.3"/></svg>
+                </span>
                 <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="scale(1.5)" stroke-width="1.13"><path d="M3.5 7.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v2"/><path d="M1.5 9a1.5 1.5 0 0 1 3 0v1.5h7V9a1.5 1.5 0 0 1 3 0v3.5h-13z"/><path d="M3.5 12.5V14M12.5 12.5V14"/></g></svg>
                 <span>{{ __('ed_sablona.katalog.nadpis') }}</span>
-                <span x-show="katalog" class="kk-pocet" x-text="katalog?.polozky.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <template x-if="panelOpen.katalog">
@@ -1476,11 +1490,14 @@
             </template>
         </details>
 
-        <details class="kk-section" :open="panelOpen.parcela" @toggle="panelOpen.parcela = $el.open; ulozitPanely()">
+        <details data-panel="parcela" :style="{ order: poradiPanelu.indexOf('parcela') }" :class="presouvanyPanel === 'parcela' && 'kk-presouva'" class="kk-section" :open="panelOpen.parcela" @toggle="panelOpen.parcela = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
+                <span class="kk-uchop" data-uchop-panelu="parcela" title="{{ __('ed_sablona.spolecne.presunout_panel') }}" aria-hidden="true"
+                      @pointerdown.stop.prevent="zacniPresunPanelu($event, 'parcela')" @click.stop.prevent>
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="6" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="6" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="6" cy="12" r="1.3"/></svg>
+                </span>
                 <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.2 9 3.5l6 2.7 6-2.7v14.3l-6 2.7-6-2.7-6 2.7z"/><path d="M9 3.5v14.3M15 6.2v14.3"/></svg>
                 <span>@funkce('katastr') {{ __('ed_sablona.parcela.nadpis') }} @else {{ __('ed_sablona.parcela.mrizka') }} @endfunkce</span>
-                <span x-show="katastrParcely.length > 0" class="kk-pocet" x-text="katastrParcely.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <div class="px-3 py-2 space-y-2 max-h-96 overflow-y-auto">
@@ -1583,11 +1600,14 @@
         </details>
 
         {{-- Objekty --}}
-        <details class="kk-section" :open="panelOpen.objekty" @toggle="panelOpen.objekty = $el.open; ulozitPanely()">
+        <details data-panel="objekty" :style="{ order: poradiPanelu.indexOf('objekty') }" :class="presouvanyPanel === 'objekty' && 'kk-presouva'" class="kk-section" :open="panelOpen.objekty" @toggle="panelOpen.objekty = $el.open; ulozitPanely()">
             <summary class="kk-section-hlava">
+                <span class="kk-uchop" data-uchop-panelu="objekty" title="{{ __('ed_sablona.spolecne.presunout_panel') }}" aria-hidden="true"
+                      @pointerdown.stop.prevent="zacniPresunPanelu($event, 'objekty')" @click.stop.prevent>
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="6" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="6" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="6" cy="12" r="1.3"/></svg>
+                </span>
                 <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="1.2" fill="currentColor"/><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="5" cy="18" r="1.2" fill="currentColor"/><path d="M9.5 6h11M9.5 12h11M9.5 18h11"/></svg>
                 <span>{{ __('ed_sablona.objekty.nadpis') }}</span>
-                <span x-show="seznamObjektu.length > 0" class="kk-pocet" x-text="seznamObjektu.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <div class="px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-gray-100">
@@ -1647,11 +1667,14 @@
         </details>
 
         {{-- Podklad (import půdorysu z výkresu) --}}
-        <details class="kk-section" :open="panelOpen.podklad" @toggle="panelOpen.podklad = $el.open; ulozitPanely(); if ($el.open) impNactiDrive()">
+        <details data-panel="podklad" :style="{ order: poradiPanelu.indexOf('podklad') }" :class="presouvanyPanel === 'podklad' && 'kk-presouva'" class="kk-section" :open="panelOpen.podklad" @toggle="panelOpen.podklad = $el.open; ulozitPanely(); if ($el.open) impNactiDrive()">
             <summary class="kk-section-hlava">
+                <span class="kk-uchop" data-uchop-panelu="podklad" title="{{ __('ed_sablona.spolecne.presunout_panel') }}" aria-hidden="true"
+                      @pointerdown.stop.prevent="zacniPresunPanelu($event, 'podklad')" @click.stop.prevent>
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="6" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="6" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="6" cy="12" r="1.3"/></svg>
+                </span>
                 <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="13" height="13" rx="1" stroke-dasharray="3 2"/><rect x="8" y="3" width="13" height="13" rx="1" fill="currentColor" fill-opacity=".12"/></svg>
                 <span>{{ __('ed_sablona.podklad.nadpis') }}</span>
-                <span x-show="podklad" class="kk-pocet">1</span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             {{-- V panelu je jen výkres, který se právě používá. Ostatní dřív nahrané
@@ -1707,8 +1730,12 @@
         </details>
 
         {{-- Export a sdílení: obrázky vznikají v prohlížeči, odkaz je hotový stav jen pro čtení (modules/sdileni.md) --}}
-        <details class="kk-section" data-sekce-export :open="panelOpen.export" @toggle="panelOpen.export = $el.open; ulozitPanely(); if ($el.open && !sdileni) nactiSdileni()">
+        <details data-panel="export" :style="{ order: poradiPanelu.indexOf('export') }" :class="presouvanyPanel === 'export' && 'kk-presouva'" class="kk-section" data-sekce-export :open="panelOpen.export" @toggle="panelOpen.export = $el.open; ulozitPanely(); if ($el.open && !sdileni) nactiSdileni()">
             <summary class="kk-section-hlava">
+                <span class="kk-uchop" data-uchop-panelu="export" title="{{ __('ed_sablona.spolecne.presunout_panel') }}" aria-hidden="true"
+                      @pointerdown.stop.prevent="zacniPresunPanelu($event, 'export')" @click.stop.prevent>
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="6" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="6" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="6" cy="12" r="1.3"/></svg>
+                </span>
                 <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/></svg>
                 <span>{{ __('ed_sablona.export.nadpis') }}</span>
                 <span x-show="sdileni?.aktivni" class="kk-pocet" title="{{ __('ed_sablona.export.odkaz_zapnuty') }}">{{ __('ed_sablona.export.odkaz') }}</span>
@@ -1766,15 +1793,14 @@
         </details>
 
         {{-- Historie --}}
-        <details class="kk-section" :open="panelOpen.historie" @toggle="panelOpen.historie = $el.open; ulozitPanely()">
+        <details data-panel="historie" :style="{ order: poradiPanelu.indexOf('historie') }" :class="presouvanyPanel === 'historie' && 'kk-presouva'" class="kk-section" :open="panelOpen.historie" @toggle="panelOpen.historie = $el.open; ulozitPanely()">
             <summary data-historie-souhrn class="kk-section-hlava">
+                <span class="kk-uchop" data-uchop-panelu="historie" title="{{ __('ed_sablona.spolecne.presunout_panel') }}" aria-hidden="true"
+                      @pointerdown.stop.prevent="zacniPresunPanelu($event, 'historie')" @click.stop.prevent>
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="6" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="6" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="6" cy="12" r="1.3"/></svg>
+                </span>
                 <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5"/><path d="M3.5 3.8v4.7h4.7"/><path d="M12 7.5V12l3.2 1.8"/></svg>
                 <span>{{ __('ed_sablona.historie.nadpis') }}</span>
-                {{-- Po Zpět je vidět i u sbaleného panelu, na kterém kroku se stojí --}}
-                <span x-show="historie.length > 0" class="kk-pocet"
-                      x-text="historiePozice < historie.length - 1
-                          ? preloz('ed_sablona.historie.krok', { krok: historiePozice + 1, celkem: historie.length })
-                          : historie.length"></span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <div class="max-h-40 overflow-y-auto divide-y divide-gray-100">

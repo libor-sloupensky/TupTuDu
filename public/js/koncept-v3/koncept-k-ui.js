@@ -90,6 +90,15 @@ function konceptKEditor(initialData) {
         stenaTyp: _s.stenaTyp || 'obvodova',
         tloustkaSteny: _s.tloustkaSteny || 0.3,
         panelOpen: JSON.parse(localStorage.getItem('kv3_panelOpen') || '{"objekty":false,"parcela":false,"historie":false}'),
+        // Pořadí panelů vpravo, mění se tahem za šestitečkový úchyt (jen v tomto prohlížeči)
+        poradiPanelu: (() => {
+            const vychozi = ['plochy', 'katalog', 'parcela', 'objekty', 'podklad', 'export', 'historie'];
+            try {
+                const ulozene = JSON.parse(localStorage.getItem('kv3_poradiPanelu') || '[]').filter(id => vychozi.includes(id));
+                return [...ulozene, ...vychozi.filter(id => !ulozene.includes(id))];
+            } catch (e) { return vychozi; }
+        })(),
+        presouvanyPanel: null,
 
         // ─── Engine + Renderer ──────────────────────────────────
         engine: null,
@@ -6494,6 +6503,37 @@ function konceptKEditor(initialData) {
 
         ulozitPanely() {
             localStorage.setItem('kv3_panelOpen', JSON.stringify(this.panelOpen));
+        },
+
+        /** Tah za úchyt panelu: panel se řadí podle polohy myši mezi ostatními, po puštění se pořadí uloží. */
+        zacniPresunPanelu(e, id) {
+            const kontejner = e.target.closest('details')?.parentElement;
+            if (!kontejner) return;
+            this.presouvanyPanel = id;
+            document.body.classList.add('kk-presun-panelu');
+            const pohyb = (ev) => {
+                const ostatni = [...kontejner.querySelectorAll(':scope > details[data-panel]')]
+                    .filter(el => el.dataset.panel !== id && el.offsetParent !== null)
+                    .map(el => ({ id: el.dataset.panel, r: el.getBoundingClientRect() }))
+                    .sort((a, b) => a.r.top - b.r.top);
+                const pred = ostatni.filter(o => ev.clientY > o.r.top + o.r.height / 2).length;
+                const skryte = this.poradiPanelu.filter(p => p !== id && !ostatni.some(o => o.id === p));
+                const nove = ostatni.map(o => o.id);
+                nove.splice(pred, 0, id);
+                const poradi = [...nove, ...skryte];
+                if (poradi.join() !== this.poradiPanelu.join()) this.poradiPanelu = poradi;
+            };
+            const konec = () => {
+                window.removeEventListener('pointermove', pohyb);
+                window.removeEventListener('pointerup', konec);
+                window.removeEventListener('pointercancel', konec);
+                document.body.classList.remove('kk-presun-panelu');
+                this.presouvanyPanel = null;
+                try { localStorage.setItem('kv3_poradiPanelu', JSON.stringify(this.poradiPanelu)); } catch (err) { window.zalogujChybu?.(err, 'Pořadí panelů: uložení'); }
+            };
+            window.addEventListener('pointermove', pohyb);
+            window.addEventListener('pointerup', konec);
+            window.addEventListener('pointercancel', konec);
         },
 
         ulozitNastaveni() {
