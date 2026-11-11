@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Aplikace;
 
 use App\Http\Controllers\Controller;
 use App\Support\Lokalizace;
+use App\Support\Tarif;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -20,6 +21,9 @@ class UcetController extends Controller
             'uzivatel' => $request->user(),
             'zeme' => $zeme,
             'vybranaZeme' => isset($zeme[$aktualni]) ? $aktualni : 'ZZ',
+            // Logo firmy (LogoFirmyController): nahrávat smí jen tarif Profi, uložené vidí a odstraní kdokoli
+            'logoSmi' => Tarif::uzivatele($request->user()) === Tarif::PROFI,
+            'logoUrl' => $request->user()->firma()?->logo ? route('app.ucet.logo') . '?v=' . ($request->user()->firma()->upraveno?->timestamp ?? 0) : '',
         ]);
     }
 

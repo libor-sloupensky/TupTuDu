@@ -12,6 +12,7 @@
     const MAX_STRANA = 4000;    // px stage; větší parcela zmenší měřítko, jinak by obrázek nešel vytvořit
     const ZAPATI = 90;          // výška zápatí se značkou při základním měřítku listu
     const ZNACKA = '/brand/znacka-svetle-1200.png';   // papír je vždy bílý
+    const LOGO_FIRMY = '/account/logo';               // logo firmy v tarifu Profi, bez loga odpoví 204 (modules/platby.md)
 
     // Texty listu rostou s obrázkem, ať jsou po zmenšení na obrazovku stejně čitelné
     const meritkoListu = (sirka) => Math.max(0.6, sirka / 1600);
@@ -24,6 +25,26 @@
         obr.onerror = () => { window.zalogujChybu?.(new Error('Značka se nenačetla'), 'Export: značka', { ZNACKA }); ok(null); };
         obr.src = ZNACKA;
     }));
+
+    /** Logo firmy pro zápatí, nebo null. Jen v zákaznické aplikaci a v tarifu Profi; čte se při každém exportu, ať platí hned po nahrání. */
+    const nactiLogoFirmy = async () => {
+        if (window._kkInitData?.limit?.tarif !== 'profi') return null;
+        try {
+            const r = await fetch(LOGO_FIRMY, { headers: { 'Accept': 'image/*' } });
+            if (r.status !== 200 || !(r.headers.get('Content-Type') || '').startsWith('image/')) return null;
+            const adresa = URL.createObjectURL(await r.blob());
+            return await new Promise((ok) => {
+                const obr = new Image();
+                obr.onload = () => ok(obr);
+                obr.onerror = () => { window.zalogujChybu?.(new Error('Logo firmy se nenačetlo'), 'Export: logo firmy'); ok(null); };
+                obr.src = adresa;
+            });
+        } catch (err) {
+            // Bez loga zůstane v zápatí značka TupTuDu, export kvůli tomu nepadá
+            window.zalogujChybu?.(err, 'Export: logo firmy');
+            return null;
+        }
+    };
 
     const naBase64 = (pole) => {
         const b = new Uint8Array(pole.buffer, pole.byteOffset, pole.byteLength);
@@ -167,6 +188,19 @@
             g.save();
             g.textAlign = 'right';
             g.textBaseline = 'middle';
+            if (this._logoFirmyExportu) {
+                // Logo firmy místo značky a popisu služby TupTuDu, vedle zůstává jen adresa
+                const logo = this._logoFirmyExportu;
+                const k = Math.min(64 * m / logo.naturalHeight, 360 * m / logo.naturalWidth);
+                const s = logo.naturalWidth * k, v = logo.naturalHeight * k;
+                g.imageSmoothingQuality = 'high';
+                g.drawImage(logo, prava - s, zy - v / 2, s, v);
+                g.fillStyle = '#6b7280';
+                g.font = `500 ${18 * m}px ${pismo}`;
+                g.fillText('www.tuptudu.com', prava - s - 24 * m, zy);
+                g.restore();
+                return;
+            }
             g.fillStyle = '#374151';
             g.font = `500 ${22 * m}px ${pismo}`;
             const popis = preloz('ed_nastroje.export.podtitul');
@@ -185,6 +219,7 @@
         /** Obrázek značky připravený pro kreslení na plátno, volá se před sestavením listu. */
         async _pripravZnacku() {
             this._znackaExportu = await nactiZnacku();
+            this._logoFirmyExportu = await nactiLogoFirmy();
         },
 
         /** List: bílé pozadí, nadpis, měřítko a značka. */

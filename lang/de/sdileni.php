@@ -16,4 +16,5 @@ return [
     'napoveda_3d' => 'Ziehen zum Drehen, Mausrad oder zwei Finger zum Zoomen. Mit den Schaltflächen blendest du Geschosse und Dach aus.',
     'upozorneni' => 'Unverbindliches Konzept, erstellt mit TupTuDu. Es ersetzt keine Planungsunterlagen.',
     'autori_modelu' => 'Urheber der 3D-Modelle',
+    'logo_alt' => 'Firmenlogo des Autors',
 ];

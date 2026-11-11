@@ -110,7 +110,8 @@ class KonceptV3SdileniController extends Controller
         }
 
         return response()
-            ->view('sdileni.zobraz', ['sdileni' => $sdileni])
+            // Logo firmy autora v tarifu Profi (modules/platby.md)
+            ->view('sdileni.zobraz', ['sdileni' => $sdileni, 'logoFirmy' => (bool) $sdileni->koncept?->uzivatel?->logoFirmy()])
             ->withHeaders(self::HLAVICKY + ['Cache-Control' => 'private, no-cache']);
     }
 
@@ -125,6 +126,16 @@ class KonceptV3SdileniController extends Controller
         }
 
         return response()->file($cesta, $hlavicky);
+    }
+
+    /** Logo firmy autora; stránka odkazu na něj odkazuje, jen když ho autor smí používat. */
+    public function logo(string $token): Response
+    {
+        $sdileni = $this->najdi($token);
+        $soubor = $sdileni->jeUzamceny() ? null : $sdileni->koncept?->uzivatel?->logoFirmy();
+        abort_unless($soubor, 404);
+
+        return response()->file($soubor, self::HLAVICKY + ['Content-Type' => 'image/webp', 'Cache-Control' => 'private, no-cache']);
     }
 
     public function obrazek(string $token, string $soubor): Response

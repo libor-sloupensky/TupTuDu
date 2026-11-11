@@ -28,6 +28,9 @@
         .tt-sdileni-plan img { display: inline-block; vertical-align: top; max-width: 100%; max-height: 78vh; width: auto; height: auto; }
         .tt-sdileni-zprava { padding: 24px; color: #374151; text-align: center; }
         .tt-sdileni-pata { margin-top: 12px; color: var(--c-text-secondary); font-size: .85rem; }
+        /* Logo firmy autora: na bílé destičce, loga bývají kreslená na světlý podklad */
+        .tt-sdileni-hlava { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .tt-sdileni-logo { height: 56px; max-width: 220px; object-fit: contain; padding: 6px 10px; border-radius: var(--s-radius); background: #fff; }
     </style>
 </head>
 <body class="tt-web">
@@ -35,7 +38,12 @@
         <a href="{{ \App\Support\Domeny::url('web', '/') }}" class="brand-title" rel="noreferrer">@include('partials.znacka')</a>
     </div>
     <main class="tt-sdileni">
-        <h1>{{ $sdileni->nazev }}</h1>
+        <div class="tt-sdileni-hlava">
+            <h1>{{ $sdileni->nazev }}</h1>
+            @if ($logoFirmy)
+                <img class="tt-sdileni-logo" src="{{ url('/share/' . $sdileni->token . '/logo') }}" alt="{{ __('sdileni.logo_alt') }}">
+            @endif
+        </div>
         <p class="tt-sdileni-stav">{{ __('sdileni.stav_k', ['datum' => trim(\App\Support\Lokalizace::datum($sdileni->upraveno) . ' ' . $sdileni->upraveno?->format('H:i'))]) }}</p>
 
         <div class="tt-sdileni-vyber" role="group" aria-label="{{ __('sdileni.pohled') }}" data-sdileni-vyber>

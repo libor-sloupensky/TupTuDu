@@ -16,4 +16,5 @@ return [
     'napoveda_3d' => 'Arrastra para girar; usa la rueda o dos dedos para acercar. Con los botones puedes ocultar las plantas y el tejado.',
     'upozorneni' => 'Boceto orientativo creado con TupTuDu. No sustituye al proyecto técnico.',
     'autori_modelu' => 'Autores de los modelos 3D',
+    'logo_alt' => 'Logo de la empresa del autor',
 ];

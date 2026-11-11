@@ -16,4 +16,5 @@ return [
     'napoveda_3d' => 'Przeciągaj, aby obracać, a kółkiem lub dwoma palcami przybliżaj. Przyciskami ukryjesz kondygnacje i dach.',
     'upozorneni' => 'Orientacyjna koncepcja stworzona w serwisie TupTuDu. Nie zastępuje dokumentacji projektowej.',
     'autori_modelu' => 'Autorzy modeli 3D',
+    'logo_alt' => 'Logo firmy autora',
 ];

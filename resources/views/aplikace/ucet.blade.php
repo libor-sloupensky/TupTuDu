@@ -68,4 +68,84 @@
             <button type="submit" class="btn btn-primary">{{ __('ucet.zmenit_heslo') }}</button>
         </form>
     </section>
+
+    {{-- Logo firmy (tarif Profi): nahrání s náhledem a odstranění, LogoFirmyController --}}
+    <section class="card tt-ucet-sekce" x-data="logoFirmy({ url: @js($logoUrl), smi: @js($logoSmi) })">
+        <h2>{{ __('ucet.logo_nadpis') }}</h2>
+        <p class="tt-napoveda" style="margin-top:0">{{ __('ucet.logo_popis', ['mb' => \App\Services\LogoUploader::MAX_VSTUP_MB]) }}</p>
+        @unless ($logoSmi)
+            <p class="tt-napoveda">{{ __('ucet.logo_jen_profi') }} <a href="{{ route('app.predplatne') }}">{{ __('ucet.logo_tarify') }}</a></p>
+        @endunless
+        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap">
+            {{-- Bílý podklad jako papír exportu --}}
+            <div x-show="url" x-cloak style="display:flex; align-items:center; justify-content:center; width:11rem; height:5rem; padding:.4rem; border:1px solid var(--c-border); border-radius:var(--s-radius); background:#fff">
+                <img :src="url" alt="{{ __('ucet.logo_nadpis') }}" style="max-width:100%; max-height:100%; object-fit:contain">
+            </div>
+            @if ($logoSmi)
+                <label class="btn btn-primary" :style="bezi && 'opacity:.6; pointer-events:none'">
+                    <span x-text="bezi ? @js(__('ucet.logo_nahravam')) : (url ? @js(__('ucet.logo_zmenit')) : @js(__('ucet.logo_nahrat')))"></span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" @change="nahraj($event)" hidden>
+                </label>
+            @endif
+            <button type="button" class="btn btn-danger" x-show="url" x-cloak :disabled="bezi" @click="odstran()">{{ __('ucet.logo_odstranit') }}</button>
+        </div>
+        <p x-show="chyba" x-cloak x-text="chyba" style="color:var(--c-error); margin:.75rem 0 0"></p>
+    </section>
+
+    <script>
+        function logoFirmy(init) {
+            const hlavicky = { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content };
+            return {
+                url: init.url || '',
+                bezi: false,
+                chyba: '',
+                async nahraj(udalost) {
+                    const soubor = udalost.target.files?.[0];
+                    if (!soubor) return;
+                    this.chyba = '';
+                    if (soubor.size > {{ \App\Services\LogoUploader::MAX_VSTUP_MB }} * 1024 * 1024) {
+                        this.chyba = @js(__('ucet.logo_chyba_velikost', ['mb' => \App\Services\LogoUploader::MAX_VSTUP_MB]));
+                        udalost.target.value = '';
+                        return;
+                    }
+                    this.bezi = true;
+                    try {
+                        const telo = new FormData();
+                        telo.append('logo', soubor);
+                        const r = await fetch(@js(route('app.ucet.logo.ulozit')), { method: 'POST', headers: hlavicky, body: telo });
+                        const d = await r.json();
+                        if (!r.ok || !d.ok) {
+                            // 422 a 403 jsou běžná odmítnutí s vlastní hláškou, cokoli jiného je chyba k nahlášení
+                            this.chyba = d.error || d.message || @js(__('ucet.logo_chyba_ulozeni'));
+                            if (![403, 422].includes(r.status)) window.zalogujChybu?.(new Error('HTTP ' + r.status), 'Účet: nahrání loga firmy', { velikost: soubor.size, typ: soubor.type });
+                            return;
+                        }
+                        this.url = d.url;
+                    } catch (e) {
+                        this.chyba = @js(__('ucet.logo_chyba_ulozeni'));
+                        window.zalogujChybu?.(e, 'Účet: nahrání loga firmy', { velikost: soubor.size, typ: soubor.type });
+                    } finally {
+                        this.bezi = false;
+                        udalost.target.value = ''; // ať jde nahrát znovu stejný soubor
+                    }
+                },
+                async odstran() {
+                    if (!confirm(@js(__('ucet.logo_odstranit_dotaz')))) return;
+                    this.bezi = true;
+                    this.chyba = '';
+                    try {
+                        const r = await fetch(@js(route('app.ucet.logo.smazat')), { method: 'DELETE', headers: hlavicky });
+                        const d = await r.json();
+                        if (!r.ok || !d.ok) throw new Error('HTTP ' + r.status);
+                        this.url = '';
+                    } catch (e) {
+                        this.chyba = @js(__('ucet.logo_chyba_ulozeni'));
+                        window.zalogujChybu?.(e, 'Účet: odstranění loga firmy');
+                    } finally {
+                        this.bezi = false;
+                    }
+                },
+            };
+        }
+    </script>
 </x-layouts.zakaznik>

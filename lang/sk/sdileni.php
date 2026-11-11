@@ -16,4 +16,5 @@ return [
     'napoveda_3d' => 'Ťahaním otáčaš, kolieskom alebo dvoma prstami približuješ. Tlačidlami skryješ podlažia a strechu.',
     'upozorneni' => 'Orientačný koncept vytvorený v službe TupTuDu. Nenahrádza projektovú dokumentáciu.',
     'autori_modelu' => 'Autori 3D modelov',
+    'logo_alt' => 'Logo firmy autora',
 ];

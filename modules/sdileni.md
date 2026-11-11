@@ -9,7 +9,7 @@ Sekce „Export a sdílení" v pravém panelu editoru, `public/js/koncept-v3/exp
 - **Terén a Mřížka terénu** (Libor 5. 11. 2026, výchozí zapnutý a vypnutá) platí pro 3D v editoru, 3D PNG a odkaz: `zobrazTeren3d`, `zobrazMrizkuTerenu`, v modelu `bezZeme` a `mrizkaTerenu`. Viditelnost nastavuje `_jama3d`. Skrytý terén vezme s sebou i výkop.
 - **Mezi sousedními parcelami ve 3D není čára:** maska `maskaParcel` se skládá sčítáním, vyhlazené okraje se na společné hraně doplní. Ve 2D hranice parcel zůstává.
 - **Zápatí:** značka `public/brand/znacka-svetle-1200.png`, popis služby `ed_nastroje.export.podtitul` a `www.tuptudu.com` (Libor 5. 11. 2026). Na půdorysu vpravo dole vedle měřítka, u 3D v bílém pruhu pod záběrem, aby nic nezakrylo (`_kresliZnacku`, `_list3d`). Texty listu rostou s šířkou obrázku (`meritkoListu`). Náhled odkazu (`_nahledModelu`) zápatí nemá, stránka odkazu má vlastní hlavu.
-- **Plán: logo firmy v tarifu Profi**, viz `modules/platby.md`, Nápady na později. Plátno se přepne jen v jednom běhu, takže se nic nemihne a stav se vrátí.
+- **Logo firmy v tarifu Profi** nahradí v zápatí značku a je i na stránce odkazu, viz `modules/platby.md` (11. 11. 2026, lokálně). Plátno se přepne jen v jednom běhu, takže se nic nemihne a stav se vrátí.
 - **3D PNG** z aktuálního pohledu, ve dvojnásobném rozlišení. Z 2D se editor na chvíli přepne do 3D. Se skrytým domem zachytí vypočítaný výkop, samostatné tlačítko není potřeba (Libor 4. 11. 2026).
 
 Plátno 2D se po dobu snímku zvětší na velikost obrázku (`_kresbyPodlazi`), poloprůhledné tvary se kreslí přes pomocné plátno velikosti plátna. Skryté plátno při otevření ve 3D má aspoň 1 px, při nule Konva padala na `drawImage` (bug 58, `test-otevreni-3d-ui.cjs`).

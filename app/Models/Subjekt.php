@@ -17,6 +17,7 @@ class Subjekt extends Model
         'ico',
         'nazev',
         'slug',
+        'logo',
         'aktivni',
     ];
 

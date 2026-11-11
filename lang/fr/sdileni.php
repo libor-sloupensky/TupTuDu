@@ -16,4 +16,5 @@ return [
     'napoveda_3d' => 'Faites glisser pour pivoter, utilisez la molette ou deux doigts pour zoomer. Les boutons masquent les niveaux et le toit.',
     'upozorneni' => 'Esquisse indicative réalisée avec TupTuDu. Elle ne remplace pas un dossier de construction.',
     'autori_modelu' => 'Auteurs des modèles 3D',
+    'logo_alt' => 'Logo de l’entreprise de l’auteur',
 ];

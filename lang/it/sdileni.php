@@ -16,4 +16,5 @@ return [
     'napoveda_3d' => 'Trascina per ruotare, usa la rotellina o due dita per ingrandire. Con i pulsanti nascondi i piani e il tetto.',
     'upozorneni' => 'Bozza indicativa creata con TupTuDu. Non sostituisce la documentazione di progetto.',
     'autori_modelu' => 'Autori dei modelli 3D',
+    'logo_alt' => 'Logo dell’azienda dell’autore',
 ];

@@ -128,6 +128,35 @@ class Uzivatel extends Authenticatable implements MustVerifyEmail, HasLocalePref
             ->withTimestamps('vytvoreno', 'upraveno');
     }
 
+    /**
+     * Firma uživatele: subjekt, kterému patří firemní věci (zatím jen logo pro tarif Profi).
+     * Dnes má každý nejvýš jednu a je v ní sám; až půjde firmu sdílet, přibudou k subjektu další
+     * uživatelé a tady se nic nemění. Master tým sdílí master subjekt.
+     */
+    public function firma(): ?Subjekt
+    {
+        return $this->subjekty()->orderByPivot('je_vlastnik', 'desc')->orderBy('subjekty.id')->first();
+    }
+
+    /** Založí uživateli vlastní firmu (bez IČO, pojmenovanou po něm) a vrátí ji. */
+    public function zalozFirmu(): Subjekt
+    {
+        $firma = Subjekt::create(['nazev' => $this->celeJmeno() ?: $this->email, 'aktivni' => true]);
+        $this->subjekty()->attach($firma->id, ['je_vlastnik' => true]);
+
+        return $firma;
+    }
+
+    /** Soubor loga firmy, pokud ho uživatel smí používat (tarif Profi) a je nahrané. Jinak null. */
+    public function logoFirmy(): ?string
+    {
+        if (\App\Support\Tarif::uzivatele($this) !== \App\Support\Tarif::PROFI) {
+            return null;
+        }
+
+        return app(\App\Services\LogoUploader::class)->najdi($this->firma()?->logo);
+    }
+
     /** Plné jméno "Jméno Příjmení". */
     public function celeJmeno(): string
     {

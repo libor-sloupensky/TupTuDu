@@ -16,4 +16,5 @@ return [
     'napoveda_3d' => 'Drag to rotate, use the wheel or two fingers to zoom. Use the buttons to hide floors and the roof.',
     'upozorneni' => 'Indicative concept created with TupTuDu. It does not replace design documentation.',
     'autori_modelu' => '3D model credits',
+    'logo_alt' => 'Logo of the author’s company',
 ];

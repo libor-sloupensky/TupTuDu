@@ -21,4 +21,19 @@ return [
     'heslo_google' => 'Esta cuenta se creó con Google y todavía no tiene contraseña. Puedes crear una para iniciar sesión también con tu correo electrónico.',
     'zmenit_heslo' => 'Cambiar contraseña',
     'heslo_zmeneno' => 'Tu contraseña se ha cambiado.',
+
+    // Logo firmy v tarifu Profi (LogoFirmyController)
+    'logo_nadpis' => 'Logo de la empresa',
+    'logo_popis' => 'El logo aparece en lugar de la marca TupTuDu en las imágenes exportadas y en la página del enlace compartido. JPG, PNG o WebP de hasta :mb MB, las imágenes más grandes las reducimos nosotros.',
+    'logo_jen_profi' => 'El logo propio forma parte del plan Profi.',
+    'logo_tarify' => 'Ver planes',
+    'logo_nahrat' => 'Subir logo',
+    'logo_zmenit' => 'Cambiar logo',
+    'logo_nahravam' => 'Subiendo…',
+    'logo_odstranit' => 'Quitar logo',
+    'logo_odstranit_dotaz' => '¿Seguro que quieres quitar el logo de la empresa?',
+    'logo_chyba_format' => 'Formato no compatible. Usa JPG, PNG o WebP.',
+    'logo_chyba_velikost' => 'El archivo es demasiado grande, :mb MB como máximo.',
+    'logo_chyba_obrazek' => 'El archivo no es una imagen válida.',
+    'logo_chyba_ulozeni' => 'No se pudo guardar el logo. Inténtalo de nuevo.',
 ];

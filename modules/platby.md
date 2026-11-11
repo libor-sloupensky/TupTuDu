@@ -153,8 +153,25 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
 - ČR: placený konkurent se stejným záběrem není; zdarma Homeplot.ai, „Online osazení"
   (Dům jedním tahem). AIkatastr.cz 99 Kč/report, Pro 990 Kč/měs.
 
+## Logo firmy v tarifu Profi (11. 11. 2026, lokálně, nenasazeno)
+- **Kde:** Účet → sekce Logo firmy (`aplikace/ucet`, `Aplikace\LogoFirmyController`, adresy `/account/logo` GET, POST, DELETE).
+  Nahrávat smí jen Profi (master tým ho má vždy), ostatní vidí odkaz na tarify. Uložené logo jde vidět a odstranit i bez tarifu.
+- **Komu logo patří:** firmě, ne uživateli. Firma = řádek v `subjekty` (sloupec `logo`), uživatel je k ní připojený přes
+  `uzivatel_subjekt`. `Uzivatel::firma()` vrátí jeho subjekt, `zalozFirmu()` ho při prvním nahrání založí (bez IČO, pojmenovaný
+  po uživateli, `je_vlastnik`). **Až půjde firmu sdílet** (Libor 11. 11. 2026: jeden profil pro víc uživatelů, kteří ji smějí
+  upravovat), stačí k subjektu připojit další uživatele; logo ani jeho adresy se nemění. Chybí jen správa členů a údaje firmy.
+  Master tým už teď sdílí jeden subjekt, logo má tedy společné.
+- **Zpracování:** `App\Services\LogoUploader` (převzatý z Kalkulia): JPG, PNG nebo WebP do 5 MB, překreslení přes GD
+  (zahodí EXIF, SVG neprojde), zmenšení do 800 × 600 se zachováním poměru stran a průhlednosti, výstup vždy WebP.
+  Soubor `storage/app/loga/{id firmy}.webp` (mimo nasazování), nové logo staré přepíše.
+- **Kde se ukáže:** v zápatí exportu půdorysu a 3D místo značky a popisu služby, vedle zůstává šedě `www.tuptudu.com`
+  (`_kresliZnacku`, `nactiLogoFirmy` v `export-sdileni.js`; čte se při každém exportu a jen když `limit.tarif` je `profi`).
+  Na stránce sdíleného odkazu vpravo od názvu na bílé destičce (`/share/{token}/logo`, `Uzivatel::logoFirmy()` hlídá tarif autora).
+  Plány v odkazu jsou obrázky z editoru, logo v nich je takové, jaké bylo při posledním uložení odkazu.
+- **Po skončení tarifu** logo zůstane uložené, jen se nepoužívá. Při smazání účtu soubor zatím zůstává (firma může mít časem další členy).
+- Ověření: nahrání 2400 × 900 → WebP 800 × 300 (7 kB), SVG odmítnuto, zápatí exportu, odkaz, odstranění.
+
 ## Nápady na později
-- Profi: vlastní logo firmy na exportech a v odkazu (Libor 5. 11. 2026, odloženo). Zápatí kreslí jedno místo `_kresliZnacku` v `export-sdileni.js`, viz `modules/sdileni.md`.
 - Masterteam: přehled předplatitelů a využití (počty úprav jsou v `denni_upravy`).
 - Interní e-mail o novém předplatném (událost Cashieru `SubscriptionCreated`).
 - Změna e-mailu v účtu se do Paddlu nepropisuje (zákazník tam má původní e-mail na doklady).

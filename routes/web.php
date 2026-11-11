@@ -199,6 +199,7 @@ Route::middleware('subdomena:web')->group(function () {
     Route::middleware('throttle:120,1')->group(function () {
         Route::get('/share/{token}', [App\Http\Controllers\KonceptV3SdileniController::class, 'zobraz'])->name('sdileni.zobraz');
         Route::get('/share/{token}/model', [App\Http\Controllers\KonceptV3SdileniController::class, 'model']);
+        Route::get('/share/{token}/logo', [App\Http\Controllers\KonceptV3SdileniController::class, 'logo']);
         Route::get('/share/{token}/soubor/{soubor}', [App\Http\Controllers\KonceptV3SdileniController::class, 'obrazek']);
     });
 });
@@ -251,6 +252,10 @@ Route::middleware(['subdomena:app', 'auth', 'verified'])->name('app.')->group(fu
     Route::get('/account', [App\Http\Controllers\Aplikace\UcetController::class, 'upravit'])->name('ucet');
     Route::patch('/account', [App\Http\Controllers\Aplikace\UcetController::class, 'ulozit'])->name('ucet.ulozit');
     Route::put('/account/password', [App\Http\Controllers\Aplikace\UcetController::class, 'zmenitHeslo'])->name('ucet.heslo');
+    // Logo firmy pro tarif Profi (modules/platby.md); GET čte i export v editoru
+    Route::get('/account/logo', [App\Http\Controllers\Aplikace\LogoFirmyController::class, 'zobraz'])->name('ucet.logo');
+    Route::post('/account/logo', [App\Http\Controllers\Aplikace\LogoFirmyController::class, 'ulozit'])->middleware('throttle:20,1')->name('ucet.logo.ulozit');
+    Route::delete('/account/logo', [App\Http\Controllers\Aplikace\LogoFirmyController::class, 'smazat'])->name('ucet.logo.smazat');
 
     // Předplatné (Paddle přes Laravel Cashier, modules/platby.md). Zprávy z Paddlu
     // chodí na POST /paddle/webhook — routu registruje Cashier sám.

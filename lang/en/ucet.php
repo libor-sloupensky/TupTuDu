@@ -20,4 +20,19 @@ return [
     'heslo_google' => 'This account was created with Google and has no password yet. You can set one to also sign in with your email.',
     'zmenit_heslo' => 'Change password',
     'heslo_zmeneno' => 'Your password has been changed.',
+
+    // Logo firmy v tarifu Profi (LogoFirmyController)
+    'logo_nadpis' => 'Company logo',
+    'logo_popis' => 'The logo replaces the TupTuDu mark on exported images and on the shared link page. JPG, PNG or WebP up to :mb MB, we resize larger images for you.',
+    'logo_jen_profi' => 'A custom logo is part of the Profi plan.',
+    'logo_tarify' => 'See plans',
+    'logo_nahrat' => 'Upload logo',
+    'logo_zmenit' => 'Change logo',
+    'logo_nahravam' => 'Uploading…',
+    'logo_odstranit' => 'Remove logo',
+    'logo_odstranit_dotaz' => 'Really remove the company logo?',
+    'logo_chyba_format' => 'Unsupported format. Use JPG, PNG or WebP.',
+    'logo_chyba_velikost' => 'The file is too large, :mb MB at most.',
+    'logo_chyba_obrazek' => 'The file is not a valid image.',
+    'logo_chyba_ulozeni' => 'The logo could not be saved. Please try again.',
 ];
