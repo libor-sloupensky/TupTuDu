@@ -11,6 +11,7 @@ dum = {
   aktivni: 'P1',
   podlazi: [{ id, nazev, typ: bezne|sklep|podkrovi, vyska, strop, vlastniNazev, data }],  // zdola nahoru
   schodiste: [{ id, odPodlazi, doPodlazi, plocha?, tvar: prime|L|U, x, y, uhel, sirka, strana, vyskaRucne? }],
+  sloupy: [{ id: C1…, podlazi, x, y, sirka, tvar: ctverec|kruh, uhel, barva?, strecha?: false }],
   plochy: [{ id, podlazi, mistnost, typ: zvysena|snizena|bez_podlahy, dh, body: obrys místnosti z rastru, prenos, vypnuto }],
   strecha: { typ, sklon, presah, presahStit, vyskaOkapu, krytina, otocHreben, hrany: { klíč: { typ, sklon } } } | null
 }
@@ -60,6 +61,8 @@ Každá hrana obrysu horního podlaží je **okap** (rovina stoupá) nebo **št�
 Roviny procházejí vnějším lícem stěny ve výšce okapu a spodní hrany okapů leží ve stejné výšce, takže přesah je u strmější plochy menší. **Vlastní přesah drží okap ve výšce ostatních** (Libor 5. 11. 2026): rovina se v líci posune o `(přesah − výchozí) · tg(sklon)`, nároží vychází z rohu půdorysu a v rohu nevznikne zub. Pole Výška okapu u hrany tu posunutou výšku ukazuje. Jiná spodní výška (a s ní zub v rohu, třeba záměrně nižší okap nad terasou) je jen u hrany s vlastní výškou okapu. Klíč hrany je `stena:strana`, u nedorovnané hrany `iN`. Zbytek rastru v rohu natočeného domu (tětiva bez stěny, celá na líci sousední stěny) se z obrysu vyhazuje, jinak by jako skoro rovnoběžná hrana s jiným přesahem roztáhla roh střechy daleko ven (`hranyObrysu`). Krátký schod mezi rovnoběžnými stěnami zůstává.
 
 Hrana může mít vlastní typ, sklon, přesah, výšku okapu a barvu (`strecha.hrany[klíč]`), co nemá, bere z celku. Přímka hrany ve výpočtu je `n·p = c + w·(t − z)`, jde tedy o kostru s posunem startu. Roviny s různým spodkem začínají za svým okapem, proto se výsledek ořezává půdorysem střechy (rozklad na konvexní díly). Štítová stěna se počítá zvlášť, mezi nárožími domu, bez přesahů.
+
+**Schod na dlouhé straně** (Libor 11. 11. 2026): v užší části se protilehlé okapy potkají dřív. Zmizí jen kratší z obou splývajících hran, delší pokračuje přes širší část a v místě překryvu vzniká hřeben. Dřív zmizely obě a ve střeše byla díra. Sedlová předvolba bere krátký schod (do 2,5 m, `SCHOD_MAX_M`) mezi okapy stejného směru jako okap, tedy malou valbičku. Ručně přepnutý štít na schodu jde přes celou nižší střechu a ve 3D se dokreslí i za koncem stěny pod ním (`_orezTroj`). Test `test-strecha.cjs`.
 
 Stěny horního podlaží nikdy neprojdou střechou. Stěny na obrysu dosáhnou až pod ni, takže pod vyšším okapem nezůstane mezera. Pod šikmou střechou se strop nekreslí, jen plochá střecha na něm leží.
 
@@ -123,6 +126,16 @@ Světla scény jsou nastavená tak, aby vodorovná plocha vyšla zhruba 1,07× b
 Půdorys: ze spodního podlaží stupně, šipka a „↑ počet × výška/nášlap"; z horního přerušovaný obrys otvoru, stupně tmavší s hloubkou a „↓ dolů". Šrafování zmizelo, Libor ho měl za matoucí; bílá výplň obrysu také (3. 11. 2026), výplň místnosti pod schody zůstává vidět, podklad štítku je jen při pohledu shora na tmavé stupně. 3D: nášlap plná barva, podstupnice a boky 0,7× téže barvy.
 
 Magnet: při založení i otáčení (kolečko ↻ u vybraných schodů) na směry stěn aktivního a spodního podlaží, i vzdálených, na osy domu a na vodorovnou a svislou obrazovky (`_magnetSmeru`). Při tažení hrana schodů na rovnoběžný líc stěny (`_magnetSchodu`). Alt vypíná.
+
+## Sloup (Libor 11. 11. 2026)
+
+Nástroj Sloup (klávesa 9) postaví sloup 20 × 20 cm na aktivní podlaží. Označení **C1, C2…** podle anglického Column: označení objektů se bere přednostně z angličtiny (Libor 11. 11. 2026, schody S = Stairs). Panel: hranatý nebo kulatý, strana nebo průměr 10–100 cm, barva (bez vlastní barvy fasáda), Střecha přes sloup, smazat. V seznamu objektů jako schody: šedé označení, oko, nepřejmenovává se. Klíč skrytí `dum:C1`.
+- **Roh výklenku** (`_rohyVyklenku`): průsečík přímek dvou hran obrysu, mezi kterými obrys uhýbá dovnitř (1–2 hrany mezi nimi, zhruba kolmé). Při zakládání i tažení se sloup do rohu přichytí a lícuje s oběma hranami (dosah 0,4 m + polovina sloupu, podle síly magnetu, Alt vypíná). Změna rozměru v rohu drží lícování.
+- **Střecha přes sloup:** sloup v rohu výklenku na horním podlaží vyplní výklenek v obrysu střechy (`_obrysSeSloupy`), okap jde rovně až přes sloup. Vynechané hrany přestanou být hranami střechy, krajní se prodlouží a nesou své nastavení dál. Sloup jinde střechu nemění, panel to řekne. Jde vypnout (`strecha: false`).
+- **3D:** od podlahy pod strop, na horním podlaží pod nejnižší roh střechy. Na nejnižším podlaží stojí na terénu (dům bývá nad ním), stejně hluboko jako základ.
+- **Podepření:** sloup dole nese jen to, co stojí přímo na něm. Stěna nad ním je dál nepodepřená mimo sloup (průvlak se označí jako staticky zajištěno).
+- Vzorový dům má sloup C1 v rohu krytého vstupu u schodu W9/W11, střecha je proto obdélník přes vstup.
+- Test `test-sloup-ui.cjs`, panel v `test-formulare-ui.cjs`.
 
 ## Ukládání ze dvou míst
 
@@ -192,7 +205,7 @@ Změna domu v režimu 3D přestaví scénu hned (`_obnov3dPozdeji` z `afterRende
 
 ## Zatím neřešeno
 
-- **Sloup jako podpěra rohu nebo přesahu patra** (samostatný úkol, Libor 9. 11. 2026). „Přidat podpěru dolů" jen zkopíruje stěnu.
+- Sloup pod přesahem patra (na nižším podlaží) nemá vlastní stříšku ani průvlak, rozšiřuje jen střechu horního podlaží. „Přidat podpěru dolů" zkopíruje stěnu.
 - Stíny ve 3D (Libor 2. 11. 2026: nebyly správně, udělat později pořádně).
 - Plochá střecha bez přesahu. Vikýře, střešní okna a polovalba jako předvolba (polovalba jde nastavit po hranách jen částečně).
 - Ve 3D jsou zvýšené plochy jako deska na podlaze, strop se nad nimi nezvedá.

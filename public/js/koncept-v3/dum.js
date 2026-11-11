@@ -3549,14 +3549,19 @@
                 const p = e.podlaziPodleId(s.podlazi);
                 if (!p) continue;
                 const kota = kory.get(p.id) ?? 0;
+                const obrys = naM(this._obrysSloupu(s));
                 let vyska = e.svetlaVyska(p);
                 if (st && p.id === e.horniPodlazi().id) {
-                    const z = st.plocha ? st.zOkap : window.Strecha.vyskaVBode(st.plochy, s.x, -s.y);
-                    if (z !== null && z > 0.3) vyska = z;
+                    // Pod nejnižším rohem: střecha k okapu klesá a vyšší roh by jí prorazil
+                    const z = st.plocha ? st.zOkap : Math.min(...obrys.map(q => window.Strecha.vyskaVBode(st.plochy, q.x, q.y) ?? Infinity));
+                    if (isFinite(z) && z > 0.3) vyska = z;
                 }
+                // Na nejnižším podlaží stojí sloup na zemi: dům bývá nad terénem a sloup by visel ve vzduchu
+                const tn = !e.podlaziPod(p.id) ? this._terenDomu().fn : null;
+                const spodek = tn ? Math.min(kota, tn(s.x, -s.y) - ZAKLAD_POD_TEREN) : kota;
                 const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(s.barva || d.barvy.fasada), roughness: 0.85 });
                 mat.userData.barva = 'sloup:' + s.id;
-                dum.add(this._deska3d(naM(this._obrysSloupu(s)), [], kota, kota + vyska, mat, { podlazi: p.id, sloup: s.id }));
+                dum.add(this._deska3d(obrys, [], spodek, kota + vyska, mat, { podlazi: p.id, sloup: s.id }));
             }
 
             // Střecha

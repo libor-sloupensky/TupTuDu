@@ -116,8 +116,11 @@ async function main() {
         const d3 = await p.vyhodnot(`(async () => { const d = ${D}; d.rezim3d = true; await d.prepni3d(); await new Promise(r => setTimeout(r, 1500));
             const sk = window._kk3d.dumSkupina; const mesh = sk.children.find(o => o.userData.sloup === 'C1'); if (!mesh) return null;
             mesh.geometry.computeBoundingBox(); const b = mesh.geometry.boundingBox; const st = d._strechaVypocet();
-            const z = window.Strecha.vyskaVBode(st.plochy, 12.05, 9.05); d.rezim3d = false; await d.prepni2d?.(); return { vyska: +(b.max.z - b.min.z).toFixed(3), strecha: +z.toFixed(3) }; })()`);
-        kontrola('ve 3D sahá sloup až pod střechu', d3 && blizko(d3.vyska, d3.strecha, 0.01), JSON.stringify(d3));
+            const s = d.engine.dum.sloupy[0]; const PX = d.engine.PX_PER_M;
+            const z = Math.min(...d._obrysSloupu(s).map(q => window.Strecha.vyskaVBode(st.plochy, q.x / PX, q.y / PX)));
+            const stred = window.Strecha.vyskaVBode(st.plochy, s.x, -s.y);
+            d.rezim3d = false; await d.prepni2d?.(); return { vyska: +(b.max.z - b.min.z).toFixed(3), strecha: +z.toFixed(3), stred: +stred.toFixed(3) }; })()`);
+        kontrola('ve 3D sahá sloup pod nejnižší roh střechy, nevyčuhuje', d3 && blizko(d3.vyska, d3.strecha, 0.01) && d3.strecha < d3.stred, JSON.stringify(d3));
 
         console.log('\n6) Uložení a obnovení');
         await p.vyhodnot(`${D}.ulozit()`);

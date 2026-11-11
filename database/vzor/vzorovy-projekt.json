@@ -1134,6 +1134,17 @@
                 }
             ],
             "schodiste": [],
+            "sloupy": [
+                {
+                    "id": "C1",
+                    "podlazi": "P1",
+                    "x": -1.5851303407676094,
+                    "y": -2.836713601776425,
+                    "sirka": 0.2,
+                    "tvar": "ctverec",
+                    "uhel": 2.064518037308803
+                }
+            ],
             "plochy": [],
             "strecha": {
                 "typ": "sedlova",
