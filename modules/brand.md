@@ -110,13 +110,26 @@ Artefakt „Řada písma TupTuDu" https://claude.ai/artifact/DwL8YcoPkFBdph1PdRB
   zakaznik): editor V3 a stránky s Tailwind třídami (`bg-white`, `text-gray-*`) nejsou na tmavé pozadí
   připravené. Přihlašovací stránka masterteamu sdílí layout prihlaseni, je tedy tmavá.
 
+## Obrazový styl (rozhodnuto 11. 11. 2026)
+Ukazujeme vlastní produkt a nesmíme prodávat, co nemáme (Libor). Proto:
+1. **Hlavní obrazový jazyk jsou snímky z editoru**: půdorys a 3D ze vzorového projektu, vždy skriptem.
+   Na tmavém webu působí bílý výkres jako papír na stole (záměr).
+2. **Schémata** (SVG ve stránce, barvy a písmo značky) na vysvětlení pojmů, které editor neukáže (řez
+   výkopem, okap a štít, odstupy od hranice).
+3. **Ilustrace a fotky jen výjimečně**: když článek opravdu vylepší a je zřejmé, že nejde o nic, co si
+   zákazník u nás kupuje. **Žádné fotobanky.** Takové obrázky generovat AI za drobný peníz (napojení
+   služby zatím není, vybrat až bude potřeba, náklady v Kč).
+
+## Tmavý režim v aplikaci (rozhodnuto 11. 11. 2026)
+Výchozí tmavý jako web. Kdo si na webu přepne režim, má ho přepnutý i v aplikaci a editoru (jedna volba,
+cookie `tt_rezim`). Kreslicí plocha zůstává bílá. Zbývá převést panely editoru na proměnné (asi 340 pevných
+tříd Tailwind v `koncept-v3.blade.php`); dělat až po prvcích aplikace, ať se panely nepředělávají dvakrát.
+
 ## Co ještě není rozhodnuto / zbývá
-1. **Tmavý režim v aplikaci:** projít Tailwind třídy editoru a stránek účtu, pak přepínač i do app
-   a uložení volby k účtu.
-2. **Další prvky aplikace:** záložky, přepínače, nabídky, lišta nástrojů, sada ikon (návrh: Lucide, tah 1,75 px).
-3. **Obrazový styl:** screenshoty vs. kresby půdorysů vs. fotky v článcích a na titulce; obrázky na titulce
-   jsou dnes bílé výřezy editoru (na tmavém pozadí působí jako papír, záměr).
-4. **Články:** pipeline Markdown → Blade bloky (třídy už existují), `modules/blog.md`.
+1. **Prvky aplikace a ikony:** záložky, přepínače, nabídky, lišta nástrojů, tlačítka v panelech. Libor
+   11. 11. 2026: ovládání i ikony jsou často už vyladěné, neměnit neuváženě, jen když přijde lepší
+   alternativa. Postup: návrh variant vedle sebe, výběr po malých krocích.
+2. **Články:** pipeline Markdown → Blade bloky (třídy už existují), `modules/blog.md`.
 
 ## Články (návrh, neschváleno výslovně)
 Tiptap editor z Kalkulia nepřebírat. Články jako Markdown v repozitáři (hlavička: titulek, perex, datum,

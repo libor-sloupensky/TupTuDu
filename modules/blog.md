@@ -179,6 +179,9 @@ Pět kroků: článek v indexu, zobrazení, klik na výzvu, registrace z článk
    podle `modules/brand.md`, část Prvky článků (perex Q1, mezititulky N4, odrážky O2, upozornění U1, tabulka T1, výzva V1,
    odkazy L1). Žádné vlastní HTML, styly ani barvy. Nový druh prvku napřed navrhnout Liborovi a doplnit do šablony.
    Obrázky jen skriptem, v jednotném stylu (snímek z editoru nebo schéma), nikdy fotky z cizích webů.
+   Obrazový styl (`modules/brand.md`, Libor 11. 11. 2026): ukazujeme vlastní produkt, nic, co nemáme. Ilustrace
+   nebo fotka jen výjimečně, když článek opravdu vylepší a je zřejmé, že ji zákazník od nás nekupuje; žádné
+   fotobanky, takové obrázky generovat AI (služba zatím nenapojená, napřed se zeptat Libora).
 
 ## SEO pravidla (Libor 9. 11. 2026)
 
