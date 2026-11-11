@@ -119,6 +119,7 @@ return [
         'neocekavana_chyba' => 'Neočekávaná chyba',
         'zadny_polygon' => 'Žádný platný polygon.',
         'polygon_body' => 'Polygon musí mít alespoň 3 body.',
+        'vysky_pomalu' => 'Výškový profil se teď nepodařilo načíst, mapová služba odpovídá pomalu. Zkus to za chvíli.',
         'polygon_bez_bodu' => 'Žádné body v polygonu parcely.',
         'vysky_nedostupne' => 'Výšková data pro tuto oblast nejsou dostupná.',
         'souradnice_mimo' => 'Souřadnice mimo rozsah S-JTSK: :lat, :lon',

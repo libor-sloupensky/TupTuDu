@@ -108,6 +108,7 @@ return [
         'neocekavana_chyba' => 'Unexpected error',
         'zadny_polygon' => 'No valid polygon.',
         'polygon_body' => 'A polygon must have at least 3 points.',
+        'vysky_pomalu' => 'The elevation profile could not be loaded right now, the map service is responding slowly. Try again in a moment.',
         'polygon_bez_bodu' => 'No points inside the parcel polygon.',
         'vysky_nedostupne' => 'Elevation data is not available for this area.',
         'souradnice_mimo' => 'Coordinates outside the S-JTSK range: :lat, :lon',

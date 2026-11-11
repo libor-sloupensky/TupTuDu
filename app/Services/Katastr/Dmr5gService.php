@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 class Dmr5gService
 {
     private const API_URL = 'https://ags.cuzk.cz/arcgis2/rest/services/dmr5g/ImageServer/identify';
+    /** Strop pro dotazy na výšky v jednom webovém požadavku (s), pod limitem PHP 30 s. */
+    private const LIMIT_DOTAZU_S = 22;
     private const GRID_STEP = 2.0; // metry — rozlišení DMR 5G
 
     /**
@@ -123,14 +125,22 @@ class Dmr5gService
     private function dotazVysky(array $body): array
     {
         $results = [];
-        $client = new \GuzzleHttp\Client(['timeout' => 10]);
+        $client = new \GuzzleHttp\Client(['timeout' => 10, 'connect_timeout' => 4]);
+        // PHP končí po 30 s fatální chybou, kterou nejde chytit. Pomalá služba ČÚZK by ji přetáhla
+        // (skupiny po 10 bodech, každá až 10 s), proto strop pro celý požadavek. V konzoli bez stropu.
+        $termin = app()->runningInConsole() ? INF : (($_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true)) + self::LIMIT_DOTAZU_S);
 
         // Paralelně po 10 dotazech
         $chunks = array_chunk($body, 10);
         foreach ($chunks as $chunk) {
+            $zbyva = $termin - microtime(true);
+            if ($zbyva < 1) {
+                throw new \RuntimeException(__('ed_nastroje.katastr.vysky_pomalu'));
+            }
             $promises = [];
             foreach ($chunk as $idx => [$x, $y]) {
                 $promises[$idx] = $client->getAsync(self::API_URL, [
+                    'timeout' => min(10, $zbyva),
                     'query' => [
                         'geometry' => json_encode(['x' => $x, 'y' => $y]),
                         'geometryType' => 'esriGeometryPoint',

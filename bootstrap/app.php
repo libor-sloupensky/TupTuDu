@@ -103,7 +103,10 @@ return Application::configure(basePath: dirname(__DIR__))
             // Výjimky z `php artisan tinker` = ladění v konzoli (překlep, zkušební dotaz),
             // ne chyba aplikace. Tinker je posílá do report() → v bugách jen šum
             // (bug #30, 2. 10. 2026: „PHP Parse error: Unexpected character" z eval kódu).
-            if (app()->runningInConsole() && ($_SERVER['argv'][1] ?? null) === 'tinker') {
+            // Totéž platí pro samostatné ladicí skripty, které si Laravel spustí samy (php skript.php,
+            // bug #80/#81, 11. 11. 2026: zkušební SQL ze scratchpadu). Příkazy přes artisan se hlásí dál.
+            $vstup = basename((string) ($_SERVER['argv'][0] ?? ''));
+            if (app()->runningInConsole() && (($_SERVER['argv'][1] ?? null) === 'tinker' || $vstup !== 'artisan')) {
                 return;
             }
             try {

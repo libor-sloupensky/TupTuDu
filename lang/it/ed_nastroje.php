@@ -119,6 +119,7 @@ return [
         'neocekavana_chyba' => 'Errore imprevisto',
         'zadny_polygon' => 'Nessun poligono valido.',
         'polygon_body' => 'Il poligono deve avere almeno 3 punti.',
+        'vysky_pomalu' => 'Non è stato possibile caricare ora il profilo altimetrico, il servizio mappe risponde lentamente. Riprova tra poco.',
         'polygon_bez_bodu' => 'Nessun punto nel poligono della particella.',
         'vysky_nedostupne' => 'I dati altimetrici per quest’area non sono disponibili.',
         'souradnice_mimo' => 'Coordinate fuori dall’intervallo S-JTSK: :lat, :lon',

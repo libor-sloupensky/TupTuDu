@@ -119,6 +119,7 @@ return [
         'neocekavana_chyba' => 'Nieoczekiwany błąd',
         'zadny_polygon' => 'Brak prawidłowego wielokąta.',
         'polygon_body' => 'Wielokąt musi mieć co najmniej 3 punkty.',
+        'vysky_pomalu' => 'Nie udało się teraz wczytać profilu wysokości, serwis map odpowiada wolno. Spróbuj za chwilę.',
         'polygon_bez_bodu' => 'Brak punktów w wielokącie działki.',
         'vysky_nedostupne' => 'Dane wysokościowe dla tego obszaru nie są dostępne.',
         'souradnice_mimo' => 'Współrzędne poza zakresem S-JTSK: :lat, :lon',

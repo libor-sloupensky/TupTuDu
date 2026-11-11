@@ -116,6 +116,7 @@ return [
         'neocekavana_chyba' => 'Error inesperado',
         'zadny_polygon' => 'Ningún polígono válido.',
         'polygon_body' => 'El polígono debe tener al menos 3 puntos.',
+        'vysky_pomalu' => 'No se ha podido cargar ahora el perfil de altura, el servicio de mapas responde despacio. Inténtalo dentro de un momento.',
         'polygon_bez_bodu' => 'No hay puntos dentro del polígono de la parcela.',
         'vysky_nedostupne' => 'No hay datos de altitud disponibles para esta zona.',
         'souradnice_mimo' => 'Coordenadas fuera del rango S-JTSK: :lat, :lon',

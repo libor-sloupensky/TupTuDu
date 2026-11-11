@@ -119,6 +119,7 @@ return [
         'neocekavana_chyba' => 'Erreur inattendue',
         'zadny_polygon' => 'Aucun polygone valide.',
         'polygon_body' => 'Un polygone doit avoir au moins 3 points.',
+        'vysky_pomalu' => 'Le profil altimétrique n’a pas pu être chargé, le service cartographique répond lentement. Réessayez dans un instant.',
         'polygon_bez_bodu' => 'Aucun point dans le polygone de la parcelle.',
         'vysky_nedostupne' => 'Les données d’altitude ne sont pas disponibles pour cette zone.',
         'souradnice_mimo' => 'Coordonnées hors de la plage S-JTSK : :lat, :lon',

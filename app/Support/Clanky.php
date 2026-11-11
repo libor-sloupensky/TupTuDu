@@ -226,8 +226,11 @@ final class Clanky
         $clanek = ['jazyk' => $jazyk, 'adresa' => basename($soubor, '.md'), 'telo' => $casti[2], 'zdroje' => []];
         foreach (explode("\n", $casti[1]) as $radek) {
             if (str_starts_with($radek, '- ')) {
-                [$nazev, $adresa] = array_map('trim', explode('|', substr($radek, 2), 2));
-                $clanek['zdroje'][] = ['nazev' => $nazev, 'adresa' => $adresa];
+                $kusy = array_map('trim', explode('|', substr($radek, 2), 2));
+                if (count($kusy) < 2) {
+                    throw new RuntimeException('Článek ' . $soubor . ': zdroj v hlavičce musí mít tvar „- název | adresa“, je tam: ' . trim($radek));
+                }
+                $clanek['zdroje'][] = ['nazev' => $kusy[0], 'adresa' => $kusy[1]];
             } elseif (preg_match('/^(\w+):[ \t]*(.+)$/u', $radek, $udaj)) {
                 $clanek[$udaj[1]] = $udaj[2];
             }

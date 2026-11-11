@@ -119,6 +119,7 @@ return [
         'neocekavana_chyba' => 'Unerwarteter Fehler',
         'zadny_polygon' => 'Kein gültiges Polygon.',
         'polygon_body' => 'Ein Polygon braucht mindestens 3 Punkte.',
+        'vysky_pomalu' => 'Das Höhenprofil konnte gerade nicht geladen werden, der Kartendienst antwortet langsam. Versuch es gleich noch einmal.',
         'polygon_bez_bodu' => 'Keine Punkte im Polygon der Parzelle.',
         'vysky_nedostupne' => 'Für dieses Gebiet sind keine Höhendaten verfügbar.',
         'souradnice_mimo' => 'Koordinaten außerhalb des Bereichs von S-JTSK: :lat, :lon',

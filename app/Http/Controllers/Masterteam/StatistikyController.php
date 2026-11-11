@@ -195,10 +195,17 @@ class StatistikyController extends Controller
         return $den->format($dnu > 365 ? 'j. n. Y' : 'j. n.');
     }
 
-    /** Selhání Googlu: zápis do bugů (Log::error se zrcadlí) a srozumitelná odpověď pro stránku. */
+    /**
+     * Selhání Googlu: zápis do bugů (Log::error se zrcadlí) a srozumitelná odpověď pro stránku.
+     * Výpadek spojení (vypršel čas, nedostupný server) je šum sítě, ne chyba kódu: jen do laravel.log.
+     */
     private function chybaGoogle(\Throwable $e, string $co): JsonResponse
     {
-        Log::error("Statistiky: {$co} z Googlu se nepodařilo načíst — " . $e->getMessage());
+        $zprava = "Statistiky: {$co} z Googlu se nepodařilo načíst — " . $e->getMessage();
+        $vypadekSite = $e instanceof \GuzzleHttp\Exception\ConnectException
+            || $e instanceof \Illuminate\Http\Client\ConnectionException
+            || preg_match('/cURL error (6|7|28|35|52|56):/', $e->getMessage());
+        $vypadekSite ? Log::warning($zprava) : Log::error($zprava);
 
         return response()->json(['chyba' => 'Data z Googlu se nepodařilo načíst.'], 502);
     }
