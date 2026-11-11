@@ -125,11 +125,20 @@ Výchozí tmavý jako web. Kdo si na webu přepne režim, má ho přepnutý i v 
 cookie `tt_rezim`). Kreslicí plocha zůstává bílá. Zbývá převést panely editoru na proměnné (asi 340 pevných
 tříd Tailwind v `koncept-v3.blade.php`); dělat až po prvcích aplikace, ať se panely nepředělávají dvakrát.
 
+## Prvky aplikace (rozhodnuto 11. 11. 2026)
+Artefakt „Ovládání editoru“ https://claude.ai/artifact/WWFJHduMYM4Umb65F1TDHi. Ovládání i ikony jsou
+vyladěné, mění se jen to, co k sobě nesedí (Libor).
+- **Ikony lišty A** (nasazeno 5924cd3): jedna mřížka 24, čára 1,75, velikost 18 px. Výběr zůstává dnešní
+  (rámeček s šipkou), metr je pravítko z Lucide, zpět, vpřed a lupa kreslené, sloup = jeho značka v půdorysu.
+- **Panel objektu:** hlavička s označením (C1) jako v seznamu objektů; volba ze dvou až tří jako díly vedle
+  sebe, **díly stejně široké** a skupina jen tak široká, jak je potřeba; pole I1 s jednotkou uvnitř; ano/ne
+  jako přepínač; nápisy v jednom sloupci. Bez nápověd typu „tah za ↻ otáčí“.
+- **Čtyři druhy tlačítek:** nástroj (lišta), běžné (obrys), hlavní (oranžové, nejvýš jedno v panelu),
+  tiché (bez rámečku). **Mazání vždy symbolem křížku**, slovo Smazat podle místa, červené až při najetí.
+- Převod panelů zbývá, dělat zároveň s tmavým režimem aplikace.
+
 ## Co ještě není rozhodnuto / zbývá
-1. **Prvky aplikace a ikony:** záložky, přepínače, nabídky, lišta nástrojů, tlačítka v panelech. Libor
-   11. 11. 2026: ovládání i ikony jsou často už vyladěné, neměnit neuváženě, jen když přijde lepší
-   alternativa. Postup: návrh variant vedle sebe, výběr po malých krocích.
-2. **Články:** pipeline Markdown → Blade bloky (třídy už existují), `modules/blog.md`.
+1. **Články:** pipeline Markdown → Blade bloky (třídy už existují), `modules/blog.md`.
 
 ## Články (návrh, neschváleno výslovně)
 Tiptap editor z Kalkulia nepřebírat. Články jako Markdown v repozitáři (hlavička: titulek, perex, datum,
