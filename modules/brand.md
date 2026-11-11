@@ -138,8 +138,10 @@ vyladěné, mění se jen to, co k sobě nesedí (Libor).
 - **Nasazeno lokálně 11. 11. 2026 (1a4dcb5):** centrální pravidla v `koncept-v3.blade.php` (blok „Prvky panelů podle
   grafického manuálu“): pole a seznamy I1, tlačítka `.border` v panelech jako běžná, `.kk-smazat` (křížek),
   ano/ne v plovoucím panelu jako přepínač, `.kk-dily` (díly stejné šířky, zvolený `.kk-zap`), `.kk-mrizka`
-  (nápisy ve sloupci), `.kk-pole-jed` (jednotka v poli). Díly: dveře/okno, tvar schodů, tvar sloupu. Celý nový
-  rozvrh (mřížka a jednotka v poli) zatím jen u sloupu, ostatní panely mají nové prvky ve stávajícím rozvržení.
+  (nápisy ve sloupci), `.kk-pole-jed` (jednotka v poli). Díly: dveře/okno, tvar schodů, tvar sloupu.
+  Jednotka v poli ve všech panelech (61fd48a, rámeček je stín obalu, pole 24 px kvůli test-formulare-ui).
+  Nápisy ve sloupci mají sloup a pravé panely (podlaží, střecha, základy); otvor, stěna a schody zůstávají
+  v řádcích, jak je Libor ladil (výška a parapet vedle šířky, „par.“ za polem).
   Dlouhé volby (druh základů, okap/štít) zůstávají seznamem.
 - Panely vpravo: šestitečkový úchyt mění pořadí (localStorage `kv3_poradiPanelu`), hlavičky bez počtů,
   „Použité objekty“ (Libor 11. 11. 2026).
