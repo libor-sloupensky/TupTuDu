@@ -71,7 +71,7 @@ return [
 
     // Kalkulačka schodiště (clanky/bloky/kalkulacka-schodiste)
     'schod_nadpis' => 'Spočítej si schodiště',
-    'schod_uvod' => 'Zadej výšku od podlahy k podlaze. Doporučení odpovídají zvyklostem pro :zeme, výsledek je stejný jako u schodů v editoru TupTuDu.',
+    'schod_uvod' => 'Zadej výšku od podlahy k podlaze. Kontroly odpovídají předpisům a zvyklostem pro :zeme. Přímé schody a schody s odpočívadly vyjdou stejně jako v editoru TupTuDu.',
     'schod_uvod_obecny' => 'Zadej výšku od podlahy k podlaze. Doporučené hodnoty jsou jen příklad, ověř je podle předpisů ve své zemi.',
     'schod_vyska' => 'Výška od podlahy k podlaze (cm)',
     'schod_tvar' => 'Tvar',
@@ -86,8 +86,11 @@ return [
     'schod_nejuzsi' => 'Nejužší místo stupně',
     'schod_otacka' => 'Stupňů na jednu otáčku',
     'schod_podchod' => 'Podchodná výška pod otáčkou',
-    'schod_dop_nejuzsi' => 'Zabíhající stupně doporučeně aspoň :od mm v nejužším místě',
     'schod_dop_podchod' => 'Doporučená podchodná výška aspoň :od mm',
+    'schod_merena' => 'Nášlap v místě měření',
+    'schod_dop_naslap' => 'Nášlap hlavního schodiště v rodinném domě aspoň :od mm (vyhláška), při užším kalkulačka přidá stupeň',
+    'schod_dop_merena' => 'Zakřivené rameno do 110 cm: nášlap aspoň :od mm 40 cm od vnějšího okraje, širší aspoň :vnitrni mm 30 cm od vnitřního okraje (vyhláška)',
+    'schod_aplikace_jen_kalk' => 'Zabíhající a točité schody zatím spočítá jen kalkulačka. V TupTuDu postavíš do svého domu přímé schody nebo schody do L a do U s odpočívadly a uvidíš, kolik místa zaberou v půdorysu i ve 3D.',
     'schod_nelze' => 'Zatáčka se zabíhajícími stupni se do tolika stupňů nevejde. Zmenši šířku ramene, nebo zvol schody s odpočívadlem.',
     'schod_sirka' => 'Šířka ramene (cm)',
     'schod_cilova' => 'Cílová výška stupně (mm)',

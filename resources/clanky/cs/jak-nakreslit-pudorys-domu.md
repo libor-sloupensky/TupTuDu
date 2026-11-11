@@ -22,7 +22,7 @@ souvisejici: minimalni-rozmery-mistnosti, vypocet-schodiste, typy-strech, barva-
 - Porotherm 17,5 Profi, technický list (vnitřní nosná stěna 175 mm) | https://www.izomat.cz/out/media/TL_PTH175Profi-ppn14.pdf
 - ESTAV.cz: Správná orientace domu (ložnice na východ) | https://www.estav.cz/cz/1112.spravna-orientace-domu-prispeje-k-prijemnejsimu-bydleni
 - ESTAV.cz: Schodiště a jeho základní rozměry (2h + b = 630 mm) | https://www.estav.cz/cz/2581.schodiste-a-jeho-zakladni-rozmery
-- Editor TupTuDu: schodiště 3,05 m mezi podlažími = 17 stupňů po 179 mm, nášlap 271 mm, přímé rameno 4,34 m (public/js/koncept-v3/dum.js, schodyGeo) | https://www.tuptudu.com
+- Kalkulačka TupTuDu (článek Výpočet schodiště): 2,90 m mezi podlažími = 17 výšek po 171 mm, nášlap 289 mm, přímé rameno 4,62 m; 3,05 m = 18 výšek, rameno 4,95 m (nášlap aspoň 275 mm podle vyhlášky 146/2024 Sb.) | https://www.tuptudu.com
 ---
 ## Než začneš kreslit
 
@@ -53,7 +53,7 @@ Sepiš místnosti s přibližnou plochou a rozděl je na denní a noční část
 | Dveře do koupelny a na WC | 70 až 80 cm |
 | Vchodové dveře | od 90 cm |
 | Volné místo kolem postele | aspoň 60 cm |
-| Přímé schody do patra | asi 1 × 4,5 m |
+| Přímé schody do patra | asi 1 × 4,5 až 5 m |
 
 :::pozor Častá chyba: tenké stěny
 Když u zděného domu při stejném vnějším rozměru nakreslíš obvodovou stěnu 30 cm místo 50 cm, každá místnost u fasády vyjde o 20 cm hlubší, než bude. Napříč domem pak chybí 40 cm a nábytek, který se na výkrese vešel, se do domu nevejde.

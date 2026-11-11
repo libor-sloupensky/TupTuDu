@@ -1,8 +1,8 @@
-{{-- Blok článku `::kalkulacka-schodiste`. Výpočet a nákres: public/js/kalkulacka-schodiste.js, počítá stejně jako
-     schody v editoru (modules/dum.md, část Schody). Pole v cm a mm mají data-meritko, kalkulačka počítá v metrech.
+{{-- Blok článku `::kalkulacka-schodiste`. Výpočet a nákres: public/js/kalkulacka-schodiste.js, přímé schody a schody s odpočívadly
+     staví stejně jako editor (modules/dum.md, část Schody), navíc hlídá nášlap podle vyhlášky. Pole v cm a mm mají data-meritko, kalkulačka počítá v metrech.
      Verze článku pro jinou zemi přepíše výchozí hodnoty a doporučení parametry, např.
      `::kalkulacka-schodiste sirka=80 | vyskaMax=190 | sirkaMin=80` (vyska, sirka a prumer v cm, cilova v mm,
-     limity vyskaMin, vyskaMax, krokMin, krokMax, nejuzsi a podchod v mm, sirkaMin v cm, rameno = nejvíc výšek v rameni).
+     limity vyskaMin, vyskaMax, krokMin, krokMax, naslapMin, zakrivMin a podchod v mm (naslapMin=0 vypne přidávání výšek), sirkaMin v cm, rameno = nejvíc výšek v rameni).
      Prvky s data-jen se ukazují jen u vyjmenovaných tvarů. Úvod jmenuje země z hlavičky (`zeme:`). --}}
 @php
     $vlastni = [];
@@ -18,7 +18,8 @@
         'krokMax' => isset($vlastni['krokMax']) ? $vlastni['krokMax'] / 1000 : null,
         'sirkaMin' => isset($vlastni['sirkaMin']) ? $vlastni['sirkaMin'] / 100 : null,
         'rameno' => $vlastni['rameno'] ?? null,
-        'nejuzsi' => isset($vlastni['nejuzsi']) ? $vlastni['nejuzsi'] / 1000 : null,
+        'naslapMin' => isset($vlastni['naslapMin']) ? $vlastni['naslapMin'] / 1000 : null,
+        'zakrivMin' => isset($vlastni['zakrivMin']) ? $vlastni['zakrivMin'] / 1000 : null,
         'podchod' => isset($vlastni['podchod']) ? $vlastni['podchod'] / 1000 : null,
     ], fn ($x) => $x !== null);
     $mm = fn (string $klic, float $vychozi) => (int) round(($limity[$klic] ?? $vychozi) * 1000);
@@ -27,11 +28,12 @@
         'krok' => __('clanky.schod_dop_krok', ['od' => $mm('krokMin', 0.6), 'do' => $mm('krokMax', 0.65)]),
         'sirka' => __('clanky.schod_dop_sirka', ['od' => (int) round(($limity['sirkaMin'] ?? 0.9) * 100)]),
         'rameno' => __('clanky.schod_dop_rameno', ['do' => (int) ($limity['rameno'] ?? 18)]),
-        'nejuzsi' => __('clanky.schod_dop_nejuzsi', ['od' => $mm('nejuzsi', 0.13)]),
+        'naslap' => __('clanky.schod_dop_naslap', ['od' => $mm('naslapMin', 0.275)]),
+        'merena' => __('clanky.schod_dop_merena', ['od' => $mm('naslapMin', 0.275), 'vnitrni' => $mm('zakrivMin', 0.18)]),
         'podchod' => __('clanky.schod_dop_podchod', ['od' => $mm('podchod', 2.1)]),
     ];
     // Doporučení, která platí jen pro některé tvary
-    $jenTvary = ['nejuzsi' => 'Lz Uz', 'podchod' => 'tocite'];
+    $jenTvary = ['merena' => 'Lz Uz tocite', 'podchod' => 'tocite'];
     $tvary = ['prime' => 'schod_tvar_prime', 'L' => 'schod_tvar_l', 'Lz' => 'schod_tvar_lz', 'U' => 'schod_tvar_u',
         'U2' => 'schod_tvar_u2', 'Uz' => 'schod_tvar_uz', 'tocite' => 'schod_tvar_tocite'];
     $zeme = array_map(fn ($kod) => __('zeme.' . $kod), \App\Support\Clanky::zeme($clanek));
@@ -40,10 +42,11 @@
         ['n', __('clanky.schod_n'), '', null, null],
         ['rameno', __('clanky.schod_rameno'), '', 'rameno', null],
         ['h', __('clanky.schod_h'), 'mm', 'vyska', null],
-        ['b', __('clanky.schod_b'), 'mm', null, null],
+        ['b', __('clanky.schod_b'), 'mm', 'naslap', null],
         ['krok', __('clanky.schod_krok'), 'mm', 'krok', null],
         ['sklon', __('clanky.schod_sklon'), '°', null, null],
-        ['nejuzsi', __('clanky.schod_nejuzsi'), 'mm', 'nejuzsi', 'Lz Uz'],
+        ['merena', __('clanky.schod_merena'), 'mm', 'merena', 'Lz Uz tocite'],
+        ['nejuzsi', __('clanky.schod_nejuzsi'), 'mm', null, 'Lz Uz'],
         ['otacka', __('clanky.schod_otacka'), '', null, 'tocite'],
         ['podchod', __('clanky.schod_podchod'), 'm', 'podchod', 'tocite'],
         ['pudorys', __('clanky.schod_pudorys'), 'm', 'sirka', null],
@@ -84,7 +87,7 @@
             <div class="tt-kalkulacka-popisek">{{ __('clanky.kalk_vysledek') }}</div>
             <dl class="tt-kalkulacka-souhrn">
                 @foreach ($vysledky as [$klic, $popisek, $jednotka, $stav, $jen])
-                    <div @if ($jen) data-jen="{{ $jen }}" hidden @endif>
+                    <div @if ($jen) data-jen="{{ $jen }}" hidden @endif @if (in_array($klic, ['merena', 'nejuzsi'])) data-zatacka @endif>
                         <dt>{{ $popisek }}</dt>
                         <dd>
                             <strong data-v="{{ $klic }}">–</strong> {{ $jednotka }}
@@ -100,7 +103,7 @@
             <p class="tt-schody-nelze" data-nelze hidden>{{ __('clanky.schod_nelze') }}</p>
             <ul class="tt-schody-doporuceni">
                 @foreach ($doporuceni as $klic => $text)
-                    <li data-stav="{{ $klic }}" @isset($jenTvary[$klic]) data-jen="{{ $jenTvary[$klic] }}" hidden @endisset>{{ $text }}</li>
+                    <li data-stav="{{ $klic }}" @isset($jenTvary[$klic]) data-jen="{{ $jenTvary[$klic] }}" hidden @endisset @if ($klic === 'merena') data-zatacka @endif>{{ $text }}</li>
                 @endforeach
             </ul>
         </div>
@@ -111,7 +114,8 @@
         <figcaption class="tt-clanek-meta">{{ __('clanky.schod_nakres_popis') }}</figcaption>
     </figure>
     <div class="tt-kalkulacka-aplikace" data-vyzva>
-        <p class="tt-jen-mys">{{ __('clanky.schod_aplikace') }}</p>
+        {{-- Zabíhající a točité schody editor zatím nemá, výzva to řekne --}}
+        <p class="tt-jen-mys"><span data-jen="prime L U U2">{{ __('clanky.schod_aplikace') }}</span><span data-jen="Lz Uz tocite" hidden>{{ __('clanky.schod_aplikace_jen_kalk') }}</span></p>
         <p class="tt-jen-dotyk">{{ __('clanky.vyzva_dotyk') }}</p>
         <a class="btn btn-primary tt-jen-mys" href="{{ \App\Support\Clanky::adresaRegistrace($clanek) }}" data-vyzva-klik>{{ __('clanky.schod_aplikace_tlacitko') }}</a>
         <button type="button" class="btn btn-primary tt-jen-dotyk" data-poslat-odkaz>{{ __('clanky.vyzva_poslat') }}</button>

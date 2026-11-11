@@ -2,28 +2,35 @@
  * Veřejná kalkulačka schodiště (článek Výpočet schodiště, modules/blog.md).
  *
  * Záměrně samostatný kód, veřejná stránka nesmí načítat nic z js/koncept-v3. Přímé schody, do L, do U a do U
- * se dvěma odpočívadly počítá stejně jako editor (DumGeo.schodyGeo a castiSchodu v koncept-v3/dum.js): počet výšek
+ * se dvěma odpočívadly staví stejně jako editor (DumGeo.schodyGeo a castiSchodu v koncept-v3/dum.js): počet výšek
  * z cílové výšky stupně, nášlap ze vztahu 2h + b = 630 mm omezený na 220 až 320 mm. Shodu hlídá
  * services/import-test/test-kalkulacka-schodiste.cjs.
  *
+ * Navíc proti editoru (zatím): vyhláška 146/2024 Sb., příloha 4 bod 2 žádá nášlap hlavního schodiště aspoň 300 mm,
+ * v rodinném domě 275 mm (limit naslapMin). Když by při zaokrouhleném počtu výšek vyšel užší, kalkulačka přidá
+ * výšku: pro 3,05 m tedy 18 výšek po 169 mm místo 17 po 179 mm s nášlapem 271 mm.
+ *
  * Zabíhající stupně (do L a do U) a točité schody editor zatím nemá, kalkulačka je tu napřed (Libor 11. 11. 2026:
  * nejdřív doladit tady, pak přenést do projektu). Pravidla pro zakřivená ramena:
- *  - výstupní čára je blíž k vnějšímu okraji: u ramene do 900 mm 300 mm od něj, do 1 200 mm 400 mm, do 1 800 mm
- *    třetina šířky, širší v polovině (výklad ČSN 73 4130, VUT a ČKAIT TS 02),
- *  - na výstupní čáře mají všechny stupně stejný nášlap jako u přímých schodů,
- *  - zabíhající stupně v nejužším místě aspoň 130 mm. Zúžení se rozloží rovnoměrně na tolik stupňů kolem zatáčky,
- *    aby vyšlo aspoň 150 mm (vnitřní hrana se dělí stejnoměrně, hrana stupně spojuje bod na vnitřní hraně s bodem
- *    na výstupní čáře),
- *  - točité: podchodná výška pod stupněm o otáčku výš aspoň 2 100 mm.
+ *  - výstupní čára (stupně na ní mají nášlap b jako přímé schody) je u ramene do 1,2 m 0,4 m od vnějšího okraje,
+ *    tam vyhláška měří nášlap ramene do 1,1 m. Širší: třetina šířky od vnějšího okraje, nad 1,8 m polovina
+ *    (výklad ČSN 73 4130, VUT a ČKAIT TS 02),
+ *  - rameno širší než 1,1 m: vyhláška měří 0,3 m od vnitřního okraje, v rodinném domě aspoň 180 mm (zakrivMin),
+ *  - zúžení na vnitřní hraně se rozloží rovnoměrně na tolik stupňů kolem zatáčky, aby vyšlo aspoň 150 mm (vnitřní
+ *    hrana se dělí stejnoměrně, hrana stupně spojuje bod na vnitřní hraně s bodem na výstupní čáře),
+ *  - točité: podchodná výška pod stupněm o otáčku výš aspoň 2 100 mm (ČSN, tloušťka stupně 50 mm je odhad).
  * Texty jsou v šabloně clanky/bloky/kalkulacka-schodiste, tady se jen dosazují čísla a kreslí nákres.
  *
  * Délky v metrech. Půdorys: první rameno ve směru x od nástupu v [0, 0], zatáčí se ke kladnému y.
  */
 (function (koren) {
     const VYCHOZI = { vyska: 2.9, tvar: 'prime', sirka: 1.0, cilova: 0.175, prumer: 2.0 };   // šířka 1 m jako v editoru
-    // Doporučení v Česku (ČSN 73 4130 jen doporučuje, modules/stavebni-parametry.md); verze pro jinou zemi je
-    // přepíše parametry bloku (data-limity)
-    const LIMITY = { vyskaMin: 0.15, vyskaMax: 0.18, krokMin: 0.6, krokMax: 0.65, sirkaMin: 0.9, rameno: 18, nejuzsi: 0.13, podchod: 2.1 };
+    // Česko: naslapMin a zakrivMin z vyhlášky 146/2024 Sb. (příloha 4, rodinný dům), ostatní doporučuje ČSN 73 4130
+    // (modules/stavebni-parametry.md). Verze pro jinou zemi je přepíše parametry bloku (data-limity), naslapMin 0
+    // vypne přidávání výšek.
+    const LIMITY = { vyskaMin: 0.15, vyskaMax: 0.18, krokMin: 0.6, krokMax: 0.65, sirkaMin: 0.9, rameno: 18, podchod: 2.1, naslapMin: 0.275, zakrivMin: 0.18 };
+    const ZAKRIV_UZKE = 1.1;   // rameno do této šířky: nášlap se měří 0,4 m od vnějšího okraje, širší 0,3 m od vnitřního
+    const OD_VNITRNIHO = 0.3;
     const TVARY = ['prime', 'L', 'Lz', 'U', 'U2', 'Uz', 'tocite'];
     const SLOUPEK = 0.12;      // průměr středového sloupku točitých schodů
     const TL_STUPNE = 0.05;    // tloušťka stupně, ubírá z podchodné výšky točitých schodů
@@ -33,8 +40,7 @@
 
     /** Vzdálenost výstupní čáry od vnějšího okraje zakřiveného ramene. */
     function odstupVystupni(sir) {
-        if (sir <= 0.9 + 1e-9) return Math.min(0.3, sir / 2);
-        if (sir <= 1.2 + 1e-9) return 0.4;
+        if (sir <= 1.2 + 1e-9) return Math.min(0.4, sir / 2);
         if (sir <= 1.8 + 1e-9) return sir / 3;
         return sir / 2;
     }
@@ -117,6 +123,12 @@
         return nej;
     }
 
+    function vzdalenostOdUsecky(P, A, B) {
+        const ex = B[0] - A[0], ey = B[1] - A[1], d2 = ex * ex + ey * ey || 1;
+        const u = omez(((P[0] - A[0]) * ex + (P[1] - A[1]) * ey) / d2, 0, 1);
+        return Math.hypot(P[0] - A[0] - ex * u, P[1] - A[1] - ey * u);
+    }
+
     /**
      * Zabíhající stupně do L (čtvrtobrat) a do U (půlobrat), bez odpočívadla. Výstupní čára je v zatáčce oblouk kolem
      * vnitřního rohu. Vrací null, když se zatáčka do schodů nevejde (moc široké rameno na málo stupňů).
@@ -170,9 +182,19 @@
             nejuzsi = Math.min(nejuzsi, h1.u - h0.u);
             if (h1.param <= h0.param + 1e-6) poradi = false;
         }
+        // Nášlap 0,3 m od vnitřního okraje: bod na hraně stupně v té vzdálenosti od vnitřní hrany (půlením)
+        const vnitrniCara = U ? [[0, sir], [a1, sir]] : [[0, sir], [a1, sir], [a1, sir + a2]];
+        const odCary = (P) => Math.min(...vnitrniCara.slice(1).map((B, i) => vzdalenostOdUsecky(P, vnitrniCara[i], B)));
+        const naCare = hrany.map((h) => {
+            let lo = 0, hi = 1;
+            const bod = (s) => [h.vnitrni[0] + (h.venku[0] - h.vnitrni[0]) * s, h.vnitrni[1] + (h.venku[1] - h.vnitrni[1]) * s];
+            for (let i = 0; i < 40; i++) { const s = (lo + hi) / 2; if (odCary(bod(s)) < OD_VNITRNIHO) lo = s; else hi = s; }
+            return bod((lo + hi) / 2);
+        });
+        const odVnitrniho = Math.min(...naCare.slice(1).map((P, k) => Math.hypot(P[0] - naCare[k][0], P[1] - naCare[k][1])));
         const vystupni = [];
         for (let i = 0; i <= 60; i++) vystupni.push(W(N * b * i / 60));
-        return { polygony, casti: [N], vystupni, nejuzsi, zabihaStupnu: m, platne: poradi, ...obalka(polygony) };
+        return { polygony, casti: [N], vystupni, nejuzsi, odVnitrniho, zabihaStupnu: m, platne: poradi, ...obalka(polygony) };
     }
 
     /** Točité (vřetenové) schody kolem sloupku, průměr D. Stupně nad první otáčkou jsou v půdorysu nad prvními. */
@@ -193,7 +215,7 @@
         const uhel = N * alfa;
         for (let i = 0; i <= 90; i++) vystupni.push(bod(rv, ZACATEK + uhel * i / 90));
         return {
-            polygony, casti: [N], vystupni, kruh: { cx: R, cy: R, R, r0 }, sir, nejuzsi: null,
+            polygony, casti: [N], vystupni, kruh: { cx: R, cy: R, R, r0 }, sir, nejuzsi: null, odVnitrniho: alfa * (r0 + OD_VNITRNIHO),
             otacka: 2 * Math.PI / alfa, uhel: uhel * 180 / Math.PI, minX: 0, minY: 0, delka: D, sirka: D,
         };
     }
@@ -203,9 +225,12 @@
         const L = { ...LIMITY, ...(limity || {}) };
         const tvar = TVARY.includes(v.tvar) ? v.tvar : 'prime';
         const H = v.vyska;
-        const n = Math.max(2, Math.round(H / (v.cilova || 0.175)));
+        let n = Math.max(2, Math.round(H / (v.cilova || 0.175)));
+        const naslap = (k) => omez(0.63 - 2 * H / k, 0.22, 0.32);
+        // Vyhláška: užší nášlap než naslapMin nejde, přidá se výška (stupně nižší, nášlap širší)
+        while (L.naslapMin > 0 && naslap(n) < L.naslapMin - 1e-9 && n < 80) n++;
         const h = H / n;
-        const b = omez(0.63 - 2 * h, 0.22, 0.32);
+        const b = naslap(n);
         let p = null, sirka = v.sirka, nelze = false;
         if (tvar === 'tocite') {
             p = tocite(n - 1, b, v.prumer);
@@ -222,6 +247,11 @@
         const rameno = Math.max(...p.casti) + 1;   // výšek v nejdelším rameni: jeho nášlapy a krok na odpočívadlo nebo podlahu
         const podchod = p.otacka ? p.otacka * h - TL_STUPNE : null;
         const nejuzsi = nelze ? null : p.nejuzsi ?? null;
+        // Zakřivená ramena: nášlap tam, kde ho měří vyhláška (do 1,1 m na výstupní čáře 0,4 m od vnějšího okraje)
+        const zakrivene = !nelze && (tvar === 'Lz' || tvar === 'Uz' || tvar === 'tocite');
+        const uzke = sirka <= ZAKRIV_UZKE + 1e-9;
+        const merena = zakrivene ? (uzke ? b : p.odVnitrniho) : null;
+        const merenaMez = uzke ? L.naslapMin : L.zakrivMin;
         return {
             useky,
             n, h, b, sirka, tvar, H, nelze,
@@ -231,13 +261,15 @@
             rameno,
             pudorys: p,
             nejuzsi,
+            merena,
             otacka: p.otacka ?? null,
             podchod,
             vyskaOk: h >= L.vyskaMin - 1e-9 && h <= L.vyskaMax + 1e-9,
             krokOk: 2 * h + b >= L.krokMin - 1e-9 && 2 * h + b <= L.krokMax + 1e-9,
             sirkaOk: sirka >= L.sirkaMin - 1e-9,
             ramenoOk: rameno <= L.rameno,
-            nejuzsiOk: nejuzsi === null || nejuzsi >= L.nejuzsi - 1e-9,
+            naslapOk: !(L.naslapMin > 0) || b >= L.naslapMin - 1e-9,
+            merenaOk: merena === null || !(merenaMez > 0) || merena >= merenaMez - 1e-9,
             podchodOk: podchod === null || podchod >= L.podchod - 1e-9,
         };
     }
@@ -315,7 +347,11 @@
         };
 
         let limity = {};
-        try { limity = JSON.parse(blok.dataset.limity || '{}'); } catch { /* výchozí limity */ }
+        try {
+            limity = JSON.parse(blok.dataset.limity || '{}');
+        } catch (e) {
+            window.zalogujChybu?.(e, 'Kalkulačka schodiště: limity', { clanek: blok.dataset.clanek, limity: blok.dataset.limity });
+        }
         const prepocet = () => {
             const vstup = {};
             blok.querySelectorAll('[data-pole]').forEach((pole) => {
@@ -325,8 +361,8 @@
             // Pole, řádky výsledku a doporučení jen pro některé tvary
             blok.querySelectorAll('[data-jen]').forEach((e) => { e.hidden = !e.dataset.jen.split(' ').includes(r.tvar); });
             blok.querySelectorAll('[data-nelze]').forEach((e) => { e.hidden = !r.nelze; });
-            // Zatáčka se nevejde: nejužší místo nemá smysl ukazovat
-            if (r.nelze) blok.querySelectorAll('[data-jen="Lz Uz"]').forEach((e) => { e.hidden = true; });
+            // Zatáčka se nevejde: nejužší místo ani nášlap v zatáčce nemá smysl ukazovat
+            if (r.nelze) blok.querySelectorAll('[data-zatacka]').forEach((e) => { e.hidden = true; });
             const mm = (x) => cislo(x * 1000);
             zapis('n', cislo(r.n));
             zapis('h', mm(r.h));
@@ -336,6 +372,7 @@
             zapis('naslapu', cislo(r.naslapu));
             zapis('rameno', cislo(r.rameno));
             zapis('nejuzsi', r.nejuzsi === null ? '–' : mm(r.nejuzsi));
+            zapis('merena', r.merena === null ? '–' : mm(r.merena));
             zapis('otacka', r.otacka === null ? '–' : cislo(r.otacka, 1));
             zapis('podchod', r.podchod === null ? '–' : cislo(r.podchod, 2));
             zapis('pudorys', `${cislo(r.pudorys.delka, 2)} × ${cislo(r.pudorys.sirka, 2)}`);
@@ -343,7 +380,8 @@
             stav('vyska', r.vyskaOk);
             stav('krok', r.krokOk);
             stav('sirka', r.sirkaOk);
-            stav('nejuzsi', r.nejuzsiOk);
+            stav('naslap', r.naslapOk);
+            stav('merena', r.merenaOk);
             stav('podchod', r.podchodOk);
             const d = blok.dataset;
             kresliBokorys(blok.querySelector('[data-nakres="bokorys"]'), r, {

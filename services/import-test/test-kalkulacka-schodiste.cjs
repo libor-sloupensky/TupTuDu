@@ -27,13 +27,13 @@ for (const tvar of ['prime', 'L', 'U', 'U2']) {
             for (const cilova of [0.16, 0.175, 0.19]) {
                 pripadu++;
                 const PX = 100;
-                const n0 = Math.max(2, Math.round(vyska / cilova));
-                const s = { x: 0, y: 0, uhel: 0, sirka, tvar: tvar === 'prime' ? undefined : tvar === 'U2' ? 'U' : tvar, strana: 1, vyskaStupne: cilova,
-                    casti: tvar === 'U2' ? Kalkulacka.castiSchodu(n0, 'U2') : undefined };
+                // Počet výšek z kalkulačky (ta navíc přidá výšku, když by nášlap vyšel pod 275 mm); geometrie musí sedět s editorem
+                const k = Kalkulacka.spocitej({ vyska, tvar, sirka, cilova });
+                const s = { x: 0, y: 0, uhel: 0, sirka, tvar: tvar === 'prime' ? undefined : tvar === 'U2' ? 'U' : tvar, strana: 1, vyskaStupne: vyska / k.n,
+                    casti: tvar === 'U2' ? Kalkulacka.castiSchodu(k.n, 'U2') : undefined };
                 const e = schodyGeo(s, vyska, PX);
                 const xs = e.obrys.map((p) => p.x / PX), ys = e.obrys.map((p) => p.y / PX);
                 const ed = { delka: Math.max(...xs) - Math.min(...xs), sirka: Math.max(...ys) - Math.min(...ys) };
-                const k = Kalkulacka.spocitej({ vyska, tvar, sirka, cilova });
                 const ok = k.n === e.n && blizko(k.h, e.v) && blizko(k.b, e.b)
                     && blizko(k.pudorys.delka, ed.delka) && blizko(k.pudorys.sirka, ed.sirka)
                     && e.stupne.length === k.useky.length;
@@ -54,10 +54,22 @@ const vychozi = Kalkulacka.spocitej({});
 const vychoziOk = vychozi.n === 17 && vychozi.vyskaOk && vychozi.krokOk && vychozi.sirkaOk;
 console.log(`   ${vychoziOk ? 'OK  ' : 'CHYBA'} výchozí 2,90 m: 17 stupňů po 171 mm, vše v doporučení`);
 if (!vychoziOk) chyb++;
-const uzke = Kalkulacka.spocitej({ sirka: 0.8, cilova: 0.2, vyska: 2.8 });
+const uzke = Kalkulacka.spocitej({ sirka: 0.8, cilova: 0.2, vyska: 2.8 }, { naslapMin: 0 });   // bez limitu nášlapu by kalkulačka výšku přidala
 const uzkeOk = !uzke.sirkaOk && !uzke.vyskaOk;
-console.log(`   ${uzkeOk ? 'OK  ' : 'CHYBA'} úzké a strmé schody nesplní doporučení šířky ani výšky`);
+console.log(`   ${uzkeOk ? 'OK  ' : 'CHYBA'} úzké a strmé schody (bez limitu nášlapu) nesplní doporučení šířky ani výšky`);
 if (!uzkeOk) chyb++;
+
+// Vyhláška 146/2024 Sb.: nášlap hlavního schodiště v rodinném domě aspoň 275 mm. Pro 3,05 m by 17 výšek dalo 271 mm,
+// kalkulačka proto vezme 18 (169 / 291 mm); 2,90 m zůstane na 17. Bez limitu (jiná země) 17.
+const v305 = Kalkulacka.spocitej({ vyska: 3.05 }), v305bez = Kalkulacka.spocitej({ vyska: 3.05 }, { naslapMin: 0 });
+const naslapOk = v305.n === 18 && v305.b >= 0.275 && v305.naslapOk && v305bez.n === 17 && Kalkulacka.spocitej({ vyska: 3.2 }).n === 19;
+console.log(`   ${naslapOk ? 'OK  ' : 'CHYBA'} nášlap podle vyhlášky: 3,05 m = ${v305.n} výšek, nášlap ${(v305.b * 1000).toFixed(0)} mm (bez limitu ${v305bez.n})`);
+if (!naslapOk) chyb++;
+// Široké zabíhající rameno se měří 0,3 m od vnitřního okraje, v rodinném domě aspoň 180 mm
+const siroke15 = Kalkulacka.spocitej({ tvar: 'Uz', sirka: 1.5 });
+const sirokeMer = siroke15.merena < 0.18 && !siroke15.merenaOk && Kalkulacka.spocitej({ tvar: 'Lz', sirka: 1.0 }).merenaOk;
+console.log(`   ${sirokeMer ? 'OK  ' : 'CHYBA'} zabíhající do U šířky 1,5 m: 0,3 m od vnitřního okraje ${(siroke15.merena * 1000).toFixed(0)} mm, upozorní`);
+if (!sirokeMer) chyb++;
 
 // Výšek v jednom rameni nejvýš 18: přímé schody na 3,50 m (20 výšek) ne, do L ano
 const prime35 = Kalkulacka.spocitej({ vyska: 3.5 });
@@ -92,7 +104,8 @@ for (const tvar of ['Lz', 'Uz']) {
                 const vadne = p.polygony.filter((o) => plocha(o.body) < 0.02 || prekryvHran(o.body)).length;
                 // Plocha stupňů = obálka bez vnitřního rohu (L), u U bez ničeho (ramena těsně vedle sebe)
                 const ocekavana = tvar === 'Lz' ? p.delka * p.sirka - (p.delka - sirka) * (p.sirka - sirka) : p.delka * p.sirka;
-                const ok = p.platne && !vadne && p.polygony.length === k.n - 1 && Math.abs(soucet - ocekavana) < 1e-6 && k.nejuzsi > 0 && k.nejuzsiOk === (k.nejuzsi >= 0.13 - 1e-9);
+                const ok = p.platne && !vadne && p.polygony.length === k.n - 1 && Math.abs(soucet - ocekavana) < 1e-6 && k.nejuzsi > 0
+                    && k.merenaOk === (sirka <= 1.1 ? k.b >= 0.275 - 1e-9 : k.merena >= 0.18 - 1e-9);
                 if (!ok) {
                     geoChyb++;
                     if (geoChyb <= 8) console.log(`   CHYBA ${tvar} H=${vyska} š=${sirka} h0=${cilova}: pořadí ${p.platne}, vadných ${vadne}, stupňů ${p.polygony.length}/${k.n - 1}, plocha ${soucet.toFixed(3)} / ${ocekavana.toFixed(3)}, nejužší ${k.nejuzsi?.toFixed(3)}`);
@@ -101,12 +114,12 @@ for (const tvar of ['Lz', 'Uz']) {
         }
     }
 }
-console.log(`   ${geoChyb ? 'CHYBA' : 'OK  '} zabíhající stupně: ${geoPripadu} kombinací bez překřížených a prázdných stupňů, plocha sedí, pod 130 mm v nejužším místě upozorní`);
+console.log(`   ${geoChyb ? 'CHYBA' : 'OK  '} zabíhající stupně: ${geoPripadu} kombinací bez překřížených a prázdných stupňů, plocha sedí, nášlap v místě měření podle vyhlášky`);
 chyb += geoChyb;
 
 const lz = Kalkulacka.spocitej({ tvar: 'Lz' }), lPod = Kalkulacka.spocitej({ tvar: 'L' });
 const uz = Kalkulacka.spocitej({ tvar: 'Uz' }), uPod = Kalkulacka.spocitej({ tvar: 'U' });
-const zabihaOk = lz.nejuzsiOk && uz.nejuzsiOk && lz.nejuzsi >= 0.15 - 1e-9
+const zabihaOk = lz.merenaOk && uz.merenaOk && lz.nejuzsi >= 0.15 - 1e-9
     && lz.pudorys.delka + lz.pudorys.sirka < lPod.pudorys.delka + lPod.pudorys.sirka && uz.pudorys.delka < uPod.pudorys.delka;
 console.log(`   ${zabihaOk ? 'OK  ' : 'CHYBA'} výchozí zabíhající: nejužší L ${(lz.nejuzsi * 1000).toFixed(0)} mm, U ${(uz.nejuzsi * 1000).toFixed(0)} mm; půdorys L ${lz.pudorys.delka.toFixed(2)} × ${lz.pudorys.sirka.toFixed(2)} (s odpočívadlem ${lPod.pudorys.delka.toFixed(2)} × ${lPod.pudorys.sirka.toFixed(2)}), U ${uz.pudorys.delka.toFixed(2)} × ${uz.pudorys.sirka.toFixed(2)} (${uPod.pudorys.delka.toFixed(2)} × ${uPod.pudorys.sirka.toFixed(2)})`);
 if (!zabihaOk) chyb++;
