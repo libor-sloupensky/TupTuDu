@@ -6,6 +6,17 @@ Search Console a Google Ads. Pokyn „analyzuj web" = stáhnout data, navrhnout 
 udělat v kódu a pushnout. Placené nástroje (Screaming Frog, Ahrefs/Semrush, hostované MCP)
 zatím nerozhodnuto — třešinky na dortu, až web poběží veřejně.
 
+## Servery jen na vyžádání (od 2026-11-11)
+Každé sezení Claude Code si spouštělo všechny tři servery (4 sezení = 12 procesů, ~700 MB RAM).
+Teď je hlavní sezení **nemá**: `disabledMcpjsonServers` v lokálním `.claude/settings.local.json`.
+Data se berou přes agenty, kteří si servery spustí jen na dobu svého běhu (`mcpServers` ve frontmatteru):
+- **`marketing-data`** (`.claude/agents/marketing-data.md`) — GA4, Search Console, Google Ads; na každý dotaz
+  typu „jaká je návštěvnost", „co hledají lidé", „kontrola indexace".
+- **`copywriter-clanku`** — GA4 a Search Console pro výběr a úpravu článků.
+V definici agenta se `${PROMĚNNÁ}` nedosazuje (na rozdíl od `.mcp.json`), proto jsou tam cesta ke klíči
+a ID projektu napsané přímo (složka `.claude` se necommituje). `.mcp.json` zůstává jako záložní definice;
+v jednom sezení se dá zapnout přes `/mcp`, ale to se zapíše trvale do `~/.claude.json` → po práci zase vypnout.
+
 ## Stav (2026-11-01)
 - **PC:** pipx 1.18.10 a uv 0.13.6 nainstalovány uživatelsky (`C:\Users\HP\.local\bin`, je v uživatelské PATH).
   MCP servery jsou **trvale nainstalované** (`pipx install analytics-mcp`,
