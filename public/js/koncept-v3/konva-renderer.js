@@ -1366,6 +1366,8 @@ class KonvaRenderer {
         if (schodyOtocId) return { type: 'schodyOtoc', id: schodyOtocId };
         const schodisteId = konvaTarget?.getAttr?.('_schodisteId');
         if (schodisteId) return { type: 'schodiste', id: schodisteId };
+        const sloupOtocId = konvaTarget?.getAttr?.('_sloupOtocId');
+        if (sloupOtocId) return { type: 'sloupOtoc', id: sloupOtocId };
         const sloupId = konvaTarget?.getAttr?.('_sloupId');
         if (sloupId) return { type: 'sloup', id: sloupId };
         // Přenesená zvýšená plocha nesmí zakrýt místnost (výběr, přejmenování): kde místnost je, patří klik jí

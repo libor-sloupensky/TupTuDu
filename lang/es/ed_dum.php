@@ -100,6 +100,7 @@ return [
         'otoceni_schodiste' => 'Girar escalera',
         'sloup' => 'Pilar',
         'posun_sloupu' => 'Mover pilar',
+        'otoceni_sloupu' => 'Girar pilar',
         'smazani_sloupu' => 'Eliminar pilar',
         'smazani_strechy' => 'Borrar cubierta',
         'barva_domu' => 'Color de la casa',

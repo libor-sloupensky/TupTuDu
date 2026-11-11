@@ -202,9 +202,11 @@
     .kk-posuvnik::-webkit-scrollbar-thumb:hover { background: #6b7280; background-clip: padding-box; }
     @supports (-moz-appearance: none) { .kk-posuvnik { scrollbar-color: #9ca3af #f3f4f6; } }
     /* Vzorový projekt: výrazná hláška nad plátnem */
-    .tt-vzor-hlaska { display: flex; flex-wrap: wrap; gap: .25rem .5rem; align-items: baseline; padding: .5rem .75rem; font-size: .8rem; line-height: 1.4;
-        background: var(--c-chip); color: var(--c-text); border-left: 4px solid var(--c-primary); border-bottom: 1px solid var(--c-border); }
-    .tt-vzor-hlaska strong { color: var(--c-primary-text); }
+    /* Hláška vzorového projektu: upozornění U1 z grafického manuálu (modules/brand.md), křížkem skrytá do dalšího dne */
+    .tt-vzor-hlaska { margin: 8px 8px 0; padding-right: 44px; }
+    .tt-vzor-zavrit { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: calc(var(--s-radius) * .6);
+        font-size: 20px; line-height: 1; color: var(--c-text-secondary); background: none; border: 0; cursor: pointer; }
+    .tt-vzor-zavrit:hover { color: var(--c-primary); background: var(--c-surface); }
     /* Celá obrazovka: editor přes celé okno, web navigace (hlavička, levé menu, patička) pryč. Jen do reloadu nebo dalšího kliku. */
     .kk-editor.fullscreen { position: fixed; inset: 0; z-index: 9999; }
     body.kk-fullscreen > header,
@@ -239,14 +241,20 @@
          :style="'order:' + (obracene ? 2 : 0) + ';min-width:0;min-height:0'">
         {{-- Vzorový projekt (App\Support\VzorovyProjekt): kopie uživatele je na hraní a v noci se vrátí, šablona se propisuje všem --}}
         @if (($aktivni->vzor ?? null) === 'kopie')
-            <div class="tt-vzor-hlaska" data-vzor-hlaska role="status">
-                <strong>{{ __('ed_sablona.vzor.nadpis') }}</strong>
-                <span>{{ __('ed_sablona.vzor.text') }}</span>
+            <div class="tt-upozorneni tt-vzor-hlaska" data-vzor-hlaska role="status" x-cloak
+                 x-data="{ den: new Date().toLocaleDateString('sv'), get skryta() { try { return this.zavreno || localStorage.getItem('tt_vzor_hlaska_kopie') === this.den } catch (e) { return this.zavreno } }, zavreno: false }" x-show="!skryta">
+                <div class="tt-upozorneni-titulek">{{ __('ed_sablona.vzor.nadpis') }}</div>
+                <p>{{ __('ed_sablona.vzor.text') }}</p>
+                <button type="button" class="tt-vzor-zavrit" data-vzor-zavrit title="{{ __('ed_sablona.vzor.zavrit') }}" aria-label="{{ __('ed_sablona.vzor.zavrit') }}"
+                        @click="zavreno = true; try { localStorage.setItem('tt_vzor_hlaska_kopie', den) } catch (e) {}">&times;</button>
             </div>
         @elseif (($aktivni->vzor ?? null) === 'sablona' && $trasaV3 === 'masterteam.koncept-v3')
-            <div class="tt-vzor-hlaska" data-vzor-hlaska role="status">
-                <strong>Šablona vzorového projektu.</strong>
-                <span>Uživatelé mají její kopii na hraní. Změny tady jim každou noc ve 3:00 jejich času přepíšou kopii. Obrázky do článků se berou odsud.</span>
+            <div class="tt-upozorneni tt-vzor-hlaska" data-vzor-hlaska role="status" x-cloak
+                 x-data="{ den: new Date().toLocaleDateString('sv'), get skryta() { try { return this.zavreno || localStorage.getItem('tt_vzor_hlaska_sablona') === this.den } catch (e) { return this.zavreno } }, zavreno: false }" x-show="!skryta">
+                <div class="tt-upozorneni-titulek">Šablona vzorového projektu.</div>
+                <p>Uživatelé mají její kopii na hraní. Změny tady jim každou noc ve 3:00 jejich času přepíšou kopii. Obrázky do článků se berou odsud.</p>
+                <button type="button" class="tt-vzor-zavrit" data-vzor-zavrit title="{{ __('ed_sablona.vzor.zavrit') }}" aria-label="{{ __('ed_sablona.vzor.zavrit') }}"
+                        @click="zavreno = true; try { localStorage.setItem('tt_vzor_hlaska_sablona', den) } catch (e) {}">&times;</button>
             </div>
         @endif
         {{-- Toolbar — řádek 1: název, 2D/3D, zoom, layout, fullscreen --}}

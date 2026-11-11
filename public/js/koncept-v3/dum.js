@@ -1864,7 +1864,7 @@
             for (const roh of this._rohyVyklenku(this._obrysPodlazi(this.engine.dum.aktivni))) {
                 const c = roh.stred(sirka / 2);
                 const d = Math.hypot(c.x * PX - bod.x, c.y * PX - bod.y);
-                if (d <= dosah && (!nej || d < nej.d)) nej = { d, x: c.x * PX, y: c.y * PX, uhel: roh.uhel };
+                if (d <= dosah && (!nej || d < nej.d)) nej = { d, x: c.x * PX, y: c.y * PX, uhel: roh.uhel, roh: true };
             }
             return nej || { x: bod.x, y: bod.y, uhel };
         },
@@ -2391,7 +2391,15 @@
                 this.renderer.setSelection([]);
                 this.renderer.selectedSloupy.add(hit.id);
                 this.renderer.render();
-                this._domTah = { typ: 'sloup', id: hit.id, x0: s.x, y0: s.y, last: { ...pos }, start: { ...pos }, posun: false };
+                this._domTah = { typ: 'sloup', id: hit.id, x0: s.x, y0: s.y, u0: s.uhel || 0, last: { ...pos }, start: { ...pos }, posun: false };
+                return true;
+            }
+            if (hit.type === 'sloupOtoc') {
+                const s = (this.engine.dum.sloupy || []).find(x => x.id === hit.id);
+                if (!s) return true;
+                const PX = this.engine.PX_PER_M;
+                const stred = { x: s.x * PX, y: -s.y * PX };
+                this._domTah = { typ: 'sloupOtoc', id: hit.id, stred, u0: s.uhel || 0, a0: Math.atan2(pos.y - stred.y, pos.x - stred.x), last: { ...pos }, start: { ...pos }, posun: false };
                 return true;
             }
             if (hit.type === 'schodiste') {
@@ -2447,7 +2455,18 @@
                         const q = this._magnetSloupu({ x: t.x0 * PX + pos.x - t.start.x, y: -t.y0 * PX + pos.y - t.start.y }, s.sirka || SLOUP_SIRKA, e);
                         s.x = q.x / PX;
                         s.y = -q.y / PX;
-                        if (s.tvar !== 'kruh') s.uhel = q.uhel;
+                        // V rohu se srovná s jeho stěnami, jinak drží své natočení
+                        if (q.roh) s.uhel = q.uhel;
+                        else if (typeof t.u0 === 'number') s.uhel = t.u0;
+                    }
+                } else if (t.typ === 'sloupOtoc') {
+                    const s = (this.engine.dum.sloupy || []).find(x => x.id === t.id);
+                    if (s) {
+                        const otoceni = Math.atan2(pos.y - t.stred.y, pos.x - t.stred.x) - t.a0;
+                        let u = t.u0 + Math.atan2(Math.sin(otoceni), Math.cos(otoceni));   // bez skoku přes ±180°
+                        // Magnet na směry stěn, os domu a obrazovky (čtverec je souměrný po 90°)
+                        if (!this._bezMagnetu(e)) u = this._magnetSmeru(u, this._silaUhlu(5));
+                        s.uhel = u;
                     }
                 } else if (t.typ === 'schodyOtoc') {
                     const s = this.engine.dum.schodiste.find(x => x.id === t.id);
@@ -2490,7 +2509,7 @@
             if (!t.posun) return true;
             if (t.typ === 'podklad') { this.podkladUloz?.(); return true; }
             this.renderer._mistnostiCache = null;
-            this._poZmeneDomu(preloz(t.typ === 'schody' ? 'ed_dum.krok.posun_schodiste' : t.typ === 'sloup' ? 'ed_dum.krok.posun_sloupu' : 'ed_dum.krok.otoceni_schodiste'));
+            this._poZmeneDomu(preloz(t.typ === 'schody' ? 'ed_dum.krok.posun_schodiste' : t.typ === 'sloup' ? 'ed_dum.krok.posun_sloupu' : t.typ === 'sloupOtoc' ? 'ed_dum.krok.otoceni_sloupu' : 'ed_dum.krok.otoceni_schodiste'));
             return true;
         },
 
@@ -2689,6 +2708,15 @@
                 r.schodyLayer.add(tvar);
                 const cary = sl.tvar === 'kruh' ? [[obrys[0], obrys[10]], [obrys[5], obrys[15]]] : [[obrys[0], obrys[2]], [obrys[1], obrys[3]]];
                 for (const [a, b] of cary) r.schodyLayer.add(new Konva.Line({ points: [a.x, a.y, b.x, b.y], stroke: barva, strokeWidth: 1, strokeScaleEnabled: false, listening: false }));
+                if (vybrany && !nahled && sl.tvar !== 'kruh') {
+                    const cx = sl.x * PX, cy = -sl.y * PX, roh = obrys[2];
+                    const L = Math.hypot(roh.x - cx, roh.y - cy) || 1, d = L + 16 / s;
+                    const u = { x: cx + (roh.x - cx) / L * d, y: cy + (roh.y - cy) / L * d };
+                    const k = new Konva.Circle({ x: u.x, y: u.y, radius: 9 / s, fill: '#ffffff', stroke: primary, strokeWidth: 1.5, strokeScaleEnabled: false });
+                    k.setAttr('_sloupOtocId', sl.id);
+                    r.schodyLayer.add(k);
+                    popisek(r.schodyLayer, u.x, u.y, '↻', primary, 12);
+                }
             };
             for (const sl of this.engine.dum.sloupy || []) {
                 if (sl.podlazi === aktivni && !this.jeObjektSkryty({ type: 'sloup', id: sl.id })) kresliSloup(sl, r.selectedSloupy.has(sl.id));

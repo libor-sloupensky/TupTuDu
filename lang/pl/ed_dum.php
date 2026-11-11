@@ -100,6 +100,7 @@ return [
         'otoceni_schodiste' => 'Obrót schodów',
         'sloup' => 'Słup',
         'posun_sloupu' => 'Przesunięcie słupa',
+        'otoceni_sloupu' => 'Obrót słupa',
         'smazani_sloupu' => 'Usunięcie słupa',
         'smazani_strechy' => 'Usunięcie dachu',
         'barva_domu' => 'Kolor domu',

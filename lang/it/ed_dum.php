@@ -100,6 +100,7 @@ return [
         'otoceni_schodiste' => 'Rotazione scala',
         'sloup' => 'Colonna',
         'posun_sloupu' => 'Spostamento colonna',
+        'otoceni_sloupu' => 'Rotazione colonna',
         'smazani_sloupu' => 'Eliminazione colonna',
         'smazani_strechy' => 'Eliminazione tetto',
         'barva_domu' => 'Colore casa',

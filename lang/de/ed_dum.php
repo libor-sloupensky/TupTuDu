@@ -100,6 +100,7 @@ return [
         'otoceni_schodiste' => 'Treppe gedreht',
         'sloup' => 'Säule',
         'posun_sloupu' => 'Säule verschoben',
+        'otoceni_sloupu' => 'Säule gedreht',
         'smazani_sloupu' => 'Säule gelöscht',
         'smazani_strechy' => 'Dach gelöscht',
         'barva_domu' => 'Hausfarbe',

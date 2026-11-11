@@ -64,7 +64,22 @@ async function main() {
         kontrola('výrazná hláška o hraní zdarma a noční obnově', editor.hlaska && /zdarma|nic nestojí/i.test(editor.hlaska) && /3:00/.test(editor.hlaska), editor.hlaska);
         kontrola('editor bez limitu úprav, smazání skryté, kresba i podklad šablony', editor.limit && editor.limit.zbyva === null && !editor.smazat && editor.steny > 5 && editor.podklad, JSON.stringify({ limit: editor.limit, smazat: editor.smazat, steny: editor.steny, podklad: editor.podklad }));
         await p.snimek(path.join(vystup, 'vzorovy-projekt.png'));
-        const profil = await p.vyhodnot(`(async () => { const d = ${D}; await new Promise(r => setTimeout(r, 500));
+        // Křížek hlášku schová do dalšího dne (jen v tomhle prohlížeči)
+        const videt = () => p.vyhodnot(`(() => { const h = document.querySelector('[data-vzor-hlaska]'); return !!h && getComputedStyle(h).display !== 'none'; })()`);
+        await p.vyhodnot(`(document.querySelector('[data-vzor-zavrit]').click(), 1)`);
+        await pauza(200);
+        const poKrizku = await videt();
+        await p.jdiNa(ZAKLAD + '/projects/' + kopie[0].kod);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        await pauza(800);
+        const poNacteni = await videt();
+        await p.vyhodnot(`(localStorage.setItem('tt_vzor_hlaska_kopie', '2000-01-01'), 1)`);
+        await p.jdiNa(ZAKLAD + '/projects/' + kopie[0].kod);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        await pauza(2500);
+        const dalsiDen = await videt();
+        kontrola('křížek hlášku skryje, po načtení zůstane skrytá, další den je zpět', !poKrizku && !poNacteni && dalsiDen, JSON.stringify({ poKrizku, poNacteni, dalsiDen }));
+        const profil =await p.vyhodnot(`(async () => { const d = ${D}; await new Promise(r => setTimeout(r, 500));
             const dotazy = performance.getEntriesByType('resource').filter(e => e.name.includes('/land/elevation')).length;
             d._katastrAutosave(); await new Promise(r => setTimeout(r, 2500));
             return { body: d.vyskovyProfil?.body?.length || 0, dotazy }; })()`);

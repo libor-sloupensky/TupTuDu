@@ -100,6 +100,7 @@ return [
         'otoceni_schodiste' => 'Rotation de l’escalier',
         'sloup' => 'Poteau',
         'posun_sloupu' => 'Déplacement du poteau',
+        'otoceni_sloupu' => 'Rotation du poteau',
         'smazani_sloupu' => 'Suppression du poteau',
         'smazani_strechy' => 'Suppression du toit',
         'barva_domu' => 'Couleur de la maison',

@@ -269,6 +269,7 @@ return [
     'vzor' => [
         'nadpis' => 'Projekt przykładowy do zabawy.',
         'text' => 'Próbuj czegokolwiek, zmiany tutaj nic nie kosztują i nie wliczają się do limitu planu. Co noc o 3:00 projekt wraca do stanu wyjściowego, a twoje zmiany zostaną usunięte. To, co chcesz zachować, rób we własnym projekcie.',
+        'zavrit' => 'Ukryj do jutra',
     ],
     'projekt' => [
         'novy_volba' => '— Utwórz nowy projekt —',

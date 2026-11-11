@@ -269,6 +269,7 @@ return [
     'vzor' => [
         'nadpis' => 'Vzorový projekt na hranie.',
         'text' => 'Skúšaj čokoľvek, úpravy tu nič nestoja a nepočítajú sa do limitu tarifu. Každú noc o 3:00 sa projekt vráti do východiskového stavu a tvoje zmeny sa zmažú. Čo si chceš nechať, rob vo vlastnom projekte.',
+        'zavrit' => 'Skryť do zajtra',
     ],
     'projekt' => [
         'novy_volba' => '— Vytvoriť nový koncept —',

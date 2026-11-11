@@ -100,6 +100,7 @@ return [
         'otoceni_schodiste' => 'Otočenie schodiska',
         'sloup' => 'Stĺp',
         'posun_sloupu' => 'Posun stĺpa',
+        'otoceni_sloupu' => 'Otočenie stĺpa',
         'smazani_sloupu' => 'Zmazanie stĺpa',
         'smazani_strechy' => 'Zmazanie strechy',
         'barva_domu' => 'Farba domu',

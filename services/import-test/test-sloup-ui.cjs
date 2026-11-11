@@ -106,6 +106,25 @@ async function main() {
         await tah(await m(10.5, 11.05), await m(11.9, 9.2));
         s = await stav();
         kontrola('tah zpět ke kraji: přichytí se do rohu', s.vRohu && blizko(s.s.x, 12.05, 0.01) && blizko(s.s.y, -9.05, 0.01) && s.hran === 4, JSON.stringify(s.s));
+        // Otáčení kolečkem ↻: o 30° volně, kolem 89° se přichytí na směr stěn
+        const otoc = async (stupnu) => {
+            const b = await p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.sloupy[0]; const PX = d.engine.PX_PER_M;
+                const k = d.renderer.schodyLayer.findOne(n => n.getAttr('_sloupOtocId')); const tr = d.stage.getAbsoluteTransform(); const r = d.stage.container().getBoundingClientRect();
+                const q = tr.point({ x: k.x(), y: k.y() }), c = tr.point({ x: s.x * PX, y: -s.y * PX });
+                const a = Math.atan2(q.y - c.y, q.x - c.x) + ${stupnu} * Math.PI / 180, L = Math.hypot(q.x - c.x, q.y - c.y);
+                return { od: { x: Math.round(r.left + q.x), y: Math.round(r.top + q.y) }, kam: { x: Math.round(r.left + c.x + Math.cos(a) * L), y: Math.round(r.top + c.y + Math.sin(a) * L) }, u0: s.uhel }; })()`);
+            await tah(b.od, b.kam);
+            const u = await p.vyhodnot(`${D}.engine.dum.sloupy[0].uhel`);
+            return { u0: b.u0, u: u, dst: (u - b.u0) * 180 / Math.PI };
+        };
+        const o30 = await otoc(30);
+        kontrola('otočení kolečkem o 30°: drží natočení mimo směry stěn', blizko(o30.dst, 30, 2.5), JSON.stringify(o30));
+        const o87 = await otoc(59);
+        const zbytek = ((o87.u % (Math.PI / 2)) + Math.PI / 2) % (Math.PI / 2);
+        kontrola('k 89° od stěny se přichytí přesně na její směr', Math.min(zbytek, Math.PI / 2 - zbytek) < 1e-6, JSON.stringify(o87));
+        const poTahu = await p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.sloupy[0]; return { u: s.uhel, hran: d._strechaVypocet().hrany.length }; })()`);
+        kontrola('otočený sloup v rohu dál nese střechu', poTahu.hran === 4, JSON.stringify(poTahu));
+        await p.vyhodnot(`(() => { const d = ${D}; d.undo(); d.undo(); return 1; })()`);
         const zpet = await p.vyhodnot(`(() => { const d = ${D}; d.undo(); const po = { ...d.engine.dum.sloupy[0] }; d.redo(); return po; })()`);
         kontrola('Zpět vrátí sloup před tahem', blizko(zpet.y, -11.05, 0.05), JSON.stringify(zpet));
 

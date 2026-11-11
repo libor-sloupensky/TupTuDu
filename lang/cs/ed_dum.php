@@ -100,6 +100,7 @@ return [
         'otoceni_schodiste' => 'Otočení schodiště',
         'sloup' => 'Sloup',
         'posun_sloupu' => 'Posun sloupu',
+        'otoceni_sloupu' => 'Otočení sloupu',
         'smazani_sloupu' => 'Smazání sloupu',
         'smazani_strechy' => 'Smazání střechy',
         'barva_domu' => 'Barva domu',
