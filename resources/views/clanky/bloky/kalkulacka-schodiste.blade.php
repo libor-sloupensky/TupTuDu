@@ -74,6 +74,13 @@
                 <label for="schod-sirka">{{ __('clanky.schod_sirka') }}</label>
                 <input type="number" inputmode="decimal" id="schod-sirka" data-pole="sirka" data-meritko="0.01" value="{{ $vlastni['sirka'] ?? 100 }}" min="60" max="250" step="5">
             </div>
+            <div data-jen="Lz Uz" hidden>
+                <label for="schod-zatacka">{{ __('clanky.schod_zatacka') }}</label>
+                <select id="schod-zatacka" data-pole="zatacka">
+                    <option value="osa">{{ __('clanky.schod_zatacka_osa') }}</option>
+                    <option value="rozlozene">{{ __('clanky.schod_zatacka_rozlozene') }}</option>
+                </select>
+            </div>
             <div data-jen="tocite" hidden>
                 <label for="schod-prumer">{{ __('clanky.schod_prumer') }}</label>
                 <input type="number" inputmode="decimal" id="schod-prumer" data-pole="prumer" data-meritko="0.01" value="{{ $vlastni['prumer'] ?? 200 }}" min="120" max="300" step="10">
@@ -87,7 +94,7 @@
             <div class="tt-kalkulacka-popisek">{{ __('clanky.kalk_vysledek') }}</div>
             <dl class="tt-kalkulacka-souhrn">
                 @foreach ($vysledky as [$klic, $popisek, $jednotka, $stav, $jen])
-                    <div @if ($jen) data-jen="{{ $jen }}" hidden @endif @if (in_array($klic, ['merena', 'nejuzsi'])) data-zatacka @endif>
+                    <div @if ($jen) data-jen="{{ $jen }}" hidden @endif @if (in_array($klic, ['merena', 'nejuzsi'])) data-zatacka @endif data-radek="{{ $klic }}">
                         <dt>{{ $popisek }}</dt>
                         <dd>
                             <strong data-v="{{ $klic }}">–</strong> {{ $jednotka }}

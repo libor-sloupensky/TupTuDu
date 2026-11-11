@@ -24,7 +24,7 @@
  * Délky v metrech. Půdorys: první rameno ve směru x od nástupu v [0, 0], zatáčí se ke kladnému y.
  */
 (function (koren) {
-    const VYCHOZI = { vyska: 2.9, tvar: 'prime', sirka: 1.0, cilova: 0.175, prumer: 2.0 };   // šířka 1 m jako v editoru
+    const VYCHOZI = { vyska: 2.9, tvar: 'prime', sirka: 1.0, cilova: 0.175, prumer: 2.0, zatacka: 'osa' };   // šířka 1 m jako v editoru
     // Česko: naslapMin a zakrivMin z vyhlášky 146/2024 Sb. (příloha 4, rodinný dům), ostatní doporučuje ČSN 73 4130
     // (modules/stavebni-parametry.md). Verze pro jinou zemi je přepíše parametry bloku (data-limity), naslapMin 0
     // vypne přidávání výšek.
@@ -132,8 +132,10 @@
     /**
      * Zabíhající stupně do L (čtvrtobrat) a do U (půlobrat), bez odpočívadla. Výstupní čára je v zatáčce oblouk kolem
      * vnitřního rohu. Vrací null, když se zatáčka do schodů nevejde (moc široké rameno na málo stupňů).
+     * zatacka 'osa': stupně v zatáčce se sbíhají do osy zatáčky (vnitřního rohu), jak se běžně stavějí;
+     * 'rozlozene': zúžení se rozloží rovnoměrně na stupně kolem zatáčky (vyrovnávané stupně, širší u vnitřní hrany).
      */
-    function zabihajici(N, b, sir, tvar) {
+    function zabihajici(N, b, sir, tvar, zatacka) {
         const U = tvar === 'Uz';
         const d = odstupVystupni(sir), r = sir - d;
         const T = (U ? Math.PI : Math.PI / 2) * r;          // délka výstupní čáry v zatáčce
@@ -151,16 +153,23 @@
         const vnejsi = U ? [[0, 0], [a1 + sir, 0], [a1 + sir, 2 * sir], [a1 - a2, 2 * sir]] : [[0, 0], [a1 + sir, 0], [a1 + sir, sir + a2]];
         const rohyVen = U ? [[a1 + sir, [a1 + sir, 0]], [a1 + 3 * sir, [a1 + sir, 2 * sir]]] : [[a1 + sir, [a1 + sir, 0]]];
 
-        // Zúžení na vnitřní hraně: m stupňů kolem zatáčky, každý tam má šířku c = b − T / m
-        let m = Math.min(N, Math.ceil(T / Math.max(1e-6, b - CIL_UZKY) - 1e-9));
-        let iA;
-        for (;;) {
-            iA = omez(Math.round((a1 + T / 2) / b - m / 2), 0, N - m);
-            if ((iA * b <= a1 + 1e-9 && (iA + m) * b >= a1 + T - 1e-9) || m >= N) break;
-            m++;
+        let u, m;
+        if (zatacka === 'rozlozene') {
+            // Zúžení na vnitřní hraně: m stupňů kolem zatáčky, každý tam má šířku c = b − T / m
+            m = Math.min(N, Math.ceil(T / Math.max(1e-6, b - CIL_UZKY) - 1e-9));
+            let iA;
+            for (;;) {
+                iA = omez(Math.round((a1 + T / 2) / b - m / 2), 0, N - m);
+                if ((iA * b <= a1 + 1e-9 && (iA + m) * b >= a1 + T - 1e-9) || m >= N) break;
+                m++;
+            }
+            const sA = iA * b, sB = (iA + m) * b, uA = sA, uB = sB - T;
+            u = (s) => (s <= sA ? s : s >= sB ? s - T : uA + (s - sA) * (uB - uA) / (sB - sA));
+        } else {
+            // Kolem osy: v zatáčce vedou všechny hrany stupňů z vnitřního rohu
+            u = (s) => (s <= a1 ? s : s >= a1 + T ? s - T : a1);
+            m = Math.ceil((a1 + T) / b - 1e-9) - Math.floor(a1 / b + 1e-9);
         }
-        const sA = iA * b, sB = (iA + m) * b, uA = sA, uB = sB - T;
-        const u = (s) => (s <= sA ? s : s >= sB ? s - T : uA + (s - sA) * (uB - uA) / (sB - sA));
 
         const hrany = [];
         for (let k = 0; k <= N; k++) {
@@ -173,11 +182,13 @@
         let nejuzsi = Infinity, poradi = true;
         for (let k = 0; k < N; k++) {
             const h0 = hrany[k], h1 = hrany[k + 1];
-            const body = [h0.vnitrni];
-            if (h0.u < a1 - 1e-9 && h1.u > a1 + 1e-9) body.push([a1, sir]);
-            body.push(h1.vnitrni, h1.venku);
-            rohyVen.filter(([p]) => p > h0.param + 1e-9 && p < h1.param - 1e-9).reverse().forEach(([, bod]) => body.push(bod));
-            body.push(h0.venku);
+            const body = [];
+            const pridej = (q) => { const z = body[body.length - 1]; if (!z || Math.hypot(z[0] - q[0], z[1] - q[1]) > 1e-9) body.push(q); };
+            pridej(h0.vnitrni);
+            if (h0.u < a1 - 1e-9 && h1.u > a1 + 1e-9) pridej([a1, sir]);
+            pridej(h1.vnitrni); pridej(h1.venku);
+            rohyVen.filter(([p]) => p > h0.param + 1e-9 && p < h1.param - 1e-9).reverse().forEach(([, bod]) => pridej(bod));
+            pridej(h0.venku);
             polygony.push({ body });
             nejuzsi = Math.min(nejuzsi, h1.u - h0.u);
             if (h1.param <= h0.param + 1e-6) poradi = false;
@@ -232,11 +243,12 @@
         const h = H / n;
         const b = naslap(n);
         let p = null, sirka = v.sirka, nelze = false;
+        const zabiha = tvar === 'Lz' || tvar === 'Uz';
         if (tvar === 'tocite') {
             p = tocite(n - 1, b, v.prumer);
             sirka = p.sir;
         } else if (tvar === 'Lz' || tvar === 'Uz') {
-            p = zabihajici(n - 1, b, v.sirka, tvar);
+            p = zabihajici(n - 1, b, v.sirka, tvar, v.zatacka);
             // Zatáčka se nevejde: nákres ukáže schody s odpočívadlem a výsledek upozorní
             if (!p) { nelze = true; p = sOdpocivadly(n, b, v.sirka, tvar === 'Lz' ? 'L' : 'U'); }
         } else {
@@ -246,7 +258,8 @@
         const useky = p.casti.flatMap((c, i) => [...(i > 0 ? [v.sirka] : []), ...Array(c).fill(b)]).filter((x) => x > 0);
         const rameno = Math.max(...p.casti) + 1;   // výšek v nejdelším rameni: jeho nášlapy a krok na odpočívadlo nebo podlahu
         const podchod = p.otacka ? p.otacka * h - TL_STUPNE : null;
-        const nejuzsi = nelze ? null : p.nejuzsi ?? null;
+        // Kolem osy se stupně sbíhají do bodu, nejužší místo je osa sama
+        const nejuzsi = nelze || (zabiha && v.zatacka !== 'rozlozene') ? null : p.nejuzsi ?? null;
         // Zakřivená ramena: nášlap tam, kde ho měří vyhláška (do 1,1 m na výstupní čáře 0,4 m od vnějšího okraje)
         const zakrivene = !nelze && (tvar === 'Lz' || tvar === 'Uz' || tvar === 'tocite');
         const uzke = sirka <= ZAKRIV_UZKE + 1e-9;
@@ -363,6 +376,7 @@
             blok.querySelectorAll('[data-nelze]').forEach((e) => { e.hidden = !r.nelze; });
             // Zatáčka se nevejde: nejužší místo ani nášlap v zatáčce nemá smysl ukazovat
             if (r.nelze) blok.querySelectorAll('[data-zatacka]').forEach((e) => { e.hidden = true; });
+            if (r.nejuzsi === null) blok.querySelectorAll('[data-radek="nejuzsi"]').forEach((e) => { e.hidden = true; });
             const mm = (x) => cislo(x * 1000);
             zapis('n', cislo(r.n));
             zapis('h', mm(r.h));

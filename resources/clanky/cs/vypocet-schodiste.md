@@ -1,7 +1,7 @@
 ---
 titulek: Výpočet schodiště: výška schodu, vzorec a kalkulačka
 klicove_slovo: výpočet schodiště
-popis: Zadej výšku od podlahy k podlaze a hned uvidíš počet stupňů, výšku schodu, nášlap i délku ramene. Se vzorcem 2h + b = 630 mm a doporučeními pro Česko.
+popis: Kalkulačka schodiště pro přímé, lomené do L a do U, se zabíhajícími stupni i točité. Počet a výška stupňů, nášlap podle vyhlášky a nákres v měřítku.
 perex: Výpočet schodiště začíná výškou od podlahy dole k podlaze nahoře. Vyděl ji asi 175 mm a zaokrouhli na celý počet výšek, šířku stupně (nášlap) dopočítáš ze vzorce 2h + b = 630 mm. V Česku musí nášlap v rodinném domě vyjít aspoň 275 mm. Pro 2,90 m vyjde 17 výšek po 171 mm, nášlap 289 mm a přímé rameno dlouhé asi 4,6 m.
 publikovano: 2026-11-11
 overeno: 2026-11-11
@@ -24,7 +24,7 @@ souvisejici: jak-nakreslit-pudorys-domu, minimalni-rozmery-mistnosti
 ---
 ::kalkulacka-schodiste
 
-Zadej výšku od hotové podlahy dole k hotové podlaze nahoře, ne světlou výšku místnosti, ta je menší o strop.
+Kalkulačka počítá přímé schody, lomené do L a do U s odpočívadly i se zabíhajícími stupni a točité schody. Zadej výšku od hotové podlahy dole k hotové podlaze nahoře, ne světlou výšku místnosti, ta je menší o strop.
 
 ## Vzorec pro výpočet schodiště
 

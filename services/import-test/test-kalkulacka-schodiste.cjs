@@ -92,23 +92,23 @@ const prekryvHran = (body) => {
     return false;
 };
 let geoChyb = 0, geoPripadu = 0;
-for (const tvar of ['Lz', 'Uz']) {
+for (const [tvar, zatacka] of [['Lz', 'osa'], ['Uz', 'osa'], ['Lz', 'rozlozene'], ['Uz', 'rozlozene']]) {
     for (const vyska of [2.5, 2.7, 2.9, 3.05, 3.2, 3.5]) {
         for (const sirka of [0.8, 0.9, 1.0, 1.2, 1.5]) {
             for (const cilova of [0.16, 0.175, 0.19]) {
                 geoPripadu++;
-                const k = Kalkulacka.spocitej({ vyska, tvar, sirka, cilova });
+                const k = Kalkulacka.spocitej({ vyska, tvar, sirka, cilova, zatacka });
                 if (k.nelze) continue;
                 const p = k.pudorys;
                 const soucet = p.polygony.reduce((s, o) => s + plocha(o.body), 0);
                 const vadne = p.polygony.filter((o) => plocha(o.body) < 0.02 || prekryvHran(o.body)).length;
                 // Plocha stupňů = obálka bez vnitřního rohu (L), u U bez ničeho (ramena těsně vedle sebe)
                 const ocekavana = tvar === 'Lz' ? p.delka * p.sirka - (p.delka - sirka) * (p.sirka - sirka) : p.delka * p.sirka;
-                const ok = p.platne && !vadne && p.polygony.length === k.n - 1 && Math.abs(soucet - ocekavana) < 1e-6 && k.nejuzsi > 0
+                const ok = p.platne && !vadne && p.polygony.length === k.n - 1 && Math.abs(soucet - ocekavana) < 1e-6 && (zatacka === 'osa' ? k.nejuzsi === null : k.nejuzsi > 0)
                     && k.merenaOk === (sirka <= 1.1 ? k.b >= 0.275 - 1e-9 : k.merena >= 0.18 - 1e-9);
                 if (!ok) {
                     geoChyb++;
-                    if (geoChyb <= 8) console.log(`   CHYBA ${tvar} H=${vyska} š=${sirka} h0=${cilova}: pořadí ${p.platne}, vadných ${vadne}, stupňů ${p.polygony.length}/${k.n - 1}, plocha ${soucet.toFixed(3)} / ${ocekavana.toFixed(3)}, nejužší ${k.nejuzsi?.toFixed(3)}`);
+                    if (geoChyb <= 8) console.log(`   CHYBA ${tvar} ${zatacka} H=${vyska} š=${sirka} h0=${cilova}: pořadí ${p.platne}, vadných ${vadne}, stupňů ${p.polygony.length}/${k.n - 1}, plocha ${soucet.toFixed(3)} / ${ocekavana.toFixed(3)}, nejužší ${k.nejuzsi?.toFixed(3)}`);
                 }
             }
         }
@@ -117,11 +117,11 @@ for (const tvar of ['Lz', 'Uz']) {
 console.log(`   ${geoChyb ? 'CHYBA' : 'OK  '} zabíhající stupně: ${geoPripadu} kombinací bez překřížených a prázdných stupňů, plocha sedí, nášlap v místě měření podle vyhlášky`);
 chyb += geoChyb;
 
-const lz = Kalkulacka.spocitej({ tvar: 'Lz' }), lPod = Kalkulacka.spocitej({ tvar: 'L' });
-const uz = Kalkulacka.spocitej({ tvar: 'Uz' }), uPod = Kalkulacka.spocitej({ tvar: 'U' });
-const zabihaOk = lz.merenaOk && uz.merenaOk && lz.nejuzsi >= 0.15 - 1e-9
+const lz = Kalkulacka.spocitej({ tvar: 'Lz', zatacka: 'rozlozene' }), lPod = Kalkulacka.spocitej({ tvar: 'L' }), lOsa = Kalkulacka.spocitej({ tvar: 'Lz' });
+const uz = Kalkulacka.spocitej({ tvar: 'Uz', zatacka: 'rozlozene' }), uPod = Kalkulacka.spocitej({ tvar: 'U' });
+const zabihaOk = lOsa.nejuzsi === null && lOsa.merenaOk && lOsa.pudorys.delka === lz.pudorys.delka && lz.merenaOk && uz.merenaOk && lz.nejuzsi >= 0.15 - 1e-9
     && lz.pudorys.delka + lz.pudorys.sirka < lPod.pudorys.delka + lPod.pudorys.sirka && uz.pudorys.delka < uPod.pudorys.delka;
-console.log(`   ${zabihaOk ? 'OK  ' : 'CHYBA'} výchozí zabíhající: nejužší L ${(lz.nejuzsi * 1000).toFixed(0)} mm, U ${(uz.nejuzsi * 1000).toFixed(0)} mm; půdorys L ${lz.pudorys.delka.toFixed(2)} × ${lz.pudorys.sirka.toFixed(2)} (s odpočívadlem ${lPod.pudorys.delka.toFixed(2)} × ${lPod.pudorys.sirka.toFixed(2)}), U ${uz.pudorys.delka.toFixed(2)} × ${uz.pudorys.sirka.toFixed(2)} (${uPod.pudorys.delka.toFixed(2)} × ${uPod.pudorys.sirka.toFixed(2)})`);
+console.log(`   ${zabihaOk ? 'OK  ' : 'CHYBA'} zabíhající: kolem osy (výchozí) bez nejužšího místa, rozložené nejužší L ${(lz.nejuzsi * 1000).toFixed(0)} mm, U ${(uz.nejuzsi * 1000).toFixed(0)} mm; půdorys L ${lz.pudorys.delka.toFixed(2)} × ${lz.pudorys.sirka.toFixed(2)} (s odpočívadlem ${lPod.pudorys.delka.toFixed(2)} × ${lPod.pudorys.sirka.toFixed(2)}), U ${uz.pudorys.delka.toFixed(2)} × ${uz.pudorys.sirka.toFixed(2)} (${uPod.pudorys.delka.toFixed(2)} × ${uPod.pudorys.sirka.toFixed(2)})`);
 if (!zabihaOk) chyb++;
 
 // Točité: průměr 1,6 m na 2,90 m nesplní podchodnou výšku, 2 m ano; výstupní čára 0,6 m od středu
