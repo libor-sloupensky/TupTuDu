@@ -29,7 +29,13 @@ function uklidStareKoncepty() {
     if (uklizeno) return;
     uklizeno = true;
     try {
-        spawn('php', ['artisan', 'koncepty:uklid-testu'], { cwd: path.join(__dirname, '../..'), stdio: 'ignore', detached: true, windowsHide: true })
+        // COLUMNS a LINES: odpojený proces nemá konzoli a Symfony Console by si rozměry zjišťovalo přes
+        // `cmd /c stty` a `cmd /c mode CON`. Ty si založí novou konzoli, která na Windows 11 problikne
+        // jako okno Terminalu přes rozepsanou práci (a na okamžik sebere fokus klávesnice).
+        spawn('php', ['artisan', 'koncepty:uklid-testu'], {
+            cwd: path.join(__dirname, '../..'), stdio: 'ignore', detached: true, windowsHide: true,
+            env: { ...process.env, COLUMNS: '120', LINES: '50' },
+        })
             .on('error', () => {}).unref();
     } catch { /* úklid je jen úklid, test kvůli němu nepadá */ }
 }
