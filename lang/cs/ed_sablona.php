@@ -100,6 +100,9 @@ return [
     ],
     // Sloup: nový a panel vybraného
     'sloup' => [
+        'tvar' => 'Tvar',
+        'strana' => 'Strana',
+        'prumer' => 'Průměr',
         'nazev' => 'Sloup',
         'novy' => 'Nový sloup',
         'klepni' => 'Klepni, kam sloup postavit. V rohu výklenku (krytý vstup, terasa) se sám přichytí.',

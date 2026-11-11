@@ -83,7 +83,7 @@ async function main() {
         await pauza(200);
         s = await stav();
         kontrola('30 cm: sloup zůstane lícovat v rohu', blizko(s.s.sirka, 0.3, 1e-9) && blizko(s.s.x, 12.0, 0.01) && blizko(s.s.y, -9.0, 0.01) && s.hran === 4, JSON.stringify(s.s));
-        await pole('[data-sloup-tvar]', 'kruh');
+        await p.vyhodnot(`(document.querySelector('[data-sloup-tvar=kruh]').click(), 1)`);
         await pauza(150);
         s = await stav();
         kontrola('kulatý sloup', s.s.tvar === 'kruh', s.s.tvar);

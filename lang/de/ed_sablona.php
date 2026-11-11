@@ -100,6 +100,9 @@ return [
     ],
     // Sloup: nový a panel vybraného
     'sloup' => [
+        'tvar' => 'Form',
+        'strana' => 'Seite',
+        'prumer' => 'Durchmesser',
         'nazev' => 'Säule',
         'novy' => 'Neue Säule',
         'klepni' => 'Klicke, wo die Säule stehen soll. In der Ecke einer Nische (überdachter Eingang, Terrasse) rastet sie von selbst ein.',

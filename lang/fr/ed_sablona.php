@@ -100,6 +100,9 @@ return [
     ],
     // Sloup: nový a panel vybraného
     'sloup' => [
+        'tvar' => 'Forme',
+        'strana' => 'Côté',
+        'prumer' => 'Diamètre',
         'nazev' => 'Poteau',
         'novy' => 'Nouveau poteau',
         'klepni' => 'Cliquez à l’endroit où placer le poteau. Dans l’angle d’un renfoncement (entrée couverte, terrasse), il s’accroche tout seul.',

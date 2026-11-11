@@ -100,6 +100,9 @@ return [
     ],
     // Sloup: nový a panel vybraného
     'sloup' => [
+        'tvar' => 'Kształt',
+        'strana' => 'Bok',
+        'prumer' => 'Średnica',
         'nazev' => 'Słup',
         'novy' => 'Nowy słup',
         'klepni' => 'Kliknij, gdzie postawić słup. W narożniku wnęki (zadaszone wejście, taras) sam się przyciągnie.',

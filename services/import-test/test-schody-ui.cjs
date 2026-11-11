@@ -90,7 +90,7 @@ async function main() {
         kontrola('prázdné pole vrátí výpočet', g.n === 17 && blizko(g.b, 0.63 - 2 * g.v, 0.001), JSON.stringify({ n: g.n, b: g.b }));
 
         console.log('\n3) Do L a do U s částmi');
-        await pole('[data-schody-tvar]', 'L');
+        await p.vyhodnot(`(document.querySelector('[data-schody-tvar=L]').click(), 1)`);
         await pauza(200);
         g = await geo();
         kontrola('L: součet částí n − 2, jedno odpočívadlo, poslední stupeň pod podlahou', g.casti.length === 2 && g.casti[0] + g.casti[1] === g.n - 2 && g.podest === 1 && blizko(g.zPosl + g.v, g.H, 1e-6), JSON.stringify(g));
@@ -102,7 +102,7 @@ async function main() {
         await pauza(200);
         g = await geo();
         kontrola('L: první část 5, zbytek do druhé', g.casti[0] === 5 && g.casti[1] === g.n - 7, JSON.stringify(g.casti));
-        await pole('[data-schody-tvar]', 'U');
+        await p.vyhodnot(`(document.querySelector('[data-schody-tvar=U]').click(), 1)`);
         await pauza(200);
         g = await geo();
         kontrola('U výchozí: prostřední 0, jedno široké odpočívadlo, stupně vyjdou na podlahu', g.casti.length === 3 && g.casti[1] === 0 && g.casti[0] + g.casti[2] === g.n - 2 && g.podest === 1 && blizko(g.zPosl + g.v, g.H, 1e-6) && g.obrys >= 4, JSON.stringify(g));
@@ -140,7 +140,7 @@ async function main() {
         await pauza(400);
 
         console.log('\n5) Otáčení a tah schodů');
-        await pole('[data-schody-tvar]', 'prime');
+        await p.vyhodnot(`(document.querySelector('[data-schody-tvar=prime]').click(), 1)`);
         await pauza(250);
         const uchop = await p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.schodiste[0]; const g = window.DumGeo.schodyGeo(s, d._vyskaMeziPodlazimi(s), 80); const xs = g.obrys.map(q => q.x), ys = g.obrys.map(q => q.y); return { u: g.uchop, stred: { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 } }; })()`);
         // Tah úchopem po kružnici kolem středu tak, aby výsledný úhel vyšel kousek vedle šikmé stěny (25°)

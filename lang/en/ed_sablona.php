@@ -100,6 +100,9 @@ return [
     ],
     // Sloup: nový a panel vybraného
     'sloup' => [
+        'tvar' => 'Shape',
+        'strana' => 'Side',
+        'prumer' => 'Diameter',
         'nazev' => 'Column',
         'novy' => 'New column',
         'klepni' => 'Click where to place the column. In the corner of a recess (covered entrance, terrace) it snaps into place.',

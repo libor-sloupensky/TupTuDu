@@ -100,6 +100,9 @@ return [
     ],
     // Sloup: nový a panel vybraného
     'sloup' => [
+        'tvar' => 'Forma',
+        'strana' => 'Lato',
+        'prumer' => 'Diametro',
         'nazev' => 'Colonna',
         'novy' => 'Nuova colonna',
         'klepni' => 'Fai clic dove vuoi mettere la colonna. Nell’angolo di una rientranza (ingresso coperto, terrazza) si aggancia da sola.',

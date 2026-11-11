@@ -157,18 +157,18 @@
     .kk-barva-vzorek span { font-size: 10px; line-height: 14px; padding: 0 4px; margin-bottom: 3px; border-radius: 3px; background: rgba(255,255,255,.85); color: #374151; }
     .kk-barva-vzorek button { cursor: pointer; }
     .kk-barva-kod { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 8px; color: var(--c-text); }
-    .kk-barva-hex { width: 9ch; padding: 1px 4px; border: 1px solid #9ca3af; border-radius: 4px; font: inherit; font-variant-numeric: tabular-nums; color: var(--c-text); background: var(--c-surface); }
-    .kk-barva-posuvnik { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 12px; font-weight: 400; color: #6b7280; }
+    .kk-barva-hex { width: 9ch; padding: 1px 4px; border: 1px solid var(--c-input-border); border-radius: 4px; font: inherit; font-variant-numeric: tabular-nums; color: var(--c-text); background: var(--c-surface); }
+    .kk-barva-posuvnik { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 12px; font-weight: 400; color: var(--c-text-secondary); }
     .kk-barva-posuvnik > span { display: flex; justify-content: space-between; }
     .kk-barva-posuvnik output { color: var(--c-text); font-variant-numeric: tabular-nums; }
     .kk-barva-posuvnik input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; margin: 0; padding: 0; border-radius: 7px; border: 1px solid #9ca3af; cursor: pointer; }
     .kk-barva-posuvnik input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #374151; }
     .kk-barva-posuvnik input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid #374151; }
     .kk-barva-posuvnik input[type=range]::-moz-range-track { background: transparent; }
-    .kk-podlazi-uprava select { height: 24px; margin: 0; color: var(--c-text); font-size: 12px; padding: 0 4px; border: 1px solid #6b7280; border-radius: 4px; }
-    .kk-podlazi-pole label, .kk-podlazi-pole { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 400; margin: 0; color: #6b7280; }
+    .kk-podlazi-uprava select { height: 24px; margin: 0; color: var(--c-text); font-size: 12px; padding: 0 4px; border: 1px solid var(--c-input-border); border-radius: var(--s-radius); }
+    .kk-podlazi-pole label, .kk-podlazi-pole { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 400; margin: 0; color: var(--c-text-secondary); }
     .kk-dum-zprava { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 20; max-width: 80%; background: var(--c-text, #2a2a2a); color: var(--c-surface); border-radius: 6px; padding: 6px 12px; font-size: 12px; }
-    .kk-paleta-krytina { width: 22px; height: 22px; border-radius: 4px; border: 1px solid #9ca3af; padding: 0; }
+    .kk-paleta-krytina { width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--c-input-border); padding: 0; }
     .kk-paleta-krytina.kk-aktivni { outline: 2px solid var(--c-primary); outline-offset: 1px; }
     /* Formuláře editoru. app.css dává polím a nápisům spodní okraj pro formuláře webu; v řádku editoru
        by pole sedělo o 8 px výš než text a selecty vedle něj. Zarovnání hlídá test-formulare-ui.cjs. */
@@ -180,9 +180,45 @@
     #kk-panel-otvoru input[type=number], #kk-panel-otvoru select { height: 24px; font-size: 12px; line-height: 22px; padding-top: 0; padding-bottom: 0; }
     #kk-panel-otvoru input[type=checkbox] { width: 13px; height: 13px; margin: 0; }
     /* Globální label (app.css) je tučný, blokový a s okrajem — v panelu má být jako ostatní popisky */
-    #kk-panel-otvoru label { display: inline-flex; align-items: center; font-size: 12px; font-weight: 400; margin: 0; color: #6b7280; }
+    #kk-panel-otvoru label { display: inline-flex; align-items: center; font-size: 12px; font-weight: 400; margin: 0; color: var(--c-text-secondary); }
     #kk-panel-otvoru button { height: 24px; font-size: 12px; line-height: 22px; padding-top: 0; padding-bottom: 0; }
     #kk-panel-otvoru .flex.items-center { min-height: 26px; }
+    /* ── Prvky panelů podle grafického manuálu (modules/brand.md, Prvky aplikace, Libor 11. 11. 2026) ──
+       Pole a seznamy I1, tlačítka „běžné“ s obrysem, mazání tiché s křížkem, ano/ne jako přepínač,
+       volba ze dvou až tří jako díly stejné šířky. Barvy jen z proměnných, platí i pro tmavý režim. */
+    #kk-panel-otvoru input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]), #kk-panel-otvoru select,
+    .kk-section input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]), .kk-section select {
+        border: 1px solid var(--c-input-border); background-color: var(--c-input); color: var(--c-text); border-radius: var(--s-radius); }
+    #kk-panel-otvoru input:not([type=checkbox]):focus, #kk-panel-otvoru select:focus, .kk-section input:not([type=checkbox]):focus, .kk-section select:focus {
+        outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 1px var(--c-primary); }
+    #kk-panel-otvoru button.border, .kk-section button.border { border-color: var(--c-border-strong); border-radius: var(--s-radius); background-color: transparent; color: var(--c-text); }
+    #kk-panel-otvoru button.border:hover:not(:disabled), .kk-section button.border:hover:not(:disabled) { border-color: var(--c-primary); color: var(--c-primary); background-color: var(--c-primary-10); }
+    .kk-smazat { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--s-radius);
+        background: none; color: var(--c-text-secondary); cursor: pointer; }
+    .kk-smazat:hover { color: var(--c-error); background: color-mix(in srgb, var(--c-error) 10%, transparent); }
+    #kk-panel-otvoru label > input[type=checkbox] { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 26px; height: 15px; margin: 0 6px 0 0;
+        border-radius: 8px; background: var(--c-border-strong); position: relative; cursor: pointer; transition: background .15s; }
+    #kk-panel-otvoru label > input[type=checkbox]::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%;
+        background: var(--c-surface); transition: transform .15s; }
+    #kk-panel-otvoru label > input[type=checkbox]:checked { background: var(--c-primary); }
+    #kk-panel-otvoru label > input[type=checkbox]:checked::after { transform: translateX(11px); }
+    #kk-panel-otvoru label > input[type=checkbox]:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
+    .kk-dily { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; height: 24px; border: 1px solid var(--c-border-strong);
+        border-radius: var(--s-radius); overflow: hidden; background: var(--c-surface); }
+    #kk-panel-otvoru .kk-dily > button, .kk-dily > button { height: 22px; padding: 0 10px; border: 0; background: none; color: var(--c-text-secondary);
+        font-size: 12px; white-space: nowrap; cursor: pointer; }
+    .kk-dily > button + button { border-left: 1px solid var(--c-border-strong); }
+    .kk-dily > button:hover:not(.kk-zap), #kk-panel-otvoru .kk-dily > button:hover:not(.kk-zap) { background: var(--c-primary-10); color: var(--c-primary); }
+    .kk-dily > button.kk-zap, #kk-panel-otvoru .kk-dily > button.kk-zap { background: var(--c-primary); color: var(--c-on-primary); }
+    /* Nápisy v jednom sloupci, pole pod sebou */
+    .kk-mrizka { display: grid; grid-template-columns: max-content max-content; gap: 6px 10px; align-items: center; }
+    .kk-mrizka > * { justify-self: start; }
+    /* Pole s jednotkou uvnitř (I1) */
+    .kk-pole-jed { display: inline-flex; align-items: center; height: 24px; border: 1px solid var(--c-input-border); border-radius: var(--s-radius);
+        background: var(--c-input); overflow: hidden; }
+    .kk-pole-jed:focus-within { border-color: var(--c-primary); box-shadow: 0 0 0 1px var(--c-primary); }
+    #kk-panel-otvoru .kk-pole-jed input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]), .kk-section .kk-pole-jed input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]) { width: 48px; height: 22px; border: 0; border-radius: 0; background: none; box-shadow: none; padding: 0 2px 0 8px; }
+    .kk-pole-jed > span { padding: 0 8px 0 2px; color: var(--c-text-secondary); }
     @keyframes kk-blik {
         0%  { animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
         15% { color: var(--c-primary); background-color: color-mix(in srgb, var(--c-primary) 14%, transparent);
@@ -521,11 +557,11 @@
                     <div class="p-2 flex flex-col gap-1">
                         <div class="flex items-center gap-2">
                             <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.schody.nove') }}</span>
-                            <select x-model="schodyTvar" class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto">
-                                <option value="prime">{{ __('ed_sablona.schody.tvar_prime') }}</option>
-                                <option value="L">{{ __('ed_sablona.schody.tvar_l') }}</option>
-                                <option value="U">{{ __('ed_sablona.schody.tvar_u') }}</option>
-                            </select>
+                            <div class="kk-dily ml-auto" role="group">
+                                <button type="button" :class="schodyTvar === 'prime' && 'kk-zap'" @click="schodyTvar = 'prime'">{{ __('ed_sablona.schody.tvar_prime') }}</button>
+                                <button type="button" :class="schodyTvar === 'L' && 'kk-zap'" @click="schodyTvar = 'L'">{{ __('ed_sablona.schody.tvar_l') }}</button>
+                                <button type="button" :class="schodyTvar === 'U' && 'kk-zap'" @click="schodyTvar = 'U'">{{ __('ed_sablona.schody.tvar_u') }}</button>
+                            </div>
                         </div>
                         <div class="text-gray-500" x-text="schodyStart ? preloz('ed_sablona.schody.klepni_smer') : preloz('ed_sablona.schody.klepni_zacatek')"></div>
                     </div>
@@ -586,12 +622,11 @@
                     <div class="p-2 flex flex-col gap-1">
                         <div class="flex items-center gap-2">
                             <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.otvor.novy') }}</span>
-                            <select x-model="otvorTyp" @change="otvorSirka = { dvere: 0.9, okno: 1.2, pruchod: 0.9 }[otvorTyp] || otvorSirka; ulozitNastaveni()"
-                                    class="border border-gray-500 rounded px-1 py-0.5 text-xs ml-auto">
-                                {{-- Průchod tu není schválně — je mezi typy dveří v panelu vlastností --}}
-                                <option value="dvere">{{ __('ed_sablona.otvor.dvere') }}</option>
-                                <option value="okno">{{ __('ed_sablona.otvor.okno') }}</option>
-                            </select>
+                            {{-- Průchod tu není schválně — je mezi typy dveří v panelu vlastností --}}
+                            <div class="kk-dily ml-auto" role="group" data-otvor-typ>
+                                <button type="button" data-otvor-typ="dvere" :class="otvorTyp === 'dvere' && 'kk-zap'" @click="otvorTyp = 'dvere'; otvorSirka = 0.9; ulozitNastaveni()">{{ __('ed_sablona.otvor.dvere') }}</button>
+                                <button type="button" data-otvor-typ="okno" :class="otvorTyp === 'okno' && 'kk-zap'" @click="otvorTyp = 'okno'; otvorSirka = 1.2; ulozitNastaveni()">{{ __('ed_sablona.otvor.okno') }}</button>
+                            </div>
                             <span class="text-gray-500">{{ __('ed_sablona.spolecne.sirka_zkr') }}</span>
                             {{-- Šířka v cm (v enginu zůstávají metry) --}}
                             <input type="number" min="40" max="300" step="5"
@@ -666,7 +701,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <button type="button" @click="katalogSmaz()" class="border border-gray-500 rounded px-2 hover:bg-gray-100 ml-auto" data-katalog-smaz>{{ __('ed_sablona.spolecne.smazat') }}</button>
+                                    <button type="button" @click="katalogSmaz()" class="kk-smazat ml-auto" data-katalog-smaz><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>{{ __('ed_sablona.spolecne.smazat') }}</button>
                                 </div>
                             </div>
                         </template>
@@ -828,18 +863,18 @@
                         <template x-if="inspector.kind === 'sloup'">
                             <div class="flex flex-col gap-1 w-full" data-panel-sloupu>
                                 <div class="flex items-center gap-2">
+                                    <span class="kk-oznaceni text-gray-700 bg-gray-100" x-text="inspector.id"></span>
                                     <span class="text-gray-600 font-medium whitespace-nowrap">{{ __('ed_sablona.sloup.nazev') }}</span>
-                                    <span class="text-gray-500" x-text="inspector.id"></span>
                                 </div>
-                                <div class="flex items-center gap-1">
-                                    <select class="border border-gray-500 rounded px-1 py-0.5 text-xs" data-sloup-tvar @change="setSloup('tvar', $event.target.value)">
-                                        <option value="ctverec" :selected="inspector.tvar === 'ctverec'">{{ __('ed_sablona.sloup.ctverec') }}</option>
-                                        <option value="kruh" :selected="inspector.tvar === 'kruh'">{{ __('ed_sablona.sloup.kruh') }}</option>
-                                    </select>
-                                    <span class="text-gray-500 ml-1" x-text="inspector.tvar === 'kruh' ? '⌀' : preloz('ed_sablona.spolecne.sirka_zkr')"></span>
-                                    <input type="number" min="10" max="100" step="1" title="{{ __('ed_sablona.sloup.sirka_tip') }}" data-sloup="sirka" class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
-                                           :value="Math.round(inspector.sirka * 100)" @change="setSloup('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()">
-                                    <span class="text-gray-500">cm</span>
+                                <div class="kk-mrizka">
+                                    <span class="text-gray-500">{{ __('ed_sablona.sloup.tvar') }}</span>
+                                    <div class="kk-dily" role="group" aria-label="{{ __('ed_sablona.sloup.tvar') }}">
+                                        <button type="button" data-sloup-tvar="ctverec" :class="inspector.tvar === 'ctverec' && 'kk-zap'" @click="setSloup('tvar', 'ctverec')">{{ __('ed_sablona.sloup.ctverec') }}</button>
+                                        <button type="button" data-sloup-tvar="kruh" :class="inspector.tvar === 'kruh' && 'kk-zap'" @click="setSloup('tvar', 'kruh')">{{ __('ed_sablona.sloup.kruh') }}</button>
+                                    </div>
+                                    <span class="text-gray-500" x-text="inspector.tvar === 'kruh' ? preloz('ed_sablona.sloup.prumer') : preloz('ed_sablona.sloup.strana')"></span>
+                                    <span class="kk-pole-jed" title="{{ __('ed_sablona.sloup.sirka_tip') }}"><input type="number" min="10" max="100" step="1" data-sloup="sirka"
+                                           :value="Math.round(inspector.sirka * 100)" @change="setSloup('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                 </div>
                                 <label x-show="inspector.strechaVolba" class="flex items-center gap-1 text-gray-500" title="{{ __('ed_sablona.sloup.strecha_tip') }}">
                                     <input type="checkbox" data-sloup-strecha :checked="inspector.strecha" @change="setSloup('strecha', $event.target.checked)"> {{ __('ed_sablona.sloup.strecha') }}
@@ -848,7 +883,7 @@
                                 <div data-barva-sloupu x-data="vyberBarvy({ hodnota: () => inspector?.barva, nastav: (hex) => setSloup('barva', hex), nahled: (hex) => nahledBarvy3d('sloup:' + inspector?.id, hex), pouzite: () => barvyJinde('sloup:' + inspector?.id) })">
                                     @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
                                 </div>
-                                <button type="button" @click="smazatSloup()" class="self-end border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400">{{ __('ed_sablona.spolecne.smazat') }}</button>
+                                <button type="button" @click="smazatSloup()" class="self-end kk-smazat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>{{ __('ed_sablona.spolecne.smazat') }}</button>
                             </div>
                         </template>
 
@@ -860,11 +895,11 @@
                                     <span class="text-gray-500" x-text="inspector.trasa"></span>
                                 </div>
                                 <div class="flex items-center gap-1">
-                                    <select class="border border-gray-500 rounded px-1 py-0.5 text-xs" title="{{ __('ed_sablona.schody.tvar_tip') }}" data-schody-tvar @change="setSchody('tvar', $event.target.value)">
-                                        <option value="prime" :selected="inspector.tvar === 'prime'">{{ __('ed_sablona.schody.tvar_prime') }}</option>
-                                        <option value="L" :selected="inspector.tvar === 'L'">{{ __('ed_sablona.schody.tvar_l') }}</option>
-                                        <option value="U" :selected="inspector.tvar === 'U'">{{ __('ed_sablona.schody.tvar_u') }}</option>
-                                    </select>
+                                    <div class="kk-dily" role="group" title="{{ __('ed_sablona.schody.tvar_tip') }}">
+                                        <button type="button" data-schody-tvar="prime" :class="inspector.tvar === 'prime' && 'kk-zap'" @click="setSchody('tvar', 'prime')">{{ __('ed_sablona.schody.tvar_prime') }}</button>
+                                        <button type="button" data-schody-tvar="L" :class="inspector.tvar === 'L' && 'kk-zap'" @click="setSchody('tvar', 'L')">{{ __('ed_sablona.schody.tvar_l') }}</button>
+                                        <button type="button" data-schody-tvar="U" :class="inspector.tvar === 'U' && 'kk-zap'" @click="setSchody('tvar', 'U')">{{ __('ed_sablona.schody.tvar_u') }}</button>
+                                    </div>
                                     <span class="text-gray-500 ml-1">{{ __('ed_sablona.spolecne.sirka_zkr') }}</span>
                                     <input type="number" min="60" max="250" step="5" title="{{ __('ed_sablona.schody.sirka_tip') }}" class="w-14 border border-gray-500 rounded px-1 py-0.5 text-xs"
                                            :value="Math.round(inspector.sirka * 100)" @change="setSchody('sirka', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()">
@@ -891,7 +926,7 @@
                                     @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
                                 </div>
                                 <div class="text-orange-700" x-show="!inspector.pohodlne">{{ __('ed_sablona.schody.mimo_rozsah') }}</div>
-                                <button type="button" @click="smazatSchody()" class="self-end border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400">{{ __('ed_sablona.spolecne.smazat') }}</button>
+                                <button type="button" @click="smazatSchody()" class="self-end kk-smazat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>{{ __('ed_sablona.spolecne.smazat') }}</button>
                             </div>
                         </template>
 
@@ -1034,9 +1069,8 @@
                             <div class="flex items-center gap-2 w-full">
                                 <span class="text-gray-600 font-medium whitespace-nowrap" x-text="inspector.count > 1 ? preloz('ed_sablona.stena.oddelovace') : preloz('ed_sablona.stena.oddelovac')"></span>
                                 <span class="text-gray-500" x-show="inspector.delka !== null" x-text="inspector.delka !== null ? inspector.delka.toFixed(2) + ' m' : ''"></span>
-                                <button type="button" @click="smazatVybraneOddelovace()"
-                                        class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs hover:bg-red-50 hover:border-red-400"
-                                        title="{{ __('ed_sablona.stena.smazat_tip') }}">{{ __('ed_sablona.spolecne.smazat') }}</button>
+                                <button type="button" @click="smazatVybraneOddelovace()" class="ml-auto kk-smazat"
+                                        title="{{ __('ed_sablona.stena.smazat_tip') }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>{{ __('ed_sablona.spolecne.smazat') }}</button>
                             </div>
                         </template>
 
@@ -1280,7 +1314,7 @@
                                     </template>
                                     <div class="flex items-center gap-2">
                                         <span class="text-gray-500" x-show="!strechaPanel.hrana" x-text="rezim3d ? preloz('ed_sablona.strecha.hrany_ve_2d') : preloz('ed_sablona.strecha.klepni_hrana')"></span>
-                                        <button type="button" @click="smazatStrechu()" title="{{ __('ed_sablona.strecha.smazat_tip') }}" class="ml-auto border border-gray-500 rounded px-2 py-0.5 text-xs whitespace-nowrap hover:bg-red-50 hover:border-red-400">{{ __('ed_sablona.strecha.smazat') }}</button>
+                                        <button type="button" @click="smazatStrechu()" title="{{ __('ed_sablona.strecha.smazat_tip') }}" class="ml-auto kk-smazat whitespace-nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>{{ __('ed_sablona.strecha.smazat') }}</button>
                                     </div>
                                 </div>
                             </template>

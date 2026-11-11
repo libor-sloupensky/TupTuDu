@@ -184,7 +184,7 @@ async function main() {
         await js(`d.nastroj = 'otvor'; d._selectionTick++`);
         await zmer('nástroj otvor', PANEL);
         await js(`d.nastroj = 'vyber'; d.zacniSchody(); d._selectionTick++`);
-        await zmer('nástroj schody', PANEL);
+        await zmer('nástroj schody', PANEL, true);   // jen díly tvaru a nápověda, žádné pole
         await js(`d._zrusRozkreslene?.(); d.nastroj = 'vyber'; d._selectionTick++`);
 
         console.log('\n2) Vybrané objekty');

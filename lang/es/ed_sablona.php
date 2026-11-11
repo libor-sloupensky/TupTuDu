@@ -100,6 +100,9 @@ return [
     ],
     // Sloup: nový a panel vybraného
     'sloup' => [
+        'tvar' => 'Forma',
+        'strana' => 'Lado',
+        'prumer' => 'Diámetro',
         'nazev' => 'Pilar',
         'novy' => 'Nuevo pilar',
         'klepni' => 'Haz clic donde quieras colocar el pilar. En la esquina de un entrante (entrada cubierta, terraza) se ajusta solo.',
