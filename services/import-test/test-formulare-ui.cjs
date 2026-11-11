@@ -208,6 +208,22 @@ async function main() {
         await js(`d.nastroj = 'vyber'; d.zacniSloup(); d._selectionTick++`);
         await zmer('nástroj sloup', PANEL, true);   // jen nápověda, žádné pole
         await js(`d.nastroj = 'vyber'; d._selectionTick++`);
+        // Nábytková sestava (sestavy.js): nástroj, kuchyň s nákresem, skříňka, rozměry, povrchy, vestavěná skříň
+        await js(`d.renderer.clearSelection(); d.zacniSestavu('kuchyn'); d._selectionTick++`);
+        await zmer('nástroj sestava', PANEL, true);   // jen nápověda
+        await js(`d._sestavaStisk({ x: 2.5 * X, y: 0.6 * X }); const t = d._domTah; d._domTah = null; if (t) d._sestavaPusteni(t); d._selectionTick++`);
+        await zmer('sestava kuchyň', PANEL, true);   // nákres a tlačítka, pole má až skříňka
+        await js(`d.sestavaVyberSloupec('0:1')`);
+        await zmer('sestava skříňka', PANEL);
+        await js(`d.sestavaVyberSloupec(null); d.sestavaZalozka = 'rozmery'; d._selectionTick++`);
+        await zmer('sestava rozměry', PANEL);
+        await js(`d.sestavaZalozka = 'povrchy'; d._selectionTick++`);
+        await zmer('sestava povrchy', PANEL);
+        await js(`d.renderer.clearSelection(); d.zacniSestavu('skrin'); d._sestavaStisk({ x: 7.5 * X, y: 7.4 * X }); const t = d._domTah; d._domTah = null; if (t) d._sestavaPusteni(t); d.sestavaZalozka = 'skrinky'; d.sestavaVyberDvere(0); d._selectionTick++`);
+        await zmer('sestava skříň', PANEL);
+        await js(`d.sestavaZalozka = 'rozmery'; d._selectionTick++`);
+        await zmer('sestava skříň rozměry', PANEL);
+        await js(`d.engine.dum.sestavy = []; d.sestavaZalozka = 'skrinky'; d.renderer.clearSelection(); d.nastroj = 'vyber'; d._selectionTick++`);
         // Úroveň podlahy je v panelu místnosti; přenesenou zvýšenou podlahu vypíše panel místnosti nad ní,
         // vlastní panel má jen tam, kde pod ní uzavřená místnost není
         await js(`d.renderer.setSelection([]); const m = e.mistnosti[0]; d.renderer.setSelection([], [], [], [], [], [], [m.id]); d.setMistnostUroven('typ', 'zvysena'); d._selectionTick++`);
