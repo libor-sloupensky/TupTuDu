@@ -1,7 +1,8 @@
 # Články pro vyhledávače (Pain Point SEO)
 
-Stav k 5. 11. 2026: **Libor plán schválil a na vzorovém článku upravil pravidla, viz níže. Základ je v commitu e6da276, úpravy
-podle nových pravidel jsou lokálně. Oba napsané články mají `stav: koncept`, nic není nasazené.** Analýza se zdroji: https://claude.ai/artifact/6Ygtwz1KndoYiuTqpjx6FY
+Stav k 11. 11. 2026: **na webu jsou dva články o zemině (od 9. 11.), technika jazykových verzí je nasazená, verze v dalších
+jazycích zatím nejsou. Koeficient nakypření se po dvou dnech ukazuje v Googlu na 2. až 3. místě. Výzkum dalších frází
+z 11. 11. je v části Kandidáti na další články.** Analýza se zdroji: https://claude.ai/artifact/6Ygtwz1KndoYiuTqpjx6FY
 (soukromá stránka „SEO články TupTuDu“, z jiného sezení aktualizovat publikováním s `url`).
 
 ## Strategie
@@ -14,7 +15,7 @@ záviset na domě a pozemku čtenáře. Trh je malý, hodnotí se založené pro
 
 | # | Článek | Adresa | Stav | Před napsáním |
 |---|---|---|---|---|
-| 1 | Kolik zeminy zbude po výkopu základů | `/cs/clanky/kolik-zeminy-z-vykopu` | koncept, čeká na přečtení | hotovo: kalkulačka, schéma, snímek. Navazují: koeficient nakypření (napsaný), základy na svahu, skrývka ornice, nezámrzná hloubka, pracovní prostor výkopu, kam se zeminou |
+| 1 | Kolik zeminy zbude po výkopu základů | `/cs/clanky/kolik-zeminy-z-vykopu` | na webu od 9. 11. 2026, s ním i koeficient nakypření | hotovo: kalkulačka, schéma, snímek. Navazují: koeficient nakypření (napsaný), základy na svahu, skrývka ornice, nezámrzná hloubka, pracovní prostor výkopu, kam se zeminou |
 | 2 | Výpočet schodiště s nákresem | `/cs/clanky/vypocet-schodiste` | nenapsáno | Plánovač 9. 11.: výpočet schodiště 1 300, výška schodu 720, schody výpočet 50, kalkulačka schodiště 50. kalkulačka s nákresem, ověřit ČSN 73 4130 |
 | 3 | Základy na svahu | `/cs/clanky/zaklady-na-svahu` | nenapsáno | Plánovač: dům ve svahu 590, stavba domu ve svahu 30, dům na svažitém pozemku 10. Titulek a adresu zvážit podle „dům ve svahu“. editor od 5. 11. 2026 základ prodlouží až k domu, čísla brát z něj. Snímek domu na svahu už je (`zaklad-svah`) |
 | 4 | Jak nakreslit půdorys domu online | `/cs/clanky/jak-nakreslit-pudorys` | nenapsáno | Plánovač: půdorys domu 1 000, půdorys online 50, jak nakreslit půdorys domu 40. ověřit, kolik úprav spotřebuje jednoduchý dům |
@@ -31,6 +32,39 @@ projektantem“ (až bude aspoň šest článků).
 
 Nedělat: výkopové práce s názvem města, cena a svépomocná stavba základové desky, článek o převodu z PDF do 3D (nikdo to
 tak nehledá, patří na stránku funkce), kuchyně a koupelny, samotná kalkulačka sklonu střechy, katastr a ochranná pásma.
+
+## Kandidáti na další články (výzkum 11. 11. 2026)
+
+Cíl: přivést lidi, kteří dům teprve plánují, a tedy můžou editor hned použít. Objemy jsou měsíční průměr z Plánovače
+(Google, Česko, čeština), varianty bez diakritiky a se slovosledem Google počítá jako tytéž dotazy, sčítat se nesmí.
+Čísla pod 50 jsou hrubá pásma. Seznam v nich není. Pořadí: shoda s editorem × objem × konkurence × připravenost editoru.
+
+| # | Fráze (shluk) | Objem | Proč |
+|---|---|---|---|
+| 1 | půdorys bungalovu, bungalov do L, s garáží, 4+1 a 5+1 | ~600 | hledají vzory dispozic, článek se vzorovými půdorysy otevíranými v editoru (vzorový projekt) |
+| 2 | výpočet schodiště, výška schodu, výpočet schodů | ~2 000 | největší objem s nízkou konkurencí, kalkulačka s nákresem, editor schody umí |
+| 3 | dům ve svahu, projekty a půdorys domu ve svahu | ~800 | terén parcely a prodloužený základ umí jen my, v Česku s katastrem |
+| 4 | půdorys domu, půdorys rodinného domu, jak nakreslit půdorys | ~1 200 | přímé použití editoru, hlavní dotaz ale hledá hlavně vzory, proto „jak nakreslit sám“ |
+| 5 | minimální velikost ložnice a pokoje, šířka chodby, světlá výška | ~350 | rozměry při kreslení dispozice, editor ukazuje plochy místností |
+| 6 | pultová střecha, typy a druhy střech, sklon střechy | ~2 500 | střecha na vlastním domě ve 3D, vikýře a polovalba zatím chybí |
+| 7 | vizualizace domu (zdarma), 3D návrh domu online | ~300 | přesný záměr na nástroj, konkurence vizualizačních studií |
+| 8 | barva fasády, návrh fasády online, fasáda k černé střeše | ~350 | barvy domu ve 3D, „barva fasády“ ovládají prodejci barev |
+| 9 | cena projektu rodinného domu, projekt rodinného domu | ~250 | připravený koncept zkrátí práci projektanta, opatrně, ne proti architektům |
+| 10 | studie rodinného domu | ~80 | stejný záměr jako 9, skoro bez konkurence |
+| 11 | dvougenerační dům, půdorys | ~280 | dispozice pro dvě rodiny, vzorový půdorys |
+| 12 | rozměry garáže, garáž pro 2 auta | ~350 | rozměry do půdorysu, auta v katalogu ověřit |
+| 13 | zastavěná a podlahová plocha, maximální zastavěnost | ~1 000 | až po řádku ploch v editoru |
+| 14 | šířka dveří, rozměr dveří 80 a 90 | ~350 | otvory v editoru, hodně hledají při rekonstrukci |
+| 15 | vzdálenost stavby od hranice pozemku | ~130 | katastr v editoru, malý objem, národní téma |
+| 16 | základové pasy, plovoucí deska, pasy nebo deska | ~400 | druhá vlna k zemině |
+| 17 | obytné podkroví, výška a plocha podkroví | ~150 | podkroví jako podlaží v editoru |
+| 18 | program na návrh domu, kreslení půdorysu online | ~70 | nejsilnější záměr, malý objem, spíš stránka funkce nebo srovnání |
+| 19 | orientace domu ke světovým stranám | ~10 | kompas a slunce v editoru, Plánovač asi podhodnocuje |
+| 20 | výpočet plochy střechy | ~70 | až po řádku plochy střechy |
+| 21 | nezámrzná hloubka, hloubka základů | ~40 | podpůrný článek k zemině |
+| 22 | skrývka ornice | malý | podpůrný článek k zemině |
+
+Nepsat: rodinný dům (74 000, obecné), dům na klíč a typové projekty (prodejci, konkurence vysoká).
 
 ## Jak přidat článek
 
