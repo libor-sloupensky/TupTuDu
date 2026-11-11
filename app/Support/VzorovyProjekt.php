@@ -142,6 +142,52 @@ class VzorovyProjekt
         return config('app.timezone');
     }
 
+    /** Soubor s výchozí verzí v repozitáři; odtud ji seeder při nasazení zapíše do šablony. */
+    public const SOUBOR = 'vzor/vzorovy-projekt.json';
+
+    public const SOUBOR_PDF = 'vzor/vzorovy-projekt.pdf';
+
+    /**
+     * Zapíše obsah výchozí verze (data, metadata, podklad) do šablony; když šablona není, založí ji pro `$autor`.
+     * Vrací šablonu, nebo null, když se nic nezměnilo. Kopie si novou verzi vezmou podle `upraveno` šablony:
+     * nepoužité při otevření, používané v noci (Libor 11. 11. 2026: pracovní verze se stává výchozí na pokyn).
+     */
+    public static function zapisSablonu(array $obsah, ?string $pdf, \App\Models\Uzivatel $autor): ?KonceptV3
+    {
+        $sablona = self::sablona();
+        if ($sablona && $sablona->data == $obsah['data'] && $sablona->metadata == ($obsah['metadata'] ?? null)) {
+            return null;
+        }
+        $vlastnik = $sablona?->uzivatel_id ?? $autor->id;
+        if ($pdf !== null) {
+            $otisk = sha1($pdf);
+            $cesta = PdfPodkladService::SLOZKA . '/' . $vlastnik . "/$otisk";
+            if (! Storage::exists("$cesta.pdf")) {
+                Storage::put("$cesta.pdf", $pdf);
+                Storage::put("$cesta.json", json_encode([
+                    'nazev' => 'vzorovy-projekt.pdf', 'pripona' => 'pdf', 'velikost' => strlen($pdf),
+                    'nahrano' => now()->toIso8601String(), 'strany' => $obsah['podklad_strany'] ?? [],
+                ], JSON_UNESCAPED_UNICODE));
+            }
+        }
+        if (! $sablona) {
+            $sablona = new KonceptV3(['uzivatel_id' => $vlastnik, 'verze' => 1, 'faze' => $obsah['faze'] ?? 'rozhovor', 'chat' => [], 'historie' => []]);
+            $sablona->vzor = 'sablona';
+            $sablona->kod = KonceptV3::novyKod();
+        }
+        $sablona->nazev = $obsah['nazev'] ?? 'Vzorový projekt – výchozí';
+        $sablona->data = $obsah['data'];
+        $sablona->metadata = $obsah['metadata'] ?? null;
+        $sablona->historie = [];
+        $sablona->historie_aktualni = null;
+        $sablona->verze = (int) $sablona->verze + 1;
+        $sablona->upraveno = now();
+        // Bez událostí modelu: není to nový projekt uživatele (GA4)
+        KonceptV3::withoutEvents(fn () => $sablona->save());
+
+        return $sablona;
+    }
+
     /** Cesta k souboru podkladu šablony, ať ho kopie ostatních uživatelů načtou (podklady jsou po uživatelích). */
     public static function cestaPodkladu(string $otisk): ?string
     {

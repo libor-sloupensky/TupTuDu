@@ -133,6 +133,14 @@ async function main() {
         await pauza(1500);
         const master = await p.vyhodnot(`(() => { const d = ${D}; return { vzory: d.koncepty.filter(k => k.vzor).map(k => k.vzor), hlaska: document.querySelector('[data-vzor-hlaska]')?.textContent.replace(/\\s+/g, ' ').trim() || null }; })()`);
         kontrola('master má v aplikaci svou kopii s hláškou pro uživatele, šablonu nevidí', masterKopie && !master.vzory.includes('sablona') && master.vzory.includes('kopie') && /na hraní/.test(master.hlaska || ''), JSON.stringify(master));
+        // Pracovní verze (Libor 11. 11. 2026): v aplikaci není, v Masterteamu je jediná, šablona a kopie tam chybí, šablona jde otevřít přes ?id
+        kontrola('pracovní verzi master v aplikaci nevidí', !master.vzory.includes('pracovni'), JSON.stringify(master.vzory));
+        const sablonaId = json(`echo json_encode(App\\Support\\VzorovyProjekt::sablona()->id);`);
+        await p.jdiNa(ZAKLAD + '/masterteam/koncept-v3?id=' + sablonaId);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        await pauza(1500);
+        const mt = await p.vyhodnot(`(() => { const d = ${D}; return { vzory: d.koncepty.map(k => k.vzor || null), pracovni: d.koncepty.filter(k => k.vzor === 'pracovni').length, otevrena: d.projektId, hlaska: document.querySelector('[data-vzor-hlaska]')?.textContent.replace(/\\s+/g, ' ').trim() || null }; })()`);
+        kontrola('Masterteam: v seznamu pracovní verze, bez šablony a kopie; šablona přes ?id s hláškou needitovat', !mt.vzory.includes('sablona') && !mt.vzory.includes('kopie') && /needituj/.test(mt.hlaska || ''), JSON.stringify(mt));
     } finally {
         await p.zavri?.();
         uklid();

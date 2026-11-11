@@ -251,12 +251,21 @@
                 <button type="button" class="tt-vzor-zavrit" data-vzor-zavrit title="{{ __('ed_sablona.vzor.zavrit') }}" aria-label="{{ __('ed_sablona.vzor.zavrit') }}"
                         @click="zavreno = true; try { localStorage.setItem('tt_vzor_hlaska_kopie', den) } catch (e) {}">&times;</button>
             </div>
+        @elseif (($aktivni->vzor ?? null) === 'pracovni' && $trasaV3 === 'masterteam.koncept-v3')
+            {{-- Pracovní verze vzorového projektu: uživatelé ji nevidí, výchozí se stane na pokyn (vzor:prevzit) --}}
+            <div class="tt-upozorneni tt-vzor-hlaska" data-vzor-hlaska role="status" x-cloak
+                 x-data="{ den: new Date().toLocaleDateString('sv'), get skryta() { try { return this.zavreno || localStorage.getItem('tt_vzor_hlaska_pracovni') === this.den } catch (e) { return this.zavreno } }, zavreno: false }" x-show="!skryta">
+                <div class="tt-upozorneni-titulek">Pracovní verze vzorového projektu.</div>
+                <p>Uživatelé ji nevidí. Až má platit pro ně, řekni Claudovi, ať ji použije jako výchozí.</p>
+                <button type="button" class="tt-vzor-zavrit" data-vzor-zavrit title="{{ __('ed_sablona.vzor.zavrit') }}" aria-label="{{ __('ed_sablona.vzor.zavrit') }}"
+                        @click="zavreno = true; try { localStorage.setItem('tt_vzor_hlaska_pracovni', den) } catch (e) {}">&times;</button>
+            </div>
         @elseif (($aktivni->vzor ?? null) === 'sablona' && $trasaV3 === 'masterteam.koncept-v3')
             <div class="tt-upozorneni tt-vzor-hlaska" data-vzor-hlaska role="status" x-cloak
                  x-data="{ den: new Date().toLocaleDateString('sv'), get skryta() { try { return this.zavreno || localStorage.getItem('tt_vzor_hlaska_sablona') === this.den } catch (e) { return this.zavreno } }, zavreno: false }" x-show="!skryta">
-                <div class="tt-upozorneni-titulek">Šablona vzorového projektu.</div>
-                <p>Uživatelé mají její kopii na hraní. Obrázky do článků se berou odsud.</p>
-                <p>Změny tady jim každou noc ve 3:00 jejich času přepíšou kopii.</p>
+                <div class="tt-upozorneni-titulek">Výchozí vzorový projekt, ze kterého mají uživatelé kopii.</div>
+                <p>Tady needituj. Změny dělej ve „Vzorový projekt – pracovní“, odsud je přepíše příkaz <code>vzor:prevzit</code>.</p>
+                <p>Obrázky do článků se berou odsud.</p>
                 <button type="button" class="tt-vzor-zavrit" data-vzor-zavrit title="{{ __('ed_sablona.vzor.zavrit') }}" aria-label="{{ __('ed_sablona.vzor.zavrit') }}"
                         @click="zavreno = true; try { localStorage.setItem('tt_vzor_hlaska_sablona', den) } catch (e) {}">&times;</button>
             </div>

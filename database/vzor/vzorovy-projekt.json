@@ -1,5 +1,5 @@
 {
-    "nazev": "Vzorový projekt",
+    "nazev": "Vzorový projekt – výchozí",
     "faze": "rozhovor",
     "data": {
         "steny": [
@@ -1173,8 +1173,8 @@
     },
     "metadata": {
         "podklad": {
-            "url": "\/masterteam\/koncept-v3\/podklad\/e687fe2ed9df7ed326be9ce240a0440286df2593\/obrazek\/1\/150",
-            "vektor": "\/masterteam\/koncept-v3\/podklad\/e687fe2ed9df7ed326be9ce240a0440286df2593\/vektor\/1",
+            "url": "/masterteam/koncept-v3/podklad/e687fe2ed9df7ed326be9ce240a0440286df2593/obrazek/1/150",
+            "vektor": "/masterteam/koncept-v3/podklad/e687fe2ed9df7ed326be9ce240a0440286df2593/vektor/1",
             "otisk": "e687fe2ed9df7ed326be9ce240a0440286df2593",
             "strana": 1,
             "nazev": "vzorovy-projekt.pdf",
@@ -1193,9 +1193,9 @@
         "katastr": {
             "parcely": [
                 {
-                    "cislo": "240\/8",
+                    "cislo": "240/8",
                     "typ": "pozemkova",
-                    "label": "240\/8",
+                    "label": "240/8",
                     "polygon_wgs84": [
                         [
                             49.441771,
@@ -1265,9 +1265,9 @@
                     "druh_pozemku_cz": "Trvalý travní porost"
                 },
                 {
-                    "cislo": "239\/11",
+                    "cislo": "239/11",
                     "typ": "pozemkova",
-                    "label": "239\/11",
+                    "label": "239/11",
                     "polygon_wgs84": [
                         [
                             49.44174,
@@ -1337,7 +1337,7 @@
                 "ok": "Blansko"
             },
             "podklad": "zadny",
-            "kompasUhel": 351.1,
+            "kompasUhel": 332,
             "profil": {
                 "body": [
                     [
@@ -2581,7 +2581,7 @@
                 "vyska_max": 298.6,
                 "vyskovy_rozdil": 4.4,
                 "vyska_prumerna": 295.7,
-                "_hash": "239\/11|240\/8"
+                "_hash": "239/11|240/8"
             }
         }
     },

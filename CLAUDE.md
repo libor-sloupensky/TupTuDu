@@ -66,6 +66,9 @@ Když uživatel řekne **„oprav bugy"** (nebo „oprav chyby") bez podrobnost�
 
 Proxy čte celou DB (i uživatele) — **jen SELECT** pro ladění; zápis (`?write=1`) jen na označení bugů nebo na výslovný pokyn. Žádné DROP/ALTER/TRUNCATE (proxy je stejně blokuje).
 
+## Vzorový projekt — „použij vzorový projekt jako výchozí"
+Libor upravuje „Vzorový projekt – pracovní" v Masterteamu. Na pokyn „použij ho jako výchozí" spustit `php artisan vzor:prevzit` (napřed `--dry-run`), commitnout `database/vzor`; na produkci se projeví po nasazení. Podrobnosti a podklad s osobními údaji: `modules/aplikace.md`, část Vzorový projekt.
+
 ## Překlady — zákaznická část (web, app)
 - **Uživateli tykáme** všude, kde je to vhodné: web, aplikace, editor, e-maily i SEO články včetně titulků a popisů. V ostatních jazycích stejně (de du, sk a pl ty, es tú, it tu). **Výjimka: francouzsky vykáme (vous)**, tykání by tam působilo nezdvořile. Vykání nebo neosobní styl jen ve francouzštině a v právních dokumentech (podmínky, soukromí, vrácení peněz).
 - Texty, které uvidí zákazník, **nikdy natvrdo česky** — Blade `__('skupina.klic')`, JS `preloz('skupina.klic')`. Nový text rovnou do `lang/cs` i `lang/en`, pak `php artisan preklady:kontrola`. Ostatní jazyky se doplňují hromadně **před každým nasazením**, do té doby v nich platí angličtina; `preklady:kontrola` nesmí před pushem nic hlásit.

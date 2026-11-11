@@ -22,12 +22,15 @@ class KonceptV3Controller extends Controller
 {
     public function indexK(Request $request)
     {
-        $koncepty = Koncept::where('uzivatel_id', Auth::id())
+        $vsechny = Koncept::where('uzivatel_id', Auth::id())
             ->orderByDesc('upraveno')
             ->get();
+        // Vzorový projekt (Libor 11. 11. 2026): v seznamu jen pracovní verze (vzor = pracovni). Kopie na hraní patří do aplikace (/projects),
+        // šablona se ručně neupravuje, přepisuje ji `vzor:prevzit` z pracovní verze. Přes ?id jdou otevřít dál.
+        $koncepty = $vsechny->reject(fn ($k) => in_array($k->vzor, ['kopie', 'sablona'], true))->values();
 
         $aktivniId = (int) $request->query('id', 0);
-        $aktivni = $aktivniId ? $koncepty->firstWhere('id', $aktivniId) : null;
+        $aktivni = $aktivniId ? $vsechny->firstWhere('id', $aktivniId) : null;
 
         return view('masterteam.koncept-v3', compact('koncepty', 'aktivni'));
     }
