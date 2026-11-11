@@ -76,7 +76,7 @@ Společný nástroj: `public/js/koncept-v3/vyber-barvy.js`, šablona `resources/
 ## Druh místnosti (Libor 10. 11. 2026)
 
 Místnost má vedle názvu volitelný druh (`m.druh`, seznam `DRUHY_MISTNOSTI` v `stavebni-engine.js`): obývák, ložnice, pokoj,
-kuchyně, jídelna, koupelna, WC, chodba, zádveří, šatna, pracovna, technická, prádelna, spíž, sklad, garáž. Výchozí je „Jiná“
+kuchyně, jídelna, koupelna, WC, chodba, zádveří, šatna, pracovna, technická, prádelna, spíž, sklad, sklep, garáž. Výchozí je „Jiná“
 (bez druhu, jen vlastní název). Výběr je v panelu místnosti pod názvem, jeden krok Zpět (`setMistnostDruh`,
 `engine.nastavDruhMistnosti`).
 - **Název:** výchozí název (`auto`) se převezme z druhu s prvním volným číslem, „Obývák“, „Obývák 2“. Ručně napsaný název
@@ -86,7 +86,7 @@ kuchyně, jídelna, koupelna, WC, chodba, zádveří, šatna, pracovna, technick
   napsaný výchozí název výchozím zůstane (`engine.prejmenujMistnost`). Vzorový dům pro všechny jazyky = u každé místnosti
   vybrat druh, u podlaží s ručním názvem název smazat.
 - **Import výkresu:** typ prostoru z rozpoznání (CubiCasa, `DRUH_Z_IMPORTU`) se převede na druh, název z výkresu zůstane.
-- **Zatím jen označení.** Plochy podle druhu (obytná a příslušenství), upozornění podle druhu a barva podle druhu jsou další krok.
+- **Nábytek podle druhu** nabízí katalog (`modules/katalog.md`, Pravidla). Plochy podle druhu (obytná a příslušenství), upozornění podle druhu a barva podle druhu jsou další krok.
 - Test: `node services/import-test/test-druh-mistnosti.cjs`.
 
 ## Barvy domu a podlahy místností

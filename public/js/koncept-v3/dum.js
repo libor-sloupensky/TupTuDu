@@ -535,6 +535,8 @@
                 this.posunPodkladu = false;
                 if (this.rezimStrecha) this._strechaVypni();
             });
+            // Vybraná místnost přepne nabídku nábytku na svůj druh (katalog.js)
+            this.$watch('_selectionTick', () => this._katalogMistnostZVyberu?.());
             // Nastavení střechy otevřené ve 3D: po návratu do 2D patří k němu půdorys střechy
             this.$watch('rezim3d', (v) => {
                 if (!v && this.podlaziUprava === 'strecha' && !this.rezimStrecha) this._strechaZapni();

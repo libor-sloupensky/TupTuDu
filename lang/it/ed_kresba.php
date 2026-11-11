@@ -95,6 +95,7 @@ return [
     'prostor_pradelna' => 'Lavanderia',
     'prostor_kuchynsky_kout' => 'Angolo cottura',
     'prostor_spiz' => 'Dispensa',
+    'prostor_sklep' => 'Cantina',
     'prostor_kotelna' => 'Locale caldaia',
 
     // Upřesnění za názvem prostoru

@@ -62,6 +62,26 @@ const kontrola = (popis, podminka, detail = '') => {
         kontrola('panel ukáže kategorii a katalog se načte', panel.videt && panel.karet > 0 && panel.kusu >= 100, JSON.stringify(panel));
         const hledani = await p.vyhodnot(`(async () => { const d = ${D}; d.katalogHledat = 'postel'; await new Promise(r => setTimeout(r, 150)); const n = d.katalogPolozky.length, vsechnyPostele = d.katalogPolozky.every(x => x.nazev.toLowerCase().includes('postel')); d.katalogHledat = ''; await new Promise(r => setTimeout(r, 150)); return { n, vsechnyPostele }; })()`);
         kontrola('hledání najde podle názvu napříč kategoriemi', hledani.n >= 5 && hledani.vsechnyPostele, JSON.stringify(hledani));
+        // Místnost nad kategoriemi (Libor 11. 11. 2026): volba přes skutečný select, kategorie se zúží
+        const mistnost = await p.vyhodnot(`(async () => { const d = ${D}; const cekej = () => new Promise(r => setTimeout(r, 150));
+            const sel = document.getElementById('kk-katalog-mistnost'); const kat = document.getElementById('kk-katalog-kategorie');
+            const zvol = async (v) => { sel.value = v; sel.dispatchEvent(new Event('change')); await cekej(); return { mistnost: d.katalogMistnost, kategorie: d.katalogKategorie, volby: [...kat.options].map(o => o.value), vybrana: kat.value, karet: document.querySelectorAll('[data-katalog-polozka]').length }; };
+            const sklepVNabidce = [...sel.options].some(o => o.value === 'sklep');
+            const loznice = await zvol('loznice'); const obyvak = await zvol('obyvak'); const vse = await zvol('');
+            return { sklepVNabidce, loznice, obyvak, vse }; })()`);
+        kontrola('ložnice nabídne postele první a kategorii přepne na ně', mistnost.loznice.volby[0] === 'postele' && mistnost.loznice.kategorie === 'postele' && mistnost.loznice.vybrana === 'postele' && !mistnost.loznice.volby.includes('stoly') && mistnost.loznice.karet > 0, JSON.stringify(mistnost.loznice));
+        kontrola('obývák bez postelí přepne na pohovky', mistnost.obyvak.kategorie === 'pohovky' && !mistnost.obyvak.volby.includes('postele'), JSON.stringify(mistnost.obyvak));
+        kontrola('„Všechny místnosti“ vrátí všech 14 kategorií a sklep je v nabídce', mistnost.vse.volby.length === 14 && mistnost.vse.kategorie === 'pohovky' && mistnost.sklepVNabidce, JSON.stringify({ n: mistnost.vse.volby.length, sklep: mistnost.sklepVNabidce }));
+        // Vybraná místnost s druhem na plánu přepne nabídku sama, bez druhu volbu nechá
+        const zVyberu = await p.vyhodnot(`(async () => { const d = ${D}; const cekej = () => new Promise(r => setTimeout(r, 150));
+            const m = d.engine.mistnosti[0]; if (!m) return null;
+            d.engine.nastavDruhMistnosti(m, 'koupelna'); d.renderer.setSelection([], [], [], [], [], [], [m.id]); d._selectionTick++; await cekej();
+            const koupelna = { mistnost: d.katalogMistnost, kategorie: d.katalogKategorie, select: document.getElementById('kk-katalog-mistnost').value };
+            d.engine.nastavDruhMistnosti(m, ''); d.renderer.setSelection([], [], [], [], [], [], [m.id]); d._selectionTick++; await cekej();
+            const bezDruhu = d.katalogMistnost;
+            d.renderer.clearSelection(); d.katalogNastavMistnost(''); d.katalogKategorie = 'pohovky'; d._selectionTick++; await cekej();
+            return { koupelna, bezDruhu }; })()`);
+        kontrola('vybraná koupelna přepne nabídku na koupelnu, místnost bez druhu volbu nechá', zVyberu && zVyberu.koupelna.mistnost === 'koupelna' && zVyberu.koupelna.select === 'koupelna' && zVyberu.koupelna.kategorie === 'zrcadla' && zVyberu.bezDruhu === 'koupelna', JSON.stringify(zVyberu));
         await p.snimek(path.join(vystup, 'katalog-panel.png'));
 
         console.log('\n2) Vložení klikem a zarážka o zeď');

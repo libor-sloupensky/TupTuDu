@@ -13,6 +13,31 @@
     const TOLERANCE_PX = 0.01;
     const ROZMERY = [['sirka', 'ed_nastroje.katalog.sirka'], ['hloubka', 'ed_nastroje.katalog.hloubka'], ['vyska', 'ed_nastroje.katalog.vyska']];
 
+    /**
+     * Nábytek podle druhu místnosti (Libor 11. 11. 2026): volba místnosti nad kategoriemi nechá jen kategorie,
+     * které do ní patří, v pořadí od nejtypičtější. Druhy viz DRUHY_MISTNOSTI ve stavebni-engine.js.
+     * Až přibude koupelna, kuchyňská linka a vestavěné skříně (modules/katalog.md, Plán), doplnit sem.
+     */
+    const KATEGORIE_PODLE_DRUHU = {
+        obyvak: ['pohovky', 'kresla', 'stolky', 'police', 'skrine', 'svitidla', 'koberce', 'obrazy', 'zrcadla', 'rostliny'],
+        loznice: ['postele', 'skrine', 'stolky', 'kresla', 'zrcadla', 'svitidla', 'koberce', 'obrazy', 'rostliny'],
+        pokoj: ['postele', 'psaci', 'zidle', 'skrine', 'police', 'kresla', 'stolky', 'svitidla', 'koberce', 'obrazy', 'rostliny'],
+        kuchyne: ['stoly', 'zidle', 'police', 'skrine', 'svitidla', 'obrazy', 'rostliny'],
+        jidelna: ['stoly', 'zidle', 'skrine', 'police', 'svitidla', 'koberce', 'obrazy', 'rostliny'],
+        koupelna: ['zrcadla', 'skrine', 'police', 'svitidla', 'rostliny'],
+        wc: ['zrcadla', 'police', 'svitidla', 'obrazy'],
+        chodba: ['skrine', 'police', 'zrcadla', 'stolky', 'svitidla', 'koberce', 'obrazy', 'rostliny'],
+        zadveri: ['skrine', 'police', 'zrcadla', 'zidle', 'svitidla', 'koberce'],
+        satna: ['skrine', 'police', 'zrcadla', 'svitidla', 'koberce'],
+        pracovna: ['psaci', 'zidle', 'police', 'skrine', 'kresla', 'svitidla', 'koberce', 'obrazy', 'rostliny'],
+        technicka: ['police', 'skrine', 'svitidla'],
+        pradelna: ['police', 'skrine', 'svitidla'],
+        spiz: ['police', 'skrine'],
+        sklad: ['police', 'skrine', 'svitidla'],
+        sklep: ['police', 'skrine', 'svitidla'],
+        garaz: ['police', 'skrine', 'svitidla'],
+    };
+
     // Duch kusu pod kurzorem a náhled při tažení z panelu, mimo reaktivní data (Konva nesnese proxy)
     let duch = null;
     let tazenyNahled = null;
@@ -61,6 +86,7 @@
     window.KonceptKatalog = {
         katalog: null,
         katalogKategorie: 'pohovky',
+        katalogMistnost: '',
         katalogHledat: '',
         katalogVybrany: null,
         katalogRetez: true,
@@ -90,6 +116,7 @@
             this.ulozitPanely();
             if (!otevrit) { this._katalogZrusVyber(); return; }
             if (this.nastroj !== 'katalog') this.nastroj = 'vyber';
+            this._katalogMistnostZVyberu();
             await this._katalogNacti();
             await this.$nextTick();
             document.getElementById('kk-sekce-katalog')?.scrollIntoView({ block: 'nearest' });
@@ -99,6 +126,38 @@
             if (!this.katalog) return [];
             const q = this.katalogHledat.trim().toLowerCase();
             return this.katalog.polozky.filter(p => (q ? p.nazev.toLowerCase().includes(q) : p.kategorie === this.katalogKategorie));
+        },
+
+        /** Volby místnosti nad kategoriemi: všechny, pak druhy v pořadí jako v panelu místnosti. */
+        get katalogMistnostiVolby() {
+            const druhy = window.DRUHY_MISTNOSTI || {};
+            return [{ id: '', nazev: preloz('ed_sablona.katalog.mistnost_vse') },
+                ...Object.keys(KATEGORIE_PODLE_DRUHU).filter(id => druhy[id]).map(id => ({ id, nazev: preloz('ed_kresba.' + druhy[id]) }))];
+        },
+
+        /** Kategorie pro zvolenou místnost, bez volby všechny v pořadí katalogu. */
+        get katalogKategorieVolby() {
+            const vse = this.katalog?.kategorie || [];
+            const ids = KATEGORIE_PODLE_DRUHU[this.katalogMistnost];
+            if (!ids) return vse;
+            return ids.map(id => vse.find(k => k.id === id)).filter(Boolean);
+        },
+
+        /** Změna místnosti: zůstane kategorie, pokud do místnosti patří, jinak první typická. */
+        katalogNastavMistnost(druh) {
+            this.katalogMistnost = KATEGORIE_PODLE_DRUHU[druh] ? druh : '';
+            const ids = KATEGORIE_PODLE_DRUHU[this.katalogMistnost];
+            if (ids && !ids.includes(this.katalogKategorie)) this.katalogKategorie = ids[0];
+        },
+
+        /**
+         * Vybraná místnost s druhem na plánu přepne nabídku na svůj druh, ať se nábytek vybírá pro ni.
+         * Místnost bez druhu ani zrušený výběr volbu nemění, uživatel si ji mohl nastavit sám.
+         */
+        _katalogMistnostZVyberu() {
+            if (!this.panelOpen?.katalog) return;
+            const druh = this._vybranaMistnost?.()?.druh;
+            if (druh && KATEGORIE_PODLE_DRUHU[druh] && druh !== this.katalogMistnost) this.katalogNastavMistnost(druh);
         },
 
         katalogRozmery(p) {

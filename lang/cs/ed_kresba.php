@@ -95,6 +95,7 @@ return [
     'prostor_pradelna' => 'Prádelna',
     'prostor_kuchynsky_kout' => 'Kuch. kout',
     'prostor_spiz' => 'Spíž',
+    'prostor_sklep' => 'Sklep',
     'prostor_kotelna' => 'Kotelna',
 
     // Upřesnění za názvem prostoru

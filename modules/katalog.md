@@ -8,8 +8,8 @@ Kusy z volně licencovaných zdrojů, které si uživatel vloží do půdorysu a
 |---|---|---|
 | Volný nábytek a dekorace | Amazon Berkeley Objects (ABO), Poly Haven | první balík hotový |
 | Podlahy, dlažba, obklady, látky | ambientCG, Poly Haven (CC0) | další krok |
-| Umyvadlo, WC, vana | tvary ze Sweet Home 3D (jen sady CC BY) s naší keramikou a chromem | další krok |
-| Sprchový kout, kuchyňská linka, vestavěné skříně | vlastní generátor | další krok |
+| Umyvadlo, WC, vana | tvary ze Sweet Home 3D (jen sady CC BY) s naší keramikou a chromem | v plánu, viz Plán 1 |
+| Sprchový kout, kuchyňská linka, vestavěné skříně | vlastní generátor (konfigurátor) | v plánu, viz Plán 2 |
 | Zahrada, obrazy z muzeí | EZ-Tree, Poly Haven, Met | později |
 | Co jinde není, „nafoť svůj gauč" | AI generátor, test až nad hotovým základem | později |
 
@@ -69,6 +69,7 @@ Kus je obyčejný `engine.vybaveni` s polem `katalog` (ID), `nazev` a `uroven` (
 - **Rozměry:** v cm i v % původní velikosti (`zaklad`), druhá hodnota se dopočítá. Spojený řetízek mění šířku, hloubku i výšku ve stejném poměru, rozpojený jen zadaný rozměr. Model se roztáhne (`Katalog3d.vloz`), značka také.
 - **Klik** má přesný tvar kusu, ne obdélník kolem něj. Menší kusy jsou navrchu, stůl jde chytit i na koberci.
 - **Značka v půdorysu** je pohled shora v barvě objektu s tmavou čárou na hranách, ve WebP.
+- **Nábytek podle místnosti (Libor 11. 11. 2026):** nad kategoriemi je volba místnosti, výchozí „Všechny místnosti“. Druh místnosti zúží kategorie na ty, které do něj patří, v pořadí od nejtypičtější (`KATEGORIE_PODLE_DRUHU` v `katalog.js`), a když zvolená kategorie do místnosti nepatří, přepne na první. Vybraná místnost s druhem na plánu nabídku přepne sama (`_katalogMistnostZVyberu`, hlídá `_selectionTick`), místnost bez druhu ani zrušený výběr volbu nemění. Hledání jde napříč celým katalogem a volbu místnosti dočasně vypne. Nový druh místnosti nebo kategorii doplnit do `KATEGORIE_PODLE_DRUHU`, test v `test-katalog-ui.cjs`, část 1.
 - **Katalog je sekce v pravém panelu**, ne plovoucí okno (zakrývalo půdorys, klik pod ním nedopadl). Vlastnosti vybraného kusu jsou ve společném panelu vlastností (`inspector.kind === 'katalog'`).
 - **Po vložení** se kus vybere a nástroj skončí, sekce zůstane otevřená pro další. Esc zruší vybraný kus.
 - **Výška ve 3D** počítá se zvýšenou nebo sníženou podlahou místnosti pod kusem (`_nulaBodu`).
@@ -169,3 +170,11 @@ Viděno při prohlídce, zatím neřešeno:
 3. **Další vrstvy v pořadí:** povrchy (ambientCG, Poly Haven), koupelna (Sweet Home 3D + vlastní materiály, kout), generátor linky.
 4. **Dotyk na tabletu** nikdo nezkoušel.
 5. **Stránka analýzy** v nákladech ještě uvádí Cloudflare R2, Libor navrhl AWS.
+
+## Plán: koupelna, WC, kuchyňská linka a vestavěné skříně (Libor 11. 11. 2026)
+
+V katalogu chybí vybavení koupelny a WC, kuchyňská linka a vestavěné skříně. Libor: „dvě sousta, zatím do plánů, ať na ně nezapomeneme.“ Nedělat bez výzvy.
+
+**Plán 1: koupelna a WC.** Umyvadlo, WC (i závěsné), vana, bidet, pisoár, pračka a sušička jako obyčejné kusy katalogu. Tvary ze Sweet Home 3D, jen sady s licencí CC BY (autor do `ZDROJE` v `sestav.cjs`), keramika a chrom naše. Nové kategorie, např. `sanita`, a jejich doplnění do `KATEGORIE_PODLE_DRUHU` (koupelna, WC, prádelna). Sprchový kout patří do Plánu 2, potřebuje volné rozměry a zástěnu.
+
+**Plán 2: konfigurátor kuchyňské linky a vestavěných skříní.** Nejde o pevné kusy, rozměr se řídí místností. Společný základ: řada modulů podél zdi (spodní, horní, vysoké), šířky modulů s dorovnáním do rohu nebo k otvoru, pracovní deska, dvířka a úchytky, barva korpusu a dvířek. Linka navíc dřez, varná deska, trouba, digestoř, lednice a myčka jako moduly. Vestavěná skříň výklenek od podlahy ke stropu s posuvnými nebo otočnými dveřmi. Ve 3D generovaná geometrie, v půdorysu značka s rozdělením modulů. Před začátkem rozhodnout s Liborem: tvar linky (rovná, L, U, ostrůvek), jak moc podrobné moduly a jestli půjde do rozpočtu.

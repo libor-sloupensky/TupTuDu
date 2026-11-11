@@ -171,14 +171,14 @@ const DRUHY_MISTNOSTI = {
     obyvak: 'prostor_obyvak', loznice: 'prostor_loznice', pokoj: 'prostor_pokoj', kuchyne: 'prostor_kuchyne',
     jidelna: 'prostor_jidelna', koupelna: 'prostor_koupelna', wc: 'prostor_wc', chodba: 'prostor_chodba',
     zadveri: 'prostor_zadveri', satna: 'prostor_satna', pracovna: 'prostor_pracovna', technicka: 'prostor_technicka',
-    pradelna: 'prostor_pradelna', spiz: 'prostor_spiz', sklad: 'prostor_sklad', garaz: 'prostor_garaz',
+    pradelna: 'prostor_pradelna', spiz: 'prostor_spiz', sklad: 'prostor_sklad', sklep: 'prostor_sklep', garaz: 'prostor_garaz',
 };
 
 /** Typ prostoru z importu výkresu (CubiCasa) → druh místnosti. */
 const DRUH_Z_IMPORTU = {
     LivingRoom: 'obyvak', Bedroom: 'loznice', Room: 'pokoj', Kitchen: 'kuchyne', Dining: 'jidelna', Bath: 'koupelna',
     Entry: 'zadveri', DraughtLobby: 'zadveri', Hall: 'chodba', Closet: 'satna', DressingRoom: 'satna', Den: 'pracovna',
-    Utility: 'technicka', TechnicalRoom: 'technicka', Storage: 'sklad', Garage: 'garaz',
+    Utility: 'technicka', TechnicalRoom: 'technicka', Storage: 'sklad', Basement: 'sklep', Garage: 'garaz',
 };
 
 /** Název kusu z katalogu: slovník podle českého názvu, ten je zdroj a ukládá se vedle. Neznámý kus zůstane, jak je. */
