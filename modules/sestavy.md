@@ -8,7 +8,11 @@ v `modules/katalog.md`, oddíl Plán 2. Libor: „udělej to celé a pak to odla
 - Podvolba nástroje **Nábytek a vybavení** (křesílko), žádné nové tlačítko v liště. Nahoře v panelu přepínač
   Nábytek | Nábytková sestava, volba se pamatuje (`localStorage kv3_katalog_rezim`).
 - Vlastní objekt místo skříněk v katalogu, staví se z parametrů (jako schodiště).
-- První vlna rovná linka a tvar L. Pro všechny tarify. **Kusovník ani cena ne** (národně neudržitelné).
+- Rovná linka, tvar L a tvar U (U doplněno týž den, Libor: „mám kuchyň do U“). Pro všechny tarify. **Kusovník ani cena
+  ne** (národně neudržitelné).
+- **Šířka každého dílu platí přesně** (Libor 11. 11. 2026: „člověk se musí přizpůsobit tomu, co je v nabídce“). Návrh
+  na začátku vyplní stěnu, ale změna šířky skříňky nebo dveří skříně ostatní díly nemění: sestava se zkrátí nebo
+  prodlouží po volné stěně. Panel a nákres ukazují volné místo u konců.
 - Horní skříňky mají stejné dělení jako spodní pod nimi. Nová linka se sama vybaví, uživatel si ji přeskupí.
 - Označení podle angličtiny: **K1** kuchyň (Kitchen), **B1** vestavěná skříň (Built-in). W mají stěny, M nábytek.
 
@@ -35,10 +39,19 @@ Co jde spočítat, se neukládá a počítá `rozvrh(s, ctx)` při každém vykr
 ## Kuchyň
 - **Sloupce:** skladba `spodni` (jen spodní), `spodni_horni`, `vysoka` (lednice, trouba, potraviny), `volne`
   (volně stojící lednice, americká, nebo mezera; nad ní volitelně horní skříňka), `lista` (krycí lišta pod 15 cm).
-- **Dorovnání** (`dorovnejRameno`): sloupce vyplní přesně délku ramene. Ručně zadaná šířka (`upraveno`) zůstává,
-  přizpůsobí se poslední neupravený (při tahu za začátek první). Zbytek pod 15 cm je lišta, větší nová skříňka.
-- **Rohy (L):** roh zabere od líce stěny 90 cm (rohová skříňka s lomenými dvířky), slepý roh hloubka + 5 cm lišta.
-  Horní roh má stejnou délku, ať se dělení nahoře a dole kryje. Deska jde rohem průběžně.
+- **Pevné šířky** (`_sestavaZmenaSirky`, `_sestavaZmenDelkuRamene`): změna šířky, odebrání i přidání skříňky posune
+  volný konec ramene (`volnyKonecRamene`: u rovné konec, u L a U krajní konce). Prodloužit jde jen po volném úseku;
+  co se nevejde, dostane nejvíc, kolik zbývá, a hláška řekne kolik. Přidaná skříňka má 60 cm, nebo co zbývá.
+- **Dorovnání** (`dorovnejRameno`) zůstává tam, kde délku určují stěny: tah za konec, změna hloubky nebo rohu, nové
+  rameno a prostřední rameno U mezi dvěma rohy. Ručně zadaná šířka (`upraveno`) zůstává, přizpůsobí se poslední
+  neupravený (při tahu za začátek první). Zbytek pod 15 cm je lišta, větší nová skříňka.
+- **Rohy (L, U):** roh zabere od líce stěny 90 cm (rohová skříňka s lomenými dvířky), slepý roh hloubka + 5 cm lišta.
+  Horní roh má stejnou délku, ať se dělení nahoře a dole kryje. Deska jde rohem průběžně. Každý roh má vlastní volbu
+  (`rohy[i]`, v panelu Roh 1 a Roh 2).
+- **Tvar při kreslení** (`sestavaTvar`, panel nástroje Rovná | Do L | Do U, pamatuje se): klik na úsek líce pokračuje
+  v rohu blíž kurzoru (L), nebo v obou rozích (U), boční ramena do první překážky, nejvýš 2,4 m. Kde roh chybí,
+  vznikne menší tvar. Tlačítka v Rozměrech přidají rameno k rovné i k L (linku zkrácenou skříňkami nejdřív dotáhnou
+  do rohu) a odeberou krajní rameno.
 - **Automatické vybavení** (`vybavKuchyn`): sloty po 60 cm; lednice na kraji dál od okna (od 2,4 m); dřez pod
   oknem, jinak o skříňku od lednice; varná deska s troubou a vestavnou digestoří aspoň ob skříňku od dřezu, ne vedle
   lednice a raději ne na kraji; myčka vedle dřezu z druhé strany než deska; vedle desky šuplíky. „Vybavit znovu“.
@@ -53,11 +66,15 @@ Co jde spočítat, se neukládá a počítá `rozvrh(s, ctx)` při každém vykr
 Hloubka 62 cm, ve výklenku (klik na úsek s kratšími bočními stěnami do 80 cm) převezme jeho hloubku. Výška ke stropu,
 nebo vlastní. Dveře posuvné (2–6 dílů, ve dvou kolejnicích, rám), otočné (po zhruba 50 cm, úchytky), bez dveří
 (police a tyč). Každé dveře mohou být zrcadlo (stříbrné, bronzové, grafitové): klik na dveře v nákresu.
+Šířka vybraných dveří (`s.dily`, `dilySkrine`, `setDilSkrine`) platí přesně a skříň se o rozdíl zkrátí nebo prodlouží;
+posuvné díly se v nákresu i ve 3D překrývají o 3 cm, rozměr platí bez překrytí. Druh dveří nebo počet dílů rozdělí
+skříň znovu rovným dílem. Tah za konec mění krajní díl, mimo 20–150 cm se skříň rozdělí znovu.
 
 ## Ovládání
 - **Kreslení** (`nastroj = 'sestava'`): náhled pod kurzorem ukáže celý volný úsek líce. Volný úsek končí u jiné
-  stěny, u dveří (+5 cm na zárubeň) a u jiné sestavy v celé hloubce (`_sestavaVolnyUsek`, kraj se dohledá půlením).
-  Klik = celý úsek, tah = od bodu k bodu, tah za roh dál od stěny než hloubka = tvar L.
+  stěny, u dveří ve stěně (+5 cm na zárubeň), před dveřmi v sousední stěně (místo na průchod v šířce dveří) a u jiné
+  sestavy v celé hloubce (`_sestavaVolnyUsek`, kraj se dohledá půlením).
+  Klik = celý úsek podle zvoleného tvaru, tah = od bodu k bodu, tah za roh dál od stěny než hloubka = tvar L.
 - **Výběr:** klik na sestavu v půdorysu vybere ji i skříňku, tahem skříňky se přesune v řadě (`_sestavaCilSloupce`).
   Úchyty na koncích mění délku po volném úseku (magnet na konec úseku). Ve 3D klik vybere sestavu i skříňku
   (`userData.sloupce` po trojúhelnících, `_sestava3dZasah` v `_kus3dKlik`). Delete smaže skříňku, nebo sestavu.
@@ -88,10 +105,11 @@ háčky v `dum.js` (stisk, pohyb, puštění, klik, Esc, Delete, inspektor, `_re
 `export-sdileni.js`, `import-pudorysu.js` (mixin), slovníky `ed_sablona.sestava.*` a `ed_dum.sestava|krok|barvy`.
 
 ## Testy
-`node services/import-test/test-sestava-ui.cjs` (kreslení, vybavení, nákres, šířka a posun skříňky, tah myší,
-délka a Zpět, L, skříň se zrcadlem, 3D, sdílený odkaz, uložení). Panely v `test-formulare-ui.cjs`.
+`node services/import-test/test-sestava-ui.cjs` (kreslení, vybavení, nákres, pevná šířka, volné místo a posun
+skříňky, tah myší, délka a Zpět, L a U tlačítkem, rameno před dveřmi, skříň se zrcadlem a šířkou dveří, 3D,
+sdílený odkaz, uložení, kreslení do L a do U). Panely v `test-formulare-ui.cjs`.
 
 ## Zatím ne / další kroky
-Tvar U, ostrůvek a barový pult; skříň do L a zkosení v podkroví; dělené dveře skříně; nezávislé dělení horních
-skříněk; povrch po jednotlivých skříňkách; fotografické textury dřeva a kamene (postup jako krytiny); osvětlení pod
+Ostrůvek a barový pult; skříň do L a zkosení v podkroví; dělené dveře skříně; nezávislé dělení horních skříněk;
+povrch po jednotlivých skříňkách; fotografické textury dřeva a kamene (postup jako krytiny); osvětlení pod
 skříňkami; volně stojící sporák, pračka a vinotéka.
