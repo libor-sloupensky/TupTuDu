@@ -292,35 +292,30 @@
                 <button @click="rezim3d = false; prepni2d()" :class="!rezim3d && 'kk-tl-aktivni'">2D</button>
                 <button @click="rezim3d = true; prepni3d(); zmerFunkci('pohled_3d')" :class="rezim3d && 'kk-tl-aktivni'">3D</button>
             </div>
-            <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="kk-tl text-base" data-tip-below="{{ __('ed_sablona.lista.zpet') }}">&#8630;</button>
-            <button @click="redo()" data-historie-vpred :disabled="historiePozice >= historie.length - 1" class="kk-tl text-base" data-tip-below="{{ __('ed_sablona.lista.vpred') }}">&#8631;</button>
+            <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="kk-tl" data-tip-below="{{ __('ed_sablona.lista.zpet') }}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+            </button>
+            <button @click="redo()" data-historie-vpred :disabled="historiePozice >= historie.length - 1" class="kk-tl" data-tip-below="{{ __('ed_sablona.lista.vpred') }}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+            </button>
             <div class="kk-skupina">
-                <button @click="zoomOut()" data-tip-below="{{ __('ed_sablona.lista.oddalit') }}">&minus;</button>
+                <button @click="zoomOut()" data-tip-below="{{ __('ed_sablona.lista.oddalit') }}" aria-label="{{ __('ed_sablona.lista.oddalit') }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.9-4.9M8 10.5h5"/></svg></button>
                 <span x-text="Math.round(zoom * 100) + ' %'"></span>
-                <button @click="zoomIn()" data-tip-below="{{ __('ed_sablona.lista.priblizit') }}">+</button>
+                <button @click="zoomIn()" data-tip-below="{{ __('ed_sablona.lista.priblizit') }}" aria-label="{{ __('ed_sablona.lista.priblizit') }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.9-4.9M8 10.5h5M10.5 8v5"/></svg></button>
             </div>
             <span class="kk-oddelovac"></span>
             {{-- Layout --}}
             <button @click="cyklujLayout()" class="kk-tl" :data-tip-below="layoutTip">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-                    <g x-show="layoutMode === 0">
-                        <rect x="1" y="1" width="8" height="14" rx="1" fill="currentColor" opacity="0.15"/><rect x="1" y="1" width="8" height="14" rx="1"/>
-                        <line x1="11" y1="3" x2="15" y2="3"/><line x1="11" y1="6" x2="15" y2="6"/><line x1="11" y1="9" x2="14" y2="9"/>
-                    </g>
-                    <g x-show="layoutMode === 1">
-                        <rect x="7" y="1" width="8" height="14" rx="1" fill="currentColor" opacity="0.15"/><rect x="7" y="1" width="8" height="14" rx="1"/>
-                        <line x1="1" y1="3" x2="5" y2="3"/><line x1="1" y1="6" x2="5" y2="6"/><line x1="1" y1="9" x2="4" y2="9"/>
-                    </g>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="2.5" y="3" width="19" height="18" rx="2"/>
+                    <g x-show="layoutMode === 0"><path d="M14 3v18M16.5 7.5h2.5M16.5 11h2.5M16.5 14.5h1.5"/></g>
+                    <g x-show="layoutMode === 1"><path d="M10 3v18M5 7.5h2.5M5 11h2.5M5 14.5h1.5"/></g>
                 </svg>
             </button>
             {{-- Fullscreen --}}
             <button @click="prepniFullscreen()" class="kk-tl" :data-tip-below="celaObrazovka ? preloz('ed_sablona.lista.zmensit') : preloz('ed_sablona.lista.cela_obrazovka')">
-                <svg x-show="!celaObrazovka" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="1,5 1,1 5,1"/><polyline points="11,1 15,1 15,5"/><polyline points="15,11 15,15 11,15"/><polyline points="5,15 1,15 1,11"/>
-                </svg>
-                <svg x-show="celaObrazovka" x-cloak width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="5,1 5,5 1,5"/><polyline points="15,5 11,5 11,1"/><polyline points="11,15 11,11 15,11"/><polyline points="1,11 5,11 5,15"/>
-                </svg>
+                <svg x-show="!celaObrazovka" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                <svg x-show="celaObrazovka" x-cloak width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
             </button>
         </div>
         {{-- Toolbar — řádek 2: nástroje + nápověda --}}
@@ -338,54 +333,39 @@
                 {{-- Posun (ruka) --}}
                 <button @click="nastroj = 'posun'" class="kk-tl" :class="nastroj === 'posun' && 'kk-tl-aktivni'"
                         data-tip="{{ __('ed_sablona.lista.posun') }}">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6 9V3.5a1 1 0 012 0V8.5"/>
-                        <path d="M8 7.5V2.5a1 1 0 012 0V8"/>
-                        <path d="M10 7.5V3.5a1 1 0 012 0V8.5"/>
-                        <path d="M12 6.5a1 1 0 012 0V10a5 5 0 01-5 5H8a4.5 4.5 0 01-3.5-1.7L2.8 11a1.2 1.2 0 011.7-1.3L6 11.5"/>
-                    </svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0"/><path d="M14 10V4a2 2 0 0 0-4 0v2"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.3l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></svg>
                 </button>
                 {{-- Stěna --}}
                 <button @click="nastroj = 'stena'" class="kk-tl" :class="nastroj === 'stena' && 'kk-tl-aktivni'"
                         data-tip="{{ __('ed_sablona.lista.stena') }}">
                     {{-- roh stěny v půdorysu --}}
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M3.5 20.5v-16h17v4.5H8v11.5z" fill="currentColor" fill-opacity=".22"/>
                     </svg>
                 </button>
                 {{-- Metr --}}
                 <button @click="nastroj = nastroj === 'metr' ? 'vyber' : 'metr'" class="kk-tl" :class="nastroj === 'metr' && 'kk-tl-aktivni'"
                         data-tip="{{ __('ed_sablona.lista.metr') }}">
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="1" y1="15" x2="15" y2="15"/><line x1="1" y1="13" x2="1" y2="15"/><line x1="15" y1="13" x2="15" y2="15"/>
-                        <line x1="4" y1="14" x2="4" y2="15"/><line x1="7" y1="14" x2="7" y2="15"/><line x1="10" y1="14" x2="10" y2="15"/><line x1="13" y1="14" x2="13" y2="15"/>
-                        <text x="8" y="11" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">m</text>
-                    </svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M17.5 15.5l2-2"/></svg>
                 </button>
                 {{-- Otvor --}}
                 <button @click="nastroj = nastroj === 'otvor' ? 'vyber' : 'otvor'" class="kk-tl" :class="nastroj === 'otvor' && 'kk-tl-aktivni'"
                         data-tip="{{ __('ed_sablona.lista.otvor') }}">
                     {{-- dveře a okno --}}
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="2.5" y="5" width="8.5" height="16" rx="1"/><circle cx="8.6" cy="13.4" r=".9" fill="currentColor"/><rect x="13.5" y="5" width="8" height="8" rx="1"/><path d="M17.5 5v8M13.5 9h8"/>
                     </svg>
                 </button>
                 {{-- Schodiště --}}
                 <button @click="nastroj === 'schody' ? (nastroj = 'vyber') : zacniSchody()" class="kk-tl" :class="nastroj === 'schody' && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.schody') }}">
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M2 14h3v-3h3V8h3V5h3V2"/>
-                    </svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h4.5v-4.5H12V12h4.5V7.5H21V3"/></svg>
                 </button>
                 {{-- Sloup --}}
                 <button @click="nastroj === 'sloup' ? (nastroj = 'vyber') : zacniSloup()" class="kk-tl" :class="nastroj === 'sloup' && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.sloup') }}" data-nastroj-sloup>
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 2h10M3 14h10M5.5 2v12M10.5 2v12"/>
-                    </svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1"/><path d="M5 5l14 14M19 5 5 19"/></svg>
                 </button>
                 <button @click="prepniKatalog()" class="kk-tl" :class="panelOpen.katalog && ['vyber', 'katalog'].includes(nastroj) && 'kk-tl-aktivni'" data-tip="{{ __('ed_sablona.lista.katalog') }}" data-katalog-tlacitko>
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3.5 7.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v2"/><path d="M1.5 9a1.5 1.5 0 0 1 3 0v1.5h7V9a1.5 1.5 0 0 1 3 0v3.5h-13z"/><path d="M3.5 12.5V14M12.5 12.5V14"/>
-                    </svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3"/><path d="M2 13.5a2 2 0 0 1 4 0V16h12v-2.5a2 2 0 0 1 4 0V19H2z"/><path d="M5 19v2M19 19v2"/></svg>
                 </button>
                 {{-- Úroveň podlahy (zvýšená, snížená, bez podlahy) se nastavuje v panelu místnosti, samostatný nástroj není --}}
             </div>
@@ -396,7 +376,7 @@
                 <button type="button" id="kk-magnet-tl" @click="magnetPanel = !magnetPanel"
                         class="kk-tl relative" :class="[(magnetPanel || magnetSila > 0) && 'kk-tl-aktivni', magnetPuls && 'kk-magnet-puls']"
                         data-tip="{{ __('ed_sablona.lista.magnet') }}">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="m6 15-4-4 6.75-6.77a7.79 7.79 0 0 1 11 11L13 22l-4-4 6.39-6.36a2.14 2.14 0 0 0-3-3L6 15"/><path d="m5 8 4 4"/><path d="m12 15 4 4"/>
                     </svg>
                 </button>
