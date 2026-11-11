@@ -176,11 +176,12 @@ async function nocniZona(s, w, nazev) {
         d.nastroj = 'vyber'; d.fitView(); d.renderer.render(); d.autoSave('Noční část'); return true;`);
     await S.pauza(1500);
     const mistnosti = await s.js(`d.renderer._mistnostiCache = null; d.renderer.render(); const out = {};
-        for (const [klic, druh, nazev, dekor, x, y] of [['A', 'loznice', 'Ložnice', 'prkna', 1.5, 1.5], ['B', 'loznice', 'Ložnice', 'prkna', 5.0, 1.5],
-            ['chodba', 'chodba', 'Chodba', 'dlazba60', 3.6, ${3.15 + w / 2}], ['hala', 'zadveri', 'Hala', 'dlazba60', 8.8, 2.0],
-            ['koupelna', 'koupelna', 'Koupelna', 'dlazba30', 1.3, ${Ych + 2.0}], ['obyvak', 'obyvak', 'Obývák', 'prkna', 6.5, ${Ych + 2.0}]]) {
+        // Názvy jako výchozí (auto), aby se jazyková verze snímku popsala v jazyce editoru
+        for (const [klic, druh, nazev, dekor, x, y] of [['A', 'loznice', 'prostor_loznice', 'prkna', 1.5, 1.5], ['B', 'loznice', 'prostor_loznice', 'prkna', 5.0, 1.5],
+            ['chodba', 'chodba', 'prostor_chodba', 'dlazba60', 3.6, ${3.15 + w / 2}], ['hala', 'zadveri', 'prostor_hala', 'dlazba60', 8.8, 2.0],
+            ['koupelna', 'koupelna', 'prostor_koupelna', 'dlazba30', 1.3, ${Ych + 2.0}], ['obyvak', 'obyvak', 'prostor_obyvak', 'prkna', 6.5, ${Ych + 2.0}]]) {
             const id = d.renderer.mistnostVBode(x * X, y * X); const m = e.najdiMistnost(id);
-            if (m) { e.nastavDruhMistnosti(m, druh); m.nazev = nazev; delete m.auto; m.podlaha = { dekor }; }
+            if (m) { e.nastavDruhMistnosti(m, druh); m.nazev = preloz('ed_kresba.' + nazev); m.auto = { k: nazev, n: 1 }; m.podlaha = { dekor }; }
             out[klic] = { id, plocha: d.renderer.plochaMistnosti(id) };
         }
         d.renderer._mistnostiCache = null; d.renderer.render(); return out;`);
@@ -237,7 +238,7 @@ async function rozmeryMistnosti(s) {
     const okraj = 0.25;
     const [x0, y0, x1, y1] = [mapa.px(-0.45 - okraj), mapa.py(-0.45 - okraj), mapa.px(10.75 + okraj), mapa.py(z.Ych + 1.0)];
     await s.js(`const W = 1200, H = Math.round(W * ${(y1 - y0) / (x1 - x0)}); return ${sn('vyrez')}('loznice', 'plan', ${x0}, ${y0}, ${x1 - x0}, ${y1 - y0}, W, H);`);
-    await s.uloz('loznice', 'minimalni-rozmery-mistnosti', 'loznice-pudorys', { jpg: false, kvalitaWebp: 0.9 });
+    await s.uloz('loznice', 'minimalni-rozmery-mistnosti', 'loznice-pudorys', { jpg: false, kvalitaWebp: 0.9, text: true });
     // Chodba 120 cm: výřez kolem chodby, dva lidé vedle sebe
     const vyrezChodby = async (mapaCh, Ych, nazev, osoby) => {
         await lide(s, 'plan', mapaCh, osoby);
@@ -246,16 +247,18 @@ async function rozmeryMistnosti(s) {
     };
     await vyrezChodby(mapa, z.Ych, 'ch120', [[4.45, 3.15 + 0.3], [4.45, 3.15 + 0.9]]);
 
-    // Úvodní obrázek: noční část ve 3D shora, s nábytkem; obývák se do záběru nevejde
-    await s.do3d();
-    const B = `${sn('body')}().filter(b => b.z < ${z.Ych + 0.25})`;
-    for (const [nazev, W, H] of [['uvod', 1200, 700], ['og', ...OG]]) {
-        await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(64, 0.22, 1))}, pomer: ${W / H}, okraj: 0.03, B: ${B} }); return true;`);
-        await S.pauza(800);
-        await s.js(`return ${sn('snimek')}('${nazev}', ${W}, ${H});`);
+    // Úvodní obrázek: noční část ve 3D shora, s nábytkem; obývák se do záběru nevejde. Jazyková verze 3D nefotí (bez textu).
+    if (!S.JAZYK) {
+        await s.do3d();
+        const B = `${sn('body')}().filter(b => b.z < ${z.Ych + 0.25})`;
+        for (const [nazev, W, H] of [['uvod', 1200, 700], ['og', ...OG]]) {
+            await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(64, 0.22, 1))}, pomer: ${W / H}, okraj: 0.03, B: ${B} }); return true;`);
+            await S.pauza(800);
+            await s.js(`return ${sn('snimek')}('${nazev}', ${W}, ${H});`);
+        }
+        await s.uloz('uvod', 'minimalni-rozmery-mistnosti', 'minimalni-rozmery-mistnosti-uvod', { jpg: false });
+        await s.uloz('og', 'minimalni-rozmery-mistnosti', 'minimalni-rozmery-mistnosti', { webp: false });
     }
-    await s.uloz('uvod', 'minimalni-rozmery-mistnosti', 'minimalni-rozmery-mistnosti-uvod', { jpg: false });
-    await s.uloz('og', 'minimalni-rozmery-mistnosti', 'minimalni-rozmery-mistnosti', { webp: false });
 
     // Stejná část s chodbou 90 cm: jeden člověk, druhý se nevyhne. Nový koncept znovu načte stránku, výřez se 120 cm
     // se proto přenese jako obrázek.
@@ -267,7 +270,7 @@ async function rozmeryMistnosti(s) {
     const mapa90 = await planSMeritkem(s, 'plan', z90.Yjih);
     await vyrezChodby(mapa90, z90.Ych, 'ch90', [[4.45, 3.15 + 0.45]]);
     await s.js(`return ${sn('slozit')}('chodby', ['ch90', 'ch120'], 1, 10);`);
-    await s.uloz('chodby', 'minimalni-rozmery-mistnosti', 'chodba-90-120', { jpg: false, kvalitaWebp: 0.9 });
+    await s.uloz('chodby', 'minimalni-rozmery-mistnosti', 'chodba-90-120', { jpg: false, kvalitaWebp: 0.9, text: true });
 }
 
 /**
@@ -299,7 +302,8 @@ async function pudorysDomu(s) {
     console.log('   půdorys', JSON.stringify(r));
     await s.js(`const o = ${sn('obalka')}('plan'); const k = 24; const w = o.x1 - o.x0 + 2 * k, h = o.y1 - o.y0 + 2 * k; const W = 1200, H = Math.round(W * h / w);
         return ${sn('vyrez')}('plan2', 'plan', o.x0 - k, o.y0 - k, w, h, W, H);`);
-    await s.uloz('plan2', 'jak-nakreslit-pudorys-domu', 'pudorys-prizemi', { jpg: false, kvalitaWebp: 0.9 });
+    await s.uloz('plan2', 'jak-nakreslit-pudorys-domu', 'pudorys-prizemi', { jpg: false, kvalitaWebp: 0.9, text: true });
+    if (S.JAZYK) return;   // 3D je bez textu, společný pro všechny jazyky
 
     await s.js(`d.showVybaveni = true; d.renderer.showVybaveni = true; d.renderer.render(); return true;`);
     await s.do3d();

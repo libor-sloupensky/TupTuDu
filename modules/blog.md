@@ -319,8 +319,11 @@ statiku a bezpečnost (základy, výkopy, opěrné zdi) je dobré jednou za čas
 - **Schéma** je SVG přímo ve stránce: v obrázku jen čísla, popisy pod ním z `lang/*/clanky.php` (`clanky/bloky/rez-vykopu`).
   Přeloží se samo a v dalším jazyce se nekreslí znovu.
 - **Snímek bez textu** (3D pohled) je jeden pro všechny jazyky. Takový volit, kde to jde.
-- **Snímek s textem** (panel editoru) se generuje skriptem pro každý jazyk zvlášť: `public/img/clanky/{adresa}/{jazyk}/soubor`.
-  `::obrazek` si variantu v jazyce článku najde sám, jinak použije společný soubor. Vyžaduje přeložený editor.
+- **Snímek s textem** (panel editoru, půdorys s názvy místností) se generuje skriptem pro každý jazyk zvlášť:
+  `public/img/clanky/{adresa}/{jazyk}/soubor`, adresa je ta česká. `::obrazek` si variantu v jazyce článku najde sám,
+  jinak použije společný soubor. Příkaz `node services/clanky/snimky-vse.cjs --jazyk en,sk,pl,de,fr,es,it`
+  (od 11. 11. 2026): editor se otevře v aplikaci v daném jazyce (Masterteam je jen česky) a uloží se jen snímky
+  označené `uloz(…, { text: true })`. Názvy místností ve scéně proto vždy jako výchozí (`auto`), ruční název by zůstal česky.
 - Popisek a popis pro nevidomé jsou v textu článku, překládají se s ním. Nově vytvořené snímky vždy skriptem, nikdy ručně.
 - Jednotky jsou zatím jen metrické, řešení odloženo (Libor 5. 11. 2026).
 
@@ -330,6 +333,7 @@ Obrázky z editoru se přegenerovávají, kdykoli se změní vzhled editoru („
 
     node services/clanky/snimky-vse.cjs            # všechny články
     node services/clanky/snimky-vse.cjs typy-strech barva-fasady   # jen vybrané
+    node services/clanky/snimky-vse.cjs --jazyk en,sk,pl,de,fr,es,it   # jazykové verze snímků s textem (část Obrázky a překlad)
 
 Scény jsou uložené jako kód (`snimky-clanky-dum.cjs`, `snimky-zemina.cjs`, společné kroky `snimky-editor.cjs`), ne jako
 projekty: pokaždé se postaví z aktuálního editoru a testovací koncepty ClaudeTest se hned mažou, v seznamu projektů
@@ -351,7 +355,8 @@ projít očima (pravidlo 13), kontrolní půdorysy jsou v `services/import-test/
 | kolik-zeminy-z-vykopu | `vykop-svah`, `zaklad-svah` (+ náhled `vykop-svah.jpg`) | `snimky-zemina.cjs`: dům 12 × 10 m na svahu 10 %, okna ze všech stran, vchod na horní straně, střecha `taska-cervena`; jáma bez domu a dům se základem protaženým k zemi, základ pro názornost šedě (v editoru má barvu fasády) |
 
 Nový obrázek: navrhnout scénu jako skutečný dům (pravidlo 13), přidat funkci do `snimky-clanky-dum.cjs` a do `CLANKY`,
-článek do seznamu v `snimky-vse.cjs` a řádek do této tabulky. Bez obrázků z editoru je `koeficient-nakypreni-zeminy`
+článek do seznamu v `snimky-vse.cjs` a řádek do této tabulky. Snímek s textem editoru označit `text: true` a článek
+přidat do `S_TEXTEM` v `snimky-vse.cjs`. Jazykové verze mají dnes `loznice-pudorys`, `chodba-90-120` a `pudorys-prizemi`. Bez obrázků z editoru je `koeficient-nakypreni-zeminy`
 (nákres `::nakypreni` je SVG v šabloně).
 
 ## Příklad výpočtu pro články

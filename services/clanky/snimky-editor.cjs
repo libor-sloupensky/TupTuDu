@@ -4,6 +4,10 @@
  * a skript je na konci smaže. Šablonu vzorového projektu jen čte (kopie se dělá na serveru, šablona se neotvírá).
  *
  * Použití: const S = require('./snimky-editor.cjs'); const s = await S.zacni(); … await s.konec();
+ *
+ * Jazyková verze (JAZYK=de): editor se otevře v aplikaci v daném jazyce (Masterteam je jen česky) a uloží se jen
+ * snímky s textem (`uloz(…, { text: true })`, půdorysy s názvy místností) do public/img/clanky/{článek}/{jazyk}/.
+ * `::obrazek` si variantu jazyka článku najde sám, 3D snímky bez textu zůstávají společné (modules/blog.md).
  */
 const fs = require('fs');
 const path = require('path');
@@ -15,8 +19,9 @@ const ZAKLAD = process.env.V3_URL || 'http://127.0.0.1:8002';
 const EMAIL = process.env.V3_EMAIL || 'libor.sloupensky@seznam.cz';
 const HESLO = process.env.V3_HESLO || '12345';
 const D = `Alpine.$data(document.querySelector('[x-data]'))`;
+const JAZYK = process.env.JAZYK && process.env.JAZYK !== 'cs' ? process.env.JAZYK : null;
 
-const tinker = (kod) => execFileSync('php', ['artisan', 'tinker', '--execute', kod], { cwd: KOREN, windowsHide: true }).toString().trim();
+const tinker =(kod) => execFileSync('php', ['artisan', 'tinker', '--execute', kod], { cwd: KOREN, windowsHide: true }).toString().trim();
 
 /** Pomocníci ve stránce: body domu ve 3D, záběr kamery, snímek scény, výřez, složení. */
 const POMOCNICI = `window.__sn = (() => {
@@ -162,6 +167,9 @@ async function zacni({ sirka = 1900, vyska = 1200 } = {}) {
         document.querySelector('input[name=password]').value = ${JSON.stringify(HESLO)};
         document.querySelector('form').submit(); return true; })()`);
     await pauza(3000);
+    // Přepnutí jazyka se uloží i k účtu, na konci se vrátí původní
+    const puvodniJazyk = JAZYK ? tinker(`echo App\\Models\\Uzivatel::where('email', ${JSON.stringify(EMAIL)})->value('jazyk');`) : null;
+    if (JAZYK) await p.jdiNa(`${ZAKLAD}/jazyk/${JAZYK}`);
 
     const s = {
         p, js, jsA, D,
@@ -182,7 +190,7 @@ async function zacni({ sirka = 1900, vyska = 1200 } = {}) {
             return id;
         },
         async otevri(id) {
-            await p.jdiNa(`${ZAKLAD}/masterteam/koncept-v3?id=${id}`);
+            await p.jdiNa(JAZYK ? `${ZAKLAD}/projects/${tinker(`echo App\\Models\\KonceptV3::findOrFail(${Number(id)})->kod;`)}` : `${ZAKLAD}/masterteam/koncept-v3?id=${id}`);
             await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine && window.THREE)`, 30000, 'editor');
             await pauza(1200);
             // Editor si pamatuje 3D z minulého konceptu, začíná se vždy ve 2D
@@ -207,8 +215,13 @@ async function zacni({ sirka = 1900, vyska = 1200 } = {}) {
             await p.cekej(`!window.Povrchy3d?.stav || window.Povrchy3d.stav().omitka === 1`, 30000, 'omítka fasády');
             await pauza(300);
         },
-        async uloz(nazev, slozka, soubor, { webp = true, jpg = true, kvalitaWebp, kvalitaJpg } = {}) {
+        async uloz(nazev, slozka, soubor, { webp = true, jpg = true, kvalitaWebp, kvalitaJpg, text = false } = {}) {
+            if (JAZYK && !text) {
+                console.log(`   ${slozka}/${soubor} bez textu, společný pro všechny jazyky`);
+                return null;
+            }
             const data = await p.vyhodnot(`window.__sn.data(${JSON.stringify(nazev)}, ${kvalitaWebp ?? 0.82}, ${kvalitaJpg ?? 0.85})`);
+            if (JAZYK) slozka = `${slozka}/${JAZYK}`;
             const cil = path.join(KOREN, 'public/img/clanky', slozka);
             fs.mkdirSync(cil, { recursive: true });
             const vysledek = [];
@@ -223,6 +236,7 @@ async function zacni({ sirka = 1900, vyska = 1200 } = {}) {
         },
         async konec() {
             try { await p.zavri(); } catch { /* končíme */ }
+            if (JAZYK) tinker(`App\\Models\\Uzivatel::where('email', ${JSON.stringify(EMAIL)})->update(['jazyk' => ${JSON.stringify(puvodniJazyk || 'cs')}]);`);
             for (const id of koncepty) {
                 tinker(`App\\Models\\KonceptV3::where('id', ${Number(id)})->where('nazev', 'like', 'ClaudeTest %')->whereNull('vzor')->delete();`);
                 console.log('smazán koncept', id);
@@ -232,4 +246,4 @@ async function zacni({ sirka = 1900, vyska = 1200 } = {}) {
     return s;
 }
 
-module.exports = { zacni, pauza, D, KOREN };
+module.exports = { zacni, pauza, D, KOREN, JAZYK };
