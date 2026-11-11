@@ -211,4 +211,21 @@ V katalogu chybí vybavení koupelny a WC, kuchyňská linka a vestavěné skř�
 
 **Plán 1: koupelna a WC.** Rozjeté 11. 11. 2026, stav v oddílu Koupelna ze Sweet Home 3D. Původní zadání: umyvadlo, WC (i závěsné), vana, bidet, pisoár, pračka a sušička jako obyčejné kusy katalogu. Tvary ze Sweet Home 3D, jen sady s licencí CC BY (autor do `ZDROJE` v `sestav.cjs`), keramika a chrom naše. Nové kategorie, např. `sanita`, a jejich doplnění do `KATEGORIE_PODLE_SKUPINY` (skupina `hygiena`). Sprchový kout patří do Plánu 2, potřebuje volné rozměry a zástěnu.
 
-**Plán 2: konfigurátor kuchyňské linky a vestavěných skříní.** Nejde o pevné kusy, rozměr se řídí místností. Společný základ: řada modulů podél zdi (spodní, horní, vysoké), šířky modulů s dorovnáním do rohu nebo k otvoru, pracovní deska, dvířka a úchytky, barva korpusu a dvířek. Linka navíc dřez, varná deska, trouba, digestoř, lednice a myčka jako moduly. Vestavěná skříň výklenek od podlahy ke stropu s posuvnými nebo otočnými dveřmi. Ve 3D generovaná geometrie, v půdorysu značka s rozdělením modulů. Před začátkem rozhodnout s Liborem: tvar linky (rovná, L, U, ostrůvek), jak moc podrobné moduly a jestli půjde do rozpočtu.
+**Plán 2: konfigurátor kuchyňské linky a vestavěných skříní** (návrh 11. 11. 2026, čeká na Liborova rozhodnutí níž).
+
+*Proč ne kusy z katalogu:* linka i vestavěná skříň se měří podle místnosti. Pevné skříňky by uživatel skládal vedle sebe po jedné a dorovnával ručně. Proto vlastní objekt **sestava**, jako schodiště: leží podél stěny, rozdělí se na moduly sama a ve 3D se staví přímo v editoru (three.js), ne jako hotový GLB.
+
+*Záznam:* `dum.sestavy` = [{ id (K1, K2… kuchyň, V1… skříň), podlazi, druh: kuchyn | skrin, body (lomená čára po líci stěny: rovná = 2 body, L = 3, U = 4), hloubka, vyska, moduly: [{ typ, sirka }], barvy: { korpus, dvirka, deska, uchytky } }]. Uložení, Zpět, výběr, mazání, Objekty (značka K a V), skrytí okem jako u schodů a sloupu.
+
+*Etapy:*
+1. **Základ sestavy (rovná linka).** Nástroj v liště: tah po líci stěny od rohu k rohu, magnet na líc a do rohu. Délka se rozdělí na spodní skříňky po 60 cm, zbytek dorovná užší modul (30 až 50 cm) nebo krycí lišta. Pracovní deska průběžná, sokl, úchytky. 2D značka (obrys, dělení modulů, horní skříňky čárkovaně). Panel: délka, hloubka, výška, barvy korpusu, dvířek a desky (stejný výběr barvy jako fasáda). Sdílený odkaz a export.
+2. **Kuchyň.** Moduly se spotřebiči: dřez s baterií, varná deska, trouba, myčka, lednice vestavná i volně stojící, digestoř. Horní skříňky (výška 72 cm, 55 cm nad deskou), vysoká skříň s lednicí nebo troubou. Tvar L a U s rohovým modulem. Ostrůvek a barový pult jako volně stojící sestava. Okno ve stěně: horní skříňky pod ním vynechá, deska zůstane pod parapetem (hlídat výšku parapetu, varování, když je nízko).
+3. **Vestavěná skříň.** Do výklenku nebo podél stěny, od podlahy ke stropu podle výšky podlaží (strop i podkroví). Dveře posuvné (2 až 4 díly) nebo otočné, zrcadlové dveře, vnitřek ve 3D zavřený. Šatna (průchozí) jako police a tyč bez dveří.
+4. **Úprava modulů.** Klik na modul v 2D nebo 3D: změna typu a šířky, přesun v řadě (tažením), smazání. Ostatní moduly se dorovnají. Hlídání kolizí s dveřmi a okny (otevírání).
+5. **Volitelně později:** seznam modulů (kusovník) do exportu, orientační cena, typ dvířek (hladká, rámová), osvětlení pod horními skříňkami.
+
+*Materiály:* stejné jako generátor koupelny (lak, dekor dřeva, keramika na dřez, chrom, sklo), barvy přes `_nastavBarvy3d`, ať je přebarvení okamžité. Spotřebiče jednoduché vlastní tvary (nerez, černé sklo varné desky), ne modely z knihoven: konzistentní vzhled a libovolná šířka. Sada kuchyňských skříněk z Blend Swap CC0 jen jako vzor proporcí.
+
+*Odhad:* etapa 1 jedno větší sezení, etapa 2 jedno až dvě, etapa 3 jedno, etapa 4 jedno.
+
+*K rozhodnutí s Liborem:* (a) přístup sestavou místo kusů v katalogu, (b) které tvary v první vlně (rovná a L), (c) zda konfigurátor jen pro placené tarify, (d) zda kusovník a cena patří do plánu.
