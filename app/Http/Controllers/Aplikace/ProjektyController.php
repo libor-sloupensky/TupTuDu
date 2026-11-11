@@ -88,6 +88,8 @@ class ProjektyController extends Controller
 
     private function mojeProjekty()
     {
-        return KonceptV3::where('uzivatel_id', Auth::id())->orderByDesc('upraveno')->get();
+        // Šablona vzorového projektu patří do Masterteamu, v aplikaci má i její autor jen svou kopii
+        return KonceptV3::where('uzivatel_id', Auth::id())->where(fn ($q) => $q->whereNull('vzor')->orWhere('vzor', '!=', 'sablona'))
+            ->orderByDesc('upraveno')->get();
     }
 }

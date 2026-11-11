@@ -256,7 +256,14 @@ class KonceptV3Controller extends Controller
         ]);
 
         $metadata = $koncept->metadata ?? [];
-        $metadata['katastr'] = $request->input('katastr');
+        $katastr = $request->input('katastr');
+        // Výškový profil uložený v projektu (vzorový projekt) zůstává, dokud jsou parcely stejné
+        $profil = $metadata['katastr']['profil'] ?? null;
+        $parcely = collect($katastr['parcely'] ?? [])->map(fn ($p) => $p['label'] ?? $p['cislo'] ?? '')->sort()->implode('|');
+        if ($profil && ! isset($katastr['profil']) && ($profil['_hash'] ?? null) === $parcely) {
+            $katastr['profil'] = $profil;
+        }
+        $metadata['katastr'] = $katastr;
         $koncept->update(['metadata' => $metadata]);
 
         return response()->json(['ok' => true]);

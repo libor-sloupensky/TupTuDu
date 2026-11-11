@@ -41,8 +41,9 @@ class VzorovyProjekt
         if ($kopie = self::kopie($uzivatel)) {
             return $kopie;
         }
+        // Kopii dostane i autor šablony: v aplikaci má vidět totéž co ostatní uživatelé
         $sablona = self::sablona();
-        if (! $sablona || $sablona->uzivatel_id === $uzivatel->id) {
+        if (! $sablona) {
             return null;
         }
 

@@ -5600,6 +5600,13 @@ function konceptKEditor(initialData) {
             // invalidace časová 30 dní.
             const cacheHash = this.katastrParcely.map(p => p.label || p.cislo).sort().join('|');
             const cacheKey = 'kv3_vysky_g_' + cacheHash; // g = globální
+            // Profil uložený přímo v projektu (vzorový projekt a jeho kopie): žádný dotaz na server
+            const vProjektu = this.metadata?.katastr?.profil;
+            if (vProjektu?.body?.length && vProjektu._hash === cacheHash) {
+                this.vyskovyProfil = vProjektu;
+                if (this.katastrZobrazitVysky) this.katastrPrekreslitCanvas();
+                return;
+            }
             const MAX_CACHE_AGE_MS = 30 * 24 * 60 * 60 * 1000;
             try {
                 const c = JSON.parse(localStorage.getItem(cacheKey) || 'null');

@@ -64,6 +64,12 @@ async function main() {
         kontrola('výrazná hláška o hraní zdarma a noční obnově', editor.hlaska && /zdarma|nic nestojí/i.test(editor.hlaska) && /3:00/.test(editor.hlaska), editor.hlaska);
         kontrola('editor bez limitu úprav, smazání skryté, kresba i podklad šablony', editor.limit && editor.limit.zbyva === null && !editor.smazat && editor.steny > 5 && editor.podklad, JSON.stringify({ limit: editor.limit, smazat: editor.smazat, steny: editor.steny, podklad: editor.podklad }));
         await p.snimek(path.join(vystup, 'vzorovy-projekt.png'));
+        const profil = await p.vyhodnot(`(async () => { const d = ${D}; await new Promise(r => setTimeout(r, 500));
+            const dotazy = performance.getEntriesByType('resource').filter(e => e.name.includes('/land/elevation')).length;
+            d._katastrAutosave(); await new Promise(r => setTimeout(r, 2500));
+            return { body: d.vyskovyProfil?.body?.length || 0, dotazy }; })()`);
+        const profilVDb = json(`echo json_encode(count(App\\Models\\KonceptV3::find(${kopie[0].id})->metadata['katastr']['profil']['body'] ?? []));`);
+        kontrola('terén z profilu uloženého v projektu, bez dotazu na server, uložení katastru ho nesmaže', profil.body > 100 && profil.dotazy === 0 && profilVDb === profil.body, JSON.stringify({ profil, profilVDb }));
 
         // Úpravy: 40 kroků, víc než denní limit Zdarma (30), všechny se uloží a nic se nezapočte
         const upravy = await p.vyhodnot(`(async () => { const d = ${D}; const e = d.engine; const X = e.PX_PER_M;
@@ -100,6 +106,18 @@ async function main() {
         kontrola('další otevření týž den už nic nezapisuje', podruhe === poOtevreni.verze, String(podruhe));
         const pasmo = json(`echo json_encode([App\\Support\\VzorovyProjekt::casovaZona((new App\\Models\\Uzivatel)->forceFill(['zeme' => 'CZ'])), App\\Support\\VzorovyProjekt::casovaZona((new App\\Models\\Uzivatel)->forceFill(['zeme' => 'PT'])), App\\Support\\VzorovyProjekt::casovaZona((new App\\Models\\Uzivatel)->forceFill(['zeme' => 'ES']))]);`);
         kontrola('3:00 podle země uživatele (pevninské pásmo)', pasmo[0] === 'Europe/Prague' && pasmo[1] === 'Europe/Lisbon' && pasmo[2] === 'Europe/Madrid', JSON.stringify(pasmo));
+
+        console.log('\n4) Master tým v aplikaci jako běžný uživatel');
+        await p.cmd('Network.clearBrowserCookies');
+        await p.jdiNa(ZAKLAD + '/login');
+        await p.vyhodnot(`document.querySelector('input[name=email]').value = 'libor.sloupensky@seznam.cz'; document.querySelector('input[name=password]').value = '12345'; document.querySelector('form').submit(); true`);
+        await pauza(3000);
+        const masterKopie = json(`$u = App\\Models\\Uzivatel::where('email', 'libor.sloupensky@seznam.cz')->first(); echo json_encode(optional(App\\Support\\VzorovyProjekt::zajistiKopii($u))->kod);`);
+        await p.jdiNa(ZAKLAD + '/projects/' + masterKopie);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        await pauza(1500);
+        const master = await p.vyhodnot(`(() => { const d = ${D}; return { vzory: d.koncepty.filter(k => k.vzor).map(k => k.vzor), hlaska: document.querySelector('[data-vzor-hlaska]')?.textContent.replace(/\\s+/g, ' ').trim() || null }; })()`);
+        kontrola('master má v aplikaci svou kopii s hláškou pro uživatele, šablonu nevidí', masterKopie && !master.vzory.includes('sablona') && master.vzory.includes('kopie') && /na hraní/.test(master.hlaska || ''), JSON.stringify(master));
     } finally {
         await p.zavri?.();
         uklid();

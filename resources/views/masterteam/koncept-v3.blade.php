@@ -243,7 +243,7 @@
                 <strong>{{ __('ed_sablona.vzor.nadpis') }}</strong>
                 <span>{{ __('ed_sablona.vzor.text') }}</span>
             </div>
-        @elseif (($aktivni->vzor ?? null) === 'sablona')
+        @elseif (($aktivni->vzor ?? null) === 'sablona' && $trasaV3 === 'masterteam.koncept-v3')
             <div class="tt-vzor-hlaska" data-vzor-hlaska role="status">
                 <strong>Šablona vzorového projektu.</strong>
                 <span>Uživatelé mají její kopii na hraní. Změny tady jim každou noc ve 3:00 jejich času přepíšou kopii. Obrázky do článků se berou odsud.</span>
