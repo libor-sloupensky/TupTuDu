@@ -122,8 +122,11 @@ Ukazujeme vlastní produkt a nesmíme prodávat, co nemáme (Libor). Proto:
 
 ## Tmavý režim v aplikaci (rozhodnuto 11. 11. 2026)
 Výchozí tmavý jako web. Kdo si na webu přepne režim, má ho přepnutý i v aplikaci a editoru (jedna volba,
-cookie `tt_rezim`). Kreslicí plocha zůstává bílá. Zbývá převést panely editoru na proměnné (asi 340 pevných
-tříd Tailwind v `koncept-v3.blade.php`); dělat až po prvcích aplikace, ať se panely nepředělávají dvakrát.
+cookie `tt_rezim`). Kreslicí plocha zůstává bílá. **Hotovo lokálně 11. 11. 2026 (3565761):** layouty app
+(Masterteam) a zakaznik čtou cookie jako web, přepínač je v hlavičce aplikace a v postranním panelu Masterteamu.
+Pevné Tailwind barvy (bg-white, text-gray-*, border-gray-*…) v tmavém režimu přemapuje blok „Tmavý režim pro
+Tailwind“ na konci `app.css` (`:root:not([data-theme=light])` přebije Tailwind z CDN). Nové stránky psát rovnou
+na proměnné. Kreslicí plocha `#kk-canvas-wrap` má vlastní bílý podklad. Test `test-panely-ui` část 3.
 
 ## Prvky aplikace (rozhodnuto 11. 11. 2026)
 Artefakt „Ovládání editoru“ https://claude.ai/artifact/WWFJHduMYM4Umb65F1TDHi. Ovládání i ikony jsou
@@ -145,7 +148,7 @@ vyladěné, mění se jen to, co k sobě nesedí (Libor).
   Dlouhé volby (druh základů, okap/štít) zůstávají seznamem.
 - Panely vpravo: šestitečkový úchyt mění pořadí (localStorage `kv3_poradiPanelu`), hlavičky bez počtů,
   „Použité objekty“ (Libor 11. 11. 2026).
-- Zbývá: tmavý režim aplikace (Tailwind třídy `text-gray-*`, `bg-white` v editoru).
+- Tmavý režim aplikace hotový (viz výše).
 
 ## Co ještě není rozhodnuto / zbývá
 1. **Články:** pipeline Markdown → Blade bloky (třídy už existují), `modules/blog.md`.
