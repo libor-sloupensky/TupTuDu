@@ -8,6 +8,7 @@ overeno: 2026-11-11
 revize: 2026-11-11
 autor: Libor z TupTuDu
 stav: koncept
+obrazek: /img/clanky/vypocet-schodiste/vypocet-schodiste.jpg
 souvisejici: jak-nakreslit-pudorys-domu, minimalni-rozmery-mistnosti
 - Vyhláška 146/2024 Sb. o požadavcích na výstavbu ve znění 97/2026 Sb., § 31 odst. 3 (stejná výška stupňů v rameni hlavního schodiště, čísla v mm neuvádí), § 94 (splnění přes normy) | https://www.zakonyprolidi.cz/cs/2024-146
 - MMR: Normy ČSN a jejich závaznost (norma je doporučující, závazná jen tam, kde to stanoví předpis) | https://mmr.gov.cz/cs/ministerstvo/stavebni-pravo/pravo-a-legislativa/novy-stavebni-zakon/normy-csn
@@ -54,6 +55,8 @@ Sklon pohodlných schodů bývá 25 až 35°. Konkrétní rozměry nakonec potvr
 ## Vejdou se schody do domu
 
 Přímé schody pro 2,90 m zaberou asi 4,6 m délky, k tomu volné místo před prvním stupněm a za posledním. Kratší je lomené schodiště do L nebo do U: odpočívadlo nahradí jeden nášlap a ostatní stupně se rozdělí do ramen. Zkracuj schody raději lomením než vyšším stupněm. Ještě méně místa zaberou zabíhající stupně v rohu, ty kalkulačka nepočítá a navrhne je projektant.
+
+::obrazek /img/clanky/vypocet-schodiste/schodiste-do-l-3d.webp | 3D pohled shora do přízemí domu bez střechy: lomené schodiště do L s odpočívadlem v rohu místnosti vede do patra. | Schodiště do L pro 3,05 m mezi podlažími: 17 výšek po 179 mm, 9 stupňů, odpočívadlo a 6 stupňů, šířka 1 m, editor TupTuDu | 1200 | 700
 
 Nad schody musí být v patře otvor ve stropu (prostup) tak dlouhý, aby vyšla podchodná výška. Ten často rozhodne, kam se schodiště v dispozici vejde, a ovlivní i velikost místností v patře. Rozměry chodby a pokojů najdeš v článku [minimální rozměry místností](clanek:minimalni-rozmery-mistnosti).
 

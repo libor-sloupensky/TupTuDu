@@ -8,6 +8,7 @@ overeno: 2026-11-11
 revize: 2026-11-11
 autor: Libor z TupTuDu
 stav: koncept
+obrazek: /img/clanky/jak-nakreslit-pudorys-domu/jak-nakreslit-pudorys-domu.jpg
 souvisejici: minimalni-rozmery-mistnosti, vypocet-schodiste, typy-strech, barva-fasady
 - Vyhláška č. 146/2024 Sb. o požadavcích na výstavbu, § 11 (odstup rodinného domu od hranice pozemku 2 m) | https://www.zakonyprolidi.cz/cs/2024-146
 - ESTAV.cz: Architekt radí, jak se tvoří správná dispozice (denní a noční zóna, zádveří) | https://www.estav.cz/cz/6901.architekt-radi-co-lze-vycist-ze-studie-rodinneho-domu-jak-se-tvori-spravna-dispozice
@@ -40,6 +41,8 @@ Sepiš místnosti s přibližnou plochou a rozděl je na denní a noční část
 7. **Nábytek.** Postel, stůl a skříně vlož ve skutečné velikosti. Teprve tady se ukáže, jestli je ložnice opravdu dost velká.
 8. **Kontrola.** Projdi cestu od vchodu do kuchyně a do koupelny, žádná by neměla vést přes jiný pokoj. Zkontroluj vnější rozměry a odstupy od hranic.
 
+::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Půdorys přízemí rodinného domu s kótami v centimetrech a s názvy a plochami místností: obývák 33,4 m², pokoj 12,1 m², ložnice 10,6 m², koupelna 8,8 m², pracovna 8,1 m², zádveří 5,8 m², WC 1,8 m². | Přízemí vzorového domu 12,54 × 8,23 m s kótami, místnostmi a plochami, editor TupTuDu | 1200 | 857
+
 | Prvek | Běžně v Česku |
 |:---|---:|
 | Obvodová stěna zděného domu se zateplením | 40 až 55 cm |
@@ -59,6 +62,8 @@ Když u zděného domu při stejném vnějším rozměru nakreslíš obvodovou s
 ## Půdorys domu online zdarma
 
 V TupTuDu [nakreslíš půdorys](aplikace:) myší na počítači. Stěnu nakreslíš tahem myši. Editor začíná s obvodovou stěnou 30 cm, skutečnou tloušťku nastav v liště nástroje ještě před kreslením. U vybrané stěny vidíš vzdálenost k protější stěně a můžeš ji přepsat přesně. Z uzavřených stěn editor sám pozná místnosti a ukáže jejich plochu. Přidáš další podlaží, schody a nábytek z katalogu a dům si prohlédneš ve 3D, i s [barvou fasády](clanek:barva-fasady).
+
+::obrazek /img/clanky/jak-nakreslit-pudorys-domu/dum-3d-bez-strechy.webp | Stejný dům ve 3D shora bez střechy: místnosti, dveře, okna a nábytek. | Stejný půdorys ve 3D bez střechy, s nábytkem z katalogu, editor TupTuDu | 1200 | 700
 
 Máš plánek od architekta nebo z katalogu projektů? Nahraj ho jako PDF nebo obrázek, nastav měřítko podle známé kóty a obkresli ho. Z vektorového PDF editor stěny rozpozná sám. V Česku k domu vybereš parcelu z katastru a uvidíš ho na skutečném pozemku.
 

@@ -8,6 +8,7 @@ overeno: 2026-11-11
 revize: 2026-11-11
 autor: Libor z TupTuDu
 stav: koncept
+obrazek: /img/clanky/typy-strech/typy-strech.jpg
 souvisejici: jak-nakreslit-pudorys-domu, barva-fasady
 - eStav: Střešní krytina (nejmenší doporučené sklony krytin podle ČSN 73 1901:1999, zrušená, platnost do 10 m délky a 600 m n. m.) | https://www.estav.cz/cz/103.stresni-krytina
 - eStav: Skladba ploché střechy (plochá střecha do 5°) | https://www.estav.cz/cz/5745.skladba-ploche-strechy-jednoplastove-a-dvouplastove
@@ -29,6 +30,8 @@ souvisejici: jak-nakreslit-pudorys-domu, barva-fasady
 
 Sklony jsou běžná praxe v Česku, ne předpis. Konečný sklon určí krytina a projektant.
 
+::obrazek /img/clanky/typy-strech/typy-strech-porovnani.webp | Stejný rodinný dům ve 3D se čtyřmi typy střechy: sedlovou, valbovou, pultovou a plochou. | Jeden dům, čtyři střechy: sedlová 38°, valbová 30°, pultová 15° a plochá. Takhle si je porovnáš i na svém domě, editor TupTuDu | 1200 | 802
+
 ## Sedlová, nebo valbová
 
 V Česku je sedlová střecha nejběžnější. Krov je jednoduchý, podkroví prostorné a okna ve štítech ho dobře prosvětlí. Strmější sklon znamená víc místa pod střechou, ale i vyšší hřeben a víc krytiny.
@@ -46,6 +49,8 @@ Sklon bývá 5 až 25° a řídí se krytinou. Plech a fólie snesou podle výro
 Sklon je úhel mezi střešní plochou a vodorovnou rovinou. Spočítáš ho z výšky hřebene nad místem, kde střecha protíná líc obvodové stěny, a z vodorovné vzdálenosti od toho líce k hřebeni: tg α = výška / vzdálenost.
 
 Příklad: sedlová střecha na domě širokém 10 m má k hřebeni vodorovně 5 m. Při sklonu 38° je hřeben 5 × tg 38° ≈ 3,9 m nad lícem stěny. Sklon v procentech je stejný poměr krát sto, tedy 78 %. Pozor, 45° je 100 %, stupně a procenta se nezaměňují.
+
+::obrazek /img/clanky/typy-strech/sedlova-30-45.webp | Dva pohledy kolmo na štít stejného domu: vlevo sedlová střecha se sklonem 30°, vpravo 45°. | Stejný dům se sedlovou střechou 30° a 45°: strmější sklon zvedne hřeben a dá víc místa v podkroví, editor TupTuDu | 1200 | 500
 
 :::pozor Nejdřív územní plán
 V Česku tvar, sklon i výšku střechy často předepisuje územní plán obce. Ověř si to dřív, než si typ střechy oblíbíš.

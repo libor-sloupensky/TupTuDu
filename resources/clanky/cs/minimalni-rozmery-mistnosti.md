@@ -8,6 +8,7 @@ overeno: 2026-11-11
 revize: 2026-11-11
 autor: Libor z TupTuDu
 stav: koncept
+obrazek: /img/clanky/minimalni-rozmery-mistnosti/minimalni-rozmery-mistnosti.jpg
 souvisejici: jak-nakreslit-pudorys-domu, vypocet-schodiste
 - Vyhláška 146/2024 Sb. ve znění 97/2026 Sb. (§ 3 písm. b obytný prostor 8 m², § 38 světlá výška 2,5 m, 2,2 m, podkroví, 1,2 m) | https://www.zakonyprolidi.cz/cs/2024-146
 - ČKAIT: nové ČSN 73 4301 a ČSN 73 4305 od 7/2026 (ložnice 8 m² bez ohledu na počet lůžek, vypuštěné nejmenší šířky místností) | https://zpravy.ckait.cz/vydani/2026-04/nove-normy-pro-navrhovani-obytnych-budov-udajne-reaguji-na-menici-se-pozadavky/
@@ -36,6 +37,8 @@ Postel 160 × 200 zabere s rámem asi 165 × 210 cm. Kolem ní nech aspoň 60 cm
 
 Ve čtvercové ložnici 3 × 3 m, tedy 9 m², zůstane u nohou postele 90 cm. Na skříň i průchod to nestačí, leda postel přisuneš ke zdi a kdo spí u ní, bude vstávat přes druhého. Skříň se vejde od zhruba 11 m²: s posuvnou skříní 3 × 3,6 m (210 + 70 + 80 cm), s otvíravou 3 × 3,7 m (210 + 60 + 100 cm). Záleží i na tom, kde jsou dveře. Ložnice 3 × 4 m má po stranách postele skoro 70 cm a mezi postelí a skříní 1,3 m.
 
+::obrazek /img/clanky/minimalni-rozmery-mistnosti/loznice-pudorys.webp | Půdorys dvou ložnic: ve 3 × 3 m postel se stolky, ve 3 × 4 m navíc šatní skříň. | Ložnice 3 × 3 m a 3 × 4 m s postelí 165 × 210 cm. V menší zbude u nohou postele 90 cm, ve větší je mezi postelí a skříní 130 cm a po stranách postele skoro 70 cm. Čísla na okraji jsou vnější kóty včetně zdí, editor TupTuDu | 1200 | 868
+
 ## Dětský pokoj a pokoj pro jednoho
 
 Na jedno dítě 8 m² stačí, záleží ale na tvaru: v pokoji širokém 2,2 m zbude vedle postele jen 1,2 m na stůl, skříň i průchod. Pro dvě děti se dvěma postelemi počítej s 12 m² a víc.
@@ -43,6 +46,8 @@ Na jedno dítě 8 m² stačí, záleží ale na tvaru: v pokoji širokém 2,2 m 
 ## Šířka chodby: kdy se minou dva lidé
 
 Chodba v rodinném domě nemá v Česku předpisem dané minimum. V 90 cm projde jeden člověk a druhý musí uhnout. Od 120 cm se minou dva, s botníkem hlubokým 30 cm počítej se 150 cm. Dlouhou pohovku nebo skříň je potřeba z chodby zatočit do dveří: s dveřmi 80 cm chce chodba kolem 125 cm, s dveřmi 90 cm stačí asi 105 cm. Schodiště má vlastní pravidla, najdeš je u [výpočtu schodiště](clanek:vypocet-schodiste).
+
+::obrazek /img/clanky/minimalni-rozmery-mistnosti/chodba-90-120.webp | Půdorys dvou chodeb dlouhých 3 m, širokých 90 a 120 cm, v širší je botník. | Chodba 90 cm a 120 cm. V širší zbude vedle botníku hlubokého 30 cm ještě 90 cm, editor TupTuDu | 1040 | 1126
 
 ## Světlá výška místnosti
 

@@ -8,6 +8,7 @@ overeno: 2026-11-11
 revize: 2026-11-11
 autor: Libor z TupTuDu
 stav: koncept
+obrazek: /img/clanky/barva-fasady/barva-fasady.jpg
 souvisejici: jak-nakreslit-pudorys-domu, typy-strech
 - Weber, technický list weberpas akrylát (HBW minimálně 25 na ETICS, zvláště osluněné plochy; nižší HBW jen s weberreflex po konzultaci) | https://www.cz.weber/files/cz/2025-04/TL_weberpas_akrylat_gr2025_FIN.pdf
 - Weber, technický list weberpas silikát (HBW aspoň 25, různé šarže se liší odstínem) | https://www.cz.weber/files/cz/2025-04/TL_weberpas_silikat_gr2025_FIN.pdf
@@ -53,6 +54,8 @@ Malý čtvereček v obchodě vypadá jinak než celá stěna venku. Odstín měn
 | krémová (RAL 9001) | cihlově červená | bílá | tradičně |
 | písková | hnědá | hnědá, dekor dřeva | teple |
 | světle šedá (RAL 7035) | černá | bílá | střídmě |
+
+::obrazek /img/clanky/barva-fasady/barva-fasady-kombinace.webp | Stejný dům ve čtyřech kombinacích: bílá fasáda s antracitovou střechou a okny, krémová s červenou střechou a bílými okny, písková s hnědou střechou a hnědými okny, světle šedá s černou střechou a bílými okny. | Kombinace z tabulky na stejném domě. Barvy na obrazovce jsou orientační, editor TupTuDu | 1200 | 802
 
 ## Vyzkoušej to na svém domě
 
