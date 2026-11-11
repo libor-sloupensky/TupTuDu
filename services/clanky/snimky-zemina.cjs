@@ -108,8 +108,8 @@ const SIRKA = 1200, VYSKA = 700;
         await p.cekej(`(() => { let vse = true, pocet = 0; window._kk3d.dumSkupina.traverse(o => { const m = o.material;
             if (!m || !m.userData?.krytinaVzhled) return; pocet++; for (const t of [m.map, m.normalMap, m.aoMap]) if (!t || !t.image) vse = false; });
             return pocet === 0 || vse; })()`, 30000, 'textury krytiny');
-        // Omítka fasády a odrazy ve sklech (Povrchy3d) se načítají také asynchronně
-        await p.cekej(`!window.Povrchy3d?.stav || (window.Povrchy3d.stav().omitka === 1 && !!window.Povrchy3d.stav().odrazy)`, 30000, 'omítka a odrazy');
+        // Omítka fasády (Povrchy3d) se načítá také asynchronně
+        await p.cekej(`!window.Povrchy3d?.stav || window.Povrchy3d.stav().omitka === 1`, 30000, 'omítka fasády');
         await pauza(500);
         // Základ nad terénem má v editoru barvu fasády (Libor 10. 11. 2026), na obrázku o protaženém základu by nebyl
         // vidět. Jen pro snímek se přebarví na šedou; popisek v článku to říká. Základ = nízké díly v barvě fasády pod

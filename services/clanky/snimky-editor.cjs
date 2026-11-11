@@ -192,7 +192,7 @@ async function zacni({ sirka = 1900, vyska = 1200 } = {}) {
             await p.vyhodnot(`${D}.fitView(), true`);
             await p.vyhodnot(POMOCNICI);
         },
-        /** Přepne do 3D, přestaví scénu, schová mřížku a počká na modely nábytku, omítku a odrazy skel. */
+        /** Přepne do 3D, přestaví scénu, schová mřížku a počká na modely nábytku a omítku. */
         async do3d() {
             await jsA(`if (!d.rezim3d) { await d.prepni3d(); await cek(800); } d._build3d(); await window.Katalog3d?.hotovo?.(); await cek(600);
                 const _3d = window._kk3d; if (_3d.grid) _3d.grid.visible = false; if (_3d.gridLines) _3d.gridLines.visible = false; return true;`);
@@ -202,9 +202,9 @@ async function zacni({ sirka = 1900, vyska = 1200 } = {}) {
             await jsA(`d._build3d(); await window.Katalog3d?.hotovo?.(); await cek(500); const _3d = window._kk3d; if (_3d.grid) _3d.grid.visible = false; return true;`);
             await s.povrchy();
         },
-        /** Omítka fasády a odrazy ve sklech se načítají asynchronně (Povrchy3d, test-fasada-3d-ui.cjs). */
+        /** Omítka fasády se načítá asynchronně (Povrchy3d.stav().omitka, test-fasada-3d-ui.cjs). */
         async povrchy() {
-            await p.cekej(`!window.Povrchy3d?.stav || (window.Povrchy3d.stav().omitka === 1 && !!window.Povrchy3d.stav().odrazy)`, 30000, 'omítka a odrazy');
+            await p.cekej(`!window.Povrchy3d?.stav || window.Povrchy3d.stav().omitka === 1`, 30000, 'omítka fasády');
             await pauza(300);
         },
         async uloz(nazev, slozka, soubor, { webp = true, jpg = true, kvalitaWebp, kvalitaJpg } = {}) {
