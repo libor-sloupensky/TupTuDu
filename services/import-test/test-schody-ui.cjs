@@ -87,7 +87,37 @@ async function main() {
         await pole('[data-schody=naslap]', '');
         await pauza(200);
         g = await geo();
-        kontrola('prázdné pole vrátí výpočet', g.n === 17 && blizko(g.b, 0.63 - 2 * g.v, 0.001), JSON.stringify({ n: g.n, b: g.b }));
+        // 3,05 m: zaokrouhlení dá 17 výšek s nášlapem 271 mm, vyhláška v Česku žádá 275 mm, proto 18
+        kontrola('prázdné pole vrátí výpočet, nášlap podle vyhlášky aspoň 275 mm (18 výšek)', g.n === 18 && blizko(g.b, 0.63 - 2 * g.v, 0.001) && g.b >= 0.275, JSON.stringify({ n: g.n, b: g.b }));
+        const varovani = (co) => p.vyhodnot(`(() => { const e = document.querySelector('[data-schody-varovani="${co}"]'); return !!e && e.getClientRects().length > 0; })()`);
+        kontrola('bez ruční hodnoty žádné varování k nášlapu', !(await varovani('naslap')));
+        // Ruční výška 180 mm smí pravidlo porušit: 17 výšek, nášlap 271 mm a výstraha v panelu
+        await pole('[data-schody=vyska]', 180);
+        await pauza(200);
+        g = await geo();
+        kontrola('ruční výška 180 mm: 17 výšek, nášlap 271 mm, panel varuje', g.n === 17 && g.b < 0.275 && await varovani('naslap'), JSON.stringify({ n: g.n, b: g.b }));
+        await pole('[data-schody=vyska]', '');
+        await pauza(200);
+
+        // Otvor ve stropu nad schody: od 4. stupně, strop nad prvními třemi zůstane, podchodná výška klesne
+        const otvor = () => p.vyhodnot(`(() => { const d = ${D}; const s = d.engine.dum.schodiste.find(x => x.id === 'S1'); const g = window.DumGeo.schodyGeo(s, d._vyskaMeziPodlazimi(s), 80);
+            const delka = (o) => { const xs = o.map(q => q.x); return (Math.max(...xs) - Math.min(...xs)) / 80; };
+            const maska = d._maskyPodlazi(s.doPodlazi).vyrezy.map(delka); const i = d.inspektorDum();
+            return { od: g.otvorOd, obrys: delka(g.obrys), otvor: delka(g.otvor), maska, b: g.b, podchod: i.podchod, podchodOk: i.podchodOk, pole: !!document.querySelector('[data-schody=otvor]') }; })()`);
+        let o = await otvor();
+        kontrola('otvor ve stropu přes celé schody, v panelu pole a podchodná výška', o.od === 0 && blizko(o.otvor, o.obrys, 1e-6) && o.pole && o.podchodOk, JSON.stringify(o));
+        await pole('[data-schody=otvor]', 4);
+        await pauza(200);
+        o = await otvor();
+        kontrola('otvor od 4. stupně: o 3 nášlapy kratší, deska v patře se zkrátí, podchodná výška menší', o.od === 3 && blizko(o.obrys - o.otvor, 3 * o.b, 1e-6) && blizko(o.maska[0], o.otvor, 1e-6) && o.podchodOk, JSON.stringify(o));
+        await pole('[data-schody=otvor]', 8);
+        await pauza(200);
+        o = await otvor();
+        kontrola('otvor od 8. stupně: podchodná výška pod 2,1 m, panel varuje', o.od === 7 && !o.podchodOk && await varovani('podchod'), JSON.stringify(o));
+        await pole('[data-schody=otvor]', 1);
+        await pauza(200);
+        o = await otvor();
+        kontrola('otvor zpět přes celé schody', o.od === 0 && blizko(o.otvor, o.obrys, 1e-6), JSON.stringify(o));
 
         console.log('\n3) Do L a do U s částmi');
         await p.vyhodnot(`(document.querySelector('[data-schody-tvar=L]').click(), 1)`);

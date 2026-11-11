@@ -134,6 +134,11 @@ return [
         'casti_tip' => 'Les marches restantes vont aux autres volées. Une volée à zéro n’est qu’un palier.',
         'casti' => 'marches par volée :',
         'barva_tip' => 'Couleur des marches. Les contremarches ont une nuance plus foncée de la même couleur en 3D.',
+        'otvor_od' => 'Trémie à partir de la marche',
+        'otvor_tip' => '1 = trémie au-dessus de tout l’escalier. Un nombre plus élevé garde le plancher au-dessus des premières marches ; la trémie est plus courte et l’échappée plus basse.',
+        'podchod' => 'échappée :vyska m',
+        'podchod_malo' => 'L’échappée au bord de la trémie est inférieure à 2,1 m. Faites commencer la trémie au-dessus d’une marche plus basse.',
+        'naslap_vyhlaska' => 'Le giron de :naslap mm est inférieur aux :min mm exigés par la réglementation tchèque pour l’escalier principal d’une maison individuelle.',
         'mimo_rozsah' => 'Hors de la plage habituelle : hauteur de marche 150–200 mm, largeur d’escalier à partir de 80 cm, 2 × hauteur + giron autour de 630 mm.',
     ],
     // Usazení a posun plánku na plátně

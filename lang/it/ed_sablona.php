@@ -134,6 +134,11 @@ return [
         'casti_tip' => 'I gradini restanti vanno nelle altre rampe. Una rampa con zero gradini è solo un pianerottolo.',
         'casti' => 'gradini per rampa:',
         'barva_tip' => 'Colore delle pedate. Le parti verticali hanno in 3D una tonalità più scura dello stesso colore.',
+        'otvor_od' => 'Foro nel solaio dal gradino',
+        'otvor_tip' => '1 = foro sopra tutta la scala. Un numero più alto lascia il solaio sopra i primi gradini; il foro è più corto e l’altezza libera minore.',
+        'podchod' => 'altezza libera :vyska m',
+        'podchod_malo' => 'L’altezza libera al bordo del foro è inferiore a 2,1 m. Fai iniziare il foro sopra un gradino più basso.',
+        'naslap_vyhlaska' => 'La pedata di :naslap mm è più stretta dei :min mm richiesti dalla normativa ceca per la scala principale di una casa unifamiliare.',
         'mimo_rozsah' => 'Fuori dai valori usuali: alzata 150–200 mm, larghezza della scala da 80 cm, 2 × alzata + pedata circa 630 mm.',
     ],
     // Usazení a posun plánku na plátně

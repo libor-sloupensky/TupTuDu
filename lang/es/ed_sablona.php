@@ -134,6 +134,11 @@ return [
         'casti_tip' => 'Los peldaños restantes pasan a los demás tramos. Un tramo con cero es solo un rellano.',
         'casti' => 'peldaños por tramo:',
         'barva_tip' => 'Color de las huellas. Las contrahuellas tienen en 3D un tono más oscuro del mismo color.',
+        'otvor_od' => 'Hueco en el forjado desde el peldaño',
+        'otvor_tip' => '1 = hueco sobre toda la escalera. Un número mayor deja el forjado sobre los primeros peldaños; el hueco es más corto y la altura libre menor.',
+        'podchod' => 'altura libre :vyska m',
+        'podchod_malo' => 'La altura libre en el borde del hueco es menor de 2,1 m. Empieza el hueco sobre un peldaño más bajo.',
+        'naslap_vyhlaska' => 'La huella de :naslap mm es menor que los :min mm que exige la normativa checa para la escalera principal de una vivienda unifamiliar.',
         'mimo_rozsah' => 'Fuera del rango habitual: contrahuella 150–200 mm, ancho de escalera desde 80 cm, 2 × contrahuella + huella en torno a 630 mm.',
     ],
     // Usazení a posun plánku na plátně

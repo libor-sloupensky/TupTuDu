@@ -920,6 +920,16 @@
                                 <div data-barva-schodu x-data="vyberBarvy({ hodnota: () => inspector?.barva, nastav: (hex) => setSchody('barva', hex), nahled: (hex) => nahledBarvy3d('schody:' + inspector?.id, hex), pouzite: () => barvyJinde('schody:' + inspector?.id) })" title="{{ __('ed_sablona.schody.barva_tip') }}">
                                     @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
                                 </div>
+                                {{-- Otvor ve stropu nad schody: může začít až nad některým stupněm, strop nad začátkem schodů zůstane --}}
+                                <template x-if="inspector.otvorMa">
+                                    <div class="flex items-center gap-1 flex-wrap" title="{{ __('ed_sablona.schody.otvor_tip') }}">
+                                        <span class="text-gray-500">{{ __('ed_sablona.schody.otvor_od') }}</span>
+                                        <input type="number" min="1" step="1" data-schody="otvor" :max="inspector.otvorMax + 1" :value="inspector.otvorOd + 1" @change="setSchody('otvor', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()">
+                                        <span class="text-gray-500 ml-2" data-schody-podchod x-text="preloz('ed_sablona.schody.podchod', { vyska: prelozCislo(inspector.podchod, 2) })"></span>
+                                    </div>
+                                </template>
+                                <div class="text-orange-700" x-show="inspector.otvorMa && !inspector.podchodOk" data-schody-varovani="podchod">{{ __('ed_sablona.schody.podchod_malo') }}</div>
+                                <div class="text-orange-700" x-show="!inspector.naslapOk" data-schody-varovani="naslap" x-text="preloz('ed_sablona.schody.naslap_vyhlaska', { naslap: Math.round(inspector.b * 1000), min: Math.round(inspector.naslapMin * 1000) })"></div>
                                 <div class="text-orange-700" x-show="!inspector.pohodlne">{{ __('ed_sablona.schody.mimo_rozsah') }}</div>
                                 <button type="button" @click="smazatSchody()" class="self-end kk-smazat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>{{ __('ed_sablona.spolecne.smazat') }}</button>
                             </div>

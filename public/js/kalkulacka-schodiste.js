@@ -6,9 +6,10 @@
  * z cílové výšky stupně, nášlap ze vztahu 2h + b = 630 mm omezený na 220 až 320 mm. Shodu hlídá
  * services/import-test/test-kalkulacka-schodiste.cjs.
  *
- * Navíc proti editoru (zatím): vyhláška 146/2024 Sb., příloha 4 bod 2 žádá nášlap hlavního schodiště aspoň 300 mm,
- * v rodinném domě 275 mm (limit naslapMin). Když by při zaokrouhleném počtu výšek vyšel užší, kalkulačka přidá
- * výšku: pro 3,05 m tedy 18 výšek po 169 mm místo 17 po 179 mm s nášlapem 271 mm.
+ * Vyhláška 146/2024 Sb., příloha 4 bod 2 žádá nášlap hlavního schodiště aspoň 300 mm, v rodinném domě 275 mm
+ * (limit naslapMin). Když by při zaokrouhleném počtu výšek vyšel užší, kalkulačka přidá výšku: pro 3,05 m tedy
+ * 18 výšek po 169 mm místo 17 po 179 mm s nášlapem 271 mm. Editor stejně (NASLAP_MIN_ZEME v dum.js, jen bez ruční
+ * výšky stupně a nášlapu).
  *
  * Zabíhající stupně (do L a do U) a točité schody editor zatím nemá, kalkulačka je tu napřed (Libor 11. 11. 2026:
  * nejdřív doladit tady, pak přenést do projektu). Pravidla pro zakřivená ramena:

@@ -134,6 +134,11 @@ return [
         'casti_tip' => 'Die übrigen Stufen werden auf die anderen Läufe verteilt. Ein Lauf mit null Stufen ist nur ein Podest.',
         'casti' => 'Stufen je Lauf:',
         'barva_tip' => 'Farbe der Trittstufen. Die Setzstufen haben in 3D einen dunkleren Ton derselben Farbe.',
+        'otvor_od' => 'Deckenöffnung ab Stufe',
+        'otvor_tip' => '1 = Öffnung über der ganzen Treppe. Eine höhere Zahl lässt die Decke über den ersten Stufen; die Öffnung wird kürzer und die Durchgangshöhe kleiner.',
+        'podchod' => 'Durchgangshöhe :vyska m',
+        'podchod_malo' => 'Die Durchgangshöhe am Rand der Öffnung ist kleiner als 2,1 m. Lass die Öffnung über einer niedrigeren Stufe beginnen.',
+        'naslap_vyhlaska' => 'Der Auftritt von :naslap mm ist schmaler als die :min mm, die die tschechische Bauvorschrift für die Haupttreppe eines Einfamilienhauses verlangt.',
         'mimo_rozsah' => 'Außerhalb des üblichen Bereichs: Steigung 150–200 mm, Treppenbreite ab 80 cm, 2 × Steigung + Auftritt etwa 630 mm.',
     ],
     // Usazení a posun plánku na plátně

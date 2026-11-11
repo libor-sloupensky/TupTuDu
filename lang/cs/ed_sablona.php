@@ -134,6 +134,11 @@ return [
         'casti_tip' => 'Stupně se dopočítají do ostatních částí. Část s nulou je jen odpočívadlo.',
         'casti' => 'stupňů v částech:',
         'barva_tip' => 'Barva nášlapů. Svislé části mají ve 3D tmavší odstín téže barvy.',
+        'otvor_od' => 'Otvor ve stropu od stupně',
+        'otvor_tip' => '1 = otvor nad celými schody. Vyšší číslo nechá strop nad prvními stupni, otvor je kratší a podchodná výška menší.',
+        'podchod' => 'podchodná výška :vyska m',
+        'podchod_malo' => 'Podchodná výška u okraje otvoru je menší než 2,1 m. Začni otvor nad nižším stupněm.',
+        'naslap_vyhlaska' => 'Nášlap :naslap mm je užší než :min mm, které vyhláška v Česku žádá u hlavního schodiště rodinného domu.',
         'mimo_rozsah' => 'Mimo běžný rozsah: výška stupně 150–200 mm, šířka schodiště od 80 cm, 2 × výška + nášlap kolem 630 mm.',
     ],
     // Usazení a posun plánku na plátně

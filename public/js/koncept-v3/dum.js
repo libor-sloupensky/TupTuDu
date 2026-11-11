@@ -229,9 +229,14 @@
     }
 
     const BARVA_SCHODU = '#8b7355';
+    const PODCHOD_MIN = 2.1;          // podchodná výška nad hranami stupňů (ČSN 73 4130), m
     const SLOUP_SIRKA = 0.2;          // výchozí strana nebo průměr sloupu (m)
     const SLOUP_DOSAH_ROHU = 0.4;     // jak daleko od lícování v rohu výklenku sloup ještě rozšíří střechu (m)
     const MAX_ODCHYLKA_SCHODU = Math.sin(2 * Math.PI / 180);
+    // Nejmenší nášlap hlavního schodiště podle země projektu (Libor 11. 11. 2026). Česko: vyhláška 146/2024 Sb.,
+    // příloha 4 bod 2, rodinný dům 275 mm. Jiné země zatím bez pravidla. Stejně počítá veřejná kalkulačka schodiště.
+    const NASLAP_MIN_ZEME = { CZ: 0.275 };
+    const naslapMin = () => NASLAP_MIN_ZEME[(typeof window !== 'undefined' && window.TT_LOKALIZACE?.zeme) || 'CZ'] || 0;
 
     /**
      * Stupně v částech schodiště. Mezi stupně se počítá i odpočívadlo a poslední krok na podlahu,
@@ -256,12 +261,17 @@
 
     /**
      * Geometrie schodiště v px. Počet stupňů z výšky podlaží (výška stupně kolem 175 mm),
-     * šířka stupně ze vztahu 2h + b = 630 mm. Přímé a do L.
+     * šířka stupně ze vztahu 2h + b = 630 mm. Bez ruční výšky stupně a nášlapu se přidá výška, když by nášlap
+     * vyšel pod nejmenší povolený (naslapMin); ruční hodnoty pravidlo smí porušit, panel pak varuje (naslapOk).
+     * `otvor` je obrys otvoru ve stropu nad schody: celé schody, nebo bez prvních `s.otvorOd` stupňů prvního
+     * ramene (strop nad začátkem schodů zůstane, podchodná výška se tím sníží).
      * @param {object} s  {x, y (m, y nahoru), uhel (rad na plátně), sirka, tvar, strana}
      * @param {number} H  výška mezi podlažími v m
      */
     function schodyGeo(s, H, PX) {
-        const n = Math.max(2, Math.round(H / (s.vyskaStupne || 0.175)));
+        let n = Math.max(2, Math.round(H / (s.vyskaStupne || 0.175)));
+        const minB = naslapMin();
+        if (!s.vyskaStupne && !s.naslap && minB) while (omez(0.63 - 2 * H / n, 0.22, 0.32) < minB - 1e-9 && n < 80) n++;
         const v = H / n;
         const b = s.naslap || omez(0.63 - 2 * v, 0.22, 0.32);
         const sir = s.sirka || 1;
@@ -293,14 +303,14 @@
         const casti = castiSchodu(s, n);
         const st = (s.strana || 1) >= 0 ? 1 : -1;
         const h = st * pul;
-        let obrys, sipka, delka;
+        let obrys, sipka, delka, obrysOd;
         if (s.tvar === 'L') {
             const [t1, t2] = casti;
             const L1 = t1 * b, L2 = t2 * b;
             rameno(0, 0, 1, 0, t1);
             podesta(L1, L1 + sir, -pul, pul, [P(L1, -pul), P(L1 + TL_PODSTUPNICE, -pul), P(L1 + TL_PODSTUPNICE, pul), P(L1, pul)]);
             rameno(L1 + pul, h, 0, st, t2);
-            obrys = [P(0, -h), P(L1 + sir, -h), P(L1 + sir, h + st * L2), P(L1, h + st * L2), P(L1, h), P(0, h)];
+            obrysOd = (z) => [P(z, -h), P(L1 + sir, -h), P(L1 + sir, h + st * L2), P(L1, h + st * L2), P(L1, h), P(z, h)];
             sipka = [P(0.1, 0), P(L1 + pul, 0), P(L1 + pul, L2 ? h + st * L2 - st * 0.1 : h)];
             delka = L1 + sir + L2;
         } else if (s.tvar === 'U') {
@@ -315,11 +325,11 @@
                 rameno(L1 + pul, h, 0, st, t2);
                 const c0 = h + st * L2;
                 podesta(L1, L1 + sir, c0, c0 + st * sir, [P(L1, c0), P(L1 + sir, c0), P(L1 + sir, c0 + st * TL_PODSTUPNICE), P(L1, c0 + st * TL_PODSTUPNICE)]);
-                obrys = [P(0, -h), P(L1 + sir, -h), P(L1 + sir, cVen), P(L1 - L3, cVen), P(L1 - L3, cDovnitr), P(L1, cDovnitr), P(L1, h), P(0, h)];
+                obrysOd = (z) => [P(z, -h), P(L1 + sir, -h), P(L1 + sir, cVen), P(L1 - L3, cVen), P(L1 - L3, cDovnitr), P(L1, cDovnitr), P(L1, h), P(z, h)];
             } else {
                 // Prostřední část bez stupňů: jedno široké odpočívadlo přes obě ramena
                 podesta(L1, L1 + sir, -h, cVen, nastup);
-                obrys = [P(0, -h), P(L1 + sir, -h), P(L1 + sir, cVen), P(L1 - L3, cVen), P(L1 - L3, h), P(0, h)];
+                obrysOd = (z) => [P(z, -h), P(L1 + sir, -h), P(L1 + sir, cVen), P(L1 - L3, cVen), P(L1 - L3, h), P(z, h)];
             }
             rameno(L1, c3, -1, 0, t3);
             sipka = [P(0.1, 0), P(L1 + pul, 0), P(L1 + pul, c3), P(L1 - L3 + 0.1, c3)];
@@ -327,13 +337,18 @@
         } else {
             const t = n - 1;
             rameno(0, 0, 1, 0, t);
-            obrys = [P(0, -pul), P(t * b, -pul), P(t * b, pul), P(0, pul)];
+            obrysOd = (z) => [P(z, -pul), P(t * b, -pul), P(t * b, pul), P(z, pul)];
             sipka = [P(0.1, 0), P(t * b - 0.1, 0)];
             delka = t * b;
         }
-        obrys = obrys.filter((p, i) => { const q = obrys[(i + 1) % obrys.length]; return Math.hypot(p.x - q.x, p.y - q.y) > 0.01; });
+        const bezDuplicit = (o) => o.filter((p, i) => { const q = o[(i + 1) % o.length]; return Math.hypot(p.x - q.x, p.y - q.y) > 0.01; });
+        obrys = bezDuplicit(obrysOd(0));
+        // Otvor ve stropu: první stupně prvního ramene mohou zůstat pod stropem, aspoň jeden stupeň ale v otvoru
+        const otvorOd = omez(Math.round(s.otvorOd || 0), 0, Math.max(0, casti[0] - 1));
+        const otvor = otvorOd ? bezDuplicit(obrysOd(otvorOd * b)) : obrys;
         return {
-            n, v, b, stupne, obrys, sipka, delka, casti, uchop: P(-0.45, 0),
+            n, v, b, stupne, obrys, otvor, otvorOd, sipka, delka, casti, uchop: P(-0.45, 0),
+            naslapOk: !minB || b >= minB - 1e-9, naslapMin: minB,
             nastup: [P(0, -pul), P(0, pul)], zpet: { x: -ux, y: -uy },
             pohodlne: v >= 0.15 && v <= 0.2 && sir >= 0.8 && 2 * v + b >= 0.58 && 2 * v + b <= 0.68,
         };
@@ -1338,7 +1353,7 @@
             for (const s of e.dum.schodiste) {
                 if (s.doPodlazi !== id || s.odPodlazi === id) continue;   // schody v rámci podlaží nic neprorážejí
                 const H = (kory.get(s.doPodlazi) ?? 0) - (kory.get(s.odPodlazi) ?? 0);
-                vyrezy.push(schodyGeo(s, H, PX).obrys);
+                vyrezy.push(schodyGeo(s, H, PX).otvor);
             }
             let podLimitem = [];
             const p = e.podlaziPodleId(id);
@@ -1769,6 +1784,18 @@
             this._poZmeneDomu(preloz('ed_dum.krok.schody_mezi_urovnemi'));
         },
 
+        /**
+         * Otvor ve stropu nad schody do vyššího podlaží: od kterého stupně začíná a podchodná výška u jeho okraje
+         * (svisle od hrany stupně pod okrajem otvoru ke spodku stropu). Schody v rámci podlaží otvor nemají.
+         */
+        _otvorSchodu(s, g) {
+            if (s.odPodlazi === s.doPodlazi || s.plocha) return { otvorMa: false };
+            const spodni = this.engine.podlaziPodleId(s.odPodlazi);
+            const H = this._vyskaMeziPodlazimi(s);
+            const podchod = H - (spodni?.strop ?? 0.25) - (g.otvorOd + 1) * g.v;
+            return { otvorMa: true, otvorOd: g.otvorOd, otvorMax: Math.max(0, g.casti[0] - 1), podchod, podchodOk: podchod >= PODCHOD_MIN - 1e-9 };
+        },
+
         _vybraneSchody() {
             const id = this.renderer ? [...this.renderer.selectedSchody][0] : null;
             return id ? this.engine.dum.schodiste.find(s => s.id === id) : null;
@@ -1786,6 +1813,8 @@
             if (klic === 'naslap') { if (hodnota > 0) s.naslap = omez(hodnota / 1000, 0.15, 0.5); else delete s.naslap; }
             if (klic === 'strana') s.strana = (s.strana || 1) > 0 ? -1 : 1;
             if (klic === 'otoc') s.uhel = (s.uhel || 0) + Math.PI / 2;
+            // Otvor ve stropu začíná nad stupněm `hodnota` (1 = nad celými schody); omezení na první rameno drží schodyGeo
+            if (klic === 'otvor') { const k = Math.round(Number(hodnota) || 1) - 1; if (k > 0) s.otvorOd = k; else delete s.otvorOd; }
             this._drzSchodyUPlochy(s);
             this.renderer._mistnostiCache = null;
             this._poZmeneDomu(preloz('ed_dum.krok.schodiste'));
@@ -2405,7 +2434,8 @@
                 return {
                     kind: 'schodiste', count: 1, id: s.id, tvar: s.tvar || 'prime', sirka: s.sirka, casti: g.casti,
                     barva: s.barva || BARVA_SCHODU, vyskaRucne: !!s.vyskaStupne, naslapRucne: !!s.naslap,
-                    n: g.n, v: g.v, b: g.b, delka: g.delka, pohodlne: g.pohodlne,
+                    n: g.n, v: g.v, b: g.b, delka: g.delka, pohodlne: g.pohodlne, naslapOk: g.naslapOk, naslapMin: g.naslapMin,
+                    ...this._otvorSchodu(s, g),
                     trasa: s.odPodlazi === s.doPodlazi ? preloz('ed_dum.schody_mezi_urovnemi', { nazev: od?.nazev || '' }) : (od?.nazev || '?') + ' → ' + (kam?.nazev || '?'),
                 };
             }
@@ -2725,11 +2755,17 @@
                 });
                 hit.setAttr('_schodisteId', st.id);
                 r.schodyLayer.add(hit);
-                for (const u of g.stupne) {
+                g.stupne.forEach((u, i) => {
+                    const podStropem = !dole && i < g.otvorOd;
                     r.schodyLayer.add(new Konva.Line({
                         points: body(u.poly), closed: true, stroke: '#6b7280', strokeWidth: 0.75, strokeScaleEnabled: false, listening: false,
-                        ...(dole ? {} : { fill: `rgba(55,65,81,${(0.06 + 0.42 * (1 - u.z / H)).toFixed(3)})` }),
+                        ...(dole || podStropem ? {} : { fill: `rgba(55,65,81,${(0.06 + 0.42 * (1 - u.z / H)).toFixed(3)})` }),
+                        ...(podStropem ? { dash: [3, 3] } : {}),
                     }));
+                });
+                // Zkrácený otvor: jeho okraj nad schody plnou čarou, stupně pod stropem jen čárkovaně
+                if (!dole && g.otvorOd) {
+                    r.schodyLayer.add(new Konva.Line({ points: body(g.otvor), closed: true, stroke: barva, strokeWidth: 1.5, strokeScaleEnabled: false, listening: false }));
                 }
                 const sipka = dole ? g.sipka : [...g.sipka].reverse();
                 r.schodyLayer.add(new Konva.Arrow({

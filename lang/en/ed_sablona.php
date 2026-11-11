@@ -134,6 +134,11 @@ return [
         'casti_tip' => 'The remaining steps go to the other flights. A flight set to zero is just a landing.',
         'casti' => 'steps per flight:',
         'barva_tip' => 'Tread colour. Risers have a darker shade of the same colour in 3D.',
+        'otvor_od' => 'Ceiling opening from step',
+        'otvor_tip' => '1 = opening over the whole stair. A higher number keeps the ceiling over the first steps; the opening is shorter and the headroom lower.',
+        'podchod' => 'headroom :vyska m',
+        'podchod_malo' => 'Headroom at the edge of the opening is less than 2.1 m. Start the opening over a lower step.',
+        'naslap_vyhlaska' => 'Tread :naslap mm is narrower than the :min mm required by Czech building regulations for the main stair of a family house.',
         'mimo_rozsah' => 'Outside the usual range: rise 150–200 mm, stair width from 80 cm, 2 × rise + tread around 630 mm.',
     ],
     // Usazení a posun plánku na plátně

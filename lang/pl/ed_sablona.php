@@ -134,6 +134,11 @@ return [
         'casti_tip' => 'Stopnie zostaną doliczone do pozostałych biegów. Bieg z zerem to tylko spocznik.',
         'casti' => 'stopnie w biegach:',
         'barva_tip' => 'Kolor stopni. Części pionowe mają w 3D ciemniejszy odcień tego samego koloru.',
+        'otvor_od' => 'Otwór w stropie od stopnia',
+        'otvor_tip' => '1 = otwór nad całymi schodami. Wyższa liczba zostawia strop nad pierwszymi stopniami, otwór jest krótszy, a prześwit mniejszy.',
+        'podchod' => 'prześwit :vyska m',
+        'podchod_malo' => 'Prześwit przy krawędzi otworu jest mniejszy niż 2,1 m. Zacznij otwór nad niższym stopniem.',
+        'naslap_vyhlaska' => 'Stopień :naslap mm jest węższy niż :min mm, których czeskie przepisy wymagają dla głównych schodów domu jednorodzinnego.',
         'mimo_rozsah' => 'Poza typowym zakresem: wysokość stopnia 150–200 mm, szerokość biegu od 80 cm, 2 × wysokość + szerokość stopnia około 630 mm.',
     ],
     // Usazení a posun plánku na plátně
