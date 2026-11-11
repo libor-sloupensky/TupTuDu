@@ -73,6 +73,11 @@ return [
     'krok_smazani_otvoru' => 'Borrar hueco',
     'krok_smazani_nabytku' => 'Borrar mueble',
     'krok_smazani_objektu' => 'Borrar objeto',
+    // Potvrzení mazání (koncept-k-ui.js, potvrditSmazani)
+    'smazat_potvrzeni' => '¿Seguro que quieres borrar?',
+    'smazat_pocet' => 'one=:pocet objeto|many=:pocet objetos|other=:pocet objetos',
+    'smazat_bod' => 'Punto y las paredes que salen de él',
+    'smazat_podklad' => 'Base (dibujo bajo el plano)',
     'krok_vlozeni' => 'Pegar (Ctrl+V)',
     'krok_prejmenovani_objektu' => 'Renombrar objeto',
 

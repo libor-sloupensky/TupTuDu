@@ -693,6 +693,8 @@ return [
         'roh_cislo' => 'Narożnik :cislo',
         'odebrat_vlevo' => 'Usuń lewe ramię',
         'odebrat_vpravo' => 'Usuń prawe ramię',
+        'rameno_vlevo_nazev' => 'Lewe ramię z szafkami',
+        'rameno_vpravo_nazev' => 'Prawe ramię z szafkami',
         'rameno_vlevo' => 'Dodaj ramię po lewej (L)',
         'rameno_vpravo' => 'Dodaj ramię po prawej (L)',
         'vyska_skrine' => 'Wysokość',

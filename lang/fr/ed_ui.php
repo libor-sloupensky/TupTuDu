@@ -73,6 +73,11 @@ return [
     'krok_smazani_otvoru' => 'Suppression de l’ouverture',
     'krok_smazani_nabytku' => 'Suppression du meuble',
     'krok_smazani_objektu' => 'Suppression de l’objet',
+    // Potvrzení mazání (koncept-k-ui.js, potvrditSmazani)
+    'smazat_potvrzeni' => 'Voulez-vous vraiment supprimer ?',
+    'smazat_pocet' => 'one=:pocet objet|many=:pocet objets|other=:pocet objets',
+    'smazat_bod' => 'Point et murs qui en partent',
+    'smazat_podklad' => 'Fond de plan (dessin sous le plan)',
     'krok_vlozeni' => 'Collage (Ctrl+V)',
     'krok_prejmenovani_objektu' => 'Renommage de l’objet',
 

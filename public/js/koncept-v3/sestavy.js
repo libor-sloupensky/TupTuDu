@@ -1445,8 +1445,10 @@
         smazatSestavu(id = null) {
             const s = id ? this._sestavaPodleId(id) : this._vybranaSestava();
             if (!s) return;
+            // Mazání se vždy potvrzuje (Libor 11. 11. 2026: linka zmizela na jedno klepnutí)
+            if (!this.potvrditSmazani?.(s.id + ' ' + preloz('ed_dum.sestava.' + s.druh))) return;
             this.engine.pushUndo();
-            this.engine.dum.sestavy = this.engine.dum.sestavy.filter(x => x !== s);
+            this.engine.dum.sestavy = this.engine.dum.sestavy.filter(x => x.id !== s.id);
             this.sestavaSloupecKlic = null;
             this.sestavaDvere = null;
             this.renderer.clearSelection();
@@ -1643,6 +1645,12 @@
 
         /** Odebraná skříňka: ostatní zůstanou a rameno s volným koncem se o její šířku zkrátí (místo zbude volné). */
         sestavaOdeberSloupec() {
+            // Potvrzení jako u každého mazání; poslední skříňku ramene odebrat nejde (zmizelo by rameno)
+            const s0 = this._vybranaSestava(), v0 = this._sestavaVybranySloupec(s0);
+            if (!v0 || (volnyKonecRamene(s0, v0.ri) && s0.ramena[v0.ri].sloupce.length < 2)) return;
+            const rv = this._sestavaRozvrh(s0), c0 = rv.sloupce.find(x => x.klic === this.sestavaSloupecKlic);
+            const nazev = v0.sl.skladba === 'lista' ? preloz('ed_sablona.sestava.lista') : preloz('ed_sablona.sestava.skrinka', { cislo: rv.sloupce.indexOf(c0) + 1 });
+            if (!this.potvrditSmazani?.(s0.id + ' · ' + nazev)) return;
             this._sestavaUprav((s) => {
                 const v = this._sestavaVybranySloupec(s);
                 if (!v) return false;
@@ -1751,6 +1759,9 @@
 
         /** Odebere krajní rameno vlevo nebo vpravo (z U zbude L, z L rovná linka). */
         sestavaOdeberRameno(kde) {
+            const s0 = this._vybranaSestava();
+            if (!s0 || (s0.body || []).length < 3) return;
+            if (!this.potvrditSmazani?.(s0.id + ' · ' + preloz('ed_sablona.sestava.rameno_' + (kde === 'vlevo' ? 'vlevo' : 'vpravo') + '_nazev'))) return;
             this._sestavaUprav((s) => {
                 if ((s.body || []).length < 3) return false;
                 const rohy = Array.from({ length: s.body.length - 2 }, (_, k) => ({ ...ROH, ...((s.rohy || [])[k] || {}) }));

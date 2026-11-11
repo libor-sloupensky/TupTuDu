@@ -73,6 +73,11 @@ return [
     'krok_smazani_otvoru' => 'Delete opening',
     'krok_smazani_nabytku' => 'Delete furniture',
     'krok_smazani_objektu' => 'Delete object',
+    // Potvrzení mazání (koncept-k-ui.js, potvrditSmazani)
+    'smazat_potvrzeni' => 'Really delete?',
+    'smazat_pocet' => 'one=:pocet object|other=:pocet objects',
+    'smazat_bod' => 'Point and the walls leading from it',
+    'smazat_podklad' => 'Underlay (drawing under the plan)',
     'krok_vlozeni' => 'Paste (Ctrl+V)',
     'krok_prejmenovani_objektu' => 'Rename object',
 

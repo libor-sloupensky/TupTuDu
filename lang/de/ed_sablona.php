@@ -693,6 +693,8 @@ return [
         'roh_cislo' => 'Ecke :cislo',
         'odebrat_vlevo' => 'Linken Schenkel entfernen',
         'odebrat_vpravo' => 'Rechten Schenkel entfernen',
+        'rameno_vlevo_nazev' => 'Linker Schenkel mit den Schränken',
+        'rameno_vpravo_nazev' => 'Rechter Schenkel mit den Schränken',
         'rameno_vlevo' => 'Schenkel links hinzufügen (L)',
         'rameno_vpravo' => 'Schenkel rechts hinzufügen (L)',
         'vyska_skrine' => 'Höhe',

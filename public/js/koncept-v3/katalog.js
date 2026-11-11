@@ -578,6 +578,7 @@
         katalogSmaz() {
             const v = this.katalogObjekt;
             if (!v) return;
+            if (!this.potvrditSmazani?.(this._nazevProSmazani?.(v.id) || v.nazev)) return;
             this.engine.removeVybaveni(v.id);
             this.renderer.clearSelection?.();
             this._poZmeneDomu(preloz('ed_nastroje.katalog.akce_smazani'));

@@ -73,6 +73,11 @@ return [
     'krok_smazani_otvoru' => 'Smazání otvoru',
     'krok_smazani_nabytku' => 'Smazání nábytku',
     'krok_smazani_objektu' => 'Smazání objektu',
+    // Potvrzení mazání (koncept-k-ui.js, potvrditSmazani)
+    'smazat_potvrzeni' => 'Opravdu smazat?',
+    'smazat_pocet' => 'one=:pocet objekt|few=:pocet objekty|many=:pocet objektu|other=:pocet objektů',
+    'smazat_bod' => 'Bod a stěny, které z něj vedou',
+    'smazat_podklad' => 'Podklad (výkres pod kresbou)',
     'krok_vlozeni' => 'Ctrl+V vložení',
     'krok_prejmenovani_objektu' => 'Přejmenování objektu',
 

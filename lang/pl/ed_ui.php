@@ -73,6 +73,11 @@ return [
     'krok_smazani_otvoru' => 'Usunięcie otworu',
     'krok_smazani_nabytku' => 'Usunięcie mebla',
     'krok_smazani_objektu' => 'Usunięcie obiektu',
+    // Potvrzení mazání (koncept-k-ui.js, potvrditSmazani)
+    'smazat_potvrzeni' => 'Na pewno usunąć?',
+    'smazat_pocet' => 'one=:pocet obiekt|few=:pocet obiekty|many=:pocet obiektów|other=:pocet obiektu',
+    'smazat_bod' => 'Punkt i ściany, które z niego wychodzą',
+    'smazat_podklad' => 'Podkład (rysunek pod planem)',
     'krok_vlozeni' => 'Wklejenie Ctrl+V',
     'krok_prejmenovani_objektu' => 'Zmiana nazwy obiektu',
 

@@ -693,6 +693,8 @@ return [
         'roh_cislo' => 'Angle :cislo',
         'odebrat_vlevo' => 'Retirer le retour gauche',
         'odebrat_vpravo' => 'Retirer le retour droit',
+        'rameno_vlevo_nazev' => 'Retour gauche avec ses caissons',
+        'rameno_vpravo_nazev' => 'Retour droit avec ses caissons',
         'rameno_vlevo' => 'Ajouter un retour à gauche (L)',
         'rameno_vpravo' => 'Ajouter un retour à droite (L)',
         'vyska_skrine' => 'Hauteur',

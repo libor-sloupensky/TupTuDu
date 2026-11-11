@@ -640,9 +640,10 @@ function konceptKEditor(initialData) {
             this._poUpraveOtvoru(preloz('ed_ui.krok_podlaha_mistnosti'));
         },
 
-        smazatVybraneOddelovace() {
+        smazatVybraneOddelovace(bezPotvrzeni = false) {
             const ids = [...this.renderer.selectedOddelovace];
             if (ids.length === 0) return;
+            if (!bezPotvrzeni && !this.potvrditSmazani(ids.map(() => preloz('ed_sablona.stena.oddelovac')))) return;
             this.engine.pushUndo();
             for (const id of ids) this.engine.removeOddelovac(id);
             this.renderer.selectedOddelovace.clear();
@@ -5004,10 +5005,21 @@ function konceptKEditor(initialData) {
             }
 
             if (e.key === 'Delete' || e.key === 'Backspace') {
+                // Objekty domu (schody, sloup, sestava) se potvrzují ve svých funkcích
                 if (this.domSmazVybrane?.()) return;
+                // Všechno ostatní jedním potvrzením: oddělovače, stěny, otvory, body i nábytek (Libor 11. 11. 2026)
+                const r = this.renderer;
+                const drzeny = (this.isDraggingWall && this.draggingWallId) || (this.isDraggingOpening && this.draggingOpeningId)
+                    || (this.isDraggingVybaveni && this.draggingVybaveniId);
+                const nazvy = drzeny ? [this._nazevProSmazani(drzeny)]
+                    : (this.isDraggingNode && this.draggingNodeId) ? [preloz('ed_ui.smazat_bod')]
+                    : [...[...(r?.selectedOddelovace || [])].map(() => preloz('ed_sablona.stena.oddelovac')),
+                        ...[...(r?.selectedWalls || []), ...(r?.selectedOpenings || []), ...(r?.selectedVybaveni || [])].map(id => this._nazevProSmazani(id)),
+                        ...[...(r?.selectedNodes || [])].map(() => preloz('ed_ui.smazat_bod'))];
+                if (!nazvy.length || !this.potvrditSmazani(nazvy)) return;
                 if (this.renderer && this.renderer.selectedOddelovace.size > 0) {
-                    this.smazatVybraneOddelovace();
-                    if (!this.renderer.selectedWalls.size && !this.renderer.selectedOpenings.size && !this.renderer.selectedNodes.size) return;
+                    this.smazatVybraneOddelovace(true);
+                    if (!this.renderer.selectedWalls.size && !this.renderer.selectedOpenings.size && !this.renderer.selectedNodes.size && !this.renderer.selectedVybaveni.size) return;
                 }
                 // Během drag — smazat držený objekt
                 if (this.isDraggingWall && this.draggingWallId) {
@@ -5555,9 +5567,13 @@ function konceptKEditor(initialData) {
         },
 
         async katastrOdeberParcelu(index) {
-            // Varování při odebírání poslední parcely
+            // Varování při odebírání poslední parcely, ostatní s běžným potvrzením mazání a číslem parcely
             if (this.katastrParcely.length === 1) {
                 if (!confirm(preloz('ed_ui.parcela_odebrat_posledni'))) return;
+            } else {
+                const p = this.katastrParcely[index];
+                const druh = preloz(p?.typ === 'stavebni' ? 'ed_sablona.parcela.zkratka_stavebni' : 'ed_sablona.parcela.zkratka_pozemkova');
+                if (!this.potvrditSmazani(p ? p.cislo + ' (' + druh + ')' : '')) return;
             }
             this.katastrParcely.splice(index, 1);
             this.katastrProfil = null;
@@ -6074,6 +6090,7 @@ function konceptKEditor(initialData) {
                 this.smazatSestavu(id);
                 return;
             }
+            if (!this.potvrditSmazani(this._nazevProSmazani(id))) return;
             this.engine.pushUndo();
             if (this.engine.walls.has(id)) {
                 this.engine.removeWall(id);
@@ -6085,6 +6102,47 @@ function konceptKEditor(initialData) {
             this.renderer.clearSelection();
             this.renderer.render();
             this.autoSave(preloz('ed_ui.krok_smazani_objektu'));
+        },
+
+        /**
+         * Potvrzení mazání (Libor 11. 11. 2026: „čekal jsem ověření typu opravdu smazat, zkontroluj, aby to tak bylo
+         * u všeho mazání“). Jedno okno pro všechno mazání v editoru, druhý řádek říká, co zmizí (víc než čtyři kusy
+         * počtem). Zpět mazání vrátí i tak. Testy okno obcházejí přes window.confirm.
+         * @param {string[]|string} co  názvy mazaných věcí
+         */
+        potvrditSmazani(co) {
+            const seznam = [].concat(co || []).filter(Boolean);
+            const popis = seznam.length > 4 ? prelozPocet('ed_ui.smazat_pocet', seznam.length) : seznam.join(', ');
+            const ok = window.confirm(preloz('ed_ui.smazat_potvrzeni') + (popis ? '\n' + popis : ''));
+            this._poOknuPotvrzeni(ok);
+            return ok;
+        },
+
+        /**
+         * Okno potvrzení spolkne puštění myši (Delete zmáčknutý během tažení). Co se myší dělalo, se proto dokončí
+         * tady, jinak by objekt jel dál s kurzorem: tah a otáčení se uloží, rámeček výběru zahodí. Držená stěna,
+         * bod, otvor nebo nábytek zůstanou po OK tažené, ty smaže Delete; po Zrušit zůstanou, kam je myš dotáhla.
+         */
+        _poOknuPotvrzeni(ok) {
+            this._pendingDrag = null;
+            if (this.selectionStart) {
+                this.selectionStart = null;
+                this.renderer?.clearSelectionRect();
+                this._removeScreenSelectionRect();
+            }
+            if (this.isPanning) { this.isPanning = false; this.ulozitNastaveni(); }
+            if (this._domTah) {
+                if (this._domTah.typ === 'sestavaNova') { this._domTah = null; this._sestavaNahled = null; }
+                else this.domPusteni?.();
+            }
+            const drzeny = this.isDraggingWall || this.isDraggingNode || this.isDraggingOpening || this.isDraggingVybaveni;
+            if (this.isRotating || this.isDraggingOddelovac || (!ok && drzeny)) this.onMouseUp({ evt: {} });
+        },
+
+        /** Název objektu do potvrzení mazání: označení z výkresu a název jako v seznamu objektů (W3 Obvodová stěna). */
+        _nazevProSmazani(id) {
+            const r = this.engine?.getObjectList().find(o => o.id === id);
+            return r ? ((r.oznaceni || r.id) + ' ' + (r.nazev || '')).trim() : String(id);
         },
 
         /** Výběr stěny nebo otvoru — společná cesta pro klik na plánku i v seznamu objektů. */

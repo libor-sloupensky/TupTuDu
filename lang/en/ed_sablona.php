@@ -693,6 +693,8 @@ return [
         'roh_cislo' => 'Corner :cislo',
         'odebrat_vlevo' => 'Remove left run',
         'odebrat_vpravo' => 'Remove right run',
+        'rameno_vlevo_nazev' => 'Left run with its cabinets',
+        'rameno_vpravo_nazev' => 'Right run with its cabinets',
         'rameno_vlevo' => 'Add a run on the left (L)',
         'rameno_vpravo' => 'Add a run on the right (L)',
         'vyska_skrine' => 'Height',

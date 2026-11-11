@@ -78,6 +78,9 @@ skříň znovu rovným dílem. Tah za konec mění krajní díl, mimo 20–150 c
 - **Výběr:** klik na sestavu v půdorysu vybere ji i skříňku, tahem skříňky se přesune v řadě (`_sestavaCilSloupce`).
   Úchyty na koncích mění délku po volném úseku (magnet na konec úseku). Ve 3D klik vybere sestavu i skříňku
   (`userData.sloupce` po trojúhelnících, `_sestava3dZasah` v `_kus3dKlik`). Delete smaže skříňku, nebo sestavu.
+- **Mazání vždy po potvrzení** „Opravdu smazat?“ s názvem (K1 Kuchyňská linka, K1 · Skříňka 3, K1 · Levé rameno
+  se skříňkami): Delete, Smazat v panelu, odebrání skříňky a ramene, křížek v Objektech (Libor 11. 11. 2026,
+  linka předtím zmizela na jedno klepnutí). Společné okno `potvrditSmazani` v `koncept-k-ui.js`.
 - **Panel** (`partials/panel-sestavy.blade.php`): záložky Skříňky/Dveře, Rozměry, Povrchy. Nákres zepředu (SVG z
   `nakres`) je hlavní místo úprav: klik vybere skříňku, tah ji přesune, okna ve stěně jsou modře, strop čárkovaně.
 - **Katalog:** ve skupině Kuchyně a v noční zóně a vstupu je první dlaždice odkaz do sestavy.
@@ -107,9 +110,13 @@ háčky v `dum.js` (stisk, pohyb, puštění, klik, Esc, Delete, inspektor, `_re
 ## Testy
 `node services/import-test/test-sestava-ui.cjs` (kreslení, vybavení, nákres, pevná šířka, volné místo a posun
 skříňky, tah myší, délka a Zpět, L a U tlačítkem, rameno před dveřmi, skříň se zrcadlem a šířkou dveří, 3D,
-sdílený odkaz, uložení, kreslení do L a do U). Panely v `test-formulare-ui.cjs`.
+sdílený odkaz, uložení, potvrzení mazání skříně, skříňky a ramene, kreslení do L a do U). Panely v
+`test-formulare-ui.cjs`.
 
 ## Zatím ne / další kroky
+**Příště (Libor 11. 11. 2026):** automatické vybavení linky nefunguje dobře a roh nezná využití rohové skříňky
+(otočné poličky, rohová dvířka). Nejdřív projít s Liborem, co od vybavení čeká.
+
 Ostrůvek a barový pult; skříň do L a zkosení v podkroví; dělené dveře skříně; nezávislé dělení horních skříněk;
 povrch po jednotlivých skříňkách; fotografické textury dřeva a kamene (postup jako krytiny); osvětlení pod
 skříňkami; volně stojící sporák, pračka a vinotéka.

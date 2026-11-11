@@ -693,6 +693,8 @@ return [
         'roh_cislo' => 'Angolo :cislo',
         'odebrat_vlevo' => 'Togli il lato sinistro',
         'odebrat_vpravo' => 'Togli il lato destro',
+        'rameno_vlevo_nazev' => 'Lato sinistro con i suoi moduli',
+        'rameno_vpravo_nazev' => 'Lato destro con i suoi moduli',
         'rameno_vlevo' => 'Aggiungi un lato a sinistra (L)',
         'rameno_vpravo' => 'Aggiungi un lato a destra (L)',
         'vyska_skrine' => 'Altezza',

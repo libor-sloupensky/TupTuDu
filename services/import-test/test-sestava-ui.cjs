@@ -52,6 +52,9 @@ async function main() {
             const j = await r.json(); location.href = j.redirect; })()`);
         await pauza(3000);
         await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        // Mazání se potvrzuje oknem prohlížeče: test si texty zapíše a odpoví podle window.__odpoved (výchozí OK)
+        const potvrzovani = `window.__potvrzeni = []; window.__odpoved = true; window.confirm = (t) => { window.__potvrzeni.push(String(t)); return window.__odpoved; }; true`;
+        await p.vyhodnot(potvrzovani);
 
         console.log('\n1) Místnost 5 × 4 m: okno v horní stěně (parapet 1,1 m), dveře dole vlevo');
         await p.vyhodnot(`(() => { const d = ${D}; const e = d.engine; const X = e.PX_PER_M;
@@ -171,10 +174,11 @@ async function main() {
         st = await p.vyhodnot(`JSON.parse(JSON.stringify((${D}.inspector?.rohy || []).length))`);
         kontrola('panel ukazuje oba rohy', st === 2, String(st));
         await p.snimek(path.join(vystup, 'sestava-2b-U.png'));
-        await p.vyhodnot(`(() => { document.querySelector('[data-sestava-odebrat-rameno="vlevo"]').click(); return true; })()`);
+        await p.vyhodnot(`(() => { window.__potvrzeni = []; document.querySelector('[data-sestava-odebrat-rameno="vlevo"]').click(); return true; })()`);
         await pauza(300);
         k = await sestava('K1');
-        kontrola('odebrání levého ramene vrátí L', k.body.length === 3 && k.rohy.length === 1, JSON.stringify({ body: k.body.length }));
+        const textOdebrani = await p.vyhodnot('window.__potvrzeni.slice()');
+        kontrola('odebrání levého ramene se zeptá a po OK vrátí L', k.body.length === 3 && k.rohy.length === 1 && textOdebrani.length === 1 && textOdebrani[0] === 'Opravdu smazat?\nK1 · Levé rameno se skříňkami', JSON.stringify({ body: k.body.length, textOdebrani }));
 
         console.log('\n8) Vestavěná skříň vpravo od dveří u dolní stěny');
         await p.vyhodnot(`(() => { const d = ${D}; d.renderer.clearSelection(); document.querySelector('[data-sestava-druh="skrin"]')?.click(); return true; })()`);
@@ -225,11 +229,26 @@ async function main() {
         const po = await p.vyhodnot(`JSON.stringify(${D}.engine.dum.sestavy)`);
         kontrola('sestavy se uložily beze změny', pred === po && JSON.parse(po).length === 2, `${pred.length} / ${po.length}`);
 
-        console.log('\n11) Smazání skříně ze seznamu objektů');
-        await p.vyhodnot(`(() => { ${D}.smazatObjekt('B1'); return true; })()`);
+        console.log('\n11) Smazání skříně ze seznamu objektů, vždy s potvrzením');
+        // Po obnovení stránky znovu zapisovat texty okna, teď s odpovědí Zrušit
+        await p.vyhodnot(potvrzovani);
+        await p.vyhodnot(`(() => { window.__odpoved = false; ${D}.smazatObjekt('B1'); return true; })()`);
+        await pauza(300);
+        st = await p.vyhodnot(`({ ids: ${D}.engine.dum.sestavy.map(s => s.id), texty: window.__potvrzeni.slice() })`);
+        kontrola('mazání se ptá „Opravdu smazat?“ s názvem objektu, Zrušit skříň nechá', JSON.stringify(st.ids) === '["K1","B1"]' && st.texty.length === 1 && /^Opravdu smazat\?\nB1 /.test(st.texty[0]), JSON.stringify(st));
+        await p.vyhodnot(`(() => { window.__potvrzeni = []; window.__odpoved = true; ${D}.smazatObjekt('B1'); return true; })()`);
         await pauza(300);
         const zbyva = await p.vyhodnot(`${D}.engine.dum.sestavy.map(s => s.id)`);
-        kontrola('zůstala jen kuchyně', JSON.stringify(zbyva) === '["K1"]', JSON.stringify(zbyva));
+        kontrola('po OK zůstala jen kuchyně', JSON.stringify(zbyva) === '["K1"]', JSON.stringify(zbyva));
+
+        // Odebrání skříňky a ramene v panelu se ptá stejně, Zrušit nic nezmění
+        st = await p.vyhodnot(`(() => { const d = ${D}; d.vyberObjekt('K1'); const s = d._vybranaSestava(); const r = d._sestavaRozvrh(s);
+            const c = r.sloupce.find(x => x.ri === 1 && x.sl.skladba !== 'lista') || r.sloupce[0]; d.sestavaSloupecKlic = c.klic;
+            const pred = JSON.stringify(s); window.__potvrzeni = []; window.__odpoved = false;
+            d.sestavaOdeberSloupec(); d.sestavaOdeberRameno('vpravo');
+            return { stejne: JSON.stringify(d._vybranaSestava()) === pred, texty: window.__potvrzeni.slice(), ramen: s.ramena.length }; })()`);
+        kontrola('odebrání skříňky i ramene se ptá, Zrušit sestavu nezmění', st.stejne && st.texty.length === 2 && st.texty.every(t => /^Opravdu smazat\?\nK1 · /.test(t)), JSON.stringify(st));
+        await p.vyhodnot('window.__odpoved = true; true');
 
         console.log('\n12) Nástroj s tvarem: do L klik u pravého konce, do U oba rohy');
         await p.vyhodnot(`(() => { const d = ${D}; d.smazatObjekt('K1'); d.zacniSestavu('kuchyn'); d.nastavTvarSestavy('L'); return true; })()`);

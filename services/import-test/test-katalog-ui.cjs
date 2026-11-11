@@ -180,7 +180,8 @@ const kontrola = (popis, podminka, detail = '') => {
         await mys('mouseReleased', cilP); await pauza(350);
         const poPusteni = await p.vyhodnot(`(() => { const d = ${D}; const v = d.engine.vybaveni[d.engine.vybaveni.length - 1]; return { kusu: d.engine.vybaveni.length, stred: v.stred, nastroj: d.nastroj, vybrano: d.renderer.selectedVybaveni.has(v.id), nahled: !!document.querySelector('body > img[style*="fixed"]') }; })()`);
         kontrola('puštěním v půdorysu se kus vloží na místo kurzoru a vybere', poPusteni.kusu === pred + 1 && Math.abs(poPusteni.stred[0] - 5.5) < 0.05 && Math.abs(-poPusteni.stred[1] - 4) < 0.05 && poPusteni.vybrano && poPusteni.nastroj === 'vyber' && !poPusteni.nahled, JSON.stringify(poPusteni));
-        await p.vyhodnot(`${D}.katalogSmaz(); true`);
+        // Mazání se potvrzuje oknem prohlížeče (potvrditSmazani), test ho odsouhlasí
+        await p.vyhodnot(`window.confirm = () => true; ${D}.katalogSmaz(); true`);
         await pauza(200);
         const mimo = await karta();
         await pretahni({ x: mimo.x + 20, y: mimo.y + 40 });

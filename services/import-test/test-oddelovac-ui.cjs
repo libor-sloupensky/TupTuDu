@@ -205,6 +205,8 @@ async function main() {
         await p.cekej(`(() => { const d = ${D}; const n = d.stage.getIntersection(d.stage.getAbsoluteTransform().copy().point({ x: 2.5 * ${PX}, y: 4 * ${PX} })); return n && d.renderer.hitTest(n)?.type === 'oddelovac'; })()`, 5000, 'oddělovač na plátně');
         await klik(await naObr(2.5 * PX, 4 * PX));   // znovu vybrat oddělovač (kontrola „Různé" vybírala stěny)
         const vyberPredDelete = await p.vyhodnot(`(() => { const r = ${D}.renderer; return { oddelovace: r.selectedOddelovace.size, steny: r.selectedWalls.size, mistnosti: r.selectedMistnosti.size }; })()`);
+        // Mazání se potvrzuje oknem prohlížeče (potvrditSmazani), test ho odsouhlasí
+        await p.vyhodnot('window.confirm = () => true; true');
         await klavesa('Delete', 'Delete');
         s = await stav();
         kontrola('Delete smaže vybraný oddělovač', s.length === 1 && s[0].b[2] === 'volny', JSON.stringify({ s, vyberPredDelete }));

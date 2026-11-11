@@ -889,6 +889,7 @@ window.KonceptImport = {
     },
 
     podkladOdeber() {
+        if (!this.potvrditSmazani?.(preloz('ed_ui.smazat_podklad'))) return;
         this.podklad = null;
         this.renderer?.smazPodklad();
         this.podkladUloz();

@@ -73,6 +73,11 @@ return [
     'krok_smazani_otvoru' => 'Eliminazione apertura',
     'krok_smazani_nabytku' => 'Eliminazione arredo',
     'krok_smazani_objektu' => 'Eliminazione oggetto',
+    // Potvrzení mazání (koncept-k-ui.js, potvrditSmazani)
+    'smazat_potvrzeni' => 'Vuoi davvero eliminare?',
+    'smazat_pocet' => 'one=:pocet oggetto|many=:pocet oggetti|other=:pocet oggetti',
+    'smazat_bod' => 'Punto e pareti che ne partono',
+    'smazat_podklad' => 'Base (disegno sotto la pianta)',
     'krok_vlozeni' => 'Incolla (Ctrl+V)',
     'krok_prejmenovani_objektu' => 'Rinomina oggetto',
 

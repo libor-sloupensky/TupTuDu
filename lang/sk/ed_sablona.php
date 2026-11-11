@@ -693,6 +693,8 @@ return [
         'roh_cislo' => 'Roh :cislo',
         'odebrat_vlevo' => 'Odobrať ľavé rameno',
         'odebrat_vpravo' => 'Odobrať pravé rameno',
+        'rameno_vlevo_nazev' => 'Ľavé rameno so skrinkami',
+        'rameno_vpravo_nazev' => 'Pravé rameno so skrinkami',
         'rameno_vlevo' => 'Pridať rameno vľavo (L)',
         'rameno_vpravo' => 'Pridať rameno vpravo (L)',
         'vyska_skrine' => 'Výška',

@@ -1821,6 +1821,7 @@
         smazatSchody() {
             const s = this._vybraneSchody();
             if (!s) return;
+            if (!this.potvrditSmazani?.(this._nazevProSmazani?.(s.id) || s.id)) return;
             this.engine.pushUndo();
             this.engine.dum.schodiste = this.engine.dum.schodiste.filter(x => x !== s);
             this.renderer.clearSelection();
@@ -1973,6 +1974,7 @@
         smazatSloup() {
             const s = this._vybranySloup();
             if (!s) return;
+            if (!this.potvrditSmazani?.(this._nazevProSmazani?.(s.id) || s.id)) return;
             this.engine.pushUndo();
             this.engine.dum.sloupy = this.engine.dum.sloupy.filter(x => x !== s);
             this.renderer.clearSelection();
@@ -2273,6 +2275,7 @@
         },
 
         smazatStrechu() {
+            if (!this.engine.dum.strecha || !this.potvrditSmazani?.(preloz('ed_dum.strecha'))) return;
             this.engine.pushUndo();
             this.engine.dum.strecha = null;
             this.strechaHrana = null;

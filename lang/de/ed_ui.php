@@ -73,6 +73,11 @@ return [
     'krok_smazani_otvoru' => 'Öffnung gelöscht',
     'krok_smazani_nabytku' => 'Möbel gelöscht',
     'krok_smazani_objektu' => 'Objekt gelöscht',
+    // Potvrzení mazání (koncept-k-ui.js, potvrditSmazani)
+    'smazat_potvrzeni' => 'Wirklich löschen?',
+    'smazat_pocet' => 'one=:pocet Objekt|other=:pocet Objekte',
+    'smazat_bod' => 'Punkt und die Wände, die von ihm ausgehen',
+    'smazat_podklad' => 'Vorlage (Zeichnung unter dem Plan)',
     'krok_vlozeni' => 'Einfügen (Ctrl+V)',
     'krok_prejmenovani_objektu' => 'Objekt umbenannt',
 

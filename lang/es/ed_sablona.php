@@ -693,6 +693,8 @@ return [
         'roh_cislo' => 'Esquina :cislo',
         'odebrat_vlevo' => 'Quitar tramo izquierdo',
         'odebrat_vpravo' => 'Quitar tramo derecho',
+        'rameno_vlevo_nazev' => 'Tramo izquierdo con sus módulos',
+        'rameno_vpravo_nazev' => 'Tramo derecho con sus módulos',
         'rameno_vlevo' => 'Añadir tramo a la izquierda (L)',
         'rameno_vpravo' => 'Añadir tramo a la derecha (L)',
         'vyska_skrine' => 'Altura',

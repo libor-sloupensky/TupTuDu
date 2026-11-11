@@ -58,6 +58,8 @@ async function main() {
             const j = await r.json(); location.href = j.redirect; })()`);
         await pauza(3000);
         await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        // Mazání se potvrzuje oknem prohlížeče (potvrditSmazani), test ho odsouhlasí
+        await p.vyhodnot('window.confirm = () => true; true');
         const url = await p.vyhodnot('location.href');
 
         console.log('\n1) Přízemí a přepínač podlaží');
