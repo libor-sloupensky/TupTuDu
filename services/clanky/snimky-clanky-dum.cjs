@@ -22,18 +22,31 @@ async function vzorovyDum(s, nazev) {
     await s.do3d();
 }
 
+/** Počká, až mají materiály krytiny načtené fotografické textury (krytiny-3d.js se načítá asynchronně). */
+async function cekejNaTextury(s) {
+    await s.p.cekej(`(() => { let vse = true, pocet = 0; window._kk3d.dumSkupina.traverse(o => { const m = o.material;
+        if (!m || !m.userData?.krytinaVzhled) return; pocet++; for (const t of [m.map, m.normalMap, m.aoMap]) if (!t || !t.image) vse = false; });
+        return pocet === 0 || vse; })()`, 30000, 'textury krytiny');
+    await S.pauza(300);
+}
+
+/** Vzhled krytiny podle id z public/textury/krytiny/vzhledy.json: typ i barva (tašky a břidlice mají barvu pevnou). */
+const vzhledKrytiny = (id) => `{ const v = window.Krytiny3d.podleId(${JSON.stringify(id)}); d.setStrecha('krytina', v.typ); d.setStrecha('barva', v.hex); }`;
+
 async function strecha(s, nast) {
-    const prikazy = Object.entries(nast).map(([k, v]) => `d.setStrecha(${JSON.stringify(k)}, ${JSON.stringify(v)});`).join(' ');
-    await s.js(`${prikazy} return true;`);
+    const { vzhled, ...zbytek } = nast;
+    const prikazy = Object.entries(zbytek).map(([k, v]) => `d.setStrecha(${JSON.stringify(k)}, ${JSON.stringify(v)});`).join(' ');
+    await s.js(`${prikazy} ${vzhled ? vzhledKrytiny(vzhled) : ''} return true;`);
     await s.prestav3d();
+    await cekejNaTextury(s);
 }
 
 async function typyStrech(s) {
     console.log('\nTypy střech');
     await vzorovyDum(s, 'snímky typy střech');
     const typy = [
-        { typ: 'sedlova', sklon: 38, krytina: 'taska', barva: KRYTINA.cervena },
-        { typ: 'valbova', sklon: 30, krytina: 'taska', barva: KRYTINA.cervena },
+        { typ: 'sedlova', sklon: 38, vzhled: 'taska-cervena' },
+        { typ: 'valbova', sklon: 30, vzhled: 'taska-cervena' },
         { typ: 'pultova', sklon: 15, krytina: 'falc', barva: KRYTINA.antracit },
         { typ: 'plocha', sklon: 2, krytina: 'falc', barva: KRYTINA.antracit },
     ];
@@ -42,11 +55,11 @@ async function typyStrech(s) {
     // Jeden záběr pro všechny čtyři: obálka všech střech dohromady
     await s.js(`window.__vse = []; return true;`);
     for (const t of typy) {
-        await strecha(s, { typ: t.typ, sklon: t.sklon, presah: 0.5, krytina: t.krytina, barva: t.barva });
+        await strecha(s, { typ: t.typ, sklon: t.sklon, presah: 0.5, ...(t.vzhled ? { vzhled: t.vzhled } : { krytina: t.krytina, barva: t.barva }) });
         await s.js(`window.__vse.push(...${sn('body')}()); return true;`);
     }
     for (const [i, t] of typy.entries()) {
-        await strecha(s, { typ: t.typ, sklon: t.sklon, presah: 0.5, krytina: t.krytina, barva: t.barva });
+        await strecha(s, { typ: t.typ, sklon: t.sklon, presah: 0.5, ...(t.vzhled ? { vzhled: t.vzhled } : { krytina: t.krytina, barva: t.barva }) });
         if (i === 0) {
             // Náhled pro sdílení jen se sedlovou
             await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(POHLED)}, pomer: ${OG[0] / OG[1]}, okraj: 0.05 }); return true;`);
@@ -64,7 +77,7 @@ async function typyStrech(s) {
     // Sedlová 30° a 45° kolmo na štít, stejné měřítko (záběr podle vyšší)
     const osa = await s.js(`const u = e.smerRastru(); return [Math.sin(u), -Math.cos(u)];`);
     const pohled = [osa[0], Math.tan(4 * Math.PI / 180), osa[1]];
-    await strecha(s, { typ: 'sedlova', sklon: 45, presah: 0.5, krytina: 'taska', barva: KRYTINA.cervena });
+    await strecha(s, { typ: 'sedlova', sklon: 45, presah: 0.5, vzhled: 'taska-cervena' });
     await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(pohled)}, pomer: 597 / 500, okraj: 0.05 }); return true;`);
     await S.pauza(600);
     await s.js(`return ${sn('snimek')}('s45', 597, 500);`);
@@ -79,16 +92,19 @@ async function barvaFasady(s) {
     console.log('\nBarva fasády');
     await vzorovyDum(s, 'snímky barva fasády');
     const kombinace = [
-        { fasada: RAL[9016], strecha: RAL[7016], okna: RAL[7016] },
-        { fasada: RAL[9001], strecha: KRYTINA.cervena, okna: RAL[9016] },
-        { fasada: '#D8C8A8', strecha: KRYTINA.hneda, okna: RAL[8003] },
-        { fasada: RAL[7035], strecha: RAL[9011], okna: RAL[9016] },
+        { fasada: RAL[9016], strecha: 'taska-cerna', okna: RAL[7016] },
+        { fasada: RAL[9001], strecha: 'taska-cervena', okna: RAL[9016] },
+        { fasada: '#D8C8A8', strecha: 'betonova-hneda-mech', okna: RAL[8003] },
+        { fasada: RAL[7035], strecha: 'betonova-cerna', okna: RAL[9016] },
     ];
-    const barvy = (k) => s.js(`d.setBarvaDomu('fasada', '${k.fasada}'); d.setBarvaDomu('oknoVen', '${k.okna}'); d.setBarvaDomu('dvereVen', '${k.okna}'); d.setStrecha('barva', '${k.strecha}'); return true;`);
-    await strecha(s, { typ: 'sedlova', sklon: 38, presah: 0.5, krytina: 'taska' });
+    const barvy = async (k) => {
+        await s.js(`d.setBarvaDomu('fasada', '${k.fasada}'); d.setBarvaDomu('oknoVen', '${k.okna}'); d.setBarvaDomu('dvereVen', '${k.okna}'); ${vzhledKrytiny(k.strecha)} return true;`);
+        await s.prestav3d();
+        await cekejNaTextury(s);
+    };
+    await strecha(s, { typ: 'sedlova', sklon: 38, presah: 0.5 });
     for (const [i, k] of kombinace.entries()) {
         await barvy(k);
-        await s.prestav3d();
         await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(20, 0.29, 0.96))}, pomer: 597 / 398, okraj: 0.05 }); return true;`);
         await S.pauza(600);
         await s.js(`return ${sn('snimek')}('b${i}', 597, 398);`);
@@ -99,7 +115,6 @@ async function barvaFasady(s) {
     // Úvodní obrázek (i náhled při sdílení): světlá fasáda s tmavou střechou a okny, zahradní strana s velkými okny,
     // pohled skoro z výšky očí a z jiného místa než mřížka kombinací
     await barvy(kombinace[0]);
-    await s.prestav3d();
     const zahrada = await s.js(`const t = e.smerRastru(), U = [Math.cos(t), Math.sin(t)], V = [-Math.sin(t), Math.cos(t)];
         return [U[0] - 0.35 * V[0], U[1] - 0.35 * V[1]];`);
     await s.js(`${sn('zaber')}({ smer: ${JSON.stringify(smer(11, zahrada[0], zahrada[1]))}, pomer: ${OG[0] / OG[1]}, okraj: 0.06 }); return true;`);

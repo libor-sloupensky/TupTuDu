@@ -7,7 +7,7 @@ publikovano: 2026-11-11
 overeno: 2026-11-11
 revize: 2026-11-11
 autor: Libor z TupTuDu
-stav: koncept
+stav: zverejneno
 obrazek: /img/clanky/barva-fasady/barva-fasady.jpg
 souvisejici: jak-nakreslit-pudorys-domu, typy-strech
 - Weber, technický list weberpas akrylát (HBW minimálně 25 na ETICS, zvláště osluněné plochy; nižší HBW jen s weberreflex po konzultaci) | https://www.cz.weber/files/cz/2025-04/TL_weberpas_akrylat_gr2025_FIN.pdf
@@ -20,6 +20,8 @@ souvisejici: jak-nakreslit-pudorys-domu, typy-strech
 - Krajský soud v Praze, 48 A 25/2016 (Veltrusy): ochranné pásmo zámku, povolení předepsalo pálenou krytinu, nařízené odstranění černé betonové krytiny potvrzeno | https://vyhledavac.nssoud.cz/DokumentOriginal/Index/452368
 - Zákon 20/1987 Sb., § 14 odst. 2: závazné stanovisko obce s rozšířenou působností v památkové zóně, rezervaci a ochranném pásmu, i k udržovacím pracím | https://www.zakonyprolidi.cz/cs/1987-20
 ---
+::obrazek /img/clanky/barva-fasady/barva-fasady-uvod.webp | Bílý přízemní dům s černou taškovou střechou a antracitovými okny, pohled ze zahrady na velká okna obývacího pokoje. | Světlá fasáda s tmavou střechou a okny: kontrast, který sedí skoro vždy, editor TupTuDu | 1200 | 630
+
 ## Nejdřív střecha a okna
 
 Krytina a okna vydrží desítky let, fasáda se přetírá častěji. Proto se volí k nim.
@@ -59,7 +61,7 @@ Malý čtvereček v obchodě vypadá jinak než celá stěna venku. Odstín měn
 
 ## Vyzkoušej to na svém domě
 
-V TupTuDu si [nakreslíš půdorys domu](clanek:jak-nakreslit-pudorys-domu), přidáš střechu a okna a [ve 3D nabarvíš](aplikace:) fasádu, střechu, okna zvlášť zvenku a zevnitř, dveře i vrata. Odstín ze vzorníku výrobce zadáš kódem #rrggbb, nebo vybereš nejbližší RAL. Dům si otočíš a uvidíš stranu ve slunci i ve stínu. Výsledek pošleš rodině odkazem.
+V TupTuDu si [nakreslíš půdorys domu](clanek:jak-nakreslit-pudorys-domu), přidáš střechu a okna a [ve 3D nabarvíš](aplikace:) fasádu, střechu, okna zvlášť zvenku a zevnitř, dveře i vrata. U fasády, oken a dveří zadáš odstín ze vzorníku výrobce kódem #rrggbb, nebo vybereš nejbližší RAL. Tašky a břidlici vybereš z hotových vzhledů podle fotografií, plech v jakékoli barvě. Dům si otočíš a uvidíš stranu ve slunci i ve stínu. Výsledek pošleš rodině odkazem.
 
 Barvu na obrazovce ovlivní monitor a převod RAL je orientační. 3D proto slouží k porovnání kombinací, konečný odstín ověř na vzorku. Fasádu editor barví jedním odstínem, obklad nebo druhou barvu na části domu zatím nenastavíš.
 

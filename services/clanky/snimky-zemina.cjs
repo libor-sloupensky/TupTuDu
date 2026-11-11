@@ -48,7 +48,7 @@ const SIRKA = 1200, VYSKA = 700;
             O(jih, 1.0, 1.0, 'dvere', { strana: 'in' }); O(jih, 3.5, 1.5, 'okno'); O(jih, 6.7, 1.5, 'okno'); O(jih, 9.5, 1.5, 'okno');
             O(zapad, 2.0, 1.2, 'okno'); O(zapad, 6.8, 1.2, 'okno');
             O(sever, 2.0, 1.2, 'okno'); O(sever, 8.0, 1.2, 'okno'); O(vychod, 4.0, 1.2, 'okno');
-            d.setBarvaDomu('fasada', '#e8e2d6'); d.renderer.render(); d.autoSave('Stěny'); d._selectionTick++; return true;`);
+            d.setBarvaDomu('fasada', '#F6F6F6'); d.renderer.render(); d.autoSave('Stěny'); d._selectionTick++; return true;`);
         await pauza(1000);
         await js(`d.katastrParcely = [{ cislo: 'ukázka', label: 'ukázka', polygon_wgs84: [[50 - 0.00025, 15 - 0.00035], [50 + 0.00035, 15 - 0.00035], [50 + 0.00035, 15 + 0.0005], [50 - 0.00025, 15 + 0.0005]] }];
             d._zalozZaklady();
@@ -98,10 +98,28 @@ const SIRKA = 1200, VYSKA = 700;
         await uloz('vykop-svah');
 
         // Stejný dům s podlahou 30 cm nad terénem: základ se na dolní straně protáhne až k němu
-        const nad = await js(`d.setVolbuZakladu('prodlouzit', true); d.setNadTerenem(0.3); d.strechaVytvor(); d.seznamPodlazi.forEach(x => { if (!x.viditelne3d) d.naPodlazi(x.id); });
+        const nad = await js(`d.setVolbuZakladu('prodlouzit', true); d.setNadTerenem(0.3); d.strechaVytvor();
+            { const v = window.Krytiny3d.podleId('taska-cervena'); d.setStrecha('krytina', v.typ); d.setStrecha('barva', v.hex); }
+            d.seznamPodlazi.forEach(x => { if (!x.viditelne3d) d.naPodlazi(x.id); });
             const z = d.zemina; return { nad: z.zakladNadTerenem, vykopek: z.vykopek.vykopano, ornice: z.ornice.vykopano, sterk: z.sterk };`);
         console.log('nad terénem:', JSON.stringify(nad));
         await pauza(1500);
+        // Fotografické textury krytiny se načítají asynchronně (krytiny-3d.js)
+        await p.cekej(`(() => { let vse = true, pocet = 0; window._kk3d.dumSkupina.traverse(o => { const m = o.material;
+            if (!m || !m.userData?.krytinaVzhled) return; pocet++; for (const t of [m.map, m.normalMap, m.aoMap]) if (!t || !t.image) vse = false; });
+            return pocet === 0 || vse; })()`, 30000, 'textury krytiny');
+        await pauza(500);
+        // Základ nad terénem má v editoru barvu fasády (Libor 10. 11. 2026), na obrázku o protaženém základu by nebyl
+        // vidět. Jen pro snímek se přebarví na šedou; popisek v článku to říká. Základ = nízké díly v barvě fasády pod
+        // úrovní spodku stěn.
+        const sokl = await js(`const T = THREE, dily = [];
+            window._kk3d.scene.traverse(o => { if (o.isMesh && o.visible && o.material?.userData?.barva === 'fasada') dily.push({ o, b: new T.Box3().setFromObject(o) }); });
+            const steny = dily.filter(x => x.b.max.y - x.b.min.y > 2);
+            const podlaha = Math.min(...steny.map(x => x.b.min.y));
+            let n = 0;
+            for (const x of dily) if (x.b.max.y - x.b.min.y < 2 && x.b.max.y <= podlaha + 0.02) { x.o.material = x.o.material.clone(); x.o.material.color.set('#9b958c'); n++; }
+            return { dilu: dily.length, sten: steny.length, podlaha: +podlaha.toFixed(3), zakladu: n };`);
+        console.log('základ šedě:', JSON.stringify(sokl));
         await zaber(7.5, 1, [-32, 9, 22]);
         await uloz('zaklad-svah');
     } finally {
