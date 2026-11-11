@@ -10,10 +10,10 @@
  * Délky v metrech.
  */
 (function (koren) {
-    const VYCHOZI = { vyska: 2.9, tvar: 'prime', sirka: 0.9, cilova: 0.175 };
+    const VYCHOZI = { vyska: 2.9, tvar: 'prime', sirka: 1.0, cilova: 0.175 };   // šířka 1 m jako v editoru
     // Doporučení v Česku (ČSN 73 4130 jen doporučuje, modules/stavebni-parametry.md); verze pro jinou zemi je
     // přepíše parametry bloku (data-limity)
-    const LIMITY = { vyskaMin: 0.15, vyskaMax: 0.18, krokMin: 0.6, krokMax: 0.65, sirkaMin: 0.9 };
+    const LIMITY = { vyskaMin: 0.15, vyskaMax: 0.18, krokMin: 0.6, krokMax: 0.65, sirkaMin: 0.9, rameno: 18 };
     const omez = (x, a, b) => Math.min(b, Math.max(a, x));
 
     /** Stupně v půdorysu: obdélníky {x, y, w, h, podesta} v m, nástup v [0, 0], první rameno ve směru x. */
@@ -62,10 +62,13 @@
             krok: 2 * h + b,
             sklon: Math.atan(h / b) * 180 / Math.PI,
             naslapu: p.casti.reduce((s, c) => s + c, 0),
+            // Výšek v nejdelším rameni: jeho nášlapy a krok na odpočívadlo nebo podlahu
+            rameno: Math.max(...p.casti) + 1,
             pudorys: p,
             vyskaOk: h >= L.vyskaMin - 1e-9 && h <= L.vyskaMax + 1e-9,
             krokOk: 2 * h + b >= L.krokMin - 1e-9 && 2 * h + b <= L.krokMax + 1e-9,
             sirkaOk: v.sirka >= L.sirkaMin - 1e-9,
+            ramenoOk: Math.max(...p.casti) + 1 <= L.rameno,
         };
     }
 
@@ -148,6 +151,8 @@
             zapis('krok', mm(r.krok));
             zapis('sklon', cislo(r.sklon));
             zapis('naslapu', cislo(r.naslapu));
+            zapis('rameno', cislo(r.rameno));
+            stav('rameno', r.ramenoOk);
             zapis('pudorys', `${cislo(r.pudorys.delka, 2)} × ${cislo(r.pudorys.sirka, 2)}`);
             stav('vyska', r.vyskaOk);
             stav('krok', r.krokOk);

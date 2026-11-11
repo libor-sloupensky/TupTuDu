@@ -2,7 +2,7 @@
      schody v editoru (modules/dum.md, část Schody). Pole v cm a mm mají data-meritko, kalkulačka počítá v metrech.
      Verze článku pro jinou zemi přepíše výchozí hodnoty a doporučení parametry, např.
      `::kalkulacka-schodiste sirka=80 | vyskaMax=190 | sirkaMin=80` (vyska a sirka v cm, cilova v mm,
-     limity vyskaMin, vyskaMax, krokMin, krokMax v mm, sirkaMin v cm). Úvod jmenuje země z hlavičky (`zeme:`). --}}
+     limity vyskaMin, vyskaMax, krokMin, krokMax v mm, sirkaMin v cm, rameno = nejvíc výšek v rameni). Úvod jmenuje země z hlavičky (`zeme:`). --}}
 @php
     $vlastni = [];
     foreach ($parametry ?? [] as $parametr) {
@@ -16,17 +16,20 @@
         'krokMin' => isset($vlastni['krokMin']) ? $vlastni['krokMin'] / 1000 : null,
         'krokMax' => isset($vlastni['krokMax']) ? $vlastni['krokMax'] / 1000 : null,
         'sirkaMin' => isset($vlastni['sirkaMin']) ? $vlastni['sirkaMin'] / 100 : null,
+        'rameno' => $vlastni['rameno'] ?? null,
     ], fn ($x) => $x !== null);
     $mm = fn (string $klic, float $vychozi) => (int) round(($limity[$klic] ?? $vychozi) * 1000);
     $doporuceni = [
         'vyska' => __('clanky.schod_dop_vyska', ['od' => $mm('vyskaMin', 0.15), 'do' => $mm('vyskaMax', 0.18)]),
         'krok' => __('clanky.schod_dop_krok', ['od' => $mm('krokMin', 0.6), 'do' => $mm('krokMax', 0.65)]),
         'sirka' => __('clanky.schod_dop_sirka', ['od' => (int) round(($limity['sirkaMin'] ?? 0.9) * 100)]),
+        'rameno' => __('clanky.schod_dop_rameno', ['do' => (int) ($limity['rameno'] ?? 18)]),
     ];
     $zeme = array_map(fn ($kod) => __('zeme.' . $kod), \App\Support\Clanky::zeme($clanek));
     $uvod = $zeme === [] ? __('clanky.schod_uvod_obecny') : __('clanky.schod_uvod', ['zeme' => implode(' / ', $zeme)]);
     $vysledky = [
         ['n', __('clanky.schod_n'), '', null],
+        ['rameno', __('clanky.schod_rameno'), '', 'rameno'],
         ['h', __('clanky.schod_h'), 'mm', 'vyska'],
         ['b', __('clanky.schod_b'), 'mm', null],
         ['krok', __('clanky.schod_krok'), 'mm', 'krok'],
@@ -55,7 +58,7 @@
                 </div>
                 <div>
                     <label for="schod-sirka">{{ __('clanky.schod_sirka') }}</label>
-                    <input type="number" inputmode="decimal" id="schod-sirka" data-pole="sirka" data-meritko="0.01" value="{{ $vlastni['sirka'] ?? 90 }}" min="60" max="150" step="5">
+                    <input type="number" inputmode="decimal" id="schod-sirka" data-pole="sirka" data-meritko="0.01" value="{{ $vlastni['sirka'] ?? 100 }}" min="60" max="150" step="5">
                 </div>
             </div>
             <details>

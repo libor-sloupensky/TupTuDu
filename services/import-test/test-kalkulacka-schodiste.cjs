@@ -56,5 +56,12 @@ const uzkeOk = !uzke.sirkaOk && !uzke.vyskaOk;
 console.log(`   ${uzkeOk ? 'OK  ' : 'CHYBA'} úzké a strmé schody nesplní doporučení šířky ani výšky`);
 if (!uzkeOk) chyb++;
 
+// Výšek v jednom rameni nejvýš 18: přímé schody na 3,50 m (20 výšek) ne, do L ano
+const prime35 = Kalkulacka.spocitej({ vyska: 3.5 });
+const l35 = Kalkulacka.spocitej({ vyska: 3.5, tvar: 'L' });
+const ramenoOk = prime35.rameno === 20 && !prime35.ramenoOk && l35.rameno <= 11 && l35.ramenoOk && vychozi.ramenoOk;
+console.log(`   ${ramenoOk ? 'OK  ' : 'CHYBA'} přímé schody na 3,50 m mají 20 výšek v rameni a potřebují odpočívadlo, do L ne — ${prime35.rameno} / ${l35.rameno}`);
+if (!ramenoOk) chyb++;
+
 console.log(chyb ? `\nCHYBY: ${chyb} z ${pripadu} případů` : `\nVše v pořádku, ${pripadu} případů shodných s editorem`);
 process.exit(chyb ? 1 : 0);
