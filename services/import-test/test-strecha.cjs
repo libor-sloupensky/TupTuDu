@@ -135,5 +135,36 @@ const stenySchod = engineZ([[schod[0], schod[1]], [schod[1], schod[2]], [schod[3
 hr = Strecha.hranyObrysu(schod, stenySchod);
 kontrola('schod mezi rovnoběžnými stěnami zůstává', hr.length === 6, hr.map(h => h.klic).join(' '));
 
+console.log('Schod na dlouhé straně: střecha bez díry (dřív zmizela plocha i v širší části)');
+{
+    // Užší část 4 m vpravo, širší 5 m vlevo, schod 1 m
+    const SCHOD = [{ x: 0, y: 0 }, { x: 12, y: 0 }, { x: 12, y: 4 }, { x: 6, y: 4 }, { x: 6, y: 5 }, { x: 0, y: 5 }];
+    const ROVNE = { zOkap: 3, presah: 0, presahStit: 0, sklon: 30 };
+    const pokryto = (v) => {
+        let s = 0;
+        for (const p of v.plochy) for (const t of p.troj) s += Math.abs(Strecha.plochaPolygonu(t));
+        return { s, okraj: Math.abs(Strecha.plochaPolygonu(v.okraj)) };
+    };
+    for (const [popis, typy] of [
+        ['sedlová, schod jako štít', ['okap', 'stit', 'okap', 'stit', 'okap', 'stit']],
+        ['sedlová, schod jako okap', ['okap', 'stit', 'okap', 'okap', 'okap', 'stit']],
+        ['valbová', Array(6).fill('okap')],
+    ]) {
+        const v = Strecha.vypocet(hranyZ(SCHOD, typy), ROVNE);
+        const { s, okraj } = pokryto(v);
+        kontrola(`${popis}: střecha kryje celý půdorys`, blizko(s, okraj), `${s.toFixed(2)} z ${okraj.toFixed(2)} m²`);
+    }
+    const v = Strecha.vypocet(hranyZ(SCHOD, ['okap', 'stit', 'okap', 'stit', 'okap', 'stit']), ROVNE);
+    kontrola('širší část má hřeben výš', blizko(zPlochy(v, 3, 2.5), 3 + 2.5 * tg(30)) && blizko(zPlochy(v, 9, 2), 3 + 2 * tg(30)),
+        `${zPlochy(v, 3, 2.5).toFixed(3)} / ${zPlochy(v, 9, 2).toFixed(3)}`);
+    const vodorovne = v.hrebeny.filter(h => blizko(h[0].z, h[1].z) && h[0].z > 3.5);
+    kontrola('hřeben v obou částech', vodorovne.some(h => blizko(h[0].y, 2)) && vodorovne.some(h => blizko(h[0].y, 2.5)), String(vodorovne.length));
+    // Předvolba: krátký schod mezi okapy stejného směru je okap, konce domu zůstávají štíty
+    const t = Strecha.typyHran({ typ: 'sedlova' }, SCHOD.map((a, i) => ({ a, b: SCHOD[(i + 1) % 6], klic: 'h' + i })));
+    kontrola('sedlová předvolba: schod je okap, konce štíty', t.map(h => h.typ).join(',') === 'okap,stit,okap,okap,okap,stit', t.map(h => h.typ).join(','));
+    const rucne = Strecha.typyHran({ typ: 'sedlova', hrany: { h3: { typ: 'stit' } } }, SCHOD.map((a, i) => ({ a, b: SCHOD[(i + 1) % 6], klic: 'h' + i })));
+    kontrola('ruční štít na schodu má přednost', rucne[3].typ === 'stit', rucne[3].typ);
+}
+
 console.log(chyb ? `\n${chyb} chyb` : '\nVše v pořádku');
 process.exit(chyb ? 1 : 0);

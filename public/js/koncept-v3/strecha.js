@@ -15,6 +15,8 @@
  */
 (function (koren) {
     const EPS = 1e-7;
+    /** Nejdelší schod na straně okapu, který sedlová předvolba ještě bere jako okap (m). */
+    const SCHOD_MAX_M = 2.5;
 
     const plochaPolygonu = (p) => {
         let a = 0;
@@ -51,22 +53,54 @@
      */
     function stahuj(hrany, t, nast, vystup, hloubka = 0) {
         let iter = 0;
+        // Koncový bod hrany v čase t (po poslední události); u protilehlých splývajících sousedů
+        // je to jejich společný bod, ze kterého vede hřeben
+        const konce = new Map();
         while (hrany.length >= 3 && iter++ < 400 && hloubka < 40) {
-            // Sousední rovnoběžné hrany: souosé se sloučí, protilehlé a splývající zmizí (hřeben)
+            // Sousední rovnoběžné hrany: souosé se sloučí, protilehlé a splývající se překrývají (hřeben)
             let upraveno = false;
             for (let i = 0; i < hrany.length; i++) {
-                const j = (i + 1) % hrany.length;
+                const m = hrany.length;
+                const j = (i + 1) % m;
                 const a = hrany[i], b = hrany[j];
                 const det = a.n.x * b.n.y - a.n.y * b.n.x;
                 if (Math.abs(det) >= 1e-6) continue;
                 const souhlas = a.n.x * b.n.x + a.n.y * b.n.y > 0;
                 if (souhlas && Math.abs(a.c + a.w * t - (b.c + b.w * t)) < 1e-4) {
+                    if (konce.has(b)) konce.set(a, konce.get(b));
                     hrany = hrany.filter((_, k) => k !== j);
                     upraveno = true;
                     break;
                 }
                 if (!souhlas && Math.abs(a.c + a.w * t + (b.c + b.w * t)) < 1e-4) {
-                    hrany = hrany.filter((_, k) => k !== i && k !== j);
+                    // Obě leží na jedné přímce a jdou proti sobě. Zmizí jen kratší z nich, delší
+                    // pokračuje dál (dům se schodem na dlouhé straně: v užší části se okapy
+                    // potkají dřív, v širší části střecha pokračuje). Dřív mizely obě a v širší
+                    // části zůstala díra.
+                    const vA = vrcholPohyb(hrany[(i + m - 1) % m], a), vB = vrcholPohyb(b, hrany[(j + 1) % m]);
+                    if (!vA || !vB || m < 4) {
+                        hrany = hrany.filter((_, k) => k !== i && k !== j);
+                        upraveno = true;
+                        break;
+                    }
+                    const pA = bodV(vA, t), pB = bodV(vB, t);
+                    const sA = a.d.x * pA.x + a.d.y * pA.y, sB = a.d.x * pB.x + a.d.y * pB.y;
+                    const spolecny = konce.get(a);
+                    const zbytek = Math.abs(sA - sB) < 1e-4 ? null : (sA < sB ? pB : pA);
+                    if (spolecny) {
+                        const od = zbytek || (sA < sB ? pB : pA);
+                        if (Math.hypot(od.x - spolecny.x, od.y - spolecny.y) > 1e-3) vystup.hrebeny.push([{ ...od, z: t }, { ...spolecny, z: t }]);
+                    }
+                    if (!zbytek) {
+                        hrany = hrany.filter((_, k) => k !== i && k !== j);
+                    } else if (sA < sB) {
+                        // a je delší: b zmizí, a končí tam, kde začínala hrana za b
+                        konce.set(a, pB);
+                        hrany = hrany.filter((_, k) => k !== j);
+                    } else {
+                        // b je delší: a zmizí, b navazuje na hranu před a
+                        hrany = hrany.filter((_, k) => k !== i);
+                    }
                     upraveno = true;
                     break;
                 }
@@ -164,6 +198,8 @@
                 }
                 return;
             }
+            konce.clear();
+            hrany.forEach((e, i) => { konce.set(e, horni[(i + 1) % n]); });
             hrany = zbyva;
         }
     }
@@ -561,13 +597,29 @@
         }
         const osa = Math.atan2(nejdelsi.b.y - nejdelsi.a.y, nejdelsi.b.x - nejdelsi.a.x);
         const cos = (h, u) => Math.abs(Math.cos(Math.atan2(h.b.y - h.a.y, h.b.x - h.a.x) - u));
+        const osaHrebene = osa + (strecha.otocHreben ? Math.PI / 2 : 0);
+        const delkaH = (h) => Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y);
+        /**
+         * Krátký schod na straně okapu: oba sousedé jsou okapy a jdou stejným směrem. Štít by
+         * tu stál jen nad krátkou stěnou a nad nižší střechou trčel jako zub, proto je okapem
+         * (malá valbička). Konec domu má sousedy opačných směrů a zůstává štítem.
+         */
+        const schodNaOkapu = (i) => {
+            const m = hrany.length, h = hrany[i];
+            if (m < 6 || delkaH(h) > SCHOD_MAX_M) return false;
+            const p = hrany[(i + m - 1) % m], n = hrany[(i + 1) % m];
+            if (cos(p, osaHrebene) <= 0.7 || cos(n, osaHrebene) <= 0.7) return false;
+            const smer = (e) => ({ x: (e.b.x - e.a.x) / (delkaH(e) || 1), y: (e.b.y - e.a.y) / (delkaH(e) || 1) });
+            const sp = smer(p), sn = smer(n);
+            return sp.x * sn.x + sp.y * sn.y > 0.7;
+        };
         return hrany.map((h, i) => {
             const rucne = strecha.hrany && strecha.hrany[h.klic];
             let typ;
             if (strecha.typ === 'valbova' || strecha.typ === 'stanova') typ = 'okap';
             else if (strecha.typ === 'pultova') typ = h === nejdelsi ? 'okap' : 'stit';
             else if (strecha.typ === 'plocha') typ = 'stit';
-            else typ = cos(h, osa + (strecha.otocHreben ? Math.PI / 2 : 0)) > 0.7 ? 'okap' : 'stit';   // sedlová
+            else typ = cos(h, osaHrebene) > 0.7 || schodNaOkapu(i) ? 'okap' : 'stit';   // sedlová
             if (rucne && rucne.typ) typ = rucne.typ;
             return {
                 ...h, index: i, typ,

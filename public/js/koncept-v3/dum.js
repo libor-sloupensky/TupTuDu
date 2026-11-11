@@ -2089,6 +2089,30 @@
             return vysledek;
         },
 
+        /** Části trojúhelníků {x,y,z}, kde g(bod) ≥ 0 (g je lineární v x, y); nulové kousky vypadnou. */
+        _orezTroj(troj, g) {
+            const vysledek = [];
+            for (const t of troj) {
+                const out = [];
+                for (let k = 0; k < 3; k++) {
+                    const p = t[k], q = t[(k + 1) % 3];
+                    const gp = g(p), gq = g(q);
+                    if (gp >= 0) out.push(p);
+                    if ((gp >= 0) !== (gq >= 0)) {
+                        const u = gp / (gp - gq);
+                        out.push({ x: p.x + (q.x - p.x) * u, y: p.y + (q.y - p.y) * u, z: p.z + (q.z - p.z) * u });
+                    }
+                }
+                for (let i = 1; i < out.length - 1; i++) {
+                    const a = out[0], b = out[i], c = out[i + 1];
+                    const ux = b.x - a.x, uy = b.y - a.y, uz = b.z - a.z, vx = c.x - a.x, vy = c.y - a.y, vz = c.z - a.z;
+                    const plocha = Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx);
+                    if (plocha > 1e-4) vysledek.push([a, b, c]);
+                }
+            }
+            return vysledek;
+        },
+
         /** Hrany obrysu podlaží v metrech (orientace plátna), null když není uzavřené. */
         _obrysPodlazi(id) {
             const eng = this.engine.enginePodlazi(id);
@@ -3335,9 +3359,16 @@
                         dum.add(this._troj3d(pl.troj, kota, matKrytina(h.barva || zaklad), { strecha: true, krytina: true, klic: h.klic, vlastniBarva: !!h.barva }, pl));
                     }
                     // Štít nad stěnou vytvoří sama stěna, dotažená až pod střechu. Tenká plocha v líci
-                    // by se s ní prala; zůstává jen tam, kde pod hranou žádná stěna není.
-                    const bezSteny = (pl) => !String((st.hrany.find(h => h.index === pl.hrana) || {}).klic || '').includes(':');
-                    const stity = st.stity.filter(bezSteny).flatMap(pl => pl.troj);
+                    // by se s ní prala; zůstává jen tam, kde pod hranou žádná stěna není. To je i část
+                    // štítu za koncem stěny: schod na dlouhé straně má štít přes celou nižší střechu,
+                    // stěna pod ním je ale jen krátká.
+                    const stity = st.stity.flatMap((pl) => {
+                        const h = st.hrany.find(x => x.index === pl.hrana) || {};
+                        if (!String(h.klic || '').includes(':') || !h.a || !h.b) return pl.troj;
+                        const L = Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y) || 1;
+                        const s = (p) => ((p.x - h.a.x) * (h.b.x - h.a.x) + (p.y - h.a.y) * (h.b.y - h.a.y)) / L;
+                        return [...this._orezTroj(pl.troj, p => -s(p)), ...this._orezTroj(pl.troj, p => s(p) - L)];
+                    });
                     if (stity.length) {
                         const matStit = new THREE.MeshStandardMaterial({ color: TYPY_STEN?.obvodova?.barva3d || 0x6b6b6b, roughness: 0.85, side: THREE.DoubleSide });
                         matStit.userData.barva = 'fasada';
