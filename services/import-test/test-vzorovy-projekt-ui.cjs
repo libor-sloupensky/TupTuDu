@@ -83,6 +83,21 @@ async function main() {
         kontrola('obnova vrátí kopii do stavu šablony a smaže historii', /k obnově [1-9]/.test(nanecisto) && poObnove.stejne && poObnove.historie === 0, JSON.stringify({ nanecisto, poObnove }));
         const znovu = tinker('Artisan::call("vzor:obnovit"); echo Artisan::output();');
         kontrola('podruhé týž den už se neobnovuje', /obnoveno 0/.test(znovu), znovu);
+        // Nepoužitá kopie: v noci se nenačte ani nepřepíše, ani když je po termínu
+        tinker(`App\\Models\\KonceptV3::whereKey(${kopie[0].id})->update(['vzor_obnoveno_v' => now()->subDays(2), 'upraveno' => now()->subDays(2)]);`);
+        const nepouzita = tinker('Artisan::call("vzor:obnovit", ["--dry-run" => true]); echo Artisan::output();');
+        kontrola('nepoužitou kopii noční běh nebere', /k obnově 0/.test(nepouzita), nepouzita);
+        // Změněná šablona: nepoužitá kopie ji dostane až při otevření
+        tinker(`App\\Models\\KonceptV3::whereKey(${sablona.id})->update(['upraveno' => now()]);`);
+        const predOtevrenim = json(`echo json_encode(App\\Models\\KonceptV3::find(${kopie[0].id})->verze);`);
+        await p.jdiNa(ZAKLAD + '/projects/' + kopie[0].kod);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        const poOtevreni = json(`$k = App\\Models\\KonceptV3::find(${kopie[0].id}); echo json_encode(['verze' => $k->verze, 'dnes' => $k->vzor_obnoveno_v->isToday(), 'shodne' => (string) $k->upraveno === (string) $k->vzor_obnoveno_v]);`);
+        kontrola('při otevření se nepoužitá kopie srovná s novou šablonou a nevypadá jako upravená', poOtevreni.verze === predOtevrenim + 1 && poOtevreni.dnes && poOtevreni.shodne, JSON.stringify({ predOtevrenim, poOtevreni }));
+        await p.jdiNa(ZAKLAD + '/projects/' + kopie[0].kod);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 20000, 'editor');
+        const podruhe = json(`echo json_encode(App\\Models\\KonceptV3::find(${kopie[0].id})->verze);`);
+        kontrola('další otevření týž den už nic nezapisuje', podruhe === poOtevreni.verze, String(podruhe));
         const pasmo = json(`echo json_encode([App\\Support\\VzorovyProjekt::casovaZona((new App\\Models\\Uzivatel)->forceFill(['zeme' => 'CZ'])), App\\Support\\VzorovyProjekt::casovaZona((new App\\Models\\Uzivatel)->forceFill(['zeme' => 'PT'])), App\\Support\\VzorovyProjekt::casovaZona((new App\\Models\\Uzivatel)->forceFill(['zeme' => 'ES']))]);`);
         kontrola('3:00 podle země uživatele (pevninské pásmo)', pasmo[0] === 'Europe/Prague' && pasmo[1] === 'Europe/Lisbon' && pasmo[2] === 'Europe/Madrid', JSON.stringify(pasmo));
     } finally {

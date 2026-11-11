@@ -48,6 +48,8 @@ class ProjektyController extends Controller
         $koncepty = $this->mojeProjekty();
         $aktivni = $koncepty->firstWhere('kod', $kod);
         abort_unless($aktivni, 404);
+        // Nepoužitá kopie vzorového projektu se v noci nepřepisuje, novou podobu dostane až tady
+        VzorovyProjekt::obnovPriOtevreni($aktivni);
 
         return view('masterteam.koncept-v3', [
             'koncepty' => $koncepty,

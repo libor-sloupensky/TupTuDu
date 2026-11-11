@@ -63,9 +63,12 @@ Hotový dům na hraní pro každého uživatele a zdroj obrázků do článků. 
   (`KonceptV3Controller::ulozit`, editor dostane `zbyva: null`), kopie se nepočítá do limitu projektů (`Tarif::pocetProjektu`),
   nejde smazat ani přejmenovat. Nad plátnem je výrazná hláška (`ed_sablona.vzor`). Uživatel bez vlastního projektu má na
   úvodní obrazovce odkaz na ni, vlastní projekt má při otevření `/projects` přednost. Při otevření se ukáže celý dům.
-- **Noční obnova** `vzor:obnovit` (plánovač, každých 15 minut): kopie, u které místně minula 3:00 a od té doby se neobnovila,
-  dostane znovu data a metadata šablony, prázdnou historii a vyšší verzi (otevřený editor zastaví dialog konfliktu). Pásmo
-  podle země uživatele, u zemí s více pásmy evropské (`casovaZona`), bez země pásmo aplikace.
+- **Noční obnova, šetrně k serveru** (Libor 11. 11. 2026: většina kopií se nikdy nepoužije). `vzor:obnovit` (plánovač,
+  každých 15 minut) načte jen kopie, které uživatel od poslední obnovy změnil (`upraveno > vzor_obnoveno_v`), a z nich ty, kde
+  místně minula 3:00. Nepoužitá kopie se v noci nečte ani nepřepisuje, novou podobu šablony dostane až při otevření
+  (`obnovPriOtevreni`, jen když od 3:00 minula a šablona je novější). Obnova vrátí data a metadata šablony, prázdnou historii
+  a vyšší verzi (otevřený editor zastaví dialog konfliktu) a nastaví `upraveno` na čas obnovy, ať kopie nevypadá jako
+  upravená. Pásmo podle země uživatele, u zemí s více pásmy evropské (`casovaZona`), bez země pásmo aplikace.
 - **Podklad šablony** leží u jejího autora, kopie ostatních ho čtou přes `VzorovyProjekt::cestaPodkladu` v `najdiOriginal`.
 - Kopie nevolá událost `projekt_zalozen` (GA4), vzniká bez událostí modelu.
 - Test: `node services/import-test/test-vzorovy-projekt-ui.cjs`.

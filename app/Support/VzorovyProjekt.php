@@ -14,7 +14,11 @@ use Illuminate\Support\Facades\Storage;
  *
  * Šablona je jeden projekt master týmu (`vzor = sablona`), používá se i na obrázky do článků. Každý uživatel
  * má její kopii (`vzor = kopie`): úpravy v ní nestojí nic z limitu tarifu, nejde smazat a každou noc
- * ve 3:00 jeho místního času se vrátí do stavu šablony (`vzor:obnovit`).
+ * ve 3:00 jeho místního času se vrátí do stavu šablony.
+ *
+ * Šetrně k serveru (většina kopií se nikdy nepoužije): v noci (`vzor:obnovit`) se sahá jen na kopie, ve kterých
+ * uživatel od poslední obnovy něco změnil. Nepoužitá kopie se nepřepisuje, novou podobu šablony dostane
+ * až při otevření (`obnovPriOtevreni`).
  */
 class VzorovyProjekt
 {
@@ -47,7 +51,7 @@ class VzorovyProjekt
         $kopie->kod = KonceptV3::novyKod();
         self::prevezmiSablonu($kopie, $sablona, $uzivatel);
         // Bez událostí modelu: kopie není nový projekt uživatele (událost projekt_zalozen pro GA4)
-        KonceptV3::withoutEvents(fn () => $kopie->save());
+        KonceptV3::withoutEvents(fn () => self::ulozBezZmeny($kopie));
 
         return $kopie;
     }
@@ -61,9 +65,43 @@ class VzorovyProjekt
         }
         self::prevezmiSablonu($kopie, $sablona, $kopie->uzivatel);
         $kopie->verze = (int) $kopie->verze + 1;
-        $kopie->save();
+        self::ulozBezZmeny($kopie);
 
         return true;
+    }
+
+    /**
+     * Při otevření kopie: když od poslední obnovy minula 3:00 a mezitím ji uživatel upravil nebo se změnila
+     * šablona, vrátí se do stavu šablony. Jinak se nic nezapisuje.
+     */
+    public static function obnovPriOtevreni(KonceptV3 $kopie): void
+    {
+        if ($kopie->vzor !== 'kopie' || ! self::jeKObnove($kopie)) {
+            return;
+        }
+        $sablona = self::sablona();
+        $zmenena = $kopie->upraveno && $kopie->vzor_obnoveno_v && $kopie->upraveno->greaterThan($kopie->vzor_obnoveno_v);
+        $novejsiSablona = $sablona?->upraveno && $kopie->vzor_obnoveno_v && $sablona->upraveno->greaterThan($kopie->vzor_obnoveno_v);
+        if ($zmenena || $novejsiSablona) {
+            self::obnov($kopie);
+        }
+    }
+
+    /** Minula od poslední obnovy kopie 3:00 místního času uživatele? */
+    public static function jeKObnove(KonceptV3 $kopie): bool
+    {
+        return ! $kopie->vzor_obnoveno_v || $kopie->vzor_obnoveno_v->lessThan(self::posledniTermin($kopie->uzivatel));
+    }
+
+    /** Obnova nastaví „upraveno“ stejně jako čas obnovy, jinak by kopie vypadala jako upravená uživatelem. */
+    private static function ulozBezZmeny(KonceptV3 $kopie): void
+    {
+        $ted = now();
+        $kopie->vzor_obnoveno_v = $ted;
+        $kopie->upraveno = $ted;
+        $kopie->timestamps = false;
+        $kopie->save();
+        $kopie->timestamps = true;
     }
 
     private static function prevezmiSablonu(KonceptV3 $kopie, KonceptV3 $sablona, ?Uzivatel $uzivatel): void

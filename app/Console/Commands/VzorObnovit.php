@@ -9,6 +9,7 @@ use Illuminate\Console\Command;
 /**
  * Kopie vzorového projektu vrátí do stavu šablony, když u uživatele místně minula 3:00 a od té doby
  * se ještě neobnovila (App\Support\VzorovyProjekt, modules/aplikace.md). Spouští ho plánovač každých 15 minut.
+ * Bere jen kopie, ve kterých uživatel od poslední obnovy něco změnil, nepoužité kopie se vůbec nenačítají.
  */
 class VzorObnovit extends Command
 {
@@ -26,10 +27,10 @@ class VzorObnovit extends Command
 
         $suchy = (bool) $this->option('dry-run');
         $obnoveno = 0;
-        KonceptV3::where('vzor', 'kopie')->with('uzivatel')->chunkById(100, function ($kopie) use ($suchy, &$obnoveno) {
+        KonceptV3::where('vzor', 'kopie')->whereColumn('upraveno', '>', 'vzor_obnoveno_v')
+            ->with('uzivatel')->chunkById(100, function ($kopie) use ($suchy, &$obnoveno) {
             foreach ($kopie as $k) {
-                $termin = VzorovyProjekt::posledniTermin($k->uzivatel);
-                if ($k->vzor_obnoveno_v && $k->vzor_obnoveno_v->greaterThanOrEqualTo($termin)) {
+                if (! VzorovyProjekt::jeKObnove($k)) {
                     continue;
                 }
                 if (! $suchy) {
