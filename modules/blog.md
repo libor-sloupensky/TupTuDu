@@ -33,6 +33,12 @@ projektantem“ (až bude aspoň šest článků).
 Nedělat: výkopové práce s názvem města, cena a svépomocná stavba základové desky, článek o převodu z PDF do 3D (nikdo to
 tak nehledá, patří na stránku funkce), kuchyně a koupelny, samotná kalkulačka sklonu střechy, katastr a ochranná pásma.
 
+**Napsáno 11. 11. 2026 (koncepty po odborné revizi, se snímky z editoru, čekají na Liborovo schválení):** `vypocet-schodiste`
+(s kalkulačkou `::kalkulacka-schodiste`, počítá jako editor, test `test-kalkulacka-schodiste.cjs`), `jak-nakreslit-pudorys-domu`,
+`minimalni-rozmery-mistnosti`, `typy-strech`, `barva-fasady`. Snímky vyrábí `node services/clanky/snimky-clanky-dum.cjs [článek]`
+ze vzorového projektu (kopie ClaudeTest, šablona se nemění). Nápady z revizí na další články: světlá výška a podkroví
+(minimální výška stropu 170 + světlá výška 110), minimální rozměry koupelny (110), pultová střecha samostatně.
+
 ## Kandidáti na další články (výzkum 11. 11. 2026)
 
 Cíl: přivést lidi, kteří dům teprve plánují, a tedy můžou editor hned použít. Objemy jsou měsíční průměr z Plánovače
