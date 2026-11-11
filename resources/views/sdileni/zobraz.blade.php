@@ -88,6 +88,9 @@
 <script src="/js/teren-3d.js?v={{ filemtime(public_path('js/teren-3d.js')) }}"></script>
 <script>window.KATALOG_ZAKLAD = @json(config('katalog.zaklad'));</script>
 <script src="/js/katalog-3d.js?v={{ filemtime(public_path('js/katalog-3d.js')) }}"></script>
+{{-- Vzhledy střešních krytin, vyrábí services/krytiny/sestav.py (modules/dum.md, část Krytiny) --}}
+<script>window.KRYTINY_VZHLEDY = @json(json_decode(file_get_contents(public_path('textury/krytiny/vzhledy.json')))); window.KRYTINY_VERZE = {{ filemtime(public_path('textury/krytiny/vzhledy.json')) }};</script>
+<script src="/js/krytiny-3d.js?v={{ filemtime(public_path('js/krytiny-3d.js')) }}"></script>
 <script src="/js/sdileni-prohlizec.js?v={{ filemtime(public_path('js/sdileni-prohlizec.js')) }}"></script>
 </body>
 </html>

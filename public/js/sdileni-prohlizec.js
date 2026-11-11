@@ -57,6 +57,9 @@
             return textury.get(id);
         };
         const materialy = (data.materialy || []).map((m) => {
+            // Střešní krytina: stejný materiál jako v editoru, textury se dotáhnou a scéna se překreslí
+            const krytina = m.krytina && window.Krytiny3d ? window.Krytiny3d.material(m.krytina, m.barva, () => { window.Svetlo3d.prekresliStiny(renderer); vykresli(); }) : null;
+            if (krytina) return krytina;
             const mapa = m.mapa ? texturaZ(m.mapa) : null;
             return new THREE.MeshStandardMaterial({
                 color: new THREE.Color(m.barva), roughness: m.drsnost ?? 0.8, metalness: m.kov ?? 0,
@@ -73,6 +76,7 @@
             const geom = new THREE.BufferGeometry();
             geom.setAttribute('position', new THREE.BufferAttribute(naFloat32(k.pozice), 3));
             if (k.uv) geom.setAttribute('uv', new THREE.BufferAttribute(naFloat32(k.uv), 2));
+            if (k.uv && material.aoMap) geom.setAttribute('uv2', geom.getAttribute('uv'));
             geom.computeVertexNormals();
             skupiny.get(k.skupina).add(new THREE.Mesh(geom, material));
         }

@@ -25,6 +25,32 @@ return [
         'bridlice' => 'Slate',
         'falc' => 'Standing seam metal',
         'trapez' => 'Trapezoidal sheet',
+        'vlnity' => 'Corrugated sheet',
+    ],
+
+    // Vzhled krytiny z fotografie, kód se ukládá jako průměrná barva vzhledu (krytiny-3d.js)
+    'vzhled_krytiny' => [
+        'taska-cervena' => 'Red',
+        'taska-zvetrala' => 'Red, weathered',
+        'taska-lisejnik' => 'Red with lichen',
+        'taska-oranzova' => 'Orange',
+        'taska-hneda-stara' => 'Brown, aged',
+        'taska-cerna' => 'Black',
+        'taska-cerna-lisejnik' => 'Black with lichen',
+        'betonova-cihlova' => 'Brick red',
+        'betonova-hneda-mech' => 'Brown with moss',
+        'betonova-tmava-mech' => 'Dark brown with moss',
+        'betonova-cerna' => 'Black with moss',
+        'betonova-seda' => 'Grey with moss',
+        'bobrovka-cervena' => 'Red',
+        'bobrovka-hneda-stara' => 'Brown, aged',
+        'bobrovka-seda' => 'Grey',
+        'sindel-sedy' => 'Grey',
+        'sindel-tmavy-mech' => 'Dark with moss',
+        'bridlice-obdelnik' => 'Rectangular',
+        'bridlice-supina' => 'Fish scale',
+        'bridlice-stara' => 'Grey, aged',
+        'bridlice-svetla' => 'Light grey',
     ],
 
     'barva_krytiny' => [

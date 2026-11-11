@@ -31,6 +31,8 @@ dum = {
 | `public/js/koncept-v3/stavebni-engine.js` | model domu, přepínání, kóty, kopie stěn, transformace domu, magnet spodního podlaží |
 | `public/js/koncept-v3/dum.js` | mixin editoru: přepínač, podepření, podklad po podlažích, schody, plochy, střecha, 2D a 3D domu |
 | `public/js/koncept-v3/strecha.js` | čistá geometrie střechy, bez kresby; test `services/import-test/test-strecha.cjs` |
+| `public/js/krytiny-3d.js` | vzhledy a materiály střešních krytin, společné s prohlížečem sdílení; test `test-strecha-3d-ui` |
+| `services/krytiny/sestav.py` | výroba textur krytin do `public/textury/krytiny/`, viz Krytiny a tloušťka ve 3D |
 | `public/js/koncept-v3/mistnosti.js` | rastr místností, výřezy a plocha pod limitem výšky |
 | `public/js/koncept-v3/koty-vyberu.js` | kóty u vybrané stěny a otvoru |
 | `public/js/koncept-v3/koty-retezce.js` | kótovací řetězce kolem domu a rozměry místností; test `test-zobrazeni-objektu-ui` |
@@ -66,7 +68,24 @@ Hrana může mít vlastní typ, sklon, přesah, výšku okapu a barvu (`strecha.
 
 Stěny horního podlaží nikdy neprojdou střechou. Stěny na obrysu dosáhnou až pod ni, takže pod vyšším okapem nezůstane mezera. Pod šikmou střechou se strop nekreslí, jen plochá střecha na něm leží.
 
-Typ krytiny (`strecha.krytina`) určuje reliéf ve 3D a platí pro celek, barva je zvlášť (`strecha.barva`). Starší hodnoty jako `antracit` se čtou jako barva. Reliéf se kreslí jako dlaždice 1,2 × 1,2 m a mapuje se v metrech po ploše.
+Typ krytiny (`strecha.krytina`) platí pro celek, barva je zvlášť (`strecha.barva`, na hraně vlastní). Starší hodnoty jako `antracit` se čtou jako barva. Vzhled ve 3D viz další část.
+
+### Krytiny a tloušťka ve 3D (Libor 11. 11. 2026)
+
+Cíl je 3D blíž fotografii. **Střecha je deska:** rovina výpočtu je spodní líc krokví, krytina leží o `TLOUSTKA_STRECHY` (28 cm kolmo u základního sklonu) výš, svisle o `_tloustkaStrechy()`. Vrch je kopie roviny posunutá nahoru, hřebeny a nároží proto sedí samy a 2D, výpočty podkroví ani stěny pod střechou se nemění. Údaj „hřeben“ v panelu je vrch krytiny, tedy včetně tloušťky.
+
+- **Okraj** (`_okrajStrechy`): hrana trojúhelníku, kterou nesdílí jiný a za kterou není střecha, dostane svislý pás čela nebo závětrného prkna. Vodorovná hrana ve spodní výšce plochy (okap) dostane i půlkulatý žlab. Hřebenáče (`_hrebenaceStrechy`) jsou na úsečkách kostry, od kterých plochy klesají na obě strany, tedy hřeben a nároží, ne úžlabí.
+- **Barvy okraje nepřidávají čtvrtou barvu domu** (fasáda, střecha, okna; články o barvě fasády): čelo, závětrné prkno a žlaby jsou v barvě krytiny o `ODSTIN_PLECHU` tmavší, hřebenáče v barvě krytiny, podbití v barvě fasády a mění se s ní. Svody zatím nejsou.
+- **Plochá střecha:** deska v barvě fasády, po obvodu atika 25 × 40 cm s oplechováním, uvnitř asfaltový pás ve zvolené barvě.
+
+**Krytiny z fotografických textur** (Poly Haven a ambientCG, obojí CC0, bez povinnosti uvádět autora): barva, normálová mapa, drsnost a zastínění spár, 1024 px ve WebP, asi 0,4 MB na vzhled. Načítá se jen vzhled, který střecha má. Seznam `vzhledy.json` vkládá šablona editoru i sdílení do stránky (`window.KRYTINY_VZHLEDY`), verze v adrese textur je čas souboru.
+
+- **Tašky, bobrovka, šindel a břidlice se nepřebarvují** (Libor: nabídka barev je ve skutečnosti omezená, vycházet z příkladů). Panel místo nástroje na barvu ukáže vzorky vzhledů včetně zvětralých a s mechem. Vzhled se ukládá jako jeho průměrná barva do `strecha.barva` (u hrany do `hrany[klíč].barva`), takže historie, 2D, sdílení i starší projekty fungují beze změny.
+- **Bez přesné shody** (starší projekt, změna typu z plechu) se hledá nejbližší vzhled v Lab, jen mezi základními (`zakladni`, bez zvětrání). Změna typu krytiny barvu rovnou srovná na nalezený vzhled.
+- **Plech** (falcovaný, trapézový, vlnitý) a asfaltový pás se prodávají v libovolném odstínu: textura nese jen jas a barvu volí uživatel nástrojem na barvu. Falc nemá zdroj, jeho reliéf kreslí `sestav.py`.
+- **Textura:** souřadnice v metrech dělených `metru` vzhledu (velikost dlaždice, u Poly Haven z rozměrů zdroje, u ambientCG odpočítaná z tašek), u podél okapu, v po spádnici, nahoře hřeben. Materiál krytiny má bílou barvu, barvu dává textura (`Krytiny3d.material`). Stíny se přepočítají, až textury dorazí.
+- **Nový vzhled:** řádek do `VZHLEDY` v `services/krytiny/sestav.py`, `python services/krytiny/sestav.py` (surové mapy stáhne do `services/krytiny/zdroje/`, mimo git), název do `lang/*/ed_dum.php`, skupina `vzhled_krytiny`. Zdrojová textura musí jít plynule navázat (roof_slates_03 má nahoře hřebenovou řadu a dělala švy). Průměrné barvy musí být různé, skript to hlídá.
+- **Sdílený odkaz** dostane u materiálu krytiny jen `krytina` (id vzhledu), prohlížeč si materiál postaví přes `Krytiny3d` stejně jako editor.
 
 Podkroví: šrafa pod 1,2 m, čáry 1,20 · 1,80 · 2,30 m, započitatelná plocha nad 1,2 m (česká vyhláška, `modules/stavebni-parametry.md`), stěny ve 3D končí pod střechou.
 

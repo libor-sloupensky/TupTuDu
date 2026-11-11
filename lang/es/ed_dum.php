@@ -25,6 +25,32 @@ return [
         'bridlice' => 'Pizarra',
         'falc' => 'Chapa de junta alzada',
         'trapez' => 'Chapa grecada',
+        'vlnity' => 'Chapa ondulada',
+    ],
+
+    // Vzhled krytiny z fotografie, kód se ukládá jako průměrná barva vzhledu (krytiny-3d.js)
+    'vzhled_krytiny' => [
+        'taska-cervena' => 'Roja',
+        'taska-zvetrala' => 'Roja, envejecida',
+        'taska-lisejnik' => 'Roja con líquenes',
+        'taska-oranzova' => 'Naranja',
+        'taska-hneda-stara' => 'Marrón, envejecida',
+        'taska-cerna' => 'Negra',
+        'taska-cerna-lisejnik' => 'Negra con líquenes',
+        'betonova-cihlova' => 'Rojo ladrillo',
+        'betonova-hneda-mech' => 'Marrón con musgo',
+        'betonova-tmava-mech' => 'Marrón oscuro con musgo',
+        'betonova-cerna' => 'Negra con musgo',
+        'betonova-seda' => 'Gris con musgo',
+        'bobrovka-cervena' => 'Roja',
+        'bobrovka-hneda-stara' => 'Marrón, envejecida',
+        'bobrovka-seda' => 'Gris',
+        'sindel-sedy' => 'Gris',
+        'sindel-tmavy-mech' => 'Oscura con musgo',
+        'bridlice-obdelnik' => 'Rectangular',
+        'bridlice-supina' => 'En escamas',
+        'bridlice-stara' => 'Gris, envejecida',
+        'bridlice-svetla' => 'Gris claro',
     ],
 
     'barva_krytiny' => [

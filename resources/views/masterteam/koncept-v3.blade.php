@@ -28,6 +28,9 @@
 <script src="/js/teren-3d.js?v={{ filemtime(public_path('js/teren-3d.js')) }}"></script>
 <script>window.KATALOG_ZAKLAD = @json(config('katalog.zaklad'));</script>
 <script src="/js/katalog-3d.js?v={{ filemtime(public_path('js/katalog-3d.js')) }}"></script>
+{{-- Vzhledy střešních krytin, vyrábí services/krytiny/sestav.py (modules/dum.md, část Krytiny) --}}
+<script>window.KRYTINY_VZHLEDY = @json(json_decode(file_get_contents(public_path('textury/krytiny/vzhledy.json')))); window.KRYTINY_VERZE = {{ filemtime(public_path('textury/krytiny/vzhledy.json')) }};</script>
+<script src="/js/krytiny-3d.js?v={{ filemtime(public_path('js/krytiny-3d.js')) }}"></script>
 <script src="/js/koncept-v3/stavebni-engine.js?v={{ filemtime(public_path('js/koncept-v3/stavebni-engine.js')) }}"></script>
 <script src="/js/koncept-v3/pudorys-icons.js?v={{ filemtime(public_path('js/koncept-v3/pudorys-icons.js')) }}"></script>
 <script src="/js/koncept-v3/mistnosti.js?v={{ filemtime(public_path('js/koncept-v3/mistnosti.js')) }}"></script>
@@ -170,6 +173,11 @@
     .kk-dum-zprava { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 20; max-width: 80%; background: var(--c-text, #2a2a2a); color: var(--c-surface); border-radius: 6px; padding: 6px 12px; font-size: 12px; }
     .kk-paleta-krytina { width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--c-input-border); padding: 0; }
     .kk-paleta-krytina.kk-aktivni { outline: 2px solid var(--c-primary); outline-offset: 1px; }
+    /* Vzhledy krytiny: vzorky z fotografií textur */
+    .kk-vzhledy-krytiny { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
+    .kk-vzhled-krytiny { width: 30px; height: 30px; border-radius: 4px; border: 1px solid var(--c-input-border); padding: 0; overflow: hidden; }
+    .kk-vzhled-krytiny img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .kk-vzhled-krytiny.kk-aktivni { outline: 2px solid var(--c-primary); outline-offset: 1px; }
     /* Formuláře editoru. app.css dává polím a nápisům spodní okraj pro formuláře webu; v řádku editoru
        by pole sedělo o 8 px výš než text a selecty vedle něj. Zarovnání hlídá test-formulare-ui.cjs. */
     .kk-editor input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden]), .kk-editor select, .kk-editor textarea, .kk-editor label { margin: 0; }
@@ -1281,9 +1289,25 @@
                                                 <option :value="k.id" :selected="strechaPanel.krytina === k.id" x-text="k.nazev"></option>
                                             </template>
                                         </select></div>
-                                    <div x-data="vyberBarvy({ hodnota: () => strechaPanel?.barva, nastav: (hex) => setStrecha('barva', hex), nahled: (hex) => nahledBarvyStrechy(hex), pouzite: () => barvyJinde('strecha') })">
-                                        @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
-                                    </div>
+                                    {{-- Tašky, bobrovka, šindel, břidlice: vzhled z fotografie. Plech: libovolná barva. --}}
+                                    <template x-if="strechaPanel.vzhledy.length">
+                                        <div class="kk-podlazi-pole items-start" title="{{ __('ed_sablona.strecha.vzhled_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.vzhled') }}</span>
+                                            <div class="flex flex-col gap-1 flex-1 min-w-0">
+                                                <div class="kk-vzhledy-krytiny" data-vzhledy-krytiny>
+                                                    <template x-for="v in strechaPanel.vzhledy" :key="v.id">
+                                                        <button type="button" class="kk-vzhled-krytiny" :class="{ 'kk-aktivni': strechaPanel.vzhled === v.id }" :title="v.nazev" :aria-label="v.nazev"
+                                                                :aria-pressed="strechaPanel.vzhled === v.id" :data-vzhled="v.id" @click="setStrecha('barva', v.hex)"><img :src="v.nahled" alt="" loading="lazy"></button>
+                                                    </template>
+                                                </div>
+                                                <span class="text-gray-500 truncate" x-text="(strechaPanel.vzhledy.find(v => v.id === strechaPanel.vzhled) || {}).nazev || ''"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template x-if="!strechaPanel.vzhledy.length">
+                                        <div x-data="vyberBarvy({ hodnota: () => strechaPanel?.barva, nastav: (hex) => setStrecha('barva', hex), nahled: (hex) => nahledBarvyStrechy(hex), pouzite: () => barvyJinde('strecha') })">
+                                            @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
+                                        </div>
+                                    </template>
                                     <div class="text-gray-500" x-show="strechaPanel.bezObrysu">{{ __('ed_sablona.strecha.bez_obrysu') }}</div>
                                     {{-- Vybraná hrana: co nemá vlastní, bere z celku --}}
                                     <template x-if="strechaPanel.hrana">
@@ -1306,7 +1330,20 @@
                                                     <span class="kk-pole-jed"><input type="number" min="0" max="1200" step="5" class="w-16" data-hrana="vyskaOkapu" :value="Math.round(strechaPanel.hrana.z * 100)"
                                                            @change="setHranaStrechy(strechaPanel.hrana.klic, { vyskaOkapu: $event.target.value === '' ? null : parseFloat($event.target.value) / 100 })" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
                                             </template>
-                                            <template x-if="strechaPanel.hrana.typ === 'okap'">
+                                            <template x-if="strechaPanel.hrana.typ === 'okap' && strechaPanel.vzhledy.length">
+                                                <div class="kk-podlazi-pole items-start" title="{{ __('ed_sablona.strecha.vzhled_hrany_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.vzhled') }}</span>
+                                                    <div class="flex flex-col gap-1 flex-1 min-w-0">
+                                                        <div class="kk-vzhledy-krytiny" data-vzhledy-hrany>
+                                                            <template x-for="v in strechaPanel.vzhledy" :key="v.id">
+                                                                <button type="button" class="kk-vzhled-krytiny" :class="{ 'kk-aktivni': strechaPanel.hrana.vzhled === v.id }" :title="v.nazev" :aria-label="v.nazev"
+                                                                        :aria-pressed="strechaPanel.hrana.vzhled === v.id" :data-vzhled="v.id" @click="setHranaStrechy(strechaPanel.hrana.klic, { barva: v.hex })"><img :src="v.nahled" alt="" loading="lazy"></button>
+                                                            </template>
+                                                        </div>
+                                                        <button type="button" x-show="strechaPanel.hrana.barva" @click="setHranaStrechy(strechaPanel.hrana.klic, { barva: null })" class="self-start underline text-gray-500 hover:text-primary" title="{{ __('ed_sablona.strecha.jako_strecha_tip') }}">{{ __('ed_sablona.strecha.jako_strecha') }}</button>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                            <template x-if="strechaPanel.hrana.typ === 'okap' && !strechaPanel.vzhledy.length">
                                                 <div x-data="vyberBarvy({ hodnota: () => strechaPanel?.hrana?.barva || strechaPanel?.barva, nastav: (hex) => setHranaStrechy(strechaPanel.hrana.klic, { barva: hex }), nahled: (hex) => nahledBarvyStrechy(hex, strechaPanel.hrana.klic), pouzite: () => barvyJinde('hrana:' + strechaPanel?.hrana?.klic) })">
                                                     @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
                                                     <button type="button" x-show="strechaPanel.hrana.barva" @click="setHranaStrechy(strechaPanel.hrana.klic, { barva: null })" class="underline text-gray-500 hover:text-primary" title="{{ __('ed_sablona.strecha.jako_strecha_tip') }}">{{ __('ed_sablona.strecha.jako_strecha') }}</button>

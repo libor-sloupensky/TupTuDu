@@ -1,0 +1,216 @@
+[
+ {
+  "id": "taska-cervena",
+  "typ": "taska",
+  "metru": 4.0,
+  "hex": "#a66046",
+  "zdroj": "acg",
+  "orig": "RoofingTiles012A",
+  "zakladni": true
+ },
+ {
+  "id": "taska-zvetrala",
+  "typ": "taska",
+  "metru": 4.0,
+  "hex": "#8f563e",
+  "zdroj": "acg",
+  "orig": "RoofingTiles012B"
+ },
+ {
+  "id": "taska-lisejnik",
+  "typ": "taska",
+  "metru": 3.0,
+  "hex": "#6c503b",
+  "zdroj": "acg",
+  "orig": "RoofingTiles011C"
+ },
+ {
+  "id": "taska-oranzova",
+  "typ": "taska",
+  "metru": 3.4,
+  "hex": "#8f5b43",
+  "zdroj": "acg",
+  "orig": "RoofingTiles014A"
+ },
+ {
+  "id": "taska-hneda-stara",
+  "typ": "taska",
+  "metru": 4.0,
+  "hex": "#867461",
+  "zdroj": "ph",
+  "orig": "roof_09"
+ },
+ {
+  "id": "taska-cerna",
+  "typ": "taska",
+  "metru": 3.5,
+  "hex": "#313035",
+  "zdroj": "acg",
+  "orig": "RoofingTiles013A",
+  "zakladni": true
+ },
+ {
+  "id": "taska-cerna-lisejnik",
+  "typ": "taska",
+  "metru": 3.5,
+  "hex": "#413d35",
+  "zdroj": "acg",
+  "orig": "RoofingTiles013C"
+ },
+ {
+  "id": "betonova-cihlova",
+  "typ": "betonova",
+  "metru": 2.5,
+  "hex": "#76452e",
+  "zdroj": "acg",
+  "orig": "RoofingTiles006",
+  "zakladni": true
+ },
+ {
+  "id": "betonova-hneda-mech",
+  "typ": "betonova",
+  "metru": 2.5,
+  "hex": "#613822",
+  "zdroj": "acg",
+  "orig": "RoofingTiles007"
+ },
+ {
+  "id": "betonova-tmava-mech",
+  "typ": "betonova",
+  "metru": 2.5,
+  "hex": "#392112",
+  "zdroj": "acg",
+  "orig": "RoofingTiles008"
+ },
+ {
+  "id": "betonova-cerna",
+  "typ": "betonova",
+  "metru": 2.5,
+  "hex": "#1e201f",
+  "zdroj": "acg",
+  "orig": "RoofingTiles009",
+  "zakladni": true
+ },
+ {
+  "id": "betonova-seda",
+  "typ": "betonova",
+  "metru": 2.5,
+  "hex": "#616767",
+  "zdroj": "acg",
+  "orig": "RoofingTiles010",
+  "zakladni": true
+ },
+ {
+  "id": "bobrovka-cervena",
+  "typ": "bobrovka",
+  "metru": 2.6,
+  "hex": "#8d5537",
+  "zdroj": "ph",
+  "orig": "clay_roof_tiles_03",
+  "zakladni": true
+ },
+ {
+  "id": "bobrovka-hneda-stara",
+  "typ": "bobrovka",
+  "metru": 1.5,
+  "hex": "#5b4f3b",
+  "zdroj": "ph",
+  "orig": "roof_tiles_14"
+ },
+ {
+  "id": "bobrovka-seda",
+  "typ": "bobrovka",
+  "metru": 2.0,
+  "hex": "#3e403d",
+  "zdroj": "acg",
+  "orig": "RoofingTiles002",
+  "zakladni": true
+ },
+ {
+  "id": "sindel-sedy",
+  "typ": "sindel",
+  "metru": 8.0,
+  "hex": "#575652",
+  "zdroj": "ph",
+  "orig": "grey_roof_01",
+  "zakladni": true
+ },
+ {
+  "id": "sindel-tmavy-mech",
+  "typ": "sindel",
+  "metru": 3.0,
+  "hex": "#615c4b",
+  "zdroj": "ph",
+  "orig": "grey_roof_tiles"
+ },
+ {
+  "id": "bridlice-obdelnik",
+  "typ": "bridlice",
+  "metru": 2.2,
+  "hex": "#343634",
+  "zdroj": "acg",
+  "orig": "RoofingTiles003",
+  "zakladni": true
+ },
+ {
+  "id": "bridlice-supina",
+  "typ": "bridlice",
+  "metru": 2.0,
+  "hex": "#3a3e3c",
+  "zdroj": "acg",
+  "orig": "RoofingTiles004"
+ },
+ {
+  "id": "bridlice-stara",
+  "typ": "bridlice",
+  "metru": 3.0,
+  "hex": "#908675",
+  "zdroj": "ph",
+  "orig": "roof_slates_02"
+ },
+ {
+  "id": "bridlice-svetla",
+  "typ": "bridlice",
+  "metru": 1.5,
+  "hex": "#787a78",
+  "zdroj": "ph",
+  "orig": "grey_roof_tiles_02",
+  "zakladni": true
+ },
+ {
+  "id": "falc",
+  "typ": "falc",
+  "metru": 1.2,
+  "hex": "#ececec",
+  "zdroj": "gen",
+  "orig": "falc",
+  "prebarvit": true
+ },
+ {
+  "id": "trapez",
+  "typ": "trapez",
+  "metru": 2.0,
+  "hex": "#6a2617",
+  "zdroj": "ph",
+  "orig": "box_profile_metal_sheet",
+  "prebarvit": true
+ },
+ {
+  "id": "vlnity",
+  "typ": "vlnity",
+  "metru": 1.12,
+  "hex": "#aab3ae",
+  "zdroj": "ph",
+  "orig": "corrugated_iron",
+  "prebarvit": true
+ },
+ {
+  "id": "asfaltovy-pas",
+  "typ": "plocha",
+  "metru": 10.0,
+  "hex": "#3b3634",
+  "zdroj": "ph",
+  "orig": "bitumen",
+  "prebarvit": true
+ }
+]

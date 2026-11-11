@@ -369,6 +369,8 @@
                     barva: '#' + m.color.getHexString(), drsnost: +(m.roughness ?? 0.8).toFixed(2), kov: +(m.metalness ?? 0).toFixed(2),
                     pruhlednost: m.transparent ? m.opacity : 1, mapa, reliefMapa: !!m.bumpMap, relief: m.bumpScale || 0,
                 };
+                // Střešní krytina jde jako vzhled, prohlížeč si textury stáhne sám (krytiny-3d.js)
+                if (m.userData?.krytinaVzhled) popis.krytina = m.userData.krytinaVzhled;
                 const klic = JSON.stringify(popis);
                 if (!klicMaterialu.has(klic)) { klicMaterialu.set(klic, materialy.length); materialy.push(popis); }
                 return klicMaterialu.get(klic);

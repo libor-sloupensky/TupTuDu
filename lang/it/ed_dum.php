@@ -25,6 +25,32 @@ return [
         'bridlice' => 'Ardesia',
         'falc' => 'Lamiera aggraffata',
         'trapez' => 'Lamiera grecata',
+        'vlnity' => 'Lamiera ondulata',
+    ],
+
+    // Vzhled krytiny z fotografie, kód se ukládá jako průměrná barva vzhledu (krytiny-3d.js)
+    'vzhled_krytiny' => [
+        'taska-cervena' => 'Rossa',
+        'taska-zvetrala' => 'Rossa, invecchiata',
+        'taska-lisejnik' => 'Rossa con licheni',
+        'taska-oranzova' => 'Arancione',
+        'taska-hneda-stara' => 'Marrone, invecchiata',
+        'taska-cerna' => 'Nera',
+        'taska-cerna-lisejnik' => 'Nera con licheni',
+        'betonova-cihlova' => 'Rosso mattone',
+        'betonova-hneda-mech' => 'Marrone con muschio',
+        'betonova-tmava-mech' => 'Marrone scuro con muschio',
+        'betonova-cerna' => 'Nera con muschio',
+        'betonova-seda' => 'Grigia con muschio',
+        'bobrovka-cervena' => 'Rossa',
+        'bobrovka-hneda-stara' => 'Marrone, invecchiata',
+        'bobrovka-seda' => 'Grigia',
+        'sindel-sedy' => 'Grigia',
+        'sindel-tmavy-mech' => 'Scura con muschio',
+        'bridlice-obdelnik' => 'Rettangolare',
+        'bridlice-supina' => 'A scaglie',
+        'bridlice-stara' => 'Grigia, invecchiata',
+        'bridlice-svetla' => 'Grigio chiaro',
     ],
 
     'barva_krytiny' => [

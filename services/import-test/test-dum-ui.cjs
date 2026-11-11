@@ -457,11 +457,11 @@ async function main() {
         const krytiny3d = await p.vyhodnot(`(async () => { const d = ${D}; const cek = () => new Promise(r => setTimeout(r, 200)); d.rezim3d = true; await d.prepni3d(); await new Promise(r => setTimeout(r, 500));
             const plochy = () => window._kk3d.dumSkupina.children.filter(o => o.userData.strecha && o.material.map);
             const st = d.engine.dum.strecha; const pred = { krytina: st.krytina, barva: st.barva };
-            d.setStrecha('krytina', 'falc'); await cek(); const falc = plochy().map(o => [!!o.material.map, !!o.material.bumpMap, o.material.metalness, !!o.geometry.attributes.uv]);
+            d.setStrecha('krytina', 'falc'); await cek(); const falc = plochy().map(o => [!!o.material.map, !!o.material.normalMap, o.material.metalness, !!o.geometry.attributes.uv]);
             d.setStrecha('barva', '#3f4347'); await cek(); const hex = plochy()[0].material.color.getHexString();
             d.setStrecha('krytina', pred.krytina); d.setStrecha('barva', pred.barva); await cek();
             d.prepni2d(); d.rezim3d = false; return { falc, hex }; })()`);
-        kontrola('typ krytiny dává reliéf a kov, barva se mění zvlášť', krytiny3d.falc.length >= 1 && krytiny3d.falc.every(f => f[0] && f[1] && f[2] > 0 && f[3]) && krytiny3d.hex === '3f4347', JSON.stringify(krytiny3d));
+        kontrola('typ krytiny dává texturu s reliéfem a kov, barva plechu se mění zvlášť', krytiny3d.falc.length >= 1 && krytiny3d.falc.every(f => f[0] && f[1] && f[2] > 0 && f[3]) && krytiny3d.hex === '3f4347', JSON.stringify(krytiny3d));
         await pauza(500);
         const hrana = await p.vyhodnot(`(async () => { const d = ${D}; const cek = () => new Promise(r => setTimeout(r, 150)); d.rezimStrecha = false; d.naPodlazi(d.engine.horniPodlazi().id); d.prepniUpravuStrechy(); await cek();
             const v = d._strechaVypocet(); const h = v.hrany.find(x => x.typ === 'okap'); d.strechaHrana = h.klic; d._selectionTick++; await cek();
@@ -474,8 +474,9 @@ async function main() {
             d.hranaJakoCelek(h.klic); await cek(); out.poVraceni = (d.engine.dum.strecha.hrany || {})[h.klic] || null; d.prepniUpravuStrechy(); d.rezimStrecha = false; d.strechaHrana = null; d.renderer.render(); return out; })()`);
         kontrola('hrana má vlastní sklon, přesah a výšku okapu, jde vrátit na celek', hrana.nazvy.every(Boolean) && hrana.popisekOkap === 'Přesah okapu' && (hrana.popisekStit === null || hrana.popisekStit === 'Přesah štítu') && blizko(hrana.presah, 1.5, 1e-6) && blizko(hrana.z, 1.8, 1e-6) && hrana.sklon === 55 && hrana.min <= 1.8 && hrana.poVraceni === null, JSON.stringify(hrana));
         const nastrojBarvy = await p.vyhodnot(`(async () => { const d = ${D}; const cek = () => new Promise(r => setTimeout(r, 150)); d.rezim3d = true; await d.prepni3d(); await new Promise(r => setTimeout(r, 400));
+            const predKrytina = d.engine.dum.strecha.krytina; const pred = d.engine.dum.strecha.barva; d.setStrecha('krytina', 'falc'); await cek();
             d.podlaziUprava = 'strecha'; await cek(); const panel = document.querySelector('[data-uprava=strecha]');
-            const sym = panel.querySelector('[data-barva-symbol]'); const pred = d.engine.dum.strecha.barva; const zavreno = !panel.querySelector('[data-barva-nastroj]');
+            const sym = panel.querySelector('[data-barva-symbol]'); const zavreno = !panel.querySelector('[data-barva-nastroj]');
             sym.click(); await cek(); const n = panel.querySelector('[data-barva-nastroj]'); const posledni = d.historie[d.historie.length - 1]; const kroku = () => d.historie.length - 1 - d.historie.indexOf(posledni);
             const jas = n.querySelector('[data-barva-posuvnik=l]'); const vzorek = () => getComputedStyle(n.querySelector('[data-barva-nova]')).backgroundColor;
             const v0 = vzorek(); jas.value = 70; jas.dispatchEvent(new Event('input', { bubbles: true })); await cek(); const v1 = vzorek();
@@ -487,7 +488,7 @@ async function main() {
             ral.value = '1234'; ral.dispatchEvent(new Event('change', { bubbles: true })); await cek(); const chyba = /nemáme/.test(n.textContent);
             const pouzite = panel.querySelectorAll('[data-barva-pouzite] button').length;
             d.setStrecha('barva', pred); await cek(); const zUndo = n.querySelector('[data-barva-nova]').style.background !== '';
-            sym.click(); d.podlaziUprava = null; await cek(); d.prepni2d(); d.rezim3d = false;
+            sym.click(); d.setStrecha('krytina', predKrytina); d.setStrecha('barva', pred); d.podlaziUprava = null; await cek(); d.prepni2d(); d.rezim3d = false;
             return { zavreno, v0, v1, zaTahu, puvodniVzorek, poPusteni, zRal, chyba, pouzite }; })()`);
         kontrola('nástroj na barvu: zavřený jen symbol, vzorek a 3D za tahu bez kroku, po puštění jeden krok, RAL, jinde použité', nastrojBarvy.zavreno && nastrojBarvy.v0 !== nastrojBarvy.v1 && nastrojBarvy.zaTahu.kroku === 0 && nastrojBarvy.zaTahu.hex !== nastrojBarvy.zaTahu.zapis && nastrojBarvy.puvodniVzorek === nastrojBarvy.v0 && nastrojBarvy.poPusteni.kroku === 1 && nastrojBarvy.poPusteni.zapis !== nastrojBarvy.zaTahu.zapis && nastrojBarvy.zRal.zapis === '#293133' && /7016/.test(nastrojBarvy.zRal.popis) && nastrojBarvy.chyba && nastrojBarvy.pouzite >= 1, JSON.stringify(nastrojBarvy));
         await pauza(400);

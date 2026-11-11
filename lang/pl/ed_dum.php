@@ -25,6 +25,32 @@ return [
         'bridlice' => 'Łupek',
         'falc' => 'Blacha na rąbek',
         'trapez' => 'Blacha trapezowa',
+        'vlnity' => 'Blacha falista',
+    ],
+
+    // Vzhled krytiny z fotografie, kód se ukládá jako průměrná barva vzhledu (krytiny-3d.js)
+    'vzhled_krytiny' => [
+        'taska-cervena' => 'Czerwona',
+        'taska-zvetrala' => 'Czerwona, zwietrzała',
+        'taska-lisejnik' => 'Czerwona z porostami',
+        'taska-oranzova' => 'Pomarańczowa',
+        'taska-hneda-stara' => 'Brązowa, stara',
+        'taska-cerna' => 'Czarna',
+        'taska-cerna-lisejnik' => 'Czarna z porostami',
+        'betonova-cihlova' => 'Ceglasta',
+        'betonova-hneda-mech' => 'Brązowa z mchem',
+        'betonova-tmava-mech' => 'Ciemnobrązowa z mchem',
+        'betonova-cerna' => 'Czarna z mchem',
+        'betonova-seda' => 'Szara z mchem',
+        'bobrovka-cervena' => 'Czerwona',
+        'bobrovka-hneda-stara' => 'Brązowa, stara',
+        'bobrovka-seda' => 'Szara',
+        'sindel-sedy' => 'Szary',
+        'sindel-tmavy-mech' => 'Ciemny z mchem',
+        'bridlice-obdelnik' => 'Prostokątna',
+        'bridlice-supina' => 'Łuskowa',
+        'bridlice-stara' => 'Szara, stara',
+        'bridlice-svetla' => 'Jasnoszara',
     ],
 
     'barva_krytiny' => [

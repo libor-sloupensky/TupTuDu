@@ -147,7 +147,7 @@ async function main() {
 
         console.log('\n4) Jinde použité: co je na domě, ne historie');
         const jinde = await p.vyhodnot(`(async () => { const d = ${D}; const cek = () => new Promise(r => setTimeout(r, 200));
-            d.setStrecha('barva', '#aa1111'); await cek(); const a = d.barvyJinde('fasada').map(b => b.hex);
+            d.setStrecha('krytina', 'falc'); d.setStrecha('barva', '#aa1111'); await cek(); const a = d.barvyJinde('fasada').map(b => b.hex);
             d.setStrecha('barva', '#3f4347'); await cek(); const b = d.barvyJinde('fasada');
             const uStrechy = d.barvyJinde('strecha').map(x => x.hex);
             return { predtim: a.includes('#aa1111'), pozdeji: b.map(x => x.hex).includes('#aa1111'), strechaUSebe: uStrechy.includes('#3f4347'), popis: b.find(x => x.hex === '#3f4347')?.kde, okna: b.find(x => x.hex === '#293133')?.kde, fasadaUSebe: b.some(x => x.hex === d.engine.dum.barvy.fasada) }; })()`);

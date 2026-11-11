@@ -25,6 +25,32 @@ return [
         'bridlice' => 'Bridlica',
         'falc' => 'Falcovaný plech',
         'trapez' => 'Trapézový plech',
+        'vlnity' => 'Vlnitý plech',
+    ],
+
+    // Vzhled krytiny z fotografie, kód se ukládá jako průměrná barva vzhledu (krytiny-3d.js)
+    'vzhled_krytiny' => [
+        'taska-cervena' => 'Červená',
+        'taska-zvetrala' => 'Červená, zvetraná',
+        'taska-lisejnik' => 'Červená s lišajníkom',
+        'taska-oranzova' => 'Oranžová',
+        'taska-hneda-stara' => 'Hnedá, stará',
+        'taska-cerna' => 'Čierna',
+        'taska-cerna-lisejnik' => 'Čierna s lišajníkom',
+        'betonova-cihlova' => 'Tehlová',
+        'betonova-hneda-mech' => 'Hnedá s machom',
+        'betonova-tmava-mech' => 'Tmavohnedá s machom',
+        'betonova-cerna' => 'Čierna s machom',
+        'betonova-seda' => 'Sivá s machom',
+        'bobrovka-cervena' => 'Červená',
+        'bobrovka-hneda-stara' => 'Hnedá, stará',
+        'bobrovka-seda' => 'Sivá',
+        'sindel-sedy' => 'Sivý',
+        'sindel-tmavy-mech' => 'Tmavý s machom',
+        'bridlice-obdelnik' => 'Obdĺžniková',
+        'bridlice-supina' => 'Šupinová',
+        'bridlice-stara' => 'Sivá, stará',
+        'bridlice-svetla' => 'Svetlosivá',
     ],
 
     'barva_krytiny' => [

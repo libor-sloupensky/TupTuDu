@@ -25,6 +25,32 @@ return [
         'bridlice' => 'Ardoise',
         'falc' => 'Joint debout',
         'trapez' => 'Bac acier',
+        'vlnity' => 'Tôle ondulée',
+    ],
+
+    // Vzhled krytiny z fotografie, kód se ukládá jako průměrná barva vzhledu (krytiny-3d.js)
+    'vzhled_krytiny' => [
+        'taska-cervena' => 'Rouge',
+        'taska-zvetrala' => 'Rouge, patinée',
+        'taska-lisejnik' => 'Rouge avec lichens',
+        'taska-oranzova' => 'Orange',
+        'taska-hneda-stara' => 'Brune, vieillie',
+        'taska-cerna' => 'Noire',
+        'taska-cerna-lisejnik' => 'Noire avec lichens',
+        'betonova-cihlova' => 'Rouge brique',
+        'betonova-hneda-mech' => 'Brune avec mousse',
+        'betonova-tmava-mech' => 'Brun foncé avec mousse',
+        'betonova-cerna' => 'Noire avec mousse',
+        'betonova-seda' => 'Grise avec mousse',
+        'bobrovka-cervena' => 'Rouge',
+        'bobrovka-hneda-stara' => 'Brune, vieillie',
+        'bobrovka-seda' => 'Grise',
+        'sindel-sedy' => 'Gris',
+        'sindel-tmavy-mech' => 'Sombre avec mousse',
+        'bridlice-obdelnik' => 'Rectangulaire',
+        'bridlice-supina' => 'En écailles',
+        'bridlice-stara' => 'Grise, vieillie',
+        'bridlice-svetla' => 'Gris clair',
     ],
 
     'barva_krytiny' => [

@@ -12,7 +12,8 @@
  *  - Zvýšená podlaha se přenáší do vyšších podlaží (zvedá se i strop), jde vypnout.
  */
 (function () {
-    // Typ krytiny určuje reliéf, barva je zvlášť (na hraně může být vlastní)
+    // Typ krytiny určuje texturu (public/js/krytiny-3d.js). U tašek, bobrovky, šindele a břidlice je
+    // barva vzhled z fotografie, u plechu libovolná. Na hraně může být vlastní.
     const TYPY_KRYTIN = [
         { id: 'taska', nazev: preloz('ed_dum.krytina.taska'), kov: false },
         { id: 'betonova', nazev: preloz('ed_dum.krytina.betonova'), kov: false },
@@ -21,6 +22,7 @@
         { id: 'bridlice', nazev: preloz('ed_dum.krytina.bridlice'), kov: false },
         { id: 'falc', nazev: preloz('ed_dum.krytina.falc'), kov: true },
         { id: 'trapez', nazev: preloz('ed_dum.krytina.trapez'), kov: true },
+        { id: 'vlnity', nazev: preloz('ed_dum.krytina.vlnity'), kov: true },
     ];
     const BARVY_KRYTIN = [
         { id: 'cervena', nazev: preloz('ed_dum.barva_krytiny.cervena'), barva: '#a8502f' },
@@ -33,87 +35,21 @@
     const STARE_KRYTINY = { antracit: '#3f4347', hneda: '#6d4c3b', seda: '#8a8d90', plech: '#5d6d75' };
     const typKrytiny = (st) => (TYPY_KRYTIN.find(k => k.id === st.krytina) ? st.krytina : (st.krytina === 'plech' ? 'falc' : 'taska'));
     const barvaKrytiny = (st) => st.barva || STARE_KRYTINY[st.krytina] || BARVY_KRYTIN[0].barva;
+    // Vzhled krytiny podle typu a uložené barvy; u tašek je barva jen klíč vzhledu (krytiny-3d.js)
+    const vzhledKrytiny = (typ, hex) => window.Krytiny3d?.vzhled(typ, hex) || null;
+    /** Barva, jakou krytina opravdu má: u pevného vzhledu jeho průměr, u plechu zvolená. */
+    const barvaZobrazena = (typ, hex) => {
+        const v = vzhledKrytiny(typ, hex);
+        return v && !v.prebarvit ? v.hex : hex;
+    };
+    // Střecha ve 3D je deska: rovina výpočtu je spodní líc krokví, krytina leží výš (kolmo k rovině).
+    // Okraj nepřidává další barvu domu (fasáda, střecha, okna): čelo, žlaby a hřebenáče jsou v barvě
+    // krytiny, čelo a žlab o ODSTIN_PLECHU tmavší, podbití v barvě fasády.
+    const TLOUSTKA_STRECHY = 0.28;
+    const ODSTIN_PLECHU = 0.8;
+    const ATIKA_SIRKA = 0.25;
+    const ATIKA_VYSKA = 0.4;
 
-    /**
-     * Reliéf krytiny jako dlaždice 1,2 × 1,2 m. Kreslí se jednou odstíny šedi, stejný obrázek
-     * slouží jako tmavnutí barvy i jako výškový podklad. Nahoře v obrázku je hřeben.
-     */
-    const METRU_NA_TEXTURU = 1.2;
-    function kresliRelief(typ) {
-        const N = 512;
-        const cv = document.createElement('canvas');
-        cv.width = cv.height = N;
-        const g = cv.getContext('2d');
-        g.fillStyle = '#e8e8e8';
-        g.fillRect(0, 0, N, N);
-        let seme = 7;
-        const nahoda = () => { seme = (seme * 16807) % 2147483647; return (seme % 1000) / 1000; };
-        const sed = (v) => { const c = Math.round(Math.min(255, Math.max(0, v))); return `rgb(${c},${c},${c})`; };
-        if (typ === 'taska' || typ === 'betonova') {
-            const sloupcu = typ === 'taska' ? 4 : 5, rad = 4, s = N / sloupcu, v = N / rad;
-            for (let x = 0; x < N; x++) {
-                const f = (x % s) / s;
-                const h = typ === 'taska' ? Math.cos(f * Math.PI * 2) : (Math.cos(f * Math.PI * 4) * 0.5);
-                g.fillStyle = sed(205 + h * 42);
-                g.fillRect(x, 0, 1, N);
-            }
-            for (let r = 0; r < rad; r++) {
-                const l = g.createLinearGradient(0, (r + 1) * v - 14, 0, (r + 1) * v);
-                l.addColorStop(0, 'rgba(0,0,0,0)');
-                l.addColorStop(1, 'rgba(0,0,0,.55)');
-                g.fillStyle = l;
-                g.fillRect(0, (r + 1) * v - 14, N, 14);
-            }
-        } else if (typ === 'bobrovka') {
-            const rad = 8, sloupcu = 6, v = N / rad, s = N / sloupcu;
-            // Vyšší řady překrývají nižší: kreslí se od okapu nahoru
-            for (let r = rad; r >= -1; r--) {
-                for (let c = -1; c <= sloupcu; c++) {
-                    const x = (c + (r % 2 ? 0.5 : 0)) * s, y = r * v;
-                    g.beginPath();
-                    g.moveTo(x + 2, y - v);
-                    g.lineTo(x + 2, y + v * 0.45);
-                    g.quadraticCurveTo(x + s / 2, y + v * 1.25, x + s - 2, y + v * 0.45);
-                    g.lineTo(x + s - 2, y - v);
-                    g.closePath();
-                    g.fillStyle = sed(205 + nahoda() * 36);
-                    g.fill();
-                    g.lineWidth = 3;
-                    g.strokeStyle = 'rgba(0,0,0,.5)';
-                    g.stroke();
-                }
-            }
-        } else if (typ === 'sindel' || typ === 'bridlice') {
-            const rad = typ === 'sindel' ? 8 : 6, sloupcu = typ === 'sindel' ? 4 : 5, v = N / rad, s = N / sloupcu;
-            for (let r = 0; r < rad; r++) {
-                for (let c = -1; c <= sloupcu; c++) {
-                    const x = (c + (r % 2 ? 0.5 : 0)) * s;
-                    g.fillStyle = sed((typ === 'sindel' ? 190 : 180) + nahoda() * 60);
-                    g.fillRect(x + 1, r * v + 1, s - 2, v - 2);
-                }
-                g.fillStyle = 'rgba(0,0,0,.55)';
-                g.fillRect(0, (r + 1) * v - 3, N, 3);
-            }
-        } else if (typ === 'falc') {
-            const s = N / 2;
-            for (let i = 0; i < 2; i++) {
-                const x = (i + 0.5) * s;
-                g.fillStyle = 'rgba(0,0,0,.4)';
-                g.fillRect(x + 4, 0, 10, N);
-                g.fillStyle = '#ffffff';
-                g.fillRect(x - 4, 0, 8, N);
-            }
-        } else if (typ === 'trapez') {
-            const s = N / 6;
-            for (let x = 0; x < N; x++) {
-                const f = (x % s) / s;
-                const h = f < 0.2 ? f / 0.2 : (f < 0.45 ? 1 : (f < 0.65 ? 1 - (f - 0.45) / 0.2 : 0));
-                g.fillStyle = sed(165 + h * 80);
-                g.fillRect(x, 0, 1, N);
-            }
-        }
-        return cv;
-    }
     // Dekor podlahy místnosti. Barva je zvlášť, `barva` zde platí, dokud si ji uživatel nezmění.
     // `metru` = kolik metrů pokryje jedna dlaždice textury.
     const DEKORY_PODLAH = [
@@ -2065,14 +2001,24 @@
             let hranaData = null;
             if (hrana) {
                 const q = window.Strecha.parametryHran([hrana], { zOkap: this._vyskaOkapu(), presah: st.presah, presahStit: st.presahStit, sklon: st.sklon })[0];
-                hranaData = { klic: hrana.klic, typ: hrana.typ, sklon: hrana.sklon, presah: q.presah, z: q.z, barva: hrana.barva || null, rucne: !!(st.hrany || {})[hrana.klic] };
+                hranaData = {
+                    klic: hrana.klic, typ: hrana.typ, sklon: hrana.sklon, presah: q.presah, z: q.z, barva: hrana.barva || null, rucne: !!(st.hrany || {})[hrana.klic],
+                    vzhled: vzhledKrytiny(typKrytiny(st), hrana.barva || barvaKrytiny(st))?.id || null,
+                };
             }
+            const typ = typKrytiny(st);
+            const vzhled = vzhledKrytiny(typ, barvaKrytiny(st));
             return {
                 st,
-                krytina: typKrytiny(st),
+                krytina: typ,
                 barva: barvaKrytiny(st),
+                // Tašky, bobrovka, šindel a břidlice: vzhledy z fotografií místo volné barvy (krytiny-3d.js)
+                vzhledy: vzhled && !vzhled.prebarvit ? window.Krytiny3d.typu(typ).map(v => ({
+                    id: v.id, hex: v.hex, nahled: window.Krytiny3d.nahled(v.id), nazev: preloz('ed_dum.vzhled_krytiny.' + v.id),
+                })) : [],
+                vzhled: vzhled?.id || null,
                 zOkap: this._vyskaOkapu(),
-                zMax: v && !v.plocha ? v.zMax : null,
+                zMax: v && !v.plocha ? v.zMax + this._tloustkaStrechy() : null,
                 bezObrysu: !v,
                 hrana: hranaData,
             };
@@ -2080,7 +2026,7 @@
 
         _novaStrecha() {
             const t = TYPY_STRECH[0];
-            return { typ: t.id, sklon: t.sklon, presah: 0.5, presahStit: 0.15, vyskaOkapu: null, krytina: 'taska', barva: BARVY_KRYTIN[0].barva, otocHreben: false, hrany: {} };
+            return { typ: t.id, sklon: t.sklon, presah: 0.5, presahStit: 0.15, vyskaOkapu: null, krytina: 'taska', barva: vzhledKrytiny('taska', BARVY_KRYTIN[0].barva)?.hex || BARVY_KRYTIN[0].barva, otocHreben: false, hrany: {} };
         },
 
         strechaVytvor() {
@@ -2115,6 +2061,8 @@
             } else if (klic === 'krytina') {
                 st.barva = barvaKrytiny(st);
                 st.krytina = hodnota;
+                const v = vzhledKrytiny(hodnota, st.barva);
+                if (v && !v.prebarvit) st.barva = v.hex;
             } else if (klic === 'barva') {
                 st.barva = hodnota;
             }
@@ -2154,8 +2102,9 @@
             for (const s of d.schodiste) pridej('schody:' + s.id, s.barva || BARVA_SCHODU, preloz('ed_dum.barvy.schody'));
             for (const s of d.sloupy || []) pridej('sloup:' + s.id, s.barva, preloz('ed_dum.barvy.sloup'));
             if (d.strecha) {
-                pridej('strecha', barvaKrytiny(d.strecha), preloz('ed_dum.strecha'));
-                for (const [k, h] of Object.entries(d.strecha.hrany || {})) pridej('hrana:' + k, h.barva, preloz('ed_dum.hrana_strechy'));
+                const typ = typKrytiny(d.strecha);
+                pridej('strecha', barvaZobrazena(typ, barvaKrytiny(d.strecha)), preloz('ed_dum.strecha'));
+                for (const [k, h] of Object.entries(d.strecha.hrany || {})) pridej('hrana:' + k, h.barva && barvaZobrazena(typ, h.barva), preloz('ed_dum.hrana_strechy'));
             }
             // Fasáda a otvory se počítají, jen když na domě opravdu jsou
             let steny = false;
@@ -2270,6 +2219,8 @@
             for (const o of dum.children) {
                 const u = o.userData;
                 if (u.krytina && (klic ? u.klic === klic : !u.vlastniBarva)) o.material.color.set(hex);
+                // Čelo, žlaby a hřebenáče jdou s barvou celé střechy
+                if (u.oplechovani && !klic) for (const m of [].concat(o.material)) if (m.userData.odstin) m.color.set(hex).multiplyScalar(m.userData.odstin);
             }
         },
 
@@ -2897,10 +2848,11 @@
             const v = this._strechaVypocet();
             if (!v) return;
             const nahled = this._barvaNahled;
-            const krytina = nahled && !nahled.klic ? nahled.hex : barvaKrytiny(st);
+            const typ = typKrytiny(st);
+            const krytina = nahled && !nahled.klic ? nahled.hex : barvaZobrazena(typ, barvaKrytiny(st));
             for (const pl of v.plochy) {
                 const hranaPlochy = v.hrany.find(h => h.index === pl.hrana) || {};
-                const barva = nahled && nahled.klic === hranaPlochy.klic ? nahled.hex : (hranaPlochy.barva || krytina);
+                const barva = nahled && nahled.klic === hranaPlochy.klic ? nahled.hex : (hranaPlochy.barva ? barvaZobrazena(typ, hranaPlochy.barva) : krytina);
                 for (const t of pl.troj) {
                     r.strechaLayer.add(new Konva.Line({
                         points: t.flatMap(b => [b.x * PX, b.y * PX]), closed: true,
@@ -3574,25 +3526,116 @@
             return jeVen(-1) ? -1 : 0;
         },
 
-        /** Dlaždice reliéfu krytiny, sdílené: při přestavbě scény se nemažou. */
-        _texturaKrytiny(typ) {
-            const THREE = window.THREE;
-            const _3d = window._kk3d;
-            if (!_3d.texturyKrytin) _3d.texturyKrytin = new Map();
-            let t = _3d.texturyKrytin.get(typ);
-            if (!t) {
-                t = new THREE.CanvasTexture(kresliRelief(typ));
-                t.encoding = THREE.sRGBEncoding;
-                t.wrapS = t.wrapT = THREE.RepeatWrapping;
-                t.anisotropy = 8;
-                _3d.texturyKrytin.set(typ, t);
+        /** Svislá tloušťka střešní desky (m): kolmo k rovině u základního sklonu vyjde TLOUSTKA_STRECHY. */
+        _tloustkaStrechy() {
+            const sklon = (this.engine.dum.strecha?.sklon || 35) * Math.PI / 180;
+            return Math.min(0.6, TLOUSTKA_STRECHY / Math.max(0.3, Math.cos(sklon)));
+        },
+
+        /**
+         * Okraj střešní desky: svislé pásy čela a závětrného prkna od spodního líce o T výš a okapové
+         * žlaby u vodorovných hran ve spodní výšce plochy. Trojúhelníky ve výpočtu (m, z nahoru),
+         * normály ven. Hrana trojúhelníku, kterou nesdílí jiný, je okrajem jen tehdy, když za ní
+         * žádná střecha není: ve švech ploch (T-spoje po ořezu) by pás zůstal schovaný v desce.
+         */
+        _okrajStrechy(plochy, T) {
+            const klic = (b) => Math.round(b.x * 500) + ',' + Math.round(b.y * 500) + ',' + Math.round(b.z * 500);
+            const hrany = new Map();
+            for (const pl of plochy) {
+                const zMin = Math.min(...pl.troj.flatMap(t => t.map(b => b.z)));
+                for (const t of pl.troj) {
+                    for (let i = 0; i < 3; i++) {
+                        const a = t[i], b = t[(i + 1) % 3];
+                        const ka = klic(a), kb = klic(b);
+                        if (ka === kb) continue;
+                        const k = ka < kb ? ka + '|' + kb : kb + '|' + ka;
+                        const z = hrany.get(k);
+                        if (z) z.pocet++;
+                        else hrany.set(k, { a, b, c: t[(i + 2) % 3], zMin, pocet: 1 });
+                    }
+                }
             }
-            return t;
+            const cela = [], okapy = [];
+            for (const h of hrany.values()) {
+                if (h.pocet > 1) continue;
+                const { a, b, c } = h;
+                const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy);
+                if (L < 0.005) continue;
+                // Vodorovně ven od trojúhelníku
+                let o = { x: -dy / L, y: dx / L };
+                if (o.x * (c.x - a.x) + o.y * (c.y - a.y) > 0) o = { x: -o.x, y: -o.y };
+                const st = { x: (a.x + b.x) / 2 + o.x * 0.05, y: (a.y + b.y) / 2 + o.y * 0.05 };
+                if (window.Strecha.vyskaVBode(plochy, st.x, st.y) !== null) continue;
+                const nahoru = (p, dz) => ({ x: p.x, y: p.y, z: p.z + dz });
+                this._ctyruhelnik(cela, a, b, nahoru(b, T), nahoru(a, T), { x: o.x, y: o.y, z: 0 });
+                // Žlab jen pod vodorovnou hranou ve spodní výšce plochy (okap), ne na štítu
+                if (Math.abs(a.z - b.z) < 0.003 && Math.max(a.z, b.z) <= h.zMin + 0.003) {
+                    const R = 0.075, presah = R + 0.02, e = { x: dx / L, y: dy / L };
+                    const osa = (p, k) => ({ x: p.x + o.x * (R + 0.02) + e.x * k, y: p.y + o.y * (R + 0.02) + e.y * k, z: p.z + T * 0.5 });
+                    this._polovalec(okapy, osa(a, -presah), osa(b, presah), R, { x: o.x, y: o.y, z: 0 }, { x: 0, y: 0, z: -1 });
+                }
+            }
+            return { cela, okapy };
+        },
+
+        /**
+         * Hřebenáče na hřebenech a nárožích (ne v úžlabí): úsečka kostry, od které plochy na obě
+         * strany klesají. Půlválec leží na krytině, trojúhelníky ve výpočtu (m, z nahoru).
+         */
+        _hrebenaceStrechy(st, T) {
+            const R = 0.12, troj = [], videne = new Set();
+            const vyska = (x, y) => window.Strecha.vyskaVBode(st.plochy, x, y);
+            for (const [p, q] of st.hrebeny || []) {
+                const k = [p, q].map(b => Math.round(b.x * 200) + ',' + Math.round(b.y * 200)).sort().join('|');
+                if (videne.has(k)) continue;
+                videne.add(k);
+                const dx = q.x - p.x, dy = q.y - p.y, L = Math.hypot(dx, dy);
+                if (L < 0.1) continue;
+                const u = { x: -dy / L, y: dx / L };
+                const m = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
+                const zm = vyska(m.x, m.y);
+                const z1 = vyska(m.x + u.x * 0.3, m.y + u.y * 0.3), z2 = vyska(m.x - u.x * 0.3, m.y - u.y * 0.3);
+                if (zm === null || z1 === null || z2 === null || z1 > zm - 0.02 || z2 > zm - 0.02) continue;
+                const zp = vyska(p.x, p.y) ?? p.z, zq = vyska(q.x, q.y) ?? q.z;
+                const A = { x: p.x, y: p.y, z: zp + T - R * 0.45 }, B = { x: q.x, y: q.y, z: zq + T - R * 0.45 };
+                // Kolmo k ose půlválce: vodorovně a „nahoru“ kolmo k ose
+                const ex = B.x - A.x, ey = B.y - A.y, ez = B.z - A.z, eL = Math.hypot(ex, ey, ez);
+                const e = { x: ex / eL, y: ey / eL, z: ez / eL };
+                let w = { x: e.y * 0 - e.z * u.y, y: e.z * u.x - e.x * 0, z: e.x * u.y - e.y * u.x };
+                if (w.z < 0) w = { x: -w.x, y: -w.y, z: -w.z };
+                this._polovalec(troj, A, B, R, { x: u.x, y: u.y, z: 0 }, w);
+            }
+            return troj;
+        },
+
+        /** Čtyřúhelník a-b-c-d jako dva trojúhelníky s normálou ve směru `ven`. */
+        _ctyruhelnik(troj, a, b, c, d, ven) {
+            const n = {
+                x: (b.y - a.y) * (c.z - a.z) - (b.z - a.z) * (c.y - a.y),
+                y: (b.z - a.z) * (c.x - a.x) - (b.x - a.x) * (c.z - a.z),
+                z: (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x),
+            };
+            if (n.x * ven.x + n.y * ven.y + n.z * ven.z >= 0) troj.push([a, b, c], [a, c, d]);
+            else troj.push([a, c, b], [a, d, c]);
+        },
+
+        /**
+         * Půlválec podél osy A→B o poloměru R: oblouk z `u` přes `w` do -u (u, w kolmé k ose,
+         * jednotkové). Žlab má w dolů, hřebenáč nahoru. Normály od osy.
+         */
+        _polovalec(troj, A, B, R, u, w, dilu = 8) {
+            const bod = (S, th) => ({ x: S.x + R * (Math.cos(th) * u.x + Math.sin(th) * w.x), y: S.y + R * (Math.cos(th) * u.y + Math.sin(th) * w.y), z: S.z + R * (Math.cos(th) * u.z + Math.sin(th) * w.z) });
+            for (let i = 0; i < dilu; i++) {
+                const t0 = Math.PI * i / dilu, t1 = Math.PI * (i + 1) / dilu, tm = (t0 + t1) / 2;
+                const ven = { x: Math.cos(tm) * u.x + Math.sin(tm) * w.x, y: Math.cos(tm) * u.y + Math.sin(tm) * w.y, z: Math.cos(tm) * u.z + Math.sin(tm) * w.z };
+                this._ctyruhelnik(troj, bod(A, t0), bod(B, t0), bod(B, t1), bod(A, t1), ven);
+            }
         },
 
         /**
          * Trojúhelníky (m, z nahoru) jako mesh scény. S `rovina` (n, d, tg plochy) dostanou
-         * souřadnice textury: u podél okapu, v po spádnici, obojí ve skutečných metrech.
+         * souřadnice textury: u podél okapu, v po spádnici, obojí v metrech dělených `rovina.metru`
+         * (velikost dlaždice textury). uv2 je kopie pro mapu zastínění.
          */
         _troj3d(trojVypoctu, zPosun, mat, userData, rovina) {
             const THREE = window.THREE;
@@ -3607,11 +3650,13 @@
             if (rovina) {
                 const uv = new Float32Array(troj.length * 6);
                 const naSpadu = Math.sqrt(1 + rovina.tg * rovina.tg);
+                const metru = rovina.metru || 1;
                 troj.forEach((t, i) => t.forEach((b, j) => {
-                    uv[i * 6 + j * 2] = (b.x * rovina.d.x + b.y * rovina.d.y) / METRU_NA_TEXTURU;
-                    uv[i * 6 + j * 2 + 1] = (b.x * rovina.n.x + b.y * rovina.n.y) * naSpadu / METRU_NA_TEXTURU;
+                    uv[i * 6 + j * 2] = (b.x * rovina.d.x + b.y * rovina.d.y) / metru;
+                    uv[i * 6 + j * 2 + 1] = (b.x * rovina.n.x + b.y * rovina.n.y) * naSpadu / metru;
                 }));
                 g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+                g.setAttribute('uv2', new THREE.BufferAttribute(uv, 2));
             }
             g.computeVertexNormals();
             const m = new THREE.Mesh(g, mat);
@@ -3750,21 +3795,60 @@
                 const typ = typKrytiny(d.strecha);
                 const zaklad = barvaKrytiny(d.strecha);
                 const kov = (TYPY_KRYTIN.find(k => k.id === typ) || {}).kov;
-                const relief = this._texturaKrytiny(typ);
-                const matKrytina = (barva) => new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(barva), roughness: kov ? 0.45 : 0.85, metalness: kov ? 0.25 : 0,
-                    side: THREE.DoubleSide, flatShading: true, map: relief, bumpMap: relief, bumpScale: 0.035,
-                });
+                // Textury dorazí až po přestavbě scény, stíny se pak přepočítají
+                const poNacteni = () => window.Svetlo3d?.prekresliStiny(_3d.renderer);
+                const matKrytina = (barva, typKr = typ) => {
+                    const v = vzhledKrytiny(typKr, barva);
+                    if (v) return { m: window.Krytiny3d.material(v, barva, poNacteni), metru: v.metru };
+                    return { m: new THREE.MeshStandardMaterial({ color: new THREE.Color(barva), roughness: 0.85, side: THREE.DoubleSide }), metru: 1 };
+                };
+                // Oplechování v barvě krytiny; `odstin` drží i náhled barvy za tahu posuvníkem
+                const barvaStrechy = barvaZobrazena(typ, zaklad);
+                const matPlechu = (odstin = ODSTIN_PLECHU) => {
+                    const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(barvaStrechy).multiplyScalar(odstin), roughness: 0.45, metalness: 0.25, side: THREE.DoubleSide });
+                    m.userData.odstin = odstin;
+                    return m;
+                };
+                const fasada = (oboustranna = false) => {
+                    const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(d.barvy.fasada), roughness: 0.9, side: oboustranna ? THREE.DoubleSide : THREE.FrontSide });
+                    m.userData.barva = 'fasada';
+                    return m;
+                };
                 if (st.plocha) {
                     const zOd = kota + st.zOkap;
-                    // Plochá: deska přes obrys (přesah se u ploché v první verzi neřeší)
+                    // Plochá: deska přes obrys v barvě fasády, nahoře asfaltový pás ve zvolené barvě
+                    // a po obvodu atika s oplechováním (přesah se u ploché zatím neřeší)
                     const obrys = st.hrany.map(h => h.a);
-                    const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(zaklad), roughness: 0.85 });
-                    dum.add(this._deska3d(obrys, [], zOd, zOd + 0.2, mat, { strecha: true, krytina: true }));
+                    dum.add(this._deska3d(obrys, [], zOd, zOd + 0.2, fasada(), { strecha: true }));
+                    const vnitrek = this._odsadPolygon(obrys, -ATIKA_SIRKA);
+                    dum.add(this._deska3d(obrys, [vnitrek], zOd + 0.2, zOd + 0.2 + ATIKA_VYSKA,
+                        [matPlechu(), fasada(), matPlechu(), fasada()], { strecha: true, oplechovani: true }));
+                    const T2 = window.THREE.ShapeUtils;
+                    const kontura = vnitrek.map(p => new THREE.Vector2(p.x, p.y));
+                    const vrch = T2.triangulateShape(kontura, []).map(([i, j, k]) => [i, j, k].map(n => ({ x: vnitrek[n].x, y: vnitrek[n].y, z: st.zOkap + 0.2 + 0.003 })));
+                    const nahoru = vrch.map(t => (((t[1].x - t[0].x) * (t[2].y - t[0].y) - (t[1].y - t[0].y) * (t[2].x - t[0].x)) > 0 ? t : [...t].reverse()));
+                    const { m, metru } = matKrytina(zaklad, 'plocha');
+                    dum.add(this._troj3d(nahoru, kota, m, { strecha: true, krytina: true }, { d: { x: 1, y: 0 }, n: { x: 0, y: 1 }, tg: 0, metru }));
                 } else {
-                    for (const pl of st.plochy) {
+                    // Deska tloušťky T svisle: kolmo k rovině vyjde TLOUSTKA_STRECHY u základního sklonu.
+                    // Spodek je rovina výpočtu, vrch její kopie o T výš, takže hřebeny i nároží sedí samy.
+                    const T = this._tloustkaStrechy();
+                    const plochy = st.plochy;
+                    for (const pl of plochy) {
                         const h = st.hrany.find(x => x.index === pl.hrana) || {};
-                        dum.add(this._troj3d(pl.troj, kota, matKrytina(h.barva || zaklad), { strecha: true, krytina: true, klic: h.klic, vlastniBarva: !!h.barva }, pl));
+                        const { m, metru } = matKrytina(h.barva || zaklad);
+                        dum.add(this._troj3d(pl.troj, kota + T, m, { strecha: true, krytina: true, klic: h.klic, vlastniBarva: !!h.barva }, { ...pl, metru }));
+                    }
+                    // Podbití: spodní líc desky v barvě fasády, normála dolů
+                    dum.add(this._troj3d(plochy.flatMap(pl => pl.troj.map(t => [...t].reverse())), kota, fasada(true), { strecha: true, podbiti: true }));
+                    const { cela, okapy } = this._okrajStrechy(plochy, T);
+                    if (cela.length) dum.add(this._troj3d(cela, kota, matPlechu(), { strecha: true, celo: true, oplechovani: true }));
+                    if (okapy.length) dum.add(this._troj3d(okapy, kota, matPlechu(), { strecha: true, zlab: true, oplechovani: true }));
+                    const hrebenace = this._hrebenaceStrechy(st, T);
+                    if (hrebenace.length) {
+                        const mat = kov ? matPlechu(1) : new THREE.MeshStandardMaterial({ color: new THREE.Color(barvaStrechy), roughness: 0.8, side: THREE.DoubleSide });
+                        mat.userData.odstin = 1;
+                        dum.add(this._troj3d(hrebenace, kota, mat, { strecha: true, hrebenac: true, oplechovani: true }));
                     }
                     // Štít nad stěnou vytvoří sama stěna, dotažená až pod střechu. Tenká plocha v líci
                     // by se s ní prala; zůstává jen tam, kde pod hranou žádná stěna není. To je i část

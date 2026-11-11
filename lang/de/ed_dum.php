@@ -25,6 +25,32 @@ return [
         'bridlice' => 'Schiefer',
         'falc' => 'Stehfalzblech',
         'trapez' => 'Trapezblech',
+        'vlnity' => 'Wellblech',
+    ],
+
+    // Vzhled krytiny z fotografie, kód se ukládá jako průměrná barva vzhledu (krytiny-3d.js)
+    'vzhled_krytiny' => [
+        'taska-cervena' => 'Rot',
+        'taska-zvetrala' => 'Rot, verwittert',
+        'taska-lisejnik' => 'Rot mit Flechten',
+        'taska-oranzova' => 'Orange',
+        'taska-hneda-stara' => 'Braun, gealtert',
+        'taska-cerna' => 'Schwarz',
+        'taska-cerna-lisejnik' => 'Schwarz mit Flechten',
+        'betonova-cihlova' => 'Ziegelrot',
+        'betonova-hneda-mech' => 'Braun mit Moos',
+        'betonova-tmava-mech' => 'Dunkelbraun mit Moos',
+        'betonova-cerna' => 'Schwarz mit Moos',
+        'betonova-seda' => 'Grau mit Moos',
+        'bobrovka-cervena' => 'Rot',
+        'bobrovka-hneda-stara' => 'Braun, gealtert',
+        'bobrovka-seda' => 'Grau',
+        'sindel-sedy' => 'Grau',
+        'sindel-tmavy-mech' => 'Dunkel mit Moos',
+        'bridlice-obdelnik' => 'Rechteckig',
+        'bridlice-supina' => 'Schuppenform',
+        'bridlice-stara' => 'Grau, gealtert',
+        'bridlice-svetla' => 'Hellgrau',
     ],
 
     'barva_krytiny' => [
