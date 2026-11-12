@@ -104,9 +104,39 @@ každý členský stát zveřejňuje mimo jiné katastrální parcely jako mapov
 datovém modelu. Jedno napojení na tento model by tak šlo použít ve více zemích.
 - Cíl: v dalších zemích zapnout `katastr` (hledání parcely, obrys pozemku do editoru) přes jejich službu INSPIRE.
 - Pořadí jako u jazyků: SK a PL, potom DE s Rakouskem, FR, ES a IT.
-- Před začátkem zjistit u každé země adresu služby, jestli jde hledat podle čísla parcely nebo jen podle mapy,
-  přesnost, licenci a limity. Německo má katastr po spolkových zemích. Podrobnosti se dohledají až při práci.
 - Do té doby platí ruční pozemek (také v plánu).
+
+### Rozbor 12. 11. 2026: parcely a výšky v Evropě
+**Jedna celoevropská služba v kvalitě ČR neexistuje**, ani pro parcely, ani pro výšky.
+- Výšky pro celou Evropu jsou jen hrubé: Copernicus GLO-30 (30 m, zdarma) je model povrchu včetně stromů
+  a domů, chyba je v metrech. Na zeminu (mřížka 2 m) nepoužitelné. EEA-10 (10 m) je jen pro vybrané úřady.
+  Celoevropský LiDAR model neexistuje, TU Delft má jen katalog (European Point Cloud Portal).
+- Open Cadastral Map (EuroGeographics, OME2) je prototyp s odkazy na národní stahování, projekt skončil 2025.
+- **Pomáhá nařízení EU 2023/138 (datové sady s vysokou hodnotou, HVD):** od června 2024 musí každý stát EU
+  dát katastrální parcely, budovy i výškový model pod CC BY 4.0 (nebo volněji), přes API a ke stažení.
+  Praxe zaostává (Bavorsko, Rakousko). Licence CC BY = uvést zdroj v editoru a v zásadách (čl. 4).
+- ČÚZK parcely už bereme přes INSPIRE WFS (`CuzkWfsClient`), parser modelu INSPIRE CP jde použít i jinde.
+
+Služby vyzkoušené 12. 11. 2026 (dotaz z lokálu, odpověď s daty):
+
+| Země | Parcely | Výšky |
+|---|---|---|
+| PL | ULDK `uldk.gugik.gov.pl`: parcela v bodě (`GetParcelByXY`) i podle čísla TERYT, vrací WKT | `services.gugik.gov.pl/nmt`: `GetHByPointList` výšky seznamu bodů (EPSG:2180), model 1 m |
+| FR | API Carto `apicarto.ign.fr/api/cadastre/parcelle?geom=` GeoJSON, i podle obce, sekce a čísla | `data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json`, RGE ALTI 1 m, více bodů naráz |
+| SK | WFS `inspirews.skgeodesy.sk/geoserver/cp/ows`, CC BY 4.0 | WCS `inspirews.skgeodesy.sk/geoserver/el/ows`, DMR 5.0 1 m celé SK, EPSG:3046, výřez jako GeoTIFF |
+| ES | Catastro jen přes `http://` (https vrací HTML): `Consulta_RCCOOR` bod → referencia, WFS `INSPIRE/wfsCP.aspx` bbox i referencia. Baskicko a Navarra mají vlastní katastr | WCS `servicios.idee.es/wcs-inspire/mdt`, nejjemněji 5 m (`Elevacion25830_5`), 2 m jen ke stažení |
+| IT | WFS `wfs.cartografia.agenziaentrate.gov.it/inspire/wfs/owfs01.php`, CC BY 4.0, EPSG:6706, jen číslo a obrys bez výměry | národně jen asi 10 m (TINITALY), 1 m LiDAR po regionech; neověřeno |
+| DE | po spolkových zemích; podle bavorského sněmu všechny zdarma kromě Bavorska (tam vektor za poplatek). NRW ověřeno: `wfs.nrw.de/geobasis/wfs_nw_alkis_vereinfacht`, dl-de/zero | DGM1 1 m otevřený ve všech zemích (od 2024); BKG má celoněmecký DGM1 přes WCS, licence neověřena |
+| AT | BEV katastr CC BY 4.0 ke stažení (stav k datu), INSPIRE WFS má v metadatech „fees, restricted“ | BEV ALS-DGM 1 m celé AT, CC BY 4.0, jen soubory COG (55 dlaždic, EPSG:3035) |
+
+Technické poznámky:
+- Hledání podle čísla parcely se v každé zemi skládá jinak (CZ KÚ + číslo, PL TERYT, FR obec + sekce + číslo,
+  ES 14 znaků, IT obec + list + parcela, DE Gemarkung + Flur + Flurstück). Společná cesta pro všechny země je
+  klik do mapy → parcela v bodě (umí všechny ověřené služby), číslo jako doplněk po zemích.
+- Výšky: PL a FR vrací čísla pro seznam bodů (jako náš dotaz na DMR 5G). WCS (SK, ES, BKG) vrací rastr výřezu,
+  potřeba čtečka GeoTIFF v PHP (nekomprimovaný float32 je jednoduchý). Soubory COG (AT, Copernicus) chtějí čtení
+  po částech přes HTTP Range, pracnější.
+- Radon a geologie (ČGS) a české druhy pozemků zůstávají jen pro ČR.
 
 ## Národní domény (až podle zájmu)
 Jedna aplikace pro všechny domény: host do `config/domeny.php` (`web`) a do
