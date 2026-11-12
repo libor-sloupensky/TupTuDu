@@ -119,7 +119,7 @@ kuchyně, jídelna, koupelna, WC, chodba, zádveří, šatna, pracovna, technick
   vybrat druh, u podlaží s ručním názvem název smazat.
 - **Import výkresu:** typ prostoru z rozpoznání (CubiCasa, `DRUH_Z_IMPORTU`) se převede na druh, název z výkresu zůstane.
 - **Skupiny (Libor 11. 11. 2026):** `SKUPINY_MISTNOSTI` dělí druhy na denní zónu (obývák, jídelna, pracovna), noční zónu (ložnice, pokoj), kuchyni a spíž, koupelny a WC (i prádelna), vstup a chodby (zádveří, chodba, šatna) a technické a sklady (technická, sklad, sklep, garáž). Výběr druhu je po skupinách (`<optgroup>`, `skupinyDruhuVolby`), „Jiná“ zvlášť nahoře. Názvy `ed_kresba.skupina_*`.
-- **Nábytek podle skupiny** nabízí katalog (`modules/katalog.md`, Pravidla). Plochy podle druhu (obytná a příslušenství), upozornění podle druhu a barva podle druhu jsou další krok.
+- **Nábytek podle skupiny** nabízí katalog (`modules/katalog.md`, Pravidla). Plochy, upozornění a barvu podle druhu Libor 12. 11. 2026 zamítl jako nadbytečné.
 - Test: `node services/import-test/test-druh-mistnosti.cjs`.
 
 ## Barvy domu a podlahy místností
