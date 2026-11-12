@@ -26,7 +26,9 @@ Veřejná adresa `tuptudu.com/share/{token}` (40 náhodných znaků), správa p�
 
 Výkop v odkazu: `teren.jamy` má předem spočítanou síť pro každou kombinaci skrytých podlaží v terénu (při více než třech podlažích jen pro všechna), buňky a výšky v cm. Po skrytí těch podlaží se ukáže a terén se vyřízne.
 
-Model: `{verze, zeme, diry, teren, skupiny:[{id,nazev}], materialy, textury, meshe:[{skupina, material, pozice, uv}]}`, pozice a uv jsou Float32 v base64. Editor posílá gzip, server ho posílá dál s `Content-Encoding: gzip`.
+Model: `{verze, zeme, diry, teren, skupiny:[{id,nazev}], prochazka, materialy, textury, meshe:[{skupina, material, pozice, uv}]}`, pozice a uv jsou Float32 v base64. Editor posílá gzip, server ho posílá dál s `Content-Encoding: gzip`.
+
+**Procházka v odkazu** (12. 11. 2026, modules/dum.md, část Procházka): přepínač Procházka vedle 3D, stránka k tomu načítá `public/js/prochazka-3d.js` (společný s editorem, nic z `js/koncept-v3`). `prochazka = {start: {x, z, yOd, smer, sklon, oko}, mapka: {otoceni, podlazi: [{id, nazev, y, obrazek, obal}]}}`: panáček začne tam, kde ho autor nechal (starší odkazy před domem), mapka podlaží je **obrázek PNG** s rozsahem v metrech, stěny a otvory jako data do odkazu nejdou. Chodí se po všem kromě střechy a kusů z katalogu (přidávají se až po sestavení seznamu), výška terénu z mřížky `teren`, bez ní rovina `zeme`. Pod terénem se skryje terén, mřížka, země i výkop. Esc vrátí pohled 3D.
 
 ## Testy
-`node services/import-test/test-sdileni-ui.cjs`, `test-otevreni-3d-ui.cjs` (bug 58)
+`node services/import-test/test-sdileni-ui.cjs`, `test-otevreni-3d-ui.cjs` (bug 58), procházka v odkazu `test-prochazka-ui.cjs` (část 11)

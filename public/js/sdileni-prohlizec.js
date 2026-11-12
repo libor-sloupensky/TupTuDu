@@ -7,12 +7,16 @@
     const zprava = document.querySelector('[data-sdileni-zprava]');
     const ovladani = document.querySelector('[data-sdileni-ovladani]');
 
-    // Přepínač 3D a půdorysů
+    // Přepínač 3D, procházky a půdorysů. Procházka je pohled okem panáčka v téže scéně (prochazka-3d.js).
     const tlacitka = [...document.querySelectorAll('[data-sdileni-vyber] button')];
+    const prochazka = { chci: false, prepni: null };
     tlacitka.forEach((b) => b.addEventListener('click', () => {
         tlacitka.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-        document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== b.dataset.pohled; });
-        if (b.dataset.pohled === '3d') window.dispatchEvent(new Event('resize'));
+        const panel = b.dataset.pohled === 'prochazka' ? '3d' : b.dataset.pohled;
+        document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== panel; });
+        if (panel === '3d') window.dispatchEvent(new Event('resize'));
+        prochazka.chci = b.dataset.pohled === 'prochazka';
+        prochazka.prepni?.(prochazka.chci);
     }));
 
     const ukazNahled = () => {
@@ -71,6 +75,8 @@
         });
 
         const skupiny = new Map();
+        // Procházka: po čem se chodí (vše kromě střechy) a kam vede dvojklik (i střecha, ta jen zastaví paprsek)
+        const pochozi = [], cile = [];
         for (const k of data.meshe || []) {
             const material = materialy[k.material];
             if (!material) continue;
@@ -80,7 +86,10 @@
             if (k.uv) geom.setAttribute('uv', new THREE.BufferAttribute(naFloat32(k.uv), 2));
             if (k.uv && material.aoMap) geom.setAttribute('uv2', geom.getAttribute('uv'));
             geom.computeVertexNormals();
-            skupiny.get(k.skupina).add(new THREE.Mesh(geom, material));
+            const mesh = new THREE.Mesh(geom, material);
+            skupiny.get(k.skupina).add(mesh);
+            cile.push(mesh);
+            if (k.skupina !== 'strecha') pochozi.push(mesh);
         }
 
         const obal = new THREE.Box3();
@@ -168,11 +177,74 @@
         controls.enableDamping = false;
         controls.maxPolarAngle = window.Povrchy3d && zemObjekt ? window.Povrchy3d.nejnizsiPohled(obal, new THREE.Box3().setFromObject(zemObjekt), data.zeme ?? 0) : Math.PI / 2.1;
 
+        // ─── Procházka ─────────────────────────────────────
+        const vyskyTerenu = data.teren ? naFloat32(data.teren.vysky) : null;
+        /** Výška terénu pod bodem (i skrytého), bilineárně z mřížky jako v editoru; bez výšek rovná země. */
+        const terenV = (x, z) => {
+            const t = data.teren;
+            if (t && vyskyTerenu) {
+                const krok = t.sirka / (t.sloupcu - 1);
+                const c = (x - t.minX) / krok, r = (z - t.minZ) / krok;
+                if (c < 0 || r < 0 || c > t.sloupcu - 1 || r > t.radku - 1) return null;
+                const c0 = Math.floor(c), r0 = Math.floor(r), c1 = Math.min(t.sloupcu - 1, c0 + 1), r1 = Math.min(t.radku - 1, r0 + 1);
+                const fc = c - c0, fr = r - r0, h = (rr, cc) => vyskyTerenu[rr * t.sloupcu + cc];
+                return (h(r0, c0) * (1 - fc) + h(r0, c1) * fc) * (1 - fr) + (h(r1, c0) * (1 - fc) + h(r1, c1) * fc) * fr;
+            }
+            return data.bezZeme ? null : zeme.position.y;
+        };
+        let ovladac = null;
+        if (window.Prochazka3d) {
+            let texty = {};
+            try { texty = JSON.parse(plocha.dataset.textProchazka || '{}'); } catch (e) { /* bez textů jen bez popisků */ }
+            ovladac = window.Prochazka3d.vytvor({
+                scena: scene, platno: renderer.domElement, vrstva: plocha,
+                pochozi: () => pochozi,
+                cile: () => [...cile, teren?.plocha, zeme].filter(o => o && o.parent),
+                nepochozi: (o) => skupiny.get('strecha')?.children.includes(o) || false,
+                teren: terenV,
+                texty,
+                podZemi: (pod) => {
+                    for (const o of [teren?.plocha, teren?.mrizka, zeme]) if (o) o.visible = !pod;
+                    if (pod) jamy.forEach((sit) => { sit.visible = false; });
+                    else obnovVnitrek();
+                    window.Svetlo3d.prekresliStiny(renderer);
+                },
+                konec: () => tlacitka.find(b => b.dataset.pohled === '3d')?.click(),
+                probud: () => {},
+            });
+        }
+        const napoveda = plocha.parentElement.querySelector('[data-sdileni-napoveda]');
+        const aktivniKamera = () => (ovladac?.aktivni ? ovladac.kamera : camera);
+        const smycka = () => {
+            if (!ovladac?.aktivni) return;
+            if (ovladac.krok()) renderer.render(scene, ovladac.kamera);
+            requestAnimationFrame(smycka);
+        };
+        /** Kde panáček začne: kde ho autor nechal, u starších odkazů před domem čelem k němu. */
+        const startProchazky = () => data.prochazka?.start || {
+            x: stred.x, z: obal.isEmpty() ? 8 : obal.max.z + 8, yOd: (data.zeme ?? 0) + window.Prochazka3d.KROK, smer: 0, sklon: 0,
+        };
+        prochazka.prepni = (zapnout) => {
+            if (!ovladac || zapnout === ovladac.aktivni) return;
+            if (zapnout) {
+                controls.enabled = false;
+                ovladac.nastavMapku(data.prochazka?.mapka || null);
+                ovladac.rozmer(plocha.clientWidth || 1, plocha.clientHeight || 1);
+                ovladac.zapni(startProchazky());
+                requestAnimationFrame(smycka);
+            } else {
+                ovladac.vypni();
+                controls.enabled = true;
+            }
+            if (napoveda) napoveda.textContent = zapnout ? plocha.dataset.textNapovedaProchazka : plocha.dataset.textNapoveda3d;
+            vykresli();
+        };
+
         let kresliSe = false;
         function vykresli() {
             if (kresliSe) return;
             kresliSe = true;
-            requestAnimationFrame(() => { kresliSe = false; renderer.render(scene, camera); });
+            requestAnimationFrame(() => { kresliSe = false; renderer.render(scene, aktivniKamera()); });
         }
         controls.addEventListener('change', vykresli);
 
@@ -184,6 +256,7 @@
             camera.left = -pul * pomer; camera.right = pul * pomer; camera.top = pul; camera.bottom = -pul;
             camera.updateProjectionMatrix();
             controls.update();
+            ovladac?.rozmer(w, h);
             vykresli();
         };
         window.addEventListener('resize', velikost);
@@ -203,13 +276,16 @@
             b.addEventListener('click', () => {
                 g.visible = !g.visible;
                 obnovVnitrek();
+                ovladac?.obnov();   // panáček se usadí na to, co zůstalo vidět
                 window.Svetlo3d.prekresliStiny(renderer);
                 b.setAttribute('aria-pressed', String(g.visible));
                 vykresli();
             });
             ovladani.appendChild(b);
         }
-        window.__sdileniScena = { scene, skupiny, renderer, camera, vykresli, teren, jamy };
+        window.__sdileniScena = { scene, skupiny, renderer, camera, vykresli, teren, jamy, ovladac };
+        // Procházka zvolená ještě před načtením modelu
+        if (prochazka.chci) prochazka.prepni(true);
     }
 
     fetch(plocha.dataset.model)

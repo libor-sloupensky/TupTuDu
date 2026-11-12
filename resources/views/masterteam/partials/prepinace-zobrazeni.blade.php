@@ -27,3 +27,10 @@
     <input type="checkbox" x-model="showVybaveni" @change="if(renderer){renderer.showVybaveni=showVybaveni;renderer.render()};ulozitNastaveni()" class="rounded text-primary w-3.5 h-3.5">
     {{ __('ed_sablona.objekty.vybaveni') }}
 </label>
+@unless ($vExportu ?? false)
+{{-- Panáček procházky na výkres nikdy nejde, v sekci Export proto chybí --}}
+<label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer select-none" x-show="panacek" x-cloak data-tip="{{ __('ed_sablona.prochazka.panacek_tip') }}">
+    <input type="checkbox" x-model="zobrazPanacka" @change="prepniZobrazPanacka()" class="rounded text-primary w-3.5 h-3.5">
+    {{ __('ed_sablona.prochazka.panacek') }}
+</label>
+@endunless

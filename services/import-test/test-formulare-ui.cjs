@@ -264,6 +264,12 @@ async function main() {
         await p.vyhodnot(`(() => { document.querySelector('[x-model=katastrCislo]').closest('details').setAttribute('data-parcela', ''); return true; })()`);
         await zmer('parcela', '[data-parcela]');
         await p.snimek(path.join(vystup, 'formular-parcela.png'));
+        // Panel procházky (mapka a výška oka) staví společný modul prochazka-3d.js; hodnotu ihned ověřuje test-prochazka-ui
+        await p.vyhodnot(`(async () => { await ${D}.prepniProchazku(); return true; })()`);
+        await pauza(600);
+        await zmer('procházka', '[data-prochazka-panel]');
+        await p.vyhodnot(`${D}.ukonciProchazku('2d'); true`);
+        await pauza(500);
 
         console.log('\n5) Hodnota ihned');
         const naObr = (x, y) => p.vyhodnot(`(() => { const d = ${D}; const X = d.engine.PX_PER_M; const t = d.stage.getAbsoluteTransform().copy().point({ x: ${x} * X, y: ${y} * X });

@@ -142,6 +142,7 @@ class StatistikyController extends Controller
         'parcela' => 'Parcela',
         'podlazi' => 'Podlaží',
         'strecha' => 'Střecha',
+        'prochazka' => 'Procházka',
     ];
 
     /**

@@ -14,6 +14,8 @@ return [
     'plan_cely' => 'Ouvrir le plan en grand',
     'napoveda_jama' => 'Masquez les niveaux enterrés pour voir l’excavation.',
     'napoveda_3d' => 'Faites glisser pour pivoter, utilisez la molette ou deux doigts pour zoomer. Les boutons masquent les niveaux et le toit.',
+    'pohled_prochazka' => 'Visite',
+    'napoveda_prochazka' => 'Déplacez-vous avec Z Q S D ou les flèches, faites glisser pour regarder autour, A et E changent la hauteur des yeux. Double-cliquez ou touchez pour aller à un endroit.',
     'upozorneni' => 'Esquisse indicative réalisée avec TupTuDu. Elle ne remplace pas un dossier de construction.',
     'autori_modelu' => 'Auteurs des modèles 3D',
     'logo_alt' => 'Logo de l’entreprise de l’auteur',

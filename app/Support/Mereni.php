@@ -20,7 +20,7 @@ class Mereni
     /** Funkce editoru, které se počítají. Nová funkce = přidat sem i k volání v editoru. */
     public const FUNKCE = [
         'import_vykresu', 'pohled_3d', 'export_pudorys', 'export_3d', 'sdileni',
-        'katalog', 'parcela', 'podlazi', 'strecha',
+        'katalog', 'parcela', 'podlazi', 'strecha', 'prochazka',
     ];
 
     /** Připočte použití funkce k dnešku. Master tým (vlastní práce a testy) se nepočítá. */

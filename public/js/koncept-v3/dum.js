@@ -525,6 +525,7 @@
             // Vybraná místnost přepne nabídku nábytku na svou skupinu (katalog.js)
             this.$watch('_selectionTick', () => this._katalogSkupinaZVyberu?.());
             this.sestavyInit?.();
+            this.prochazkaInit?.();
             // Nastavení střechy otevřené ve 3D: po návratu do 2D patří k němu půdorys střechy
             this.$watch('rezim3d', (v) => {
                 if (!v && this.podlaziUprava === 'strecha' && !this.rezimStrecha) this._strechaZapni();
@@ -656,6 +657,8 @@
 
         /** Klik na podlaží v přepínači: ve 2D přepne, ve 3D ho ukáže nebo skryje. */
         naPodlazi(id) {
+            // V procházce jezdí řádek podlaží jako výtah (prochazka.js)
+            if (this.rezimProchazka) { this.prochazkaVytah(id); return; }
             if (this.rezim3d) {
                 this.skryte3d = this.skryte3d.includes(id) ? this.skryte3d.filter(x => x !== id) : [...this.skryte3d, id];
                 this._nastavViditelnost3d();
@@ -3224,7 +3227,8 @@
                     }
                 }
             }
-            const teren = this.zobrazTeren3d, mrizka = teren && this.zobrazMrizkuTerenu;
+            // Oko procházky pod terénem terén skryje, nad ním se vrátí; přepínač Terén se tím nemění (Libor 12. 11. 2026)
+            const teren = this.zobrazTeren3d && !this.prochazkaPodZemi, mrizka = teren && this.zobrazMrizkuTerenu;
             const jamaVidet = !!(teren && ukazat && _3d.jama);
             if (_3d.jama) _3d.jama.visible = jamaVidet;
             window.Teren3d.nastavJamu(u, jamaVidet ? _3d.jama : null);

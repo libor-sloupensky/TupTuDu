@@ -36,6 +36,8 @@
 {{-- Omítka fasády a nejnižší pohled kamery (modules/dum.md, část Fasáda a pohled) --}}
 <script>window.POVRCHY_VERZE = {{ filemtime(public_path('textury/omitka/normala.webp')) }};</script>
 <script src="/js/povrchy-3d.js?v={{ filemtime(public_path('js/povrchy-3d.js')) }}"></script>
+{{-- Procházka okem panáčka, společná se sdíleným odkazem (modules/dum.md, část Procházka) --}}
+<script src="/js/prochazka-3d.js?v={{ filemtime(public_path('js/prochazka-3d.js')) }}"></script>
 <script src="/js/koncept-v3/stavebni-engine.js?v={{ filemtime(public_path('js/koncept-v3/stavebni-engine.js')) }}"></script>
 <script src="/js/koncept-v3/pudorys-icons.js?v={{ filemtime(public_path('js/koncept-v3/pudorys-icons.js')) }}"></script>
 <script src="/js/koncept-v3/mistnosti.js?v={{ filemtime(public_path('js/koncept-v3/mistnosti.js')) }}"></script>
@@ -284,6 +286,9 @@
     .kk-status-row > div { padding: 2px 8px; border-radius: 3px; font: 12px/1.4 monospace; display: flex; align-items: center; }
     .kk-coords { background: rgba(0,80,0,.85); color: #0f0; }
     .kk-3d-help { background: rgba(0,0,0,.65); color: #ddd; }
+    /* Panáček táhnutý z tlačítka Procházka do půdorysu (prochazka.js) */
+    .kk-panacek-duch { position: fixed; z-index: 10000; pointer-events: none; transform: translate(-50%, -100%); color: var(--c-primary); }
+    .kk-panacek-duch svg { width: 28px; height: 28px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
     #kk-canvas-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; background: #fff; }
 </style>
 
@@ -347,8 +352,13 @@
             @endfunkce
             {{-- 2D/3D přepínač --}}
             <div class="kk-skupina kk-skupina-dily">
-                <button @click="rezim3d = false; prepni2d()" :class="!rezim3d && 'kk-tl-aktivni'">2D</button>
-                <button @click="rezim3d = true; prepni3d(); zmerFunkci('pohled_3d')" :class="rezim3d && 'kk-tl-aktivni'">3D</button>
+                <button @click="if (rezimProchazka) ukonciProchazku('2d'); else { rezim3d = false; prepni2d() }" :class="!rezim3d && 'kk-tl-aktivni'">2D</button>
+                <button @click="if (rezimProchazka) ukonciProchazku('3d'); else { rezim3d = true; prepni3d(); zmerFunkci('pohled_3d') }" :class="rezim3d && !rezimProchazka && 'kk-tl-aktivni'">3D</button>
+                {{-- Procházka: klik, nebo přetažení panáčka do půdorysu (prochazka.js) --}}
+                <button @pointerdown="prochazkaStisk($event)" @click="prochazkaKlik()" :class="rezimProchazka && 'kk-tl-aktivni'" data-prochazka
+                        data-tip-below="{{ __('ed_sablona.prochazka.tlacitko_tip') }}" aria-label="{{ __('ed_sablona.prochazka.nazev') }}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="m9 21 3-6 3 6"/><path d="m6 9 6 2 6-2"/><path d="M12 11v4"/></svg>
+                </button>
             </div>
             <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="kk-tl" data-tip-below="{{ __('ed_sablona.lista.zpet') }}">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
@@ -520,6 +530,16 @@
                         <tr><td><strong>Ctrl+F</strong></td><td>{{ __('ed_sablona.napoveda.cela_obrazovka') }}</td></tr>
                     </table>
                 </div>
+                <div>
+                    <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.prochazka.nazev') }}</div>
+                    <table class="napoveda-tabulka" style="border-collapse:collapse">
+                        <tr><td><strong>{{ __('ed_sablona.prochazka.klavesy_wasd') }}</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_chuze') }}</td></tr>
+                        <tr><td><strong>← →</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_otoceni') }}</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.prochazka.klavesy_qe') }}</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_oko') }}</td></tr>
+                        <tr><td><strong>Shift</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_rychle') }}</td></tr>
+                        <tr><td><strong>{{ __('ed_sablona.prochazka.dvojklik') }}</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_dojdi') }}</td></tr>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -533,7 +553,8 @@
             </div>
             <div class="kk-status-row">
                 <div class="kk-coords" x-text="'X: ' + kurzorX.toFixed(2) + ' Y: ' + kurzorY.toFixed(2)"></div>
-                <div class="kk-3d-help" x-show="rezim3d" x-cloak>{{ __('ed_sablona.platno.napoveda_3d') }}</div>
+                <div class="kk-3d-help" x-show="rezim3d && !rezimProchazka" x-cloak>{{ __('ed_sablona.platno.napoveda_3d') }}</div>
+                <div class="kk-3d-help" x-show="rezimProchazka" x-cloak data-prochazka-napoveda>{{ __('ed_sablona.prochazka.napoveda') }}</div>
             </div>
 
             {{-- Povinná atribuce Mapy.com — viditelná pokud je aktivní mapové podloží --}}
@@ -1185,7 +1206,7 @@
                 <span style="font:11px/1.2 monospace;color:#444;font-weight:600;margin-left:5px" x-text="meritkoText"></span>
             </div>
             {{-- Kompas --}}
-            <div style="position:absolute;top:12px;right:12px;z-index:10;cursor:grab;user-select:none;width:56px;height:56px"
+            <div style="position:absolute;top:12px;right:12px;z-index:10;cursor:grab;user-select:none;width:56px;height:56px" x-show="!rezimProchazka"
                  @mousedown.prevent="kompasStart($event)"
                  @dblclick.prevent="kompasReset()"
                  data-tip-below="{{ __('ed_sablona.platno.kompas') }}">
@@ -1398,7 +1419,7 @@
                         <div>
                             <div class="kk-podlazi-radek" :data-radek="p.id"
                                  :class="[(p.aktivni && !rezimStrecha && !rezim3d) && 'kk-aktivni', (rezim3d && !p.viditelne3d) && 'kk-skryte', (rezim3d && p.viditelne3d) && 'kk-aktivni']"
-                                 @click="naPodlazi(p.id)" :title="rezim3d ? preloz('ed_sablona.podlazi.ukazat_skryt', { nazev: p.nazev }) : preloz('ed_sablona.podlazi.prejit', { nazev: p.nazev })">
+                                 @click="naPodlazi(p.id)" :title="rezimProchazka ? preloz('ed_sablona.prochazka.vytah_tip', { nazev: p.nazev }) : (rezim3d ? preloz('ed_sablona.podlazi.ukazat_skryt', { nazev: p.nazev }) : preloz('ed_sablona.podlazi.prejit', { nazev: p.nazev }))">
                                 <span x-text="p.nazev"></span>
                                 <span class="kk-podlazi-pozor" x-show="p.nepodeprene > 0 && !rezim3d" x-text="p.nepodeprene" :title="preloz('ed_sablona.podlazi.nepodeprene_tip', { pocet: p.nepodeprene })"></span>
                                 <span class="ml-auto whitespace-nowrap" :title="preloz('ed_sablona.podlazi.plocha_tip', { pocet: p.pocet })" x-text="prelozCislo(p.plocha, 1) + ' m²'"></span>
@@ -1902,7 +1923,7 @@
                         <div class="flex flex-col gap-1" data-export-prepinace>
                             <div class="text-gray-500">{{ __('ed_sablona.export.na_pudorysu') }}</div>
                             <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                @include('masterteam.partials.prepinace-zobrazeni')
+                                @include('masterteam.partials.prepinace-zobrazeni', ['vExportu' => true])
                             </div>
                         </div>
                         <div class="flex flex-col gap-1" data-export-parcela>
@@ -2286,6 +2307,7 @@ if (!{{ $aktivni?->id ?? 'null' }}) {
 <script src="/js/koncept-v3/import-pudorysu.js?v={{ filemtime(public_path('js/koncept-v3/import-pudorysu.js')) }}"></script>
 <script src="/js/koncept-v3/katalog.js?v={{ filemtime(public_path('js/koncept-v3/katalog.js')) }}"></script>
 <script src="/js/koncept-v3/sestavy.js?v={{ filemtime(public_path('js/koncept-v3/sestavy.js')) }}"></script>
+<script src="/js/koncept-v3/prochazka.js?v={{ filemtime(public_path('js/koncept-v3/prochazka.js')) }}"></script>
 <script src="/js/koncept-v3/limit-tarifu.js?v={{ filemtime(public_path('js/koncept-v3/limit-tarifu.js')) }}"></script>
 <script>
 var _kkInitData = {

@@ -14,6 +14,8 @@ return [
     'plan_cely' => 'Otvoriť pôdorys v plnej veľkosti',
     'napoveda_jama' => 'Po skrytí podlaží v teréne uvidíš výkop.',
     'napoveda_3d' => 'Ťahaním otáčaš, kolieskom alebo dvoma prstami približuješ. Tlačidlami skryješ podlažia a strechu.',
+    'pohled_prochazka' => 'Prechádzka',
+    'napoveda_prochazka' => 'Chodíš klávesmi W A S D alebo šípkami, ťahaním sa rozhliadaš, Q a E menia výšku oka. Dvojklikom alebo ťuknutím prejdeš na miesto.',
     'upozorneni' => 'Orientačný koncept vytvorený v službe TupTuDu. Nenahrádza projektovú dokumentáciu.',
     'autori_modelu' => 'Autori 3D modelov',
     'logo_alt' => 'Logo firmy autora',

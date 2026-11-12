@@ -5896,6 +5896,8 @@ function konceptKEditor(initialData) {
                                 ku: this.katastrVybraneKu,
                                 podklad: this.katastrMapaPodklad,
                                 kompasUhel: this.kompasUhel,
+                                // Kde stojí panáček procházky (prochazka.js), jako kompas to není úprava
+                                ...(this.panacek ? { panacek: this.panacek } : {}),
                             },
                         }),
                     });
@@ -7052,12 +7054,15 @@ function konceptKEditor(initialData) {
                 requestAnimationFrame(animate);
                 const _3d = window._kk3d;
                 if (!_3d) return;
-                if (_3d.controls) _3d.controls.update();
                 const ted = performance.now();
+                // Procházka má vlastní kameru a ovládání (prochazka.js), OrbitControls jsou mezitím vypnuté
+                const prochazka = _3d.prochazka?.aktivni ? _3d.prochazka : null;
+                if (prochazka) { if (prochazka.krok()) _3d.kresliDo = ted + 300; }
+                else if (_3d.controls) _3d.controls.update();
                 if (ted >= (_3d.kresliDo || 0) && ted - naposledy < KLID_MS) return;
                 if (_3d.renderer && _3d.scene && _3d.camera) {
                     naposledy = ted;
-                    _3d.renderer.render(_3d.scene, _3d.camera);
+                    _3d.renderer.render(_3d.scene, prochazka ? prochazka.kamera : _3d.camera);
                 }
             };
             animate();
@@ -7079,6 +7084,7 @@ function konceptKEditor(initialData) {
             _3d.camera.top = halfH;
             _3d.camera.bottom = -halfH;
             _3d.camera.updateProjectionMatrix();
+            _3d.prochazka?.rozmer(w, h);
             _3d.renderer.setSize(w, h);
             // Line2 material potřebuje aktuální rozlišení pro screen-space šířku
             if (_3d.parcelOutlines) {
@@ -7760,6 +7766,9 @@ function konceptKEditor(initialData) {
                     _3d.cameraInitialized = true;
                 }
             }
+
+            // Panáček procházky: nové meshe pro chůzi, mapka a postava (prochazka.js)
+            this._prochazkaPoStavbe?.();
 
             // Restart animation pokud byl zastavený
             this._start3dLoop();

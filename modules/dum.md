@@ -33,6 +33,7 @@ dum = {
 | `public/js/koncept-v3/strecha.js` | čistá geometrie střechy, bez kresby; test `services/import-test/test-strecha.cjs` |
 | `public/js/krytiny-3d.js` | vzhledy a materiály střešních krytin, společné s prohlížečem sdílení; test `test-strecha-3d-ui` |
 | `public/js/povrchy-3d.js` | omítka fasády a nejnižší pohled kamery, společné s prohlížečem sdílení; test `test-fasada-3d-ui` |
+| `public/js/prochazka-3d.js` | procházka okem panáčka, společná s prohlížečem sdílení; mixin editoru `koncept-v3/prochazka.js`, test `test-prochazka-ui` |
 | `services/krytiny/sestav.py` | výroba textur krytin do `public/textury/krytiny/`, viz Krytiny a tloušťka ve 3D |
 | `public/js/koncept-v3/mistnosti.js` | rastr místností, výřezy a plocha pod limitem výšky |
 | `public/js/koncept-v3/koty-vyberu.js` | kóty u vybrané stěny a otvoru |
@@ -194,6 +195,48 @@ Jeden úhel `kompasUhel` pro obě zobrazení: dům je ve 3D natočený stejně j
 - **Po návratu do 2D** se půdorys natočí podle změny ve 3D (`_kompasZmenenV3d`, skryté plátno 2D nemá ve 3D rozměr). Při vstupu
   do 3D se pohled natočí podle kompasu.
 
+## Procházka (Libor 12. 11. 2026)
+
+Pohled okem panáčka, oddělený od 3D, aby se nemíchal s ortografickým pohledem svázaným s 2D. Třetí díl přepínače v liště
+(2D | 3D | ikona panáčka, název Procházka, v ostatních jazycích Walk, Rundgang, Prechádzka, Spacer, Visite, Recorrido,
+Passeggiata). Ve všech tarifech. Měří se jako funkce `prochazka` (`App\Support\Mereni`).
+
+- **Soubory:** `public/js/prochazka-3d.js` je společný s odkazem (ovládání, gravitace, mapka, obloha, kroužek cíle, tlačítka na
+  dotyk, postava pro 3D), `public/js/koncept-v3/prochazka.js` je mixin editoru (panáček ve 2D a 3D, zapnutí, výchozí místo,
+  uložení). Háčky jinde: smyčka a velikost 3D a konec `_build3d` (`koncept-k-ui.js`), řádek podlaží jako výtah a skrytí terénu
+  (`dum.js`), kamera pro výběr kusu (`katalog.js`), snímek a model odkazu (`export-sdileni.js`). Test `test-prochazka-ui.cjs`.
+- **Kamera:** perspektivní (60° svisle) ve stejné scéně jako 3D, OrbitControls jsou mezitím vypnuté. Kompas, přiblížení ani
+  pohled 3D se nemění; Esc vrátí tam, odkud procházka začala, tlačítka 2D a 3D ji ukončí taky. Kompas se v procházce skryje,
+  orientaci dává mapka.
+- **Ovládání:** W A S D a šipky nahoru a dolů chůze, šipky vlevo a vpravo otočení na místě (A a D úkrok), Q a E nebo Page Down
+  a Page Up výška oka, Shift rychleji, tah myší rozhlížení (svět jde za kurzorem jako ve Street View a ve 3D), kolečko krok,
+  dvojklik dojde na místo (kroužek pod myší ukazuje kam, u zdi k její patě). Klávesy podle polohy (`e.code`), na francouzské
+  AZERTY jsou to Z Q S D a A, popisky má francouzský slovník. Na dotyk: tah rozhlížení, ťuknutí dojde, dva prsty krok,
+  tlačítka vlevo dole (jen při `pointer: coarse`).
+- **Chůze:** panáček stojí na nejvyšší vodorovné ploše pod `nohy + KROK` (0,5 m): podlaha, schod, terén. Výš nevyjde, níž spadne.
+  Paprsek dolů jde jen na viditelné meshe domu bez nábytku z katalogu, sestav a střechy; terén se bere z výšek
+  (`_terrainHeightAt`, bez výšek rovina 0), proto se na skrytém terénu stát dá. Zdi i nábytek jsou průchozí (Libor).
+  Na jiné podlaží: po schodech, klikem na řádek podlaží v panelu (výtah na stejné místo, mimo obrys doprostřed podlaží,
+  skryté se ukáže) nebo šipkami v záhlaví mapky.
+- **Oko:** výchozí 1,6 m nad tím, na čem panáček stojí, rozsah −30 až 60 m (pole Oko v panelu platí ihned). Při klesání se oko
+  zastaví 10 cm nad zemí, pod zem až dalším stiskem. **Pod terénem** (oko pod nulou a pod terénem v tom místě) se terén,
+  mřížka a výkop po dobu procházky skryjí a nad zemí se vrátí (Libor 12. 11. 2026); přepínač Terén se nemění
+  (`prochazkaPodZemi` v `_jama3d`). Ve sklepě oko nad podlahou terén neskrývá.
+- **Mapka** v panelu vpravo nahoře: stěny, otvory a schody podlaží, na kterém panáček stojí (podle výšky podlahy), natočené
+  jako půdorys podle kompasu, tečka s výsečí pohledu. Klik do mapky panáčka přenese na stejné podlaží.
+- **Obloha:** koule kolem oka, nahoře modrá, pod obzorem barva země (pod zemí neutrální). Jen v procházce, do modelu odkazu
+  nejde.
+- **Panáček** (`panacek` = `{x, z, podlazi, dy, smer, sklon, oko}`, metry scény, `dy` = nohy nad podlahou podlaží) se ukládá do
+  metadat katastru vedle kompasu, ne do kresby: není to úprava, nečerpá limit ani nedělá krok Zpět. Ukládá se po zastavení
+  (1,5 s) a při konci. **Napoprvé** stojí 8 m před vchodem a dívá se na něj: dveře, pak průchod, pak francouzské okno
+  v obvodové stěně 1.NP (`_stranaVen`); bez nich před domem dole na obrazovce, čelem k domu.
+- **Ve 2D** (vrstva `panacekLayer`, stálá velikost přes `afterZoom`): tělo shora s výsečí, tah ho přesune na aktivní podlaží,
+  kroužek na konci výseče ho otočí, dvojklik spustí procházku; jen s nástrojem Výběr, na jiném podlaží zesvětlený. Na výkres
+  nejde (export ho skryje s pomocnými vrstvami). Panáčka jde i přetáhnout z tlačítka do půdorysu (jako ve Street View), po
+  puštění procházka začne tam. **Ve 3D** stojí postava 1,75 m v barvě značky (měřítko), v procházce a v exportu ne. Přepínač
+  Panáček je v panelu Objekty (`kv3_prochazka` v localStorage), v sekci Export chybí.
+- **Export obrázku** v procházce bere pohled oka, bez kroužku a postavy.
+
 ## Kóty u výběru
 
 `public/js/koncept-v3/koty-vyberu.js`, vlastní vrstva `kotyVyberuLayer`, ve stavu tahu se nekreslí. Rastr bez oddělovačů (`bezOddelovacu`) se po změně kresby počítá až 120 ms po výběru, aby nezdržel stisk myši.
@@ -253,7 +296,8 @@ Změna domu v režimu 3D přestaví scénu hned (`_obnov3dPozdeji` z `afterRende
 - Tečkovaná čára u T-napojení ve 3D (stejné plochy dvou stěn), patří ke kroku barev.
 - Ovládání dotykem: panely ano, tažení na plátně je zatím jen myší jako celý editor.
 - Limit podlaží v tarifu.
-- **Pohled okem** (Libor 11. 11. 2026: „vyřešíme příště, je to širší věc“): perspektivní kamera s okem nad terénem, aby šlo koukat na dům zespodu (podbití, okap) a pohled přitom nikdy nešel pod terén. Dnešní ortografická kamera polohu oka nemá a sklopí se jen skoro vodorovně. Dotkne se kamery, přiblížení svázaného s 2D, exportu obrázku, sdíleného odkazu a kompasu.
+- ~~Pohled okem~~ hotový 12. 11. 2026 jako Procházka, viz výše. 3D zůstává ortografické.
+- Procházka: zdi nezastaví (záměrně), po střeše se nechodí, zorný úhel je pevný.
 
 ## Světlo
 

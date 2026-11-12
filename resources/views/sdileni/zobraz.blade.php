@@ -48,6 +48,7 @@
 
         <div class="tt-sdileni-vyber" role="group" aria-label="{{ __('sdileni.pohled') }}" data-sdileni-vyber>
             <button type="button" aria-pressed="true" data-pohled="3d">{{ __('sdileni.pohled_3d') }}</button>
+            <button type="button" aria-pressed="false" data-pohled="prochazka">{{ __('sdileni.pohled_prochazka') }}</button>
             @foreach ($sdileni->podlazi as $p)
                 <button type="button" aria-pressed="false" data-pohled="plan-{{ $p['id'] }}">{{ $p['nazev'] }}</button>
             @endforeach
@@ -62,11 +63,21 @@
                  data-autori="{{ \App\Support\Domeny::url('web', '/model-credits') }}"
                  data-text-jama="{{ __('sdileni.napoveda_jama') }}"
                  data-text-chyba="{{ __('sdileni.chyba_modelu') }}"
-                 data-text-alt="{{ __('sdileni.nahled_alt', ['nazev' => $sdileni->nazev]) }}">
+                 data-text-alt="{{ __('sdileni.nahled_alt', ['nazev' => $sdileni->nazev]) }}"
+                 data-text-napoveda-3d="{{ __('sdileni.napoveda_3d') }}"
+                 data-text-napoveda-prochazka="{{ __('sdileni.napoveda_prochazka') }}"
+                 data-text-prochazka="{{ json_encode([
+                     'oko' => __('ed_sablona.prochazka.oko'), 'okoTip' => __('ed_sablona.prochazka.oko_tip'),
+                     'mapkaTip' => __('ed_sablona.prochazka.mapka_tip'),
+                     'patroVys' => __('ed_sablona.prochazka.patro_vys'), 'patroNiz' => __('ed_sablona.prochazka.patro_niz'),
+                     'pad_vpred' => __('ed_sablona.prochazka.vpred'), 'pad_vzad' => __('ed_sablona.prochazka.vzad'),
+                     'pad_otocVlevo' => __('ed_sablona.prochazka.otoc_vlevo'), 'pad_otocVpravo' => __('ed_sablona.prochazka.otoc_vpravo'),
+                     'pad_vys' => __('ed_sablona.prochazka.oko_vys'), 'pad_niz' => __('ed_sablona.prochazka.oko_niz'),
+                 ], JSON_UNESCAPED_UNICODE) }}">
                 <div class="tt-sdileni-zprava" data-sdileni-zprava>{{ __('sdileni.nacitam') }}</div>
                 <div class="tt-sdileni-ovladani" data-sdileni-ovladani></div>
             </div>
-            <p class="tt-sdileni-pata">{{ __('sdileni.napoveda_3d') }}</p>
+            <p class="tt-sdileni-pata" data-sdileni-napoveda>{{ __('sdileni.napoveda_3d') }}</p>
         </section>
         @foreach ($sdileni->podlazi as $p)
             <section data-panel="plan-{{ $p['id'] }}" hidden>
@@ -94,6 +105,8 @@
 {{-- Omítka fasády a nejnižší pohled kamery (modules/dum.md, část Fasáda a pohled) --}}
 <script>window.POVRCHY_VERZE = {{ filemtime(public_path('textury/omitka/normala.webp')) }};</script>
 <script src="/js/povrchy-3d.js?v={{ filemtime(public_path('js/povrchy-3d.js')) }}"></script>
+{{-- Procházka okem panáčka, společná s editorem (modules/dum.md, část Procházka) --}}
+<script src="/js/prochazka-3d.js?v={{ filemtime(public_path('js/prochazka-3d.js')) }}"></script>
 <script src="/js/sdileni-prohlizec.js?v={{ filemtime(public_path('js/sdileni-prohlizec.js')) }}"></script>
 </body>
 </html>

@@ -617,7 +617,7 @@
                 try {
                     const _3d = window._kk3d, r = platno.getBoundingClientRect();
                     const paprsek = new THREE.Raycaster();
-                    paprsek.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), _3d.camera);
+                    paprsek.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), _3d.prochazka?.aktivni ? _3d.prochazka.kamera : _3d.camera);
                     // Kus podle kvádru z rozměrů: modely mají zhuštěné souřadnice (meshopt) a zásah do nich
                     // vychází v r128 jinde. Stěna nebo strop před kusem má přednost.
                     const vKusu = (o) => { for (; o; o = o.parent) if (o.userData?.kus) return true; return false; };

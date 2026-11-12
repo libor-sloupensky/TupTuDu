@@ -14,6 +14,8 @@ return [
     'plan_cely' => 'Open the floor plan at full size',
     'napoveda_jama' => 'Hide the floors in the ground to see the excavation.',
     'napoveda_3d' => 'Drag to rotate, use the wheel or two fingers to zoom. Use the buttons to hide floors and the roof.',
+    'pohled_prochazka' => 'Walk',
+    'napoveda_prochazka' => 'Walk with W A S D or the arrow keys, drag to look around, Q and E change the eye height. Double-click or tap to go to a spot.',
     'upozorneni' => 'Indicative concept created with TupTuDu. It does not replace design documentation.',
     'autori_modelu' => '3D model credits',
     'logo_alt' => 'Logo of the author’s company',

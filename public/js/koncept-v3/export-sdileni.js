@@ -99,7 +99,7 @@
                 schody: [...r.selectedSchody], sloupy: [...r.selectedSloupy], plochy: [...r.selectedPlochy],
                 rezimStrecha: this.rezimStrecha, strechaHrana: this.strechaHrana,
             };
-            const skryte = [r.podkladLayer, r.spodekLayer, r.strechaLayer, r.selectionLayer, r.kotyVyberuLayer].filter(Boolean);
+            const skryte = [r.podkladLayer, r.spodekLayer, r.strechaLayer, r.selectionLayer, r.kotyVyberuLayer, r.panacekLayer].filter(Boolean);
             const viditelnost = skryte.map(v => v.visible());
             // Z vrstvy katastru jde na výkres jen kresba, mapový podklad nikdy
             const schovaneKatastr = r.katastrLayer.getChildren(n => n.getAttr('_mapTile'));
@@ -305,20 +305,29 @@
             }
         },
 
-        /** Snímek aktuálního pohledu v dvojnásobném rozlišení. */
+        /** Snímek aktuálního pohledu v dvojnásobném rozlišení. V procházce okem panáčka, bez kroužku a postavy. */
         _snimekScény() {
             const _3d = window._kk3d;
+            const kamera = _3d.prochazka?.aktivni ? _3d.prochazka.kamera : _3d.camera;
+            const postava = _3d.panacek3d, postavaVidet = !!postava?.visible;
+            if (postava) postava.visible = false;
+            _3d.prochazka?.pomucky(false);
             const puvodni = _3d.renderer.getPixelRatio();
-            _3d.renderer.setPixelRatio(Math.max(2, puvodni));
-            _3d.renderer.render(_3d.scene, _3d.camera);
-            const zdroj = _3d.renderer.domElement;
-            const cv = document.createElement('canvas');
-            cv.width = zdroj.width;
-            cv.height = zdroj.height;
-            cv.getContext('2d').drawImage(zdroj, 0, 0);
-            _3d.renderer.setPixelRatio(puvodni);
-            _3d.renderer.render(_3d.scene, _3d.camera);
-            return cv;
+            try {
+                _3d.renderer.setPixelRatio(Math.max(2, puvodni));
+                _3d.renderer.render(_3d.scene, kamera);
+                const zdroj = _3d.renderer.domElement;
+                const cv = document.createElement('canvas');
+                cv.width = zdroj.width;
+                cv.height = zdroj.height;
+                cv.getContext('2d').drawImage(zdroj, 0, 0);
+                return cv;
+            } finally {
+                if (postava) postava.visible = postavaVidet;
+                _3d.prochazka?.pomucky(true);
+                _3d.renderer.setPixelRatio(puvodni);
+                _3d.renderer.render(_3d.scene, kamera);
+            }
         },
 
         /** Snímek 3D s bílým zápatím se značkou pod obrazem, do záběru nic nekreslí. */
@@ -429,6 +438,8 @@
                 teren: this.zobrazTeren3d ? this._terenProOdkaz() : null,
                 bezZeme: !this.zobrazTeren3d,
                 mrizkaTerenu: this.zobrazMrizkuTerenu,
+                // Procházka v odkazu: kde panáček začne a mapka podlaží (prochazka.js)
+                prochazka: this._prochazkaProOdkaz?.(),
                 materialy,
                 textury,
                 meshe: [...kbelik.values()].map(k => ({
