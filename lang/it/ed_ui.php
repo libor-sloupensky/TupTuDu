@@ -83,6 +83,10 @@ return [
 
     // Katastr a parcely — druh a radon se ukládají k parcele v jazyce při jejím přidání
     'parcela_nenactena' => 'Non è stato possibile caricare la particella.',
+    'mapa_nenactena' => 'Non è stato possibile caricare la mappa.',
+    'mapa_priblizit' => 'Ingrandisci la mappa sul terreno, le particelle si possono scegliere solo a una scala dettagliata.',
+    'pozemek_rucni' => 'Terreno disegnato',
+    'vysky_nenacteny' => 'Non è stato possibile caricare il profilo altimetrico.',
     'parcela_duplicita' => 'Questa particella è già stata aggiunta.',
     'parcela_nesousedi' => 'La particella non confina con nessuna di quelle caricate. Si possono aggiungere solo particelle confinanti.',
     'parcela_odebrat_posledni' => 'Vuoi davvero rimuovere l’ultima particella? Gli oggetti perderanno l’ancoraggio al terreno.',

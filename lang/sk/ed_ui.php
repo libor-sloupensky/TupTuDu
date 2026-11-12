@@ -83,6 +83,10 @@ return [
 
     // Katastr a parcely — druh a radon se ukládají k parcele v jazyce při jejím přidání
     'parcela_nenactena' => 'Parcelu sa nepodarilo načítať.',
+    'mapa_nenactena' => 'Mapu sa nepodarilo načítať.',
+    'mapa_priblizit' => 'Priblíž mapu k pozemku, parcely sa dajú vybrať až v podrobnej mierke.',
+    'pozemek_rucni' => 'Obkreslený pozemok',
+    'vysky_nenacteny' => 'Výškový profil sa nepodarilo načítať.',
     'parcela_duplicita' => 'Táto parcela už je pridaná.',
     'parcela_nesousedi' => 'Parcela nesusedí so žiadnou z načítaných parciel. Pridať možno iba susediace parcely.',
     'parcela_odebrat_posledni' => 'Naozaj odobrať poslednú parcelu? Ukotvenie objektov k pozemku sa tým stratí.',

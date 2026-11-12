@@ -82,6 +82,26 @@ return [
         'valbova' => 'Valbová',
         'pultova' => 'Pultová',
         'plocha' => 'Plochá',
+        // Jen nižší střecha nad částí podlaží bez patra
+        'terasa' => 'Terasa',
+        'zadna' => 'Bez strechy',
+    ],
+
+    // Nižší střecha nad částí podlaží, nad kterou už patro není (garáž, krytý vstup)
+    'nizsi' => [
+        'vyber' => 'Strecha',
+        'vyber_tip' => 'Ktorú strechu upravuješ. Nižšie strechy pridá editor sám nad časti podlažia, nad ktorými už nie je poschodie. Vybrať ich môžeš aj kliknutím v pôdoryse.',
+        'hlavni' => 'Hlavná',
+        'cast' => 'nižšia časť',
+        'cast_n' => 'nižšia časť :n',
+        'typ_tip' => 'Pultová stúpa k stene poschodia. Terasa je plochá pochôdzna strecha so zábradlím, bez strechy zostane len strop.',
+        'vyska_okapu_tip' => 'Výška, kde strecha pretne líc steny, meraná od podlahy tohto podlažia. Predvolená je výška stropu.',
+        'krytina_auto' => 'Podľa sklonu: od :sklon° ako hlavná strecha (:krytina), pri menšom sklone falcovaný plech v jej farbe.',
+        'podle_sklonu' => 'podľa sklonu',
+        'podle_sklonu_tip' => 'Krytinu a farbu znova určí sklon a hlavná strecha',
+        'pod_sklonem' => 'Krytina je pod svojím bezpečným sklonom :sklon°, hrozí zatekanie.',
+        'terasa_info' => 'Dlažba vo výške podlahy poschodia, zábradlie na vonkajších hranách.',
+        'zadna_info' => 'Nad touto časťou zostane len strop.',
     ],
 
     // Úroveň podlahy místnosti
@@ -134,6 +154,7 @@ return [
         'otoceni_sloupu' => 'Otočenie stĺpa',
         'smazani_sloupu' => 'Zmazanie stĺpa',
         'smazani_strechy' => 'Zmazanie strechy',
+        'nizsi_strecha' => 'Nižšia strecha',
         'barva_domu' => 'Farba domu',
         'zaklady' => 'Základy',
         'nova_sestava' => 'Nová nábytková zostava',

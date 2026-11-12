@@ -122,6 +122,11 @@ return [
         'vysky_pomalu' => 'Das Höhenprofil konnte gerade nicht geladen werden, der Kartendienst antwortet langsam. Versuch es gleich noch einmal.',
         'polygon_bez_bodu' => 'Keine Punkte im Polygon der Parzelle.',
         'vysky_nedostupne' => 'Für dieses Gebiet sind keine Höhendaten verfügbar.',
+        'vysky_zeme_nejsou' => 'Für diesen Ort haben wir noch kein Geländemodell, das Gelände bleibt eben.',
+        'pozemek_velky' => 'Das Grundstück ist für ein Höhenprofil zu groß, wähle einen kleineren Teil (bis 1,5 km).',
+        'bod_mimo_evropu' => 'Hier haben wir kein Kataster, der Ort liegt außerhalb der unterstützten Länder. Du kannst das Grundstück nachzeichnen.',
+        'bod_bez_katastru' => 'Für dieses Land haben wir noch kein Kataster. Du kannst das Grundstück nachzeichnen.',
+        'bod_nenalezena' => 'An dieser Stelle haben wir keine Parzelle gefunden. Klicke ins Innere des Grundstücks oder zeichne es nach.',
         'souradnice_mimo' => 'Koordinaten außerhalb des Bereichs von S-JTSK: :lat, :lon',
     ],
 ];

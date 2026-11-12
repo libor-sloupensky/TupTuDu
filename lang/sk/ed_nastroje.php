@@ -119,6 +119,11 @@ return [
         'vysky_pomalu' => 'Výškový profil sa teraz nepodarilo načítať, mapová služba odpovedá pomaly. Skús to o chvíľu.',
         'polygon_bez_bodu' => 'Žiadne body v polygóne parcely.',
         'vysky_nedostupne' => 'Výškové dáta pre túto oblasť nie sú dostupné.',
+        'vysky_zeme_nejsou' => 'Pre toto miesto zatiaľ nemáme výškový model terénu, terén bude rovina.',
+        'pozemek_velky' => 'Pozemok je na výškový profil príliš veľký, vyber menšiu časť (do 1,5 km).',
+        'bod_mimo_evropu' => 'Tu kataster nemáme, miesto je mimo podporovaných krajín. Pozemok môžeš obkresliť.',
+        'bod_bez_katastru' => 'Pre túto krajinu zatiaľ kataster nemáme. Pozemok môžeš obkresliť.',
+        'bod_nenalezena' => 'Na tomto mieste sme parcelu nenašli. Skús kliknúť dovnútra pozemku, alebo ho obkresli.',
         'souradnice_mimo' => 'Súradnice mimo rozsahu S-JTSK: :lat, :lon',
     ],
 ];

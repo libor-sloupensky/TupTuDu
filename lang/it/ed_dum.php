@@ -82,6 +82,26 @@ return [
         'valbova' => 'A padiglione',
         'pultova' => 'A una falda',
         'plocha' => 'Piano',
+        // Jen nižší střecha nad částí podlaží bez patra
+        'terasa' => 'Terrazza',
+        'zadna' => 'Senza tetto',
+    ],
+
+    // Nižší střecha nad částí podlaží, nad kterou už patro není (garáž, krytý vstup)
+    'nizsi' => [
+        'vyber' => 'Tetto',
+        'vyber_tip' => 'Il tetto che stai modificando. L’editor aggiunge da solo tetti più bassi sopra le parti di un piano che non hanno un altro piano sopra. Puoi sceglierli anche con un clic sulla pianta.',
+        'hlavni' => 'Principale',
+        'cast' => 'parte bassa',
+        'cast_n' => 'parte bassa :n',
+        'typ_tip' => 'Il tetto a una falda sale verso la parete del piano superiore. La terrazza è un tetto piano praticabile con parapetto, senza tetto resta solo il solaio.',
+        'vyska_okapu_tip' => 'Altezza in cui il tetto incontra il filo della parete, misurata dal pavimento di questo piano. Il valore predefinito è l’altezza del soffitto.',
+        'krytina_auto' => 'In base alla pendenza: da :sklon° come il tetto principale (:krytina), con pendenza minore lamiera aggraffata nel suo colore.',
+        'podle_sklonu' => 'in base alla pendenza',
+        'podle_sklonu_tip' => 'Manto e colore tornano a dipendere dalla pendenza e dal tetto principale',
+        'pod_sklonem' => 'La pendenza è inferiore a quella minima sicura del manto (:sklon°), rischio di infiltrazioni.',
+        'terasa_info' => 'Pavimentazione all’altezza del pavimento del piano superiore, parapetto sui bordi esterni.',
+        'zadna_info' => 'Sopra questa parte resta solo il solaio.',
     ],
 
     // Úroveň podlahy místnosti
@@ -134,6 +154,7 @@ return [
         'otoceni_sloupu' => 'Rotazione colonna',
         'smazani_sloupu' => 'Eliminazione colonna',
         'smazani_strechy' => 'Eliminazione tetto',
+        'nizsi_strecha' => 'Tetto più basso',
         'barva_domu' => 'Colore casa',
         'zaklady' => 'Fondazioni',
         'nova_sestava' => 'Nuovo arredo su misura',

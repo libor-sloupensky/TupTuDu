@@ -83,6 +83,10 @@ return [
 
     // Katastr a parcely — druh a radon se ukládají k parcele v jazyce při jejím přidání
     'parcela_nenactena' => 'Nie udało się wczytać działki.',
+    'mapa_nenactena' => 'Nie udało się wczytać mapy.',
+    'mapa_priblizit' => 'Przybliż mapę do działki, działki ewidencyjne można wybierać dopiero przy dużym przybliżeniu.',
+    'pozemek_rucni' => 'Obrysowana działka',
+    'vysky_nenacteny' => 'Nie udało się wczytać profilu wysokościowego.',
     'parcela_duplicita' => 'Ta działka jest już dodana.',
     'parcela_nesousedi' => 'Działka nie sąsiaduje z żadną z wczytanych działek. Można dodawać tylko działki sąsiednie.',
     'parcela_odebrat_posledni' => 'Na pewno usunąć ostatnią działkę? Obiekty stracą zakotwiczenie do działki.',

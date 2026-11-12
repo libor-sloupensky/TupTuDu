@@ -82,6 +82,26 @@ return [
         'valbova' => 'A cuatro aguas',
         'pultova' => 'A un agua',
         'plocha' => 'Plana',
+        // Jen nižší střecha nad částí podlaží bez patra
+        'terasa' => 'Terraza',
+        'zadna' => 'Sin cubierta',
+    ],
+
+    // Nižší střecha nad částí podlaží, nad kterou už patro není (garáž, krytý vstup)
+    'nizsi' => [
+        'vyber' => 'Cubierta',
+        'vyber_tip' => 'Qué cubierta estás editando. El editor añade por sí solo cubiertas más bajas sobre las partes de una planta que no tienen otra planta encima. También puedes elegirlas haciendo clic en el plano.',
+        'hlavni' => 'Principal',
+        'cast' => 'parte baja',
+        'cast_n' => 'parte baja :n',
+        'typ_tip' => 'La de un agua sube hacia la pared de la planta superior. La terraza es una cubierta plana transitable con barandilla; sin cubierta solo queda el forjado.',
+        'vyska_okapu_tip' => 'Altura a la que la cubierta corta la cara de la pared, medida desde el suelo de esta planta. Por defecto es la altura del techo.',
+        'krytina_auto' => 'Según la pendiente: desde :sklon° como la cubierta principal (:krytina); con menos pendiente, chapa de junta alzada en su color.',
+        'podle_sklonu' => 'según la pendiente',
+        'podle_sklonu_tip' => 'La cobertura y el color vuelven a depender de la pendiente y de la cubierta principal',
+        'pod_sklonem' => 'La pendiente es inferior a la mínima segura de esta cobertura (:sklon°), puede haber filtraciones.',
+        'terasa_info' => 'Solado a la altura del suelo de la planta superior, barandilla en los bordes exteriores.',
+        'zadna_info' => 'Sobre esta parte solo queda el forjado.',
     ],
 
     // Úroveň podlahy místnosti
@@ -134,6 +154,7 @@ return [
         'otoceni_sloupu' => 'Girar pilar',
         'smazani_sloupu' => 'Eliminar pilar',
         'smazani_strechy' => 'Borrar cubierta',
+        'nizsi_strecha' => 'Cubierta más baja',
         'barva_domu' => 'Color de la casa',
         'zaklady' => 'Cimentación',
         'nova_sestava' => 'Nuevo mobiliario a medida',

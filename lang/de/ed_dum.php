@@ -82,6 +82,26 @@ return [
         'valbova' => 'Walmdach',
         'pultova' => 'Pultdach',
         'plocha' => 'Flachdach',
+        // Jen nižší střecha nad částí podlaží bez patra
+        'terasa' => 'Terrasse',
+        'zadna' => 'Kein Dach',
+    ],
+
+    // Nižší střecha nad částí podlaží, nad kterou už patro není (garáž, krytý vstup)
+    'nizsi' => [
+        'vyber' => 'Dach',
+        'vyber_tip' => 'Welches Dach du bearbeitest. Niedrigere Dächer fügt der Editor selbst über Teilen eines Geschosses hinzu, über denen kein weiteres Geschoss liegt. Du kannst sie auch per Klick im Grundriss wählen.',
+        'hlavni' => 'Hauptdach',
+        'cast' => 'niedrigerer Teil',
+        'cast_n' => 'niedrigerer Teil :n',
+        'typ_tip' => 'Das Pultdach steigt zur Wand des Obergeschosses an. Die Terrasse ist ein begehbares Flachdach mit Geländer, ohne Dach bleibt nur die Decke.',
+        'vyska_okapu_tip' => 'Höhe, in der das Dach die Wandfläche schneidet, gemessen vom Boden dieses Geschosses. Standard ist die Deckenhöhe.',
+        'krytina_auto' => 'Nach Neigung: ab :sklon° wie das Hauptdach (:krytina), bei geringerer Neigung Stehfalzblech in dessen Farbe.',
+        'podle_sklonu' => 'nach Neigung',
+        'podle_sklonu_tip' => 'Eindeckung und Farbe richten sich wieder nach Neigung und Hauptdach',
+        'pod_sklonem' => 'Die Neigung liegt unter der Regeldachneigung der Eindeckung von :sklon°, es kann Wasser eindringen.',
+        'terasa_info' => 'Plattenbelag auf Höhe des Bodens im Obergeschoss, Geländer an den Außenkanten.',
+        'zadna_info' => 'Über diesem Teil bleibt nur die Decke.',
     ],
 
     // Úroveň podlahy místnosti
@@ -134,6 +154,7 @@ return [
         'otoceni_sloupu' => 'Säule gedreht',
         'smazani_sloupu' => 'Säule gelöscht',
         'smazani_strechy' => 'Dach gelöscht',
+        'nizsi_strecha' => 'Niedrigeres Dach',
         'barva_domu' => 'Hausfarbe',
         'zaklady' => 'Fundament',
         'nova_sestava' => 'Neue Einbaumöbel',

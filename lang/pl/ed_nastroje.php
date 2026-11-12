@@ -122,6 +122,11 @@ return [
         'vysky_pomalu' => 'Nie udało się teraz wczytać profilu wysokości, serwis map odpowiada wolno. Spróbuj za chwilę.',
         'polygon_bez_bodu' => 'Brak punktów w wielokącie działki.',
         'vysky_nedostupne' => 'Dane wysokościowe dla tego obszaru nie są dostępne.',
+        'vysky_zeme_nejsou' => 'Dla tego miejsca nie mamy jeszcze numerycznego modelu terenu, teren będzie płaski.',
+        'pozemek_velky' => 'Działka jest za duża na profil wysokościowy, wybierz mniejszą część (do 1,5 km).',
+        'bod_mimo_evropu' => 'Tu nie mamy danych katastralnych, to miejsce leży poza obsługiwanymi krajami. Możesz obrysować działkę.',
+        'bod_bez_katastru' => 'Dla tego kraju nie mamy jeszcze danych katastralnych. Możesz obrysować działkę.',
+        'bod_nenalezena' => 'W tym miejscu nie znaleźliśmy działki ewidencyjnej. Spróbuj kliknąć wewnątrz działki albo ją obrysuj.',
         'souradnice_mimo' => 'Współrzędne poza zakresem S-JTSK: :lat, :lon',
     ],
 ];

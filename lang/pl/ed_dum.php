@@ -82,6 +82,26 @@ return [
         'valbova' => 'Czterospadowy',
         'pultova' => 'Jednospadowy',
         'plocha' => 'Płaski',
+        // Jen nižší střecha nad částí podlaží bez patra
+        'terasa' => 'Taras',
+        'zadna' => 'Bez dachu',
+    ],
+
+    // Nižší střecha nad částí podlaží, nad kterou už patro není (garáž, krytý vstup)
+    'nizsi' => [
+        'vyber' => 'Dach',
+        'vyber_tip' => 'Który dach edytujesz. Niższe dachy edytor dodaje sam nad częściami kondygnacji, nad którymi nie ma już piętra. Możesz je też wybrać kliknięciem na rzucie.',
+        'hlavni' => 'Główny',
+        'cast' => 'niższa część',
+        'cast_n' => 'niższa część :n',
+        'typ_tip' => 'Jednospadowy wznosi się ku ścianie piętra. Taras to płaski dach użytkowy z balustradą, bez dachu zostaje tylko strop.',
+        'vyska_okapu_tip' => 'Wysokość, na której dach przecina lico ściany, mierzona od podłogi tej kondygnacji. Domyślnie wysokość do stropu.',
+        'krytina_auto' => 'Według nachylenia: od :sklon° jak dach główny (:krytina), przy mniejszym nachyleniu blacha na rąbek w jego kolorze.',
+        'podle_sklonu' => 'według nachylenia',
+        'podle_sklonu_tip' => 'Pokrycie i kolor znów określą nachylenie i dach główny',
+        'pod_sklonem' => 'Nachylenie jest mniejsze niż bezpieczne minimum tego pokrycia :sklon°, dach może przeciekać.',
+        'terasa_info' => 'Posadzka na wysokości podłogi piętra, balustrada na zewnętrznych krawędziach.',
+        'zadna_info' => 'Nad tą częścią zostaje tylko strop.',
     ],
 
     // Úroveň podlahy místnosti
@@ -134,6 +154,7 @@ return [
         'otoceni_sloupu' => 'Obrót słupa',
         'smazani_sloupu' => 'Usunięcie słupa',
         'smazani_strechy' => 'Usunięcie dachu',
+        'nizsi_strecha' => 'Niższy dach',
         'barva_domu' => 'Kolor domu',
         'zaklady' => 'Fundamenty',
         'nova_sestava' => 'Nowa zabudowa meblowa',

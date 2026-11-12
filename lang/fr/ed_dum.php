@@ -82,6 +82,26 @@ return [
         'valbova' => 'Quatre pans',
         'pultova' => 'Monopente',
         'plocha' => 'Plat',
+        // Jen nižší střecha nad částí podlaží bez patra
+        'terasa' => 'Terrasse',
+        'zadna' => 'Sans toit',
+    ],
+
+    // Nižší střecha nad částí podlaží, nad kterou už patro není (garáž, krytý vstup)
+    'nizsi' => [
+        'vyber' => 'Toit',
+        'vyber_tip' => 'Le toit que vous modifiez. L’éditeur ajoute lui-même des toits plus bas au-dessus des parties d’un niveau sans étage au-dessus. Vous pouvez aussi les sélectionner d’un clic sur le plan.',
+        'hlavni' => 'Principal',
+        'cast' => 'partie basse',
+        'cast_n' => 'partie basse :n',
+        'typ_tip' => 'Le toit monopente monte vers le mur de l’étage. La terrasse est un toit plat accessible avec garde-corps ; sans toit, il ne reste que le plafond.',
+        'vyska_okapu_tip' => 'Hauteur où le toit rencontre le nu du mur, mesurée depuis le sol de ce niveau. Par défaut, la hauteur sous plafond.',
+        'krytina_auto' => 'Selon la pente : à partir de :sklon°, comme le toit principal (:krytina), en dessous, joint debout de la même couleur.',
+        'podle_sklonu' => 'selon la pente',
+        'podle_sklonu_tip' => 'La couverture et la couleur suivent de nouveau la pente et le toit principal',
+        'pod_sklonem' => 'La pente est inférieure à la pente minimale de la couverture (:sklon°), risque d’infiltrations.',
+        'terasa_info' => 'Dallage au niveau du sol de l’étage, garde-corps sur les bords extérieurs.',
+        'zadna_info' => 'Seul le plafond reste au-dessus de cette partie.',
     ],
 
     // Úroveň podlahy místnosti
@@ -134,6 +154,7 @@ return [
         'otoceni_sloupu' => 'Rotation du poteau',
         'smazani_sloupu' => 'Suppression du poteau',
         'smazani_strechy' => 'Suppression du toit',
+        'nizsi_strecha' => 'Toit plus bas',
         'barva_domu' => 'Couleur de la maison',
         'zaklady' => 'Fondations',
         'nova_sestava' => 'Nouvel aménagement',

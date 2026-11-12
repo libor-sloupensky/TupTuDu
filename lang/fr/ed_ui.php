@@ -83,6 +83,10 @@ return [
 
     // Katastr a parcely — druh a radon se ukládají k parcele v jazyce při jejím přidání
     'parcela_nenactena' => 'Impossible de charger la parcelle.',
+    'mapa_nenactena' => 'Impossible de charger la carte.',
+    'mapa_priblizit' => 'Zoomez sur le terrain, les parcelles ne se sélectionnent qu’à une échelle détaillée.',
+    'pozemek_rucni' => 'Terrain tracé',
+    'vysky_nenacteny' => 'Impossible de charger le profil altimétrique.',
     'parcela_duplicita' => 'Cette parcelle est déjà ajoutée.',
     'parcela_nesousedi' => 'Cette parcelle n’est adjacente à aucune parcelle chargée. Seules les parcelles adjacentes peuvent être ajoutées.',
     'parcela_odebrat_posledni' => 'Retirer vraiment la dernière parcelle ? Les objets perdront leur ancrage au terrain.',

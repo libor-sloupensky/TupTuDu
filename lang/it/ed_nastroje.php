@@ -122,6 +122,11 @@ return [
         'vysky_pomalu' => 'Non è stato possibile caricare ora il profilo altimetrico, il servizio mappe risponde lentamente. Riprova tra poco.',
         'polygon_bez_bodu' => 'Nessun punto nel poligono della particella.',
         'vysky_nedostupne' => 'I dati altimetrici per quest’area non sono disponibili.',
+        'vysky_zeme_nejsou' => 'Per questo luogo non abbiamo ancora un modello digitale del terreno, il terreno sarà piano.',
+        'pozemek_velky' => 'Il terreno è troppo grande per il profilo altimetrico, scegli una parte più piccola (fino a 1,5 km).',
+        'bod_mimo_evropu' => 'Qui non abbiamo il catasto, il luogo è fuori dai paesi supportati. Puoi disegnare il contorno del terreno.',
+        'bod_bez_katastru' => 'Per questo paese non abbiamo ancora il catasto. Puoi disegnare il contorno del terreno.',
+        'bod_nenalezena' => 'In questo punto non abbiamo trovato nessuna particella. Prova a cliccare all’interno del terreno, oppure disegnane il contorno.',
         'souradnice_mimo' => 'Coordinate fuori dall’intervallo S-JTSK: :lat, :lon',
     ],
 ];
