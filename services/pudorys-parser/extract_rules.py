@@ -1,5 +1,5 @@
 import fitz, glob, os, re
-src=r"C:\Users\HP\.codex\TupTuDu.com\temporary\pdf pudorysy"
+src=r"C:\Projekty\TupTuDu.com\temporary\pdf pudorysy"
 os.chdir(src)
 pdfs=sorted(glob.glob("*.pdf"))
 print("PDF v korpusu:", len(pdfs))
@@ -28,7 +28,7 @@ for f in pdfs:
     corpus.append((f, uniq))
     print(f"{f[:44]:44} | odstavců s uvažováním: {len(uniq)}")
 # ulož korpus
-outdir=r"C:\Users\HP\.codex\TupTuDu.com\services\pudorys-parser"
+outdir=r"C:\Projekty\TupTuDu.com\services\pudorys-parser"
 os.makedirs(outdir,exist_ok=True)
 with open(os.path.join(outdir,"korpus_uvazovani.txt"),"w",encoding="utf-8") as w:
     for f,ps in corpus:
