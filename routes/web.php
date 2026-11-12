@@ -71,6 +71,10 @@ $hlavniCron = function (string $token) {
 Route::get('/cron/bugy/{token}', $hlavniCron)->middleware('throttle:12,1')->name('cron.bugy');
 Route::get('/cron/{token}', $hlavniCron)->middleware('throttle:12,1')->name('cron');
 
+// Přenos dat analýzy konkurence na produkci (token v hlavičce X-DB-Token), modules/konkurence.md
+Route::post('/interni/konkurence/import', [App\Http\Controllers\Masterteam\KonkurenceController::class, 'importPresToken'])
+    ->middleware('throttle:6,1')->name('interni.konkurence.import');
+
 // Google OAuth přihlášení (Socialite) — jen pro existující uživatele.
 // Stejně jako login běží na app i masterteamu (každá subdoména má vlastní session).
 Route::middleware('subdomena:app,masterteam')->group(function () {

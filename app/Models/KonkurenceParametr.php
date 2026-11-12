@@ -14,7 +14,7 @@ class KonkurenceParametr extends Model
     protected $table = 'konkurence_parametry';
 
     protected $fillable = [
-        'klic', 'skupina', 'nazev', 'popis', 'typ', 'jednotka', 'rezim',
+        'klic', 'skupina', 'nazev', 'popis', 'kriteria', 'typ', 'jednotka', 'rezim',
         'jak_merit', 'automaticky', 'pridano', 'poradi',
     ];
 

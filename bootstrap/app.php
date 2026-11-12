@@ -39,7 +39,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Zprávy z Paddlu (paddle/webhook, Laravel Cashier) nemají CSRF token —
         // pravost ověřuje Cashier podpisem (PADDLE_WEBHOOK_SECRET). Bez klíče by
         // podpis neověřoval vůbec → mimo lokál je odmítne PaddleJenSPodpisem.
-        $middleware->validateCsrfTokens(except: ['api/bug', 'paddle/*']);
+        // interni/* chrání token v hlavičce (přenos dat analýzy konkurence, modules/konkurence.md)
+        $middleware->validateCsrfTokens(except: ['api/bug', 'paddle/*', 'interni/*']);
         // Volba tmavý/světlý režim (partials/prepinac-rezimu) se zapisuje z JS nešifrovaně;
         // šifrovaná vrstva by ji jinak při čtení zahodila a layout by nevěděl, co nastavit.
         $middleware->encryptCookies(except: ['tt_rezim']);

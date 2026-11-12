@@ -124,6 +124,29 @@ class KonkurenceController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    /**
+     * Přenos dat analýzy na produkci (modules/konkurence.md, Import): POST JSON ve tvaru konkurence:import,
+     * hlavička X-DB-Token = CRON_TOKEN. Data jsou mimo veřejný repozitář, proto nejdou seederem.
+     * Režim existujících řádků nepřepíše, jen s ?prepsat-rezim=1.
+     */
+    public function importPresToken(Request $request)
+    {
+        $token = (string) config('services.cron_token');
+        if ($token === '' || ! hash_equals($token, (string) $request->header('X-DB-Token'))) {
+            abort(404);
+        }
+        $data = json_decode($request->getContent(), true);
+        if (! is_array($data)) {
+            return response()->json(['ok' => false, 'chyba' => 'Tělo není platný JSON.'], 422);
+        }
+        $souhrn = \App\Support\KonkurenceImport::importuj($data, $request->boolean('prepsat-rezim'));
+        if ($souhrn['chyby']) {
+            \Illuminate\Support\Facades\Log::error('Import konkurence: ' . count($souhrn['chyby']) . ' chyb', ['prvni' => array_slice($souhrn['chyby'], 0, 5)]);
+        }
+
+        return response()->json(['ok' => ! $souhrn['chyby'], 'souhrn' => $souhrn]);
+    }
+
     /** Barva verdiktu vývoje pro štítek (CSS proměnné brandu). */
     public static function barvaVerdiktu(?string $verdikt): string
     {

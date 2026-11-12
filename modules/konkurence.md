@@ -22,7 +22,7 @@ nejpalčivější požadavky, plán funkcí, nápady, rozbor jazyků a zemí a p
 ## Režim sledování (parametry i aplikace)
 | Režim | Význam |
 |---|---|
-| **Sledovat** | Měří se podrobně, je v matici a smí do veřejného srovnání na webu (`modules/srovnani.md`). |
+| **Sledovat** | Měří se podrobně, je v matici a smí do veřejného srovnání na webu (`modules/srovnani.md`). Zveřejní se jen hodnota, která je před zveřejněním ověřená se snímkem; „sledovat“ je podmínka, ne automatické zveřejnění. |
 | **Tiše** | Měří se pro jistotu a jen interně. Na web nikdy. Obvykle méně podrobně nebo jen strojově. |
 | **Nesledovat** | Neměří se. Parametr nebo aplikace zůstává v katalogu, aby šly kdykoli zapnout. |
 
@@ -38,6 +38,9 @@ a neslibujeme ho) a AI dispozice (`h_ai_dispozice`, rozhodnuto bez AI).
   Od druhého měření sloupec Změny = počet hodnot, které se proti minulému měření liší.
 - **Parametry:** katalog po skupinách s přepínačem, štítkem „nový“ (přidán po začátku měření), typem hodnoty,
   štítkem „strojově“ a počtem aplikací, u kterých je hodnota zjištěná. Filtr Vše / režimy / Nové návrhy.
+  Klepnutí na název rozbalí **Co hodnotíme** (`kriteria`: kdy je „má“, „částečně“ a „nemá“) a **Odkud** (`jak_merit`),
+  zaškrtávátko je rozbalí u všech (Libor 12. 11. 2026: samotné „jak měřit“ nestačilo).
+- Tabulky Přehledu a Událostí rolují uvnitř karty, hlavička zůstává nahoře.
 - **Matice:** poslední měření, parametry a aplikace v režimu Sledovat, přepínačem i Tiše. Najetí na buňku
   ukáže poznámku, zdroj a datum ověření. U seznamu je v buňce počet.
 - **Události:** vydání, nové funkce, změny cen a obsahu po měsících.
@@ -69,9 +72,17 @@ katalog a skript leží v `storage/app/konkurence/reserse-2026-11-12/` (jen lok�
 
 Pozor: `services/srovnani-ukazka/konkurence-data.json` (stav 1. 11. 2026) je v repozitáři od 3. 11. 2026, tedy veřejně.
 
-**Přenos na produkci (zatím nepostaveno):** při prvním nasazení chráněný endpoint pod `CRON_TOKEN`, který přijme
-stejný JSON a zavolá `KonkurenceImport::importuj` (zápis přes `db-proxy` je jen pro bugy). Po nasazení je pravdou
-produkční DB: režimy přepínat tam, lokálně jen zkoušet.
+**Přenos na produkci:** `POST /interni/konkurence/import` se stejným JSON, hlavička `X-DB-Token` = produkční
+`CRON_TOKEN` (lokálně v `.env` jako `PROD_CRON_TOKEN`), špatný token vrací 404, `?prepsat-rezim=1` přepíše i režimy.
+Zápis přes `db-proxy` je jen pro bugy, proto vlastní adresa. Od prvního přenosu (12. 11. 2026) je pravdou produkční DB:
+režimy přepíná Libor tam, lokálně se jen zkouší. Nová data (měření, popisy) se posílají stejně, režim zůstane.
+```
+T=$(grep ^PROD_CRON_TOKEN= .env | cut -d= -f2-)
+curl -s -X POST https://www.tuptudu.com/interni/konkurence/import -H "X-DB-Token: $T" \
+  -H 'Content-Type: application/json' --data-binary @storage/app/konkurence/import.json
+```
+Import sestavuje `storage/app/konkurence/reserse-2026-11-12/sestav_import.py <ta složka> <výstup.json>`
+z dat původní analýzy, katalogu (`katalog.py`), popisů parametrů (`kriteria.py`) a rešerší.
 
 ## Katalog parametrů (12. 11. 2026)
 42 původních (a–h) + 61 nových, celkem 103: Sledovat 52, Tiše 41, Nesledovat 10 (doporučení, Libor přepíná).

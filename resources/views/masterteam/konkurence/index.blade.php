@@ -29,6 +29,14 @@
     .kn-tab th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; color: var(--c-text-secondary); padding: 8px 10px; border-bottom: 1px solid var(--c-border-strong); background: var(--c-surface); }
     .kn-tab td { padding: 8px 8px; border-bottom: 1px solid var(--c-border); vertical-align: middle; }
     .kn-tab tr:last-child td { border-bottom: 0; }
+    /* Hlavička zůstává při rolování vidět: tabulka roluje uvnitř karty (vodorovně i svisle) */
+    .kn-rolovani { overflow: auto; max-height: calc(100vh - 170px); }
+    .kn-rolovani .kn-tab thead th { position: sticky; top: 0; z-index: 2; }
+    .kn-detail-tl { display: inline-flex; align-items: center; gap: 4px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--c-text); font: inherit; font-weight: 600; text-align: left; }
+    .kn-detail-tl svg { width: 12px; height: 12px; color: var(--c-text-secondary); transition: transform .15s; flex: none; }
+    .kn-detail-tl[aria-expanded="true"] svg { transform: rotate(90deg); }
+    .kn-detail { margin-top: 6px; padding: 8px 12px; border-left: 2px solid var(--c-primary); background: color-mix(in srgb, var(--c-text) 4%, transparent); border-radius: 0 6px 6px 0; font-size: 13px; line-height: 1.5; }
+    .kn-detail b { color: var(--c-text); }
     .kn-d { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; }
     .kn-d.ano { background: var(--c-ok); }
     .kn-d.cast { border: 2px solid var(--c-warn); background: linear-gradient(90deg, var(--c-warn) 50%, transparent 50%); }
@@ -62,7 +70,7 @@
     .kn-matice .kn-my { background: var(--c-primary-10); }
 </style>
 
-<div class="kn" x-data="{ filtr: 'vse' }">
+<div class="kn" x-data="{ filtr: 'vse', vsePodrobnosti: false }">
     <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
             <h1 class="text-2xl font-bold">Konkurence</h1>
@@ -100,7 +108,7 @@
                 fn ($a, $b) => $b['body'] <=> $a['body'],
             ]);
         @endphp
-        <div class="kn-karta" style="overflow-x:auto">
+        <div class="kn-karta kn-rolovani">
             <table class="kn-tab" style="min-width:980px">
                 <thead>
                     <tr>
@@ -196,7 +204,10 @@
             @foreach(['vse' => 'Vše', 'sledovat' => 'Sledovat', 'tise' => 'Tiše', 'nesledovat' => 'Nesledovat', 'nove' => 'Nové návrhy'] as $f => $nazev)
                 <button type="button" class="kn-filtr" :aria-pressed="filtr === '{{ $f }}'" @click="filtr = '{{ $f }}'">{{ $nazev }}</button>
             @endforeach
-            <span class="kn-tlumene text-xs ml-2">Přepnutí se uloží hned.</span>
+            <label class="kn-tlumene text-xs ml-2 inline-flex items-center gap-1.5" style="cursor:pointer">
+                <input type="checkbox" x-model="vsePodrobnosti" style="accent-color: var(--c-primary)"> Rozbalit popis u všech
+            </label>
+            <span class="kn-tlumene text-xs ml-2">Klepnutím na název se ukáže, co parametr vyhodnocuje. Přepnutí režimu se uloží hned.</span>
         </div>
 
         <div class="grid gap-4">
@@ -206,18 +217,25 @@
                 <div>
                 @foreach($vSkupine as $p)
                     @php $novy = $p->pridano && $mereni && $p->pridano->gt($mereni->datum); @endphp
-                    <div x-data="{ rezim: @js($p->rezim), novy: @js($novy) }"
+                    <div x-data="{ rezim: @js($p->rezim), novy: @js($novy), otevreno: false }"
                          x-show="filtr === 'vse' || filtr === rezim || (filtr === 'nove' && novy)"
                          :class="rezim === 'nesledovat' && 'kn-vypnute'"
-                         class="flex items-center gap-3 px-4 py-2" style="border-bottom:1px solid var(--c-border)">
+                         class="flex items-start gap-3 px-4 py-2" style="border-bottom:1px solid var(--c-border)">
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="font-semibold" title="Jak měřit: {{ $p->jak_merit }}">{{ $p->nazev }}</span>
+                                <button type="button" class="kn-detail-tl" :aria-expanded="otevreno || vsePodrobnosti" @click="otevreno = !otevreno">
+                                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 2l4 4-4 4"/></svg>{{ $p->nazev }}
+                                </button>
                                 @if($novy)<span class="kn-stitek">nový {{ $p->pridano->format('j. n.') }}</span>@endif
                                 @if($p->typ !== 'stav')<span class="kn-stitek sedy">{{ \App\Models\KonkurenceParametr::TYPY[$p->typ] ?? $p->typ }}</span>@endif
-                                @if($p->automaticky)<span class="kn-stitek sedy" title="Jde vyčíst strojově: {{ $p->jak_merit }}">strojově</span>@endif
+                                @if($p->automaticky)<span class="kn-stitek sedy" title="Hodnotu jde vyčíst strojově, bez ručního ověřování">strojově</span>@endif
                             </div>
                             @if($p->popis)<div class="kn-tlumene text-xs mt-0.5">{{ $p->popis }}</div>@endif
+                            <div class="kn-detail kn-tlumene" x-show="otevreno || vsePodrobnosti" x-cloak>
+                                @if($p->kriteria)<div><b>Co hodnotíme:</b> {{ $p->kriteria }}</div>@endif
+                                @if($p->jak_merit)<div class="mt-1"><b>Odkud:</b> {{ $p->jak_merit }}</div>@endif
+                                @unless($p->kriteria || $p->jak_merit)<div>Popis zatím chybí.</div>@endunless
+                            </div>
                         </div>
                         <div class="kn-tlumene text-xs kn-cislo text-right" style="width:74px" title="U kolika aplikací je hodnota zjištěná">
                             {{ $vyplneno[$p->id] ?? 0 }} / {{ $pocetKonk }}
@@ -265,7 +283,7 @@
                     <tr class="kn-skupina"><th colspan="{{ $sloupce->count() + 1 }}">{{ $skupiny[$skupina] ?? $skupina }}</th></tr>
                     @foreach($vSkupine as $p)
                         <tr>
-                            <th class="kn-radek" title="{{ $p->popis }}">{{ $p->nazev }}@if($p->rezim === 'tise') <span class="kn-stitek sedy">tiše</span>@endif</th>
+                            <th class="kn-radek" title="{{ $p->kriteria ?: $p->popis }}">{{ $p->nazev }}@if($p->rezim === 'tise') <span class="kn-stitek sedy">tiše</span>@endif</th>
                             @foreach($sloupce as $k)
                                 @php $h = $hodnoty[$k->id][$p->id] ?? null; @endphp
                                 @php
@@ -291,7 +309,7 @@
         @if($udalosti->isEmpty())
             <div class="kn-karta px-6 py-10 text-center kn-tlumene">Zatím žádné události. Přibývají z rešerší a měsíčních měření.</div>
         @else
-            <div class="kn-karta" style="overflow-x:auto">
+            <div class="kn-karta kn-rolovani">
                 <table class="kn-tab">
                     <thead><tr><th>Měsíc</th><th>Aplikace</th><th>Druh</th><th>Co se stalo</th></tr></thead>
                     <tbody>
