@@ -82,6 +82,26 @@ return [
         'valbova' => 'Hipped',
         'pultova' => 'Mono-pitch',
         'plocha' => 'Flat',
+        // Lower roof over a part of a storey only
+        'terasa' => 'Terrace',
+        'zadna' => 'No roof',
+    ],
+
+    // Lower roof over the part of a storey with no storey above it (garage, covered entrance)
+    'nizsi' => [
+        'vyber' => 'Roof',
+        'vyber_tip' => 'Which roof you are editing. The editor adds lower roofs by itself over the parts of a storey with no storey above them. You can also pick one by clicking it on the plan.',
+        'hlavni' => 'Main',
+        'cast' => 'lower part',
+        'cast_n' => 'lower part :n',
+        'typ_tip' => 'Mono-pitch rises towards the wall of the upper storey. Terrace is a flat walkable roof with a railing, no roof leaves just the ceiling.',
+        'vyska_okapu_tip' => 'Height where the roof meets the outer face of the wall, measured from the floor of this storey. Defaults to the ceiling height.',
+        'krytina_auto' => 'By pitch: from :sklon° the same as the main roof (:krytina), below that standing seam metal in its colour.',
+        'podle_sklonu' => 'by pitch',
+        'podle_sklonu_tip' => 'Covering and colour follow the pitch and the main roof again',
+        'pod_sklonem' => 'The covering is below its safe pitch of :sklon°, it may leak.',
+        'terasa_info' => 'Paving at the floor level of the upper storey, railing along the outer edges.',
+        'zadna_info' => 'Only the ceiling stays over this part.',
     ],
 
     // Úroveň podlahy místnosti
@@ -134,6 +154,7 @@ return [
         'otoceni_sloupu' => 'Rotate column',
         'smazani_sloupu' => 'Delete column',
         'smazani_strechy' => 'Delete roof',
+        'nizsi_strecha' => 'Lower roof',
         'barva_domu' => 'House colour',
         'zaklady' => 'Foundations',
         'nova_sestava' => 'New fitted furniture',

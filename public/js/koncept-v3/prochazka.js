@@ -181,7 +181,7 @@
                 vrstva: this.$refs.canvasWrap,
                 pochozi: () => this._prochazkaSite().pochozi,
                 cile: () => this._prochazkaSite().cile,
-                nepochozi: (o) => { for (; o; o = o.parent) if (o.userData?.strecha) return true; return false; },
+                nepochozi: (o) => { for (; o; o = o.parent) if (o.userData?.strecha && !(o.userData.terasa && !o.userData.zabradli)) return true; return false; },
                 teren: (x, z) => (_3d.terrainHeights ? this._terrainHeightAt(x, z) : (_3d.ground ? 0 : null)),
                 texty: {
                     oko: k('oko'), okoTip: k('oko_tip'), okoVychozi: k('oko_vychozi'), mapkaTip: k('mapka_tip'), patroVys: k('patro_vys'), patroNiz: k('patro_niz'),
@@ -213,7 +213,8 @@
                 const projdi = (o, chuze) => {
                     const u = o.userData || {};
                     if (u.katalog || u.kus || u.prochazka) return;
-                    const dal = chuze && !u.sestavy && !u.strecha;
+                    // Na terase (plochá pochozí nižší střecha) se chodí, na zábradlí ne
+                    const dal = chuze && !u.sestavy && (!u.strecha || (u.terasa && !u.zabradli));
                     if (o.isMesh) { cile.push(o); if (dal) pochozi.push(o); }
                     for (const c of o.children) projdi(c, dal);
                 };

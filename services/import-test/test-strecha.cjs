@@ -166,5 +166,66 @@ console.log('Schod na dlouhé straně: střecha bez díry (dřív zmizela plocha
     kontrola('ruční štít na schodu má přednost', rucne[3].typ === 'stit', rucne[3].typ);
 }
 
+console.log('Nižší střecha: garáž u zdi patra (Libor 12. 11. 2026)');
+{
+    // Garáž 4 × 6 m vpravo od domu, zeď patra vlevo (x = 0)
+    const G = [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 6 }, { x: 0, y: 6 }];
+    const hrG = G.map((a, i) => ({ a, b: G[(i + 1) % 4], klic: i === 3 ? 'zed3' : 'W' + i + ':1', zed: i === 3 }));
+    let t = Strecha.typyHranNizsi({ typ: 'pultova', sklon: 10 }, hrG);
+    kontrola('pultová: okap naproti zdi, boky štíty, u zdi štít bez přesahu', t.map(h => h.typ).join(',') === 'stit,okap,stit,stit' && t[3].presah === 0, t.map(h => h.typ + (h.presah ?? '')).join(','));
+    let v = Strecha.vypocet(t, { zOkap: 3, presah: 0.3, presahStit: 0.1, sklon: 10 });
+    kontrola('stoupá od okapu ke zdi patra', blizko(zPlochy(v, 3.99, 3), 3, 0.01) && blizko(zPlochy(v, 0.01, 3), 3 + 4 * tg(10), 0.01), `${zPlochy(v, 3.99, 3)?.toFixed(3)} / ${zPlochy(v, 0.01, 3)?.toFixed(3)}`);
+    kontrola('u zdi patra střecha končí v líci (bez přesahu)', blizko(obalka(v).x0, 0) && blizko(obalka(v).x1, 4.3), JSON.stringify(obalka(v)));
+    t = Strecha.typyHranNizsi({ typ: 'sedlova', sklon: 30 }, hrG);
+    kontrola('sedlová: hřeben kolmo ke zdi, štít naproti zdi', t.map(h => h.typ).join(',') === 'okap,stit,okap,stit', t.map(h => h.typ).join(','));
+    t = Strecha.typyHranNizsi({ typ: 'sedlova', sklon: 30, otocHreben: true }, hrG);
+    kontrola('sedlová otočená: okap souběžně se zdí', t.map(h => h.typ).join(',') === 'stit,okap,stit,stit', t.map(h => h.typ).join(','));
+    t = Strecha.typyHranNizsi({ typ: 'valbova', sklon: 25 }, hrG);
+    kontrola('valbová: okap všude kromě zdi', t.map(h => h.typ).join(',') === 'okap,okap,okap,stit', t.map(h => h.typ).join(','));
+    t = Strecha.typyHranNizsi({ typ: 'pultova', sklon: 10, hrany: { 'W2:1': { typ: 'okap', sklon: 20 }, zed3: { typ: 'okap' } } }, hrG);
+    kontrola('ruční hrana platí, zeď patra zůstává štítem', t[2].typ === 'okap' && t[2].sklon === 20 && t[3].typ === 'stit', t.map(h => h.typ).join(','));
+
+    // Část do L kolem rohu domu: okapy na obou vnějších stranách, nároží z vnějšího rohu
+    const L = [{ x: 8, y: 0 }, { x: 11, y: 0 }, { x: 11, y: 9 }, { x: 0, y: 9 }, { x: 0, y: 6 }, { x: 8, y: 6 }];
+    const hrL = L.map((a, i) => ({ a, b: L[(i + 1) % 6], klic: 'h' + i, zed: i >= 4 }));
+    t = Strecha.typyHranNizsi({ typ: 'pultova', sklon: 10 }, hrL);
+    kontrola('L: okapy vpravo a dole, konce štíty', t.map(h => h.typ).join(',') === 'stit,okap,okap,stit,stit,stit', t.map(h => h.typ).join(','));
+    v = Strecha.vypocet(t, { zOkap: 3, presah: 0.3, presahStit: 0.1, sklon: 10 });
+    kontrola('L: u zdi patra v obou ramenech stejně vysoko', blizko(zPlochy(v, 8.01, 2), 3 + 3 * tg(10), 0.01) && blizko(zPlochy(v, 3, 6.01), 3 + 3 * tg(10), 0.01));
+
+    // Samostatná část bez patra nad sebou: běžná pultová (okap na nejdelší hraně)
+    t = Strecha.typyHranNizsi({ typ: 'pultova', sklon: 10 }, G.map((a, i) => ({ a, b: G[(i + 1) % 4], klic: 'h' + i })));
+    kontrola('bez zdi patra: běžná pultová', t.filter(h => h.typ === 'okap').length === 1, t.map(h => h.typ).join(','));
+
+    // Prstenec kolem patra: valbová přes celé podlaží, oříznutá obrysem patra
+    const P = [{ x: 0, y: 0 }, { x: 12, y: 0 }, { x: 12, y: 10 }, { x: 0, y: 10 }];
+    const U = [{ x: 3, y: 2 }, { x: 10, y: 2 }, { x: 10, y: 8 }, { x: 3, y: 8 }];
+    t = Strecha.typyHranNizsi({ typ: 'pultova', sklon: 10 }, P.map((a, i) => ({ a, b: P[(i + 1) % 4], klic: 'h' + i })), U);
+    kontrola('prstenec: všechny vnější hrany okapem (paprsek narazí na patro)', t.every(h => h.typ === 'okap'), t.map(h => h.typ).join(','));
+    v = Strecha.vypocet(t, { zOkap: 3, presah: 0, presahStit: 0, sklon: 10 });
+    const troj = v.plochy.flatMap(pl => Strecha.orizniMimo(pl.troj, U));
+    let plocha = 0;
+    for (const q of troj) plocha += Math.abs(Strecha.plochaPolygonu(q));
+    kontrola('po ořezu zbývá jen prstenec', blizko(plocha, 120 - 42, 0.01), plocha.toFixed(3));
+    kontrola('nic neleží uvnitř patra', troj.every(q => !Strecha.bodUvnitr({ x: (q[0].x + q[1].x + q[2].x) / 3, y: (q[0].y + q[1].y + q[2].y) / 3 }, U)));
+    kontrola('výška ořezaných kusů leží v rovině', troj.every(q => q.every(b => blizko(Strecha.vyskaVBode(v.plochy, b.x, b.y), b.z, 0.005))));
+    const hreb = Strecha.useckyMimo(v.hrebeny, U);
+    kontrola('nároží zůstanou jen mimo patro', hreb.length && hreb.every(([a, b]) => !Strecha.bodUvnitr({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, U)), String(hreb.length));
+    const oblast = Strecha.oblastBez(P, [U]);
+    let po = 0;
+    for (const d of oblast) po += Strecha.plochaPolygonu(d);
+    kontrola('oblast terasy kolem patra', blizko(po, 78, 0.01), po.toFixed(3));
+
+    // Dorovnání obrysu z rastru: zakulacené rohy zmizí, hrana u patra je zeď
+    const zRastru = [{ x: 0.02, y: 0.01 }, { x: 3.9, y: 0.02 }, { x: 3.98, y: 0.08 }, { x: 4.01, y: 0.2 }, { x: 4.02, y: 5.85 }, { x: 3.95, y: 5.99 }, { x: 0.01, y: 6.02 }];
+    const primky = [
+        { a: { x: -5, y: 0 }, b: { x: 4, y: 0 }, klic: 'W1:1' }, { a: { x: 4, y: 0 }, b: { x: 4, y: 6 }, klic: 'W2:1' },
+        { a: { x: 4, y: 6 }, b: { x: -5, y: 6 }, klic: 'W3:1' }, { a: { x: 0, y: -2 }, b: { x: 0, y: 8 }, zed: true },
+    ];
+    const d = Strecha.dorovnejObrys(zRastru, primky);
+    kontrola('dorovnaný obrys má čtyři hrany přesně na lících', d.length === 4 && d.every(h => [h.a, h.b].every(b => [0, 4].includes(Math.round(b.x * 1000) / 1000) && [0, 6].includes(Math.round(b.y * 1000) / 1000))), JSON.stringify(d.map(h => [h.a, h.klic])));
+    kontrola('hrana u patra je zeď, ostatní nesou klíč stěny', d.filter(h => h.zed).length === 1 && d.filter(h => !h.zed).every(h => /^W\d:1$/.test(h.klic)), d.map(h => h.klic).join(' '));
+}
+
 console.log(chyb ? `\n${chyb} chyb` : '\nVše v pořádku');
 process.exit(chyb ? 1 : 0);

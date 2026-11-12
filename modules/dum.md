@@ -13,7 +13,8 @@ dum = {
   schodiste: [{ id, odPodlazi, doPodlazi, plocha?, tvar: prime|L|U, x, y, uhel, sirka, strana, vyskaRucne? }],
   sloupy: [{ id: C1…, podlazi, x, y, sirka, tvar: ctverec|kruh, uhel, barva?, strecha?: false }],
   plochy: [{ id, podlazi, mistnost, typ: zvysena|snizena|bez_podlahy, dh, body: obrys místnosti z rastru, prenos, vypnuto }],
-  strecha: { typ, sklon, presah, presahStit, vyskaOkapu, krytina, otocHreben, hrany: { klíč: { typ, sklon } } } | null
+  strecha: { typ, sklon, presah, presahStit, vyskaOkapu, krytina, otocHreben, hrany: { klíč: { typ, sklon } } } | null,
+  nizsiStrechy: { 'P1|W5:-1': { typ?, sklon?, presah?, presahStit?, vyskaOkapu?, krytina?, barva?, otocHreben?, hrany? } }  // jen ruční úpravy
 }
 ```
 
@@ -38,7 +39,7 @@ dum = {
 | `public/js/koncept-v3/mistnosti.js` | rastr místností, výřezy a plocha pod limitem výšky |
 | `public/js/koncept-v3/koty-vyberu.js` | kóty u vybrané stěny a otvoru |
 | `public/js/koncept-v3/koty-retezce.js` | kótovací řetězce kolem domu a rozměry místností; test `test-zobrazeni-objektu-ui` |
-| `services/import-test/test-dum-ui.cjs` | test celého domu v prohlížeči (57 kontrol); `test-barvy-domu-ui`, `test-koty-vyberu-ui` a `test-magnet-patro-ui` a `test-schody-ui` pro barvy, kóty, magnet a schody; `test-dum-import-ui.cjs` ověřuje import skutečného výkresu na patro |
+| `services/import-test/test-dum-ui.cjs` | test celého domu v prohlížeči (57 kontrol); `test-nizsi-strecha-ui` pro nižší střechy; `test-barvy-domu-ui`, `test-koty-vyberu-ui` a `test-magnet-patro-ui` a `test-schody-ui` pro barvy, kóty, magnet a schody; `test-dum-import-ui.cjs` ověřuje import skutečného výkresu na patro |
 
 ## Pravidla
 
@@ -71,6 +72,20 @@ Hrana může mít vlastní typ, sklon, přesah, výšku okapu a barvu (`strecha.
 Stěny horního podlaží nikdy neprojdou střechou. Stěny na obrysu dosáhnou až pod ni, takže pod vyšším okapem nezůstane mezera. Pod šikmou střechou se strop nekreslí, jen plochá střecha na něm leží.
 
 Typ krytiny (`strecha.krytina`) platí pro celek, barva je zvlášť (`strecha.barva`, na hraně vlastní). Starší hodnoty jako `antracit` se čtou jako barva. Vzhled ve 3D viz další část.
+
+### Nižší střechy (Libor 12. 11. 2026)
+
+Patrový dům s přízemní garáží, krytým vstupem nebo jinou částí mimo obrys patra. Hlavní střecha zůstává nad horním podlažím, nad každou částí podlaží, nad kterou už patro není, přidá editor sám nižší střechu (jen když hlavní střecha existuje, smazání hlavní smaže i nižší). Starší projekty se nepřevádějí: v `dum.nizsiStrechy` jsou jen ruční úpravy, výchozí nižší střecha se dopočítá.
+
+- **Část** (`_castiNizsich`): obrys podlaží (se sloupy v rohu výklenku) bez obrysu podlaží hned nad ním, v rastru po 2,5 cm. Otevření rastru vyhodí proužky užší než 50 cm (širší zeď dole než nahoře není garáž) a části pod 0,8 m². Obrys se dorovná na přímky (`Strecha.dorovnejObrys`): líce podlaží s klíčem stěny jako u hlavní střechy a obrys patra, hrana na něm je `zed`. Zakulacené rohy z otevření zmizí, roh je průsečík sousedů. Prázdné patro (bez obrysu) nic nezakrývá ani nevytvoří. Část kolem patra ze všech stran (prstenec) má patro jako díru: střecha se spočítá nad celým obrysem a ořízne jím (`orizniMimo`, `useckyMimo`).
+- **Id části** = podlaží | klíč nejdelší hrany se stěnou (`P1|W5:-1`), nastavení tak drží i po úpravě kresby. Název v panelu podle místnosti v části („1.NP – Garáž“), jinak „1.NP – nižší část“.
+- **Výchozí:** pultová od zdi patra 10°, přesah okapu 30 cm, štítu 10 cm, okap ve výšce stropu toho podlaží (konstrukční výška nad jeho podlahou). Typy hran (`Strecha.typyHranNizsi`): hrana u zdi patra je vždy štít bez přesahu, který se nekreslí. Pultová má okap tam, odkud paprsek dovnitř části narazí na zeď patra (garáž: hrana naproti zdi; část do L kolem rohu: obě vnější strany s nárožím; prstenec: všechny), ostatní hrany jsou štíty. Sedlová má hřeben kolmo ke zdi patra (⟳ souběžně), valbová okap všude kromě zdi. Část bez zdi patra bere běžné předvolby.
+- **Volby typu** jen u nižší: Terasa (plochá pochozí z patra: dlažba 60 × 60 cm ve výšce podlahy patra, zábradlí 1 m na vnějších hranách v barvě oken zvenku, v procházce se po ní chodí) a Bez střechy (zůstane strop podlaží).
+- **Krytina podle sklonu:** barva hlavní střechy; pod bezpečným sklonem krytiny hlavní střechy plech (falc) v její zobrazené barvě, nad ním stejná krytina a vzhled jako hlavní. Bezpečné sklony podle země v `SKLON_MIN_KRYTINY` (dum.js, zatím jen Česko podle výrobců: tašky 22°, bobrovka 30°, šindel 15°, břidlice 25°, falc 7°, trapéz 8°, vlnitý 10°; ostatní země stejně, patří do národní specifikace). Ručně zvolená krytina platí, „podle sklonu“ ji vrátí. Krytina pod svým bezpečným sklonem dostane v panelu varování, i u hlavní střechy.
+- **Ovládání:** v panelu Střecha nahoře výběr „Hlavní / 1.NP – …“ (jen když nižší střechy jsou). V režimu střechy jsou v půdorysu všechny střechy, klepnutí na plochu vybere střechu, na hranu i hranu. Nižší střecha nemá tlačítko smazat, typ Bez střechy to nahrazuje. Úpravy jdou do `dum.nizsiStrechy[id]`, hrany stejně jako u hlavní.
+- **3D** (`_strecha3d` společná s hlavní, `_terasa3d`): u zdi patra se nekreslí štít ani čelo (`_okrajStrechy` s `vynechat`), štíty nad stěnami podlaží ano, protože jeho stěny pod nižší střechu nesahají. Plochá nižší má atiku jen na vnějších hranách (`_pasyNizsi`). Sloup pod nižší střechou sahá pod ni. Meshe mají `strecha`, `strechaId` a `nizsi` (podlaží): skryjí se se střechou i se svým podlažím, ve sdíleném odkazu jdou do skupiny střechy.
+- **Okno patra pod nižší střechou** střecha zakryje (stoupá po zdi patra, u garáže 4 m asi o 1 m nad podlahu patra), editor zatím neupozorňuje.
+- Testy: `test-strecha.cjs` (geometrie), `test-nizsi-strecha-ui.cjs` (dům s garáží, panel, klepnutí, terasa, 3D, Zpět, uložení, prstenec).
 
 ### Krytiny a tloušťka ve 3D (Libor 11. 11. 2026)
 
@@ -287,7 +302,8 @@ Změna domu v režimu 3D přestaví scénu hned (`_obnov3dPozdeji` z `afterRende
 
 ## Zatím neřešeno
 
-- Sloup pod přesahem patra (na nižším podlaží) nemá vlastní stříšku ani průvlak, rozšiřuje jen střechu horního podlaží. „Přidat podpěru dolů" zkopíruje stěnu.
+- Sloup pod přesahem patra (na nižším podlaží) průvlak nedostane (staticky zajištěno), „Přidat podpěru dolů" zkopíruje stěnu. Sloup v rohu výklenku části bez patra rozšíří nižší střechu (viz Nižší střechy).
+- Nižší střecha: podlaží, které přesahuje přes nižší střechu jiného podlaží (tři a více podlaží se střídavými přesahy), se neřeší, počítá se jen s podlažím hned nad. Samostatná budova na podlaží (druhá komponenta rastru) střechu nemá, stejně jako u hlavní.
 - Stíny ve 3D (Libor 2. 11. 2026: nebyly správně, udělat později pořádně).
 - Plochá střecha bez přesahu. Vikýře, střešní okna a polovalba jako předvolba (polovalba jde nastavit po hranách jen částečně).
 - Ve 3D jsou zvýšené plochy jako deska na podlaze, strop se nad nimi nezvedá.

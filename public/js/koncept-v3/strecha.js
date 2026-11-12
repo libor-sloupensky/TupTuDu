@@ -631,7 +631,286 @@
         });
     }
 
-    const Strecha = { vypocet, parametryHran, vyskaVBode, izocara, podUrovni, obrysZRastru, hranyObrysu, typyHran, plochaPolygonu, konvexniDily };
+    // ─── Nižší střecha (Libor 12. 11. 2026) ─────────────────
+    // Střecha nad částí podlaží, nad kterou už patro není: garáž, krytý vstup, terasa. Obrys části
+    // má hrany dvou druhů: na líci podlaží (okap nebo štít jako u hlavní střechy) a u zdi patra
+    // (`zed`). U zdi patra střecha jen končí: štít bez přesahu, který se nekreslí, zeď tam stojí.
+
+    /** Průsečík paprsku p + r·t (t > 0) s úsečkou a–b, vrací t nebo null. */
+    function paprsekUsecka(p, r, a, b) {
+        const ex = b.x - a.x, ey = b.y - a.y;
+        const det = r.x * ey - r.y * ex;
+        if (Math.abs(det) < 1e-12) return null;
+        const t = ((a.x - p.x) * ey - (a.y - p.y) * ex) / det;
+        const s = ((a.x - p.x) * r.y - (a.y - p.y) * r.x) / det;
+        return t > 1e-6 && s >= -1e-6 && s <= 1 + 1e-6 ? t : null;
+    }
+
+    /**
+     * Typy hran nižší střechy. Pultová (výchozí) stoupá ke zdi patra: okapem je hrana, od které
+     * paprsek dovnitř části narazí na zeď patra, ostatní jsou štíty. Sedlová má hřeben kolmo ke zdi
+     * patra (otočením souběžně), valbová okap všude kromě zdi. Část bez zdi patra (prstenec kolem
+     * patra bere zeď z `patro`) a samostatná část bez patra mají běžné předvolby. Ruční nastavení
+     * hrany má přednost, hrana u zdi zůstává vždy štítem bez přesahu.
+     * @param {object} strecha  nastavení (typ, sklon, otocHreben, hrany)
+     * @param {Array<{a,b,klic,zed?}>} hrany  obrys části (m)
+     * @param {Array<{x,y}>|null} patro  obrys patra uvnitř části (prstenec), jinak null
+     */
+    function typyHranNizsi(strecha, hrany, patro = null) {
+        if (!hrany.length) return [];
+        const zdi = hrany.filter(h => h.zed);
+        const delka = (h) => Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y);
+        const plocha = plochaPolygonu(hrany.map(h => h.a));
+        const dovnitr = (h) => { const L = delka(h) || 1, dx = (h.b.x - h.a.x) / L, dy = (h.b.y - h.a.y) / L; return plocha > 0 ? { x: -dy, y: dx } : { x: dy, y: -dx }; };
+        const cil = [...hrany.map(h => ({ a: h.a, b: h.b, zed: !!h.zed }))];
+        if (patro && patro.length >= 3) patro.forEach((a, i) => cil.push({ a, b: patro[(i + 1) % patro.length], zed: true }));
+        const kZdi = (h) => {
+            const r = dovnitr(h);
+            for (const t of [0.1, 0.3, 0.5, 0.7, 0.9]) {
+                const p = { x: h.a.x + (h.b.x - h.a.x) * t, y: h.a.y + (h.b.y - h.a.y) * t };
+                let nej = null;
+                for (const c of cil) {
+                    if (c.a === h.a && c.b === h.b) continue;
+                    const s = paprsekUsecka(p, r, c.a, c.b);
+                    if (s !== null && (!nej || s < nej.s - 1e-6 || (Math.abs(s - nej.s) <= 1e-6 && c.zed))) nej = { s, zed: c.zed };
+                }
+                if (nej && nej.zed) return true;
+            }
+            return false;
+        };
+        const typ = strecha.typ || 'pultova';
+        let zaklad = null;
+        if (typ === 'plocha' || typ === 'terasa' || typ === 'zadna') {
+            zaklad = hrany.map(() => 'stit');
+        } else if (typ === 'pultova') {
+            zaklad = hrany.map(h => (!h.zed && kZdi(h) ? 'okap' : 'stit'));
+            if (!zaklad.includes('okap')) zaklad = null;
+        } else if (zdi.length && (typ === 'valbova' || typ === 'stanova')) {
+            zaklad = hrany.map(h => (h.zed ? 'stit' : 'okap'));
+        } else if (zdi.length && typ === 'sedlova') {
+            const z = zdi.reduce((a, h) => (delka(h) > delka(a) ? h : a), zdi[0]);
+            const osa = Math.atan2(z.b.y - z.a.y, z.b.x - z.a.x) + (strecha.otocHreben ? 0 : Math.PI / 2);
+            zaklad = hrany.map(h => (h.zed ? 'stit' : (Math.abs(Math.cos(Math.atan2(h.b.y - h.a.y, h.b.x - h.a.x) - osa)) > 0.7 ? 'okap' : 'stit')));
+        }
+        if (!zaklad) {
+            // Bez zdi patra (samostatná část, prstenec kolem patra): běžná předvolba nad samotnou částí
+            const bezZdi = hrany.filter(h => !h.zed);
+            const bezne = typyHran({ ...strecha, typ, hrany: {} }, bezZdi);
+            zaklad = hrany.map(h => (h.zed ? 'stit' : (bezne[bezZdi.indexOf(h)]?.typ || 'stit')));
+        }
+        return hrany.map((h, i) => {
+            const rucne = !h.zed && strecha.hrany && strecha.hrany[h.klic];
+            return {
+                ...h, index: i, typ: rucne && rucne.typ ? rucne.typ : zaklad[i],
+                sklon: (rucne && rucne.sklon) || strecha.sklon || 10,
+                presah: h.zed ? 0 : (rucne && typeof rucne.presah === 'number' ? rucne.presah : undefined),
+                zOkap: rucne && typeof rucne.vyskaOkapu === 'number' ? rucne.vyskaOkapu : undefined,
+                barva: (rucne && rucne.barva) || undefined,
+            };
+        });
+    }
+
+    /** Část konvexního mnohoúhelníku (kladná plocha) vlevo od přímky a→b. */
+    function polorovina(poly, a, b) {
+        const f = (p) => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+        const out = [];
+        poly.forEach((p, i) => {
+            const q = poly[(i + 1) % poly.length];
+            const fp = f(p), fq = f(q);
+            if (fp >= 0) out.push(p);
+            if ((fp >= 0) !== (fq >= 0)) {
+                const t = fp / (fp - fq);
+                out.push({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t });
+            }
+        });
+        return out;
+    }
+
+    /** Konvexní P bez konvexního C (oba s kladnou plochou) jako konvexní díly; null = nepřekrývají se. */
+    function odectiKonvexni(P, C, minPlocha = 1e-6) {
+        let prunik = P;
+        for (let i = 0; i < C.length && prunik.length >= 3; i++) prunik = polorovina(prunik, C[i], C[(i + 1) % C.length]);
+        if (prunik.length < 3 || plochaPolygonu(prunik) < minPlocha) return null;
+        const dily = [];
+        let zbytek = P;
+        for (let i = 0; i < C.length && zbytek.length >= 3; i++) {
+            const a = C[i], b = C[(i + 1) % C.length];
+            const ven = polorovina(zbytek, b, a);
+            if (ven.length >= 3 && plochaPolygonu(ven) >= minPlocha) dily.push(ven);
+            zbytek = polorovina(zbytek, a, b);
+        }
+        return dily;
+    }
+
+    /** Mnohoúhelník s kladnou plochou (vnitřek vlevo od hran). */
+    const kladne = (poly) => (plochaPolygonu(poly) < 0 ? [...poly].reverse() : poly);
+
+    /**
+     * Mnohoúhelník `poly` bez mnohoúhelníků `diry` jako konvexní díly s kladnou plochou (m).
+     * Slouží ploché nižší střeše a terase kolem patra.
+     */
+    function oblastBez(poly, diry = []) {
+        let dily = konvexniDily(kladne(poly));
+        for (const d of diry) {
+            if (!d || d.length < 3) continue;
+            for (const C of konvexniDily(kladne(d))) {
+                dily = dily.flatMap(P => { const r = odectiKonvexni(P, C); return r === null ? [P] : r; });
+            }
+        }
+        return dily.filter(d => d.length >= 3 && plochaPolygonu(d) > 1e-4);
+    }
+
+    /**
+     * Části trojúhelníků {x,y,z} mimo mnohoúhelník (m). Výška se dopočítá z roviny trojúhelníku,
+     * orientace zůstává. Nižší střecha kolem patra se tak ořízne obrysem patra.
+     */
+    function orizniMimo(troj, poly) {
+        if (!poly || poly.length < 3) return troj;
+        const dily = konvexniDily(kladne(poly));
+        const vysledek = [];
+        for (const t of troj) {
+            const [a, b, c] = t;
+            const det = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+            if (Math.abs(det) < 1e-12) { vysledek.push(t); continue; }
+            // Rovina z = a.z + gx·(x − a.x) + gy·(y − a.y)
+            const gx = ((b.z - a.z) * (c.y - a.y) - (c.z - a.z) * (b.y - a.y)) / det;
+            const gy = ((c.z - a.z) * (b.x - a.x) - (b.z - a.z) * (c.x - a.x)) / det;
+            const zBodu = (p) => ({ x: p.x, y: p.y, z: a.z + gx * (p.x - a.x) + gy * (p.y - a.y) });
+            let kusy = [det > 0 ? [a, b, c] : [a, c, b]];
+            let zasah = false;
+            for (const C of dily) {
+                kusy = kusy.flatMap(P => { const r = odectiKonvexni(P, C); if (r === null) return [P]; zasah = true; return r; });
+            }
+            if (!zasah) { vysledek.push(t); continue; }
+            for (const K of kusy) {
+                for (let i = 1; i < K.length - 1; i++) {
+                    const u = [zBodu(K[0]), zBodu(K[i]), zBodu(K[i + 1])];
+                    if (Math.abs(plochaPolygonu(u)) < 1e-7) continue;
+                    vysledek.push(det > 0 ? u : [u[0], u[2], u[1]]);
+                }
+            }
+        }
+        return vysledek;
+    }
+
+    /** Bod uvnitř mnohoúhelníku (m). */
+    function bodUvnitr(p, poly) {
+        let v = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+            if ((poly[i].y > p.y) !== (poly[j].y > p.y)
+                && p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x) v = !v;
+        }
+        return v;
+    }
+
+    /** Úsečky {x,y,z} jen mimo mnohoúhelník: rozdělí se v průsečících s jeho hranami. */
+    function useckyMimo(usecky, poly) {
+        if (!poly || poly.length < 3) return usecky;
+        const vysledek = [];
+        for (const [p, q] of usecky) {
+            const r = { x: q.x - p.x, y: q.y - p.y };
+            const ts = [0, 1];
+            poly.forEach((a, i) => {
+                const b = poly[(i + 1) % poly.length];
+                const ex = b.x - a.x, ey = b.y - a.y;
+                const det = r.x * ey - r.y * ex;
+                if (Math.abs(det) < 1e-12) return;
+                const t = ((a.x - p.x) * ey - (a.y - p.y) * ex) / det;
+                const s = ((a.x - p.x) * r.y - (a.y - p.y) * r.x) / det;
+                if (t > 0 && t < 1 && s >= 0 && s <= 1) ts.push(t);
+            });
+            ts.sort((x, y) => x - y);
+            const bod = (t) => ({ x: p.x + r.x * t, y: p.y + r.y * t, z: p.z + (q.z - p.z) * t });
+            for (let i = 0; i < ts.length - 1; i++) {
+                if (ts[i + 1] - ts[i] < 1e-6) continue;
+                if (bodUvnitr(bod((ts[i] + ts[i + 1]) / 2), poly)) continue;
+                vysledek.push([bod(ts[i]), bod(ts[i + 1])]);
+            }
+        }
+        return vysledek;
+    }
+
+    /**
+     * Obrys části z rastru dorovná na skutečné přímky: líce podlaží (klíč stěna:strana) a obrys
+     * patra (`zed`). Rastr je po pár cm a otevřením (ubrání tenkých proužků) se konvexní rohy
+     * zakulatí, proto krátká nedorovnaná hrana mezi dvěma dorovnanými zmizí a roh vznikne
+     * průsečíkem sousedů. Body i přímky v metrech. Vrací [{a, b, klic, zed}].
+     * @param {Array<{x,y}>} body  zjednodušený obrys z rastru
+     * @param {Array<{a,b,klic,zed?}>} primky  kandidáti: hrany obrysu podlaží a patra
+     */
+    function dorovnejObrys(body, primky, tol = 0.09, kratka = 0.6) {
+        const n = body.length;
+        if (n < 3) return [];
+        let linie = body.map((a, i) => {
+            const b = body[(i + 1) % n];
+            const L = Math.hypot(b.x - a.x, b.y - a.y) || 1e-9;
+            const ux = (b.x - a.x) / L, uy = (b.y - a.y) / L;
+            let nej = null;
+            if (L > 0.15) {
+                for (const c of primky) {
+                    const wx = c.b.x - c.a.x, wy = c.b.y - c.a.y, WL = Math.hypot(wx, wy);
+                    if (WL < 0.05) continue;
+                    if (Math.abs(ux * wy / WL - uy * wx / WL) > 0.06) continue;
+                    const dist = (q) => Math.abs((q.x - c.a.x) * wy - (q.y - c.a.y) * wx) / WL;
+                    const d = Math.max(dist(a), dist(b));
+                    if (d > tol) continue;
+                    const s0 = ((a.x - c.a.x) * wx + (a.y - c.a.y) * wy) / WL, s1 = ((b.x - c.a.x) * wx + (b.y - c.a.y) * wy) / WL;
+                    const prekryv = Math.min(Math.max(s0, s1), WL) - Math.max(Math.min(s0, s1), 0);
+                    if (prekryv < Math.min(WL, L) * 0.3) continue;
+                    // Přednost má bližší přímka, při shodě zeď patra (střecha na ní končí)
+                    if (!nej || d < nej.d - 0.005 || (Math.abs(d - nej.d) <= 0.005 && c.zed && !nej.zed)) {
+                        nej = { d, p: c.a, dx: wx / WL, dy: wy / WL, klic: c.klic || null, zed: !!c.zed };
+                    }
+                }
+            }
+            return nej ? { p: nej.p, dx: nej.dx, dy: nej.dy, klic: nej.klic, zed: nej.zed, L, dorovnana: true }
+                : { p: a, dx: ux, dy: uy, klic: null, zed: false, L, dorovnana: false };
+        });
+        const rovnobezne = (u, v) => Math.abs(u.dx * v.dy - u.dy * v.dx) < 0.03;
+        const naPrimce = (u, v) => rovnobezne(u, v) && Math.abs((v.p.x - u.p.x) * u.dy - (v.p.y - u.p.y) * u.dx) < 0.02;
+        // Zakulacené rohy: úsek nedorovnaných hran (dohromady krátký) mezi dorovnanými sousedy, kteří se protnou
+        const m0 = linie.length;
+        const pryc = new Set();
+        for (let i = 0; i < m0; i++) {
+            if (linie[i].dorovnana || !linie[(i + m0 - 1) % m0].dorovnana) continue;
+            let j = i, delkaUseku = 0;
+            while (!linie[j % m0].dorovnana && j - i < m0) { delkaUseku += linie[j % m0].L; j++; }
+            const po = linie[j % m0], pred = linie[(i + m0 - 1) % m0];
+            if (po.dorovnana && delkaUseku <= kratka && !rovnobezne(pred, po) && m0 - (j - i) >= 3) {
+                for (let k = i; k < j; k++) pryc.add(k % m0);
+            }
+        }
+        if (pryc.size) linie = linie.filter((_, i) => !pryc.has(i));
+        // Souosé sousedy spojit
+        const spojene = [];
+        for (const l of linie) {
+            const u = spojene[spojene.length - 1];
+            if (u && naPrimce(u, l) && u.zed === l.zed) { u.L += l.L; if (!u.klic) u.klic = l.klic; continue; }
+            spojene.push({ ...l });
+        }
+        if (spojene.length > 2 && naPrimce(spojene[0], spojene[spojene.length - 1]) && spojene[0].zed === spojene[spojene.length - 1].zed) {
+            const z = spojene.pop();
+            if (!spojene[0].klic) spojene[0].klic = z.klic;
+        }
+        const m = spojene.length;
+        if (m < 3) return [];
+        const vrcholy = spojene.map((l, i) => {
+            const pred = spojene[(i + m - 1) % m];
+            const det = pred.dx * l.dy - pred.dy * l.dx;
+            if (Math.abs(det) < 1e-6) return { x: l.p.x, y: l.p.y };
+            const s = ((l.p.x - pred.p.x) * l.dy - (l.p.y - pred.p.y) * l.dx) / det;
+            return { x: pred.p.x + pred.dx * s, y: pred.p.y + pred.dy * s };
+        });
+        return spojene.map((l, i) => ({
+            a: vrcholy[i], b: vrcholy[(i + 1) % m],
+            klic: l.zed ? 'zed' + i : (l.klic || ('i' + i)), zed: l.zed,
+        })).filter(h => Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y) > 0.01);
+    }
+
+    const Strecha = {
+        vypocet, parametryHran, vyskaVBode, izocara, podUrovni, obrysZRastru, hranyObrysu, typyHran, plochaPolygonu, konvexniDily,
+        typyHranNizsi, orizniMimo, useckyMimo, oblastBez, dorovnejObrys, bodUvnitr, zjednodus,
+    };
     if (typeof window !== 'undefined') window.Strecha = Strecha;
     if (typeof module !== 'undefined' && module.exports) module.exports = Strecha;
 })();

@@ -50,6 +50,27 @@
     const ATIKA_SIRKA = 0.25;
     const ATIKA_VYSKA = 0.4;
 
+    // Nižší střecha nad částí podlaží, nad kterou už patro není (Libor 12. 11. 2026): editor ji přidá sám,
+    // výchozí pultová od zdi patra kolem 10°, okap ve výšce stropu toho podlaží. Jde přepnout na terasu
+    // (plochá pochozí z patra) nebo bez střechy. Barva jako hlavní střecha, krytina podle sklonu.
+    const NIZSI_SKLON = 10;
+    const NIZSI_PRESAH = 0.3;
+    const NIZSI_PRESAH_STIT = 0.1;
+    const NIZSI_MIN_SIRKA = 0.5;      // užší proužek (širší zeď dole než nahoře) není část pod vlastní střechou (m)
+    const NIZSI_MIN_PLOCHA = 0.8;     // m²
+    const ZABRADLI_VYSKA = 1.0;       // zábradlí terasy (m nad dlažbou)
+    // Bezpečný sklon krytiny podle země projektu (°). Pod ním dostane nižší střecha plech (falc) v barvě
+    // hlavní střechy, nad ním stejnou krytinu jako hlavní. Česko podle výrobců: drážkové pálené
+    // a betonové tašky 22°, bobrovka 30°, asfaltový šindel 15°, břidlice 25°, falcovaný plech 7°,
+    // trapézový 8°, vlnitý 10°. Ostatní země zatím stejně (národní specifikace editoru, modules/dum.md).
+    const SKLON_MIN_KRYTINY = {
+        CZ: { taska: 22, betonova: 22, bobrovka: 30, sindel: 15, bridlice: 25, falc: 7, trapez: 8, vlnity: 10 },
+    };
+    const sklonMinKrytiny = (typ) => {
+        const zeme = (typeof window !== 'undefined' && window.TT_LOKALIZACE?.zeme) || 'CZ';
+        return (SKLON_MIN_KRYTINY[zeme] || SKLON_MIN_KRYTINY.CZ)[typ] ?? 0;
+    };
+
     // Dekor podlahy místnosti. Barva je zvlášť, `barva` zde platí, dokud si ji uživatel nezmění.
     // `metru` = kolik metrů pokryje jedna dlaždice textury.
     const DEKORY_PODLAH = [
@@ -142,6 +163,15 @@
         { id: 'valbova', nazev: preloz('ed_dum.typ_strechy.valbova'), sklon: 30 },
         { id: 'pultova', nazev: preloz('ed_dum.typ_strechy.pultova'), sklon: 15 },
         { id: 'plocha', nazev: preloz('ed_dum.typ_strechy.plocha'), sklon: 2 },
+    ];
+    // Nižší střecha má navíc terasu a volbu bez střechy; pultová stoupá ke zdi patra
+    const TYPY_NIZSICH = [
+        { id: 'pultova', nazev: preloz('ed_dum.typ_strechy.pultova'), sklon: NIZSI_SKLON },
+        { id: 'sedlova', nazev: preloz('ed_dum.typ_strechy.sedlova'), sklon: 38 },
+        { id: 'valbova', nazev: preloz('ed_dum.typ_strechy.valbova'), sklon: 30 },
+        { id: 'plocha', nazev: preloz('ed_dum.typ_strechy.plocha'), sklon: 2 },
+        { id: 'terasa', nazev: preloz('ed_dum.typ_strechy.terasa'), sklon: 2 },
+        { id: 'zadna', nazev: preloz('ed_dum.typ_strechy.zadna'), sklon: NIZSI_SKLON },
     ];
     // Úroveň podlahy místnosti. „bezna" nemá záznam v dum.plochy, ostatní ano (obrys = místnost).
     // Dřívější „prostup" byl totéž co bez podlahy (otvor ve stropu pod místností), sjednoceno 3. 11. 2026.
@@ -463,6 +493,81 @@
         return nej;
     }
 
+    /**
+     * Vzdálenost každé buňky rastru k nejbližší buňce s cil = 0, zkosená metrika 3-4
+     * (výsledek ve třetinách buňky). Dva průchody, buňky mimo rastr se neberou.
+     */
+    function vzdalenostRastru(cil, w, h) {
+        const D = new Float32Array(w * h);
+        for (let i = 0; i < w * h; i++) D[i] = cil[i] ? 1e9 : 0;
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const i = y * w + x;
+                let v = D[i];
+                if (!v) continue;
+                if (x > 0) v = Math.min(v, D[i - 1] + 3);
+                if (y > 0) {
+                    v = Math.min(v, D[i - w] + 3);
+                    if (x > 0) v = Math.min(v, D[i - w - 1] + 4);
+                    if (x < w - 1) v = Math.min(v, D[i - w + 1] + 4);
+                }
+                D[i] = v;
+            }
+        }
+        for (let y = h - 1; y >= 0; y--) {
+            for (let x = w - 1; x >= 0; x--) {
+                const i = y * w + x;
+                let v = D[i];
+                if (!v) continue;
+                if (x < w - 1) v = Math.min(v, D[i + 1] + 3);
+                if (y < h - 1) {
+                    v = Math.min(v, D[i + w] + 3);
+                    if (x < w - 1) v = Math.min(v, D[i + w + 1] + 4);
+                    if (x > 0) v = Math.min(v, D[i + w - 1] + 4);
+                }
+                D[i] = v;
+            }
+        }
+        return D;
+    }
+
+    /** Otevření masky: zmizí proužky užší než 2r buněk, zbytek zůstane (konvexní rohy se zakulatí). */
+    function otevreniRastru(M, w, h, r) {
+        const k = vzdalenostRastru(M, w, h);
+        const mimoJadro = new Uint8Array(w * h);
+        for (let i = 0; i < w * h; i++) mimoJadro[i] = k[i] > 3 * r ? 0 : 1;
+        const kJadru = vzdalenostRastru(mimoJadro, w, h);
+        const O = new Uint8Array(w * h);
+        for (let i = 0; i < w * h; i++) O[i] = M[i] && kJadru[i] <= 3 * r ? 1 : 0;
+        return O;
+    }
+
+    /** Vnější obrys komponenty (štítek `k` v poli `stitky`) jako cesta po rozích buněk, (x, y) v buňkách. */
+    function obrysKomponenty(stitky, w, h, k) {
+        const uvnitr = (x, y) => x >= 0 && y >= 0 && x < w && y < h && stitky[y * w + x] === k;
+        let sx = -1, sy = -1;
+        hledej: for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) if (uvnitr(x, y)) { sx = x; sy = y; break hledej; }
+        }
+        if (sx < 0) return [];
+        const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];
+        const cesta = [];
+        let x = sx, y = sy, s = 0, kroku = 0;
+        const limit = 4 * (w + h) * 20;
+        do {
+            cesta.push({ x, y });
+            let lx, ly, px, py;
+            if (s === 0) { lx = x; ly = y - 1; px = x; py = y; }
+            else if (s === 1) { lx = x; ly = y; px = x - 1; py = y; }
+            else if (s === 2) { lx = x - 1; ly = y; px = x - 1; py = y - 1; }
+            else { lx = x - 1; ly = y - 1; px = x; py = y - 1; }
+            if (uvnitr(lx, ly)) s = (s + 3) % 4;
+            else if (!uvnitr(px, py)) s = (s + 1) % 4;
+            x += DX[s]; y += DY[s];
+        } while ((x !== sx || y !== sy) && ++kroku < limit);
+        return cesta;
+    }
+
     window.DumGeo = { schodyGeo, castiSchodu, bodVPolygonu, hraniceSchodu, odectiKonvexni };
 
     window.KonceptDum = {
@@ -474,6 +579,7 @@
         zobrazSpodek: true,
         rezimStrecha: false,
         strechaHrana: null,        // klíč vybrané hrany střechy
+        strechaVyber: null,        // upravovaná střecha: null = hlavní, jinak id nižší střechy (_nizsiStrechy)
         skryte3d: [],              // 3D: podlaží vypnutá v seznamu
         zobrazStrechu3d: true,
         dumZprava: '',
@@ -495,7 +601,7 @@
                 druhy: seznam.filter(d => druhy[d]).map(d => ({ id: d, nazev: preloz('ed_kresba.' + druhy[d]) })),
             }));
         },
-        get typyStrechVolby() { return TYPY_STRECH; },
+        get typyStrechVolby() { return this._vybranaNizsi() ? TYPY_NIZSICH : TYPY_STRECH; },
         get typyPlochVolby() { return TYPY_PLOCH; },
 
         dumInit() {
@@ -705,6 +811,11 @@
             this._zrusRozkreslene();
             this.engine.pushUndo();
             this.engine.smazPodlazi(id);
+            // Ruční nastavení nižších střech smazaného podlaží už nemá k čemu patřit
+            const nizsi = this.engine.dum.nizsiStrechy || {};
+            if (Object.keys(nizsi).some(k => k.startsWith(id + '|'))) {
+                this.engine.dum.nizsiStrechy = Object.fromEntries(Object.entries(nizsi).filter(([k]) => !k.startsWith(id + '|')));
+            }
             if (this.metadata?.podklady?.[id]) {
                 const { [id]: _pryc, ...zbytek } = this.metadata.podklady;
                 this.metadata = { ...this.metadata, podklady: zbytek };
@@ -2036,33 +2147,52 @@
             // eslint-disable-next-line no-unused-vars
             const _tick = this._selectionTick;
             if (!this.engine) return null;
-            const st = this.engine.dum.strecha;
-            if (!st) return { st: null };
-            const v = this._strechaVypocet();
-            const hrana = v && this.strechaHrana && !this.rezim3d ? (v.hrany || []).find(h => h.klic === this.strechaHrana) : null;
+            const hlavni = this.engine.dum.strecha;
+            if (!hlavni) return { st: null };
+            // Upravuje se hlavní střecha, nebo nižší vybraná v panelu či klepnutím v půdorysu
+            const nizsi = this._vybranaNizsi();
+            const st = nizsi ? nizsi.nast : hlavni;
+            const v = nizsi ? nizsi.v : this._strechaVypocet();
+            const zOkap = nizsi ? nizsi.v.zOkap : this._vyskaOkapu();
+            const typ = nizsi ? st.krytina : typKrytiny(st);
+            const barva = nizsi ? st.barva : barvaKrytiny(st);
+            const hrana = v && this.strechaHrana && !this.rezim3d ? (v.hrany || []).find(h => h.klic === this.strechaHrana && !h.zed) : null;
             let hranaData = null;
             if (hrana) {
-                const q = window.Strecha.parametryHran([hrana], { zOkap: this._vyskaOkapu(), presah: st.presah, presahStit: st.presahStit, sklon: st.sklon })[0];
+                const q = window.Strecha.parametryHran([hrana], { zOkap, presah: st.presah, presahStit: st.presahStit, sklon: st.sklon })[0];
                 hranaData = {
                     klic: hrana.klic, typ: hrana.typ, sklon: hrana.sklon, presah: q.presah, z: q.z, barva: hrana.barva || null, rucne: !!(st.hrany || {})[hrana.klic],
-                    vzhled: vzhledKrytiny(typKrytiny(st), hrana.barva || barvaKrytiny(st))?.id || null,
+                    vzhled: vzhledKrytiny(typ, hrana.barva || barva)?.id || null,
                 };
             }
-            const typ = typKrytiny(st);
-            const vzhled = vzhledKrytiny(typ, barvaKrytiny(st));
+            const vzhled = vzhledKrytiny(typ, barva);
+            const ploche = st.typ === 'plocha' || st.typ === 'terasa' || st.typ === 'zadna';
+            const sklonMin = sklonMinKrytiny(typ);
             return {
                 st,
+                id: nizsi ? nizsi.id : '',
+                nizsi: !!nizsi,
+                volby: this.strechyVolby,
                 krytina: typ,
-                barva: barvaKrytiny(st),
+                barva,
                 // Tašky, bobrovka, šindel a břidlice: vzhledy z fotografií místo volné barvy (krytiny-3d.js)
-                vzhledy: vzhled && !vzhled.prebarvit ? window.Krytiny3d.typu(typ).map(v => ({
-                    id: v.id, hex: v.hex, nahled: window.Krytiny3d.nahled(v.id), nazev: preloz('ed_dum.vzhled_krytiny.' + v.id),
+                vzhledy: vzhled && !vzhled.prebarvit ? window.Krytiny3d.typu(typ).map(x => ({
+                    id: x.id, hex: x.hex, nahled: window.Krytiny3d.nahled(x.id), nazev: preloz('ed_dum.vzhled_krytiny.' + x.id),
                 })) : [],
                 vzhled: vzhled?.id || null,
-                zOkap: this._vyskaOkapu(),
-                zMax: v && !v.plocha ? v.zMax + this._tloustkaStrechy() : null,
+                zOkap,
+                zMax: v && !v.plocha && !ploche && v.plochy?.length ? v.zMax + this._tloustkaStrechy(st.sklon) : null,
                 bezObrysu: !v,
                 hrana: hranaData,
+                // Terasa a bez střechy krytinu nemají, plochá má asfaltový pás jako hlavní plochá
+                bezKrytiny: !!nizsi && (st.typ === 'terasa' || st.typ === 'zadna'),
+                bezSklonu: ploche,
+                // Krytina podle sklonu (jen nižší střecha bez ručně zvolené krytiny)
+                autoKrytina: !!nizsi && !st.rucneKrytina,
+                autoText: nizsi ? preloz('ed_dum.nizsi.krytina_auto', { sklon: sklonMinKrytiny(typKrytiny(hlavni)), krytina: (TYPY_KRYTIN.find(k => k.id === typKrytiny(hlavni)) || {}).nazev || '' }) : '',
+                // Krytina pod svým bezpečným sklonem (ručně zvolená, nebo hlavní střecha)
+                podSklonem: !ploche && sklonMin > 0 && st.sklon < sklonMin - 1e-9
+                    ? preloz('ed_dum.nizsi.pod_sklonem', { sklon: sklonMin }) : '',
             };
         },
 
@@ -2079,9 +2209,48 @@
             this.zmerFunkci?.('strecha');
         },
 
+        /** Úprava nižší střechy: do dum.nizsiStrechy jdou jen ruční hodnoty, zbytek dopočítá _nastaveniNizsi. */
+        _setNizsi(n, klic, hodnota) {
+            const d = this.engine.dum;
+            this.engine.pushUndo();
+            this._barvaNahled = null;
+            const o = { ...((d.nizsiStrechy || {})[n.id] || {}) };
+            if (klic === 'typ') {
+                o.typ = hodnota;
+                o.hrany = {};          // předvolba nastaví hrany znovu
+                const t = TYPY_NIZSICH.find(x => x.id === hodnota);
+                if (t && hodnota !== 'terasa' && hodnota !== 'zadna') o.sklon = t.sklon;
+            } else if (klic === 'otocHreben') {
+                o.otocHreben = !n.nast.otocHreben;
+                o.hrany = {};
+            } else if (klic === 'sklon') {
+                o.sklon = omez(Number(hodnota) || 1, 1, 75);
+            } else if (klic === 'presah' || klic === 'presahStit') {
+                o[klic] = omez(Number(hodnota) || 0, 0, 3);
+            } else if (klic === 'vyskaOkapu') {
+                if (hodnota === null || hodnota === '' || isNaN(hodnota)) delete o.vyskaOkapu;
+                else o.vyskaOkapu = omez(Number(hodnota), 0, 12);
+            } else if (klic === 'krytina') {
+                o.krytina = hodnota;
+                // Tašky a spol. mají vzhled z fotografie, plech zůstane v barvě hlavní střechy, dokud ji uživatel nezmění
+                const v = vzhledKrytiny(hodnota, n.nast.barva);
+                if (v && !v.prebarvit) o.barva = v.hex;
+                else if (o.barva) o.barva = n.nast.barva;
+            } else if (klic === 'barva') {
+                o.barva = hodnota;
+            } else if (klic === 'podleSklonu') {
+                delete o.krytina;
+                delete o.barva;
+            }
+            d.nizsiStrechy = { ...(d.nizsiStrechy || {}), [n.id]: o };
+            this._poZmeneDomu(preloz('ed_dum.krok.nizsi_strecha'));
+        },
+
         setStrecha(klic, hodnota) {
             const st = this.engine.dum.strecha;
             if (!st) return;
+            const nizsi = this._vybranaNizsi();
+            if (nizsi) { this._setNizsi(nizsi, klic, hodnota); return; }
             this.engine.pushUndo();
             this._barvaNahled = null;
             if (klic === 'typ') {
@@ -2111,10 +2280,19 @@
             this._poZmeneDomu(preloz('ed_dum.strecha'));
         },
 
+        /** Objekt, do kterého se zapisuje nastavení hran upravované střechy (hlavní, nebo ruční hodnoty nižší). */
+        _zapisStrechy() {
+            const d = this.engine.dum;
+            const nizsi = this._vybranaNizsi();
+            if (!nizsi) return d.strecha;
+            d.nizsiStrechy = { ...(d.nizsiStrechy || {}), [nizsi.id]: { ...((d.nizsiStrechy || {})[nizsi.id] || {}) } };
+            return d.nizsiStrechy[nizsi.id];
+        },
+
         setHranaStrechy(klic, nastav) {
-            const st = this.engine.dum.strecha;
-            if (!st) return;
+            if (!this.engine.dum.strecha) return;
             this.engine.pushUndo();
+            const st = this._zapisStrechy();
             this._barvaNahled = null;
             const hrana = { ...((st.hrany || {})[klic] || {}), ...nastav };
             for (const k of Object.keys(hrana)) if (hrana[k] === null || hrana[k] === undefined || hrana[k] === '' || Number.isNaN(hrana[k])) delete hrana[k];
@@ -2148,6 +2326,13 @@
                 const typ = typKrytiny(d.strecha);
                 pridej('strecha', barvaZobrazena(typ, barvaKrytiny(d.strecha)), preloz('ed_dum.strecha'));
                 for (const [k, h] of Object.entries(d.strecha.hrany || {})) pridej('hrana:' + k, h.barva && barvaZobrazena(typ, h.barva), preloz('ed_dum.hrana_strechy'));
+                // Nižší střechy: jen vlastní barvy, bez nich mají barvu hlavní
+                for (const [id, o] of Object.entries(d.nizsiStrechy || {})) {
+                    if (!o || !this._nizsiStrechy().some(n => n.id === id)) continue;
+                    const typN = this._nastaveniNizsi(id).krytina;
+                    if (o.barva) pridej('strecha:' + id, barvaZobrazena(typN, o.barva), preloz('ed_dum.strecha'));
+                    for (const [k, h] of Object.entries(o.hrany || {})) pridej('hrana:' + id + ':' + k, h.barva && barvaZobrazena(typN, h.barva), preloz('ed_dum.hrana_strechy'));
+                }
             }
             // Fasáda a otvory se počítají, jen když na domě opravdu jsou
             let steny = false;
@@ -2255,12 +2440,14 @@
 
         /** Za tahu posuvníkem jen překreslí střechu, krok historie vznikne až po puštění. */
         nahledBarvyStrechy(hex, klic = null) {
-            this._barvaNahled = { hex, klic };
+            const strecha = this.strechaVyber || 'hlavni';
+            this._barvaNahled = { hex, klic, strecha };
             if (!this.rezim3d) { this._renderDum(); return; }
             const dum = window._kk3d?.dumSkupina;
             if (!dum) return;
             for (const o of dum.children) {
                 const u = o.userData;
+                if ((u.strechaId || 'hlavni') !== strecha) continue;
                 if (u.krytina && (klic ? u.klic === klic : !u.vlastniBarva)) o.material.color.set(hex);
                 // Čelo, žlaby a hřebenáče jdou s barvou celé střechy
                 if (u.oplechovani && !klic) for (const m of [].concat(o.material)) if (m.userData.odstin) m.color.set(hex).multiplyScalar(m.userData.odstin);
@@ -2269,19 +2456,24 @@
 
         /** Hrana znovu bere vše z nastavení celé střechy. */
         hranaJakoCelek(klic) {
-            const st = this.engine.dum.strecha;
-            if (!st || !(st.hrany || {})[klic]) return;
+            const nizsi = this._vybranaNizsi();
+            const puvodni = nizsi ? (this.engine.dum.nizsiStrechy || {})[nizsi.id] : this.engine.dum.strecha;
+            if (!puvodni || !(puvodni.hrany || {})[klic]) return;
             this.engine.pushUndo();
+            const st = this._zapisStrechy();
             const { [klic]: _pryc, ...zbytek } = st.hrany;
             st.hrany = zbytek;
             this._poZmeneDomu(preloz('ed_dum.hrana_strechy'));
         },
 
+        /** Smaže hlavní střechu i nižší (bez hlavní nevznikají), jeden krok Zpět. */
         smazatStrechu() {
             if (!this.engine.dum.strecha || !this.potvrditSmazani?.(preloz('ed_dum.strecha'))) return;
             this.engine.pushUndo();
             this.engine.dum.strecha = null;
+            this.engine.dum.nizsiStrechy = {};
             this.strechaHrana = null;
+            this.strechaVyber = null;
             this._poZmeneDomu(preloz('ed_dum.krok.smazani_strechy'));
         },
 
@@ -2331,6 +2523,218 @@
             }
             this._strechaCache = { klic, vysledek };
             return vysledek;
+        },
+
+        // ─── Nižší střechy (Libor 12. 11. 2026) ─────────────────
+        /**
+         * Části podlaží, nad kterými už patro není: garáž, krytý vstup, terasa. Obrys podlaží (se sloupy
+         * v rohu výklenku) bez obrysu podlaží hned nad ním, v rastru po 2,5 cm. Proužky užší než
+         * NIZSI_MIN_SIRKA (širší zeď dole než nahoře) otevření rastru vyhodí, obrys části se pak dorovná
+         * na líce podlaží (klíč stěny jako u hlavní střechy) a na obrys patra (hrana `zed`). Část, která
+         * patro obklopuje ze všech stran, má patro jako díru (`diry`). Metry plátna (y dolů).
+         * Id části = podlaží | klíč nejdelší hrany se stěnou, aby nastavení drželo i po úpravě kresby.
+         */
+        _castiNizsich() {
+            const d = this.engine?.dum;
+            if (!d || d.podlazi.length < 2 || typeof document === 'undefined' || !window.Strecha) return [];
+            if ((this.isDraggingNode || this.isDraggingWall) && this._castiCache) return this._castiCache.casti;
+            const S = window.Strecha;
+            const klic = d.podlazi.map(p => { const eng = this.engine.enginePodlazi(p.id); return p.id + ':' + (eng ? eng.geoPodpis() : '-'); }).join('|')
+                + '#' + JSON.stringify((d.sloupy || []).filter(s => s.strecha !== false).map(s => [s.podlazi, s.x, s.y, s.sirka, s.tvar, s.uhel]));
+            if (this._castiCache && this._castiCache.klic === klic) return this._castiCache.casti;
+            const RES = 0.025;
+            const casti = [];
+            d.podlazi.forEach((p, i) => {
+                const nad = d.podlazi[i + 1];
+                if (!nad) return;
+                const hranyU = this._obrysPodlazi(nad.id);
+                const hranyP0 = this._obrysPodlazi(p.id);
+                // Prázdné patro (ještě nenakreslené) nic nezakrývá, ale ani nevytvoří střechu nad celým podlažím
+                if (!hranyU || hranyU.length < 3 || !hranyP0 || hranyP0.length < 3) return;
+                const vyklenky = [];
+                const hranyP = this._obrysSeSloupy(hranyP0, p.id, vyklenky);
+                const U = hranyU.map(h => h.a), Pp = hranyP.map(h => h.a);
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for (const q of Pp) { minX = Math.min(minX, q.x); maxX = Math.max(maxX, q.x); minY = Math.min(minY, q.y); maxY = Math.max(maxY, q.y); }
+                const okraj = 4 * RES;
+                const x0 = minX - okraj, y0 = minY - okraj;
+                const w = Math.ceil((maxX - minX + 2 * okraj) / RES), h = Math.ceil((maxY - minY + 2 * okraj) / RES);
+                if (w < 4 || h < 4 || w * h > 4e6) return;
+                const cv = document.createElement('canvas');
+                cv.width = w; cv.height = h;
+                const g = cv.getContext('2d', { willReadFrequently: true });
+                const cesta = (poly) => {
+                    g.beginPath();
+                    poly.forEach((q, k) => { const x = (q.x - x0) / RES, y = (q.y - y0) / RES; if (k) g.lineTo(x, y); else g.moveTo(x, y); });
+                    g.closePath();
+                };
+                g.fillStyle = '#000';
+                cesta(Pp);
+                g.fill();
+                g.globalCompositeOperation = 'destination-out';
+                cesta(U);
+                g.fill();
+                const data = g.getImageData(0, 0, w, h).data;
+                const M = new Uint8Array(w * h);
+                let pocet = 0;
+                for (let k = 0; k < w * h; k++) if (data[k * 4 + 3] > 127) { M[k] = 1; pocet++; }
+                if (pocet * RES * RES < NIZSI_MIN_PLOCHA) return;
+                const O = otevreniRastru(M, w, h, Math.round(NIZSI_MIN_SIRKA / 2 / RES));
+                // Komponenty otevřené masky
+                const stitky = new Int32Array(w * h);
+                const zasobnik = new Int32Array(w * h);
+                let dalsi = 1;
+                const primky = [...hranyP.map(hh => ({ a: hh.a, b: hh.b, klic: hh.klic })), ...hranyU.map(hh => ({ a: hh.a, b: hh.b, zed: true }))];
+                const engP = this.engine.enginePodlazi(p.id);
+                const PX = this.engine.PX_PER_M;
+                const naPodlazi = [];
+                for (let start = 0; start < w * h; start++) {
+                    if (!O[start] || stitky[start]) continue;
+                    const k = dalsi++;
+                    let n = 0, bunek = 0;
+                    zasobnik[n++] = start;
+                    stitky[start] = k;
+                    while (n > 0) {
+                        const c = zasobnik[--n];
+                        bunek++;
+                        const x = c % w;
+                        if (x > 0 && O[c - 1] && !stitky[c - 1]) { stitky[c - 1] = k; zasobnik[n++] = c - 1; }
+                        if (x < w - 1 && O[c + 1] && !stitky[c + 1]) { stitky[c + 1] = k; zasobnik[n++] = c + 1; }
+                        if (c >= w && O[c - w] && !stitky[c - w]) { stitky[c - w] = k; zasobnik[n++] = c - w; }
+                        if (c < w * (h - 1) && O[c + w] && !stitky[c + w]) { stitky[c + w] = k; zasobnik[n++] = c + w; }
+                    }
+                    const plochaBunek = bunek * RES * RES;
+                    if (plochaBunek < NIZSI_MIN_PLOCHA) continue;
+                    const body = S.zjednodus(obrysKomponenty(stitky, w, h, k).map(c => ({ x: x0 + c.x * RES, y: y0 + c.y * RES })), RES * 1.6);
+                    const hrany = S.dorovnejObrys(body, primky);
+                    if (hrany.length < 3) continue;
+                    const poly = hrany.map(hh => hh.a);
+                    const plochaObrysu = Math.abs(S.plochaPolygonu(poly));
+                    if (plochaObrysu < NIZSI_MIN_PLOCHA) continue;
+                    // Obrys komponenty kolem patra obklopí i patro: to je díra, střecha se jím ořízne
+                    const diry = plochaObrysu - plochaBunek > Math.max(0.5, 0.5 * Math.abs(S.plochaPolygonu(U))) ? [U] : [];
+                    // Nastavení drží klíč nejdelší hrany se stěnou podlaží
+                    let kotva = null;
+                    for (const hh of hrany) {
+                        if (hh.zed || !String(hh.klic).includes(':')) continue;
+                        if (!kotva || Math.hypot(hh.b.x - hh.a.x, hh.b.y - hh.a.y) > Math.hypot(kotva.b.x - kotva.a.x, kotva.b.y - kotva.a.y)) kotva = hh;
+                    }
+                    let id = p.id + '|' + (kotva ? kotva.klic : 'c' + naPodlazi.length);
+                    while (casti.some(c => c.id === id)) id += '+';
+                    // Název podle místnosti v části (garáž, zádveří…), jinak jen podlaží
+                    const mistnost = (engP?.mistnosti || []).find(m => m.kotva && m.nazev && S.bodUvnitr({ x: m.kotva.x / PX, y: m.kotva.y / PX }, poly));
+                    const cast = {
+                        id, podlazi: p.id, hrany, poly, diry, patro: U, plocha: plochaObrysu,
+                        oblast: S.oblastBez(poly, diry),
+                        vyklenky: vyklenky.filter(v => S.bodUvnitr(v.poly.reduce((a, q) => ({ x: a.x + q.x / v.poly.length, y: a.y + q.y / v.poly.length }), { x: 0, y: 0 }), poly)),
+                        mistnost: mistnost ? mistnost.nazev : null,
+                    };
+                    naPodlazi.push(cast);
+                    casti.push(cast);
+                }
+                naPodlazi.forEach((c, k) => {
+                    c.nazev = p.nazev + ' – ' + (c.mistnost || (naPodlazi.length > 1 ? preloz('ed_dum.nizsi.cast_n', { n: k + 1 }) : preloz('ed_dum.nizsi.cast')));
+                });
+            });
+            this._castiCache = { klic, casti };
+            return casti;
+        },
+
+        /**
+         * Platné nastavení nižší střechy: výchozí hodnoty, ruční úpravy (dum.nizsiStrechy[id]) a krytina
+         * podle sklonu. Barva je barva hlavní střechy; pod bezpečným sklonem její krytiny dostane nižší
+         * střecha plech (falc) v té barvě, nad ním stejnou krytinu jako hlavní (Libor 12. 11. 2026).
+         */
+        _nastaveniNizsi(id) {
+            const d = this.engine.dum;
+            const o = (d.nizsiStrechy || {})[id] || {};
+            const hl = d.strecha || this._novaStrecha();
+            const typ = TYPY_NIZSICH.some(t => t.id === o.typ) ? o.typ : 'pultova';
+            const sklon = typeof o.sklon === 'number' ? o.sklon : NIZSI_SKLON;
+            const typHl = typKrytiny(hl), barvaHl = barvaKrytiny(hl);
+            const jakoHlavni = hl.typ !== 'plocha' && sklon >= sklonMinKrytiny(typHl) - 1e-9;
+            const autoKrytina = jakoHlavni ? typHl : 'falc';
+            const krytina = TYPY_KRYTIN.some(k => k.id === o.krytina) ? o.krytina : autoKrytina;
+            const barva = o.barva || (krytina === typHl || hl.typ === 'plocha' ? barvaHl : barvaZobrazena(typHl, barvaHl));
+            const cislo = (x, vychozi) => (typeof x === 'number' && isFinite(x) ? x : vychozi);
+            return {
+                typ, sklon, presah: cislo(o.presah, NIZSI_PRESAH), presahStit: cislo(o.presahStit, NIZSI_PRESAH_STIT),
+                vyskaOkapu: typeof o.vyskaOkapu === 'number' ? o.vyskaOkapu : null,
+                krytina, barva, otocHreben: !!o.otocHreben, hrany: o.hrany || {},
+                rucneKrytina: !!o.krytina, autoKrytina,
+            };
+        },
+
+        /**
+         * Nižší střechy spočítané nad částmi podlaží bez patra (jen s hlavní střechou). Výška v metrech
+         * nad podlahou podlaží té části, okap ve výšce jeho stropu. Ploché, terasa a bez střechy nemají
+         * kostru, jen oblast (konvexní díly). Výsledek se drží, dokud se nezmění obrysy nebo nastavení.
+         */
+        _nizsiStrechy() {
+            const d = this.engine?.dum;
+            if (!d || !d.strecha || !window.Strecha) return [];
+            const casti = this._castiNizsich();
+            if (!casti.length) return [];
+            const S = window.Strecha;
+            const klic = (this._castiCache?.klic || '') + '#' + JSON.stringify(d.nizsiStrechy || {}) + '#' + JSON.stringify([d.strecha.typ, d.strecha.krytina, d.strecha.barva])
+                + '#' + d.podlazi.map(p => p.vyska + ',' + p.strop + ',' + p.nazev).join(';') + '#' + ((typeof window !== 'undefined' && window.TT_LOKALIZACE?.zeme) || '');
+            if (this._nizsiCache && this._nizsiCache.klic === klic) return this._nizsiCache.vysledek;
+            const vysledek = [];
+            for (const c of casti) {
+                const nast = this._nastaveniNizsi(c.id);
+                const p = this.engine.podlaziPodleId(c.podlazi);
+                const zOkap = nast.vyskaOkapu ?? p.vyska;
+                const typy = S.typyHranNizsi(nast, c.hrany, c.diry[0] || null);
+                let v = null;
+                if (nast.typ === 'plocha' || nast.typ === 'terasa' || nast.typ === 'zadna') {
+                    v = { plocha: nast.typ === 'plocha', terasa: nast.typ === 'terasa', zadna: nast.typ === 'zadna', hrany: typy, zOkap, plochy: [], stity: [], hrebeny: [], zMax: zOkap };
+                } else {
+                    try {
+                        v = S.vypocet(typy, { zOkap, presah: nast.presah, presahStit: nast.presahStit, sklon: nast.sklon });
+                        if (c.diry.length) {
+                            for (const pl of v.plochy) pl.troj = S.orizniMimo(pl.troj, c.diry[0]);
+                            v.plochy = v.plochy.filter(pl => pl.troj.length);
+                            v.hrebeny = S.useckyMimo(v.hrebeny, c.diry[0]);
+                        }
+                        v.hrany = typy;
+                        v.zOkap = zOkap;
+                    } catch (e) {
+                        window.zalogujChybu?.(e, 'Výpočet nižší střechy', { typ: nast.typ, hran: c.hrany.length, id: c.id });
+                        v = null;
+                    }
+                }
+                if (!v) continue;
+                v.vyklenky = c.vyklenky;
+                vysledek.push({ ...c, nast, v });
+            }
+            this._nizsiCache = { klic, vysledek };
+            return vysledek;
+        },
+
+        /** Nižší střecha vybraná v panelu, null = hlavní (i když vybraná část mezitím zmizela). */
+        _vybranaNizsi() {
+            // eslint-disable-next-line no-unused-vars
+            const _tick = this._selectionTick;
+            if (!this.strechaVyber || !this.engine) return null;
+            return this._nizsiStrechy().find(n => n.id === this.strechaVyber) || null;
+        },
+
+        /** Výběr upravované střechy v panelu: hlavní a nižší podle podlaží. Prázdný, když nižší nejsou. */
+        get strechyVolby() {
+            // eslint-disable-next-line no-unused-vars
+            const _tick = this._selectionTick;
+            if (!this.engine?.dum.strecha) return [];
+            const nizsi = this._nizsiStrechy();
+            if (!nizsi.length) return [];
+            return [{ id: '', nazev: preloz('ed_dum.nizsi.hlavni') }, ...nizsi.map(n => ({ id: n.id, nazev: n.nazev }))];
+        },
+
+        vyberStrechu(id) {
+            this.strechaVyber = id || null;
+            this.strechaHrana = null;
+            this._barvaNahled = null;
+            this.renderer?.render();
+            this._selectionTick++;
         },
 
         /** Části trojúhelníků {x,y,z}, kde g(bod) ≥ 0 (g je lineární v x, y); nulové kousky vypadnou. */
@@ -2457,14 +2861,19 @@
         /** @returns {boolean} true = vstup vyřízen, editor ho dál nezpracovává */
         domStisk(pos, e, hit) {
             if (this.rezimStrecha) {
-                if (hit && hit.type === 'hranaStrechy') {
-                    this.strechaHrana = hit.klic;
+                if (hit && (hit.type === 'hranaStrechy' || hit.type === 'strecha')) {
+                    // Klepnutí na hranu nebo plochu vybere i střechu, ke které patří (hlavní, nebo nižší)
+                    const id = hit.type === 'strecha' ? hit.id : hit.strecha;
+                    this.strechaVyber = id && id !== 'hlavni' ? id : null;
+                    this.strechaHrana = hit.type === 'hranaStrechy' ? hit.klic : null;
+                    this._barvaNahled = null;
                     this.podlaziUprava = 'strecha';
                     this.panelOpen.plochy = true;
                 } else {
                     this.strechaHrana = null;
                 }
                 this.renderer.render();
+                this._selectionTick++;
                 return true;
             }
             if (this.posunPodkladu) {
@@ -2910,28 +3319,51 @@
             r.strechaLayer.batchDraw();
         },
 
+        /** Půdorys střech: hlavní nad horním podlažím a nižší nad částmi podlaží bez patra. */
         _renderStrecha2d(r, s, primary, popisek) {
-            const PX = this.engine.PX_PER_M;
             const st = this.engine.dum.strecha;
             if (!st) return;
             const v = this._strechaVypocet();
-            if (!v) return;
-            const nahled = this._barvaNahled;
-            const typ = typKrytiny(st);
-            const krytina = nahled && !nahled.klic ? nahled.hex : barvaZobrazena(typ, barvaKrytiny(st));
+            if (v) this._kresliStrechu2d(r, s, primary, popisek, v, { id: 'hlavni', typ: typKrytiny(st), barva: barvaKrytiny(st) });
+            for (const n of this._nizsiStrechy()) {
+                this._kresliStrechu2d(r, s, primary, popisek, n.v, { id: n.id, typ: n.nast.krytina, barva: n.nast.barva, nizsi: n });
+            }
+        },
+
+        /**
+         * Jedna střecha v půdorysu. Plochy jsou klikací (vyberou střechu), hrany přepínají okap a štít.
+         * Hrana nižší střechy u zdi patra klikací není, střecha na ní jen končí.
+         */
+        _kresliStrechu2d(r, s, primary, popisek, v, o) {
+            const PX = this.engine.PX_PER_M;
+            const vybrana = (this.strechaVyber || 'hlavni') === o.id;
+            const nahled = this._barvaNahled && (this._barvaNahled.strecha || 'hlavni') === o.id ? this._barvaNahled : null;
+            const typ = o.typ;
+            const krytina = nahled && !nahled.klic ? nahled.hex : barvaZobrazena(typ, o.barva);
+            const plocha = (body, fill, opacity = 0.22) => {
+                const tvar = new Konva.Line({ points: body.flatMap(b => [b.x * PX, b.y * PX]), closed: true, fill, opacity });
+                tvar.setAttr('_strechaId', o.id);
+                r.strechaLayer.add(tvar);
+            };
             for (const pl of v.plochy) {
                 const hranaPlochy = v.hrany.find(h => h.index === pl.hrana) || {};
                 const barva = nahled && nahled.klic === hranaPlochy.klic ? nahled.hex : (hranaPlochy.barva ? barvaZobrazena(typ, hranaPlochy.barva) : krytina);
-                for (const t of pl.troj) {
-                    r.strechaLayer.add(new Konva.Line({
-                        points: t.flatMap(b => [b.x * PX, b.y * PX]), closed: true,
-                        fill: barva, opacity: 0.22, listening: false,
-                    }));
-                }
+                for (const t of pl.troj) plocha(t, barva);
             }
-            if (v.plocha) {
+            if (v.plocha && !o.nizsi) plocha(v.hrany.map(h => h.a), krytina);
+            if (o.nizsi && (v.plocha || v.terasa || v.zadna)) {
+                // Plochá v barvě krytiny, terasa jako dlažba, bez střechy jen průhledně (klik ji pořád vybere)
+                const fill = v.terasa ? '#a8a29e' : v.zadna ? '#ffffff' : krytina;
+                for (const kus of o.nizsi.oblast) plocha(kus, fill, v.zadna ? 0.01 : 0.22);
+                const stred = o.nizsi.poly.reduce((a, q) => ({ x: a.x + q.x / o.nizsi.poly.length, y: a.y + q.y / o.nizsi.poly.length }), { x: 0, y: 0 });
+                const bod = window.Strecha.bodUvnitr(stred, o.nizsi.poly) ? stred : o.nizsi.oblast[0]?.[0] || stred;
+                popisek(r.strechaLayer, bod.x * PX, bod.y * PX, preloz('ed_dum.typ_strechy.' + o.nizsi.nast.typ), '#1d4ed8', 11);
+            }
+            if (o.nizsi) {
+                // Obrys nižší střechy: vybraná barvou značky, ostatní šedě; u zdi patra plná tenká čára
                 r.strechaLayer.add(new Konva.Line({
-                    points: v.hrany.flatMap(h => [h.a.x * PX, h.a.y * PX]), closed: true, fill: krytina, opacity: 0.22, listening: false,
+                    points: o.nizsi.poly.flatMap(b => [b.x * PX, b.y * PX]), closed: true,
+                    stroke: vybrana ? primary : '#9ca3af', strokeWidth: vybrana ? 2.5 : 1, strokeScaleEnabled: false, listening: false,
                 }));
             }
             for (const h of v.hrebeny) {
@@ -2946,16 +3378,22 @@
                     stroke: '#6b7280', strokeWidth: 1, strokeScaleEnabled: false, dash: [4, 4], listening: false,
                 }));
             }
-            // Hrany obrysu: klikací místo je všude modře čárkované, okap a štít odliší popisek
+            // Hrany obrysu: klikací místo je všude modře čárkované, okap a štít odliší popisek.
+            // Terasa a bez střechy hrany nemají co přepínat.
+            if (v.terasa || v.zadna) return;
             for (const h of v.hrany) {
-                const vybrana = this.strechaHrana === h.klic;
+                if (h.zed) continue;
+                const hranaVybrana = vybrana && this.strechaHrana === h.klic;
                 const cara = new Konva.Line({
                     points: [h.a.x * PX, h.a.y * PX, h.b.x * PX, h.b.y * PX],
-                    stroke: '#2563eb', strokeWidth: vybrana ? 6 : 3.5,
-                    strokeScaleEnabled: false, dash: [8, 5], hitStrokeWidth: 16 / s,
+                    stroke: '#2563eb', strokeWidth: hranaVybrana ? 6 : 3.5,
+                    // Bez škálování tahu je i šířka zásahu v pixelech obrazovky (dřív 16 / s, při oddálení desítky px)
+                    strokeScaleEnabled: false, dash: [8, 5], hitStrokeWidth: 16,
                 });
                 cara.setAttr('_hranaStrechy', h.klic);
+                cara.setAttr('_strechaId', o.id);
                 r.strechaLayer.add(cara);
+                if (v.plocha && o.nizsi) continue;
                 popisek(r.strechaLayer, (h.a.x + h.b.x) / 2 * PX, (h.a.y + h.b.y) / 2 * PX,
                     h.typ === 'okap' ? h.sklon + '°' : preloz('ed_dum.stit'), '#1d4ed8', 11);
             }
@@ -3290,7 +3728,8 @@
             const strechaVidet = this.zobrazStrechu3d;
             for (const o of dum.children) {
                 const u = o.userData;
-                if (u.strecha) o.visible = strechaVidet;
+                // Nižší střecha patří i ke svému podlaží: bez něj by visela ve vzduchu
+                if (u.strecha) o.visible = strechaVidet && (!u.nizsi || this._viditelne3d(u.nizsi));
                 else if (u.podlazi) o.visible = this._viditelne3d(u.podlazi);
                 else if (u.stropPod) {
                     // Deska patří podlaží nad ní jako podlaha. Bez něj je pryč, aby šlo vidět dovnitř;
@@ -3626,8 +4065,8 @@
         },
 
         /** Svislá tloušťka střešní desky (m): kolmo k rovině u základního sklonu vyjde TLOUSTKA_STRECHY. */
-        _tloustkaStrechy() {
-            const sklon = (this.engine.dum.strecha?.sklon || 35) * Math.PI / 180;
+        _tloustkaStrechy(sklonStupne = null) {
+            const sklon = (sklonStupne ?? this.engine.dum.strecha?.sklon ?? 35) * Math.PI / 180;
             return Math.min(0.6, TLOUSTKA_STRECHY / Math.max(0.3, Math.cos(sklon)));
         },
 
@@ -3637,7 +4076,7 @@
          * normály ven. Hrana trojúhelníku, kterou nesdílí jiný, je okrajem jen tehdy, když za ní
          * žádná střecha není: ve švech ploch (T-spoje po ořezu) by pás zůstal schovaný v desce.
          */
-        _okrajStrechy(plochy, T) {
+        _okrajStrechy(plochy, T, vynechat = null) {
             const klic = (b) => Math.round(b.x * 500) + ',' + Math.round(b.y * 500) + ',' + Math.round(b.z * 500);
             const hrany = new Map();
             for (const pl of plochy) {
@@ -3665,6 +4104,8 @@
                 if (o.x * (c.x - a.x) + o.y * (c.y - a.y) > 0) o = { x: -o.x, y: -o.y };
                 const st = { x: (a.x + b.x) / 2 + o.x * 0.05, y: (a.y + b.y) / 2 + o.y * 0.05 };
                 if (window.Strecha.vyskaVBode(plochy, st.x, st.y) !== null) continue;
+                // Za hranou stojí zeď patra (nižší střecha): čelo by leželo v jejím líci
+                if (vynechat && vynechat(st)) continue;
                 const nahoru = (p, dz) => ({ x: p.x, y: p.y, z: p.z + dz });
                 this._ctyruhelnik(cela, a, b, nahoru(b, T), nahoru(a, T), { x: o.x, y: o.y, z: 0 });
                 // Žlab jen pod vodorovnou hranou ve spodní výšce plochy (okap), ne na štítu
@@ -3869,17 +4310,26 @@
                 if (g.sloupek) dum.add(this._deska3d(naM(g.sloupek), [], kota, kota + g.n * g.v, matSvisle, { podlazi: s.odPodlazi, schody: s.id }));
             }
 
-            // Sloupy: od podlahy pod strop, na horním podlaží až pod střechu
+            // Nižší střechy nad částmi podlaží bez patra (garáž, krytý vstup, terasa); jen s hlavní střechou
+            const nizsi = d.strecha ? this._nizsiStrechy() : [];
+
+            // Sloupy: od podlahy pod strop, pod střechou (hlavní na horním podlaží, nižší jinde) až pod ni
             for (const s of d.sloupy || []) {
                 const p = e.podlaziPodleId(s.podlazi);
                 if (!p) continue;
                 const kota = kory.get(p.id) ?? 0;
                 const obrys = naM(this._obrysSloupu(s));
                 let vyska = e.svetlaVyska(p);
+                // Pod nejnižším rohem: střecha k okapu klesá a vyšší roh by jí prorazil
+                const podStrechou = (v) => {
+                    const z = v.plocha ? v.zOkap : Math.min(...obrys.map(q => window.Strecha.vyskaVBode(v.plochy, q.x, q.y) ?? Infinity));
+                    return isFinite(z) && z > 0.3 ? z : null;
+                };
                 if (st && p.id === e.horniPodlazi().id) {
-                    // Pod nejnižším rohem: střecha k okapu klesá a vyšší roh by jí prorazil
-                    const z = st.plocha ? st.zOkap : Math.min(...obrys.map(q => window.Strecha.vyskaVBode(st.plochy, q.x, q.y) ?? Infinity));
-                    if (isFinite(z) && z > 0.3) vyska = z;
+                    vyska = podStrechou(st) ?? vyska;
+                } else {
+                    const n = nizsi.find(x => x.podlazi === p.id && !x.v.terasa && !x.v.zadna && window.Strecha.bodUvnitr({ x: s.x, y: -s.y }, x.poly));
+                    if (n) vyska = podStrechou(n.v) ?? vyska;
                 }
                 // Na nejnižším podlaží stojí sloup na zemi: dům bývá nad terénem a sloup by visel ve vzduchu
                 const tn = !e.podlaziPod(p.id) ? this._terenDomu().fn : null;
@@ -3892,106 +4342,224 @@
             // Střecha
             if (st) {
                 const horni = e.horniPodlazi();
-                const kota = kory.get(horni.id) ?? 0;
-                const typ = typKrytiny(d.strecha);
-                const zaklad = barvaKrytiny(d.strecha);
-                const kov = (TYPY_KRYTIN.find(k => k.id === typ) || {}).kov;
-                // Textury dorazí až po přestavbě scény, stíny se pak přepočítají
-                const poNacteni = () => window.Svetlo3d?.prekresliStiny(_3d.renderer);
-                const matKrytina = (barva, typKr = typ) => {
-                    const v = vzhledKrytiny(typKr, barva);
-                    if (v) return { m: window.Krytiny3d.material(v, barva, poNacteni), metru: v.metru };
-                    return { m: new THREE.MeshStandardMaterial({ color: new THREE.Color(barva), roughness: 0.85, side: THREE.DoubleSide }), metru: 1 };
-                };
-                // Oplechování v barvě krytiny; `odstin` drží i náhled barvy za tahu posuvníkem
-                const barvaStrechy = barvaZobrazena(typ, zaklad);
-                const matPlechu = (odstin = ODSTIN_PLECHU) => {
-                    const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(barvaStrechy).multiplyScalar(odstin), roughness: 0.45, metalness: 0.25, side: THREE.DoubleSide });
-                    m.userData.odstin = odstin;
-                    return m;
-                };
-                const fasada = (oboustranna = false) => {
-                    const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(d.barvy.fasada), roughness: 0.9, side: oboustranna ? THREE.DoubleSide : THREE.FrontSide });
-                    m.userData.barva = 'fasada';
-                    return m;
-                };
-                if (st.plocha) {
-                    const zOd = kota + st.zOkap;
-                    // Plochá: deska přes obrys v barvě fasády, nahoře asfaltový pás ve zvolené barvě
-                    // a po obvodu atika s oplechováním (přesah se u ploché zatím neřeší)
-                    const obrys = st.hrany.map(h => h.a);
-                    dum.add(this._deska3d(obrys, [], zOd, zOd + 0.2, fasada(), { strecha: true }));
-                    const vnitrek = this._odsadPolygon(obrys, -ATIKA_SIRKA);
-                    dum.add(this._deska3d(obrys, [vnitrek], zOd + 0.2, zOd + 0.2 + ATIKA_VYSKA,
-                        [matPlechu(), fasada(), matPlechu(), fasada()], { strecha: true, oplechovani: true }));
-                    const T2 = window.THREE.ShapeUtils;
-                    const kontura = vnitrek.map(p => new THREE.Vector2(p.x, p.y));
-                    const vrch = T2.triangulateShape(kontura, []).map(([i, j, k]) => [i, j, k].map(n => ({ x: vnitrek[n].x, y: vnitrek[n].y, z: st.zOkap + 0.2 + 0.003 })));
-                    const nahoru = vrch.map(t => (((t[1].x - t[0].x) * (t[2].y - t[0].y) - (t[1].y - t[0].y) * (t[2].x - t[0].x)) > 0 ? t : [...t].reverse()));
-                    const { m, metru } = matKrytina(zaklad, 'plocha');
-                    dum.add(this._troj3d(nahoru, kota, m, { strecha: true, krytina: true }, { d: { x: 1, y: 0 }, n: { x: 0, y: 1 }, tg: 0, metru }));
-                } else {
-                    // Deska tloušťky T svisle: kolmo k rovině vyjde TLOUSTKA_STRECHY u základního sklonu.
-                    // Spodek je rovina výpočtu, vrch její kopie o T výš, takže hřebeny i nároží sedí samy.
-                    const T = this._tloustkaStrechy();
-                    const plochy = st.plochy;
-                    for (const pl of plochy) {
-                        const h = st.hrany.find(x => x.index === pl.hrana) || {};
-                        const { m, metru } = matKrytina(h.barva || zaklad);
-                        dum.add(this._troj3d(pl.troj, kota + T, m, { strecha: true, krytina: true, klic: h.klic, vlastniBarva: !!h.barva }, { ...pl, metru }));
-                    }
-                    // Podbití: spodní líc desky v barvě fasády, normála dolů
-                    dum.add(this._troj3d(plochy.flatMap(pl => pl.troj.map(t => [...t].reverse())), kota, fasada(true), { strecha: true, podbiti: true }));
-                    const { cela, okapy } = this._okrajStrechy(plochy, T);
-                    if (cela.length) dum.add(this._troj3d(cela, kota, matPlechu(), { strecha: true, celo: true, oplechovani: true }));
-                    if (okapy.length) dum.add(this._troj3d(okapy, kota, matPlechu(), { strecha: true, zlab: true, oplechovani: true }));
-                    const hrebenace = this._hrebenaceStrechy(st, T);
-                    if (hrebenace.length) {
-                        const mat = kov ? matPlechu(1) : new THREE.MeshStandardMaterial({ color: new THREE.Color(barvaStrechy), roughness: 0.8, side: THREE.DoubleSide });
-                        mat.userData.odstin = 1;
-                        dum.add(this._troj3d(hrebenace, kota, mat, { strecha: true, hrebenac: true, oplechovani: true }));
-                    }
-                    // Štít nad stěnou vytvoří sama stěna, dotažená až pod střechu. Tenká plocha v líci
-                    // by se s ní prala; zůstává jen tam, kde pod hranou žádná stěna není. To je i část
-                    // štítu za koncem stěny: schod na dlouhé straně má štít přes celou nižší střechu,
-                    // stěna pod ním je ale jen krátká.
-                    const stity = st.stity.flatMap((pl) => {
-                        const h = st.hrany.find(x => x.index === pl.hrana) || {};
-                        if (!String(h.klic || '').includes(':') || !h.a || !h.b) return pl.troj;
-                        const L = Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y) || 1;
-                        const s = (p) => ((p.x - h.a.x) * (h.b.x - h.a.x) + (p.y - h.a.y) * (h.b.y - h.a.y)) / L;
-                        return [...this._orezTroj(pl.troj, p => -s(p)), ...this._orezTroj(pl.troj, p => s(p) - L)];
-                    });
-                    if (stity.length) {
-                        const matStit = new THREE.MeshStandardMaterial({ color: TYPY_STEN?.obvodova?.barva3d || 0x6b6b6b, roughness: 0.85, side: THREE.DoubleSide });
-                        matStit.userData.barva = 'fasada';
-                        dum.add(this._troj3d(stity, kota, matStit, { strecha: true }));
-                    }
-                    // Výklenek pod střechou přes sloup (krytý vstup): podhled ve výšce, kde se zbytek střechy
-                    // potkává se zdí, a nad otevřenými stranami zeď od podhledu až pod střechu. Jinak by mezi
-                    // nižší zdí výklenku a střechou bylo vidět skrz (Libor 11. 11. 2026).
-                    for (const v of st.vyklenky || []) {
-                        const zP = st.zOkap;
-                        const matPodhled = () => {
-                            const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(d.barvy.fasada), roughness: 0.9, side: THREE.DoubleSide });
-                            m.userData.barva = 'fasada';
-                            return m;
-                        };
-                        dum.add(this._deska3d(v.poly, [], kota + zP - 0.04, kota + zP, matPodhled(), { strecha: true, podhled: true }));
-                        const troj = [];
-                        for (const [u, w] of v.otevrene) {
-                            const n = Math.max(1, Math.ceil(Math.hypot(w.x - u.x, w.y - u.y) / 0.25));
-                            const bod = (t) => ({ x: u.x + (w.x - u.x) * t, y: u.y + (w.y - u.y) * t });
-                            for (let k = 0; k < n; k++) {
-                                const a = bod(k / n), b = bod((k + 1) / n);
-                                const za = Math.max(zP, window.Strecha.vyskaVBode(st.plochy, a.x, a.y) ?? zP);
-                                const zb = Math.max(zP, window.Strecha.vyskaVBode(st.plochy, b.x, b.y) ?? zP);
-                                if (Math.max(za, zb) - zP < 0.005) continue;
-                                troj.push([{ ...a, z: zP }, { ...b, z: zP }, { ...b, z: zb }], [{ ...a, z: zP }, { ...b, z: zb }, { ...a, z: za }]);
-                            }
+                this._strecha3d(dum, st, kory.get(horni.id) ?? 0, { id: 'hlavni', typ: typKrytiny(d.strecha), zaklad: barvaKrytiny(d.strecha), sklon: d.strecha.sklon });
+            }
+            for (const n of nizsi) {
+                const kota = kory.get(n.podlazi) ?? 0;
+                if (n.v.zadna) continue;
+                if (n.v.terasa) this._terasa3d(dum, n, kota);
+                else this._strecha3d(dum, n.v, kota, { id: n.id, typ: n.nast.krytina, zaklad: n.nast.barva, sklon: n.nast.sklon, nizsi: n });
+            }
+        },
+
+        /**
+         * Jedna střecha ve 3D: hlavní nad horním podlažím, nebo nižší (o.nizsi) nad částí podlaží bez patra.
+         * U nižší střechy se nekreslí štít ani čelo u zdi patra (zeď tam stojí), štíty nad stěnami podlaží
+         * ano, protože jeho stěny pod nižší střechu nesahají. Plochá nižší má atiku jen na vnějších hranách.
+         * @param {{id:string, typ:string, zaklad:string, sklon:number, nizsi?:object}} o
+         */
+        _strecha3d(dum, st, kota, o) {
+            const THREE = window.THREE;
+            const _3d = window._kk3d;
+            const d = this.engine.dum;
+            const ud = (navic = {}) => ({ strecha: true, strechaId: o.id, ...(o.nizsi ? { nizsi: o.nizsi.podlazi } : {}), ...navic });
+            const typ = o.typ;
+            const zaklad = o.zaklad;
+            const kov = (TYPY_KRYTIN.find(k => k.id === typ) || {}).kov;
+            // Textury dorazí až po přestavbě scény, stíny se pak přepočítají
+            const poNacteni = () => window.Svetlo3d?.prekresliStiny(_3d.renderer);
+            const matKrytina = (barva, typKr = typ) => {
+                const v = vzhledKrytiny(typKr, barva);
+                if (v) return { m: window.Krytiny3d.material(v, barva, poNacteni), metru: v.metru };
+                return { m: new THREE.MeshStandardMaterial({ color: new THREE.Color(barva), roughness: 0.85, side: THREE.DoubleSide }), metru: 1 };
+            };
+            // Oplechování v barvě krytiny; `odstin` drží i náhled barvy za tahu posuvníkem
+            const barvaStrechy = barvaZobrazena(typ, zaklad);
+            const matPlechu = (odstin = ODSTIN_PLECHU) => {
+                const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(barvaStrechy).multiplyScalar(odstin), roughness: 0.45, metalness: 0.25, side: THREE.DoubleSide });
+                m.userData.odstin = odstin;
+                return m;
+            };
+            const fasada = (oboustranna = false) => {
+                const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(d.barvy.fasada), roughness: 0.9, side: oboustranna ? THREE.DoubleSide : THREE.FrontSide });
+                m.userData.barva = 'fasada';
+                return m;
+            };
+            if (st.plocha && o.nizsi) {
+                // Plochá nižší: deska na stropu podlaží, asfaltový pás, atika jen na vnějších hranách (u zdi patra ne)
+                const n = o.nizsi;
+                const zOd = kota + st.zOkap;
+                this._vyklenkyNizsi3d(dum, n, kota, ud);
+                for (const kus of n.oblast) dum.add(this._deska3d(kus, [], zOd, zOd + 0.2, fasada(), ud()));
+                const vrch = n.oblast.flatMap(kus => kus.slice(1, -1).map((q, i) => [kus[0], q, kus[i + 2]].map(b => ({ x: b.x, y: b.y, z: st.zOkap + 0.2 + 0.003 }))));
+                const { m, metru } = matKrytina(zaklad, 'plocha');
+                dum.add(this._troj3d(vrch, kota, m, ud({ krytina: true }), { d: { x: 1, y: 0 }, n: { x: 0, y: 1 }, tg: 0, metru }));
+                for (const pas of this._pasyNizsi(n, ATIKA_SIRKA)) {
+                    dum.add(this._deska3d(pas, [], zOd + 0.2, zOd + 0.2 + ATIKA_VYSKA, [matPlechu(), fasada(), matPlechu()], ud({ oplechovani: true })));
+                }
+            } else if (st.plocha) {
+                const zOd = kota + st.zOkap;
+                // Plochá: deska přes obrys v barvě fasády, nahoře asfaltový pás ve zvolené barvě
+                // a po obvodu atika s oplechováním (přesah se u ploché zatím neřeší)
+                const obrys = st.hrany.map(h => h.a);
+                dum.add(this._deska3d(obrys, [], zOd, zOd + 0.2, fasada(), ud()));
+                const vnitrek = this._odsadPolygon(obrys, -ATIKA_SIRKA);
+                dum.add(this._deska3d(obrys, [vnitrek], zOd + 0.2, zOd + 0.2 + ATIKA_VYSKA,
+                    [matPlechu(), fasada(), matPlechu(), fasada()], ud({ oplechovani: true })));
+                const T2 = window.THREE.ShapeUtils;
+                const kontura = vnitrek.map(p => new THREE.Vector2(p.x, p.y));
+                const vrch = T2.triangulateShape(kontura, []).map(([i, j, k]) => [i, j, k].map(n => ({ x: vnitrek[n].x, y: vnitrek[n].y, z: st.zOkap + 0.2 + 0.003 })));
+                const nahoru = vrch.map(t => (((t[1].x - t[0].x) * (t[2].y - t[0].y) - (t[1].y - t[0].y) * (t[2].x - t[0].x)) > 0 ? t : [...t].reverse()));
+                const { m, metru } = matKrytina(zaklad, 'plocha');
+                dum.add(this._troj3d(nahoru, kota, m, ud({ krytina: true }), { d: { x: 1, y: 0 }, n: { x: 0, y: 1 }, tg: 0, metru }));
+            } else {
+                // Deska tloušťky T svisle: kolmo k rovině vyjde TLOUSTKA_STRECHY u základního sklonu.
+                // Spodek je rovina výpočtu, vrch její kopie o T výš, takže hřebeny i nároží sedí samy.
+                const T = this._tloustkaStrechy(o.sklon);
+                const plochy = st.plochy;
+                for (const pl of plochy) {
+                    const h = st.hrany.find(x => x.index === pl.hrana) || {};
+                    const { m, metru } = matKrytina(h.barva || zaklad);
+                    dum.add(this._troj3d(pl.troj, kota + T, m, ud({ krytina: true, klic: h.klic, vlastniBarva: !!h.barva }), { ...pl, metru }));
+                }
+                // Podbití: spodní líc desky v barvě fasády, normála dolů
+                dum.add(this._troj3d(plochy.flatMap(pl => pl.troj.map(t => [...t].reverse())), kota, fasada(true), ud({ podbiti: true })));
+                // Nižší střecha u zdi patra čelo nemá: hrana leží v líci zdi
+                const uZdi = o.nizsi ? (p) => window.Strecha.bodUvnitr(p, o.nizsi.patro) : null;
+                const { cela, okapy } = this._okrajStrechy(plochy, T, uZdi);
+                if (cela.length) dum.add(this._troj3d(cela, kota, matPlechu(), ud({ celo: true, oplechovani: true })));
+                if (okapy.length) dum.add(this._troj3d(okapy, kota, matPlechu(), ud({ zlab: true, oplechovani: true })));
+                const hrebenace = this._hrebenaceStrechy(st, T);
+                if (hrebenace.length) {
+                    const mat = kov ? matPlechu(1) : new THREE.MeshStandardMaterial({ color: new THREE.Color(barvaStrechy), roughness: 0.8, side: THREE.DoubleSide });
+                    mat.userData.odstin = 1;
+                    dum.add(this._troj3d(hrebenace, kota, mat, ud({ hrebenac: true, oplechovani: true })));
+                }
+                // Štít nad stěnou vytvoří sama stěna, dotažená až pod střechu. Tenká plocha v líci
+                // by se s ní prala; zůstává jen tam, kde pod hranou žádná stěna není. To je i část
+                // štítu za koncem stěny: schod na dlouhé straně má štít přes celou nižší střechu,
+                // stěna pod ním je ale jen krátká. Nižší střecha má štíty celé (stěny podlaží pod ni
+                // nesahají), jen u zdi patra žádný.
+                const stity = st.stity.flatMap((pl) => {
+                    const h = st.hrany.find(x => x.index === pl.hrana) || {};
+                    if (o.nizsi) return h.zed ? [] : pl.troj;
+                    if (!String(h.klic || '').includes(':') || !h.a || !h.b) return pl.troj;
+                    const L = Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y) || 1;
+                    const s = (p) => ((p.x - h.a.x) * (h.b.x - h.a.x) + (p.y - h.a.y) * (h.b.y - h.a.y)) / L;
+                    return [...this._orezTroj(pl.troj, p => -s(p)), ...this._orezTroj(pl.troj, p => s(p) - L)];
+                });
+                if (stity.length) {
+                    const matStit = new THREE.MeshStandardMaterial({ color: TYPY_STEN?.obvodova?.barva3d || 0x6b6b6b, roughness: 0.85, side: THREE.DoubleSide });
+                    matStit.userData.barva = 'fasada';
+                    dum.add(this._troj3d(stity, kota, matStit, ud({ stit: true })));
+                }
+                // Výklenek pod střechou přes sloup (krytý vstup): podhled ve výšce, kde se zbytek střechy
+                // potkává se zdí, a nad otevřenými stranami zeď od podhledu až pod střechu. Jinak by mezi
+                // nižší zdí výklenku a střechou bylo vidět skrz (Libor 11. 11. 2026).
+                for (const v of st.vyklenky || []) {
+                    const zP = st.zOkap;
+                    const matPodhled = () => {
+                        const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(d.barvy.fasada), roughness: 0.9, side: THREE.DoubleSide });
+                        m.userData.barva = 'fasada';
+                        return m;
+                    };
+                    dum.add(this._deska3d(v.poly, [], kota + zP - 0.04, kota + zP, matPodhled(), ud({ podhled: true })));
+                    const troj = [];
+                    for (const [u, w] of v.otevrene) {
+                        const n = Math.max(1, Math.ceil(Math.hypot(w.x - u.x, w.y - u.y) / 0.25));
+                        const bod = (t) => ({ x: u.x + (w.x - u.x) * t, y: u.y + (w.y - u.y) * t });
+                        for (let k = 0; k < n; k++) {
+                            const a = bod(k / n), b = bod((k + 1) / n);
+                            const za = Math.max(zP, window.Strecha.vyskaVBode(st.plochy, a.x, a.y) ?? zP);
+                            const zb = Math.max(zP, window.Strecha.vyskaVBode(st.plochy, b.x, b.y) ?? zP);
+                            if (Math.max(za, zb) - zP < 0.005) continue;
+                            troj.push([{ ...a, z: zP }, { ...b, z: zP }, { ...b, z: zb }], [{ ...a, z: zP }, { ...b, z: zb }, { ...a, z: za }]);
                         }
-                        if (troj.length) dum.add(this._troj3d(troj, kota, matPodhled(), { strecha: true, podhled: true }));
                     }
+                    if (troj.length) dum.add(this._troj3d(troj, kota, matPodhled(), ud({ podhled: true })));
+                }
+            }
+        },
+
+        /**
+         * Pásy podél vnějších hran nižší střechy (atika, zábradlí), šířka `sirka` dovnitř. U zdi patra
+         * pás není. Sousední pásy se v rohu potkají v průsečíku, u zdi končí na ní. Body v m (y dolů).
+         */
+        _pasyNizsi(n, sirka, odsazeni = 0) {
+            const hr = n.hrany, m = hr.length;
+            const zn = window.Strecha.plochaPolygonu(n.poly) > 0 ? 1 : -1;
+            const dovnitr = (h) => { const L = Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y) || 1; return { x: -(h.b.y - h.a.y) / L * zn, y: (h.b.x - h.a.x) / L * zn }; };
+            // Průsečík dvou hran posunutých dovnitř o d (u rovnoběžných jen posun)
+            const roh = (h1, h2, d1, d2) => {
+                const n1 = dovnitr(h1), n2 = dovnitr(h2);
+                const p1 = { x: h1.b.x + n1.x * d1, y: h1.b.y + n1.y * d1 }, p2 = { x: h2.a.x + n2.x * d2, y: h2.a.y + n2.y * d2 };
+                const u1 = { x: h1.b.x - h1.a.x, y: h1.b.y - h1.a.y }, u2 = { x: h2.b.x - h2.a.x, y: h2.b.y - h2.a.y };
+                const det = u1.x * u2.y - u1.y * u2.x;
+                if (Math.abs(det) < 1e-9) return p2;
+                const t = ((p2.x - p1.x) * u2.y - (p2.y - p1.y) * u2.x) / det;
+                return { x: p1.x + u1.x * t, y: p1.y + u1.y * t };
+            };
+            const pasy = [];
+            hr.forEach((h, i) => {
+                if (h.zed || Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y) < 0.05) return;
+                const pred = hr[(i + m - 1) % m], po = hr[(i + 1) % m];
+                // U zdi patra se pás ořízne její přímkou (d = 0), jinde se potká se sousedním pásem
+                const zac = (d) => roh(pred, h, pred.zed ? 0 : d, d);
+                const kon = (d) => roh(h, po, d, po.zed ? 0 : d);
+                pasy.push([zac(odsazeni), kon(odsazeni), kon(odsazeni + sirka), zac(odsazeni + sirka)]);
+            });
+            return pasy;
+        },
+
+        /** Výklenek se sloupem pod plochou nižší střechou nebo terasou: deska ve výšce stropu, ať tam nezůstane díra. */
+        _vyklenkyNizsi3d(dum, n, kota, ud) {
+            const THREE = window.THREE;
+            const p = this.engine.podlaziPodleId(n.podlazi);
+            for (const v of n.v.vyklenky || []) {
+                const fasada = new THREE.MeshStandardMaterial({ color: new THREE.Color(this.engine.dum.barvy.fasada), roughness: 0.9 });
+                fasada.userData.barva = 'fasada';
+                dum.add(this._deska3d(v.poly, [], kota + p.vyska - p.strop, kota + p.vyska, [new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 }), fasada, fasada], ud({ podhled: true })));
+            }
+        },
+
+        /**
+         * Terasa: plochá pochozí střecha z patra (Libor 12. 11. 2026). Dlažba 60 × 60 cm na stropu podlaží
+         * ve výšce podlahy patra, souběžně s nejdelší hranou, a zábradlí 1 m na vnějších hranách. Zábradlí
+         * má barvu oken zvenku: barvy domu jsou fasáda, střecha a okna, čtvrtá nepřibývá.
+         */
+        _terasa3d(dum, n, kota) {
+            const THREE = window.THREE;
+            const d = this.engine.dum;
+            const ud = (navic = {}) => ({ strecha: true, strechaId: n.id, nizsi: n.podlazi, terasa: true, ...navic });
+            const z = n.v.zOkap;
+            this._vyklenkyNizsi3d(dum, n, kota, ud);
+            const fasada = new THREE.MeshStandardMaterial({ color: new THREE.Color(d.barvy.fasada), roughness: 0.9 });
+            fasada.userData.barva = 'fasada';
+            for (const kus of n.oblast) dum.add(this._deska3d(kus, [], kota + z, kota + z + 0.018, fasada, ud()));
+            const nej = n.hrany.reduce((a, h) => (Math.hypot(h.b.x - h.a.x, h.b.y - h.a.y) > Math.hypot(a.b.x - a.a.x, a.b.y - a.a.y) ? h : a), n.hrany[0]);
+            const L = Math.hypot(nej.b.x - nej.a.x, nej.b.y - nej.a.y) || 1;
+            const smer = { x: (nej.b.x - nej.a.x) / L, y: (nej.b.y - nej.a.y) / L };
+            const textura = this._texturaDekoru('dlazba60');
+            const dlazba = new THREE.MeshStandardMaterial({ color: new THREE.Color(dekorPodlahy('dlazba60').barva), roughness: 0.5, map: textura, bumpMap: textura, bumpScale: 0.012 });
+            const vrch = n.oblast.flatMap(kus => kus.slice(1, -1).map((q, i) => [kus[0], q, kus[i + 2]].map(b => ({ x: b.x, y: b.y, z: z + 0.02 }))));
+            dum.add(this._troj3d(vrch, kota, dlazba, ud({ dlazba: true }), { d: smer, n: { x: -smer.y, y: smer.x }, tg: 0, metru: dekorPodlahy('dlazba60').metru }));
+            // Zábradlí: sloupky po nejvýš 1,2 m, madlo a dvě příčky, 5 cm od hrany
+            const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(d.barvy.oknoVen), roughness: 0.4, metalness: 0.3 });
+            mat.userData.barva = 'oknoVen';
+            const zD = kota + z + 0.02;
+            for (const pas of this._pasyNizsi(n, 0.04, 0.05)) {
+                const [a, b, c, e] = pas;
+                for (const [z0, z1] of [[ZABRADLI_VYSKA - 0.04, ZABRADLI_VYSKA], [0.1, 0.13], [0.5, 0.53]]) {
+                    dum.add(this._deska3d(pas, [], zD + z0, zD + z1, mat, ud({ zabradli: true })));
+                }
+                const delka = Math.hypot(b.x - a.x, b.y - a.y);
+                const pocet = Math.max(1, Math.ceil(delka / 1.2));
+                for (let i = 0; i <= pocet; i++) {
+                    const t = i / pocet;
+                    const p0 = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }, p1 = { x: e.x + (c.x - e.x) * t, y: e.y + (c.y - e.y) * t };
+                    const u = { x: (b.x - a.x) / (delka || 1) * 0.02, y: (b.y - a.y) / (delka || 1) * 0.02 };
+                    const sloupek = [{ x: p0.x - u.x, y: p0.y - u.y }, { x: p0.x + u.x, y: p0.y + u.y }, { x: p1.x + u.x, y: p1.y + u.y }, { x: p1.x - u.x, y: p1.y - u.y }];
+                    dum.add(this._deska3d(sloupek, [], zD, zD + ZABRADLI_VYSKA - 0.04, mat, ud({ zabradli: true })));
                 }
             }
         },

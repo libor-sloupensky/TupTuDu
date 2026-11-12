@@ -1363,8 +1363,11 @@ class KonvaRenderer {
         const oddelovacId = konvaTarget?.getAttr?.('_oddelovacId');
         if (oddelovacId) return { type: 'oddelovac', id: oddelovacId };
 
+        // Střecha: hrana (okap/štít) nebo plocha; nižší střechy mají vlastní id (dum.js)
         const hranaStrechy = konvaTarget?.getAttr?.('_hranaStrechy');
-        if (hranaStrechy) return { type: 'hranaStrechy', klic: hranaStrechy };
+        if (hranaStrechy) return { type: 'hranaStrechy', klic: hranaStrechy, strecha: konvaTarget.getAttr('_strechaId') || 'hlavni' };
+        const strechaId = konvaTarget?.getAttr?.('_strechaId');
+        if (strechaId) return { type: 'strecha', id: strechaId };
         const schodyOtocId = konvaTarget?.getAttr?.('_schodyOtocId');
         if (schodyOtocId) return { type: 'schodyOtoc', id: schodyOtocId };
         const schodisteId = konvaTarget?.getAttr?.('_schodisteId');

@@ -782,6 +782,9 @@ class StavebniEngine {
             sestavy: [],     // [{id, podlazi, druh: kuchyn|skrin, body:[[x,y]], strana, ramena:[{sloupce}], rohy, vysky, hloubky, povrchy, …}]
             plochy: [],      // [{id, podlazi, mistnost, typ: zvysena|snizena|bez_podlahy, dh, body:[[x,y] m] = obrys místnosti z rastru, prenos, vypnuto:[id podlaží]}]
             strecha: null,   // {typ, sklon, presah, presahStit, vyskaOkapu, krytina, hrany:{klíč:{typ,sklon,presah}}}
+            // Nižší střechy nad částmi podlaží, nad kterými už patro není (dum.js). Editor je přidá sám,
+            // tady jsou jen ruční úpravy: {id části: {typ: pultova|sedlova|valbova|plocha|terasa|zadna, sklon, …, hrany}}
+            nizsiStrechy: {},
             zaklady: null,   // {odkop, sirkaPasu, spara, skladba, skladbaDeska, ornice, svah, nakypreni, podDum, prodlouzit, casti:{id podlaží: pasy|deska|stavajici}}; co chybí, bere se z Zemina.VYCHOZI
         };
     }
@@ -816,6 +819,7 @@ class StavebniEngine {
                 .filter(a => a && a.mistnost)
                 .map(a => JSON.parse(JSON.stringify({ ...a, typ: a.typ === 'prostup' ? 'bez_podlahy' : a.typ, body: Array.isArray(a.body) ? a.body : [] }))),
             strecha: d.strecha ? JSON.parse(JSON.stringify(d.strecha)) : null,
+            nizsiStrechy: d.nizsiStrechy && typeof d.nizsiStrechy === 'object' && !Array.isArray(d.nizsiStrechy) ? JSON.parse(JSON.stringify(d.nizsiStrechy)) : {},
             zaklady: d.zaklady ? JSON.parse(JSON.stringify(d.zaklady)) : null,
         };
         if (!dum.podlazi.some(p => p.id === dum.aktivni)) dum.aktivni = dum.podlazi[0].id;
@@ -832,6 +836,7 @@ class StavebniEngine {
             sestavy: JSON.parse(JSON.stringify(d.sestavy || [])),
             plochy: JSON.parse(JSON.stringify(d.plochy || [])),
             strecha: d.strecha ? JSON.parse(JSON.stringify(d.strecha)) : null,
+            nizsiStrechy: JSON.parse(JSON.stringify(d.nizsiStrechy || {})),
             zaklady: d.zaklady ? JSON.parse(JSON.stringify(d.zaklady)) : null,
         };
     }

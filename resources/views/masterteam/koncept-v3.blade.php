@@ -1315,35 +1315,51 @@
                             </template>
                             <template x-if="strechaPanel.st">
                                 <div class="flex flex-col gap-1">
-                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.typ_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.typ') }}</span>
-                                        <select class="flex-1 min-w-0" @change="setStrecha('typ', $event.target.value)">
+                                    {{-- Nižší střechy nad částmi podlaží bez patra (garáž, krytý vstup): editor je přidá sám --}}
+                                    <template x-if="strechaPanel.volby.length">
+                                        <div class="kk-podlazi-pole" title="{{ __('ed_dum.nizsi.vyber_tip') }}"><span class="w-24 shrink-0 font-semibold">{{ __('ed_dum.nizsi.vyber') }}</span>
+                                            <select class="flex-1 min-w-0" data-strecha-vyber @change="vyberStrechu($event.target.value)">
+                                                <template x-for="v in strechaPanel.volby" :key="v.id">
+                                                    <option :value="v.id" :selected="strechaPanel.id === v.id" x-text="v.nazev"></option>
+                                                </template>
+                                            </select></div>
+                                    </template>
+                                    <div class="kk-podlazi-pole" :title="strechaPanel.nizsi ? preloz('ed_dum.nizsi.typ_tip') : preloz('ed_sablona.strecha.typ_tip')"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.typ') }}</span>
+                                        <select class="flex-1 min-w-0" data-strecha-typ @change="setStrecha('typ', $event.target.value)">
                                             <template x-for="t in typyStrechVolby" :key="t.id">
                                                 <option :value="t.id" :selected="strechaPanel.st.typ === t.id" x-text="t.nazev"></option>
                                             </template>
                                         </select>
                                         <button type="button" x-show="strechaPanel.st.typ === 'sedlova'" @click="setStrecha('otocHreben')" class="kk-btn" title="{{ __('ed_sablona.strecha.otocit_hreben') }}">⟳</button>
                                     </div>
-                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.sklon_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.sklon') }}</span>
-                                        <span class="kk-pole-jed"><input type="number" min="1" max="75" step="1" class="w-16" :value="strechaPanel.st.sklon" :disabled="strechaPanel.st.typ === 'plocha'"
+                                    <div class="text-gray-500" x-show="strechaPanel.st.typ === 'terasa'">{{ __('ed_dum.nizsi.terasa_info') }}</div>
+                                    <div class="text-gray-500" x-show="strechaPanel.st.typ === 'zadna'">{{ __('ed_dum.nizsi.zadna_info') }}</div>
+                                    <div class="kk-podlazi-pole" x-show="!strechaPanel.nizsi || !strechaPanel.bezSklonu" title="{{ __('ed_sablona.strecha.sklon_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.sklon') }}</span>
+                                        <span class="kk-pole-jed"><input type="number" min="1" max="75" step="1" class="w-16" data-strecha-pole="sklon" :value="strechaPanel.st.sklon" :disabled="strechaPanel.st.typ === 'plocha'"
                                                @change="setStrecha('sklon', parseFloat($event.target.value))" @keydown.enter.prevent="$event.target.blur()"><span>°</span></span></div>
-                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.presah_okapu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.presah_okapu') }}</span>
+                                    <div class="kk-podlazi-pole" x-show="!strechaPanel.nizsi || !strechaPanel.bezSklonu" title="{{ __('ed_sablona.strecha.presah_okapu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.presah_okapu') }}</span>
                                         <span class="kk-pole-jed"><input type="number" min="0" max="300" step="5" class="w-16" :value="Math.round((strechaPanel.st.presah || 0) * 100)"
                                                @change="setStrecha('presah', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
-                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.presah_stitu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.presah_stitu') }}</span>
+                                    <div class="kk-podlazi-pole" x-show="!strechaPanel.nizsi || !strechaPanel.bezSklonu" title="{{ __('ed_sablona.strecha.presah_stitu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.presah_stitu') }}</span>
                                         <span class="kk-pole-jed"><input type="number" min="0" max="300" step="5" class="w-16" :value="Math.round((strechaPanel.st.presahStit || 0) * 100)"
                                                @change="setStrecha('presahStit', parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span></div>
-                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.vyska_okapu_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.vyska_okapu') }}</span>
+                                    <div class="kk-podlazi-pole" x-show="!strechaPanel.bezKrytiny" :title="strechaPanel.nizsi ? preloz('ed_dum.nizsi.vyska_okapu_tip') : preloz('ed_sablona.strecha.vyska_okapu_tip')"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.vyska_okapu') }}</span>
                                         <span class="kk-pole-jed"><input type="number" min="0" max="1200" step="5" class="w-16" :value="Math.round(strechaPanel.zOkap * 100)"
                                                @change="setStrecha('vyskaOkapu', $event.target.value === '' ? null : parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                         <span class="ml-auto whitespace-nowrap" title="{{ __('ed_sablona.strecha.hreben_tip') }}" x-show="strechaPanel.zMax !== null" x-text="strechaPanel.zMax !== null ? preloz('ed_sablona.strecha.hreben', { vyska: prelozCislo(strechaPanel.zMax, 2) }) : ''"></span></div>
-                                    <div class="kk-podlazi-pole" title="{{ __('ed_sablona.strecha.krytina_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.krytina') }}</span>
+                                    <div class="kk-podlazi-pole" x-show="!strechaPanel.bezKrytiny" title="{{ __('ed_sablona.strecha.krytina_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.krytina') }}</span>
                                         <select class="flex-1 min-w-0" data-krytina @change="setStrecha('krytina', $event.target.value)">
                                             <template x-for="k in krytinyVolby" :key="k.id">
                                                 <option :value="k.id" :selected="strechaPanel.krytina === k.id" x-text="k.nazev"></option>
                                             </template>
                                         </select></div>
+                                    {{-- Nižší střecha: krytina podle sklonu, dokud ji uživatel nezvolí sám --}}
+                                    <div class="text-gray-500" x-show="strechaPanel.nizsi && !strechaPanel.bezKrytiny && !strechaPanel.bezSklonu && strechaPanel.autoKrytina" data-krytina-auto x-text="strechaPanel.autoText"></div>
+                                    <button type="button" x-show="strechaPanel.nizsi && !strechaPanel.bezKrytiny && !strechaPanel.autoKrytina" @click="setStrecha('podleSklonu')" data-podle-sklonu
+                                            class="self-start underline text-gray-500 hover:text-primary" title="{{ __('ed_dum.nizsi.podle_sklonu_tip') }}">{{ __('ed_dum.nizsi.podle_sklonu') }}</button>
+                                    <div class="text-orange-700" x-show="!strechaPanel.bezKrytiny && strechaPanel.podSklonem" data-pod-sklonem x-text="strechaPanel.podSklonem"></div>
                                     {{-- Tašky, bobrovka, šindel, břidlice: vzhled z fotografie. Plech: libovolná barva. --}}
-                                    <template x-if="strechaPanel.vzhledy.length">
+                                    <template x-if="!strechaPanel.bezKrytiny && strechaPanel.vzhledy.length">
                                         <div class="kk-podlazi-pole items-start" title="{{ __('ed_sablona.strecha.vzhled_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.vzhled') }}</span>
                                             <div class="flex flex-col gap-1 flex-1 min-w-0">
                                                 <div class="kk-vzhledy-krytiny" data-vzhledy-krytiny>
@@ -1356,8 +1372,8 @@
                                             </div>
                                         </div>
                                     </template>
-                                    <template x-if="!strechaPanel.vzhledy.length">
-                                        <div x-data="vyberBarvy({ hodnota: () => strechaPanel?.barva, nastav: (hex) => setStrecha('barva', hex), nahled: (hex) => nahledBarvyStrechy(hex), pouzite: () => barvyJinde('strecha') })">
+                                    <template x-if="!strechaPanel.bezKrytiny && !strechaPanel.vzhledy.length">
+                                        <div x-data="vyberBarvy({ hodnota: () => strechaPanel?.barva, nastav: (hex) => setStrecha('barva', hex), nahled: (hex) => nahledBarvyStrechy(hex), pouzite: () => barvyJinde(strechaPanel?.nizsi ? 'strecha:' + strechaPanel.id : 'strecha') })">
                                             @include('partials.vyber-barvy', ['popisek' => __('ed_sablona.barva.barva')])
                                         </div>
                                     </template>
@@ -1406,8 +1422,8 @@
                                         </div>
                                     </template>
                                     <div class="flex items-center gap-2">
-                                        <span class="text-gray-500" x-show="!strechaPanel.hrana" x-text="rezim3d ? preloz('ed_sablona.strecha.hrany_ve_2d') : preloz('ed_sablona.strecha.klepni_hrana')"></span>
-                                        <button type="button" @click="smazatStrechu()" title="{{ __('ed_sablona.strecha.smazat_tip') }}" class="ml-auto kk-smazat whitespace-nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>{{ __('ed_sablona.strecha.smazat') }}</button>
+                                        <span class="text-gray-500" x-show="!strechaPanel.hrana && !strechaPanel.bezKrytiny" x-text="rezim3d ? preloz('ed_sablona.strecha.hrany_ve_2d') : preloz('ed_sablona.strecha.klepni_hrana')"></span>
+                                        <button type="button" x-show="!strechaPanel.nizsi" @click="smazatStrechu()" title="{{ __('ed_sablona.strecha.smazat_tip') }}" class="ml-auto kk-smazat whitespace-nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>{{ __('ed_sablona.strecha.smazat') }}</button>
                                     </div>
                                 </div>
                             </template>

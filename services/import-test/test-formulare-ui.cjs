@@ -245,6 +245,16 @@ async function main() {
         await zmer('střecha', '#kk-podlazi-seznam');
         await js(`const v = d._strechaVypocet(); d.strechaHrana = v.hrany.find(x => x.typ === 'okap').klic; d._selectionTick++`);
         await zmer('vybraná hrana střechy', '#kk-podlazi-seznam');
+        // Nižší střecha: patro jen nad levou částí, nad zbytkem přízemí ji editor přidá sám (výběr střechy nahoře v panelu).
+        // Zpět potom vrátí patro i úpravy polí.
+        await js(`window._kkKroku = e.undoStack.length; d.strechaHrana = null; d.naPodlazi(e.dum.podlazi.find(p => p.id !== 'P1').id); e.pushUndo();
+            for (const w of [...e.walls.values()]) e.removeWall(w.id);
+            [[0,0],[6,0],[6,8],[0,8]].forEach((q, i, b) => { const r = b[(i + 1) % 4]; e.addWall(q[0]*X, q[1]*X, r[0]*X, r[1]*X, 0.3, 'obvodova'); });
+            d.renderer._mistnostiCache = null; d.renderer.render(); d.vyberStrechu(d._nizsiStrechy()[0]?.id); d.podlaziUprava = 'strecha'; d.rezimStrecha = true; d._selectionTick++`);
+        kontrola('panel upravuje nižší střechu', await p.vyhodnot(`${D}.strechaPanel?.nizsi === true`));
+        await zmer('nižší střecha', '#kk-podlazi-seznam');
+        await js(`d.vyberStrechu(''); d.rezimStrecha = false; while (e.undoStack.length > window._kkKroku) d.undo(); d.naPodlazi('P1'); d._selectionTick++`);
+        await pauza(300);
         await js(`d.rezimStrecha = false; d.strechaHrana = null; d.katastrParcely = [{ cislo: 'test' }]; d.podlaziUprava = 'zaklady'; d._selectionTick++`);
         await pauza(200);
         await js(`document.querySelector('[data-zaklady-panel] details').open = true`);
