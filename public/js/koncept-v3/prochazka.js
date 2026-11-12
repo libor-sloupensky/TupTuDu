@@ -83,6 +83,7 @@
                 ovladac.nastavMapku(this._prochazkaMapka(_3d.wallGroup.position.y));
                 this._resize3d();
                 ovladac.zapni(this._prochazkaStart());
+                _3d._prochazkaY0 = _3d.wallGroup.position.y;   // výška domu, vůči které panáček stojí
                 this._panacek3d();
                 _3d.kresliDo = performance.now() + 500;
                 this.zmerFunkci?.('prochazka');
@@ -230,10 +231,15 @@
             const _3d = window._kk3d;
             if (!_3d) return;
             _3d._prochazkaSite = null;
+            const y0 = _3d.wallGroup.position.y;
             if (this.rezimProchazka && _3d.prochazka) {
-                _3d.prochazka.nastavMapku(this._prochazkaMapka(_3d.wallGroup.position.y));
+                // Dům se posunul svisle (dotažené výšky terénu po startu procházky, posun výšky): panáček s ním.
+                // Jinak zůstal na staré výšce pod podlahou i pod terénem (Libor 12. 11. 2026, vzorový projekt).
+                if (typeof _3d._prochazkaY0 === 'number') _3d.prochazka.posunVysku(y0 - _3d._prochazkaY0);
+                _3d.prochazka.nastavMapku(this._prochazkaMapka(y0));
                 _3d.prochazka.obnov();
             }
+            _3d._prochazkaY0 = y0;
             this._panacek3d();
         },
 

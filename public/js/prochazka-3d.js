@@ -16,6 +16,7 @@
     const OKO_MIN = -30, OKO_MAX = 60;
     const ZARAZKA = 0.1;            // oko u země: klesání se tu zastaví, pod zem až dalším stiskem
     const KROK = 0.5;               // schod, který panáček vyjde sám (m)
+    const VSTUP = 2.2;              // z terénu vystoupí na podlahu domu nad sebou nejvýš o tolik (vchod na svahu)
     const RYCHLOST = 2, BEH = 5;    // chůze a se Shiftem (m/s)
     const OTACENI = 1.5;            // šipky vlevo a vpravo (rad/s)
     const OKO_RYCHLOST = 1.2;       // Q a E (m/s), se Shiftem čtyřikrát
@@ -205,7 +206,12 @@ void main() {
 
         /** Nejvyšší vodorovná plocha pod výškou yOd (podlaha, schod, terén), nebo null. */
         function zemPod(x, z, yOd) {
-            let nej = null;
+            return zemPodInfo(x, z, yOd).y;
+        }
+
+        /** Jako zemPod, navíc jestli jde o plochu domu (`naSiti`) a výšku terénu v bodě (`teren`, i nad yOd). */
+        function zemPodInfo(x, z, yOd) {
+            let nej = null, naSiti = false;
             const site = o.pochozi?.() || [];
             if (site.length) {
                 paprsek.set(bod.set(x, yOd, z), DOLU);
@@ -218,12 +224,27 @@ void main() {
                     normala.copy(h.face.normal).transformDirection(h.object.matrixWorld);
                     if (Math.abs(normala.y) < 0.5) continue;
                     nej = h.point.y;
+                    naSiti = true;
                     break;
                 }
             }
             const t = o.teren?.(x, z);
-            if (t != null && t <= yOd + 1e-6 && (nej === null || t > nej)) nej = t;
-            return nej;
+            if (t != null && t <= yOd + 1e-6 && (nej === null || t > nej)) { nej = t; naSiti = false; }
+            return { y: nej, naSiti, teren: t ?? null };
+        }
+
+        /**
+         * Kam si panáček stoupne: nejvyšší plocha do KROK nad nohama. Kdo nestojí na ploše domu, se nezahrabe:
+         * pod terénem vystoupí na terén a je-li nad ním do VSTUP podlaha domu (vchod z nižšího terénu na svahu,
+         * panáček pod deskou), stoupne si na ni. Výš ne, ať pod přesahem patra nevyskočí nahoru (Libor 12. 11. 2026).
+         */
+        function kamStoupne(x, z, y) {
+            const zem = zemPodInfo(x, z, y + KROK);
+            if (zem.naSiti) return zem.y;
+            const zaklad = Math.max(y, zem.teren ?? -Infinity);
+            const nad = zemPodInfo(x, z, zaklad + VSTUP);
+            if (nad.naSiti && nad.y > zaklad + KROK) return nad.y;
+            return zem.teren != null && zem.teren > y + KROK ? zem.teren : zem.y;
         }
 
         /** Kamera v oku panáčka podle stavu (snímek ani klik nesmí brát polohu z minulého snímku). */
@@ -529,7 +550,7 @@ void main() {
 
             // Gravitace: stoupne na schod, spadne z okraje. Bez pohybu a po usazení se nepočítá.
             if (posun || !usazeno) {
-                const zem = zemPod(s.x, s.z, s.y + KROK);
+                const zem = kamStoupne(s.x, s.z, s.y);
                 if (zem === null || Math.abs(zem - s.y) < 0.002) {
                     if (zem !== null && zem !== s.y) { s.y = zem; zmena = true; }
                     usazeno = !posun;
@@ -714,6 +735,14 @@ void main() {
             },
             /** Scéna se přestavěla: znovu usadit na zem. */
             obnov() { usazeno = false; vynutit = true; },
+            /** Dům se ve scéně posunul svisle o dy (dotažené výšky terénu, posun výšky): panáček jde s ním. */
+            posunVysku(dy) {
+                if (!isFinite(dy) || !dy) return;
+                s.y += dy;
+                if (cil) cil.y += dy;
+                usazeno = false;
+                vynutit = true;
+            },
             /** Data mapky: { podlazi: [{ id, nazev, y, steny, otvory, schody }], otoceni } v metrech scény. */
             nastavMapku(m) { mapka = m; patro = null; mapkaDo = 1; vynutit = true; },
             /** Kroužek a obloha pryč, třeba pro export obrázku. */

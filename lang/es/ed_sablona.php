@@ -326,6 +326,8 @@ return [
         'vyska_okapu_tip' => 'Altura a la que la cubierta corta la cara de la pared, medida desde el suelo de la última planta',
         'vyska_okapu' => 'Altura de alero',
         'hreben_tip' => 'Punto más alto de la cubierta sobre el suelo de la última planta',
+        'strop' => 'Techo',
+        'strop_tip' => 'Techo plano bajo la cubierta inclinada a la altura libre de la planta. Sin él se ve la estructura desde abajo.',
         'hreben' => 'cumbrera :vyska m',
         'krytina_tip' => 'Tipo de cobertura. En tejas, teja plana, tejas asfálticas y pizarra eliges el aspecto, en chapa el color. Se aplica a toda la cubierta.',
         'krytina' => 'Cobertura',

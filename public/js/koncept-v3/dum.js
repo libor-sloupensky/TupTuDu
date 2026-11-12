@@ -46,6 +46,8 @@
     // Okraj nepřidává další barvu domu (fasáda, střecha, okna): čelo, žlaby a hřebenáče jsou v barvě
     // krytiny, čelo a žlab o ODSTIN_PLECHU tmavší, podbití v barvě fasády.
     const TLOUSTKA_STRECHY = 0.28;
+    // Strop pod šikmou střechou jen do této výšky místnosti; s nižším okapem jde o podkrovní prostor bez stropu
+    const STROP_POD_STRECHOU_MIN = 2.2;
     const ODSTIN_PLECHU = 0.8;
     const ATIKA_SIRKA = 0.25;
     const ATIKA_VYSKA = 0.4;
@@ -2183,6 +2185,9 @@
                 zOkap,
                 zMax: v && !v.plocha && !ploche && v.plochy?.length ? v.zMax + this._tloustkaStrechy(st.sklon) : null,
                 bezObrysu: !v,
+                // Strop pod šikmou hlavní střechou (výchozí zapnutý); podkroví má šikmé stropy
+                stropMozny: !nizsi && !ploche && this.engine.horniPodlazi()?.typ !== 'podkrovi',
+                strop: st.strop !== false,
                 hrana: hranaData,
                 // Terasa a bez střechy krytinu nemají, plochá má asfaltový pás jako hlavní plochá
                 bezKrytiny: !!nizsi && (st.typ === 'terasa' || st.typ === 'zadna'),
@@ -2276,6 +2281,10 @@
                 if (v && !v.prebarvit) st.barva = v.hex;
             } else if (klic === 'barva') {
                 st.barva = hodnota;
+            } else if (klic === 'strop') {
+                // Strop pod šikmou střechou je výchozí, uloží se jen jeho vypnutí (otevřený krov)
+                if (hodnota) delete st.strop;
+                else st.strop = false;
             }
             this._poZmeneDomu(preloz('ed_dum.strecha'));
         },
@@ -3866,6 +3875,47 @@
                 }
                 st = dalsi;
             }
+            // Pod dveřmi a průchody podlaha přes celou tloušťku zdi: místnosti dorostou z obou stran a potkají se
+            // uprostřed, u vchodu jde podlaha místnosti až ven. Dřív jen dva pásy buněk od líců a v otvoru zuby
+            // (Libor 12. 11. 2026).
+            const dvere = [];
+            for (const op of eng.openings.values()) {
+                if (eng.constructor.prefixOtvoru?.(op.typ) !== 'D') continue;
+                const wl = eng.walls.get(op.wallId);
+                const A = wl && eng.nodes.get(wl.nodeA), B = wl && eng.nodes.get(wl.nodeB);
+                const L = A && B ? Math.hypot(B.x - A.x, B.y - A.y) : 0;
+                if (L < 1) continue;
+                const ux = (B.x - A.x) / L, uy = (B.y - A.y) / L, pxM = eng.PX_PER_M;
+                const pul = ((wl.tloustka || 0.3) / 2 + 0.02) * pxM, a = op.pozice * pxM, b = (op.pozice + op.sirka) * pxM;
+                const bod = (t, k) => ({ x: A.x + ux * t - uy * k, y: A.y + uy * t + ux * k });
+                dvere.push([bod(a, pul), bod(b, pul), bod(b, -pul), bod(a, -pul)]);
+            }
+            if (dvere.length) {
+                const cv = document.createElement('canvas');
+                cv.width = w; cv.height = h;
+                const g = cv.getContext('2d', { willReadFrequently: true });
+                for (const poly of dvere) {
+                    g.beginPath();
+                    poly.forEach((p, i) => { const x = (p.x - x0) / krok, y = (p.y - y0) / krok; if (i === 0) g.moveTo(x, y); else g.lineTo(x, y); });
+                    g.closePath();
+                    g.fill();
+                }
+                const a = g.getImageData(0, 0, w, h).data;
+                let volne = [];
+                for (let i = 0; i < w * h; i++) if (st[i] === 0 && a[i * 4 + 3] > 127) volne.push(i);
+                // Postupně po buňkách ze sousedů, dokud je co doplnit (stěna 50 cm je kolem 13 kroků z každé strany)
+                for (let pruchod = 0; pruchod < 60 && volne.length; pruchod++) {
+                    const doplnit = [];
+                    for (const i of volne) {
+                        const x = i % w;
+                        const s = (x > 0 && st[i - 1] >= 2 && st[i - 1]) || (x < w - 1 && st[i + 1] >= 2 && st[i + 1]) || (i >= w && st[i - w] >= 2 && st[i - w]) || (i < w * (h - 1) && st[i + w] >= 2 && st[i + w]);
+                        if (s) doplnit.push([i, s]);
+                    }
+                    if (!doplnit.length) break;
+                    for (const [i, s] of doplnit) st[i] = s;
+                    volne = volne.filter(i => st[i] === 0);
+                }
+            }
             const vyrezy = this._maskyPodlazi(podl.id).vyrezy;
             if (vyrezy.length) {
                 const cv = document.createElement('canvas');
@@ -4253,10 +4303,17 @@
                     const obrys = obrysBody(hrany);
                     // Podlaha nejnižšího podlaží
                     if (i === 0) pridejDesku(obrys, this._otvoryDesky(p.id, naM), kota - 0.15, kota + 0.02, { podlazi: p.id });
-                    // Strop: pod dalším podlažím vždy. Pod šikmou střechou žádný: není vidět a v líci
-                    // by se pral se stěnami dotaženými pod střechu. Plochá střecha na něm leží.
+                    // Strop: pod dalším podlažím vždy. Plochá střecha na něm leží.
                     if (nad || (st && st.plocha && p.typ !== 'podkrovi' && st.zOkap >= p.vyska - 0.001)) {
                         pridejDesku(obrys, otvory, kota + e.svetlaVyska(p), kota + p.vyska, { stropPod: p.id });
+                    } else if (st && !st.plocha && p.typ !== 'podkrovi' && d.strecha?.strop !== false
+                            && Math.min(e.svetlaVyska(p), st.zOkap) >= STROP_POD_STRECHOU_MIN) {
+                        // Pod šikmou střechou rovný strop, bez něj je zespodu vidět krov (Libor 12. 11. 2026, volba ve střeše).
+                        // Ve světlé výšce, nejvýš ale v okapu: výš by u zdí trčel do střechy (vzorový dům má okap 2,6 m).
+                        // Obrys o 2 cm dovnitř: boky desky zůstanou ve zdech dotažených pod střechu a v líci se neperou
+                        // s fasádou; horní líc u zdí zůstane v tloušťce střechy. Podkroví má šikmé stropy dál.
+                        const h = Math.min(e.svetlaVyska(p), st.zOkap);
+                        pridejDesku(this._odsadPolygon(obrys, -0.02), otvory, kota + h, kota + h + (p.strop ?? 0.25), { stropPod: p.id });
                     }
                 }
                 // Podlaha patra podle jeho vlastního obrysu: patro může přesahovat přes podlaží pod

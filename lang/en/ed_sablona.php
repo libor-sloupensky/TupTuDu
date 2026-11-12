@@ -326,6 +326,8 @@ return [
         'vyska_okapu_tip' => 'Height where the roof meets the wall face, measured from the floor of the top storey',
         'vyska_okapu' => 'Eaves height',
         'hreben_tip' => 'Highest point of the roof above the floor of the top storey',
+        'strop' => 'Ceiling',
+        'strop_tip' => 'Flat ceiling under the pitched roof at the clear height of the floor. Without it the rafters are visible from below.',
         'hreben' => 'ridge :vyska m',
         'krytina_tip' => 'Roofing type. For tiles, plain tiles, shingles and slate you pick a look, for metal a colour. Applies to the whole roof.',
         'krytina' => 'Roofing',

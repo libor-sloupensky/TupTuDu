@@ -326,6 +326,8 @@ return [
         'vyska_okapu_tip' => 'Hauteur où le toit rencontre le nu du mur, mesurée depuis le sol du dernier niveau',
         'vyska_okapu' => 'Hauteur égout',
         'hreben_tip' => 'Point le plus haut du toit au-dessus du sol du dernier niveau',
+        'strop' => 'Plafond',
+        'strop_tip' => 'Plafond plat sous le toit en pente, à la hauteur libre du niveau. Sans lui, la charpente est visible par en dessous.',
         'hreben' => 'faîtage :vyska m',
         'krytina_tip' => 'Type de couverture. Pour les tuiles, tuiles plates, bardeaux et ardoises, vous choisissez un aspect, pour le métal une couleur. S’applique à tout le toit.',
         'krytina' => 'Couverture',

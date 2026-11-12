@@ -154,8 +154,13 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         // Ke schodům v přízemí: začínají na x = 1 m, vedou po +x, šířka kolem z = 3 m
         await p.vyhodnot(`(() => { const o = window._kk3d.prochazka; o.zapni({ x: 0.5, z: 3, yOd: ${uvod.y0} + 0.5, smer: -Math.PI / 2, sklon: 0, oko: 1.6 }); return true; })()`);
         await pauza(300);
-        await drz('KeyW', 3600);
-        await pauza(500);
+        // Drží W, dokud nedojde za schody: krok se počítá z času mezi snímky, při zatíženém počítači
+        // (testy víc sezení) jde pomaleji a pevná doba nestačila
+        await p.vyhodnot(`window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyW', key: 'KeyW', bubbles: true })); true`);
+        try { await p.cekej(`window._kk3d.prochazka.stav().x > 6.5`, 15000, 'za schody'); } finally {
+            await p.vyhodnot(`window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyW', key: 'KeyW', bubbles: true })); true`);
+        }
+        await pauza(600);
         s = await stav();
         kontrola('po schodech vyjde do patra', s.patro === 'P2' && s.y > kotaP2 - 0.05 && s.y < kotaP2 + 0.1 && s.x > 6, JSON.stringify({ s, kotaP2 }));
         await snimek3d('05-po-schodech.png');
@@ -165,6 +170,55 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         await pauza(700);
         s = await stav();
         kontrola('z patra ven přes zeď: spadne na zem', s.z > 8.5 && blizko(s.y, 0, 0.03), JSON.stringify(s));
+
+        console.log('\n5b) Dům se posune a dům na svahu (vzorový projekt 12. 11.: panáček skončil pod podlahou i terénem)');
+        await p.vyhodnot(`(() => { const o = window._kk3d.prochazka; o.zapni({ x: 7, z: 5, yOd: ${uvod.y0} + 0.5, smer: 0, sklon: 0, oko: 1.6 }); return true; })()`);
+        await pauza(400);
+        // Jako dotažení výšek terénu po startu procházky: celý dům o 3 m výš
+        await p.vyhodnot(`(() => { const d = ${D}, _3d = window._kk3d; _3d.wallGroup.position.y += 3; _3d.wallGroup.updateMatrixWorld(true); d._prochazkaPoStavbe(); return true; })()`);
+        await pauza(600);
+        s = await stav();
+        kontrola('dům se posunul o 3 m nahoru: panáček jde s ním a stojí na podlaze', blizko(s.y, uvod.y0 + 3 + 0.025, 0.05) && s.patro === 'P1', JSON.stringify(s));
+        await p.vyhodnot(`(() => { const d = ${D}, _3d = window._kk3d; _3d.wallGroup.position.y -= 3; _3d.wallGroup.updateMatrixWorld(true); d._prochazkaPoStavbe(); return true; })()`);
+        await pauza(600);
+        s = await stav();
+        kontrola('a zpátky dolů s ním', blizko(s.y, uvod.y0 + 0.025, 0.05), JSON.stringify(s));
+        // Přízemí 1,2 m nad terénem: zvenku po zemi do domu, panáček vystoupí na podlahu (dřív zůstal pod ní)
+        await p.vyhodnot(`(async () => { const d = ${D}; d.engine.dum.posunVysky = 1.2; d._build3d(); await new Promise(r => setTimeout(r, 300));
+            const o = window._kk3d.prochazka; o.zapni({ x: 5, z: 11, yOd: 0.5, smer: 0, sklon: 0, oko: 1.6 }); return true; })()`);
+        await pauza(400);
+        const venku = await stav();
+        await drz('KeyW', 2500);
+        await pauza(600);
+        s = await stav();
+        const kotaP1 = await p.vyhodnot(`window._kk3d.wallGroup.position.y + ${D}.engine.kotaPodlazi('P1')`);
+        kontrola('z terénu 1,2 m pod podlahou dojde do domu a stojí na podlaze, ne pod ní', blizko(venku.y, 0, 0.03) && s.z < 7.5 && blizko(s.y, kotaP1 + 0.025, 0.05), JSON.stringify({ venku: venku.y, s, kotaP1 }));
+        await snimek3d('05b-dum-nad-terenem.png');
+        await p.vyhodnot(`(async () => { const d = ${D}; d.engine.dum.posunVysky = 0; d._build3d(); await new Promise(r => setTimeout(r, 300)); return true; })()`);
+
+        console.log('\n5c) Strop pod šikmou střechou a podlaha pod dveřmi');
+        const STROP = `(() => { const d = ${D}, _3d = window._kk3d; const m = _3d.dumSkupina.children.filter(o => o.userData?.stropPod === 'P2');
+            const b = m.length ? new THREE.Box3().setFromObject(m[0]) : null; return { pocet: m.length, od: b ? +(b.min.y - _3d.wallGroup.position.y).toFixed(3) : null, do: b ? +(b.max.y - _3d.wallGroup.position.y).toFixed(3) : null,
+            sirka: b ? +(b.max.x - b.min.x).toFixed(3) : null, svetla: d.engine.svetlaVyska(d.engine.podlaziPodleId('P2')), kota: d.engine.kotaPodlazi('P2'), panel: JSON.parse(JSON.stringify({ moz: d.strechaPanel.stropMozny, strop: d.strechaPanel.strop })) }; })()`;
+        let strop = await p.vyhodnot(STROP);
+        kontrola('pod šikmou střechou je výchozí strop ve světlé výšce horního podlaží, o 2 cm užší než dům (boky ve zdech)',
+            strop.pocet === 1 && blizko(strop.od, strop.kota + strop.svetla, 0.01) && strop.sirka < 10.3 - 0.03 && strop.panel.moz && strop.panel.strop, JSON.stringify(strop));
+        await p.vyhodnot(`(async () => { const d = ${D}; d.setStrecha('strop', false); await new Promise(r => setTimeout(r, 600)); return true; })()`);
+        strop = await p.vyhodnot(STROP);
+        kontrola('volba Strop vypnutá: strop zmizí (otevřený krov)', strop.pocet === 0 && !strop.panel.strop, JSON.stringify(strop));
+        const ulozeno = await p.vyhodnot(`${D}.engine.dum.strecha.strop`);
+        await p.vyhodnot(`(async () => { const d = ${D}; d.setStrecha('strop', true); await new Promise(r => setTimeout(r, 600)); return true; })()`);
+        strop = await p.vyhodnot(STROP);
+        kontrola('zapnutím se strop vrátí a v datech nic nezůstane', ulozeno === false && strop.pocet === 1 && (await p.vyhodnot(`${D}.engine.dum.strecha.strop === undefined`)), JSON.stringify({ ulozeno, strop }));
+        // Podlaha pod vchodovými dveřmi: na ose zdi i kousek před vnějším lícem leží dekor podlahy (0,025), ne holá deska
+        // Obdélníky dekoru podlahy (po 6 vrcholech ve výšce 0,025) pokrývají bod na ose zdi i u vnějšího líce?
+        const podDvermi = await p.vyhodnot(`(() => { const g = window._kk3d.podlaziSkupiny.get('P1'); const obd = [];
+            g.traverse(o => { const poz = o.isMesh && o.geometry.type === 'BufferGeometry' ? o.geometry.getAttribute('position') : null; if (!poz || poz.count % 6) return;
+                for (let i = 0; i < poz.count; i += 6) { const xs = [], ys = [], zs = []; for (let j = i; j < i + 6; j++) { xs.push(poz.getX(j)); ys.push(poz.getY(j)); zs.push(poz.getZ(j)); }
+                    if (Math.max(...ys) - Math.min(...ys) < 1e-4 && Math.abs(ys[0] - 0.025) < 0.002) obd.push([Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)]); } });
+            const kryje = (x, z) => obd.some(([a, b, c, d]) => x >= a && x <= b && z >= c && z <= d);
+            return { obdelniku: obd.length, osa: kryje(${dvere.x}, 8.0), uLice: kryje(${dvere.x}, 8.13), mimoDvere: kryje(${dvere.x} + 2, 8.0) }; })()`);
+        kontrola('pod vchodovými dveřmi je podlaha přes celou tloušťku zdi (bez zubů), mimo dveře ve zdi ne', podDvermi.osa && podDvermi.uLice && !podDvermi.mimoDvere, JSON.stringify(podDvermi));
 
         console.log('\n6) Mapka a export z oka');
         const mapka = await p.vyhodnot(`(() => { const c = document.querySelector('[data-pr-mapka]'); const g = c.getContext('2d'); const b = g.getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < b.length; i += 4) if (b[i] > 0) n++;

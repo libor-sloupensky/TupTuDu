@@ -326,6 +326,8 @@ return [
         'vyska_okapu_tip' => 'Altezza in cui il tetto incontra il filo della parete, misurata dal pavimento del piano più alto',
         'vyska_okapu' => 'Altezza gronda',
         'hreben_tip' => 'Punto più alto del tetto sopra il pavimento del piano più alto',
+        'strop' => 'Soffitto',
+        'strop_tip' => 'Soffitto piano sotto il tetto a falde all’altezza netta del piano. Senza, dal basso si vede l’orditura del tetto.',
         'hreben' => 'colmo :vyska m',
         'krytina_tip' => 'Tipo di manto. Per tegole, coppi piani, tegole canadesi e ardesia scegli l’aspetto, per la lamiera il colore. Vale per tutto il tetto.',
         'krytina' => 'Manto',

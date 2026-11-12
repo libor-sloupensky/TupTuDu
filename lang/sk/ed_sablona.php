@@ -326,6 +326,8 @@ return [
         'vyska_okapu_tip' => 'Výška, kde strecha pretne líc steny, meraná od podlahy horného podlažia',
         'vyska_okapu' => 'Výška odkvapu',
         'hreben_tip' => 'Najvyšší bod strechy nad podlahou horného podlažia',
+        'strop' => 'Strop',
+        'strop_tip' => 'Rovný strop pod šikmou strechou vo svetlej výške podlažia. Bez neho je zospodu vidieť krov.',
         'hreben' => 'hrebeň :vyska m',
         'krytina_tip' => 'Typ krytiny. Pri škridliach, bobrovke, šindli a bridlici vyberieš vzhľad, pri plechu farbu. Platí pre celú strechu.',
         'krytina' => 'Krytina',

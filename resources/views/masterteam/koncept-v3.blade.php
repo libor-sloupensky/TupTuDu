@@ -1347,6 +1347,11 @@
                                         <span class="kk-pole-jed"><input type="number" min="0" max="1200" step="5" class="w-16" :value="Math.round(strechaPanel.zOkap * 100)"
                                                @change="setStrecha('vyskaOkapu', $event.target.value === '' ? null : parseFloat($event.target.value) / 100)" @keydown.enter.prevent="$event.target.blur()"><span>cm</span></span>
                                         <span class="ml-auto whitespace-nowrap" title="{{ __('ed_sablona.strecha.hreben_tip') }}" x-show="strechaPanel.zMax !== null" x-text="strechaPanel.zMax !== null ? preloz('ed_sablona.strecha.hreben', { vyska: prelozCislo(strechaPanel.zMax, 2) }) : ''"></span></div>
+                                    {{-- Strop pod šikmou střechou: výchozí, vypnutím otevřený krov (Libor 12. 11. 2026) --}}
+                                    <label class="kk-podlazi-pole cursor-pointer" x-show="strechaPanel.stropMozny" title="{{ __('ed_sablona.strecha.strop_tip') }}">
+                                        <span class="w-24 shrink-0">{{ __('ed_sablona.strecha.strop') }}</span>
+                                        <input type="checkbox" data-strecha-strop :checked="strechaPanel.strop" @change="setStrecha('strop', $event.target.checked)">
+                                    </label>
                                     <div class="kk-podlazi-pole" x-show="!strechaPanel.bezKrytiny" title="{{ __('ed_sablona.strecha.krytina_tip') }}"><span class="w-24 shrink-0">{{ __('ed_sablona.strecha.krytina') }}</span>
                                         <select class="flex-1 min-w-0" data-krytina @change="setStrecha('krytina', $event.target.value)">
                                             <template x-for="k in krytinyVolby" :key="k.id">

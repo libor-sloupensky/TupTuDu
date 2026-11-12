@@ -326,6 +326,8 @@ return [
         'vyska_okapu_tip' => 'Wysokość, na której dach przecina lico ściany, mierzona od podłogi najwyższej kondygnacji',
         'vyska_okapu' => 'Wysokość okapu',
         'hreben_tip' => 'Najwyższy punkt dachu nad podłogą najwyższej kondygnacji',
+        'strop' => 'Strop',
+        'strop_tip' => 'Płaski strop pod dachem spadzistym na wysokości kondygnacji w świetle. Bez niego od dołu widać więźbę.',
         'hreben' => 'kalenica :vyska m',
         'krytina_tip' => 'Rodzaj pokrycia. Przy dachówkach, karpiówce, gontach i łupku wybierasz wygląd, przy blasze kolor. Dotyczy całego dachu.',
         'krytina' => 'Pokrycie',

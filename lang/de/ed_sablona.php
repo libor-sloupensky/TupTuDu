@@ -326,6 +326,8 @@ return [
         'vyska_okapu_tip' => 'Höhe, in der das Dach die Wandfläche schneidet, gemessen vom Boden des obersten Geschosses',
         'vyska_okapu' => 'Traufhöhe',
         'hreben_tip' => 'Höchster Punkt des Dachs über dem Boden des obersten Geschosses',
+        'strop' => 'Decke',
+        'strop_tip' => 'Gerade Decke unter dem Steildach in lichter Geschosshöhe. Ohne sie siehst du von unten den Dachstuhl.',
         'hreben' => 'First :vyska m',
         'krytina_tip' => 'Art der Eindeckung. Bei Ziegeln, Biberschwanz, Schindeln und Schiefer wählst du das Aussehen, bei Blech die Farbe. Gilt für das ganze Dach.',
         'krytina' => 'Eindeckung',

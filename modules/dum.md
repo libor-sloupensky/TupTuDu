@@ -69,7 +69,9 @@ Hrana může mít vlastní typ, sklon, přesah, výšku okapu a barvu (`strecha.
 
 **Schod na dlouhé straně** (Libor 11. 11. 2026): v užší části se protilehlé okapy potkají dřív. Zmizí jen kratší z obou splývajících hran, delší pokračuje přes širší část a v místě překryvu vzniká hřeben. Dřív zmizely obě a ve střeše byla díra. Sedlová předvolba bere krátký schod (do 2,5 m, `SCHOD_MAX_M`) mezi okapy stejného směru jako okap, tedy malou valbičku. Ručně přepnutý štít na schodu jde přes celou nižší střechu a ve 3D se dokreslí i za koncem stěny pod ním (`_orezTroj`). Test `test-strecha.cjs`.
 
-Stěny horního podlaží nikdy neprojdou střechou. Stěny na obrysu dosáhnou až pod ni, takže pod vyšším okapem nezůstane mezera. Pod šikmou střechou se strop nekreslí, jen plochá střecha na něm leží.
+Stěny horního podlaží nikdy neprojdou střechou. Stěny na obrysu dosáhnou až pod ni, takže pod vyšším okapem nezůstane mezera. Plochá střecha leží na stropu.
+
+**Strop pod šikmou střechou** (Libor 12. 11. 2026: místnost má mít strop, zespodu nemá být vidět krov): výchozí u nejvyššího podlaží, které není podkroví. Rovná deska ve světlé výšce, nejvýš v okapu (vzorový dům má okap 2,6 m pod světlou výškou 2,8 m, výš by deska u zdí trčela do střechy), tloušťka jako strop podlaží. S okapem pod 2,2 m (`STROP_POD_STRECHOU_MIN`) jde o podkrovní prostor a strop se nedělá. Obrys o 2 cm dovnitř: boky zůstanou ve zdech dotažených pod střechu a v líci se neperou s fasádou. Volba **Strop** v panelu střechy (jen hlavní šikmá, ne nad podkrovím) ho vypne pro otevřený krov, ukládá se jen `strecha.strop = false`. `userData.stropPod` jako ostatní stropy, skrývá se se střechou. Test `test-prochazka-ui` (část 5c).
 
 Typ krytiny (`strecha.krytina`) platí pro celek, barva je zvlášť (`strecha.barva`, na hraně vlastní). Starší hodnoty jako `antracit` se čtou jako barva. Vzhled ve 3D viz další část.
 
@@ -148,7 +150,7 @@ Stěny (`_hranolStrany`, `_hranolPodStrechou`): co hledí do exteriéru, je fas�
 
 **Směr vzoru podlahy (Libor 11. 11. 2026):** dekor vede souběžně se stěnami kolem místnosti (`_smerDekoru`, nejdelší směr stěn po 90°, bez stěn osa domu), prkna po delší straně místnosti. Tlačítko „↻ 90°“ vedle dekoru v panelu místnosti otočí vzor napříč (`podlaha.otoceni = 90`, nula se neukládá). Dřív šly souřadnice textury podle os plátna: v natočeném domě šikmo a prkna často napříč. Test `test-barvy-domu-ui.cjs`, část 5.
 
-Podlahu kreslí jen `_podlahyMistnosti` (všechny místnosti, bez vlastního dekoru společná hladká). Desky mají boky i vrch ve fasádě, spodek je bílý strop. **Proč:** obrys desky se počítá z rastru a může o milimetry přesáhnout líc zdi; bílý vrch desky pak dělal bílý lem všude, kde se patro nekrylo přesně se zdí pod ním. Nad terasou je proto zatím fasáda, barva terasy není řešená.
+Podlahu kreslí jen `_podlahyMistnosti` (všechny místnosti, bez vlastního dekoru společná hladká). **Pod dveřmi a průchody** (otvory s předponou D) jde podlaha přes celou tloušťku zdi: buňky v obdélníku otvoru dorůstají ze sousedních místností, dokud se nepotkají, u vchodu jde podlaha místnosti až k vnějšímu líci. Dřív jen dva pásy buněk od líců a v otvoru zuby (Libor 12. 11. 2026, test `test-prochazka-ui` část 5c). Desky mají boky i vrch ve fasádě, spodek je bílý strop. **Proč:** obrys desky se počítá z rastru a může o milimetry přesáhnout líc zdi; bílý vrch desky pak dělal bílý lem všude, kde se patro nekrylo přesně se zdí pod ním. Nad terasou je proto zatím fasáda, barva terasy není řešená.
 
 `mistnost.podlaha = {dekor, barva?}` (bez `barva` platí výchozí barva dekoru, `DEKORY_PODLAH`). Záznam `mistnost.barva` zůstává jen pro půdorys. Obdélníky podlahy přesahují dvě buňky pod stěny a oddělovače, výřezy zůstanou prázdné. Na zvýšené podlaze se dekor kreslí ve výšce zvýšení, nad schody zůstává dole (Libor 4. 11. 2026). Přenesené zvýšení z podlaží níž se řídí jeho obrysem. Snížená místnost: díra v desce o 3 cm přes obrys (`_otvoryDesky`), podlaha a deska v úrovni snížení, stěny dotažené dolů (`_behySnizeni`, s výřezem pro otvory jdoucí pod podlaží), schody k ní začínají na její podlaze. Země a mřížka leží nad ní, proto je nad těmito místnostmi nevykreslí maska ve stencil bufferu (`_maskaZeme3d`), v prohlížeči odkazu má země díry (`diry` v modelu). Plocha místnosti se nemění. Běžné schody do patra se začátkem ve snížené místnosti pořád začínají v úrovni podlaží.
 
@@ -225,7 +227,9 @@ Passeggiata). Ve všech tarifech. Měří se jako funkce `prochazka` (`App\Suppo
   orientaci dává mapka.
 - **Ovládání:** W A S D a šipky nahoru a dolů chůze, šipky vlevo a vpravo otočení na místě (A a D úkrok), Q a E nebo Page Down
   a Page Up výška oka, Shift rychleji, tah myší rozhlížení (svět jde za kurzorem jako ve Street View a ve 3D), kolečko krok,
-  dvojklik dojde na místo (kroužek pod myší ukazuje kam, u zdi k její patě). Klávesy podle polohy (`e.code`), na francouzské
+  dvojklik dojde na místo. Kroužek pod myší ukazuje kam: malý, vidět i přes zeď, paprsek projde zdmi, nábytkem i střechou
+  na první podlahu nebo terén pod okem (strop nad okem přeskočí); v cíli panáček stojí ve výšce kroužku, třeba na zemi pod
+  oknem patra (Libor 12. 11. 2026). Klávesy podle polohy (`e.code`), na francouzské
   AZERTY jsou to Z Q S D a A, popisky má francouzský slovník. Na dotyk: tah rozhlížení, ťuknutí dojde, dva prsty krok,
   tlačítka vlevo dole (jen při `pointer: coarse`).
 - **Chůze:** panáček stojí na nejvyšší vodorovné ploše pod `nohy + KROK` (0,5 m): podlaha, schod, terén. Výš nevyjde, níž spadne.
@@ -233,7 +237,12 @@ Passeggiata). Ve všech tarifech. Měří se jako funkce `prochazka` (`App\Suppo
   (`_terrainHeightAt`, bez výšek rovina 0), proto se na skrytém terénu stát dá. Zdi i nábytek jsou průchozí (Libor).
   Na jiné podlaží: po schodech, klikem na řádek podlaží v panelu (výtah na stejné místo, mimo obrys doprostřed podlaží,
   skryté se ukáže) nebo šipkami v záhlaví mapky.
-- **Oko:** výchozí 1,6 m nad tím, na čem panáček stojí, rozsah −30 až 60 m (pole Oko v panelu platí ihned). Při klesání se oko
+- **Nezahrabe se** (`kamStoupne`, Libor 12. 11. 2026 ve vzorovém domě skončil 3,35 m pod podlahou a 2,2 m pod terénem): kdo
+  nestojí na ploše domu, pod terénem vystoupí na terén, a je-li nad ním do `VSTUP` (2,2 m) podlaha domu (vchod z nižšího
+  terénu na svahu), stoupne si na ni. Výš ne, ať pod přesahem patra (krytý vstup) nevyskočí nahoru. Když se dům ve scéně
+  posune svisle (dotažené výšky terénu po startu procházky, posun výšky), panáček jde s ním (`_prochazkaY0`, `posunVysku`).
+- **Oko:** výchozí 1,6 m nad tím, na čem panáček stojí, rozsah −30 až 60 m (pole Oko v panelu platí ihned, tlačítko vedle
+  vrátí výchozí výšku a jinak je zašedlé). Při klesání se oko
   zastaví 10 cm nad zemí, pod zem až dalším stiskem. **Pod terénem** (oko pod nulou a pod terénem v tom místě) se terén,
   mřížka a výkop po dobu procházky skryjí a nad zemí se vrátí (Libor 12. 11. 2026); přepínač Terén se nemění
   (`prochazkaPodZemi` v `_jama3d`). Ve sklepě oko nad podlahou terén neskrývá.
