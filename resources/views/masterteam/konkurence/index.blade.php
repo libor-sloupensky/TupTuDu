@@ -45,10 +45,10 @@
     .kn-d.q { width: auto; height: auto; border-radius: 0; color: var(--c-text-secondary); font-size: 11px; font-weight: 700; }
     .kn-d.q::before { content: "?"; }
     .kn-d.pl { box-shadow: 0 0 0 2px var(--c-surface), 0 0 0 3.5px var(--c-primary); }
-    .kn-mesice { display: inline-grid; grid-template-columns: repeat(12, 9px); gap: 2px; vertical-align: middle; }
-    .kn-mesice i { width: 9px; height: 14px; border-radius: 2px; border: 1px solid var(--c-border); }
+    .kn-mesice { display: inline-grid; grid-template-columns: repeat(12, 7px); gap: 2px; vertical-align: middle; }
+    .kn-mesice i { width: 7px; height: 14px; border-radius: 2px; border: 1px solid var(--c-border); }
     .kn-jaz { display: inline-flex; gap: 2px; flex-wrap: nowrap; }
-    .kn-jaz span { font-size: 10.5px; font-weight: 700; width: 20px; text-align: center; padding: 1px 0; border-radius: 4px; text-transform: uppercase; color: color-mix(in srgb, var(--c-text-secondary) 45%, transparent); }
+    .kn-jaz span { font-size: 10.5px; font-weight: 700; width: 18px; text-align: center; padding: 1px 0; border-radius: 4px; text-transform: uppercase; color: color-mix(in srgb, var(--c-text-secondary) 45%, transparent); }
     .kn-jaz span.n { background: var(--c-ok); color: var(--c-surface); }
     .kn-jaz span.w { box-shadow: inset 0 0 0 1.5px var(--c-ok); color: var(--c-text); }
     .kn-bar { display: inline-block; width: 36px; height: 6px; border-radius: 3px; background: var(--c-border); overflow: hidden; vertical-align: middle; margin-right: 6px; }
@@ -119,6 +119,7 @@
                         <th>Poslední vydání</th>
                         <th title="Události (vydání, nové funkce) po měsících za posledních 12 měsíců, vpravo tento měsíc">12 měsíců</th>
                         <th title="Plně = jazyk nástroje, obrysem = jen web">Jazyky</th>
+                        <th style="text-align:right" title="Hledání názvu nástroje za měsíc v Česku, na Slovensku, v Polsku a Německu dohromady (Plánovač Google). V bublině rozpad po zemích, pořadí Tranco, instalace a odhad návštěv. Jen pro nás.">Zájem</th>
                         <th style="text-align:right">Od Kč/měs</th>
                         @if($predchozi)<th style="text-align:right" title="Změněné hodnoty proti předchozímu měření">Změny</th>@endif
                     </tr>
@@ -145,7 +146,7 @@
                         <td class="kn-cislo">
                             <span class="kn-bar"><i style="width: {{ $r['z'] ? round($r['body'] / $r['z'] * 100) : 0 }}%"></i></span>{{ str_replace('.', ',', $r['body']) }}<span class="kn-tlumene"> / {{ $r['z'] }}</span>
                         </td>
-                        <td style="min-width:120px">
+                        <td style="min-width:104px">
                             @if($r['verdikt'])
                                 <span class="kn-stitek" style="background: color-mix(in srgb, {{ KC::barvaVerdiktu($r['verdikt']->text) }} 18%, transparent); color: var(--c-text)" title="{{ $r['verdikt']->poznamka }}">{{ $r['verdikt']->text }}</span>
                             @else
@@ -181,6 +182,19 @@
                                 <span class="kn-tlumene">nezjištěno</span>
                             @endif
                         </td>
+                        @php
+                            // Zájem: součet hledání názvu v CZ+SK+PL+DE, v bublině rozpad a další ukazatele (vše Tiše)
+                            $hl = $r['hledani'];
+                            $soucet = array_sum($hl);
+                            $cislo = fn ($v) => number_format($v, 0, ',', ' ');
+                            $zajem = array_filter([
+                                $hl ? 'Hledání názvu za měsíc: ' . collect($hl)->map(fn ($v, $z) => strtoupper($z) . ' ' . $cislo($v))->implode(', ') : 'Hledání názvu nezjištěno',
+                                $r['tranco'] ? 'Tranco: ' . $cislo($r['tranco']) . '. místo' : null,
+                                $r['play'] ? 'Google Play: ' . $r['play'] . ' instalací' : null,
+                                $r['navstevy'] ? 'Similarweb: asi ' . $cislo($r['navstevy']) . ' návštěv měsíčně' : null,
+                            ]);
+                        @endphp
+                        <td class="kn-cislo" style="text-align:right" title="{{ implode("\n", $zajem) }}">{{ $hl ? ($soucet >= 1000 ? number_format($soucet / 1000, $soucet >= 10000 ? 0 : 1, ',', ' ') . ' tis.' : $soucet) : '—' }}</td>
                         <td class="kn-cislo" style="text-align:right">{{ $r['cena'] !== null ? number_format($r['cena'], 0, ',', ' ') : '—' }}</td>
                         @if($predchozi)<td class="kn-cislo" style="text-align:right">{{ $r['zmeny'] ?? 0 }}</td>@endif
                     </tr>

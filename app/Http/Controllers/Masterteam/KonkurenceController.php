@@ -101,6 +101,11 @@ class KonkurenceController extends Controller
                 'vydaniPozn' => $hodn('k_posledni_vydani')?->poznamka,
                 'vydani6' => $hodn('k_vydani_6m')?->cislo,
                 'cena' => $hodn('j_cena_min')?->cislo,
+                // Zájem: hledání názvu po zemích (Plánovač Google), pořadí Tranco, instalace, odhad Similarweb (vše Tiše)
+                'hledani' => collect(['cz', 'sk', 'pl', 'de'])->mapWithKeys(fn ($z) => [$z => $hodn('k_hledani_' . $z)?->cislo])->filter(fn ($v) => $v !== null)->all(),
+                'tranco' => $hodn('k_tranco')?->cislo,
+                'play' => $hodn('k_play')?->text,
+                'navstevy' => $hodn('k_navstevnost')?->cislo,
                 'udalosti' => $poMesicich,
                 'udalostiCelkem' => array_sum($poMesicich),
                 'zmeny' => $zmeny[$k->id] ?? null,
