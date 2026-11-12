@@ -52,6 +52,10 @@ Jen pro master tým, česky, nepřekládá se.
 - Bez knihoven Googlu: token přes podepsané JWT, v cache 50 minut.
 - Odpovědi se drží v cache (návštěvy 30 minut, vyhledávání hodinu). Selhání = `Log::error`
   (zrcadlí se do bugů) a hláška u grafu, ostatní grafy běží dál.
+- **Dotazy jednoho grafu jdou souběžně** (`Http::pool`): vyhledávání po dnech, stránkách a výrazech
+  (`vyhledavaniVse`, jedna položka cache), návštěvy po dnech a součet. Za sebou při pomalém Googlu přelezly
+  limit PHP 30 s a stránka spadla fatální chybou, kterou catch nechytí (bug 84, 12. 11. 2026). Datové endpointy
+  si proto navíc prodlouží limit na 90 s (`casNaGoogle`), jeden dotaz smí trvat 30 s, spojení 10 s.
 - Čísla služeb (GA4 `561796471`, Search Console `sc-domain:tuptudu.com`) jsou v configu, nejsou tajná.
 
 ## Pravidla výpočtu

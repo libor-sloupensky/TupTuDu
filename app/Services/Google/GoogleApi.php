@@ -36,8 +36,11 @@ class GoogleApi
         $adresa = 'https://analyticsdata.googleapis.com/v1beta/properties/' . config('services.google_api.ga4_sluzba') . ':runReport';
         $obdobi = [['startDate' => $od, 'endDate' => $do]];
 
-        $poDnech = $this->post($adresa, ['dateRanges' => $obdobi, 'dimensions' => [['name' => 'date']], 'metrics' => $metriky, 'limit' => 5000]);
-        $soucet = $this->post($adresa, ['dateRanges' => $obdobi, 'metrics' => $metriky]);
+        // Oba dotazy souběžně: za sebou s pomalým Googlem přelezly limit PHP 30 s (bug 84)
+        ['dny' => $poDnech, 'soucet' => $soucet] = $this->postSoubezne([
+            'dny' => [$adresa, ['dateRanges' => $obdobi, 'dimensions' => [['name' => 'date']], 'metrics' => $metriky, 'limit' => 5000]],
+            'soucet' => [$adresa, ['dateRanges' => $obdobi, 'metrics' => $metriky]],
+        ]);
 
         $dny = [];
         foreach ($poDnech['rows'] ?? [] as $radek) {
@@ -68,11 +71,39 @@ class GoogleApi
      */
     public function vyhledavani(string $od, string $do): array
     {
-        $odpoved = $this->post(
-            'https://www.googleapis.com/webmasters/v3/sites/' . rawurlencode(config('services.google_api.gsc_web')) . '/searchAnalytics/query',
-            ['startDate' => $od, 'endDate' => $do, 'dimensions' => ['date'], 'dataState' => 'all', 'rowLimit' => 5000]
-        );
+        return $this->poDnech($this->post($this->adresaVyhledavani(), $this->dotazVyhledavani('date', $od, $do)));
+    }
 
+    /**
+     * Vyhledávání po dnech, po stránkách a po výrazech najednou: tři dotazy souběžně. Za sebou s pomalým
+     * Search Console přelezly limit PHP 30 s a stránka Statistik spadla (bug 84, 12. 11. 2026).
+     *
+     * @return array{dny: array, stranky: array, vyrazy: array}
+     */
+    public function vyhledavaniVse(string $od, string $do): array
+    {
+        $adresa = $this->adresaVyhledavani();
+        $o = $this->postSoubezne([
+            'dny' => [$adresa, $this->dotazVyhledavani('date', $od, $do)],
+            'stranky' => [$adresa, $this->dotazVyhledavani('page', $od, $do)],
+            'vyrazy' => [$adresa, $this->dotazVyhledavani('query', $od, $do)],
+        ]);
+
+        return ['dny' => $this->poDnech($o['dny']), 'stranky' => $this->podle($o['stranky']), 'vyrazy' => $this->podle($o['vyrazy'])];
+    }
+
+    private function adresaVyhledavani(): string
+    {
+        return 'https://www.googleapis.com/webmasters/v3/sites/' . rawurlencode(config('services.google_api.gsc_web')) . '/searchAnalytics/query';
+    }
+
+    private function dotazVyhledavani(string $rozmer, string $od, string $do): array
+    {
+        return ['startDate' => $od, 'endDate' => $do, 'dimensions' => [$rozmer], 'dataState' => 'all', 'rowLimit' => 5000];
+    }
+
+    private function poDnech(array $odpoved): array
+    {
         return array_map(fn ($r) => [
             'den' => $r['keys'][0],
             'zobrazeni' => (int) $r['impressions'],
@@ -105,11 +136,12 @@ class GoogleApi
     /** @return array<string, array{zobrazeni: int, kliknuti: int, pozice: float}> */
     private function vyhledavaniPodle(string $rozmer, string $od, string $do): array
     {
-        $odpoved = $this->post(
-            'https://www.googleapis.com/webmasters/v3/sites/' . rawurlencode(config('services.google_api.gsc_web')) . '/searchAnalytics/query',
-            ['startDate' => $od, 'endDate' => $do, 'dimensions' => [$rozmer], 'dataState' => 'all', 'rowLimit' => 5000]
-        );
+        return $this->podle($this->post($this->adresaVyhledavani(), $this->dotazVyhledavani($rozmer, $od, $do)));
+    }
 
+    /** @return array<string, array{zobrazeni: int, kliknuti: int, pozice: float}> */
+    private function podle(array $odpoved): array
+    {
         $stranky = [];
         foreach ($odpoved['rows'] ?? [] as $r) {
             $stranky[$r['keys'][0]] = [
@@ -167,9 +199,41 @@ class GoogleApi
 
     private function post(string $adresa, array $telo): array
     {
-        $odpoved = Http::withToken($this->token())->timeout(30)->post($adresa, $telo);
-        if (! $odpoved->successful()) {
-            throw new RuntimeException('Google API ' . parse_url($adresa, PHP_URL_HOST) . ': HTTP ' . $odpoved->status() . ' ' . mb_substr((string) $odpoved->json('error.message'), 0, 300));
+        $odpoved = Http::withToken($this->token())->connectTimeout(10)->timeout(30)->post($adresa, $telo);
+
+        return $this->json($adresa, $odpoved);
+    }
+
+    /**
+     * Několik dotazů souběžně, výsledek pod stejnými klíči. Selže-li kterýkoli, vyhodí výjimku (spojení
+     * jako ConnectionException, ať ji volající pozná jako výpadek sítě).
+     *
+     * @param  array<string, array{0: string, 1: array}>  $dotazy  klíč => [adresa, tělo]
+     * @return array<string, array>
+     */
+    private function postSoubezne(array $dotazy): array
+    {
+        $token = $this->token();
+        $odpovedi = Http::pool(fn (Pool $pool) => array_map(
+            fn ($klic) => $pool->as($klic)->withToken($token)->connectTimeout(10)->timeout(30)->post($dotazy[$klic][0], $dotazy[$klic][1]),
+            array_keys($dotazy)
+        ));
+        $vysledky = [];
+        foreach ($dotazy as $klic => [$adresa]) {
+            $odpoved = $odpovedi[$klic] ?? null;
+            if ($odpoved instanceof \Throwable) {
+                throw $odpoved;
+            }
+            $vysledky[$klic] = $this->json($adresa, $odpoved);
+        }
+
+        return $vysledky;
+    }
+
+    private function json(string $adresa, ?Response $odpoved): array
+    {
+        if (! $odpoved?->successful()) {
+            throw new RuntimeException('Google API ' . parse_url($adresa, PHP_URL_HOST) . ': HTTP ' . ($odpoved?->status() ?? 0) . ' ' . mb_substr((string) $odpoved?->json('error.message'), 0, 300));
         }
 
         return $odpoved->json() ?? [];

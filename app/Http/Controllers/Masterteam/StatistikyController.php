@@ -38,6 +38,7 @@ class StatistikyController extends Controller
     public function navstevyData(Request $r, GoogleApi $google): JsonResponse
     {
         [$dnu, $od] = $this->obdobiMereni($r);
+        $this->casNaGoogle();
 
         try {
             $data = Cache::remember("statistiky-navstevy-{$od->toDateString()}", 1800,
@@ -66,14 +67,13 @@ class StatistikyController extends Controller
     public function vyhledavaniData(Request $r, GoogleApi $google): JsonResponse
     {
         [$dnu, $od] = $this->obdobiMereni($r);
+        $this->casNaGoogle();
 
         try {
-            $radky = Cache::remember("statistiky-vyhledavani-{$od->toDateString()}", 3600,
-                fn () => $google->vyhledavani($od->toDateString(), now()->toDateString()));
-            $poStrankach = Cache::remember("statistiky-vyhledavani-stranky-{$od->toDateString()}", 3600,
-                fn () => $google->vyhledavaniPoStrankach($od->toDateString(), now()->toDateString()));
-            $poVyrazech = Cache::remember("statistiky-vyhledavani-vyrazy-{$od->toDateString()}", 3600,
-                fn () => $google->vyhledavaniPoVyrazech($od->toDateString(), now()->toDateString()));
+            // Po dnech, stránkách a výrazech jedním souběžným dotazem (bug 84: za sebou přelezly 30 s)
+            ['dny' => $radky, 'stranky' => $poStrankach, 'vyrazy' => $poVyrazech] = Cache::remember(
+                "statistiky-vyhledavani-vse-{$od->toDateString()}", 3600,
+                fn () => $google->vyhledavaniVse($od->toDateString(), now()->toDateString()));
         } catch (\Throwable $e) {
             return $this->chybaGoogle($e, 'vyhledávání');
         }
@@ -200,6 +200,18 @@ class StatistikyController extends Controller
      * Selhání Googlu: zápis do bugů (Log::error se zrcadlí) a srozumitelná odpověď pro stránku.
      * Výpadek spojení (vypršel čas, nedostupný server) je šum sítě, ne chyba kódu: jen do laravel.log.
      */
+    /**
+     * Pojistka pro dotazy na Google: jeden smí trvat až 30 s (GoogleApi), výchozí limit PHP je také 30 s
+     * a jeho překročení je fatální chyba, kterou catch nechytí (bug 84). S rezervou pomalý Google skončí
+     * výjimkou a srozumitelnou hláškou.
+     */
+    private function casNaGoogle(): void
+    {
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(90);
+        }
+    }
+
     private function chybaGoogle(\Throwable $e, string $co): JsonResponse
     {
         $zprava = "Statistiky: {$co} z Googlu se nepodařilo načíst — " . $e->getMessage();
