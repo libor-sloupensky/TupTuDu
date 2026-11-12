@@ -136,6 +136,12 @@ class KonkurenceController extends Controller
             abort(404);
         }
         $data = json_decode($request->getContent(), true);
+        // Filtr hostingu vrací 400 na některé texty v těle (URL, slova jako v SQL), proto data chodí
+        // zabalená: {"gz": base64(gzip(JSON))}. Prostý JSON funguje dál (lokálně).
+        if (is_array($data) && isset($data['gz'])) {
+            $rozbalene = @gzdecode((string) base64_decode((string) $data['gz'], true));
+            $data = $rozbalene === false ? null : json_decode($rozbalene, true);
+        }
         if (! is_array($data)) {
             return response()->json(['ok' => false, 'chyba' => 'Tělo není platný JSON.'], 422);
         }

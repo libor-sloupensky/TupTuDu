@@ -76,10 +76,14 @@ Pozor: `services/srovnani-ukazka/konkurence-data.json` (stav 1. 11. 2026) je v r
 `CRON_TOKEN` (lokálně v `.env` jako `PROD_CRON_TOKEN`), špatný token vrací 404, `?prepsat-rezim=1` přepíše i režimy.
 Zápis přes `db-proxy` je jen pro bugy, proto vlastní adresa. Od prvního přenosu (12. 11. 2026) je pravdou produkční DB:
 režimy přepíná Libor tam, lokálně se jen zkouší. Nová data (měření, popisy) se posílají stejně, režim zůstane.
+Filtr hostingu vrací na prostý JSON s texty analýzy **400 dřív, než požadavek dojde do aplikace** (velikost nevadí,
+vadí obsah). Proto se data posílají zabalená `{"gz": base64(gzip(JSON))}`, prostý JSON jde jen lokálně:
 ```
+php -r 'echo json_encode(["gz" => base64_encode(gzencode(file_get_contents("storage/app/konkurence/import.json"), 9))]);' \
+  > storage/app/konkurence/import.gz.json
 T=$(grep ^PROD_CRON_TOKEN= .env | cut -d= -f2-)
 curl -s -X POST https://www.tuptudu.com/interni/konkurence/import -H "X-DB-Token: $T" \
-  -H 'Content-Type: application/json' --data-binary @storage/app/konkurence/import.json
+  -H 'Content-Type: application/json' --data-binary @storage/app/konkurence/import.gz.json
 ```
 Import sestavuje `storage/app/konkurence/reserse-2026-11-12/sestav_import.py <ta složka> <výstup.json>`
 z dat původní analýzy, katalogu (`katalog.py`), popisů parametrů (`kriteria.py`) a rešerší.
