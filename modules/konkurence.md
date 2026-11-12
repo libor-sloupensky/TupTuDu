@@ -9,14 +9,14 @@ Původní analýza (25 aplikací × 42 funkcí, konkurenti 1. 11., TupTuDu 4. 11
 soukromé stránce https://claude.ai/artifact/NCyfAVyDQ1R9aUTMoMKaGo. Jsou tam i texty, které do DB nešly:
 nejpalčivější požadavky, plán funkcí, nápady, rozbor jazyků a zemí a podrobný ceník.
 
-## Stav (12. 11. 2026, lokálně, nenasazeno)
+## Stav (na webu od 12. 11. 2026, data přenesená týž den)
 - Tabulky, import, stránka se čtyřmi záložkami, přepínače režimu u parametrů i aplikací.
 - V DB je měření „Listopad 2026“: původní analýza, TupTuDu aktualizované 12. 11. podle dokumentace modulů,
   nové weby z todo, jazyky a signály vývoje z rešerše 12. 11. 2026, nejlevnější tarify v Kč z ceníku 29. 10. 2026.
   28 aplikací + TupTuDu, 103 parametrů, 1 536 hodnot, 93 událostí.
 - Nové parametry jsou zatím vyplněné jen tam, kde to šlo z dřívějších dat a rešerše (jazyky, vývoj, ceny, TupTuDu).
   Zbytek doplní první úplné měření.
-- Na produkci zatím nic. Při nasazení se data musí přenést zvlášť (viz Import), migrace vytvoří jen prázdné tabulky.
+- Na produkci od 12. 11. 2026 (nasazení cf97c65), data přenesena adresou pro přenos a ověřena dotazem (103 parametrů s popisem, 29 aplikací, 1 536 hodnot, 93 událostí). Pravdou je od té doby produkční DB. Stránku na produkci v prohlížeči ověří Libor (Claude produkční přihlášení nemá).
 - Automatické měsíční měření zatím neexistuje, viz Měsíční měření.
 
 ## Režim sledování (parametry i aplikace)
