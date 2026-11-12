@@ -136,7 +136,7 @@
      * zatacka 'osa': stupně v zatáčce se sbíhají do osy zatáčky (vnitřního rohu), jak se běžně stavějí;
      * 'rozlozene': zúžení se rozloží rovnoměrně na stupně kolem zatáčky (vyrovnávané stupně, širší u vnitřní hrany).
      */
-    function zabihajici(N, b, sir, tvar, zatacka) {
+    function zabihajici(N, b, sir, tvar, zatacka, odVnitrnihoM = OD_VNITRNIHO) {
         const U = tvar === 'Uz';
         const d = odstupVystupni(sir), r = sir - d;
         const T = (U ? Math.PI : Math.PI / 2) * r;          // délka výstupní čáry v zatáčce
@@ -202,7 +202,7 @@
         const naCare = hrany.map((h) => {
             let lo = 0, hi = 1;
             const bod = (s) => [h.vnitrni[0] + (h.venku[0] - h.vnitrni[0]) * s, h.vnitrni[1] + (h.venku[1] - h.vnitrni[1]) * s];
-            for (let i = 0; i < 40; i++) { const s = (lo + hi) / 2; if (odCary(bod(s)) < OD_VNITRNIHO) lo = s; else hi = s; }
+            for (let i = 0; i < 40; i++) { const s = (lo + hi) / 2; if (odCary(bod(s)) < odVnitrnihoM) lo = s; else hi = s; }
             return bod((lo + hi) / 2);
         });
         const odVnitrniho = Math.min(...naCare.slice(1).map((P, k) => Math.hypot(P[0] - naCare[k][0], P[1] - naCare[k][1])));
@@ -212,7 +212,7 @@
     }
 
     /** Točité (vřetenové) schody kolem sloupku, průměr D. Stupně nad první otáčkou jsou v půdorysu nad prvními. */
-    function tocite(N, b, D) {
+    function tocite(N, b, D, odVnitrnihoM = OD_VNITRNIHO) {
         const R = D / 2, r0 = SLOUPEK / 2, sir = R - r0;
         const rv = R - odstupVystupni(sir);
         const alfa = b / rv;
@@ -230,7 +230,7 @@
         const uhel = N * alfa;
         for (let i = 0; i <= 90; i++) vystupni.push(bod(rv, ZACATEK + uhel * i / 90));
         return {
-            polygony, hrany, casti: [N], vystupni, kruh: { cx: R, cy: R, R, r0 }, sir, nejuzsi: null, odVnitrniho: alfa * (r0 + OD_VNITRNIHO),
+            polygony, hrany, casti: [N], vystupni, kruh: { cx: R, cy: R, R, r0 }, sir, nejuzsi: null, odVnitrniho: alfa * (r0 + odVnitrnihoM),
             otacka: 2 * Math.PI / alfa, uhel: uhel * 180 / Math.PI, minX: 0, minY: 0, delka: D, sirka: D,
         };
     }
@@ -300,10 +300,10 @@
         let p = null, sirka = v.sirka, nelze = false;
         const zabiha = tvar === 'Lz' || tvar === 'Uz';
         if (tvar === 'tocite') {
-            p = tocite(n - 1, b, v.prumer);
+            p = tocite(n - 1, b, v.prumer, L.zakrivOd > 0 ? L.zakrivOd : OD_VNITRNIHO);
             sirka = p.sir;
         } else if (tvar === 'Lz' || tvar === 'Uz') {
-            p = zabihajici(n - 1, b, v.sirka, tvar, v.zatacka);
+            p = zabihajici(n - 1, b, v.sirka, tvar, v.zatacka, L.zakrivOd > 0 ? L.zakrivOd : OD_VNITRNIHO);
             // Zatáčka se nevejde: nákres ukáže schody s odpočívadlem a výsledek upozorní
             if (!p) { nelze = true; p = sOdpocivadly(n, b, v.sirka, tvar === 'Lz' ? 'L' : 'U'); }
         } else {
@@ -317,7 +317,8 @@
         const nejuzsi = nelze || (zabiha && v.zatacka !== 'rozlozene') ? null : p.nejuzsi ?? null;
         // Zakřivená ramena: nášlap tam, kde ho měří vyhláška (do 1,1 m na výstupní čáře 0,4 m od vnějšího okraje)
         const zakrivene = !nelze && (tvar === 'Lz' || tvar === 'Uz' || tvar === 'tocite');
-        const uzke = sirka <= ZAKRIV_UZKE + 1e-9;
+        // zakrivOd (verze pro jinou zemi, např. Polsko 0,4 m od vnitřního madla): měří se tam u každé šířky ramene
+        const uzke = !(L.zakrivOd > 0) && sirka <= ZAKRIV_UZKE + 1e-9;
         const merena = zakrivene ? (uzke ? b : p.odVnitrniho) : null;
         const merenaMez = uzke ? L.naslapMin : L.zakrivMin;
         return {

@@ -171,17 +171,27 @@ final class Clanky
         );
     }
 
-    /** Česká typografie v HTML: za jednopísmennou předložkou a mezi číslem a jednotkou nezlomitelná mezera. */
+    /**
+     * Typografie v HTML podle jazyka článku. Ve všech jazycích nezlomitelná mezera mezi číslem a jednotkou. V češtině,
+     * slovenštině a polštině za jednopísmennou předložkou nebo spojkou. Ve francouzštině (revize 12. 11. 2026)
+     * nezlomitelná mezera před dvojtečkou a uvnitř « », úzká nezlomitelná před ; ! ?
+     */
     public static function vlna(string $html, string $jazyk): string
     {
-        if ($jazyk !== 'cs') {
-            return $html;
-        }
+        $predlozky = ['cs' => 'KkSsVvZzOoUuAaIi', 'sk' => 'KkSsVvZzOoUuAaIi', 'pl' => 'WwZzIiAaOoUu'][$jazyk] ?? null;
         $casti = preg_split('/(<[^>]+>)/u', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
         foreach ($casti as $i => $cast) {
             if ($i % 2 === 0) {
-                $cast = preg_replace('/(?<=^|[\s(„])([KkSsVvZzOoUuAaIi]) /u', "$1\u{00A0}", $cast);
-                $casti[$i] = preg_replace('/(\d) (m³|m²|m|cm|mm|t|%|Kč)(?![\p{L}\d])/u', "$1\u{00A0}$2", $cast);
+                if ($predlozky) {
+                    $cast = preg_replace('/(?<=^|[\s(„])([' . $predlozky . ']) /u', "$1\u{00A0}", $cast);
+                }
+                $cast = preg_replace('/(\d) (m³|m²|m|cm|mm|kg|km|t|%|Kč|€)(?![\p{L}\d])/u', "$1\u{00A0}$2", $cast);
+                if ($jazyk === 'fr') {
+                    $cast = preg_replace('/ :/u', "\u{00A0}:", $cast);
+                    $cast = preg_replace('/ ([;!?])/u', "\u{202F}$1", $cast);
+                    $cast = str_replace(['« ', ' »'], ["«\u{00A0}", "\u{00A0}»"], $cast);
+                }
+                $casti[$i] = $cast;
             }
         }
 

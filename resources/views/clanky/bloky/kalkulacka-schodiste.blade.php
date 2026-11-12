@@ -2,13 +2,18 @@
      staví stejně jako editor (modules/dum.md, část Schody), navíc hlídá nášlap podle vyhlášky. Pole v cm a mm mají data-meritko, kalkulačka počítá v metrech.
      Verze článku pro jinou zemi přepíše výchozí hodnoty a doporučení parametry, např.
      `::kalkulacka-schodiste sirka=80 | vyskaMax=190 | sirkaMin=80` (vyska, sirka a prumer v cm, cilova v mm,
-     limity vyskaMin, vyskaMax, krokMin, krokMax, naslapMin, zakrivMin a podchod v mm (naslapMin=0 vypne přidávání výšek), sirkaMin v cm, rameno = nejvíc výšek v rameni).
-     Prvky s data-jen se ukazují jen u vyjmenovaných tvarů. Úvod jmenuje země z hlavičky (`zeme:`). --}}
+     limity vyskaMin, vyskaMax, krokMin, krokMax, naslapMin, zakrivMin a podchod v mm (naslapMin=0 vypne přidávání výšek), sirkaMin v cm, rameno = nejvíc výšek v rameni). zakrivOd v mm = nášlap zakřivených ramen se u každé šířky měří v této vzdálenosti od vnitřního okraje a porovná se zakrivMin (Polsko 400).
+     Prvky s data-jen se ukazují jen u vyjmenovaných tvarů. Úvod jmenuje země z hlavičky (`zeme:`).
+     `zatacka=rozlozene` předvolí stupně rozložené do ramen (12. 11. 2026: kde předpis chce i na vnitřní straně
+     nejmenší šířku stupně, třeba Slovensko a Španělsko, sbíhání do osy nevyhoví), výchozí je osa jako v editoru. --}}
 @php
     $vlastni = [];
+    $zatacka = 'osa';
     foreach ($parametry ?? [] as $parametr) {
         if (preg_match('/^([a-zA-Z]+)\s*=\s*([0-9.]+)$/', $parametr, $m)) {
             $vlastni[$m[1]] = (float) $m[2];
+        } elseif (preg_match('/^zatacka\s*=\s*(osa|rozlozene)$/', $parametr, $m)) {
+            $zatacka = $m[1];
         }
     }
     $limity = array_filter([
@@ -20,6 +25,7 @@
         'rameno' => $vlastni['rameno'] ?? null,
         'naslapMin' => isset($vlastni['naslapMin']) ? $vlastni['naslapMin'] / 1000 : null,
         'zakrivMin' => isset($vlastni['zakrivMin']) ? $vlastni['zakrivMin'] / 1000 : null,
+        'zakrivOd' => isset($vlastni['zakrivOd']) ? $vlastni['zakrivOd'] / 1000 : null,
         'podchod' => isset($vlastni['podchod']) ? $vlastni['podchod'] / 1000 : null,
     ], fn ($x) => $x !== null);
     $mm = fn (string $klic, float $vychozi) => (int) round(($limity[$klic] ?? $vychozi) * 1000);
@@ -77,8 +83,8 @@
             <div data-jen="Lz Uz" hidden>
                 <label for="schod-zatacka">{{ __('clanky.schod_zatacka') }}</label>
                 <select id="schod-zatacka" data-pole="zatacka">
-                    <option value="osa">{{ __('clanky.schod_zatacka_osa') }}</option>
-                    <option value="rozlozene">{{ __('clanky.schod_zatacka_rozlozene') }}</option>
+                    <option value="osa" @selected($zatacka === 'osa')>{{ __('clanky.schod_zatacka_osa') }}</option>
+                    <option value="rozlozene" @selected($zatacka === 'rozlozene')>{{ __('clanky.schod_zatacka_rozlozene') }}</option>
                 </select>
             </div>
             <div data-jen="tocite" hidden>

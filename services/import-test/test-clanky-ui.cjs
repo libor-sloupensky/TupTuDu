@@ -123,7 +123,8 @@ async function main() {
         const prepnuti = await p.vyhodnot(`document.querySelector('.tt-jazyky a[hreflang=en]').href`);
         kontrola('přepínač vede přímo na anglickou verzi', prepnuti === WEB + '/en', prepnuti);
         await p.jdiNa(WEB + '/en');
-        kontrola('/en je anglicky a odkaz na články chybí, anglické zatím nejsou', await p.vyhodnot(`document.documentElement.lang === 'en' && !document.querySelector('.topbar-akce a[href*="articles"]')`));
+        // Anglické články existují od 12. 11. 2026, odkaz na ně je v hlavičce
+        kontrola('/en je anglicky a odkaz vede na anglické články', await p.vyhodnot(`document.documentElement.lang === 'en' && !!document.querySelector('.topbar-akce a[href$="/en/articles"]')`));
         await p.jdiNa(WEB + '/terms');
         kontrola('stránka bez jazyka v adrese si vybraný jazyk pamatuje', await p.vyhodnot(`document.documentElement.lang === 'en'`));
 
@@ -171,14 +172,20 @@ async function main() {
         await t.zavri();
     }
 
-    // Zkušební německá verze (klíč na český článek), po testu se smaže i se složkou, kterou založil
+    // Zkušební český originál a jeho německá verze (klíč na originál), po testu se smažou i se složkou, kterou test založil.
+    // Skutečné články mají od 12. 11. 2026 verze ve všech jazycích, test proto potřebuje vlastní originál jen s jednou verzí.
     console.log('\n7) Jazykové verze článku');
     const slozkaDe = path.join(__dirname, '../../resources/clanky/de');
     const zalozenaSlozka = !fs.existsSync(slozkaDe);
     const soubor = path.join(slozkaDe, 'claudetest-verze.md');
+    const original = path.join(__dirname, '../../resources/clanky/cs/claudetest-original.md');
+    const ORIGINAL = '/cs/clanky/claudetest-original';
     fs.mkdirSync(slozkaDe, { recursive: true });
+    fs.writeFileSync(original, ['---', 'titulek: ClaudeTest originál', 'popis: Zkušební originál.', 'perex: Zkušební originál.',
+        'publikovano: 2026-11-09', 'overeno: 2026-11-09', 'stav: koncept', 'autor: Libor z TupTuDu',
+        '---', '::kalkulacka-zeminy', ''].join('\n'));
     fs.writeFileSync(soubor, ['---', 'titulek: ClaudeTest verze', 'popis: Zkušební verze.', 'perex: Zkušební verze.',
-        'publikovano: 2026-11-09', 'overeno: 2026-11-09', 'stav: koncept', 'klic: kolik-zeminy-z-vykopu', 'zeme: DE, AT',
+        'publikovano: 2026-11-09', 'overeno: 2026-11-09', 'stav: koncept', 'klic: claudetest-original', 'zeme: DE, AT',
         '---', '::kalkulacka-zeminy spara=80 | ornice=30', ''].join('\n'));
     // Node adresu *.localhost nepřeloží, stránky proto stahuje prohlížeč (stejný původ)
     const v7 = await otevriProhlizec({ sirka: 1200, vyska: 800 });
@@ -186,20 +193,24 @@ async function main() {
         await v7.jdiNa(WEB + CLANEK);
         const stranka = (cesta) => v7.vyhodnot(`fetch(${JSON.stringify(WEB + cesta)}).then((r) => r.text())`);
         const hreflang = (html) => [...html.matchAll(/<link rel="alternate" hreflang="([a-z-]+)" href="([^"]+)"/g)].map((m) => m[1] + '=' + m[2].replace(WEB, ''));
-        const cs = await stranka(CLANEK);
+        const cs = await stranka(ORIGINAL);
         const de = await stranka('/de/artikel/claudetest-verze');
-        const ocekavane = ['cs=' + CLANEK, 'de=/de/artikel/claudetest-verze'].join();
+        const ocekavane = ['cs=' + ORIGINAL, 'de=/de/artikel/claudetest-verze'].join();
         kontrola('hreflang na české i německé verzi, bez x-default (anglická verze není)', hreflang(cs).join() === ocekavane && hreflang(de).join() === ocekavane,
             hreflang(cs).join() + ' | ' + hreflang(de).join());
-        kontrola('přepínač jazyka vede na druhou verzi', cs.includes(`href="${WEB}/de/artikel/claudetest-verze" lang="de"`) && de.includes(`href="${WEB}${CLANEK}" lang="cs"`));
+        kontrola('přepínač jazyka vede na druhou verzi', cs.includes(`href="${WEB}/de/artikel/claudetest-verze" lang="de"`) && de.includes(`href="${WEB}${ORIGINAL}" lang="cs"`));
         kontrola('kalkulačka bere výchozí hodnoty a země z verze', /id="kalk-spara"[^>]*value="80"/.test(de) && /id="kalk-ornice"[^>]*value="30"/.test(de)
             && de.includes('Deutschland / Österreich') && /id="kalk-spara"[^>]*value="100"/.test(cs));
         const mapa = await stranka('/sitemap.xml');
         kontrola('sitemapa má německou verzi s hreflang na českou', mapa.includes('<loc>' + WEB + '/de/artikel/claudetest-verze</loc>')
-            && mapa.includes('hreflang="cs" href="' + WEB + CLANEK + '"') && mapa.includes('<loc>' + WEB + '/de/artikel</loc>'));
+            && mapa.includes('hreflang="cs" href="' + WEB + ORIGINAL + '"') && mapa.includes('<loc>' + WEB + '/de/artikel</loc>'));
+        // Skutečný článek má verze ve všech osmi jazycích a x-default na anglickou
+        const jazyky = hreflang(await stranka(CLANEK)).map((h) => h.split('=')[0]);
+        kontrola('hlavní článek má hreflang všech jazyků a x-default', ['cs', 'en', 'sk', 'pl', 'de', 'fr', 'es', 'it', 'x-default'].every((j) => jazyky.includes(j)), jazyky.join());
     } finally {
         await v7.zavri();
         fs.rmSync(soubor);
+        fs.rmSync(original);
         if (zalozenaSlozka) fs.rmdirSync(slozkaDe);
     }
 
