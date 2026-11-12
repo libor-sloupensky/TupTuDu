@@ -77,27 +77,36 @@ class Polsko implements ZdrojParcel, ZdrojVysek
             return sprintf('%.2f %.2f', $n, $e);
         }, $body);
 
-        $davky = array_chunk($pl, self::DAVKA, true);
-        $odpovedi = Http::pool(fn (Pool $pool) => array_map(
-            fn ($d) => $pool->timeout(25)->get(self::NMT, ['request' => 'GetHByPointList', 'list' => implode(',', $d)]),
-            $davky
-        ));
-
+        // NMT občas vrátí celou dávku samých nul (12. 11. 2026: 2 dávky ze 7 v jednom z šesti pokusů),
+        // jindy pro tentýž bod správnou výšku. Body s nulou se proto ptají znovu, nejvýš třikrát.
         $vysky = array_fill(0, count($body), null);
-        foreach ($davky as $i => $davka) {
-            $o = $odpovedi[$i] ?? null;
-            if (!$o instanceof \Illuminate\Http\Client\Response || !$o->successful()) {
-                throw new RuntimeException('NMT GUGiK neodpověděla');
-            }
-            $trojice = explode(',', trim($o->body()));
-            $klice = array_keys($davka);
-            foreach ($trojice as $j => $t) {
-                $c = preg_split('/\s+/', trim($t));
-                if (count($c) >= 3 && is_numeric($c[2]) && isset($klice[$j])) {
-                    $v = (float) $c[2];
-                    $vysky[$klice[$j]] = $v > -100 ? $v : null;
+        $zbyva = array_keys($pl);
+        for ($pokus = 0; $pokus < 4 && $zbyva; $pokus++) {
+            $davky = array_chunk(array_intersect_key($pl, array_flip($zbyva)), self::DAVKA, true);
+            $odpovedi = Http::pool(fn (Pool $pool) => array_map(
+                fn ($d) => $pool->timeout(25)->get(self::NMT, ['request' => 'GetHByPointList', 'list' => implode(',', $d)]),
+                $davky
+            ));
+            $nuly = [];
+            foreach ($davky as $i => $davka) {
+                $o = $odpovedi[$i] ?? null;
+                if (!$o instanceof \Illuminate\Http\Client\Response || !$o->successful()) {
+                    throw new RuntimeException('NMT GUGiK neodpověděla');
+                }
+                $trojice = explode(',', trim($o->body()));
+                $klice = array_keys($davka);
+                foreach ($trojice as $j => $t) {
+                    $c = preg_split('/\s+/', trim($t));
+                    if (count($c) >= 3 && is_numeric($c[2]) && isset($klice[$j])) {
+                        $v = (float) $c[2];
+                        $vysky[$klice[$j]] = $v > -100 ? $v : null;
+                        if (abs($v) < 0.001) {
+                            $nuly[] = $klice[$j];
+                        }
+                    }
                 }
             }
+            $zbyva = $nuly;
         }
 
         return $vysky;

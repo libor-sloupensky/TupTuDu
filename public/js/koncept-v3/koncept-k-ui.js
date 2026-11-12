@@ -138,6 +138,8 @@ function konceptKEditor(initialData) {
         katastrKuNabidk: false,
         katastrVybraneKu: null,
         katastrProfilHlaska: '',   // proč výškový profil chybí (země bez modelu terénu, výpadek)
+        katastrBezVysek: false,    // výšky terénu vypnuté: terén rovina, jako bez výškových dat (metadata.katastr.bezVysek)
+        _vyskyNactene: null,       // načtený profil, i když jsou výšky vypnuté
         katastrCislo: '',
         katastrTyp: 'auto',
         katastrNacitani: false,
@@ -1686,6 +1688,7 @@ function konceptKEditor(initialData) {
                     if (kat.parcely) this.katastrParcely = kat.parcely;
                     if (kat.ku) { this.katastrVybraneKu = kat.ku; this.katastrKuHledani = kat.ku.n + ' (' + kat.ku.o + ')'; }
                     if (kat.kompasUhel && !this.kompasUhel) this.kompasUhel = kat.kompasUhel;
+                    this.katastrBezVysek = !!kat.bezVysek;
                     if (this.katastrParcely.length > 0) {
                         // Načíst stavby a okolní parcely (neukládají se do DB)
                         // Vždy znovu načíst stavby a sousedy (neukládají se spolehlivě do DB)
@@ -5653,6 +5656,23 @@ function konceptKEditor(initialData) {
             return this.katastrParcely.reduce((sum, p) => sum + (p.vymera || 0), 0);
         },
 
+        /**
+         * Načtený výškový profil. Vypnuté výšky terénu (panel Parcela, Libor 12. 11. 2026): profil se jen odloží
+         * a editor se chová jako bez výškových dat (terén rovina, zemina, 3D i sdílený odkaz), zapnutí ho vrátí.
+         */
+        _nastavProfil(profil) {
+            this._vyskyNactene = profil;
+            this.vyskovyProfil = this.katastrBezVysek ? null : profil;
+            if (this.katastrZobrazitVysky) this.katastrPrekreslitCanvas();
+        },
+
+        katastrPrepniVysky() {
+            this.katastrBezVysek = !this.katastrBezVysek;
+            this.vyskovyProfil = this.katastrBezVysek ? null : this._vyskyNactene;
+            this.katastrPrekreslitCanvas();
+            this._katastrAutosave();
+        },
+
         async katastrNactiProfil() {
             if (this.katastrParcely.length === 0 || this._vyskyNacitani) return;
 
@@ -5666,7 +5686,7 @@ function konceptKEditor(initialData) {
             // Profil uložený přímo v projektu (vzorový projekt a jeho kopie): žádný dotaz na server
             const vProjektu = this.metadata?.katastr?.profil;
             if (vProjektu?.body?.length && vProjektu._hash === cacheHash) {
-                this.vyskovyProfil = vProjektu;
+                this._nastavProfil(vProjektu);
                 if (this.katastrZobrazitVysky) this.katastrPrekreslitCanvas();
                 return;
             }
@@ -5676,7 +5696,7 @@ function konceptKEditor(initialData) {
                 if (c) {
                     const age = Date.now() - (c._timestamp || 0);
                     if (age < MAX_CACHE_AGE_MS) {
-                        this.vyskovyProfil = c;
+                        this._nastavProfil(c);
                         if (this.katastrZobrazitVysky) this.katastrPrekreslitCanvas();
                         return;
                     }
@@ -5689,7 +5709,7 @@ function konceptKEditor(initialData) {
                 if (old && old._hash === cacheHash) {
                     const age = Date.now() - (old._timestamp || 0);
                     if (age < MAX_CACHE_AGE_MS) {
-                        this.vyskovyProfil = old;
+                        this._nastavProfil(old);
                         try { localStorage.setItem(cacheKey, JSON.stringify(old)); } catch(_) {}
                         if (this.katastrZobrazitVysky) this.katastrPrekreslitCanvas();
                         return;
@@ -5717,7 +5737,7 @@ function konceptKEditor(initialData) {
                 if (d.ok && d.profil && d.profil.body && d.profil.body.length > 0) {
                     d.profil._hash = cacheHash;
                     d.profil._timestamp = Date.now();
-                    this.vyskovyProfil = d.profil;
+                    this._nastavProfil(d.profil);
                     try {
                         localStorage.setItem(cacheKey, JSON.stringify(d.profil));
                     } catch (e) {
@@ -5939,6 +5959,8 @@ function konceptKEditor(initialData) {
                                 ku: this.katastrVybraneKu,
                                 podklad: this.katastrMapaPodklad,
                                 kompasUhel: this.kompasUhel,
+                                // Výšky terénu vypnuté (terén rovina), patří k projektu, zemina se podle nich počítá
+                                ...(this.katastrBezVysek ? { bezVysek: true } : {}),
                                 // Kde stojí panáček procházky (prochazka.js), jako kompas to není úprava
                                 ...(this.panacek ? { panacek: this.panacek } : {}),
                             },

@@ -207,6 +207,25 @@ class PozemkyOver extends Command
             $this->ok($ruznych > 1, 'výšky nejsou všude stejné');
         }
 
+        // Opakovaný dotaz musí dát tytéž výšky: polská služba občas vrací celé dávky nul (12. 11. 2026),
+        // jednorázový dotaz to nepozná
+        try {
+            $znovu = $pozemky->vyskovyProfil($kod, [$poly]);
+            $podle = [];
+            foreach ($znovu['body'] as $b) {
+                $podle[$b[0] . ',' . $b[1]] = $b[2];
+            }
+            $rozdil = 0.0;
+            $chybi = 0;
+            foreach ($profil['body'] as $b) {
+                $k = $b[0] . ',' . $b[1];
+                isset($podle[$k]) ? $rozdil = max($rozdil, abs($podle[$k] - $b[2])) : $chybi++;
+            }
+            $this->ok($rozdil < 0.05 && $chybi === 0, sprintf('opakovaný dotaz: největší rozdíl %.2f m, chybí %d bodů', $rozdil, $chybi));
+        } catch (\Throwable $e) {
+            $this->chyba('opakovaný dotaz výšek: ' . $e->getMessage());
+        }
+
         if (!$this->option('bez-srovnani')) {
             $this->srovnej($profil['body']);
         }

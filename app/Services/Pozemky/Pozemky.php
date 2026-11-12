@@ -109,6 +109,14 @@ class Pozemky
         }
 
         $z = $zdroj->vysky($body);
+        // Falešné nuly: služba místo výšky vrátí 0,0 (Polsko celé dávky, 12. 11. 2026). Na pozemku, který
+        // jinak leží výš než 5 m nad mořem, je přesná nula chyba, ne terén.
+        $platne = array_values(array_filter($z, fn ($v) => $v !== null));
+        sort($platne);
+        $median = $platne ? $platne[intdiv(count($platne), 2)] : 0;
+        if (abs($median) > 5) {
+            $z = array_map(fn ($v) => ($v !== null && abs($v) < 0.001) ? null : $v, $z);
+        }
         $vystup = [];
         foreach ($body as $i => $b) {
             if (isset($z[$i]) && $z[$i] !== null) {
@@ -119,8 +127,7 @@ class Pozemky
             throw new RuntimeException(__('ed_nastroje.katastr.vysky_nedostupne'));
         }
 
-        // Rozlišení modelu: editor u hrubšího modelu (Itálie 10 m) upozorní, že terén je orientační
-        return $this->souhrn($vystup) + ['rozliseni' => $this->nastaveni($zeme)['rozliseni'] ?? null, 'zeme' => $zeme];
+        return $this->souhrn($vystup) + ['zeme' => $zeme];
     }
 
     private function souhrn(array $body): array

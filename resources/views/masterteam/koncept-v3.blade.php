@@ -1798,7 +1798,11 @@
                     </template>
                     <span x-show="katastrNacitaniProfil" class="mt-1 text-xs text-gray-500">{{ __('ed_sablona.parcela.nacitam_profil') }}</span>
                     <div x-show="katastrProfilHlaska && !katastrNacitaniProfil" class="mt-1 text-xs text-gray-500" x-text="katastrProfilHlaska"></div>
-                    <div x-show="vyskovyProfil?.rozliseni >= 5" class="mt-1 text-xs text-gray-500" x-text="preloz('ed_sablona.parcela.teren_orientacni', { m: vyskovyProfil?.rozliseni })"></div>
+                    {{-- Vypnuté výšky: terén rovina, jako bez výškových dat (katastrPrepniVysky) --}}
+                    <label x-show="_vyskyNactene" class="mt-1 flex items-center gap-1 cursor-pointer select-none text-xs text-gray-500" data-tip="{{ __('ed_sablona.parcela.pouzit_vysky_tip') }}" data-vysky-prepinac>
+                        <input type="checkbox" class="rounded text-primary w-3.5 h-3.5" :checked="!katastrBezVysek" @change="katastrPrepniVysky()">
+                        {{ __('ed_sablona.parcela.pouzit_vysky') }}
+                    </label>
                     <div x-show="katastrAtribuce()" class="mt-1 text-[10px] text-gray-400" x-text="preloz('ed_sablona.parcela.zdroj_dat') + ' ' + katastrAtribuce()"></div>
                 </div>
             </div>

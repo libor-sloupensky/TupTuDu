@@ -1,5 +1,5 @@
 <h1>Polityka prywatności</h1>
-<p>Obowiązuje od: 1 listopada 2026 r.</p>
+<p>Obowiązuje od: 12 listopada 2026 r.</p>
 
 <h2>1. Administrator</h2>
 <p>
@@ -99,7 +99,7 @@
         bezpośrednio w oknie płatności Paddle, a Paddle przetwarza je jako niezależny administrator zgodnie ze swoją
         <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">polityką prywatności</a>.
         Od nas otrzymuje imię i nazwisko oraz e-mail z konta użytkownika, my od niego status subskrypcji i zestawienie płatności.</li>
-    <li><strong>Dostawcy danych mapowych i geograficznych</strong> — podkład mapowy (Mapy.com, Seznam.cz, a.s.) i dane geologiczne (Czeska Służba Geologiczna) wczytuje bezpośrednio przeglądarka użytkownika, więc dostawcy ci widzą jego adres IP. Dane katastralne i wysokościowe (w Czechach z Czeskiego Urzędu Geodezji, Kartografii i Katastru) wczytuje nasz serwer, który wysyła tylko oznaczenie działki i współrzędne, a nie dane osobowe użytkownika. Zakres i dostawcy różnią się w zależności od kraju.</li>
+    <li><strong>Dostawcy danych mapowych i geograficznych</strong> — podkład mapowy i wyszukiwanie miejsc (Mapy.com, Seznam.cz, a.s.), warstwę granic działek na mapie (zwykle urząd katastralny kraju, w którym leży działka) i dane geologiczne (Czeska Służba Geologiczna) wczytuje bezpośrednio przeglądarka użytkownika, więc dostawcy ci widzą jego adres IP. Dane katastralne i wysokościowe (w Czechach z Czeskiego Urzędu Geodezji, Kartografii i Katastru, w innych krajach z ich urzędów katastralnych i geodezyjnych) wczytuje nasz serwer, który wysyła tylko oznaczenie działki i współrzędne miejsca, a nie dane osobowe użytkownika. Zakres i dostawcy różnią się w zależności od kraju.</li>
 </ul>
 
 <h2>5. Przekazywanie poza UE</h2>

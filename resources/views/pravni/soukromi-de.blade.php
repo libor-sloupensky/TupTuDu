@@ -1,5 +1,5 @@
 <h1>Datenschutzerklärung</h1>
-<p>Gültig ab: 1. November 2026</p>
+<p>Gültig ab: 12. November 2026</p>
 
 <h2>1. Verantwortlicher</h2>
 <p>
@@ -99,7 +99,7 @@
         direkt im Zahlungsfenster von Paddle ein; Paddle verarbeitet sie als eigenständiger Verantwortlicher nach seiner
         <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">Datenschutzerklärung</a>.
         Paddle erhält von uns den Namen und die E-Mail-Adresse Ihres Kontos; wir erhalten von Paddle den Abonnementstatus und die Zahlungsübersicht.</li>
-    <li><strong>Anbieter von Karten- und Geodaten</strong> – Die Basiskarte (Mapy.com, Seznam.cz, a.s.) und geologische Daten (Tschechischer Geologischer Dienst) lädt direkt Ihr Browser, sodass diese Anbieter Ihre IP-Adresse sehen. Kataster- und Höhendaten (in der Tschechischen Republik vom Tschechischen Amt für Landesvermessung und Kataster) lädt unser Server, der nur die Parzellenbezeichnung und Koordinaten übermittelt, nicht Ihre personenbezogenen Daten. Umfang und Anbieter unterscheiden sich je nach Land.</li>
+    <li><strong>Anbieter von Karten- und Geodaten</strong> – Die Basiskarte und die Ortssuche (Mapy.com, Seznam.cz, a.s.), die Ebene der Flurstücksgrenzen auf der Karte (in der Regel die Katasterbehörde des Landes, in dem das Grundstück liegt) und geologische Daten (Tschechischer Geologischer Dienst) lädt direkt Ihr Browser, sodass diese Anbieter Ihre IP-Adresse sehen. Kataster- und Höhendaten (in der Tschechischen Republik vom Tschechischen Amt für Landesvermessung und Kataster, in anderen Ländern von deren Kataster- und Vermessungsbehörden) lädt unser Server, der nur die Parzellenbezeichnung und die Koordinaten des Ortes übermittelt, nicht Ihre personenbezogenen Daten. Umfang und Anbieter unterscheiden sich je nach Land.</li>
 </ul>
 
 <h2>5. Übermittlung außerhalb der EU</h2>

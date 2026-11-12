@@ -484,7 +484,8 @@ return [
         'vymera' => 'Výměra:',
         'z_obrysu' => '(z obrysu)',
         'zdroj_dat' => 'Zdroj dat:',
-        'teren_orientacni' => 'Terén z modelu :m m, drobné nerovnosti nezachytí.',
+        'pouzit_vysky' => 'Počítat s výškami terénu',
+        'pouzit_vysky_tip' => 'Vypnuto: terén je rovina, jako by výšková data nebyla (zemina, 3D, sdílený odkaz).',
     ],
     // Seznam objektů a přepínače zobrazení (partials/prepinace-zobrazeni)
     'objekty' => [

@@ -1,5 +1,5 @@
 <h1>Privacy Policy</h1>
-<p>Effective from: 1 November 2026</p>
+<p>Effective from: 12 November 2026</p>
 
 <h2>1. Controller</h2>
 <p>
@@ -99,7 +99,7 @@
         directly into the Paddle checkout and Paddle processes them as an independent controller under its
         <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">privacy notice</a>.
         Paddle receives the name and email of your account from us; we receive the subscription status and payment overview from Paddle.</li>
-    <li><strong>Providers of map and geographic data</strong> — the base map (Mapy.com, Seznam.cz, a.s.) and geological data (Czech Geological Survey) are loaded directly by your browser, so these providers see your IP address. Cadastral and elevation data (in the Czech Republic from the Czech Office for Surveying, Mapping and Cadastre) are loaded by our server, which only sends the parcel designation and coordinates, not your personal data. The scope and providers vary by country.</li>
+    <li><strong>Providers of map and geographic data</strong> — the base map and place search (Mapy.com, Seznam.cz, a.s.), the parcel boundary layer on the map (usually the cadastral authority of the country where the plot is located) and geological data (Czech Geological Survey) are loaded directly by your browser, so these providers see your IP address. Cadastral and elevation data (in the Czech Republic from the Czech Office for Surveying, Mapping and Cadastre, in other countries from their cadastral and surveying authorities) are loaded by our server, which only sends the parcel designation and the coordinates of the location, not your personal data. The scope and providers vary by country.</li>
 </ul>
 
 <h2>5. Transfers outside the EU</h2>

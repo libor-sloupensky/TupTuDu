@@ -22,14 +22,14 @@ const D = `Alpine.$data(document.querySelector('[x-data]'))`;
 
 // Místa s rodinnými domy, bod uprostřed pozemku (ověřeno službami 12. 11. 2026)
 const MISTA = [
-    { zeme: 'CZ', nazev: 'Říčany', lat: 49.989809, lon: 14.650139 },
-    { zeme: 'SK', nazev: 'Banská Bystrica', lat: 48.737482, lon: 19.147434 },
-    { zeme: 'PL', nazev: 'Zakopane', lat: 49.301824, lon: 19.952773 },
-    { zeme: 'FR', nazev: 'Rennes', lat: 48.123277, lon: -1.603509 },
-    { zeme: 'ES', nazev: 'Madrid', lat: 40.4290, lon: -3.6935 },
-    { zeme: 'IT', nazev: 'Torino', lat: 44.998623, lon: 7.685416 },
-    { zeme: 'DE', nazev: 'Bonn (NRW)', lat: 50.683631, lon: 7.15849 },
-    { zeme: 'DE', nazev: 'Weimar (TH)', lat: 50.980992, lon: 11.31911 },
+    { zeme: 'CZ', nazev: 'Říčany', vysky: true, lat: 49.989809, lon: 14.650139 },
+    { zeme: 'SK', nazev: 'Banská Bystrica', vysky: true, lat: 48.737482, lon: 19.147434 },
+    { zeme: 'PL', nazev: 'Zakopane', vysky: true, lat: 49.301824, lon: 19.952773 },
+    { zeme: 'FR', nazev: 'Rennes', vysky: true, lat: 48.123277, lon: -1.603509 },
+    { zeme: 'ES', nazev: 'Madrid', vysky: false, lat: 40.4290, lon: -3.6935 },
+    { zeme: 'IT', nazev: 'Torino', vysky: false, lat: 44.998623, lon: 7.685416 },
+    { zeme: 'DE', nazev: 'Bonn (NRW)', vysky: true, lat: 50.683631, lon: 7.15849 },
+    { zeme: 'DE', nazev: 'Weimar (TH)', vysky: false, lat: 50.980992, lon: 11.31911 },
 ];
 
 let chyb = 0;
@@ -48,7 +48,8 @@ async function main() {
     const naObrazovku = (lat, lon) => p.vyhodnot(`(() => { const m = window.__kkMapaPozemku; const b = m.latLngToContainerPoint([${lat}, ${lon}]);
         const r = m.getContainer().getBoundingClientRect(); return { x: Math.round(r.left + b.x), y: Math.round(r.top + b.y) }; })()`);
     const najed = async (lat, lon, zoom = 18) => {
-        await p.vyhodnot(`(() => { window.__kkMapaPozemku.setView([${lat}, ${lon}], ${zoom}, { animate: false }); return true; })()`);
+        // Informace z předchozího místa smazat, jinak by test četl starou zemi
+        await p.vyhodnot(`(() => { ${D}.mapaInfo = null; window.__kkMapaPozemku.setView([${lat}, ${lon}], ${zoom}, { animate: false }); return true; })()`);
         await pauza(400);
         await p.cekej(`${D}.mapaInfo !== null`, 15000, 'informace o místě');
     };
@@ -98,6 +99,8 @@ async function main() {
             const uvnitr = vybrana && await p.vyhodnot(`${D}._bodVPolygonu(${m.lat}, ${m.lon}, ${D}.mapaVybrane[${pred}].polygon_wgs84)`);
             kontrola(`${m.nazev}: parcela ${vybrana?.cislo ?? '—'} (${vybrana?.vymera ?? '?'} m²), země ${vybrana?.zeme}, vrstva parcel ${info.wms ? 'ano' : 'ne'}`,
                 vybrana && vybrana.zeme === m.zeme && uvnitr && info.wms, (hlaska ? hlaska + ', ' : '') + sekund + ' s');
+            // Výšky jen tam, kde je model terénu 1 m (Španělsko 5 m a Itálie 10 m vypnuté, Durynsko bez služby)
+            kontrola(`${m.nazev}: výškový profil ${m.vysky ? 'ano' : 'ne'}`, info.vysky === m.vysky, JSON.stringify({ vysky: info.vysky }));
             await pauza(1500);
             await p.snimek(path.join(SNIMKY, `mapa-${m.zeme}-${m.nazev.replace(/\W+/g, '-')}.png`));
             if (!vybrana) continue;
@@ -126,9 +129,27 @@ async function main() {
         await pauza(1500);
         await p.snimek(path.join(SNIMKY, 'editor-CZ.png'));
 
+        console.log('\n3b) Přepínač výšek terénu: vypnuté = rovina, drží se v projektu');
+        kontrola('přepínač je v panelu Parcela', await p.vyhodnot(`!!document.querySelector('[data-vysky-prepinac]') && getComputedStyle(document.querySelector('[data-vysky-prepinac]')).display !== 'none'`));
+        await p.vyhodnot(`(() => { document.querySelector('[data-vysky-prepinac] input').click(); return true; })()`);
+        await pauza(300);
+        kontrola('po vypnutí editor výšky nemá (terén rovina), načtené zůstaly odložené',
+            await p.vyhodnot(`${D}.katastrBezVysek === true && ${D}.vyskovyProfil === null && !!${D}._vyskyNactene?.body?.length`));
+        await pauza(1800);   // ukládání katastru se odkládá o 1 s
+        await p.vyhodnot(`(() => { location.reload(); return true; })()`);
+        await pauza(2500);
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine && ${D}.katastrParcely.length === 1)`, 30000, 'editor po obnovení');
+        await p.cekej(`!${D}.katastrNacitaniProfil && !!${D}._vyskyNactene`, 60000, 'profil po obnovení');
+        kontrola('po obnovení stránky jsou výšky pořád vypnuté', await p.vyhodnot(`${D}.katastrBezVysek === true && ${D}.vyskovyProfil === null`));
+        await p.vyhodnot(`(() => { ${D}.panelOpen.parcela = true; document.querySelector('[data-vysky-prepinac] input').click(); return true; })()`);
+        await pauza(300);
+        kontrola('po zapnutí se výšky vrátí', await p.vyhodnot(`${D}.katastrBezVysek === false && !!${D}.vyskovyProfil?.body?.length`));
+        await pauza(1800);
+
         console.log('\n4) Parcela z jiné země k projektu nesousedí');
         await p.vyhodnot(`(() => { ${D}.otevriMapuPozemku(); return true; })()`);
-        await p.cekej(`!!document.querySelector('[data-mapa-pozemku].leaflet-container')`, 20000, 'mapa znovu');
+        // Po obnovení stránky lokální server (php artisan serve) vydá Leaflet až po souběžných dotazech katastru, i 7 s
+        await p.cekej(`!!document.querySelector('[data-mapa-pozemku].leaflet-container')`, 60000, 'mapa znovu');
         await pauza(500);
         const fr = MISTA[3];
         await najed(fr.lat, fr.lon);

@@ -484,7 +484,8 @@ return [
         'vymera' => 'Area:',
         'z_obrysu' => '(from outline)',
         'zdroj_dat' => 'Data source:',
-        'teren_orientacni' => 'Terrain from a :m m model, small unevenness is not captured.',
+        'pouzit_vysky' => 'Use terrain elevations',
+        'pouzit_vysky_tip' => 'Off: the terrain is flat, as if there were no elevation data (earthworks, 3D, shared link).',
     ],
     // Seznam objektů a přepínače zobrazení (partials/prepinace-zobrazeni)
     'objekty' => [

@@ -1,5 +1,5 @@
 <h1>Política de privacidad</h1>
-<p>En vigor desde el 1 de noviembre de 2026</p>
+<p>En vigor desde el 12 de noviembre de 2026</p>
 
 <h2>1. Responsable del tratamiento</h2>
 <p>
@@ -99,7 +99,7 @@
         directamente en la ventana de pago de Paddle, y Paddle los trata como responsable independiente conforme a su
         <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">política de privacidad</a>.
         Paddle recibe de nosotros el nombre y el correo electrónico de su cuenta; nosotros recibimos de Paddle el estado de la suscripción y el resumen de pagos.</li>
-    <li><strong>Proveedores de datos cartográficos y geográficos</strong>: el mapa base (Mapy.com, Seznam.cz, a.s.) y los datos geológicos (Servicio Geológico Checo) los carga directamente su navegador, por lo que estos proveedores ven su dirección IP. Los datos catastrales y altimétricos (en la República Checa, de la Oficina Checa de Topografía, Cartografía y Catastro) los carga nuestro servidor, que solo envía la designación de la parcela y las coordenadas, no sus datos personales. El alcance y los proveedores varían según el país.</li>
+    <li><strong>Proveedores de datos cartográficos y geográficos</strong>: el mapa base y la búsqueda de lugares (Mapy.com, Seznam.cz, a.s.), la capa de linderos de las parcelas en el mapa (por lo general, el organismo catastral del país donde se encuentra el terreno) y los datos geológicos (Servicio Geológico Checo) los carga directamente su navegador, por lo que estos proveedores ven su dirección IP. Los datos catastrales y altimétricos (en la República Checa, de la Oficina Checa de Topografía, Cartografía y Catastro; en otros países, de sus organismos de catastro y cartografía) los carga nuestro servidor, que solo envía la designación de la parcela y las coordenadas del lugar, no sus datos personales. El alcance y los proveedores varían según el país.</li>
 </ul>
 
 <h2>5. Transferencias fuera de la UE</h2>

@@ -8,7 +8,6 @@ use App\Services\Pozemky\Zdroje;
  *
  *   parcely   třída se ZdrojParcel (parcela v bodě, okolí, stavby), null = katastr pro zemi nemáme
  *   vysky     třída se ZdrojVysek, null = bez výškového profilu
- *   rozliseni rozlišení modelu terénu v metrech (editor u hrubšího než 2 m napíše, že je terén orientační)
  *   okoli     false, když služba neumí parcely v obálce (Polsko)
  *   wms       průhledná vrstva hranic parcel nad mapou při výběru pozemku
  *   atribuce  povinné uvedení zdroje (licence CC BY a podobné)
@@ -20,14 +19,12 @@ return [
         'CZ' => [
             'parcely' => Zdroje\Cesko::class,
             'vysky' => Zdroje\CeskoVysky::class,
-            'rozliseni' => 1,
             'wms' => ['url' => 'https://services.cuzk.cz/wms/wms.asp', 'vrstvy' => 'KN', 'verze' => '1.3.0', 'crs' => 'EPSG:3857'],
             'atribuce' => '© ČÚZK',
         ],
         'SK' => [
             'parcely' => Zdroje\Slovensko::class,
             'vysky' => Zdroje\Slovensko::class,
-            'rozliseni' => 1,
             // Server posílá Cross-Origin-Resource-Policy: same-origin, prohlížeč dlaždice zahodí: jdou přes náš server
             'wms' => ['url' => 'https://inspirews.skgeodesy.sk/geoserver/cp/ows', 'vrstvy' => 'CP.CadastralParcel', 'verze' => '1.3.0', 'crs' => 'EPSG:3857', 'proxy' => true],
             'atribuce' => '© ÚGKK SR (CC BY 4.0)',
@@ -35,7 +32,6 @@ return [
         'PL' => [
             'parcely' => Zdroje\Polsko::class,
             'vysky' => Zdroje\Polsko::class,
-            'rozliseni' => 1,
             'okoli' => false,
             'wms' => ['url' => 'https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow', 'vrstvy' => 'dzialki,numery_dzialek', 'verze' => '1.3.0', 'crs' => 'EPSG:3857'],
             'atribuce' => '© GUGiK',
@@ -43,16 +39,15 @@ return [
         'FR' => [
             'parcely' => Zdroje\Francie::class,
             'vysky' => Zdroje\Francie::class,
-            'rozliseni' => 1,
             'wms' => ['url' => 'https://data.geopf.fr/wms-r', 'vrstvy' => 'CADASTRALPARCELS.PARCELLAIRE_EXPRESS', 'verze' => '1.3.0', 'crs' => 'EPSG:3857'],
             'atribuce' => '© IGN, DGFiP (Licence Ouverte)',
         ],
         'ES' => [
             'parcely' => Zdroje\Spanelsko::class,
-            'vysky' => Zdroje\Spanelsko::class,
-            'rozliseni' => 5,
+            // Model terénu jen po 5 m: na rovině přesný, na svahu vyhladí terasy a zídky až o 2,5 m (měření 12. 11. 2026)
+            'vysky' => null,
             'wms' => ['url' => 'https://ovc.catastro.meh.es/cartografia/INSPIRE/spadgcwms.aspx', 'vrstvy' => 'CP.CadastralParcel', 'verze' => '1.3.0', 'crs' => 'EPSG:3857'],
-            'atribuce' => '© Dirección General del Catastro, © IGN España (CC BY 4.0)',
+            'atribuce' => '© Dirección General del Catastro',
         ],
         // Katastr po spolkových zemích (Zdroje\Nemecko), Bavorsko bez bezplatné WFS (jen mapa bez čísel).
         // Vrstva parcel podle spolkové země bodu, viz Pozemky::infoBodu.
@@ -60,7 +55,6 @@ return [
             'parcely' => Zdroje\Nemecko::class,
             // Výšky jen v BY, NW, HE, BB, BE, MV (Zdroje\NemeckoVysky::zemeSVyskami)
             'vysky' => Zdroje\NemeckoVysky::class,
-            'rozliseni' => 1,
             'wms_oblasti' => [
                 'BW' => ['url' => 'https://owsproxy.lgl-bw.de/owsproxy/ows/WMS_INSP_BW_Flst_ALKIS', 'vrstvy' => 'alkis:CP.CadastralParcel'],
                 'BY' => ['url' => 'https://geoservices.bayern.de/od/wms/alkis/v1/parzellarkarte', 'vrstvy' => 'by_alkis_parzellarkarte_umr_schwarz'],
@@ -83,16 +77,15 @@ return [
         ],
         'IT' => [
             'parcely' => Zdroje\Italie::class,
-            'vysky' => Zdroje\ItalieVysky::class,
-            'rozliseni' => 10,
+            // Celostátně jen TINITALY 10 m s chybami až 12 m (měření 12. 11. 2026), 1 m LiDAR jen na žádost
+            'vysky' => null,
             'wms' => ['url' => 'https://wms.cartografia.agenziaentrate.gov.it/inspire/wms/ows01.php', 'vrstvy' => 'CP.CadastralParcel', 'verze' => '1.1.1', 'crs' => 'EPSG:4258'],
-            'atribuce' => '© Agenzia delle Entrate (CC BY 4.0), © INGV TINITALY (CC BY 4.0)',
+            'atribuce' => '© Agenzia delle Entrate (CC BY 4.0)',
         ],
         // Rakousko: katastr BEV přes WFS je placený, pozemek se obkreslí; výšky ALS-DGM 1 m (COG)
         'AT' => [
             'parcely' => null,
             'vysky' => Zdroje\RakouskoVysky::class,
-            'rozliseni' => 1,
             'atribuce' => '© BEV (CC BY 4.0)',
         ],
     ],

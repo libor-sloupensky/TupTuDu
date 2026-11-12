@@ -1,5 +1,5 @@
 <h1>Politique de confidentialité</h1>
-<p>En vigueur à compter du : 1<sup>er</sup> novembre 2026</p>
+<p>En vigueur à compter du : 12 novembre 2026</p>
 
 <h2>1. Responsable du traitement</h2>
 <p>
@@ -99,7 +99,7 @@
         directement dans la page de paiement de Paddle, qui les traite en tant que responsable de traitement indépendant conformément à sa
         <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">politique de confidentialité</a>.
         Paddle reçoit de notre part le nom et l’e-mail de votre compte ; nous recevons de Paddle l’état de l’abonnement et le récapitulatif des paiements.</li>
-    <li><strong>Fournisseurs de données cartographiques et géographiques</strong> : le fond de carte (Mapy.com, Seznam.cz, a.s.) et les données géologiques (Service géologique tchèque) sont chargés directement par votre navigateur, de sorte que ces fournisseurs voient votre adresse IP. Les données cadastrales et altimétriques (en République tchèque, celles de l’Office tchèque de topographie, de cartographie et du cadastre) sont chargées par notre serveur, qui transmet uniquement la désignation de la parcelle et les coordonnées, et non vos données personnelles. L’étendue et les fournisseurs varient selon les pays.</li>
+    <li><strong>Fournisseurs de données cartographiques et géographiques</strong> : le fond de carte et la recherche de lieux (Mapy.com, Seznam.cz, a.s.), la couche des limites parcellaires sur la carte (en règle générale l’administration du cadastre du pays où se trouve le terrain) et les données géologiques (Service géologique tchèque) sont chargés directement par votre navigateur, de sorte que ces fournisseurs voient votre adresse IP. Les données cadastrales et altimétriques (en République tchèque, celles de l’Office tchèque de topographie, de cartographie et du cadastre, dans les autres pays celles de leurs administrations du cadastre et de la topographie) sont chargées par notre serveur, qui transmet uniquement la désignation de la parcelle et les coordonnées du lieu, et non vos données personnelles. L’étendue et les fournisseurs varient selon les pays.</li>
 </ul>
 
 <h2>5. Transferts hors de l’UE</h2>

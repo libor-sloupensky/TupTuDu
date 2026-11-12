@@ -1,5 +1,5 @@
 <h1>Zásady ochrany osobných údajov</h1>
-<p>Účinné od: 1. 11. 2026</p>
+<p>Účinné od: 12. 11. 2026</p>
 
 <h2>1. Prevádzkovateľ</h2>
 <p>
@@ -99,7 +99,7 @@
         priamo do platobného okna Paddle a Paddle ich spracúva ako samostatný prevádzkovateľ podľa svojich
         <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">zásad ochrany osobných údajov</a>.
         Od nás dostane meno a e-mail vášho účtu, my od neho stav predplatného a prehľad platieb.</li>
-    <li><strong>Poskytovatelia mapových a geografických údajov</strong> — mapový podklad (Mapy.com, Seznam.cz, a.s.) a geologické údaje (Česká geologická služba) načítava priamo váš prehliadač, takže títo poskytovatelia vidia vašu IP adresu. Katastrálne a výškopisné údaje (v Českej republike od Českého úradu zememeračského a katastrálneho) načítava náš server a odosiela len označenie parcely a súradnice, nie vaše osobné údaje. Rozsah a poskytovatelia sa líšia podľa krajiny.</li>
+    <li><strong>Poskytovatelia mapových a geografických údajov</strong> — mapový podklad a vyhľadávanie miest (Mapy.com, Seznam.cz, a.s.), vrstvu hraníc parciel na mape (spravidla katastrálny úrad krajiny, kde pozemok leží) a geologické údaje (Česká geologická služba) načítava priamo váš prehliadač, takže títo poskytovatelia vidia vašu IP adresu. Katastrálne a výškopisné údaje (v Českej republike od Českého úradu zememeračského a katastrálneho, v ďalších krajinách od ich katastrálnych a geodetických úradov) načítava náš server a odosiela len označenie parcely a súradnice miesta, nie vaše osobné údaje. Rozsah a poskytovatelia sa líšia podľa krajiny.</li>
 </ul>
 
 <h2>5. Prenos mimo EÚ</h2>

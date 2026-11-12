@@ -1,5 +1,5 @@
 <h1>Informativa sulla privacy</h1>
-<p>In vigore dal 1° novembre 2026</p>
+<p>In vigore dal 12 novembre 2026</p>
 
 <h2>1. Titolare del trattamento</h2>
 <p>
@@ -99,7 +99,7 @@
         vengono inseriti direttamente nella finestra di pagamento di Paddle, che li tratta come titolare autonomo secondo la propria
         <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">informativa sulla privacy</a>.
         Paddle riceve da noi il nome e l’email dell’account; noi riceviamo da Paddle lo stato dell’abbonamento e il riepilogo dei pagamenti.</li>
-    <li><strong>Fornitori di dati cartografici e geografici</strong>: la mappa di base (Mapy.com, Seznam.cz, a.s.) e i dati geologici (Servizio geologico ceco) vengono caricati direttamente dal browser dell’utente, quindi questi fornitori vedono il suo indirizzo IP. I dati catastali e altimetrici (nella Repubblica Ceca forniti dall’Ufficio ceco di geodesia, cartografia e catasto) vengono caricati dal nostro server, che invia solo la designazione della particella e le coordinate, non i dati personali dell’utente. La portata e i fornitori variano a seconda del Paese.</li>
+    <li><strong>Fornitori di dati cartografici e geografici</strong>: la mappa di base e la ricerca dei luoghi (Mapy.com, Seznam.cz, a.s.), il livello dei confini delle particelle sulla mappa (di norma l’ufficio del catasto del Paese in cui si trova il terreno) e i dati geologici (Servizio geologico ceco) vengono caricati direttamente dal browser dell’utente, quindi questi fornitori vedono il suo indirizzo IP. I dati catastali e altimetrici (nella Repubblica Ceca forniti dall’Ufficio ceco di geodesia, cartografia e catasto, negli altri Paesi dai rispettivi uffici del catasto e cartografici) vengono caricati dal nostro server, che invia solo la designazione della particella e le coordinate del luogo, non i dati personali dell’utente. La portata e i fornitori variano a seconda del Paese.</li>
 </ul>
 
 <h2>5. Trasferimenti fuori dall’UE</h2>

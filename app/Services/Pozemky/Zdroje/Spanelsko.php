@@ -2,25 +2,22 @@
 
 namespace App\Services\Pozemky\Zdroje;
 
-use App\Services\Pozemky\AsciiGrid;
 use App\Services\Pozemky\Geo;
 use App\Services\Pozemky\InspireGml;
 use App\Services\Pozemky\Parcela;
 use App\Services\Pozemky\ZdrojParcel;
-use App\Services\Pozemky\ZdrojVysek;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Španělsko: Dirección General del Catastro (INSPIRE WFS, parcely i budovy) a IGN/CNIG
- * (WCS MDT05, 5 m z PNOA LiDAR). Katastr odpovídá jen přes http, https spojení odmítá.
+ * Španělsko: Dirección General del Catastro (INSPIRE WFS, parcely i budovy). Výšky ne: celostátní model
+ * přes službu má jen 5 m (MDT05), na svahu vyhladí terasy a zídky, 2 m je jen ke stažení (modules/lokalizace.md). Katastr odpovídá jen přes http, https spojení odmítá.
  * Baskicko a Navarra mají vlastní katastr, tady nejsou.
  * Číslo parcely pro majitele je čtrnáctimístná referencia catastral.
  */
-class Spanelsko implements ZdrojParcel, ZdrojVysek
+class Spanelsko implements ZdrojParcel
 {
     private const WFS_CP = 'http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx';
     private const WFS_BU = 'http://ovc.catastro.meh.es/INSPIRE/wfsBU.aspx';
-    private const WCS = 'https://servicios.idee.es/wcs-inspire/mdt';
 
     public function parcelaVBode(float $lat, float $lon): ?array
     {
@@ -88,31 +85,5 @@ class Spanelsko implements ZdrojParcel, ZdrojVysek
         }
 
         return $xml;
-    }
-
-    /**
-     * MDT05 (5 m) jedním výřezem. GeoTIFF z této služby nese jen celé metry (Int16), proto ASCII Grid
-     * na tři desetiny (přijde v obálce multipart). Pevnina a Baleáry v UTM 30 (EPSG:25830, rozšířené pásmo),
-     * Kanárské ostrovy v REGCAN95 / UTM 28 (EPSG:4083).
-     */
-    public function vysky(array $body): array
-    {
-        $kanary = $body[0][0] < 30 && $body[0][1] < -12;
-        [$pasmo, $pokryti] = $kanary ? [28, 'Elevacion4083_5'] : [30, 'Elevacion25830_5'];
-        $utm = array_map(fn ($b) => Geo::utm($b[0], $b[1], $pasmo), $body);
-        $e = array_column($utm, 0);
-        $n = array_column($utm, 1);
-        // Výřez zarovnaný na mřížku 5 m, jinak služba převzorkuje (nečtvercové buňky, rozmazání)
-        $okraj = 10;
-        $dolu = fn ($v) => floor($v / 5) * 5;
-        $nahoru = fn ($v) => ceil($v / 5) * 5;
-        $url = self::WCS . '?' . http_build_query([
-            'service' => 'WCS', 'version' => '2.0.1', 'request' => 'GetCoverage',
-            'coverageId' => $pokryti, 'format' => 'ArcGrid',
-        ]) . '&subset=' . rawurlencode(sprintf('x(%d,%d)', $dolu(min($e) - $okraj), $nahoru(max($e) + $okraj)))
-            . '&subset=' . rawurlencode(sprintf('y(%d,%d)', $dolu(min($n) - $okraj), $nahoru(max($n) + $okraj)));
-        $mrizka = AsciiGrid::zTextu(Http::timeout(30)->get($url)->throw()->body());
-
-        return array_map(fn ($p) => ($v = $mrizka->hodnota($p[0], $p[1])) === null ? null : round($v, 2), $utm);
     }
 }
