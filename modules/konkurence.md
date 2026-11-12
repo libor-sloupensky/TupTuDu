@@ -12,7 +12,10 @@ nejpalčivější požadavky, plán funkcí, nápady, rozbor jazyků a zemí a p
 ## Stav (12. 11. 2026, lokálně, nenasazeno)
 - Tabulky, import, stránka se čtyřmi záložkami, přepínače režimu u parametrů i aplikací.
 - V DB je měření „Listopad 2026“: původní analýza, TupTuDu aktualizované 12. 11. podle dokumentace modulů,
-  nové weby z todo, jazyky a signály vývoje z rešerše 12. 11. 2026.
+  nové weby z todo, jazyky a signály vývoje z rešerše 12. 11. 2026, nejlevnější tarify v Kč z ceníku 29. 10. 2026.
+  28 aplikací + TupTuDu, 103 parametrů, 1 536 hodnot, 93 událostí.
+- Nové parametry jsou zatím vyplněné jen tam, kde to šlo z dřívějších dat a rešerše (jazyky, vývoj, ceny, TupTuDu).
+  Zbytek doplní první úplné měření.
 - Na produkci zatím nic. Při nasazení se data musí přenést zvlášť (viz Import), migrace vytvoří jen prázdné tabulky.
 - Automatické měsíční měření zatím neexistuje, viz Měsíční měření.
 
@@ -88,6 +91,23 @@ produkční DB: režimy přepínat tam, lokálně jen zkoušet.
 - **kolikmaterialu.cz — Tiše.** 87 kalkulaček materiálu, ceník řemesel, rozpočet stavby, zdarma bez registrace.
   Výkop z ručně zadaných rozměrů bez terénu. Konkuruje hlavně ve vyhledávání (výkop, zemina, základy).
 - **dozor-brno.cz — Nesledovat.** Web technického dozoru, kalkulačka zeminy je součást článku.
+
+## Vývoj a jazyky (rešerše 12. 11. 2026)
+- **Aktivní vývoj (13):** Planner 5D, Homestyler, SketchUp, Live Home 3D, HomeByMe, RoomSketcher, Rayon, magicplan,
+  Maket, VizTerra, Autodesk Forma, syte, pozemkov.cz. **Údržba:** Sweet Home 3D, Home Designer, iScape, kolikmaterialu.cz.
+  **Stagnace:** Floorplanner (poslední vydání 18. 9. 2025), Plan7Architekt (18. 2. 2025), Ashampoo (17. 3. 2026),
+  Realtime Landscaping (ale má roční cyklus, verze 2027 čekat v lednu až únoru). **Nejasné:** Homeplot, Cedreo,
+  GARDENA, Archistar, DJT, AIkatastr (bez veřejných novinek).
+- Novinky důležité pro nás: Homestyler 6.0 (4/2026) parametrické schody, střecha a vikýře, 7/2026 import půdorysu z PDF;
+  RoomSketcher AI převod půdorysu (12/2025); Planner 5D AI agent (9/2026); SketchUp a Planner 5D napojení na Claude.
+- **Jazyky:** česky má nástroj jen Sweet Home 3D, Homeplot a GARDENA, slovensky jen Ashampoo a GARDENA.
+  Polsky a německy má nástroj většina velkých plánovačů. V češtině a slovenštině jsme tedy skoro sami,
+  v Polsku a Německu narazíme na zavedené konkurenty v jejich jazyce.
+- Počty vydání nejsou u všech stejně přesné (App Store ukazuje jen 25 posledních verzí, někde jen datum ze sitemapy).
+  **Změny titulní stránky ve Wayback** jsou u dynamických webů (SketchUp 2133, Homestyler, Floorplanner) nesmyslně vysoké
+  a o vývoji nic neříkají; parametr `k_web_zmeny` je spíš na Nesledovat.
+- Zdroje pro strojové měření jsou u každé aplikace v rešerši: App Store lookup API a historie verzí, WP REST API
+  (hlavička X-WP-Total), RSS changelogů (Floorplanner, magicplan na Canny, Structure Studios), Zendesk API nápovědy.
 
 ## Měsíční měření (návrh, nepostaveno)
 1. **Strojová část** (cron na produkci přes `PlanovaneUlohy`, jednou měsíčně, zdarma): nové kolo jako kopie

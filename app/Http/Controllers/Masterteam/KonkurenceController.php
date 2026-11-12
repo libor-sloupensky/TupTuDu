@@ -98,6 +98,7 @@ class KonkurenceController extends Controller
                 'jazykyWeb' => $hodn('i_jazyky_web')?->data ?? [],
                 'verdikt' => $hodn('k_verdikt'),
                 'vydani' => $hodn('k_posledni_vydani')?->text,
+                'vydaniPozn' => $hodn('k_posledni_vydani')?->poznamka,
                 'vydani6' => $hodn('k_vydani_6m')?->cislo,
                 'cena' => $hodn('j_cena_min')?->cislo,
                 'udalosti' => $poMesicich,

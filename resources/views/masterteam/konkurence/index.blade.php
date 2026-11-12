@@ -17,7 +17,7 @@
     .kn-zalozky a[aria-current="page"] { background: var(--c-primary); color: var(--c-on-primary); }
     .kn-zalozky a[aria-current="page"] .kn-tlumene { color: inherit; opacity: .75; }
     .kn-tri { display: inline-flex; border: 1px solid var(--c-border-strong); border-radius: 7px; overflow: hidden; flex: none; }
-    .kn-tri button { font-size: 12px; font-weight: 600; padding: 4px 9px; color: var(--c-text-secondary); background: transparent; border: 0; cursor: pointer; }
+    .kn-tri button { font-size: 12px; font-weight: 600; padding: 4px 7px; color: var(--c-text-secondary); background: transparent; border: 0; cursor: pointer; }
     .kn-tri button + button { border-left: 1px solid var(--c-border); }
     .kn-tri button[aria-pressed="true"][data-r="sledovat"] { background: var(--c-primary); color: var(--c-on-primary); }
     .kn-tri button[aria-pressed="true"][data-r="tise"] { background: var(--c-primary-20); color: var(--c-text); }
@@ -27,7 +27,7 @@
     .kn-stitek.sedy { background: color-mix(in srgb, var(--c-text) 8%, transparent); color: var(--c-text-secondary); }
     .kn-tab { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; }
     .kn-tab th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; color: var(--c-text-secondary); padding: 8px 10px; border-bottom: 1px solid var(--c-border-strong); background: var(--c-surface); }
-    .kn-tab td { padding: 8px 10px; border-bottom: 1px solid var(--c-border); vertical-align: middle; }
+    .kn-tab td { padding: 8px 8px; border-bottom: 1px solid var(--c-border); vertical-align: middle; }
     .kn-tab tr:last-child td { border-bottom: 0; }
     .kn-d { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; }
     .kn-d.ano { background: var(--c-ok); }
@@ -43,7 +43,7 @@
     .kn-jaz span { font-size: 10.5px; font-weight: 700; width: 20px; text-align: center; padding: 1px 0; border-radius: 4px; text-transform: uppercase; color: color-mix(in srgb, var(--c-text-secondary) 45%, transparent); }
     .kn-jaz span.n { background: var(--c-ok); color: var(--c-surface); }
     .kn-jaz span.w { box-shadow: inset 0 0 0 1.5px var(--c-ok); color: var(--c-text); }
-    .kn-bar { display: inline-block; width: 48px; height: 6px; border-radius: 3px; background: var(--c-border); overflow: hidden; vertical-align: middle; margin-right: 6px; }
+    .kn-bar { display: inline-block; width: 36px; height: 6px; border-radius: 3px; background: var(--c-border); overflow: hidden; vertical-align: middle; margin-right: 6px; }
     .kn-bar i { display: block; height: 100%; background: var(--c-primary); }
     .kn-cislo { font-variant-numeric: tabular-nums; white-space: nowrap; }
     .kn-filtr { font-size: 13px; font-weight: 600; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--c-border-strong); color: var(--c-text-secondary); background: transparent; cursor: pointer; }
@@ -119,7 +119,7 @@
                 @foreach($radky as $r)
                     @php $k = $r['k']; @endphp
                     <tr x-data="{ rezim: @js($k->rezim) }" :class="rezim === 'nesledovat' && 'kn-vypnute'" @if($k->jeTuptudu()) style="background:var(--c-primary-10)" @endif>
-                        <td style="min-width:160px">
+                        <td style="min-width:140px">
                             <a href="{{ $k->web }}" target="_blank" rel="noopener" class="font-semibold" style="color:var(--c-text)">{{ $k->kratky ?: $k->nazev }}</a>
                             <div class="kn-tlumene text-xs">{{ Konkurent::SEGMENTY[$k->segment] ?? $k->segment }}@if($k->pridano && $mereni && $k->pridano->gt($mereni->datum)) · <span class="kn-stitek">nový {{ $k->pridano->format('j. n.') }}</span>@endif</div>
                         </td>
@@ -138,13 +138,13 @@
                                 <span class="kn-tlumene">—</span>
                             @endif
                         </td>
-                        <td class="kn-cislo">
+                        <td style="max-width:150px" title="{{ $r['vydaniPozn'] }}">
                             @php $dv = KC::datum($r['vydani']); @endphp
                             @if($dv)
-                                {{ $dv->format(strlen($r['vydani']) > 7 ? 'j. n. Y' : 'n/Y') }}
+                                <span class="kn-cislo">{{ $dv->format(strlen($r['vydani']) > 7 ? 'j. n. Y' : 'n/Y') }}</span>
                                 @if($r['vydani6'] !== null)<div class="kn-tlumene text-xs">{{ (int) $r['vydani6'] }}× za 6 měs.</div>@endif
                             @else
-                                <span class="kn-tlumene">{{ $r['vydani'] ?: '—' }}</span>
+                                <span class="kn-tlumene text-xs">{{ \Illuminate\Support\Str::limit($r['vydani'] ?: '—', 40) }}</span>
                             @endif
                         </td>
                         <td>
