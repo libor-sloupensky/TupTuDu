@@ -16,7 +16,7 @@ Masterteam je interní a **vždy česky** — nepřekládá se.
 - Přeložené: titulka webu, přihlášení, registrace, hesla, ověření e-mailu, e-maily,
   účet, úvodní obrazovka, hlavička aplikace, právní stránky (celé dokumenty cs/en).
 - SEO články: každý vychází ve všech jazycích jako verze pro zemi, propojené klíčem `klic:` a hreflang (od 9. 11. 2026, modules/blog.md, Jazyky a země).
-- V zemích bez služby editor skrývá hledání parcely a volbu mapového podkladu (`@funkce`), mřížka v panelu zůstává. Ruční pozemek a napojení parcel na Slovensku a v Polsku jsou další kroky.
+- Pozemek a výšky fungují v CZ, SK, PL, FR, ES, IT, DE a AT přes výběr na mapě (od 12. 11. 2026, část Pozemky v Evropě). Hledání podle čísla parcely a ČGS jen v ČR.
 - **Editor je přeložený** (5. 11. 2026): texty ve skupinách `ed_sablona`, `ed_ui`, `ed_dum`, `ed_kresba`, `ed_ral`, `ed_nastroje`, `ed_katalog`, načítají se jen na stránce editoru. Názvy kusů katalogu přes `ed_katalog` podle českého názvu, nový kus bez překladu zůstane česky. Skrytý AI panel přeložený není, je určený ke smazání. Data z ČÚZK a ČGS a popisy kroků historie zůstávají v jazyce, v němž vznikly. Katastr hlídá i server (`funkce:katastr`).
 - Test: `node services/import-test/test-jazyky-editor-ui.cjs` projde editor ve všech jazycích.
 
@@ -93,50 +93,45 @@ Lokalizace::maFunkci('katastr');
 2. Přidat řádek do `jazyky` v `config/lokalizace.php`.
 3. `php artisan preklady:kontrola` musí hlásit „Překlady jsou úplné".
 
-## Jak přidat zemi / národní službu
-- Služba v zemi: doplnit kód služby do `zeme.{KÓD}` v `config/lokalizace.php`.
-- Katastrální parcely jdou přes INSPIRE (celoevropský standard) — v jiných zemích EU
-  by stačilo napojit jejich službu; výškový profil a mapový podklad se řeší zvlášť.
+## Pozemky v Evropě (od 12. 11. 2026, Libor: „jednotně pro všechny regiony přes mapové podklady“)
+**Výběr pozemku na mapě** je jeden postup pro všechny země: panel Parcela → „Vybrat pozemek na mapě“ → hledání místa
+(Mapy.com), vrstva hranic parcel podle země, klik na parcelu, nebo obkreslení pozemku tam, kde katastr chybí.
+**Zemi určuje poloha pozemku, ne země uživatele** (Čech, který staví na Slovensku, dostane slovenský katastr).
+Hledání podle katastrálního území a čísla zůstává jen pro ČR (`@funkce('katastr')`, routa `land/parcel`).
 
-## Úkol v plánu: parcely v Evropě přes INSPIRE (zadal Libor 9. 11. 2026)
-Hledání parcely a obrys pozemku dnes umí jen Česko (ČÚZK). INSPIRE je směrnice EU (2007/2/ES), podle níž
-každý členský stát zveřejňuje mimo jiné katastrální parcely jako mapové služby (WMS, WFS) ve společném
-datovém modelu. Jedno napojení na tento model by tak šlo použít ve více zemích.
-- Cíl: v dalších zemích zapnout `katastr` (hledání parcely, obrys pozemku do editoru) přes jejich službu INSPIRE.
-- Pořadí jako u jazyků: SK a PL, potom DE s Rakouskem, FR, ES a IT.
-- Do té doby platí ruční pozemek (také v plánu).
+| Co | Soubor |
+|----|--------|
+| Zdroje dat po zemích, vrstvy parcel, atribuce, rozlišení výšek | `config/pozemky.php` |
+| Vstup pro editor (parcela v bodě, okolí, stavby, výškový profil, co je v místě) | `app/Services/Pozemky/Pozemky.php` |
+| Napojení zemí | `app/Services/Pozemky/Zdroje/*` |
+| Hranice států a německých spolkových zemí (Natural Earth 1:10m, zjednodušené) | `resources/data/hranice-*.json`, `Hranice.php` |
+| Geoid EGM2008 pro Evropu (výšky nad elipsoidem → nadmořské) | `resources/data/geoid-egm2008-evropa.bin`, `Geoid.php` |
+| Čtečky rastrů bez GDAL: GeoTIFF/BigTIFF (Deflate, LZW, prediktory), ASCII Grid, COG po částech | `GeoTiff.php`, `AsciiGrid.php`, `Cog.php` |
+| Mapa výběru (Leaflet 1.9.4 v `public/js/leaflet`) | `public/js/koncept-v3/mapa-pozemku.js`, `partials/mapa-pozemku.blade.php` |
+| Přidání parcely do projektu (číslo i mapa, sousednost ve WGS84) | `_katastrPridejParcelu` v `koncept-k-ui.js` |
+| Ověření skutečnými dotazy na náhodná místa | `php artisan pozemky:over [--zeme=PL,FR] [--mist=3] [--seed=7]` |
+| UI test (8 míst v 6 zemích, přidání, sousednost, obkreslení v Rakousku) | `node services/import-test/test-mapa-pozemku-ui.cjs` |
 
-### Rozbor 12. 11. 2026: parcely a výšky v Evropě
-**Jedna celoevropská služba v kvalitě ČR neexistuje**, ani pro parcely, ani pro výšky.
-- Výšky pro celou Evropu jsou jen hrubé: Copernicus GLO-30 (30 m, zdarma) je model povrchu včetně stromů
-  a domů, chyba je v metrech. Na zeminu (mřížka 2 m) nepoužitelné. EEA-10 (10 m) je jen pro vybrané úřady.
-  Celoevropský LiDAR model neexistuje, TU Delft má jen katalog (European Point Cloud Portal).
-- Open Cadastral Map (EuroGeographics, OME2) je prototyp s odkazy na národní stahování, projekt skončil 2025.
-- **Pomáhá nařízení EU 2023/138 (datové sady s vysokou hodnotou, HVD):** od června 2024 musí každý stát EU
-  dát katastrální parcely, budovy i výškový model pod CC BY 4.0 (nebo volněji), přes API a ke stažení.
-  Praxe zaostává (Bavorsko, Rakousko). Licence CC BY = uvést zdroj v editoru a v zásadách (čl. 4).
-- ČÚZK parcely už bereme přes INSPIRE WFS (`CuzkWfsClient`), parser modelu INSPIRE CP jde použít i jinde.
+Stav ověřený 12. 11. 2026 (`pozemky:over` 3 místa na zemi: 148 kontrol v pořádku, jediná „chyba“ bod na nábřeží
+v Annecy, které francouzský katastr jako parcelu nevede; UI test celý v pořádku):
 
-Služby vyzkoušené 12. 11. 2026 (dotaz z lokálu, odpověď s daty):
+| Země | Parcely (v bodě / okolí / stavby) | Výšky | Zvláštnosti |
+|---|---|---|---|
+| CZ | ČÚZK WFS CPX / ano / ano | DMR 5G, výřez `exportImage` v S-JTSK, 1 m | dřív identify bod po bodu (4000 m² přes 40 s), teď ~1 s, hodnoty shodné na cm |
+| SK | ÚGKK INSPIRE WFS (GeoJSON) / ano / ne | DMR 5.0 1 m, WCS EPSG:3046 | **výšky nad elipsoidem** (Kriváň 2537 m), odečítá se EGM2008 (→ 2494,3 m, úředně 2494,7). Vrstva parcel posílá `Cross-Origin-Resource-Policy: same-origin`, jde přes náš server s mezipamětí (`land/tile/SK`, `storage/app/dlazdice`) |
+| PL | GUGiK ULDK / ne (neumí obálku) / ne | NMT `GetHByPointList`, EPSG:2180 v pořadí sever východ, 1 m | ULDK občas vrátí chybu místo výsledku, opakuje se |
+| FR | API Carto (PCI Etalab) / ano / BD TOPO | RGE ALTI 1 m, **POST** se všemi body | souběžné GET služba omezuje (HTTP 429). Silnice a veřejná prostranství nejsou parcely |
+| ES | Catastro INSPIRE WFS, jen `http://` / ano / ano | MDT05 5 m, **ASCII Grid** zarovnaný na mřížku 5 m | GeoTIFF dává jen celé metry. Katastr má ochranu proti robotům: plná hlavička prohlížeče a opakování. Baskicko a Navarra mají vlastní katastr (nenapojeno) |
+| IT | Agenzia Entrate WFS / ano / ne | TINITALY 10 m (WCS, text) | služba odpovídá 8–32 s (WFS 1.1 vrací chybu), čekání 40 s. Výměru nedává, počítá se z obrysu. Trento a Bolzano mají vlastní katastr |
+| DE | WFS 15 spolkových zemí (ALKIS vereinfacht, INSPIRE, Berlín a Brémy vlastní pole) / ano / ne | BY (body), NW, HE, BB, BE, MV (WCS), 1 m | **Bavorsko vektor zdarma nedává** (jen mapa bez čísel, pozemek se obkreslí). TH a MV jen v UTM, SN v ETRS89. Číslo parcely z Flurstückskennzeichen. Výšky BW jen celé metry, NI a RP jen soubory, ostatní nic → bez profilu |
+| AT | katastr BEV přes WFS placený → obkreslení | BEV ALS-DGM 1 m, COG 50 × 50 km (EPSG:3035) po dlaždicích přes HTTP Range | vydání ve složce `20250915`, nové vychází v září |
 
-| Země | Parcely | Výšky |
-|---|---|---|
-| PL | ULDK `uldk.gugik.gov.pl`: parcela v bodě (`GetParcelByXY`) i podle čísla TERYT, vrací WKT | `services.gugik.gov.pl/nmt`: `GetHByPointList` výšky seznamu bodů (EPSG:2180), model 1 m |
-| FR | API Carto `apicarto.ign.fr/api/cadastre/parcelle?geom=` GeoJSON, i podle obce, sekce a čísla | `data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json`, RGE ALTI 1 m, více bodů naráz |
-| SK | WFS `inspirews.skgeodesy.sk/geoserver/cp/ows`, CC BY 4.0 | WCS `inspirews.skgeodesy.sk/geoserver/el/ows`, DMR 5.0 1 m celé SK, EPSG:3046, výřez jako GeoTIFF |
-| ES | Catastro jen přes `http://` (https vrací HTML): `Consulta_RCCOOR` bod → referencia, WFS `INSPIRE/wfsCP.aspx` bbox i referencia. Baskicko a Navarra mají vlastní katastr | WCS `servicios.idee.es/wcs-inspire/mdt`, nejjemněji 5 m (`Elevacion25830_5`), 2 m jen ke stažení |
-| IT | WFS `wfs.cartografia.agenziaentrate.gov.it/inspire/wfs/owfs01.php`, CC BY 4.0, EPSG:6706, jen číslo a obrys bez výměry | národně jen asi 10 m (TINITALY), 1 m LiDAR po regionech; neověřeno |
-| DE | po spolkových zemích; podle bavorského sněmu všechny zdarma kromě Bavorska (tam vektor za poplatek). NRW ověřeno: `wfs.nrw.de/geobasis/wfs_nw_alkis_vereinfacht`, dl-de/zero | DGM1 1 m otevřený ve všech zemích (od 2024); BKG má celoněmecký DGM1 přes WCS, licence neověřena |
-| AT | BEV katastr CC BY 4.0 ke stažení (stav k datu), INSPIRE WFS má v metadatech „fees, restricted“ | BEV ALS-DGM 1 m celé AT, CC BY 4.0, jen soubory COG (55 dlaždic, EPSG:3035) |
-
-Technické poznámky:
-- Hledání podle čísla parcely se v každé zemi skládá jinak (CZ KÚ + číslo, PL TERYT, FR obec + sekce + číslo,
-  ES 14 znaků, IT obec + list + parcela, DE Gemarkung + Flur + Flurstück). Společná cesta pro všechny země je
-  klik do mapy → parcela v bodě (umí všechny ověřené služby), číslo jako doplněk po zemích.
-- Výšky: PL a FR vrací čísla pro seznam bodů (jako náš dotaz na DMR 5G). WCS (SK, ES, BKG) vrací rastr výřezu,
-  potřeba čtečka GeoTIFF v PHP (nekomprimovaný float32 je jednoduchý). Soubory COG (AT, Copernicus) chtějí čtení
-  po částech přes HTTP Range, pracnější.
-- Radon a geologie (ČGS) a české druhy pozemků zůstávají jen pro ČR.
+- **Ověřovat vždy skutečným dotazem** (Libor: „při zavádění výšek v ČR jsme na nefunkční API přišli náhodou“). `pozemky:over` kontroluje: bod leží uvnitř obrysu, úřední výměra sedí s plochou obrysu (přehozené osy nebo špatná projekce dají jiné číslo), pokrytí mřížky výšek, různé hodnoty, srovnání s EU-DEM 25 m (OpenTopoData). Model terénu bývá v lese a zástavbě níž než EU-DEM, upozornění od −8 m je normální; kladný rozdíl přes 6 m je chyba (tak se našlo Slovensko).
+- Nová země: zdroj do `Zdroje/`, řádek do `config/pozemky.php`, místa do `PozemkyOver::MISTA`, pak `pozemky:over --zeme=XX --mist=6`.
+- Celoevropská data v kvalitě ČR nejsou: Copernicus 30 m měří povrch se stromy a domy, na zeminu nepoužitelný. Pomáhá nařízení EU 2023/138 (HVD): parcely, budovy i výškový model zdarma pod CC BY 4.0 přes API, praxe zaostává (Bavorsko, Rakousko). Zdroj dat ukazuje panel Parcela (`katastrAtribuce`), u CC BY povinné.
+- **Ceník a vitrína webu** (`partials/tarif-funkce`, `@funkce('katastr' | 'mapovy_podklad' | 'vyskovy_profil')`) zatím nabízí katastr, mapu a výšky jen návštěvníkům z ČR. Rozšíření na další země čeká na Libora.
+- **Zásady ochrany soukromí čl. 4** píšou, že katastrální a výšková data načítá náš server. Vrstvu hranic parcel na mapě výběru ale načítá prohlížeč přímo od úřadu země (kromě Slovenska), ten vidí IP adresu. Před nasazením rozhodnout: upravit text, nebo vést všechny vrstvy přes server.
+- Radon a geologie (ČGS) a české druhy pozemků jsou jen v ČR.
 
 ## Národní domény (až podle zájmu)
 Jedna aplikace pro všechny domény: host do `config/domeny.php` (`web`) a do
