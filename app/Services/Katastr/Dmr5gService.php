@@ -169,7 +169,7 @@ class Dmr5gService
      * Konverze WGS84 → S-JTSK.
      * Port z https://github.com/josefzamrzla/JTSK_Converter (Jakub Kerhat).
      */
-    private function wgs84ToSjtsk(float $lat, float $lon): array
+    public function wgs84ToSjtsk(float $lat, float $lon): array
     {
         if ($lat < 40 || $lat > 60 || $lon < 5 || $lon > 25) {
             throw new \RuntimeException(__('ed_nastroje.katastr.souradnice_mimo', ['lat' => $lat, 'lon' => $lon]));

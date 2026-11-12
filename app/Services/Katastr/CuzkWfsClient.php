@@ -10,7 +10,7 @@ class CuzkWfsClient
     private const WFS_BU = 'https://services.cuzk.cz/wfs/inspire-BU-wfs.asp';
 
     /** Překlad INSPIRE druh pozemku → čeština (dle ČÚZK) */
-    private const DRUH_POZEMKU_CZ = [
+    public const DRUH_POZEMKU_CZ = [
         'ArableGround' => 'Orná půda',
         'Grassland' => 'Trvalý travní porost',
         'Garden' => 'Zahrada',

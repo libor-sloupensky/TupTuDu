@@ -122,6 +122,8 @@ return [
         'vysky_pomalu' => 'Výškový profil se teď nepodařilo načíst, mapová služba odpovídá pomalu. Zkus to za chvíli.',
         'polygon_bez_bodu' => 'Žádné body v polygonu parcely.',
         'vysky_nedostupne' => 'Výšková data pro tuto oblast nejsou dostupná.',
+        'vysky_zeme_nejsou' => 'Pro tuto zemi zatím nemáme výškový model terénu.',
+        'pozemek_velky' => 'Pozemek je na výškový profil moc velký, vyber menší část (do 1,5 km).',
         'souradnice_mimo' => 'Souřadnice mimo rozsah S-JTSK: :lat, :lon',
     ],
 ];

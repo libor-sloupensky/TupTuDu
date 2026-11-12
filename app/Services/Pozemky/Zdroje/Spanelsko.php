@@ -1,0 +1,105 @@
+<?php
+
+namespace App\Services\Pozemky\Zdroje;
+
+use App\Services\Pozemky\Geo;
+use App\Services\Pozemky\GeoTiff;
+use App\Services\Pozemky\InspireGml;
+use App\Services\Pozemky\Parcela;
+use App\Services\Pozemky\ZdrojParcel;
+use App\Services\Pozemky\ZdrojVysek;
+use Illuminate\Support\Facades\Http;
+
+/**
+ * Španělsko: Dirección General del Catastro (INSPIRE WFS, parcely i budovy) a IGN/CNIG
+ * (WCS MDT05, 5 m z PNOA LiDAR). Katastr odpovídá jen přes http, https spojení odmítá.
+ * Baskicko a Navarra mají vlastní katastr, tady nejsou.
+ * Číslo parcely pro majitele je čtrnáctimístná referencia catastral.
+ */
+class Spanelsko implements ZdrojParcel, ZdrojVysek
+{
+    private const WFS_CP = 'http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx';
+    private const WFS_BU = 'http://ovc.catastro.meh.es/INSPIRE/wfsBU.aspx';
+    private const WCS = 'https://servicios.idee.es/wcs-inspire/mdt';
+
+    public function parcelaVBode(float $lat, float $lon): ?array
+    {
+        $parcely = $this->dotaz(Geo::obalkaKolem($lat, $lon, 0.3), $lat, $lon);
+
+        return Parcela::vyberSBodem($parcely, $lat, $lon);
+    }
+
+    public function parcelyVOblasti(array $obalka): array
+    {
+        return $this->dotaz($obalka);
+    }
+
+    private function dotaz(array $o, ?float $lat = null, ?float $lon = null): array
+    {
+        $xml = $this->wfs(self::WFS_CP, 'CP:CadastralParcel', $o);
+        $vystup = [];
+        foreach (InspireGml::prvky($xml, true) as $p) {
+            $ref = $p['ref'] ?? $p['local_id'];
+            if (!$ref) {
+                continue;
+            }
+            $vystup[] = Parcela::sestav('ES', $ref, $ref, Geo::castSBodem($p['polygony'], $lat, $lon), $p['vymera'], ['typ' => 'pozemkova']);
+        }
+
+        return $vystup;
+    }
+
+    public function stavbyVOblasti(array $obalka): array
+    {
+        try {
+            $xml = $this->wfs(self::WFS_BU, 'BU:Building', $obalka);
+        } catch (\Throwable) {
+            return [];
+        }
+        $vystup = [];
+        foreach (InspireGml::prvky($xml, true) as $p) {
+            foreach ($p['polygony'] as $polygon) {
+                $vystup[] = ['polygon_wgs84' => Parcela::uklid($polygon)];
+            }
+        }
+
+        return $vystup;
+    }
+
+    private function wfs(string $url, string $typ, array $o): string
+    {
+        // Katastr shazuje spojení podle hlavičky User-Agent: bez ní 400, s krátkou „Mozilla/5.0“
+        // nebo s názvem aplikace reset spojení, s plnou hlavičkou prohlížeče odpovídá (12. 11. 2026)
+        $odpoved = Http::timeout(25)->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')->get($url, [
+            'service' => 'WFS',
+            'version' => '2.0.0',
+            'request' => 'GetFeature',
+            'typenames' => $typ,
+            'bbox' => "{$o['min_lat']},{$o['min_lon']},{$o['max_lat']},{$o['max_lon']}",
+            'SRSname' => 'EPSG::4326',
+        ])->throw();
+        $xml = $odpoved->body();
+        // Odpověď je v ISO-8859-1, převést kvůli regulárním výrazům v UTF-8
+        if (stripos(substr($xml, 0, 100), 'ISO-8859-1') !== false) {
+            $xml = mb_convert_encoding($xml, 'UTF-8', 'ISO-8859-1');
+        }
+
+        return $xml;
+    }
+
+    /** MDT05 v ETRS89 zeměpisných souřadnicích (EPSG:4258 ≈ WGS84), jeden výřez pro všechny body. */
+    public function vysky(array $body): array
+    {
+        $lats = array_column($body, 0);
+        $lons = array_column($body, 1);
+        $okraj = 0.0001;
+        $url = self::WCS . '?' . http_build_query([
+            'service' => 'WCS', 'version' => '2.0.1', 'request' => 'GetCoverage',
+            'coverageId' => 'Elevacion4258_5', 'format' => 'image/tiff',
+        ]) . '&subset=' . rawurlencode(sprintf('Lat(%.6f,%.6f)', min($lats) - $okraj, max($lats) + $okraj))
+            . '&subset=' . rawurlencode(sprintf('Long(%.6f,%.6f)', min($lons) - $okraj, max($lons) + $okraj));
+        $tif = GeoTiff::zDat(Http::timeout(30)->get($url)->throw()->body());
+
+        return array_map(fn ($b) => ($v = $tif->hodnota($b[1], $b[0])) === null ? null : round($v, 2), $body);
+    }
+}
