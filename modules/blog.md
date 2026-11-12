@@ -99,7 +99,8 @@ Text je Markdown (tabulky, zarovnání `---:` pro čísla). Bloky mají vlastní
 
 | Blok | Zápis |
 |---|---|
-| kalkulačka zeminy | `::kalkulacka-zeminy`, ve verzi pro jinou zemi výchozí hodnoty podle ní: `::kalkulacka-zeminy spara=80 \| ornice=30` (klíče `data-pole`: spara, sirkaPasu, skladba, ornice, odkop, svah, nakypreni, vyskaSklepu, nadTerenem, vnitrni; cm v cm). Úvod kalkulačky jmenuje země z `zeme:` |
+| kalkulačka zeminy | `::kalkulacka-zeminy`, ve verzi pro jinou zemi výchozí hodnoty podle ní: `::kalkulacka-zeminy spara=80 \| ornice=30` (klíče `data-pole`: spara, sirkaPasu, skladba, ornice, odkop, svah, nakypreni, vyskaSklepu, nadTerenem, vnitrni; cm v cm; `skladbaDeska` = skladba po přepnutí na desku, výchozí 70). Úvod kalkulačky jmenuje země z `zeme:` |
+| kalkulačka schodiště | `::kalkulacka-schodiste`, ve verzi pro jinou zemi limity podle ní (popis parametrů v hlavičce šablony). Od 12. 11. 2026 navíc `zakrivOd` (mm od vnitřního okraje, kde se u každé šířky měří nášlap zakřivených ramen, porovná se se `zakrivMin`; PL 400, DE/AT 200 se 120) a `zatacka=rozlozene` (předvolba, kde sbíhání do osy nevyhoví: sk, pl, de, es). Sklon a nejdelší nášlap kalkulačka nehlídá |
 | schéma výkopu | `::rez-vykopu` |
 | obrázek | `::obrazek cesta \| popis pro nevidomé \| popisek \| šířka \| výška` |
 | výzva | `::vyzva Titulek \| Text` (na dotyku místo registrace nabídne poslat si odkaz) |
@@ -262,6 +263,15 @@ hlavní zemi jazyka. Kde se hodnota v druhé zemi liší, uvede se v textu oboj�
 tabulkou. Samostatná verze pro zemi (vlastní adresa, `hreflang="de-AT"`) jen u článku, jehož jádro je národní předpis,
 a jen když je v té zemi dost hledání. Angličtina je bez cílové země: princip a postup, čísla jen jako příklad
 s uvedením země.
+
+**Zveřejněno 12. 11. 2026 (Libor 11. 11.: „přelož všechny zveřejněné články do všech jazyků a rovnou zveřejňuj“):**
+všech 7 článků v en, sk, pl, de (DE, AT), fr, es a it, každý jazyk napsaný pro zemi, s nezávislou odbornou revizí
+pro zemi a opravenými nálezy. Rozhodnuto bez Libora, k potvrzení: angličtina britská s příklady Anglie a USA, němčina
+pro DE i AT, ostatní jen pro hlavní zemi (bez BE, CH). Podpis autora se ukazuje podle jazyka (`clanky.autor_libor`),
+v hlavičce zůstává „Libor z TupTuDu“. Typografie podle jazyka (`Clanky::vlna`: jednotky všude, předložky cs/sk/pl,
+francouzské mezery). Revize opakovaně narazily na editor, který používá české hodnoty pro všechny země: plocha
+podkroví od 1,2 m, podchodná výška 2,1 m, výchozí zatáčka „osa“, svislý výkop do 0,8 m. Články to přiznávají,
+oprava editoru podle země je otevřená.
 
 **Technicky hotovo (9. 11. 2026):** články jdou ve všech osmi jazycích (`Clanky::SEGMENTY`: cs `clanky`, en `articles`,
 sk `clanky`, pl `artykuly`, de `artikel`, fr `articles`, es `articulos`, it `articoli`), texty kolem článků a kalkulačky
