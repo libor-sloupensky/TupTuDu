@@ -68,9 +68,12 @@ class Spanelsko implements ZdrojParcel, ZdrojVysek
 
     private function wfs(string $url, string $typ, array $o): string
     {
-        // Katastr shazuje spojení podle hlavičky User-Agent: bez ní 400, s krátkou „Mozilla/5.0“
-        // nebo s názvem aplikace reset spojení, s plnou hlavičkou prohlížeče odpovídá (12. 11. 2026)
-        $odpoved = Http::timeout(25)->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')->get($url, [
+        // Katastr má ochranu proti robotům: bez User-Agent vrací 400, s krátkou hlavičkou nebo názvem aplikace
+        // spojení často shodí (cURL 56), i s plnou hlavičkou prohlížeče občas. Opakování pak projde (12. 11. 2026).
+        $odpoved = Http::timeout(20)
+            ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')
+            ->retry(4, 300, fn ($e) => $e instanceof \Illuminate\Http\Client\ConnectionException)
+            ->get($url, [
             'service' => 'WFS',
             'version' => '2.0.0',
             'request' => 'GetFeature',

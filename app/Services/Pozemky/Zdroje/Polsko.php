@@ -23,14 +23,21 @@ class Polsko implements ZdrojParcel, ZdrojVysek
 
     public function parcelaVBode(float $lat, float $lon): ?array
     {
-        $text = Http::timeout(20)->get(self::ULDK, [
-            'request' => 'GetParcelByXY',
-            'xy' => sprintf('%.7f,%.7f,4326', $lon, $lat),
-            'result' => 'id,voivodeship,county,commune,region,parcel,geom_wkt',
-            'srid' => '4326',
-        ])->throw()->body();
-
-        $radky = preg_split('/\r?\n/', trim($text));
+        // ULDK občas místo výsledku vrátí chybu (12. 11. 2026 jednou z pěti pokusů), druhý pokus projde.
+        // „-1 brak wyników“ znamená, že v bodě opravdu nic není, to se neopakuje.
+        for ($pokus = 1; $pokus <= 2; $pokus++) {
+            $text = Http::timeout(20)->retry(2, 300, fn ($e) => $e instanceof \Illuminate\Http\Client\ConnectionException)->get(self::ULDK, [
+                'request' => 'GetParcelByXY',
+                'xy' => sprintf('%.7f,%.7f,4326', $lon, $lat),
+                'result' => 'id,voivodeship,county,commune,region,parcel,geom_wkt',
+                'srid' => '4326',
+            ])->throw()->body();
+            $radky = preg_split('/\r?\n/', trim($text));
+            if (($radky[0] ?? '') === '0' || str_contains($text, 'brak wynik')) {
+                break;
+            }
+            \Illuminate\Support\Facades\Log::warning('ULDK neočekávaná odpověď: ' . mb_substr($text, 0, 200));
+        }
         if (($radky[0] ?? '') !== '0' || !isset($radky[1])) {
             return null;
         }

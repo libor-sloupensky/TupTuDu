@@ -339,8 +339,7 @@
             {{-- Na jakém podlaží se kreslí, když je panel vpravo sbalený --}}
             <span class="text-xs text-gray-500 whitespace-nowrap" x-show="seznamPodlazi.length > 1 && !rezim3d" x-cloak x-text="'· ' + nazevAktivniho"></span>
             <div class="flex-1"></div>
-            {{-- Mapový podklad --}}
-            @funkce('mapovy_podklad')
+            {{-- Mapový podklad (Mapy.com, celá Evropa) --}}
             <select x-model="katastrMapaPodklad"
                     @change="if (katastrParcely.length === 0 && katastrMapaPodklad !== 'zadny') { katastrMapaPodklad = 'zadny'; alert(preloz('ed_sablona.lista.nejprve_parcela')); } else { katastrZmenPodklad(); ulozitNastaveni(); }"
                     class="kk-pole">
@@ -349,7 +348,6 @@
                 <option value="ortofoto">{{ __('ed_sablona.lista.podklad_ortofoto') }}</option>
                 <option value="turisticka">{{ __('ed_sablona.lista.podklad_turisticka') }}</option>
             </select>
-            @endfunkce
             {{-- 2D/3D přepínač --}}
             <div class="kk-skupina kk-skupina-dily">
                 <button @click="if (rezimProchazka) ukonciProchazku('2d'); else { rezim3d = false; prepni2d() }" :class="!rezim3d && 'kk-tl-aktivni'">2D</button>
@@ -1670,7 +1668,7 @@
                     <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="6" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="6" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="6" cy="12" r="1.3"/></svg>
                 </span>
                 <svg class="kk-sekce-ik" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.2 9 3.5l6 2.7 6-2.7v14.3l-6 2.7-6-2.7-6 2.7z"/><path d="M9 3.5v14.3M15 6.2v14.3"/></svg>
-                <span>@funkce('katastr') {{ __('ed_sablona.parcela.nadpis') }} @else {{ __('ed_sablona.parcela.mrizka') }} @endfunkce</span>
+                <span>{{ __('ed_sablona.parcela.nadpis') }}</span>
                 <svg class="kk-sipka" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <div class="px-3 py-2 space-y-2 max-h-96 overflow-y-auto">
@@ -1679,8 +1677,16 @@
                 <div class="flex items-center gap-x-2 gap-y-1 text-xs text-gray-500 flex-wrap" @click.stop>
                     @include('masterteam.partials.prepinace-parcely', ['kompaktni' => true])
                 </div>
-                {{-- KÚ hledání --}}
+                {{-- Výběr pozemku na mapě: jeden postup pro všechny země (mapa-pozemku.js) --}}
+                <button type="button" @click="otevriMapuPozemku()" data-mapa-otevrit
+                        class="w-full flex items-center justify-center gap-1.5 px-2 h-8 text-xs rounded text-white"
+                        style="background: var(--c-primary);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                    {{ __('ed_sablona.parcela.vybrat_na_mape') }}
+                </button>
+                {{-- Česko: hledání podle katastrálního území a čísla parcely --}}
                 @funkce('katastr')
+                <div class="text-[11px] text-gray-500 pt-1">{{ __('ed_sablona.parcela.nebo_cislo') }}</div>
                 <div class="relative">
                     <label class="text-xs text-gray-500">{{ __('ed_sablona.parcela.ku') }}</label>
                     <input type="text" x-model="katastrKuHledani"
@@ -1717,6 +1723,7 @@
                         <span x-show="katastrNacitani">...</span>
                     </button>
                 </div>
+                @endfunkce
                 {{-- Chyba --}}
                 <div x-show="katastrChyba" class="text-xs text-red-600 bg-red-50 rounded px-2 py-1" x-text="katastrChyba"></div>
                 {{-- Seznam parcel --}}
@@ -1732,11 +1739,12 @@
                                     <span class="font-medium select-text" style="user-select:text"
                                           @click.stop.prevent
                                           @mousedown.stop
-                                          x-text="p.cislo + ' (' + (p.typ === 'stavebni' ? preloz('ed_sablona.parcela.zkratka_stavebni') : preloz('ed_sablona.parcela.zkratka_pozemkova')) + ')'"></span>
+                                          x-text="katastrNazevParcely(p)"></span>
                                 </span>
                                 <button @click.stop.prevent="katastrOdeberParcelu(i)" class="text-gray-500 hover:text-red-500">&times;</button>
                             </summary>
-                            <div class="text-gray-600 mt-0.5"><span class="text-gray-500">{{ __('ed_sablona.parcela.druh') }}</span> <span x-text="(p.druh_pozemku_cz || '—') + ', ' + (p.vymera || '?') + ' m²'"></span></div>
+                            <div class="text-gray-600 mt-0.5" x-show="p.druh_pozemku_cz"><span class="text-gray-500">{{ __('ed_sablona.parcela.druh') }}</span> <span x-text="(p.druh_pozemku_cz || '—') + ', ' + (p.vymera || '?') + ' m²'"></span></div>
+                            <div class="text-gray-600 mt-0.5" x-show="!p.druh_pozemku_cz"><span class="text-gray-500">{{ __('ed_sablona.parcela.vymera') }}</span> <span x-text="(p.vymera || '?') + ' m²' + (p.vymera_vypoctena ? ' ' + preloz('ed_sablona.parcela.z_obrysu') : '')"></span></div>
                             <template x-for="field in [{k:'radon', lbl:preloz('ed_sablona.parcela.radon')}, {k:'geologie', lbl:preloz('ed_sablona.parcela.geologie')}, {k:'ig_rajon', lbl:preloz('ed_sablona.zaklady.nazev')}]" :key="field.k">
                                 <div x-show="p[field.k]">
                                     <div class="text-gray-600 mt-0.5 flex items-start gap-1">
@@ -1767,8 +1775,9 @@
                         </div>
                     </template>
                     <span x-show="katastrNacitaniProfil" class="mt-1 text-xs text-gray-500">{{ __('ed_sablona.parcela.nacitam_profil') }}</span>
+                    <div x-show="katastrProfilHlaska && !katastrNacitaniProfil" class="mt-1 text-xs text-gray-500" x-text="katastrProfilHlaska"></div>
+                    <div x-show="katastrAtribuce()" class="mt-1 text-[10px] text-gray-400" x-text="preloz('ed_sablona.parcela.zdroj_dat') + ' ' + katastrAtribuce()"></div>
                 </div>
-                @endfunkce
             </div>
         </details>
 
@@ -2289,6 +2298,8 @@
             </div>
         </div>
     </div>
+    {{-- Výběr pozemku na mapě (mapa-pozemku.js), uvnitř komponenty editoru --}}
+    @include('masterteam.partials.mapa-pozemku')
 </div>
 
 <script>
@@ -2308,6 +2319,7 @@ if (!{{ $aktivni?->id ?? 'null' }}) {
 <script src="/js/koncept-v3/katalog.js?v={{ filemtime(public_path('js/koncept-v3/katalog.js')) }}"></script>
 <script src="/js/koncept-v3/sestavy.js?v={{ filemtime(public_path('js/koncept-v3/sestavy.js')) }}"></script>
 <script src="/js/koncept-v3/prochazka.js?v={{ filemtime(public_path('js/koncept-v3/prochazka.js')) }}"></script>
+<script src="/js/koncept-v3/mapa-pozemku.js?v={{ filemtime(public_path('js/koncept-v3/mapa-pozemku.js')) }}"></script>
 <script src="/js/koncept-v3/limit-tarifu.js?v={{ filemtime(public_path('js/koncept-v3/limit-tarifu.js')) }}"></script>
 <script>
 var _kkInitData = {
@@ -2339,6 +2351,9 @@ var _kkInitData = {
         katastrVyskovy: '{{ route($trasaV3 . ".katastr.vyskovy") }}',
         katastrSousednost: '{{ route($trasaV3 . ".katastr.sousednost") }}',
         katastrUlozit: '{{ route($trasaV3 . ".katastr.ulozit", ":id") }}',
+        katastrBod: '{{ route($trasaV3 . ".katastr.bod") }}',
+        katastrInfo: '{{ route($trasaV3 . ".katastr.info") }}',
+        katastrDlazdice: '{{ route($trasaV3 . ".katastr.dlazdice", ":zeme") }}',
         vysvetleni: '{{ route($trasaV3 . ".vysvetleni") }}',
         smazat: '{{ route($trasaV3 . ".smazat", ":id") }}',
         // Import půdorysu — podklad
@@ -2360,6 +2375,8 @@ var _kkInitData = {
         filemtime(public_path("js/koncept-v3/import-worker.js")),
     ) }}',
     mapyczApiKey: '{{ config("services.mapycz.api_key", "") }}',
+    // Povinné uvedení zdroje dat pozemku podle země (config/pozemky.php)
+    pozemkyAtribuce: @json(collect(config('pozemky.zeme'))->map(fn ($z) => $z['atribuce'] ?? null)),
     // Constraint editor (T-junction slide, detach, snap, junction type barvy).
     // Plně zpětně kompatibilní — koncepty bez constraint metadata (ručně
     // kreslené) se chovají jako předtím (volný 2D drag).

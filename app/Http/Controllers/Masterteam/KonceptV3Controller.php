@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 // Alias: tělo controlleru pracuje s Koncept, což je model tabulky koncepty_v3.
 use App\Models\KonceptV3 as Koncept;
 use App\Services\Katastr\KatastrService;
-use App\Services\Katastr\Dmr5gService;
+use App\Services\Pozemky\Pozemky;
 use App\Support\Mereni;
 use App\Support\Tarif;
 use Illuminate\Support\Facades\DB;
@@ -262,7 +262,8 @@ class KonceptV3Controller extends Controller
         $katastr = $request->input('katastr');
         // Výškový profil uložený v projektu (vzorový projekt) zůstává, dokud jsou parcely stejné
         $profil = $metadata['katastr']['profil'] ?? null;
-        $parcely = collect($katastr['parcely'] ?? [])->map(fn ($p) => $p['label'] ?? $p['cislo'] ?? '')->sort()->implode('|');
+        // Stejný klíč jako katastrNactiProfil v editoru (parcely z mapy mají id, české podle čísla label)
+        $parcely = collect($katastr['parcely'] ?? [])->map(fn ($p) => $p['id'] ?? $p['label'] ?? $p['cislo'] ?? '')->sort()->implode('|');
         if ($profil && ! isset($katastr['profil']) && ($profil['_hash'] ?? null) === $parcely) {
             $katastr['profil'] = $profil;
         }
@@ -319,11 +320,14 @@ class KonceptV3Controller extends Controller
             'bbox.max_lon' => 'required|numeric',
         ]);
 
-        $katastr = app(KatastrService::class);
         try {
-            $stavby = $katastr->nactiStavby($request->input('bbox'));
+            $stavby = app(Pozemky::class)->stavbyVOblasti($this->zemePozadavku($request), $request->input('bbox'));
         } catch (ConnectionException $e) {
             return $this->katastrNedostupny($e);
+        } catch (\Throwable $e) {
+            // Stavby jsou doplněk, výpadek služby nesmí zastavit načtení pozemku
+            \Illuminate\Support\Facades\Log::warning('Stavby nenačteny: ' . mb_substr($e->getMessage(), 0, 200));
+            $stavby = [];
         }
 
         return response()->json(['ok' => true, 'stavby' => $stavby]);
@@ -342,8 +346,19 @@ class KonceptV3Controller extends Controller
             'bbox.max_lon' => 'required|numeric',
         ]);
 
-        $katastr = app(KatastrService::class);
-        $parcely = $katastr->nactiOkolniParcely($request->input('bbox'));
+        try {
+            $parcely = app(Pozemky::class)->parcelyVOblasti($this->zemePozadavku($request), $request->input('bbox'));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Okolní parcely nenačteny: ' . mb_substr($e->getMessage(), 0, 200));
+            $parcely = [];
+        }
+        // Editoru stačí obrys a číslo
+        $parcely = array_map(fn ($p) => [
+            'polygon_wgs84' => $p['polygon_wgs84'],
+            'label' => $p['label'] ?? $p['cislo'] ?? null,
+            'typ' => $p['typ'] ?? null,
+            'id' => $p['id'] ?? null,
+        ], $parcely);
 
         return response()->json(['ok' => true, 'parcely' => $parcely]);
     }
@@ -475,30 +490,10 @@ class KonceptV3Controller extends Controller
         }
 
         try {
-            $dmr = app(Dmr5gService::class);
-            $vsechnyBody = [];
-            $globalMin = PHP_FLOAT_MAX;
-            $globalMax = PHP_FLOAT_MIN;
+            // Model terénu podle země pozemku (config/pozemky.php), body [[lat, lon, z], ...]
+            $profil = app(Pozemky::class)->vyskovyProfil($this->zemePozadavku($request), array_values($polygony));
 
-            foreach ($polygony as $polygon) {
-                $profil = $dmr->nactiVyskovyProfil($polygon);
-                $vsechnyBody = array_merge($vsechnyBody, $profil['body']);
-                $globalMin = min($globalMin, $profil['vyska_min']);
-                $globalMax = max($globalMax, $profil['vyska_max']);
-            }
-
-            $prumer = count($vsechnyBody) > 0
-                ? round(array_sum(array_column($vsechnyBody, 2)) / count($vsechnyBody), 1)
-                : 0;
-
-            return response()->json(['ok' => true, 'profil' => [
-                'body' => $vsechnyBody,
-                'pocet_bodu' => count($vsechnyBody),
-                'vyska_min' => round($globalMin, 1),
-                'vyska_max' => round($globalMax, 1),
-                'vyskovy_rozdil' => round($globalMax - $globalMin, 1),
-                'vyska_prumerna' => $prumer,
-            ]]);
+            return response()->json(['ok' => true, 'profil' => $profil]);
         } catch (\Throwable $e) {
             return response()->json([
                 'ok' => false,
@@ -517,16 +512,118 @@ class KonceptV3Controller extends Controller
             'stavajici' => 'required|array',
         ]);
 
-        $katastr = app(KatastrService::class);
-        $sousedi = $katastr->overSousednost(
-            $request->input('nova'),
-            $request->input('stavajici'),
-        );
+        $nova = $request->input('nova');
+        $stavajici = $request->input('stavajici');
+        // Parcely ze všech zemí chodí ve WGS84 [lat, lon], starší české v S-JTSK (velká záporná čísla).
+        // Validátor počítá v metrech: WGS84 převést do místní roviny.
+        if (abs((float) ($nova[0][0] ?? 0)) < 400) {
+            $ref = $nova[0];
+            $nova = \App\Services\Pozemky\Geo::doMetru($nova, $ref);
+            $stavajici = array_map(fn ($p) => \App\Services\Pozemky\Geo::doMetru($p ?? [], $ref), $stavajici);
+        }
+        $sousedi = app(KatastrService::class)->overSousednost($nova, $stavajici);
 
         return response()->json(['ok' => true, 'sousedi' => $sousedi]);
     }
 
+    /**
+     * Parcela v bodě mapy (výběr pozemku na mapě, všechny země). Zemi určí poloha.
+     */
+    public function nactiParceluVBode(Request $request)
+    {
+        $request->validate([
+            'lat' => 'required|numeric|between:-90,90',
+            'lon' => 'required|numeric|between:-180,180',
+        ]);
+
+        // Některé národní služby odpovídají pomalu (Itálie až 30 s), čekání na síť nesmí shodit požadavek
+        @set_time_limit(90);
+        try {
+            $v = app(Pozemky::class)->parcelaVBode((float) $request->input('lat'), (float) $request->input('lon'));
+        } catch (ConnectionException $e) {
+            return $this->katastrNedostupny($e);
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            \Illuminate\Support\Facades\Log::warning('Katastr v bodě: ' . mb_substr($e->getMessage(), 0, 200));
+
+            return response()->json(['ok' => false, 'error' => __('projekty.katastr_nedostupny')], 503);
+        }
+
+        if (!$v['parcela']) {
+            return response()->json([
+                'ok' => false,
+                'zeme' => $v['zeme'],
+                'duvod' => $v['duvod'],
+                'error' => __('ed_nastroje.katastr.bod_' . $v['duvod']),
+            ]);
+        }
+
+        return response()->json(['ok' => true, 'zeme' => $v['zeme'], 'parcela' => $v['parcela']]);
+    }
+
+    /** Co je v místě k dispozici: země, vrstva parcel nad mapou, katastr a výšky. */
+    public function infoMista(Request $request)
+    {
+        $request->validate([
+            'lat' => 'required|numeric|between:-90,90',
+            'lon' => 'required|numeric|between:-180,180',
+        ]);
+
+        return response()->json(['ok' => true] + app(Pozemky::class)->infoBodu((float) $request->input('lat'), (float) $request->input('lon')));
+    }
+
+    /**
+     * Dlaždice vrstvy parcel přes náš server pro služby, jejichž obrázky prohlížeč na cizí stránce zahodí
+     * (Slovensko posílá Cross-Origin-Resource-Policy: same-origin). Vrstva a adresa jen z config/pozemky.php,
+     * od prohlížeče se bere jen výřez a velikost, nejde tedy o otevřenou proxy.
+     */
+    public function dlazdiceParcel(Request $request, string $zeme)
+    {
+        $w = config('pozemky.zeme.' . strtoupper($zeme) . '.wms');
+        abort_unless($w && !empty($w['proxy']), 404);
+        $p = array_change_key_case($request->query(), CASE_LOWER);
+        $bbox = array_map('floatval', explode(',', (string) ($p['bbox'] ?? '')));
+        $sirka = (int) ($p['width'] ?? 256);
+        $vyska = (int) ($p['height'] ?? 256);
+        abort_unless(count($bbox) === 4 && $sirka > 0 && $sirka <= 512 && $vyska > 0 && $vyska <= 512, 422);
+
+        // Mezipaměť na disku (katastr se mění pomalu), ať každé posunutí mapy nejde znovu na slovenský server
+        $soubor = storage_path('app/dlazdice/' . strtoupper($zeme) . '/' . md5(implode(',', $bbox) . "|{$sirka}|{$vyska}") . '.png');
+        if (is_file($soubor) && filemtime($soubor) > time() - 30 * 86400) {
+            return response()->file($soubor, ['Content-Type' => 'image/png', 'Cache-Control' => 'private, max-age=86400']);
+        }
+
+        try {
+            $odpoved = \Illuminate\Support\Facades\Http::timeout(20)->get($w['url'], [
+                'service' => 'WMS', 'request' => 'GetMap', 'version' => $w['verze'] ?? '1.3.0',
+                'layers' => $w['vrstvy'], 'styles' => '', 'format' => 'image/png', 'transparent' => 'true',
+                'crs' => $w['crs'] ?? 'EPSG:3857', 'width' => $sirka, 'height' => $vyska,
+                'bbox' => implode(',', $bbox),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->noContent(504);
+        }
+        if (!$odpoved->successful() || !str_starts_with((string) $odpoved->header('Content-Type'), 'image/')) {
+            return response()->noContent(502);
+        }
+        @mkdir(dirname($soubor), 0775, true);
+        @file_put_contents($soubor, $odpoved->body());
+
+        return response($odpoved->body(), 200, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'private, max-age=86400',
+        ]);
+    }
+
     // ─── Helpers ─────────────────────────────────────
+
+    /** Země pozemku z požadavku (parcely z dřívějška ji nemají, ty jsou z ČR). */
+    private function zemePozadavku(Request $request): string
+    {
+        $zeme = strtoupper((string) $request->input('zeme', 'CZ'));
+
+        // Země bez zdroje (ruční pozemek v Rakousku) zůstane, Pozemky pak vrátí prázdno nebo hlášku
+        return preg_match('/^[A-Z]{2}$/', $zeme) ? $zeme : 'CZ';
+    }
 
     /** Výpadek služby ČÚZK není chyba aplikace: hláška uživateli, do logu jen varování (bez e-mailu o bugu). */
     private function katastrNedostupny(ConnectionException $e): \Illuminate\Http\JsonResponse

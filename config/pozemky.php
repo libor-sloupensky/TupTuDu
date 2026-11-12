@@ -25,7 +25,8 @@ return [
         'SK' => [
             'parcely' => Zdroje\Slovensko::class,
             'vysky' => Zdroje\Slovensko::class,
-            'wms' => ['url' => 'https://inspirews.skgeodesy.sk/geoserver/cp/ows', 'vrstvy' => 'CP.CadastralParcel', 'verze' => '1.3.0', 'crs' => 'EPSG:3857'],
+            // Server posílá Cross-Origin-Resource-Policy: same-origin, prohlížeč dlaždice zahodí: jdou přes náš server
+            'wms' => ['url' => 'https://inspirews.skgeodesy.sk/geoserver/cp/ows', 'vrstvy' => 'CP.CadastralParcel', 'verze' => '1.3.0', 'crs' => 'EPSG:3857', 'proxy' => true],
             'atribuce' => '© ÚGKK SR (CC BY 4.0)',
         ],
         'PL' => [

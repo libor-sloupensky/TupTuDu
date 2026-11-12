@@ -113,6 +113,9 @@ return [
         'vysky_nedostupne' => 'Elevation data is not available for this area.',
         'vysky_zeme_nejsou' => 'There is no terrain elevation model for this country yet.',
         'pozemek_velky' => 'The plot is too large for an elevation profile, select a smaller part (up to 1.5 km).',
+        'bod_mimo_evropu' => 'There is no cadastre here, this place is outside the supported countries. You can trace the plot.',
+        'bod_bez_katastru' => 'There is no cadastre for this country yet. You can trace the plot.',
+        'bod_nenalezena' => 'No parcel found at this spot. Try clicking inside the plot, or trace it.',
         'souradnice_mimo' => 'Coordinates outside the S-JTSK range: :lat, :lon',
     ],
 ];

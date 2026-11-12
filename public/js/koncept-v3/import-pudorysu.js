@@ -925,7 +925,7 @@ window.KonceptImport = {
  */
 window.konceptV3Komponenta = function (init) {
     const komponenta = konceptKEditor(init);
-    for (const mixin of [window.KonceptImport, window.KonceptImportProhlizec, window.KonceptLimit, window.KonceptDum, window.KonceptExport, window.KonceptKatalog, window.KonceptSestavy, window.KonceptProchazka]) {
+    for (const mixin of [window.KonceptImport, window.KonceptImportProhlizec, window.KonceptLimit, window.KonceptDum, window.KonceptExport, window.KonceptKatalog, window.KonceptSestavy, window.KonceptProchazka, window.KonceptMapaPozemku]) {
         if (mixin) Object.defineProperties(komponenta, Object.getOwnPropertyDescriptors(mixin));
     }
     return komponenta;

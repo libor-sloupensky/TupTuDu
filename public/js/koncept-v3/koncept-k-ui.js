@@ -137,6 +137,7 @@ function konceptKEditor(initialData) {
         katastrKuVysledky: [],
         katastrKuNabidk: false,
         katastrVybraneKu: null,
+        katastrProfilHlaska: '',   // proč výškový profil chybí (země bez modelu terénu, výpadek)
         katastrCislo: '',
         katastrTyp: 'auto',
         katastrNacitani: false,
@@ -5316,64 +5317,8 @@ function konceptKEditor(initialData) {
                 }
 
                 const parcela = d.parcela;
-                parcela.druh_pozemku_cz = this._katastrDruhCz[parcela.druh_pozemku] || parcela.druh_pozemku || '—';
-
-                // Duplicita — parcela se stejným KÚ kódem + číslem + typem už nesmí být přidaná
-                const jeDuplicita = this.katastrParcely.some(p =>
-                    p.cislo === parcela.cislo
-                    && (p.typ || 'pozemkova') === (parcela.typ || 'pozemkova')
-                    && (p.ku_kod || '') === (parcela.ku_kod || '')
-                );
-                if (jeDuplicita) {
-                    this.katastrChyba = preloz('ed_ui.parcela_duplicita');
-                    this.katastrNacitani = false;
-                    return;
-                }
-
-                // Sousednost — nová parcela musí sousedit s některou existující
-                if (this.katastrParcely.length > 0) {
-                    try {
-                        const sResp = await fetch(initialData.routes.katastrSousednost, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': initialData.csrf, 'Accept': 'application/json' },
-                            body: JSON.stringify({
-                                nova: parcela.polygon_sjtsk,
-                                stavajici: this.katastrParcely.map(p => p.polygon_sjtsk),
-                            }),
-                        });
-                        const sD = await sResp.json();
-                        parcela._sousedi = sD.sousedi;
-                        if (!sD.sousedi || sD.sousedi === false) {
-                            this.katastrChyba = preloz('ed_ui.parcela_nesousedi');
-                            this.katastrNacitani = false;
-                            return;
-                        }
-                    } catch (e) {
-                        parcela._sousedi = null;
-                        window.zalogujChybu?.(e, 'Koncept V3: ověření sousednosti parcel', { projektId: this.projektId, parcela: parcela.label || parcela.cislo });
-                    }
-                }
-
-                this.katastrParcely.push(parcela);
-                this._zalozZaklady();
-                this.zmerFunkci('parcela');
-
-                // Stavby
-                await this.katastrNactiStavbyParcely(parcela);
-                // User-triggered add → force AI regeneraci (odstranění + znovupřidání = čerstvé vysvětlení)
-                this.katastrNactiLimityParcely(parcela, { force: true });
-
-                // Načíst okolní parcely + výškový profil
-                await this._katastrNactiOkolni();
-                this.katastrNactiProfil(); // async, nečekáme
-
-                // Překreslit vše — katastr i mapy (přepočítat pro novou parcelu)
-                this.katastrPrekreslitCanvas();
-                if (this.katastrMapaPodklad !== 'zadny') {
-                    this.katastrZmenPodklad();
-                }
-                this.katastrCislo = '';
-                this._katastrAutosave();
+                parcela.zeme = 'CZ';
+                if (await this._katastrPridejParcelu(parcela)) this.katastrCislo = '';
 
             } catch (e) {
                 this.katastrChyba = preloz('ed_ui.chyba_zprava', { zprava: e.message });
@@ -5382,6 +5327,88 @@ function konceptKEditor(initialData) {
                 });
             }
             this.katastrNacitani = false;
+        },
+
+        /**
+         * Přidá parcelu do projektu: kontrola duplicity a sousednosti, stavby, okolí, výšky.
+         * Společné pro hledání podle čísla (ČR) i pro výběr na mapě (všechny země, mapa-pozemku.js).
+         * Vrací true, když se parcela přidala; jinak nastaví katastrChyba.
+         */
+        async _katastrPridejParcelu(parcela) {
+            if (parcela.druh_pozemku) {
+                parcela.druh_pozemku_cz = this._katastrDruhCz[parcela.druh_pozemku] || parcela.druh_pozemku_cz || parcela.druh_pozemku;
+            }
+
+            // Duplicita: parcely z mapy podle id, české z hledání podle KÚ + čísla + typu
+            const jeDuplicita = this.katastrParcely.some(p => (p.id && parcela.id)
+                ? p.id === parcela.id
+                : p.cislo === parcela.cislo
+                    && (p.typ || 'pozemkova') === (parcela.typ || 'pozemkova')
+                    && (p.ku_kod || '') === (parcela.ku_kod || '')
+                    && (p.zeme || 'CZ') === (parcela.zeme || 'CZ'));
+            if (jeDuplicita) {
+                this.katastrChyba = preloz('ed_ui.parcela_duplicita');
+                return false;
+            }
+
+            // Sousednost — nová parcela musí sousedit s některou existující (ve WGS84, platí pro všechny země).
+            // Obkreslený pozemek hranici s katastrem přesně nesdílí, u něj se sousednost nehlídá.
+            const zKatastru = this.katastrParcely.filter(p => !p.rucni);
+            if (zKatastru.length > 0 && !parcela.rucni) {
+                try {
+                    const sD = await (await fetch(initialData.routes.katastrSousednost, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': initialData.csrf, 'Accept': 'application/json' },
+                        body: JSON.stringify({
+                            nova: parcela.polygon_wgs84 || parcela.polygon_sjtsk,
+                            stavajici: zKatastru.map(p => parcela.polygon_wgs84 ? p.polygon_wgs84 : p.polygon_sjtsk),
+                        }),
+                    })).json();
+                    parcela._sousedi = sD.sousedi;
+                    if (!sD.sousedi) {
+                        this.katastrChyba = preloz('ed_ui.parcela_nesousedi');
+                        return false;
+                    }
+                } catch (e) {
+                    parcela._sousedi = null;
+                    window.zalogujChybu?.(e, 'Koncept V3: ověření sousednosti parcel', { projektId: this.projektId, parcela: parcela.label || parcela.cislo });
+                }
+            }
+
+            this.katastrParcely.push(parcela);
+            this._zalozZaklady();
+            this.zmerFunkci('parcela');
+
+            await this.katastrNactiStavbyParcely(parcela);
+            // Přidání uživatelem → čerstvé vysvětlení AI (odstranění + znovupřidání = nové)
+            this.katastrNactiLimityParcely(parcela, { force: true });
+
+            await this._katastrNactiOkolni();
+            this.katastrNactiProfil(); // async, nečekáme
+
+            // Překreslit vše — katastr i mapy (přepočítat pro novou parcelu)
+            this.katastrPrekreslitCanvas();
+            if (this.katastrMapaPodklad !== 'zadny') {
+                this.katastrZmenPodklad();
+            }
+            this._katastrAutosave();
+            return true;
+        },
+
+        /** Název parcely v seznamu: česká s druhem (p. / st.), jinde číslo a obec nebo katastrální území. */
+        katastrNazevParcely(p) {
+            if (p.rucni) return p.cislo;
+            if ((p.zeme || 'CZ') === 'CZ') {
+                return p.cislo + ' (' + preloz(p.typ === 'stavebni' ? 'ed_sablona.parcela.zkratka_stavebni' : 'ed_sablona.parcela.zkratka_pozemkova') + ')';
+            }
+            const misto = p.ku_nazev || p.obec;
+            return p.cislo + (misto ? ', ' + misto : '');
+        },
+
+        /** Zdroj dat parcel v projektu pro atribuci (CC BY a podobné licence). */
+        katastrAtribuce() {
+            const zdroje = initialData.pozemkyAtribuce || {};
+            return [...new Set(this.katastrParcely.map(p => zdroje[p.zeme || 'CZ']).filter(Boolean))].join(', ');
         },
 
         async katastrNactiStavbyParcely(parcela) {
@@ -5404,7 +5431,7 @@ function konceptKEditor(initialData) {
                 const resp = await fetch(initialData.routes.katastrStavby, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': initialData.csrf, 'Accept': 'application/json' },
-                    body: JSON.stringify({ bbox: parcela.bbox }),
+                    body: JSON.stringify({ bbox: parcela.bbox, zeme: parcela.zeme || 'CZ' }),
                 });
                 const d = await resp.json();
                 if (d.ok && d.stavby) {
@@ -5428,6 +5455,8 @@ function konceptKEditor(initialData) {
          */
         async katastrNactiLimityParcely(parcela, opts = {}) {
             const forceAi = !!opts.force;
+            // Radon a geologie z ČGS jen pro pozemky v Česku
+            if ((parcela.zeme || 'CZ') !== 'CZ') return;
             const poly = parcela.polygon_wgs84;
             if (!poly || poly.length === 0) return;
             // Centroid parcely
@@ -5572,8 +5601,7 @@ function konceptKEditor(initialData) {
                 if (!confirm(preloz('ed_ui.parcela_odebrat_posledni'))) return;
             } else {
                 const p = this.katastrParcely[index];
-                const druh = preloz(p?.typ === 'stavebni' ? 'ed_sablona.parcela.zkratka_stavebni' : 'ed_sablona.parcela.zkratka_pozemkova');
-                if (!this.potvrditSmazani(p ? p.cislo + ' (' + druh + ')' : '')) return;
+                if (!this.potvrditSmazani(p ? this.katastrNazevParcely(p) : '')) return;
             }
             this.katastrParcely.splice(index, 1);
             this.katastrProfil = null;
@@ -5625,7 +5653,9 @@ function konceptKEditor(initialData) {
             // Cache GLOBÁLNÍ (per-parcel-set, ne per-project) — stejná sada
             // parcel z jiného konceptu = cache hit. DMR 5G se mění pomalu,
             // invalidace časová 30 dní.
-            const cacheHash = this.katastrParcely.map(p => p.label || p.cislo).sort().join('|');
+            // Parcely z mapy mají id (jednoznačné i mezi zeměmi), české z hledání podle čísla label
+            const cacheHash = this.katastrParcely.map(p => p.id || p.label || p.cislo).sort().join('|');
+            this.katastrProfilHlaska = '';
             const cacheKey = 'kv3_vysky_g_' + cacheHash; // g = globální
             // Profil uložený přímo v projektu (vzorový projekt a jeho kopie): žádný dotaz na server
             const vProjektu = this.metadata?.katastr?.profil;
@@ -5672,9 +5702,12 @@ function konceptKEditor(initialData) {
                 const resp = await fetch(initialData.routes.katastrVyskovy, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': initialData.csrf, 'Accept': 'application/json' },
-                    body: JSON.stringify({ polygony }),
+                    // Model terénu podle země pozemku (server config/pozemky.php)
+                    body: JSON.stringify({ polygony, zeme: this.katastrParcely[0].zeme || 'CZ' }),
                 });
                 const d = await resp.json();
+                // Země bez modelu terénu nebo výpadek služby: hláška v panelu Parcela místo tichého nic
+                if (!d.ok) this.katastrProfilHlaska = d.error || preloz('ed_ui.vysky_nenacteny');
                 if (d.ok && d.profil && d.profil.body && d.profil.body.length > 0) {
                     d.profil._hash = cacheHash;
                     d.profil._timestamp = Date.now();
@@ -5838,15 +5871,16 @@ function konceptKEditor(initialData) {
                 const resp = await fetch(initialData.routes.katastrOkolni, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': initialData.csrf, 'Accept': 'application/json' },
-                    body: JSON.stringify({ bbox }),
+                    body: JSON.stringify({ bbox, zeme: this.katastrParcely[0].zeme || 'CZ' }),
                 });
                 const d = await resp.json();
                 if (d.ok && d.parcely) {
                     // Odfiltrovat vlastní parcely a vzdálené (>5m od hranice)
                     const vlastniLabels = new Set(this.katastrParcely.map(p => p.label));
+                    const vlastniId = new Set(this.katastrParcely.map(p => p.id).filter(Boolean));
                     const maxDist = 0.000045; // ~5m v degrees
                     this._katastrOkolni = d.parcely.filter(p => {
-                        if (vlastniLabels.has(p.label)) return false;
+                        if (p.id ? vlastniId.has(p.id) : vlastniLabels.has(p.label)) return false;
                         if (!p.polygon_wgs84 || p.polygon_wgs84.length < 3) return false;
                         // Kontrola min vzdálenosti od vlastní hranice
                         for (const vp of this.katastrParcely) {
@@ -5892,6 +5926,9 @@ function konceptKEditor(initialData) {
                                     vymera: p.vymera, druh_pozemku: p.druh_pozemku,
                                     druh_pozemku_cz: p.druh_pozemku_cz,
                                     _sousedi: p._sousedi,
+                                    // Pozemky v Evropě (výběr na mapě): země zdroje, id, místo, obkreslený pozemek
+                                    zeme: p.zeme, id: p.id, ku_kod: p.ku_kod, ku_nazev: p.ku_nazev, obec: p.obec,
+                                    rucni: p.rucni, vymera_vypoctena: p.vymera_vypoctena,
                                 })),
                                 ku: this.katastrVybraneKu,
                                 podklad: this.katastrMapaPodklad,

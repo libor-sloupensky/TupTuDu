@@ -118,6 +118,9 @@ Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('mastertea
     Route::post('koncept-v3/katastr/vyskovy-profil', [KonceptV3Controller::class, 'nactiVyskovy'])->name('koncept-v3.katastr.vyskovy');
     Route::post('koncept-v3/katastr/sousednost', [KonceptV3Controller::class, 'overSousednost'])->name('koncept-v3.katastr.sousednost');
     Route::post('koncept-v3/katastr/okolni', [KonceptV3Controller::class, 'nactiOkolniParcely'])->name('koncept-v3.katastr.okolni');
+    Route::post('koncept-v3/katastr/bod', [KonceptV3Controller::class, 'nactiParceluVBode'])->name('koncept-v3.katastr.bod');
+    Route::post('koncept-v3/katastr/info', [KonceptV3Controller::class, 'infoMista'])->name('koncept-v3.katastr.info');
+    Route::get('koncept-v3/katastr/dlazdice/{zeme}', [KonceptV3Controller::class, 'dlazdiceParcel'])->where('zeme', '[A-Za-z]{2}')->name('koncept-v3.katastr.dlazdice');
     Route::post('koncept-v3/vysvetleni', [KonceptV3Controller::class, 'vysvetleniPojmu'])->name('koncept-v3.vysvetleni');
     // Parametrické routy — {koncept:id} na konci (model KonceptV3 přes type-hint v controlleru)
     Route::patch('koncept-v3/{koncept:id}/ulozit', [KonceptV3Controller::class, 'ulozit'])->name('koncept-v3.ulozit');
@@ -225,15 +228,17 @@ Route::middleware(['subdomena:app', 'auth', 'verified'])->name('app.')->group(fu
         Route::post('explain', [KonceptV3Controller::class, 'vysvetleniPojmu'])->middleware('throttle:30,1')->name('vysvetleni');
         Route::post('usage', [KonceptV3Controller::class, 'zmerFunkci'])->middleware('throttle:60,1')->name('mereni');
 
-        // Katastr jen v zemích, které ho mají (config/lokalizace.php)
-        Route::middleware('funkce:katastr')->group(function () {
-            Route::post('land/parcel', [KonceptV3Controller::class, 'nactiParcelu'])->name('katastr.parcela');
-            Route::post('land/buildings', [KonceptV3Controller::class, 'nactiStavby'])->name('katastr.stavby');
-            Route::post('land/nearby', [KonceptV3Controller::class, 'nactiOkolniParcely'])->name('katastr.okolni');
-            Route::post('land/neighbours', [KonceptV3Controller::class, 'overSousednost'])->name('katastr.sousednost');
-            Route::patch('{koncept:id}/land', [KonceptV3Controller::class, 'ulozitKatastr'])->name('katastr.ulozit');
-        });
-        Route::post('land/elevation', [KonceptV3Controller::class, 'nactiVyskovy'])->middleware('funkce:vyskovy_profil')->name('katastr.vyskovy');
+        // Hledání české parcely podle katastrálního území a čísla jen pro uživatele z ČR (config/lokalizace.php)
+        Route::post('land/parcel', [KonceptV3Controller::class, 'nactiParcelu'])->middleware('funkce:katastr')->name('katastr.parcela');
+        // Pozemek z mapy funguje v každé zemi, zdroj dat podle polohy (config/pozemky.php)
+        Route::post('land/at-point', [KonceptV3Controller::class, 'nactiParceluVBode'])->middleware('throttle:60,1')->name('katastr.bod');
+        Route::post('land/info', [KonceptV3Controller::class, 'infoMista'])->middleware('throttle:120,1')->name('katastr.info');
+        Route::get('land/tile/{zeme}', [KonceptV3Controller::class, 'dlazdiceParcel'])->where('zeme', '[A-Za-z]{2}')->middleware('throttle:600,1')->name('katastr.dlazdice');
+        Route::post('land/buildings', [KonceptV3Controller::class, 'nactiStavby'])->name('katastr.stavby');
+        Route::post('land/nearby', [KonceptV3Controller::class, 'nactiOkolniParcely'])->name('katastr.okolni');
+        Route::post('land/neighbours', [KonceptV3Controller::class, 'overSousednost'])->name('katastr.sousednost');
+        Route::patch('{koncept:id}/land', [KonceptV3Controller::class, 'ulozitKatastr'])->name('katastr.ulozit');
+        Route::post('land/elevation', [KonceptV3Controller::class, 'nactiVyskovy'])->name('katastr.vyskovy');
 
         // Podklad pro import půdorysu (výkres PDF/obrázek)
         Route::get('plans', [KonceptV3PodkladController::class, 'seznam'])->name('podklad.seznam');

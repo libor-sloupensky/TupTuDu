@@ -33,7 +33,8 @@ class Italie implements ZdrojParcel
 
     private function dotaz(array $o, int $pocet, ?float $lat = null, ?float $lon = null): array
     {
-        $xml = Http::timeout(25)->get(self::WFS, [
+        // Služba odpovídá 8–32 s, i na prosté spočítání prvků (WFS 1.1 vrací jen „Richiesta non valida“)
+        $xml = Http::timeout(40)->get(self::WFS, [
             'service' => 'WFS',
             'version' => '2.0.0',
             'request' => 'GetFeature',

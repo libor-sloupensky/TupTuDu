@@ -124,6 +124,9 @@ return [
         'vysky_nedostupne' => 'Výšková data pro tuto oblast nejsou dostupná.',
         'vysky_zeme_nejsou' => 'Pro tuto zemi zatím nemáme výškový model terénu.',
         'pozemek_velky' => 'Pozemek je na výškový profil moc velký, vyber menší část (do 1,5 km).',
+        'bod_mimo_evropu' => 'Tady katastr nemáme, místo je mimo podporované země. Pozemek můžeš obkreslit.',
+        'bod_bez_katastru' => 'Pro tuto zemi zatím katastr nemáme. Pozemek můžeš obkreslit.',
+        'bod_nenalezena' => 'Na tomto místě jsme parcelu nenašli. Zkus kliknout dovnitř pozemku, nebo ho obkresli.',
         'souradnice_mimo' => 'Souřadnice mimo rozsah S-JTSK: :lat, :lon',
     ],
 ];

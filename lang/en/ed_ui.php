@@ -83,6 +83,10 @@ return [
 
     // Cadastre and parcels — land type and radon are saved with the parcel in the language at the time it was added
     'parcela_nenactena' => 'Could not load the parcel.',
+    'mapa_nenactena' => 'The map could not be loaded.',
+    'mapa_priblizit' => 'Zoom in on the plot, parcels can be selected at a detailed scale.',
+    'pozemek_rucni' => 'Traced plot',
+    'vysky_nenacteny' => 'The elevation profile could not be loaded.',
     'parcela_duplicita' => 'This parcel has already been added.',
     'parcela_nesousedi' => 'This parcel does not adjoin any loaded parcel. Only adjoining parcels can be added.',
     'parcela_odebrat_posledni' => 'Really remove the last parcel? Objects will lose their anchoring to the plot.',
