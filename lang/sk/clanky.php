@@ -7,6 +7,7 @@ return [
     'drobecky' => 'Kde si',
     'overeno' => 'Údaje overené k :datum',
     'autor' => 'Pripravil :autor',
+    'autor_libor' => 'Libor z TupTuDu',
     'souvisejici' => 'Mohlo by ťa zaujímať',
     'koncept' => 'Koncept, zatiaľ nie je zverejnený.',
     'cist' => 'Čítať článok',

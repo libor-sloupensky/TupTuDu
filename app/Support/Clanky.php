@@ -171,6 +171,17 @@ final class Clanky
         );
     }
 
+    /** Podpis všech článků v hlavičce (Libor 9. 11. 2026), kontroluje ho KontrolaClanku. */
+    public const AUTOR = 'Libor z TupTuDu';
+
+    /** Podpis pod titulkem v jazyce stránky: „Libor z TupTuDu“ v češtině, „Libor from TupTuDu“ v angličtině… */
+    public static function podpis(array $clanek): string
+    {
+        $autor = $clanek['autor'] ?? 'TupTuDu';
+
+        return $autor === self::AUTOR ? __('clanky.autor_libor') : $autor;
+    }
+
     /**
      * Typografie v HTML podle jazyka článku. Ve všech jazycích nezlomitelná mezera mezi číslem a jednotkou. V češtině,
      * slovenštině a polštině za jednopísmennou předložkou nebo spojkou. Ve francouzštině (revize 12. 11. 2026)

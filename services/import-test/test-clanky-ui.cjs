@@ -50,8 +50,9 @@ async function main() {
         // Autor z hlavičky článku: pod titulkem i pro vyhledávače
         const autor = await p.vyhodnot(`({ meta: document.querySelector('.tt-clanek-meta')?.textContent || '',
             ld: JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent)[0].author })`);
-        kontrola('autor Libor z TupTuDu na stránce i ve strukturovaných datech', autor.meta.includes('Libor z TupTuDu')
-            && autor.ld?.['@type'] === 'Person' && autor.ld?.name === 'Libor z TupTuDu', JSON.stringify(autor));
+        // Podpis podle jazyka stránky (clanky.autor_libor), ve strukturovaných datech jméno osoby a firma (12. 11. 2026)
+        kontrola('autor Libor z TupTuDu na stránce, ve strukturovaných datech Libor z firmy TupTuDu', autor.meta.includes('Libor z TupTuDu')
+            && autor.ld?.['@type'] === 'Person' && autor.ld?.name === 'Libor' && autor.ld?.worksFor?.name === 'TupTuDu', JSON.stringify(autor));
 
         console.log('\n2) Kalkulačka');
         let v = await hodnoty(p);

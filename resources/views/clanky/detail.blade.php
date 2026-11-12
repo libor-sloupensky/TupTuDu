@@ -7,7 +7,9 @@
     $adresa = Clanky::adresa($clanek);
     $jazyk = $clanek['jazyk'];
     $obrazek = $clanek['obrazek'] ?? null;
-    $autor = $clanek['autor'] ?? 'TupTuDu';
+    // Podpis podle jazyka stránky (Clanky::podpis), ve strukturovaných datech jen jméno osoby
+    $autor = Clanky::podpis($clanek);
+    $autorJmeno = ($clanek['autor'] ?? null) === Clanky::AUTOR ? 'Libor' : $autor;
     // Jazykové verze podle klíče (hreflang). Kde verze není, vede přepínač na přehled článků, nebo na titulku.
     $verze = Clanky::verze($clanek);
     $prehledy = Clanky::verzePrehledu();
@@ -26,7 +28,7 @@
             'dateModified' => $clanek['overeno'],
             'mainEntityOfPage' => $adresa,
             'author' => isset($clanek['autor'])
-                ? ['@type' => 'Person', 'name' => $autor, 'worksFor' => ['@type' => 'Organization', 'name' => 'TupTuDu', 'url' => Lokalizace::adresaWebu('/', $jazyk)]]
+                ? ['@type' => 'Person', 'name' => $autorJmeno, 'worksFor' => ['@type' => 'Organization', 'name' => 'TupTuDu', 'url' => Lokalizace::adresaWebu('/', $jazyk)]]
                 : ['@type' => 'Organization', 'name' => 'TupTuDu', 'url' => Lokalizace::adresaWebu('/', $jazyk)],
             'publisher' => [
                 '@type' => 'Organization',

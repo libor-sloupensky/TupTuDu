@@ -8,6 +8,7 @@ return [
     'drobecky' => 'Kde jsi',
     'overeno' => 'Údaje ověřené k :datum',
     'autor' => 'Připravil :autor',
+    'autor_libor' => 'Libor z TupTuDu',
     'souvisejici' => 'Mohlo by tě zajímat',
     'koncept' => 'Koncept, zatím není zveřejněný.',
     'cist' => 'Číst článek',

@@ -7,6 +7,7 @@ return [
     'drobecky' => 'Estás aquí',
     'overeno' => 'Datos comprobados a :datum',
     'autor' => 'Preparado por :autor',
+    'autor_libor' => 'Libor de TupTuDu',
     'souvisejici' => 'Te puede interesar',
     'koncept' => 'Borrador, aún no publicado.',
     'cist' => 'Leer el artículo',
