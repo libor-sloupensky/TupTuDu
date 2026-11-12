@@ -66,14 +66,21 @@ return [
     // bude se země volit při registraci.
     'vychozi_zeme' => 'CZ',
 
-    // Národní služby podle země (ISO 3166-1 alpha-2). Země, která tu není, nemá žádnou.
-    // Služby přes INSPIRE (katastrální parcely) půjdou časem zapnout i jinde v EU.
+    // Co ukazuje web a editor návštěvníkovi podle jeho země (ISO 3166-1 alpha-2): ceník, titulka, hledání podle čísla.
+    // Pozemek sám bere data podle své polohy (config/pozemky.php), tohle je jen nabídka podle země uživatele.
+    //   katastr         parcely z katastru kliknutím na mapě
+    //   katastr_cislo   hledání parcely podle katastrálního území a čísla (jen ČR)
+    //   vyskovy_profil  výšky terénu z modelu 1 m v celé zemi (Německo jen v 6 spolkových zemích, proto ne)
+    //   mapovy_podklad  mapa Mapy.com pod půdorysem
     'zeme' => [
-        'CZ' => [
-            'katastr',          // parcely, sousední a okolní parcely, stavby (ČÚZK)
-            'vyskovy_profil',   // výškový profil terénu (ČÚZK DMR 5G)
-            'mapovy_podklad',   // mapový podklad katastru v editoru
-        ],
+        'CZ' => ['katastr', 'katastr_cislo', 'vyskovy_profil', 'mapovy_podklad'],
+        'SK' => ['katastr', 'vyskovy_profil', 'mapovy_podklad'],
+        'PL' => ['katastr', 'vyskovy_profil', 'mapovy_podklad'],
+        'FR' => ['katastr', 'vyskovy_profil', 'mapovy_podklad'],
+        'ES' => ['katastr', 'mapovy_podklad'],
+        'IT' => ['katastr', 'mapovy_podklad'],
+        'DE' => ['katastr', 'mapovy_podklad'],
+        'AT' => ['vyskovy_profil', 'mapovy_podklad'],
     ],
 
     // Národní domény webu → výchozí jazyk a země návštěvníka (host bez www.).

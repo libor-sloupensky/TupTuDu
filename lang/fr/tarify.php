@@ -32,7 +32,7 @@ return [
     'projektu_az' => 'Jusqu’à :limit projets',
     'projektu_neomezene' => 'Projets illimités',
     'funkce_export' => 'Export d’images PNG et partage du projet par lien',
-    'funkce_katastr' => 'Informations cadastrales sur le terrain : parcelles, bâtiments, voisins',
+    'funkce_katastr' => 'Votre terrain sur le cadastre : sélectionnez les parcelles d’un clic sur la carte',
     'funkce_mapy' => 'Fond de carte Mapy.com',
     'funkce_teren' => 'Profil altimétrique du terrain',
 

@@ -29,7 +29,7 @@ return [
     'projektu_az' => 'Up to :limit projects',
     'projektu_neomezene' => 'Unlimited projects',
     'funkce_export' => 'PNG image export and sharing projects by link',
-    'funkce_katastr' => 'Cadastral information about the plot — parcels, buildings, neighbours',
+    'funkce_katastr' => 'Your plot from the cadastre — pick the parcels on the map',
     'funkce_mapy' => 'Mapy.com base map',
     'funkce_teren' => 'Terrain elevation profile',
 

@@ -32,7 +32,7 @@ return [
     'projektu_az' => 'Až :limit projektov',
     'projektu_neomezene' => 'Neobmedzený počet projektov',
     'funkce_export' => 'Export obrázkov PNG a zdieľanie projektu odkazom',
-    'funkce_katastr' => 'Katastrálne informácie k pozemku — parcely, stavby, susedia',
+    'funkce_katastr' => 'Pozemok z katastra — parcely vyberieš kliknutím na mape',
     'funkce_mapy' => 'Mapový podklad Mapy.com',
     'funkce_teren' => 'Výškový profil terénu',
 

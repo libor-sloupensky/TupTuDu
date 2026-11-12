@@ -233,7 +233,7 @@ Route::middleware(['subdomena:app', 'auth', 'verified'])->name('app.')->group(fu
         Route::post('usage', [KonceptV3Controller::class, 'zmerFunkci'])->middleware('throttle:60,1')->name('mereni');
 
         // Hledání české parcely podle katastrálního území a čísla jen pro uživatele z ČR (config/lokalizace.php)
-        Route::post('land/parcel', [KonceptV3Controller::class, 'nactiParcelu'])->middleware('funkce:katastr')->name('katastr.parcela');
+        Route::post('land/parcel', [KonceptV3Controller::class, 'nactiParcelu'])->middleware('funkce:katastr_cislo')->name('katastr.parcela');
         // Pozemek z mapy funguje v každé zemi, zdroj dat podle polohy (config/pozemky.php)
         Route::post('land/at-point', [KonceptV3Controller::class, 'nactiParceluVBode'])->middleware('throttle:60,1')->name('katastr.bod');
         Route::post('land/info', [KonceptV3Controller::class, 'infoMista'])->middleware('throttle:120,1')->name('katastr.info');

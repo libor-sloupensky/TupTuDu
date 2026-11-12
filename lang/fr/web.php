@@ -29,7 +29,10 @@ return [
         ],
         'pozemek' => [
             'nadpis' => 'Votre terrain sur le cadastre',
-            'text' => 'Trouvez votre parcelle : vous verrez les terrains voisins et les bâtiments du cadastre, la carte Mapy.com et le profil altimétrique du terrain.',
+            'nadpis_mapa' => 'Votre terrain sur la carte',
+            'text' => 'Trouvez votre terrain sur la carte et cliquez sur vos parcelles du cadastre. L’éditeur y ajoute la carte Mapy.com et le profil altimétrique du terrain.',
+            'text_bez_vysek' => 'Trouvez votre terrain sur la carte et cliquez sur vos parcelles du cadastre. L’éditeur y ajoute la carte Mapy.com.',
+            'text_obkresli' => 'Trouvez votre terrain sur la carte et tracez-en le contour. L’éditeur y ajoute la carte Mapy.com et le profil altimétrique du terrain.',
         ],
     ],
 

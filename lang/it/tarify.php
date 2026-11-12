@@ -32,7 +32,7 @@ return [
     'projektu_az' => 'Fino a :limit progetti',
     'projektu_neomezene' => 'Progetti illimitati',
     'funkce_export' => 'Esportazione di immagini PNG e condivisione del progetto tramite link',
-    'funkce_katastr' => 'Dati catastali del terreno: particelle, edifici, confinanti',
+    'funkce_katastr' => 'Il tuo terreno dal catasto: scegli le particelle con un clic sulla mappa',
     'funkce_mapy' => 'Mappa di base Mapy.com',
     'funkce_teren' => 'Profilo del terreno',
 

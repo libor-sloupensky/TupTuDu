@@ -26,12 +26,17 @@
                         <p>{{ __('web.funkce.' . $funkce . '.text') }}</p>
                     </div>
                 @endforeach
-                @funkce('katastr')
+                {{-- Pozemek podle země návštěvníka (config/lokalizace.php): parcely z katastru, výšky terénu, nebo obojí --}}
+                @php
+                    $sKatastrem = \App\Support\Lokalizace::maFunkci('katastr');
+                    $sVyskami = \App\Support\Lokalizace::maFunkci('vyskovy_profil');
+                @endphp
+                @if ($sKatastrem || $sVyskami)
                     <div class="card tt-vitrina-karta">
-                        <h3>{{ __('web.funkce.pozemek.nadpis') }}</h3>
-                        <p>{{ __('web.funkce.pozemek.text') }}</p>
+                        <h3>{{ __($sKatastrem ? 'web.funkce.pozemek.nadpis' : 'web.funkce.pozemek.nadpis_mapa') }}</h3>
+                        <p>{{ __($sKatastrem ? ($sVyskami ? 'web.funkce.pozemek.text' : 'web.funkce.pozemek.text_bez_vysek') : 'web.funkce.pozemek.text_obkresli') }}</p>
                     </div>
-                @endfunkce
+                @endif
             </div>
             <div class="tt-vitrina-pohledy">
                 <figure class="card">

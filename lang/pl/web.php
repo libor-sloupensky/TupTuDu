@@ -29,7 +29,10 @@ return [
         ],
         'pozemek' => [
             'nadpis' => 'Działka z katastru',
-            'text' => 'Znajdź swoją działkę, a zobaczysz sąsiednie działki i budynki z katastru nieruchomości, mapę Mapy.com i profil wysokościowy terenu.',
+            'nadpis_mapa' => 'Działka na mapie',
+            'text' => 'Znajdź działkę na mapie i kliknij swoje działki ewidencyjne z katastru. Edytor wczyta do nich mapę Mapy.com i profil wysokościowy terenu.',
+            'text_bez_vysek' => 'Znajdź działkę na mapie i kliknij swoje działki ewidencyjne z katastru. Edytor wczyta do nich mapę Mapy.com.',
+            'text_obkresli' => 'Znajdź działkę na mapie i obrysuj ją. Edytor wczyta do niej mapę Mapy.com i profil wysokościowy terenu.',
         ],
     ],
 

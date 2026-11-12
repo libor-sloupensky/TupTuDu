@@ -28,7 +28,10 @@ return [
         ],
         'pozemek' => [
             'nadpis' => 'Your plot from the cadastre',
-            'text' => 'Find your parcel and see neighbouring plots and buildings from the land registry, the Mapy.com map and the terrain elevation profile.',
+            'nadpis_mapa' => 'Your plot on the map',
+            'text' => 'Find your plot on the map and click your parcels from the cadastre. The editor adds the Mapy.com map and the terrain elevation profile.',
+            'text_bez_vysek' => 'Find your plot on the map and click your parcels from the cadastre. The editor adds the Mapy.com map.',
+            'text_obkresli' => 'Find your plot on the map and trace it. The editor adds the Mapy.com map and the terrain elevation profile.',
         ],
     ],
 

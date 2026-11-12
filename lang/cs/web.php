@@ -29,7 +29,10 @@ return [
         ],
         'pozemek' => [
             'nadpis' => 'Pozemek z katastru',
-            'text' => 'Najdi svou parcelu, uvidíš sousední pozemky a stavby z katastru nemovitostí, mapu Mapy.com a výškový profil terénu.',
+            'nadpis_mapa' => 'Pozemek na mapě',
+            'text' => 'Najdi pozemek na mapě a klikni na své parcely z katastru. Editor k nim načte mapu Mapy.com a výškový profil terénu.',
+            'text_bez_vysek' => 'Najdi pozemek na mapě a klikni na své parcely z katastru. Editor k nim načte mapu Mapy.com.',
+            'text_obkresli' => 'Najdi pozemek na mapě a obkresli ho. Editor k němu načte mapu Mapy.com a výškový profil terénu.',
         ],
     ],
 

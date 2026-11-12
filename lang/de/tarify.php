@@ -32,7 +32,7 @@ return [
     'projektu_az' => 'Bis zu :limit Projekte',
     'projektu_neomezene' => 'Unbegrenzt viele Projekte',
     'funkce_export' => 'PNG-Export und Teilen von Projekten per Link',
-    'funkce_katastr' => 'Katasterdaten zum Grundstück – Parzellen, Gebäude, Nachbarn',
+    'funkce_katastr' => 'Grundstück aus dem Kataster – Flurstücke per Klick auf der Karte auswählen',
     'funkce_mapy' => 'Basiskarte von Mapy.com',
     'funkce_teren' => 'Geländeprofil',
 

@@ -29,7 +29,10 @@ return [
         ],
         'pozemek' => [
             'nadpis' => 'Il tuo terreno dal catasto',
-            'text' => 'Cerca la tua particella: vedrai i terreni e gli edifici confinanti dal catasto, la mappa di Mapy.com e il profilo del terreno.',
+            'nadpis_mapa' => 'Il tuo terreno sulla mappa',
+            'text' => 'Cerca il tuo terreno sulla mappa e clicca sulle tue particelle del catasto. L’editor aggiunge la mappa di Mapy.com e il profilo del terreno.',
+            'text_bez_vysek' => 'Cerca il tuo terreno sulla mappa e clicca sulle tue particelle del catasto. L’editor aggiunge la mappa di Mapy.com.',
+            'text_obkresli' => 'Cerca il tuo terreno sulla mappa e disegnane il contorno. L’editor aggiunge la mappa di Mapy.com e il profilo del terreno.',
         ],
     ],
 

@@ -1707,7 +1707,7 @@
                     {{ __('ed_sablona.parcela.vybrat_na_mape') }}
                 </button>
                 {{-- Česko: hledání podle katastrálního území a čísla parcely --}}
-                @funkce('katastr')
+                @funkce('katastr_cislo')
                 <div class="text-[11px] text-gray-500 pt-1">{{ __('ed_sablona.parcela.nebo_cislo') }}</div>
                 <div class="relative">
                     <label class="text-xs text-gray-500">{{ __('ed_sablona.parcela.ku') }}</label>

@@ -32,7 +32,7 @@ return [
     'projektu_az' => 'Hasta :limit proyectos',
     'projektu_neomezene' => 'Proyectos sin límite',
     'funkce_export' => 'Exportación de imágenes PNG y proyectos compartidos por enlace',
-    'funkce_katastr' => 'Información catastral del terreno: parcelas, edificaciones y colindantes',
+    'funkce_katastr' => 'Tu parcela del catastro: elígela con un clic en el mapa',
     'funkce_mapy' => 'Mapa base de Mapy.com',
     'funkce_teren' => 'Perfil del terreno',
 

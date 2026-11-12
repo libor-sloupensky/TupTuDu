@@ -29,7 +29,10 @@ return [
         ],
         'pozemek' => [
             'nadpis' => 'Grundstück aus dem Kataster',
-            'text' => 'Finde deine Parzelle und sieh dir Nachbargrundstücke und Gebäude aus dem Kataster, die Karte von Mapy.com und das Geländeprofil an.',
+            'nadpis_mapa' => 'Grundstück auf der Karte',
+            'text' => 'Finde dein Grundstück auf der Karte und klicke deine Flurstücke aus dem Kataster an. Der Editor lädt dazu die Karte von Mapy.com und das Geländeprofil.',
+            'text_bez_vysek' => 'Finde dein Grundstück auf der Karte und klicke deine Flurstücke aus dem Kataster an. Der Editor lädt dazu die Karte von Mapy.com.',
+            'text_obkresli' => 'Finde dein Grundstück auf der Karte und zeichne es nach. Der Editor lädt dazu die Karte von Mapy.com und das Geländeprofil.',
         ],
     ],
 
