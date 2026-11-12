@@ -30,9 +30,9 @@ return [
         'pozemek' => [
             'nadpis' => 'Działka z katastru',
             'nadpis_mapa' => 'Działka na mapie',
-            'text' => 'Znajdź działkę na mapie i kliknij swoje działki ewidencyjne z katastru. Edytor wczyta do nich mapę Mapy.com i profil wysokościowy terenu.',
-            'text_bez_vysek' => 'Znajdź działkę na mapie i kliknij swoje działki ewidencyjne z katastru. Edytor wczyta do nich mapę Mapy.com.',
-            'text_obkresli' => 'Znajdź działkę na mapie i obrysuj ją. Edytor wczyta do niej mapę Mapy.com i profil wysokościowy terenu.',
+            'text' => 'Znajdź działkę na mapie i kliknij swoje działki ewidencyjne z katastru. Edytor doda do nich mapę Mapy.com i profil wysokościowy terenu.',
+            'text_bez_vysek' => 'Znajdź działkę na mapie i kliknij swoje działki ewidencyjne z katastru. Edytor doda do nich mapę Mapy.com.',
+            'text_obkresli' => 'Znajdź działkę na mapie i obrysuj ją. Edytor doda do niej mapę Mapy.com i profil wysokościowy terenu.',
         ],
     ],
 

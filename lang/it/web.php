@@ -30,9 +30,9 @@ return [
         'pozemek' => [
             'nadpis' => 'Il tuo terreno dal catasto',
             'nadpis_mapa' => 'Il tuo terreno sulla mappa',
-            'text' => 'Cerca il tuo terreno sulla mappa e clicca sulle tue particelle del catasto. L’editor aggiunge la mappa di Mapy.com e il profilo del terreno.',
-            'text_bez_vysek' => 'Cerca il tuo terreno sulla mappa e clicca sulle tue particelle del catasto. L’editor aggiunge la mappa di Mapy.com.',
-            'text_obkresli' => 'Cerca il tuo terreno sulla mappa e disegnane il contorno. L’editor aggiunge la mappa di Mapy.com e il profilo del terreno.',
+            'text' => 'Cerca il tuo terreno sulla mappa e clicca sulle tue particelle catastali. L’editor aggiunge la mappa di Mapy.com e il profilo altimetrico del terreno.',
+            'text_bez_vysek' => 'Cerca il tuo terreno sulla mappa e clicca sulle tue particelle catastali. L’editor aggiunge la mappa di Mapy.com.',
+            'text_obkresli' => 'Cerca il tuo terreno sulla mappa e disegnane il contorno. L’editor aggiunge la mappa di Mapy.com e il profilo altimetrico del terreno.',
         ],
     ],
 

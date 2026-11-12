@@ -32,7 +32,7 @@ return [
     'projektu_az' => 'Do :limit projektów',
     'projektu_neomezene' => 'Nieograniczona liczba projektów',
     'funkce_export' => 'Eksport obrazów PNG i udostępnianie projektu linkiem',
-    'funkce_katastr' => 'Działka z katastru — działki ewidencyjne wybierasz kliknięciem na mapie',
+    'funkce_katastr' => 'Działka z katastru — jej działki ewidencyjne wybierzesz kliknięciem na mapie',
     'funkce_mapy' => 'Podkład mapowy Mapy.com',
     'funkce_teren' => 'Profil wysokościowy terenu',
 
