@@ -67,7 +67,10 @@ class KonkurenceImport
                             'data' => $h['data'] ?? null,
                             'text' => $h['text'] ?? null,
                             'poznamka' => $h['poznamka'] ?? null,
+                            'poznamky' => $h['poznamky'] ?? null,
                             'zdroj' => $h['zdroj'] ?? null,
+                            'doklad' => $h['doklad'] ?? null,
+                            'doklad_v' => $h['doklad_v'] ?? null,
                             'overeno' => $h['overeno'] ?? $m['datum'],
                         ],
                     );
@@ -88,6 +91,9 @@ class KonkurenceImport
                 $souhrn['udalosti']++;
             }
         });
+
+        // Nové stránky srovnání ať jsou v patičce hned (SrovnaniController::verzePrehledu)
+        \Illuminate\Support\Facades\Cache::forget('srovnani-jazyky-prehledu');
 
         return $souhrn;
     }

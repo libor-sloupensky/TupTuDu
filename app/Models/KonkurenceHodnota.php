@@ -11,8 +11,14 @@ class KonkurenceHodnota extends Model
 
     protected $fillable = [
         'mereni_id', 'konkurent_id', 'parametr_id', 'hodnota', 'placene',
-        'cislo', 'data', 'text', 'poznamka', 'zdroj', 'doklad', 'doklad_v', 'overeno',
+        'cislo', 'data', 'text', 'poznamka', 'poznamky', 'zdroj', 'doklad', 'doklad_v', 'overeno',
     ];
+
+    /** Veřejná poznámka (p) nebo veřejný text hodnoty (t) v jazyce stránky. */
+    public function verejne(string $co, string $jazyk): ?string
+    {
+        return $this->poznamky[$jazyk][$co] ?? null;
+    }
 
     protected function casts(): array
     {
@@ -22,13 +28,14 @@ class KonkurenceHodnota extends Model
             'data' => 'array',
             'overeno' => 'date',
             'doklad_v' => 'datetime',
+            'poznamky' => 'array',
         ];
     }
 
     /** Smí na veřejnou stránku: má doklad (snímek zdroje) a ověření není starší než 6 měsíců (modules/srovnani.md). */
     public function lzeZverejnit(): bool
     {
-        return $this->doklad && $this->overeno && $this->overeno->gte(now()->subMonths(6));
+        return $this->doklad && $this->overeno && $this->overeno->gte(now()->subMonths((int) config('srovnani.platnost_mesicu', 6)));
     }
 
     /** Pořadí stavu pro srovnání: má 2, částečně 1, nemá 0; nezjištěné a skryté null (nesrovnává se). */

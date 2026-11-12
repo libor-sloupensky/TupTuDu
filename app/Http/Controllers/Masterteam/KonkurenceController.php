@@ -123,7 +123,7 @@ class KonkurenceController extends Controller
     {
         abort_if($konkurent->jeTuptudu(), 404);
 
-        return view('srovnani.profil', ['s' => \App\Support\KonkurenceSrovnani::pro($konkurent), 'nahled' => true]);
+        return view('srovnani.profil', ['s' => \App\Support\KonkurenceSrovnani::pro($konkurent)]);
     }
 
     /** Náhled stránky „X vs TupTuDu“ (modules/srovnani.md). */
@@ -131,7 +131,7 @@ class KonkurenceController extends Controller
     {
         abort_if($konkurent->jeTuptudu(), 404);
 
-        return view('srovnani.vs', ['s' => \App\Support\KonkurenceSrovnani::pro($konkurent), 'nahled' => true]);
+        return view('srovnani.vs', ['s' => \App\Support\KonkurenceSrovnani::pro($konkurent)]);
     }
 
     public function rezimParametru(Request $request, KonkurenceParametr $parametr)

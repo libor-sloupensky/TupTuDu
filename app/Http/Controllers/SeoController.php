@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\KonkurenceMereni;
+use App\Models\Konkurent;
 use App\Support\Clanky;
 use App\Support\Domeny;
 use App\Support\Lokalizace;
@@ -77,6 +79,20 @@ class SeoController extends Controller
             foreach (Clanky::vsechny($jazyk) as $clanek) {
                 $verze = Clanky::verze($clanek);
                 $polozky[] = [Clanky::adresa($clanek), '0.7', $clanek['overeno'], count($verze) > 1 ? $verze : []];
+            }
+        }
+
+        // Srovnání programů: přehled a stránky nástrojů s hreflang (modules/srovnani.md)
+        $prehledySrovnani = SrovnaniController::verzePrehledu();
+        foreach ($prehledySrovnani as $adresa) {
+            $polozky[] = [$adresa, '0.6', null, count($prehledySrovnani) > 1 ? $prehledySrovnani : []];
+        }
+        foreach (Konkurent::where('rezim', 'sledovat')->whereNotNull('adresa')->get() as $k) {
+            foreach ([false, true] as $vs) {
+                $verze = SrovnaniController::verze($k, $vs);
+                foreach ($verze as $adresa) {
+                    $polozky[] = [$adresa, '0.6', KonkurenceMereni::posledni()?->updated_at?->toDateString(), count($verze) > 1 ? $verze : []];
+                }
             }
         }
 

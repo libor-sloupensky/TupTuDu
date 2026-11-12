@@ -11,20 +11,24 @@ use App\Models\Konkurent;
  * Data pro srovnávací stránky (modules/srovnani.md): profil nástroje a „X vs TupTuDu“.
  * Všechno se počítá z posledního měření analýzy konkurence, jen z parametrů a aplikací v režimu Sledovat.
  * Plusy a mínusy jsou souměrné: co má X lépe, je plus X, co má lépe TupTuDu, je plus TupTuDu. Nic se neupravuje ručně.
+ * Veřejný režim ($verejne) bere jen hodnoty s dokladem a ověřením do 6 měsíců, ostatní jsou „nezjištěno“.
  */
 class KonkurenceSrovnani
 {
     /** Skupiny, které na veřejnou stránku nepatří nikdy (vývoj konkurenta je hodnocení, ne fakt o produktu). */
     private const BEZ_SKUPIN = ['k'];
 
-    /** Situace čtenáře: co chce udělat → které parametry rozhodují. Verdikt se počítá z dat. */
+    /** Parametry, které se ukazují jen v části Ceny, ne v tabulce vlastností. */
+    public const CENY = ['j_cenik', 'j_limity_zdarma', 'j_cena_min'];
+
+    /** Situace čtenáře: co chce udělat → které parametry rozhodují (název v lang srovnani.situace.*). */
     public const SITUACE = [
-        'pozemek' => ['Navrhnout dům na skutečném pozemku', ['f_parcely', 'f_teren_data', 'f_mapa', 'e_vykopy', 'e_zaklady']],
-        'dum' => ['Nakreslit celý dům s patry, schody a střechou', ['b_patra', 'a_schody', 'b_strecha', 'a_koty', 'a_mistnosti']],
-        'interier' => ['Zařídit interiér a mít hezké obrázky', ['d_vybaveni', 'd_kuchyne', 'd_koupelna', 'c_materialy', 'c_render']],
-        'projektant' => ['Předat podklad projektantovi', ['g_vykres', 'g_cad', 'g_3dexport', 'a_koty', 'g_pdf']],
-        'tablet' => ['Pracovat na tabletu nebo telefonu', ['h_mobil', 'a_dotyk', 'a_sken']],
-        'jazyk' => ['Mít nástroj v češtině', ['h_cestina']],
+        'pozemek' => ['f_parcely', 'f_teren_data', 'f_mapa', 'e_vykopy', 'e_zaklady'],
+        'dum' => ['b_patra', 'a_schody', 'b_strecha', 'a_koty', 'a_mistnosti'],
+        'interier' => ['d_vybaveni', 'd_kuchyne', 'd_koupelna', 'c_materialy', 'c_render'],
+        'projektant' => ['g_cad', 'g_3dexport', 'a_koty', 'g_pdf'],
+        'tablet' => ['h_mobil', 'a_dotyk', 'a_sken'],
+        'zdarma' => ['h_zdarma'],
     ];
 
     public function __construct(
@@ -34,27 +38,68 @@ class KonkurenceSrovnani
         public $parametry,      // sledované parametry, seřazené
         public array $hodnoty,  // [konkurent_id][parametr_id] => KonkurenceHodnota
         public $sledovani,      // sledovaní konkurenti bez TupTuDu (pro „kolik nástrojů to má“)
+        public string $jazyk = 'cs',
+        public bool $verejne = false,
     ) {}
 
-    public static function pro(Konkurent $konkurent): self
+    public static function pro(Konkurent $konkurent, string $jazyk = 'cs', bool $verejne = false): self
     {
         $mereni = KonkurenceMereni::posledni();
         $parametry = KonkurenceParametr::serazene()->where('rezim', 'sledovat')
             ->whereNotIn('skupina', self::BEZ_SKUPIN)->get();
-        $sledovani = Konkurent::where('rezim', 'sledovat')->where('klic', '!=', 'tuptudu')->get();
+        $sledovani = Konkurent::where('rezim', 'sledovat')->where('klic', '!=', 'tuptudu')->orderBy('poradi')->get();
         $hodnoty = [];
         if ($mereni) {
+            $podleId = $parametry->keyBy('id');
             foreach (KonkurenceHodnota::where('mereni_id', $mereni->id)->whereIn('parametr_id', $parametry->pluck('id'))->get() as $h) {
+                $h->setRelation('parametr', $podleId[$h->parametr_id]);
                 $hodnoty[$h->konkurent_id][$h->parametr_id] = $h;
             }
         }
 
-        return new self($konkurent, Konkurent::where('klic', 'tuptudu')->first(), $mereni, $parametry, $hodnoty, $sledovani);
+        return new self($konkurent, Konkurent::where('klic', 'tuptudu')->first(), $mereni, $parametry, $hodnoty, $sledovani, $jazyk, $verejne);
     }
 
-    public function hodnota(?Konkurent $k, KonkurenceParametr $p): ?KonkurenceHodnota
+    /** Parametry pro tabulku vlastností (bez cen). */
+    public function vlastnosti()
     {
-        return $k ? ($this->hodnoty[$k->id][$p->id] ?? null) : null;
+        return $this->parametry->whereNotIn('klic', self::CENY);
+    }
+
+    public function parametr(string $klic): ?KonkurenceParametr
+    {
+        return $this->parametry->firstWhere('klic', $klic);
+    }
+
+    /** Hodnota; ve veřejném režimu jen doložená. */
+    public function hodnota(?Konkurent $k, ?KonkurenceParametr $p): ?KonkurenceHodnota
+    {
+        $h = ($k && $p) ? ($this->hodnoty[$k->id][$p->id] ?? null) : null;
+        if ($h && $this->verejne && ! $h->lzeZverejnit()) {
+            return null;
+        }
+
+        return $h;
+    }
+
+    /** Poznámka k hodnotě pro čtenáře: veřejná v jazyce stránky; v náhledu záložně interní. */
+    public function poznamka(?KonkurenceHodnota $h): ?string
+    {
+        if (! $h) {
+            return null;
+        }
+
+        return $h->verejne('p', $this->jazyk) ?? ($this->verejne ? null : $h->poznamka);
+    }
+
+    /** Text hodnoty typu text (ceník, limity) v jazyce stránky; v náhledu záložně interní. */
+    public function text(?KonkurenceHodnota $h): ?string
+    {
+        if (! $h) {
+            return null;
+        }
+
+        return $h->verejne('t', $this->jazyk) ?? ($this->verejne ? null : $h->text);
     }
 
     /** Kolik sledovaných nástrojů parametr má (ano / částečně) ze všech, u kterých je hodnota zjištěná. */
@@ -78,7 +123,7 @@ class KonkurenceSrovnani
     public function rozdily(): array
     {
         $plusX = $plusMy = $shoda = $nezjisteno = [];
-        foreach ($this->parametry->where('typ', 'stav') as $p) {
+        foreach ($this->vlastnosti()->where('typ', 'stav') as $p) {
             $x = $this->hodnota($this->konkurent, $p);
             $my = $this->hodnota($this->my, $p);
             $sx = $x?->sila();
@@ -103,45 +148,37 @@ class KonkurenceSrovnani
     /** Verdikt situací: součet síly v rozhodujících parametrech, které jsou sledované a zjištěné u obou. */
     public function situace(): array
     {
-        $param = $this->parametry->keyBy('klic');
         $vysledek = [];
-        foreach (self::SITUACE as $klic => [$nazev, $klice]) {
-            $x = $my = $pouzite = 0;
+        foreach (self::SITUACE as $klic => $klice) {
+            $x = $my = 0;
             $rozhoduje = [];
             foreach ($klice as $k) {
-                if (! isset($param[$k])) {
-                    continue;
-                }
-                $sx = $this->hodnota($this->konkurent, $param[$k])?->sila();
-                $sm = $this->hodnota($this->my, $param[$k])?->sila();
+                $p = $this->parametr($k);
+                $sx = $this->hodnota($this->konkurent, $p)?->sila();
+                $sm = $this->hodnota($this->my, $p)?->sila();
                 if ($sx === null || $sm === null) {
                     continue;
                 }
                 $x += $sx;
                 $my += $sm;
-                $pouzite++;
-                $rozhoduje[] = $param[$k];
+                $rozhoduje[] = $p;
             }
-            if ($pouzite === 0) {
+            if (! $rozhoduje) {
                 continue;
             }
-            $vysledek[$klic] = [
-                'nazev' => $nazev,
-                'kdo' => $x === $my ? 'oba' : ($x > $my ? 'x' : 'my'),
-                'rozhoduje' => $rozhoduje,
-            ];
+            $vysledek[$klic] = ['kdo' => $x === $my ? 'oba' : ($x > $my ? 'x' : 'my'), 'rozhoduje' => $rozhoduje];
         }
 
         return $vysledek;
     }
 
-    /** Kolik zobrazených hodnot nemá doklad (v náhledu varování, na webu by se nezobrazily). */
+    /** Kolik hodnot nemá doklad (v náhledu varování, na webu by se nezobrazily). */
     public function bezDokladu(array $konkurenti): int
     {
         $n = 0;
         foreach ($konkurenti as $k) {
             foreach ($this->parametry as $p) {
-                $h = $this->hodnota($k, $p);
+                $h = $this->hodnoty[$k->id][$p->id] ?? null;
                 if ($h && ! $h->lzeZverejnit()) {
                     $n++;
                 }
@@ -151,9 +188,41 @@ class KonkurenceSrovnani
         return $n;
     }
 
-    /** Ostatní sledované nástroje ze stejného segmentu (odkazy „Podobné nástroje“). */
+    /** Ostatní nástroje se stránkou v tomto jazyce (ve veřejném režimu), jinak sledovaní ze stejného segmentu. */
     public function podobne()
     {
+        if ($this->verejne) {
+            return $this->sledovani->filter(fn ($k) => $k->id !== $this->konkurent->id && $k->maStranku($this->jazyk))->values();
+        }
+
         return $this->sledovani->where('segment', $this->konkurent->segment)->where('id', '!=', $this->konkurent->id)->values();
+    }
+
+    /** Datum posledního ověření hodnot konkurenta, které se na stránce ukazují (do řádku autorství). */
+    public function overeno(): ?\Carbon\Carbon
+    {
+        $datum = null;
+        foreach ($this->parametry as $p) {
+            $h = $this->hodnota($this->konkurent, $p);
+            if ($h && $h->overeno && (! $datum || $h->overeno->gt($datum))) {
+                $datum = $h->overeno;
+            }
+        }
+
+        return $datum ?? $this->mereni?->datum;
+    }
+
+    /** Zdroje (adresy výrobce) hodnot konkurenta, které se na stránce ukazují. */
+    public function zdroje(Konkurent $k): array
+    {
+        $z = [];
+        foreach ($this->parametry as $p) {
+            $h = $this->hodnota($k, $p);
+            if ($h && str_starts_with((string) $h->zdroj, 'http')) {
+                $z[] = $h->zdroj;
+            }
+        }
+
+        return array_values(array_unique($z));
     }
 }

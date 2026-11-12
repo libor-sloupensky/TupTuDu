@@ -206,6 +206,13 @@ Route::middleware('subdomena:web')->group(function () {
             Route::get('/{adresa}', [App\Http\Controllers\ClankyController::class, 'detail'])->where('adresa', '[a-z0-9-]+');
         });
     }
+    // Srovnání programů s konkurencí jen ve zveřejněných jazycích (modules/srovnani.md, config/srovnani.php)
+    foreach (config('srovnani.jazyky') as $jazyk) {
+        Route::prefix($jazyk . '/' . config('srovnani.segmenty.' . $jazyk))->group(function () {
+            Route::get('/', [App\Http\Controllers\SrovnaniController::class, 'prehled']);
+            Route::get('/{adresa}', [App\Http\Controllers\SrovnaniController::class, 'detail'])->where('adresa', '[a-z0-9-]+');
+        });
+    }
     // Adresy bez jazyka (starší odkazy, Paddle) přesměrují podle volby a polohy
     Route::get('/{stranka}', fn (Illuminate\Http\Request $request) => redirect('/' . app()->getLocale() . $request->getRequestUri()))
         ->whereIn('stranka', ['terms', 'privacy', 'refunds', 'model-credits', 'pricing', 'contact']);

@@ -1,52 +1,73 @@
-{{-- Profil nástroje X (modules/srovnani.md, Druhy stránek 1): neutrální přehled sledovaných vlastností X s kontextem trhu
-     („kolik srovnávaných nástrojů to má“), bez verdiktu a hodnotících slov. Vede na „X vs TupTuDu“. --}}
+{{-- Profil nástroje X (modules/srovnani.md, Druhy stránek): nahoře odpovědi na to, co lidé hledají (je zdarma, jazyky,
+     cena), pak vlastnosti X s kontextem trhu („kolik srovnávaných nástrojů to má“). Bez verdiktu a hodnotících slov. --}}
+@use('App\Http\Controllers\SrovnaniController')
+@use('Illuminate\Support\Facades\Lang')
 @php
     $k = $s->konkurent;
-    $jmeno = $k->kratky ?: $k->nazev;
-    $hodnota = fn ($klic) => ($p = $s->parametry->firstWhere('klic', $klic)) ? $s->hodnota($k, $p) : null;
-    $zdroje = collect($s->hodnoty[$k->id] ?? [])->pluck('zdroj')->filter(fn ($z) => str_starts_with((string) $z, 'http'))->unique()->values()->all();
-    $pocetTrh = $s->sledovani->count();
+    $jmeno = $k->jmeno();
+    $j = $s->jazyk;
+    $rok = $s->mereni?->datum->year ?? date('Y');
+    $hv = fn ($klic) => $s->hodnota($k, $s->parametr($klic));
+    $jazykyNastroje = $hv('i_jazyky_nastroj')?->data ?? [];
+    $zdarma = $hv('h_zdarma');
+    $vsAdresa = $s->verejne ? SrovnaniController::adresa($k, $j, true) : route('masterteam.konkurence.srovnani', $k);
+    $nazevP = fn ($p) => Lang::has('srovnani.p.' . $p->klic) ? __('srovnani.p.' . $p->klic) : $p->nazev;
+    $popisP = fn ($p) => Lang::has('srovnani.pp.' . $p->klic) ? __('srovnani.pp.' . $p->klic) : $p->popis;
+    $pocetTrh = $s->sledovani->filter(fn ($x) => $s->hodnota($x, $s->parametr('a_steny')) || $s->hodnota($x, $s->parametr('h_zdarma')))->count();
 @endphp
-<x-layouts.web :title="$jmeno . ': funkce, ceny a jazyky — TupTuDu'" :popis="'Co umí ' . $jmeno . ', kolik stojí a v jakých jazycích je. Přehled ' . $s->parametry->count() . ' vlastností s datem ověření.'" :neindexovat="true">
-<x-slot:hlava>@include('srovnani._spolecne')</x-slot:hlava>
+<x-layouts.web :title="__('srovnani.profil_titulek', ['nazev' => $jmeno, 'rok' => $rok])" :popis="__('srovnani.profil_popis', ['nazev' => $jmeno])"
+    :verze="$verze ?? null" :prepinac="$prepinac ?? null" :kanonicka="$kanonicka ?? null" og-typ="article" :neindexovat="! $s->verejne">
+<x-slot:hlava>
+    @include('srovnani._spolecne')
+    @if($s->verejne)@include('srovnani._data', ['nadpis' => __('srovnani.profil_h1', ['nazev' => $jmeno])])@endif
+</x-slot:hlava>
 <main class="sr">
     @include('srovnani._ramec', ['bezDokladu' => $s->bezDokladu([$k])])
-    <nav class="sr-tlumene" style="font-size:14px">Srovnání nástrojů › {{ $jmeno }}</nav>
-    <h1>{{ $jmeno }}: funkce, ceny a jazyky</h1>
-    <p style="font-size:18px">
-        {{ $jmeno }} je nástroj pro {{ $k->cilovka ?: 'návrh domu a interiéru' }}.
-        @if($k->platformy) Běží na: {{ implode(', ', $k->platformy) }}.@endif
-    </p>
-    <p style="margin:18px 0"><a class="sr-cta" href="{{ ($nahled ?? false) ? route('masterteam.konkurence.srovnani', $k) : '#' }}">Srovnání {{ $jmeno }} s TupTuDu →</a></p>
+    <nav class="sr-tlumene" style="font-size:14px"><a href="{{ $s->verejne ? SrovnaniController::prehledAdresa($j) : '/masterteam/konkurence' }}">{{ __('srovnani.drobecky') }}</a> › {{ $jmeno }}</nav>
+    <h1>{{ __('srovnani.profil_h1', ['nazev' => $jmeno]) }}</h1>
+    @if($popis = $k->verejne('popis', $j))<p style="font-size:18px">{{ $popis }}</p>@endif
 
-    <h2>Ceny</h2>
+    <h2>{{ __('srovnani.profil_rychle') }}</h2>
     <div class="sr-karty">
-        @foreach(['j_cenik' => 'Tarify', 'j_limity_zdarma' => 'Co omezuje verze zdarma', 'h_zdarma' => 'Trvalá verze zdarma'] as $klic => $nadpis)
-            @php $p = $s->parametry->firstWhere('klic', $klic); @endphp
-            @if($p)
-                <div class="sr-karta"><div class="sr-tlumene" style="font-size:13px">{{ $nadpis }}</div>@include('srovnani._hodnota', ['h' => $s->hodnota($k, $p), 'p' => $p])</div>
-            @endif
-        @endforeach
+        <div class="sr-karta"><div class="sr-tlumene" style="font-size:13px">{{ __('srovnani.profil_je_zdarma') }}</div>
+            @include('srovnani._hodnota', ['h' => $zdarma, 'p' => $s->parametr('h_zdarma')])</div>
+        @if($s->parametr('j_limity_zdarma') && $hv('j_limity_zdarma'))
+            <div class="sr-karta"><div class="sr-tlumene" style="font-size:13px">{{ __('srovnani.profil_limity') }}</div>
+                @include('srovnani._hodnota', ['h' => $hv('j_limity_zdarma'), 'p' => $s->parametr('j_limity_zdarma')])</div>
+        @endif
+        @if($jazykyNastroje)
+            <div class="sr-karta"><div class="sr-tlumene" style="font-size:13px">{{ __('srovnani.profil_v_jazyce', ['jazyk' => __('srovnani.jazyk.' . $j)]) }}</div>
+                <span class="sr-h"><i class="sr-d {{ in_array($j, $jazykyNastroje, true) ? 'ano' : 'ne' }}"></i> {{ in_array($j, $jazykyNastroje, true) ? __('srovnani.ano') : __('srovnani.ne') }}</span>
+                <span class="sr-pozn">{{ __('srovnani.profil_jazyky') }}: {{ collect($jazykyNastroje)->map(fn ($x) => Lang::has('srovnani.jazyk.' . $x) ? __('srovnani.jazyk.' . $x) : $x)->implode(', ') }}</span></div>
+        @endif
+        @if($platformy = $k->verejne('platformy', $j))
+            <div class="sr-karta"><div class="sr-tlumene" style="font-size:13px">{{ __('srovnani.profil_bezi') }}</div>{{ $platformy }}</div>
+        @endif
     </div>
 
-    <h2>Vlastnosti</h2>
-    <p class="sr-tlumene" style="font-size:14px">Sloupec vpravo říká, kolik z {{ $pocetTrh }} srovnávaných nástrojů danou věc má, ať je vidět, co je běžné a co výjimečné.</p>
+    @if($hv('j_cenik'))
+        <h2>{{ __('srovnani.profil_cena') }}</h2>
+        <div class="sr-karta">@include('srovnani._hodnota', ['h' => $hv('j_cenik'), 'p' => $s->parametr('j_cenik')])</div>
+    @endif
+    <p style="margin:22px 0"><a class="sr-cta" href="{{ $vsAdresa }}">{{ __('srovnani.profil_cta', ['nazev' => $jmeno]) }} →</a></p>
+
+    <h2>{{ __('srovnani.profil_vlastnosti', ['nazev' => $jmeno]) }}</h2>
+    <p class="sr-tlumene" style="font-size:14px">{{ __('srovnani.profil_trh_uvod') }}</p>
     <div class="sr-obal">
         <table class="sr-tab">
-            <thead><tr><th>Vlastnost</th><th>{{ $jmeno }}</th><th>Má z {{ $pocetTrh }} nástrojů</th></tr></thead>
+            <thead><tr><th>{{ __('srovnani.vlastnost') }}</th><th>{{ $jmeno }}</th><th>{{ __('srovnani.profil_trh', ['n' => $pocetTrh]) }}</th></tr></thead>
             <tbody>
-            @foreach($s->parametry->groupBy('skupina') as $skupina => $vSkupine)
-                @continue($skupina === 'j')
-                <tr class="sr-skupina"><th colspan="3">{{ \App\Models\KonkurenceParametr::SKUPINY[$skupina] ?? $skupina }}</th></tr>
+            @foreach($s->vlastnosti()->groupBy('skupina') as $skupina => $vSkupine)
+                <tr class="sr-skupina"><th colspan="3">{{ __('srovnani.skupina.' . $skupina) }}</th></tr>
                 @foreach($vSkupine as $p)
+                    @continue($p->typ === 'seznam' || $p->klic === 'h_zdarma')
                     <tr>
-                        <td title="{{ $p->kriteria }}"><b>{{ $p->nazev }}</b>@if($p->popis)<span class="sr-pozn">{{ $p->popis }}</span>@endif</td>
+                        <td @if(! $s->verejne) title="{{ $p->kriteria }}" @endif><b>{{ $nazevP($p) }}</b>@if($popisP($p))<span class="sr-pozn">{{ $popisP($p) }}</span>@endif</td>
                         <td>@include('srovnani._hodnota', ['h' => $s->hodnota($k, $p), 'p' => $p])</td>
                         <td class="sr-tlumene" style="white-space:nowrap">
                             @if($p->typ === 'stav')
                                 @php $t = $s->trh($p); @endphp
-                                {{ $t['ma'] }}@if($t['castecne']) + {{ $t['castecne'] }} částečně@endif
-                                @if($t['zjisteno'] < $pocetTrh)<span class="sr-pozn">zjištěno u {{ $t['zjisteno'] }}</span>@endif
+                                {{ $t['ma'] }}@if($t['castecne']) {{ __('srovnani.profil_trh_castecne', ['n' => $t['castecne']]) }}@endif
                             @endif
                         </td>
                     </tr>
@@ -57,14 +78,14 @@
     </div>
 
     @if($s->podobne()->isNotEmpty())
-        <h2>Podobné nástroje</h2>
+        <h2>{{ __('srovnani.podobne') }}</h2>
         <p>
-            @foreach($s->podobne() as $j)
-                <a href="{{ ($nahled ?? false) ? route('masterteam.konkurence.profil', $j) : '#' }}">{{ $j->kratky ?: $j->nazev }}</a>@if(! $loop->last), @endif
+            @foreach($s->podobne() as $x)
+                <a href="{{ $s->verejne ? SrovnaniController::adresa($x, $j) : route('masterteam.konkurence.profil', $x) }}">{{ $x->jmeno() }}</a>@if(! $loop->last) · @endif
             @endforeach
         </p>
     @endif
 
-    @include('srovnani._metodika', ['zdroje' => $zdroje])
+    @include('srovnani._metodika')
 </main>
 </x-layouts.web>

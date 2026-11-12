@@ -7,6 +7,9 @@
     {{-- Ceník, podmínky, zásady a vrácení peněz musí být dostupné bez přihlášení (požadavek Paddlu) --}}
     <nav>
         <a href="{{ \App\Support\Lokalizace::adresaWebu('/pricing') }}">{{ __('web.cenik') }}</a>
+        @if(in_array(app()->getLocale(), config('srovnani.jazyky'), true) && ($ttSrovnani = \App\Http\Controllers\SrovnaniController::verzePrehledu()[app()->getLocale()] ?? null))
+            <a href="{{ $ttSrovnani }}">{{ __('srovnani.menu') }}</a>
+        @endif
         <a href="{{ \App\Support\Domeny::url('web', '/terms') }}">{{ __('pravni.podminky_titulek') }}</a>
         <a href="{{ \App\Support\Domeny::url('web', '/privacy') }}">{{ __('pravni.soukromi_titulek') }}</a>
         <a href="{{ \App\Support\Domeny::url('web', '/refunds') }}">{{ __('pravni.vraceni_titulek') }}</a>

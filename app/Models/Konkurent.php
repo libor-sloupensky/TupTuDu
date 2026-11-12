@@ -13,8 +13,8 @@ class Konkurent extends Model
     protected $table = 'konkurenti';
 
     protected $fillable = [
-        'klic', 'nazev', 'kratky', 'segment', 'web', 'zeme', 'platformy', 'cilovka',
-        'rezim', 'kvalita', 'navic', 'chybi', 'poznamka', 'pridano', 'poradi',
+        'klic', 'adresa', 'nazev', 'kratky', 'segment', 'web', 'zeme', 'platformy', 'cilovka',
+        'rezim', 'kvalita', 'navic', 'chybi', 'poznamka', 'verejne', 'jazyky', 'pridano', 'poradi',
     ];
 
     protected function casts(): array
@@ -23,8 +23,35 @@ class Konkurent extends Model
             'platformy' => 'array',
             'navic' => 'array',
             'chybi' => 'array',
+            'verejne' => 'array',
+            'jazyky' => 'array',
             'pridano' => 'date',
         ];
+    }
+
+    /** Jméno na stránkách: krátké, jinak celé. */
+    public function jmeno(): string
+    {
+        return $this->kratky ?: $this->nazev;
+    }
+
+    /** Veřejný údaj (popis, platformy) v jazyce, záložně česky. */
+    public function verejne(string $co, string $jazyk): ?string
+    {
+        return $this->verejne[$jazyk][$co] ?? null;
+    }
+
+    /** Má veřejnou srovnávací stránku v jazyce: sledovaný, s adresou, jazyk vybraný u něj i zveřejněný v config. */
+    public function maStranku(string $jazyk): bool
+    {
+        return $this->rezim === 'sledovat' && $this->adresa && ! $this->jeTuptudu()
+            && in_array($jazyk, $this->jazyky ?? [], true) && in_array($jazyk, config('srovnani.jazyky'), true);
+    }
+
+    public function scopeSeStrankou($q, string $jazyk)
+    {
+        return $q->where('rezim', 'sledovat')->whereNotNull('adresa')->where('klic', '!=', 'tuptudu')
+            ->whereJsonContains('jazyky', $jazyk)->orderBy('poradi');
     }
 
     public const SEGMENTY = [
