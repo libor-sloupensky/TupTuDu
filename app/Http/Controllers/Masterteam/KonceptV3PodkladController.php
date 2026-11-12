@@ -220,6 +220,12 @@ class KonceptV3PodkladController extends Controller
             ]);
         }
 
+        // Bez poppleru (produkční hosting) PDF k importu připravit nejde, jen zobrazit
+        // předem vykreslený podklad vzorového projektu — jinak by tu padla výjimka 500.
+        if (!$this->pdf->dostupny()) {
+            return response()->json(['ok' => false, 'error' => __('ed_nastroje.podklad.chybi_poppler')], 422);
+        }
+
         $absCesta = Storage::path($orig);
         $png = $this->pdf->png($absCesta, $otisk, $strana, $dpi);
         $this->pdf->svg($absCesta, $otisk, $strana);

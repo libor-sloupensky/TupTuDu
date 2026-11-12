@@ -94,6 +94,7 @@ window.KonceptImport = {
             this.impDrive = d.ok ? d.vykresy : [];
         } catch (e) {
             this.impDrive = [];
+            window.zalogujChybu?.(e, 'import podkladu — seznam výkresů');
         }
     },
 

@@ -148,6 +148,38 @@ class VzorovyProjekt
     public const SOUBOR_PDF = 'vzor/vzorovy-projekt.pdf';
 
     /**
+     * Předem vykreslené strany podkladu: `vzor/vzorovy-projekt-s{strana}-{dpi}.png`. Produkční hosting PDF
+     * vykreslit neumí (shell_exec vypnutá, poppler chybí), bez nich by vzorový projekt na produkci podklad
+     * neměl (bug #22, 12. 11. 2026). Vykresluje je `vzor:prevzit` lokálně, kde poppler je.
+     */
+    public const PREDPONA_PNG = 'vzor/vzorovy-projekt-s';
+
+    /** @return list<string> absolutní cesty k předem vykresleným stranám podkladu */
+    public static function vykresleneStrany(): array
+    {
+        return glob(database_path(self::PREDPONA_PNG) . '*.png') ?: [];
+    }
+
+    /**
+     * Předem vykreslené strany uloží do cache podkladů pod otiskem PDF, odkud je editor načte
+     * (`PdfPodkladService::png` vezme hotový soubor a poppler nevolá). Vrací počet zapsaných souborů.
+     */
+    public static function ulozVykresleneStrany(string $otisk): int
+    {
+        $zapsano = 0;
+        foreach (self::vykresleneStrany() as $soubor) {
+            // vzorovy-projekt-s1-150.png → s1-150.png, stejný název jako PdfPodkladService::png
+            $rel = PdfPodkladService::SLOZKA . "/cache/$otisk/" . substr(basename($soubor), strlen('vzorovy-projekt-'));
+            if (! Storage::exists($rel) || Storage::size($rel) !== filesize($soubor)) {
+                Storage::put($rel, file_get_contents($soubor));
+                $zapsano++;
+            }
+        }
+
+        return $zapsano;
+    }
+
+    /**
      * Zapíše obsah výchozí verze (data, metadata, podklad) do šablony; když šablona není, založí ji pro `$autor`.
      * Vrací šablonu, nebo null, když se nic nezměnilo. Kopie si novou verzi vezmou podle `upraveno` šablony:
      * nepoužité při otevření, používané v noci (Libor 11. 11. 2026: pracovní verze se stává výchozí na pokyn).

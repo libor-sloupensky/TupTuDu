@@ -26,5 +26,9 @@ class VzorovyProjektSeeder extends Seeder
         $obsah = json_decode(file_get_contents($soubor), true);
         $pdf = is_file(database_path(VzorovyProjekt::SOUBOR_PDF)) ? file_get_contents(database_path(VzorovyProjekt::SOUBOR_PDF)) : null;
         VzorovyProjekt::zapisSablonu($obsah, $pdf, $autor);
+        // Podklad jako hotový obrázek: produkce PDF sama nevykreslí (bez shell_exec a poppleru)
+        if ($pdf !== null) {
+            VzorovyProjekt::ulozVykresleneStrany(sha1($pdf));
+        }
     }
 }

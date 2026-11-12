@@ -82,10 +82,31 @@ class VzorPrevzit extends Command
         file_put_contents(database_path(VzorovyProjekt::SOUBOR), json_encode($obsah, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         if ($pdf !== null) {
             file_put_contents($souborPdf, $pdf);
+            $this->vykresliPodklad($souborPdf, $otisk, (int) ($meta['podklad']['strana'] ?? 1));
         }
         $sablona = VzorovyProjekt::zapisSablonu($obsah, $pdf, $zdroj->uzivatel);
         $this->info($sablona ? "Šablona {$sablona->id} přepsaná, database/vzor zapsané. Na produkci se projeví po nasazení." : 'Šablona už byla stejná, database/vzor zapsané.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Stranu podkladu vykreslí do database/vzor jako obrázek — produkce PDF sama nevykreslí
+     * (shell_exec vypnutá, poppler chybí) a seeder ho tam vloží do cache podkladů.
+     */
+    private function vykresliPodklad(string $souborPdf, string $otisk, int $strana): void
+    {
+        $pdf = app(PdfPodkladService::class);
+        if (! $pdf->dostupny()) {
+            $this->warn('Poppler tu není: obrázek podkladu pro produkci se nevykreslil, vzorový projekt tam bude bez podkladu.');
+
+            return;
+        }
+        foreach (VzorovyProjekt::vykresleneStrany() as $stary) {
+            @unlink($stary);
+        }
+        $dpi = (int) config('koncept.podklad.dpi_podklad', 150);
+        $rel = $pdf->png($souborPdf, $otisk, $strana, $dpi);
+        copy(Storage::path($rel), database_path(VzorovyProjekt::PREDPONA_PNG . "$strana-$dpi.png"));
     }
 }

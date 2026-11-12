@@ -31,6 +31,13 @@ class PdfPodkladService
             return $this->binarky[$nazev];
         }
 
+        // Produkční hosting má shell_exec v disable_functions — funkce pak vůbec
+        // neexistuje a volání skončí fatální chybou (`@` ji nepotlačí). Bez ní
+        // nejde binárku spustit, takže poppler není k dispozici ani se zadanou cestou.
+        if (!function_exists('shell_exec')) {
+            return $this->binarky[$nazev] = null;
+        }
+
         $cesta = null;
         $vlastni = rtrim((string) config('koncept.poppler_cesta'), '/\\');
         if ($vlastni !== '') {
