@@ -36,8 +36,11 @@ a neslibujeme ho) a AI dispozice (`h_ai_dispozice`, rozhodnuto bez AI).
   má/nemá. Dál stav vývoje, poslední vydání, události po měsících za 12 měsíců (oranžová síla = počet),
   jazyky nástroje (plně) a webu (obrysem) pro cílové jazyky `cs sk pl de fr es it en`, nejlevnější tarif v Kč.
   Od druhého měření sloupec Změny = počet hodnot, které se proti minulému měření liší.
-- **Parametry:** katalog po skupinách s přepínačem, štítkem „nový“ (přidán po začátku měření), typem hodnoty,
-  štítkem „strojově“ a počtem aplikací, u kterých je hodnota zjištěná. Filtr Vše / režimy / Nové návrhy.
+- **Parametry:** katalog po skupinách s přepínačem, štítkem „nový“ (přidán po začátku měření), typem hodnoty
+  a štítkem „strojově“. Filtr Vše / režimy / Nové návrhy. Číslo u parametru = kolik konkurentů ho má
+  (má 1, částečně ½, TupTuDu se nepočítá), v bublině rozpad má / částečně / nemá / nezjištěno a kolik jen placeně.
+  Libor 12. 11. 2026: to ho zajímá víc než počet zjištěných hodnot. Pomlčka = parametr není má/nemá
+  (bublina pak řekne, u kolika aplikací je hodnota zjištěná), nebo ho u konkurence ještě nikdo neměřil.
   Klepnutí na název rozbalí **Co hodnotíme** (`kriteria`: kdy je „má“, „částečně“ a „nemá“),
   zaškrtávátko je rozbalí u všech (Libor 12. 11. 2026: samotné „jak měřit“ nestačilo). Zdroj měření (`jak_merit`)
   se na stránce neukazuje, Libor ho tam má za zbytečný; zůstává v DB jako návod pro měření.

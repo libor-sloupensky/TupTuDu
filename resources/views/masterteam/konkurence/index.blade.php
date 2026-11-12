@@ -232,16 +232,26 @@
     {{-- ───────── Parametry ───────── --}}
     @if($zalozka === 'parametry')
         @php
-            $vyplneno = [];
-            foreach ($hodnoty as $radek) {
-                foreach ($radek as $pId => $h) {
-                    if ($h->hodnota !== '?' && ($h->hodnota !== null || $h->cislo !== null || $h->text !== null || $h->data)) {
-                        $vyplneno[$pId] = ($vyplneno[$pId] ?? 0) + 1;
+            // Kolik konkurentů parametr má (má = 1, částečně = ½). TupTuDu se nepočítá, jeho stav je vedle značkou.
+            // U parametrů, které nejsou má/nemá, jen u kolika aplikací je hodnota zjištěná.
+            $my = $konkurenti->first(fn ($k) => $k->jeTuptudu());
+            $ostatni = $konkurenti->reject(fn ($k) => $k->jeTuptudu());
+            $pocetKonk = $ostatni->count();
+            $souhrn = [];
+            foreach ($ostatni as $k) {
+                foreach ($hodnoty[$k->id] ?? [] as $pId => $h) {
+                    $s = $souhrn[$pId] ?? ['ano' => 0, 'castecne' => 0, 'ne' => 0, 'skryte' => 0, 'placene' => 0, 'zjisteno' => 0];
+                    if (isset($s[$h->hodnota])) {
+                        $s[$h->hodnota]++;
+                        $s['placene'] += $h->placene && in_array($h->hodnota, ['ano', 'castecne'], true) ? 1 : 0;
                     }
+                    if ($h->hodnota !== '?' && ($h->hodnota !== null || $h->cislo !== null || $h->text !== null || $h->data)) {
+                        $s['zjisteno']++;
+                    }
+                    $souhrn[$pId] = $s;
                 }
             }
-            $pocetKonk = $konkurenti->count();
-            $my = $konkurenti->first(fn ($k) => $k->jeTuptudu());
+            $cisloCz = fn ($v) => str_replace('.', ',', (string) $v);
         @endphp
         <div class="mb-3 flex flex-wrap gap-2 items-center" role="group" aria-label="Filtr parametrů">
             @foreach(['vse' => 'Vše', 'sledovat' => 'Sledovat', 'tise' => 'Tiše', 'nesledovat' => 'Nesledovat', 'nove' => 'Nové návrhy'] as $f => $nazev)
@@ -250,7 +260,7 @@
             <label class="kn-tlumene text-xs ml-2 inline-flex items-center gap-1.5" style="cursor:pointer">
                 <input type="checkbox" x-model="vsePodrobnosti" style="accent-color: var(--c-primary)"> Rozbalit popis u všech
             </label>
-            <span class="kn-tlumene text-xs ml-2">Klepnutím na název se ukáže, co parametr vyhodnocuje. Značka na podbarveném místě je stav TupTuDu, najetím se ukážou podrobnosti. Přepnutí režimu se uloží hned.</span>
+            <span class="kn-tlumene text-xs ml-2">Klepnutím na název se ukáže, co parametr vyhodnocuje. Značka na podbarveném místě je stav TupTuDu, číslo za ní kolik aplikací parametr má (částečně = ½). Najetím se ukážou podrobnosti. Přepnutí režimu se uloží hned.</span>
         </div>
 
         <div class="grid gap-4">
@@ -288,8 +298,24 @@
                                 {{ $p->typ === 'seznam' ? count($hMy->data ?? []) : \Illuminate\Support\Str::limit($hMy->kratce(), 8, '…') }}
                             @endif
                         </div>
-                        <div class="kn-tlumene text-xs kn-cislo text-right" style="width:74px" title="U kolika aplikací je hodnota zjištěná">
-                            {{ $vyplneno[$p->id] ?? 0 }} / {{ $pocetKonk }}
+                        @php
+                            $s = $souhrn[$p->id] ?? ['ano' => 0, 'castecne' => 0, 'ne' => 0, 'skryte' => 0, 'placene' => 0, 'zjisteno' => 0];
+                            $nezjisteno = $pocetKonk - $s['ano'] - $s['castecne'] - $s['ne'] - $s['skryte'];
+                            $zmereno = $p->typ === 'stav' && $nezjisteno < $pocetKonk;
+                            $popisPoctu = match (true) {
+                                $zmereno => "Má {$s['ano']}, částečně {$s['castecne']}, nemá {$s['ne']}" . ($s['skryte'] ? ", skryté v kódu {$s['skryte']}" : '')
+                                    . ", nezjištěno {$nezjisteno}" . ($s['placene'] ? "\nZ toho jen v placené verzi {$s['placene']}" : '')
+                                    . "\nZ {$pocetKonk} aplikací bez TupTuDu, částečně = ½ bodu",
+                                $p->typ === 'stav' => 'U konkurence zatím neměřeno',
+                                default => "Parametr není typu má/nemá.\nHodnota zjištěná u {$s['zjisteno']} z {$pocetKonk} aplikací bez TupTuDu",
+                            };
+                        @endphp
+                        <div class="kn-tlumene text-xs kn-cislo text-right" style="width:74px; align-self:center" title="{{ $popisPoctu }}">
+                            @if($zmereno)
+                                <b class="kn">{{ $cisloCz($s['ano'] + $s['castecne'] / 2) }}</b> / {{ $pocetKonk }}
+                            @else
+                                —
+                            @endif
                         </div>
                         @include('masterteam.konkurence.trojstav', ['url' => route('masterteam.konkurence.parametr.rezim', $p)])
                     </div>
