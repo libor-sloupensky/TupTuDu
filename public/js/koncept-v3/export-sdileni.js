@@ -389,6 +389,8 @@
             const v = new THREE.Vector3();
             const pridej = (o, skupina) => {
                 if (!o.isMesh || !o.geometry) return;
+                // Lem desky stojí na vodorovné normále, kterou odkaz nepřenáší (počítá si normály sám); bez ní by svítil jako vrch
+                if (o.userData?.lemDesky) return;
                 const g = o.geometry, poz = g.getAttribute('position'), uv = g.getAttribute('uv'), idx = g.index;
                 if (!poz) return;
                 const pocet = idx ? idx.count : poz.count;

@@ -7501,6 +7501,28 @@ function konceptKEditor(initialData) {
             if (o.material) [].concat(o.material).forEach(m => m.dispose());
         },
 
+        /**
+         * Klika dveří na obou stranách křídla (Libor 12. 11. 2026): štítek, krček a páka, stříbrný kov.
+         * Soustava otvoru: x podél stěny, y nad podlahou, z napříč; `smer` = kam míří páka (k pantům),
+         * `pul` = půl tloušťky křídla.
+         */
+        _klika3d(g, x, y, smer, pul) {
+            const THREE = window.THREE;
+            const kov = new THREE.MeshStandardMaterial({ color: 0xc9ccd0, metalness: 0.85, roughness: 0.32 });
+            const dil = (w, h, d, px, py, pz) => {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), kov);
+                m.position.set(px, py, pz);
+                m.userData.klika = true;
+                g.add(m);
+            };
+            for (const z of [1, -1]) {
+                const lic = z * pul;
+                dil(0.042, 0.2, 0.006, x, y - 0.05, lic + z * 0.003);                 // štítek, klika v horní části
+                dil(0.018, 0.018, 0.045, x, y, lic + z * 0.0285);                     // krček
+                dil(0.13, 0.02, 0.02, x + smer * 0.056, y, lic + z * 0.051);         // páka
+            }
+        },
+
         /** Stěny (rozřezané otvory) a výplně otvorů jednoho podlaží do skupiny `group`. */
         _build3dPodlazi(eng, podl, group) {
             const THREE = window.THREE;
@@ -7593,9 +7615,25 @@ function konceptKEditor(initialData) {
                         const tStred = pul.reduce((s, p) => s + tBodu(p), 0) / pul.length;
                         const pol = (wall.tloustka || 0) / 2;
                         const vnejsi = rastr ? stitekVedle(A.x + ux * tStred + nx * pol, A.z + uz * tStred + nz * pol, nx, nz) === 1 : wall.typ === 'obvodova';
+                        // Kde za plochou je zeď (ostění, čelo, napojení), rozhodne líc této půlky v tom místě, ne střed
+                        // celého dílu: díl za oknem sahal k přístavku a ostění bylo bílé (Klemov kopie 12. 11. 2026)
+                        const vnejsiTady = (x, z) => {
+                            if (!rastr) return vnejsi;
+                            const kLici = pol - ((x - A.x) * nx + (z - A.z) * nz);
+                            return stitekVedle(x + nx * kLici, z + nz * kLici, nx, nz) === 1;
+                        };
                         pridejHranol(pul, yOd, yDo, matVnitrni, matFasada, (x, z, qx, qz) => {
                             const s = stitekVedle(x, z, qx, qz);
-                            return s === 1 || (s === 0 && vnejsi);
+                            if (s !== 0) return s === 1;
+                            // Za plochou je zeď: rastr má 2 cm, proužek u napojení jiné zdi rozhodne nejbližší okolí
+                            // podél plochy (jinak zůstala bílá vlasová linka u přístavku), ostění pak líc půlky
+                            for (const d of [0.03, 0.06, 0.1]) {
+                                for (const zn2 of [1, -1]) {
+                                    const s2 = stitekVedle(x - qz * d * zn2, z + qx * d * zn2, qx, qz);
+                                    if (s2 !== 0) return s2 === 1;
+                                }
+                            }
+                            return vnejsiTady(x, z);
                         }, vnejsi);
                     }
                 };
@@ -7754,6 +7792,12 @@ function konceptKEditor(initialData) {
                     if (vnitrniV > 0.02 && vnitrniW > 0.02) {
                         if (plne) {
                             dvoubarevny(vnitrniW, vnitrniV, 0.045, x + w / 2, yOd + vnitrniV / 2, 0, 0.7);
+                            // Klika u volné hrany, páka míří k pantům (Libor 12. 11. 2026: zatím stříbrná bez volby)
+                            const panty = op.typ === 'dvere' && typeof kridloPanty === 'function' ? kridloPanty(k.otv) : null;
+                            if (panty && vnitrniW > 0.3 && vnitrniV > 1.4) {
+                                const smer = panty === 'levy' ? -1 : 1;
+                                this._klika3d(g, panty === 'levy' ? x + w - RAM - 0.065 : x + RAM + 0.065, Math.min(1.05, yOd + vnitrniV - 0.35), smer, 0.0225);
+                            }
                         } else {
                             kvadr(vnitrniW, vnitrniV, 0.012, x + w / 2, yOd + vnitrniV / 2, 0, skloTypu(op.typ));
                             if ((k.otv !== 'fix' || k.sklopne) && vnitrniW > 3 * RAM && vnitrniV > 3 * RAM) {

@@ -197,7 +197,7 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         await p.vyhodnot(`(async () => { const d = ${D}; d.engine.dum.posunVysky = 0; d._build3d(); await new Promise(r => setTimeout(r, 300)); return true; })()`);
 
         console.log('\n5c) Strop pod šikmou střechou a podlaha pod dveřmi');
-        const STROP = `(() => { const d = ${D}, _3d = window._kk3d; const m = _3d.dumSkupina.children.filter(o => o.userData?.stropPod === 'P2');
+        const STROP = `(() => { const d = ${D}, _3d = window._kk3d; const m = _3d.dumSkupina.children.filter(o => o.userData?.stropPod === 'P2' && !o.userData.lemDesky);
             const b = m.length ? new THREE.Box3().setFromObject(m[0]) : null; return { pocet: m.length, od: b ? +(b.min.y - _3d.wallGroup.position.y).toFixed(3) : null, do: b ? +(b.max.y - _3d.wallGroup.position.y).toFixed(3) : null,
             sirka: b ? +(b.max.x - b.min.x).toFixed(3) : null, svetla: d.engine.svetlaVyska(d.engine.podlaziPodleId('P2')), kota: d.engine.kotaPodlazi('P2'), panel: JSON.parse(JSON.stringify({ moz: d.strechaPanel.stropMozny, strop: d.strechaPanel.strop })) }; })()`;
         let strop = await p.vyhodnot(STROP);
@@ -234,7 +234,7 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
             return { kPodlaze: kryje(10.0, 2.6) && kryje(10.13, 2.6), sParapetem: kryje(10.0, 5.6) }; })()`);
         kontrola('pod oknem až k podlaze je podlaha přes celou zeď, pod oknem s parapetem ne', podOknem.kPodlaze && !podOknem.sParapetem, JSON.stringify(podOknem));
         // Strop má barvu vnitřních stěn
-        const barvaStropu = await p.vyhodnot(`(() => { const _3d = window._kk3d; const m = _3d.dumSkupina.children.find(o => o.userData?.stropPod === 'P1');
+        const barvaStropu = await p.vyhodnot(`(() => { const _3d = window._kk3d; const m = _3d.dumSkupina.children.find(o => o.userData?.stropPod === 'P1' && !o.userData.lemDesky);
             let stena = null; _3d.podlaziSkupiny.get('P1').traverse(o => { for (const x of [].concat(o.material || [])) if (!stena && x.side === THREE.DoubleSide && !x.userData?.barva && x.color?.getHexString() === 'ffffff') stena = x.color.getHexString(); });
             return { strop: m ? [].concat(m.material)[0].color.getHexString() : null, stena }; })()`);
         kontrola('spodek stropní desky má barvu vnitřních stěn (bílá), dřív šedobéžová', barvaStropu.strop === 'ffffff' && barvaStropu.stena === 'ffffff', JSON.stringify(barvaStropu));

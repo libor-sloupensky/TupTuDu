@@ -4296,6 +4296,12 @@
             const pridejDesku = (obrys, otvory, yOd, yDo, userData) => {
                 const vyrezy = podUrovni.filter(v => v.od < yDo && v.do > yOd).map(v => v.poly);
                 for (const m of this._deskaSVyrezy(obrys, otvory, vyrezy, yOd, yDo, matDesky(), userData)) dum.add(m);
+                if (!vyrezy.length) {
+                    // Lem přímo na ploše desky, přednost před ní mu dá posun hloubky (o milimetr výš probleskovaly tečky)
+                    const matLemu = matFasady();
+                    Object.assign(matLemu, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+                    for (const m of this._lemDesky(obrys, yOd, yDo, matLemu, userData)) dum.add(m);
+                }
             };
 
             d.podlazi.forEach((p, i) => {
@@ -4778,6 +4784,45 @@
             _3d.scene.add(maska);
         },
 
+        /**
+         * Lem desky: pás 3 cm po obvodu těsně nad vrchem a pod spodkem, s vodorovnou normálou ven jako fasáda.
+         * Líce zdí sousedních podlaží se v datech liší o milimetry (Klemov kopie: podkroví 2–7 mm uvnitř přízemí)
+         * a vršek desky tam vykukoval jako tenká tmavá čára, stíněný jako vodorovná plocha (Libor 12. 11. 2026).
+         * S lemem se taková římsa svítí jako zeď nad ní a splyne; kde lem leží pod zdí nebo v desce, není vidět.
+         */
+        _lemDesky(obrys, yOd, yDo, mat, userData) {
+            const THREE = window.THREE;
+            const SIRKA = 0.03;
+            if (!obrys || obrys.length < 3) return [];
+            const vnitrni = this._odsadPolygon(obrys, -SIRKA);
+            let plocha = 0;
+            obrys.forEach((p, i) => { const q = obrys[(i + 1) % obrys.length]; plocha += p.x * q.y - q.x * p.y; });
+            const zn = plocha > 0 ? 1 : -1;
+            const vysledek = [];
+            for (const [y, nahoru] of [[yDo, true], [yOd, false]]) {
+                const poz = [], nor = [];
+                for (let i = 0; i < obrys.length; i++) {
+                    const j = (i + 1) % obrys.length;
+                    const a = obrys[i], b = obrys[j], L = Math.hypot(b.x - a.x, b.y - a.y);
+                    if (L < 1e-4) continue;
+                    const nx = (b.y - a.y) / L * zn, ny = -(b.x - a.x) / L * zn;
+                    // Čtyřúhelník vnější hrana → vnitřní; plán y je osa z scény. Pořadí podle toho, zda hledí nahoru.
+                    const v = [[a.x, a.y], [b.x, b.y], [vnitrni[j].x, vnitrni[j].y], [vnitrni[i].x, vnitrni[i].y]];
+                    const troj = nahoru === (zn > 0) ? [0, 2, 1, 0, 3, 2] : [0, 1, 2, 0, 2, 3];
+                    for (const k of troj) { poz.push(v[k][0], y, v[k][1]); nor.push(nx, 0, ny); }
+                }
+                if (!poz.length) continue;
+                const g = new THREE.BufferGeometry();
+                g.setAttribute('position', new THREE.Float32BufferAttribute(poz, 3));
+                g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+                const m = new THREE.Mesh(g, mat);
+                m.receiveShadow = true;
+                Object.assign(m.userData, userData || {}, { lemDesky: true });
+                vysledek.push(m);
+            }
+            return vysledek;
+        },
+
         /** Polygon odsazený o d ven, po vrcholech ve směru os obou sousedních hran. */
         _odsadPolygon(poly, d) {
             let plocha = 0;
@@ -4879,14 +4924,38 @@
                 const nx = (b.z - a.z) / L, nz = -(b.x - a.x) / L;
                 const dilu = Math.max(1, Math.ceil(L / 0.25));
                 for (let d = 0; d < dilu; d++) {
-                    const p = { x: a.x + (b.x - a.x) * d / dilu, z: a.z + (b.z - a.z) * d / dilu };
-                    const q = { x: a.x + (b.x - a.x) * (d + 1) / dilu, z: a.z + (b.z - a.z) * (d + 1) / dilu };
-                    const cil = jeVen((p.x + q.x) / 2, (p.z + q.z) / 2, nx, nz) ? ven : uvnitr;
-                    bod(cil, p, yOd); bod(cil, p, vrch); bod(cil, q, vrch);
-                    bod(cil, p, yOd); bod(cil, q, vrch); bod(cil, q, yOd);
+                    const p0 = { x: a.x + (b.x - a.x) * d / dilu, z: a.z + (b.z - a.z) * d / dilu };
+                    const q0 = { x: a.x + (b.x - a.x) * (d + 1) / dilu, z: a.z + (b.z - a.z) * (d + 1) / dilu };
+                    for (const [t0, t1, jeVenku] of this._useckyStrany(p0, q0, nx, nz, jeVen)) {
+                        const p = { x: p0.x + (q0.x - p0.x) * t0, z: p0.z + (q0.z - p0.z) * t0 };
+                        const q = { x: p0.x + (q0.x - p0.x) * t1, z: p0.z + (q0.z - p0.z) * t1 };
+                        const cil = jeVenku ? ven : uvnitr;
+                        bod(cil, p, yOd); bod(cil, p, vrch); bod(cil, q, vrch);
+                        bod(cil, p, yOd); bod(cil, q, vrch); bod(cil, q, yOd);
+                    }
                 }
             }
             this._meshStran(group, uvnitr, ven, matUvnitr, matVen);
+        },
+
+        /**
+         * Bok stěny po úsecích fasáda / vnitřek. Bod uprostřed 25cm úseku nestačí: kde na zeď navazuje jiná zeď,
+         * padne do ní a celý úsek dostal barvu podle ní, i jeho část venku (Klemov kopie 12. 11. 2026: bílý pruh
+         * u přístavku na fasádě). Když se kraje a střed úseku neshodnou, rozhodne se po 2 cm jako rastr.
+         * @returns {Array<[number, number, boolean]>} [od, do, venku] v podílu úsečky p→q
+         */
+        _useckyStrany(p, q, nx, nz, jeVen) {
+            const v = (t) => !!jeVen(p.x + (q.x - p.x) * t, p.z + (q.z - p.z) * t, nx, nz);
+            const kraj0 = v(0.05), stred = v(0.5), kraj1 = v(0.95);
+            if (kraj0 === stred && stred === kraj1) return [[0, 1, stred]];
+            const n = Math.max(2, Math.ceil(Math.hypot(q.x - p.x, q.z - p.z) / 0.02));
+            const out = [];
+            for (let i = 0; i < n; i++) {
+                const ven = v((i + 0.5) / n), posledni = out[out.length - 1];
+                if (posledni && posledni[2] === ven) posledni[1] = (i + 1) / n;
+                else out.push([i / n, (i + 1) / n, ven]);
+            }
+            return out;
         },
 
         /** Hranol pod šikmou střechou: krájí se po ~25 cm, každý plátek má horní hranu podle střechy. */
@@ -4934,9 +5003,13 @@
                 for (let i = 0; i < platek.length; i++) {
                     const j = (i + 1) % platek.length;
                     const L = Math.hypot(platek[j].x - platek[i].x, platek[j].z - platek[i].z) || 1;
-                    const cil = jeVen((platek[i].x + platek[j].x) / 2, (platek[i].z + platek[j].z) / 2, (platek[j].z - platek[i].z) / L, -(platek[j].x - platek[i].x) / L) ? ven : uvnitr;
-                    poloz(cil, D[i], H[i], H[j]);
-                    poloz(cil, D[i], H[j], D[j]);
+                    const lerp = (P, Q, k) => ({ x: P.x + (Q.x - P.x) * k, y: P.y + (Q.y - P.y) * k, z: P.z + (Q.z - P.z) * k });
+                    for (const [t0, t1, jeVenku] of this._useckyStrany(platek[i], platek[j], (platek[j].z - platek[i].z) / L, -(platek[j].x - platek[i].x) / L, jeVen)) {
+                        const cil = jeVenku ? ven : uvnitr;
+                        const d0 = lerp(D[i], D[j], t0), d1 = lerp(D[i], D[j], t1), h0 = lerp(H[i], H[j], t0), h1 = lerp(H[i], H[j], t1);
+                        poloz(cil, d0, h0, h1);
+                        poloz(cil, d0, h1, d1);
+                    }
                 }
             }
             this._meshStran(group, uvnitr, ven, matUvnitr, matVen);

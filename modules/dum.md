@@ -146,7 +146,13 @@ kuchyně, jídelna, koupelna, WC, chodba, zádveří, šatna, pracovna, technick
 
 Ve 3D nese materiál klíč v `userData.barva` a barvu dosadí `_nastavBarvy3d` (na konci `_build3d`, s přepisem i za tahu). Rám a plná výplň otvoru jsou dvě půlky tloušťky; stranu ven určí `_stranaVen` z rastru.
 
+**Klika** (Libor 12. 11. 2026, zatím stříbrná bez volby): plné dveře (`dvere`) s panty mají na obou stranách křídla štítek, krček a páku (`_klika3d`, `userData.klika`), 6,5 cm od volné hrany ve výšce 1,05 m, páka míří k pantům (`kridloPanty`: `levy` = panty na začátku křídla od uzlu A). Posuvné dveře, vrata a průchod kliku nemají.
+
 Stěny (`_hranolStrany`, `_hranolPodStrechou`): co hledí do exteriéru, je fasáda, všechno ostatní bílé, i vnitřní líc obvodové stěny (Libor 3. 11. 2026, volba vnitřní barvy může přibýt). Rozhoduje rastr pro každých 25 cm boku, takže stěna může být fasádou jen po části délky. Díl stěny se krájí po půlkách tloušťky: půlka u exteriéru má v barvě fasády i ostění, parapet a korunu. Plot a zídka mají barvu svého typu.
+
+**Napojení a ostění** (Libor 12. 11. 2026, Klemov kopie ze severu: bílý pruh u přístavku a bílé ostění okna): úsek boku se posuzuje na krajích i uprostřed, a když se neshodnou, po 2 cm (`_useckyStrany`), jinak bod uprostřed padl do navazující zdi a celý úsek dostal její barvu. Kde je za plochou zeď (ostění, čelo, napojení), rozhodne nejbližší okolí podél plochy do 10 cm a pak líc půlky v tom místě, ne střed celého dílu: díl za oknem sahal až k místnosti přístavku a ostění vyšlo bílé. Test `test-lice-3d-ui.cjs`.
+
+**Lem desky** (`_lemDesky`, téhož dne): líce zdí sousedních podlaží se v datech liší o milimetry (Klemov: podkroví 2–7 mm uvnitř přízemí) a vršek desky vykukoval jako tenká tmavá čára, stíněný jako vodorovná plocha. Každá deska z `pridejDesku` má po obvodu 3 cm pás přímo na vrchu i spodku s vodorovnou normálou ven a materiálem fasády (posun hloubky mu dá přednost před deskou). Taková římsa se pak svítí jako zeď nad ní; kde lem leží pod zdí nebo v desce, není vidět. Deska s výřezem pro okno pod úrovní lem nemá. Sdílený odkaz normály nepřenáší, lem do něj proto nejde (`_zapecModel`) a odkaz zůstává jako dřív.
 
 **Směr vzoru podlahy (Libor 11. 11. 2026):** dekor vede souběžně se stěnami kolem místnosti (`_smerDekoru`, nejdelší směr stěn po 90°, bez stěn osa domu), prkna po delší straně místnosti. Tlačítko „↻ 90°“ vedle dekoru v panelu místnosti otočí vzor napříč (`podlaha.otoceni = 90`, nula se neukládá). Dřív šly souřadnice textury podle os plátna: v natočeném domě šikmo a prkna často napříč. Test `test-barvy-domu-ui.cjs`, část 5.
 
