@@ -31,10 +31,10 @@ class PozemkyOver extends Command
         'FR' => [[45.797, 4.846], [45.899, 6.129], [43.611, 1.499], [48.121, -1.603], [48.530, 7.716], [45.774, 3.066]],
         'ES' => [[40.435, -3.813], [39.520, -0.411], [37.346, -5.928], [41.656, -0.877], [36.721, -4.421], [37.177, -3.599]],
         'IT' => [[41.876, 12.454], [45.000, 7.683], [44.494, 11.343], [43.806, 11.293], [40.846, 14.231], [45.438, 10.994]],
-        // Německo: jedno místo v každé spolkové zemi kromě Bavorska (to bezplatnou WFS nemá)
+        // Německo: jedno místo v každé spolkové zemi, Bavorsko dvakrát (bez katastru, jen výšky)
         'DE' => [[48.730, 9.105], [52.430, 13.250], [52.400, 13.065], [53.098, 8.935], [53.650, 10.160], [50.180, 8.500],
             [54.050, 12.050], [52.470, 9.850], [50.686, 7.160], [49.985, 8.165], [49.280, 7.110], [51.110, 13.650],
-            [51.510, 11.950], [53.790, 10.000], [50.980, 11.320]],
+            [51.510, 11.950], [53.790, 10.000], [50.980, 11.320], [49.790, 9.950], [48.150, 11.560]],
         'AT' => [[48.208, 16.373], [47.070, 15.439], [47.269, 11.404], [47.809, 13.055], [48.306, 14.286], [46.624, 14.307]],
     ];
 
@@ -80,18 +80,39 @@ class PozemkyOver extends Command
     private function overMisto(Pozemky $pozemky, string $kod, float $lat, float $lon): void
     {
         $this->line("· {$lat}, {$lon}");
-        $t = microtime(true);
-        try {
-            $vysledek = $pozemky->parcelaVBode($lat, $lon);
-        } catch (\Throwable $e) {
-            $this->chyba('parcela v bodě: ' . $e->getMessage());
+        if (!$pozemky->infoBodu($lat, $lon)['parcely']) {
+            // Bez katastru (Rakousko, Bavorsko): obkreslený pozemek 30 × 30 m, ověří se jen výšky
+            $this->line('    katastr: v tomto místě není, obkreslený pozemek');
+            $o = Geo::obalkaKolem($lat, $lon, 15);
+            $this->overVysky($pozemky, $kod, [[$o['min_lat'], $o['min_lon']], [$o['min_lat'], $o['max_lon']], [$o['max_lat'], $o['max_lon']], [$o['max_lat'], $o['min_lon']]]);
 
             return;
+        }
+        $t = microtime(true);
+        // Náhodný bod může padnout na silnici nebo vodu, které katastr některých zemí jako parcelu nevede
+        // (Francie, Itálie, Španělsko): zkusit ještě dva body o kus vedle, teprve pak chyba
+        foreach ([[0, 0], [12, 7], [-9, 14]] as $k => [$dy, $dx]) {
+            $bLat = $lat + $dy / 111320;
+            $bLon = $lon + $dx / (111320 * cos(deg2rad($lat)));
+            try {
+                $vysledek = $pozemky->parcelaVBode($bLat, $bLon);
+            } catch (\Throwable $e) {
+                $this->chyba('parcela v bodě: ' . $e->getMessage());
+
+                return;
+            }
+            if ($vysledek['parcela']) {
+                if ($k) {
+                    $this->line("    <fg=yellow>! v bodě parcela nebyla (silnice, voda?), nalezena o kus vedle</>");
+                }
+                [$lat, $lon] = [$bLat, $bLon];
+                break;
+            }
         }
         $ms = (int) ((microtime(true) - $t) * 1000);
         $p = $vysledek['parcela'];
         if (!$p) {
-            $this->chyba("parcela nenalezena (země {$vysledek['zeme']}, důvod {$vysledek['duvod']})");
+            $this->chyba("parcela nenalezena ani o kus vedle (země {$vysledek['zeme']}, důvod {$vysledek['duvod']})");
 
             return;
         }
@@ -126,11 +147,16 @@ class PozemkyOver extends Command
             'min_lon' => $o['min_lon'] - 0.0003, 'max_lon' => $o['max_lon'] + 0.0003,
         ];
         if (($nast['okoli'] ?? true)) {
+            // Okolí je jen podklad na plátně, výpadek je upozornění, ne chyba (editor ho tiše vynechá)
             try {
                 $okoli = $pozemky->parcelyVOblasti($kod, $obalka);
-                $this->ok(count($okoli) >= 2, 'okolní parcely: ' . count($okoli));
+                if (count($okoli) >= 2) {
+                    $this->ok(true, 'okolní parcely: ' . count($okoli));
+                } else {
+                    $this->line('    <fg=yellow>! okolní parcely: ' . count($okoli) . '</>');
+                }
             } catch (\Throwable $e) {
-                $this->chyba('okolní parcely: ' . $e->getMessage());
+                $this->line('    <fg=yellow>! okolní parcely: ' . mb_substr($e->getMessage(), 0, 120) . '</>');
             }
         }
         try {
@@ -140,8 +166,14 @@ class PozemkyOver extends Command
             $this->chyba('stavby: ' . $e->getMessage());
         }
 
-        if (!$pozemky->maVysky($kod)) {
-            $this->line('    výšky: pro zemi nejsou');
+        $this->overVysky($pozemky, $kod, $poly);
+    }
+
+    private function overVysky(Pozemky $pozemky, string $kod, array $poly): void
+    {
+        $s = Geo::stred($poly);
+        if (!$pozemky->infoBodu($s['lat'], $s['lon'])['vysky']) {
+            $this->line('    výšky: pro toto místo nejsou');
 
             return;
         }
@@ -154,6 +186,11 @@ class PozemkyOver extends Command
         try {
             $profil = $pozemky->vyskovyProfil($kod, [$poly]);
         } catch (\Throwable $e) {
+            if ($e->getMessage() === __('ed_nastroje.katastr.pozemek_velky')) {
+                $this->line('    výšky: parcela větší než 1,5 km, přeskočeno (záměrný limit)');
+
+                return;
+            }
             $this->chyba('výšky: ' . $e->getMessage());
 
             return;

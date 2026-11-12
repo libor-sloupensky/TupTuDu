@@ -1777,6 +1777,7 @@
                     </template>
                     <span x-show="katastrNacitaniProfil" class="mt-1 text-xs text-gray-500">{{ __('ed_sablona.parcela.nacitam_profil') }}</span>
                     <div x-show="katastrProfilHlaska && !katastrNacitaniProfil" class="mt-1 text-xs text-gray-500" x-text="katastrProfilHlaska"></div>
+                    <div x-show="vyskovyProfil?.rozliseni >= 5" class="mt-1 text-xs text-gray-500" x-text="preloz('ed_sablona.parcela.teren_orientacni', { m: vyskovyProfil?.rozliseni })"></div>
                     <div x-show="katastrAtribuce()" class="mt-1 text-[10px] text-gray-400" x-text="preloz('ed_sablona.parcela.zdroj_dat') + ' ' + katastrAtribuce()"></div>
                 </div>
             </div>

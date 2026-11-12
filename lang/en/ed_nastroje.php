@@ -111,7 +111,7 @@ return [
         'vysky_pomalu' => 'The elevation profile could not be loaded right now, the map service is responding slowly. Try again in a moment.',
         'polygon_bez_bodu' => 'No points inside the parcel polygon.',
         'vysky_nedostupne' => 'Elevation data is not available for this area.',
-        'vysky_zeme_nejsou' => 'There is no terrain elevation model for this country yet.',
+        'vysky_zeme_nejsou' => 'There is no terrain elevation model for this place yet, the terrain will be flat.',
         'pozemek_velky' => 'The plot is too large for an elevation profile, select a smaller part (up to 1.5 km).',
         'bod_mimo_evropu' => 'There is no cadastre here, this place is outside the supported countries. You can trace the plot.',
         'bod_bez_katastru' => 'There is no cadastre for this country yet. You can trace the plot.',

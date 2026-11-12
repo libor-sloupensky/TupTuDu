@@ -119,7 +119,8 @@ class Pozemky
             throw new RuntimeException(__('ed_nastroje.katastr.vysky_nedostupne'));
         }
 
-        return $this->souhrn($vystup);
+        // Rozlišení modelu: editor u hrubšího modelu (Itálie 10 m) upozorní, že terén je orientační
+        return $this->souhrn($vystup) + ['rozliseni' => $this->nastaveni($zeme)['rozliseni'] ?? null, 'zeme' => $zeme];
     }
 
     private function souhrn(array $body): array
@@ -147,12 +148,14 @@ class Pozemky
         $oblast = null;
         $wms = $z['wms'] ?? null;
         $parcely = !empty($z['parcely']);
+        $vysky = !empty($z['vysky']);
         if ($z && isset($z['wms_oblasti'])) {
             $oblast = Hranice::zeme($lat, $lon, Hranice::SPOLKOVE_ZEME);
             $w = $oblast ? ($z['wms_oblasti'][$oblast] ?? null) : null;
             $wms = $w ? ['verze' => '1.3.0', 'crs' => 'EPSG:3857'] + $w : null;
             if ($zeme === 'DE') {
                 $parcely = $oblast && in_array($oblast, Zdroje\Nemecko::zemeSKatastrem(), true);
+                $vysky = $oblast && in_array($oblast, Zdroje\NemeckoVysky::zemeSVyskami(), true);
             }
         }
 
@@ -161,7 +164,7 @@ class Pozemky
             'oblast' => $oblast,
             'parcely' => $parcely,
             'okoli' => $z['okoli'] ?? true,
-            'vysky' => !empty($z['vysky']),
+            'vysky' => $vysky,
             'wms' => $wms,
             'atribuce' => $z['atribuce'] ?? null,
         ];

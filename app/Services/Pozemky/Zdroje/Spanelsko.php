@@ -2,8 +2,8 @@
 
 namespace App\Services\Pozemky\Zdroje;
 
+use App\Services\Pozemky\AsciiGrid;
 use App\Services\Pozemky\Geo;
-use App\Services\Pozemky\GeoTiff;
 use App\Services\Pozemky\InspireGml;
 use App\Services\Pozemky\Parcela;
 use App\Services\Pozemky\ZdrojParcel;
@@ -72,7 +72,7 @@ class Spanelsko implements ZdrojParcel, ZdrojVysek
         // spojení často shodí (cURL 56), i s plnou hlavičkou prohlížeče občas. Opakování pak projde (12. 11. 2026).
         $odpoved = Http::timeout(20)
             ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')
-            ->retry(4, 300, fn ($e) => $e instanceof \Illuminate\Http\Client\ConnectionException)
+            ->retry([300, 800, 1600, 3000], 0, fn ($e) => $e instanceof \Illuminate\Http\Client\ConnectionException)
             ->get($url, [
             'service' => 'WFS',
             'version' => '2.0.0',
@@ -90,19 +90,29 @@ class Spanelsko implements ZdrojParcel, ZdrojVysek
         return $xml;
     }
 
-    /** MDT05 v ETRS89 zeměpisných souřadnicích (EPSG:4258 ≈ WGS84), jeden výřez pro všechny body. */
+    /**
+     * MDT05 (5 m) jedním výřezem. GeoTIFF z této služby nese jen celé metry (Int16), proto ASCII Grid
+     * na tři desetiny (přijde v obálce multipart). Pevnina a Baleáry v UTM 30 (EPSG:25830, rozšířené pásmo),
+     * Kanárské ostrovy v REGCAN95 / UTM 28 (EPSG:4083).
+     */
     public function vysky(array $body): array
     {
-        $lats = array_column($body, 0);
-        $lons = array_column($body, 1);
-        $okraj = 0.0001;
+        $kanary = $body[0][0] < 30 && $body[0][1] < -12;
+        [$pasmo, $pokryti] = $kanary ? [28, 'Elevacion4083_5'] : [30, 'Elevacion25830_5'];
+        $utm = array_map(fn ($b) => Geo::utm($b[0], $b[1], $pasmo), $body);
+        $e = array_column($utm, 0);
+        $n = array_column($utm, 1);
+        // Výřez zarovnaný na mřížku 5 m, jinak služba převzorkuje (nečtvercové buňky, rozmazání)
+        $okraj = 10;
+        $dolu = fn ($v) => floor($v / 5) * 5;
+        $nahoru = fn ($v) => ceil($v / 5) * 5;
         $url = self::WCS . '?' . http_build_query([
             'service' => 'WCS', 'version' => '2.0.1', 'request' => 'GetCoverage',
-            'coverageId' => 'Elevacion4258_5', 'format' => 'image/tiff',
-        ]) . '&subset=' . rawurlencode(sprintf('Lat(%.6f,%.6f)', min($lats) - $okraj, max($lats) + $okraj))
-            . '&subset=' . rawurlencode(sprintf('Long(%.6f,%.6f)', min($lons) - $okraj, max($lons) + $okraj));
-        $tif = GeoTiff::zDat(Http::timeout(30)->get($url)->throw()->body());
+            'coverageId' => $pokryti, 'format' => 'ArcGrid',
+        ]) . '&subset=' . rawurlencode(sprintf('x(%d,%d)', $dolu(min($e) - $okraj), $nahoru(max($e) + $okraj)))
+            . '&subset=' . rawurlencode(sprintf('y(%d,%d)', $dolu(min($n) - $okraj), $nahoru(max($n) + $okraj)));
+        $mrizka = AsciiGrid::zTextu(Http::timeout(30)->get($url)->throw()->body());
 
-        return array_map(fn ($b) => ($v = $tif->hodnota($b[1], $b[0])) === null ? null : round($v, 2), $body);
+        return array_map(fn ($p) => ($v = $mrizka->hodnota($p[0], $p[1])) === null ? null : round($v, 2), $utm);
     }
 }

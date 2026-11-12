@@ -6,7 +6,6 @@ use App\Services\Pozemky\Geo;
 use App\Services\Pozemky\Parcela;
 use App\Services\Pozemky\ZdrojParcel;
 use App\Services\Pozemky\ZdrojVysek;
-use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -19,7 +18,7 @@ class Francie implements ZdrojParcel, ZdrojVysek
     private const PARCELY = 'https://apicarto.ign.fr/api/cadastre/parcelle';
     private const WFS = 'https://data.geopf.fr/wfs/ows';
     private const ALTI = 'https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json';
-    private const DAVKA = 150;
+    private const DAVKA = 4000;
 
     public function parcelaVBode(float $lat, float $lon): ?array
     {
@@ -82,24 +81,25 @@ class Francie implements ZdrojParcel, ZdrojVysek
         return $vystup;
     }
 
+    /**
+     * POST s celým seznamem bodů (do 5000 na dotaz). Souběžné GET po dávkách služba omezuje
+     * (HTTP 429 od zhruba pěti dotazů naráz, 12. 11. 2026), jeden POST s 1600 body trvá asi 2 s.
+     */
     public function vysky(array $body): array
     {
-        $davky = array_chunk($body, self::DAVKA, true);
-        $odpovedi = Http::pool(fn (Pool $pool) => array_map(
-            fn ($d) => $pool->timeout(25)->get(self::ALTI, [
-                'lon' => implode('|', array_map(fn ($b) => sprintf('%.7f', $b[1]), $d)),
-                'lat' => implode('|', array_map(fn ($b) => sprintf('%.7f', $b[0]), $d)),
-                'resource' => 'ign_rge_alti_wld',
-                'zonly' => 'true',
-            ]),
-            $davky
-        ));
-
         $vysky = array_fill(0, count($body), null);
-        foreach ($davky as $i => $davka) {
-            $o = $odpovedi[$i] ?? null;
-            if (!$o instanceof \Illuminate\Http\Client\Response || !$o->successful()) {
-                throw new RuntimeException('Altimétrie IGN neodpověděla');
+        foreach (array_chunk($body, self::DAVKA, true) as $davka) {
+            $o = Http::timeout(30)
+                ->retry(3, 1000, fn ($e) => $e instanceof \Illuminate\Http\Client\ConnectionException
+                    || ($e instanceof \Illuminate\Http\Client\RequestException && $e->response->status() === 429), throw: false)
+                ->post(self::ALTI, [
+                    'lon' => implode('|', array_map(fn ($b) => sprintf('%.7f', $b[1]), $davka)),
+                    'lat' => implode('|', array_map(fn ($b) => sprintf('%.7f', $b[0]), $davka)),
+                    'resource' => 'ign_rge_alti_wld',
+                    'zonly' => 'true',
+                ]);
+            if (!$o->successful()) {
+                throw new RuntimeException('Altimétrie IGN neodpověděla (HTTP ' . $o->status() . ')');
             }
             $z = $o->json('elevations') ?? [];
             foreach (array_keys($davka) as $j => $klic) {

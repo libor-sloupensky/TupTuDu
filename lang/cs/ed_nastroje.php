@@ -122,7 +122,7 @@ return [
         'vysky_pomalu' => 'Výškový profil se teď nepodařilo načíst, mapová služba odpovídá pomalu. Zkus to za chvíli.',
         'polygon_bez_bodu' => 'Žádné body v polygonu parcely.',
         'vysky_nedostupne' => 'Výšková data pro tuto oblast nejsou dostupná.',
-        'vysky_zeme_nejsou' => 'Pro tuto zemi zatím nemáme výškový model terénu.',
+        'vysky_zeme_nejsou' => 'Pro toto místo zatím nemáme výškový model terénu, terén bude rovina.',
         'pozemek_velky' => 'Pozemek je na výškový profil moc velký, vyber menší část (do 1,5 km).',
         'bod_mimo_evropu' => 'Tady katastr nemáme, místo je mimo podporované země. Pozemek můžeš obkreslit.',
         'bod_bez_katastru' => 'Pro tuto zemi zatím katastr nemáme. Pozemek můžeš obkreslit.',

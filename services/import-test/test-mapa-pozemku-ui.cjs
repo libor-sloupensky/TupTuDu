@@ -152,7 +152,7 @@ async function main() {
         const at = { lat: 47.2692, lon: 11.4041 };
         await najed(at.lat, at.lon);
         const infoAt = await p.vyhodnot(`JSON.parse(JSON.stringify(${D}.mapaInfo))`);
-        kontrola('Rakousko: mapa ví, že katastr tu nemáme', infoAt.zeme === 'AT' && !infoAt.parcely, JSON.stringify(infoAt));
+        kontrola('Rakousko: mapa ví, že katastr tu nemáme a výšky ano', infoAt.zeme === 'AT' && !infoAt.parcely && infoAt.vysky, JSON.stringify(infoAt));
         await p.vyhodnot(`(() => { document.querySelector('[data-mapa-obkreslit]').click(); return true; })()`);
         const d = 0.00012;
         for (const [a, b] of [[-d, -d * 1.5], [-d, d * 1.5], [d, d * 1.5], [d, -d * 1.5]]) {
@@ -168,8 +168,8 @@ async function main() {
         await p.vyhodnot(`(() => { document.querySelector('[data-mapa-potvrdit]').click(); return true; })()`);
         await p.cekej(`!${D}.mapaPozemku && ${D}.katastrParcely.length === 1`, 30000, 'přidání obkresleného');
         await p.cekej(`!${D}.katastrNacitaniProfil`, 60000, 'profil');
-        const at2 = await p.vyhodnot(`({ hlaska: ${D}.katastrProfilHlaska, profil: !!${D}.vyskovyProfil?.body?.length })`);
-        kontrola('obkreslený pozemek je v projektu, výšky podle stavu Rakouska', true, JSON.stringify(at2));
+        const at2 = await p.vyhodnot(`({ hlaska: ${D}.katastrProfilHlaska, profil: !!${D}.vyskovyProfil?.body?.length, min: ${D}.vyskovyProfil?.vyska_min, max: ${D}.vyskovyProfil?.vyska_max })`);
+        kontrola('obkreslený pozemek je v projektu, výšky z BEV ALS-DGM 1 m (Innsbruck kolem 575 m)', at2.profil && at2.min > 560 && at2.max < 600, JSON.stringify(at2));
 
         const chybyJs = await p.vyhodnot('window.__chyby || []');
         kontrola('bez chyb JavaScriptu', !chybyJs.length, chybyJs.join(' | '));

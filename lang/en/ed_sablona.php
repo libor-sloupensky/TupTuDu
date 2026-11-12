@@ -482,6 +482,7 @@ return [
         'vymera' => 'Area:',
         'z_obrysu' => '(from outline)',
         'zdroj_dat' => 'Data source:',
+        'teren_orientacni' => 'Terrain from a :m m model, small unevenness is not captured.',
     ],
     // Seznam objektů a přepínače zobrazení (partials/prepinace-zobrazeni)
     'objekty' => [

@@ -482,6 +482,7 @@ return [
         'vymera' => 'Výměra:',
         'z_obrysu' => '(z obrysu)',
         'zdroj_dat' => 'Zdroj dat:',
+        'teren_orientacni' => 'Terén z modelu :m m, drobné nerovnosti nezachytí.',
     ],
     // Seznam objektů a přepínače zobrazení (partials/prepinace-zobrazeni)
     'objekty' => [
