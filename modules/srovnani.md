@@ -61,8 +61,42 @@ SEO je důležité: na jednoho konkurenta víc stránek s odlišným záměrem h
 - Proklik: profil ↔ srovnání ↔ podobné nástroje; z článků jen tam, kde to čtenáři pomůže.
 - Později „X vs Y“ mezi dvěma konkurenty (lidé to hledají), se stejnými pravidly a TupTuDu jako třetím sloupcem.
 
-### Hledanost (Plánovač klíčových slov, 12. 11. 2026)
-Doplní se z rešerše. Data jsou v `storage/app/konkurence/navstevnost.json` a v analýze jako tiché parametry.
+### Hledanost (Plánovač klíčových slov Google Ads, 12. 11. 2026)
+Průměr hledání názvu za měsíc (11/2025–10/2026). Data v `storage/app/konkurence/reserse-2026-11-12/navstevnost.json`,
+v analýze jako tiché parametry `k_hledani_*` a sloupec Zájem v přehledu.
+
+| Nástroj | CZ | SK | PL | DE |
+|---|---|---|---|---|
+| SketchUp | 8 100 | 4 400 | 33 100 | 33 100 |
+| Planner 5D | 2 400 | 1 300 | 12 100 | 14 800 |
+| Sweet Home 3D | 2 900 | 880 | 8 100 | 14 800 |
+| Homestyler | 1 600 | 720 | 18 100 | 4 400 |
+| Floorplanner | 1 900 | 880 | 3 600 | 6 600 |
+| HomeByMe | 1 300 | 720 | 4 400 | 4 400 |
+| Dům jedním tahem | 1 200 | 20 | 20 | 10 |
+| Pozemkov | 970 | 40 | 20 | 20 |
+| RoomSketcher, magicplan, Cedreo | 210–320 | do 140 | do 590 | 1 600–5 400 |
+| ostatní | do 340 všude, Plan7Architekt v DE 2 020 |
+
+**Co z toho plyne pro SEO:**
+1. **V Česku a na Slovensku stojí za profil jen šest velkých značek** (SketchUp, Sweet Home 3D, Planner 5D, Floorplanner,
+   Homestyler, HomeByMe) a z českých Dům jedním tahem. Dotazy typu „X alternativa“, „X recenze“, „X cena“, „X česky“
+   mají v CZ a SK skoro nulu, stránky „Alternativy k X“ by tam návštěvy nepřinesly.
+2. **Jediný záměr se skutečným objemem je „zdarma“ a „v mém jazyce“:** DE „sweet home 3d kostenlos“ 1 000,
+   „sketchup kostenlos“ 590, „planner 5d kostenlos“ 480; PL „planner 5d po polsku“ 210, „homestyler za darmo“ 170.
+   V CZ hledají „sketchupfree“ 3 600 a „sketchup online“ 1 900. Profil proto musí hned nahoře odpovědět, **jestli je
+   nástroj zdarma, co verze zdarma omezuje a v jakých je jazycích**. To jsou zároveň naše silné stránky
+   (trvalá verze zdarma, 8 jazyků), takže poctivá odpověď nám sama pomáhá.
+3. **Největší objem je v Polsku a Německu**, i u obecných dotazů: PL „projektowanie domu“ 27 100 a „program do
+   projektowania domu“ 720, DE „grundriss zeichnen“ 4 400 a „grundriss erstellen kostenlos“ 2 900; CZ „půdorys domu“
+   1 000, „návrh domu“ 320, SK „pôdorys domu“ 590. Obecné dotazy jsou spíš pro články a budoucího průvodce výběrem.
+4. **Pořadí:** čeština pro důvěru a první zkušenost, polština jako první cizí jazyk podle objemu. Němčina má největší
+   objem, ale nejtvrdší praxi výzev (Abmahnung), proto až s nejlépe doloženými daty a po advokátovi.
+
+**Ukazatele návštěvnosti** (jen interně): Tranco (pořadí webu, např. SketchUp 4 116., Planner 5D 27 123.),
+instalace z Google Play (Planner 5D 50M+, Homestyler a magicplan 10M+), odhad Similarweb (třetina návštěv
+za 3 měsíce, jejich API je placené). Hledání názvu po zemích je z nich nejpoužitelnější, protože říká, kolik zájmu
+je v zemích, kam míříme.
 
 ## Právní rámec (rozbor 3. 11. 2026, není právní rada)
 
