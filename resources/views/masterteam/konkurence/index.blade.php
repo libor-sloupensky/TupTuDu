@@ -130,6 +130,12 @@
                         <td style="min-width:140px">
                             <a href="{{ $k->web }}" target="_blank" rel="noopener" class="font-semibold" style="color:var(--c-text)">{{ $k->kratky ?: $k->nazev }}</a>
                             <div class="kn-tlumene text-xs">{{ Konkurent::SEGMENTY[$k->segment] ?? $k->segment }}@if($k->pridano && $mereni && $k->pridano->gt($mereni->datum)) · <span class="kn-stitek">nový {{ $k->pridano->format('j. n.') }}</span>@endif</div>
+                            @unless($k->jeTuptudu())
+                                <div class="text-xs" title="Náhled srovnávacích stránek (na webu nejsou)">
+                                    <a href="{{ route('masterteam.konkurence.profil', $k) }}" class="kn-tlumene">profil</a> ·
+                                    <a href="{{ route('masterteam.konkurence.srovnani', $k) }}" class="kn-tlumene">vs TupTuDu</a>
+                                </div>
+                            @endunless
                         </td>
                         <td>
                             @unless($k->jeTuptudu())

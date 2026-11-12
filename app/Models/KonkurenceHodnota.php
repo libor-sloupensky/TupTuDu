@@ -11,7 +11,7 @@ class KonkurenceHodnota extends Model
 
     protected $fillable = [
         'mereni_id', 'konkurent_id', 'parametr_id', 'hodnota', 'placene',
-        'cislo', 'data', 'text', 'poznamka', 'zdroj', 'overeno',
+        'cislo', 'data', 'text', 'poznamka', 'zdroj', 'doklad', 'doklad_v', 'overeno',
     ];
 
     protected function casts(): array
@@ -21,7 +21,20 @@ class KonkurenceHodnota extends Model
             'cislo' => 'float',
             'data' => 'array',
             'overeno' => 'date',
+            'doklad_v' => 'datetime',
         ];
+    }
+
+    /** Smí na veřejnou stránku: má doklad (snímek zdroje) a ověření není starší než 6 měsíců (modules/srovnani.md). */
+    public function lzeZverejnit(): bool
+    {
+        return $this->doklad && $this->overeno && $this->overeno->gte(now()->subMonths(6));
+    }
+
+    /** Pořadí stavu pro srovnání: má 2, částečně 1, nemá 0; nezjištěné a skryté null (nesrovnává se). */
+    public function sila(): ?int
+    {
+        return match ($this->hodnota) { 'ano' => 2, 'castecne' => 1, 'ne' => 0, default => null };
     }
 
     public const STAVY = [

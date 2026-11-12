@@ -110,6 +110,22 @@ class KonkurenceController extends Controller
         return $radky;
     }
 
+    /** Náhled veřejného profilu nástroje (modules/srovnani.md). Na web zatím nic nejde. */
+    public function nahledProfilu(Konkurent $konkurent)
+    {
+        abort_if($konkurent->jeTuptudu(), 404);
+
+        return view('srovnani.profil', ['s' => \App\Support\KonkurenceSrovnani::pro($konkurent), 'nahled' => true]);
+    }
+
+    /** Náhled stránky „X vs TupTuDu“ (modules/srovnani.md). */
+    public function nahledSrovnani(Konkurent $konkurent)
+    {
+        abort_if($konkurent->jeTuptudu(), 404);
+
+        return view('srovnani.vs', ['s' => \App\Support\KonkurenceSrovnani::pro($konkurent), 'nahled' => true]);
+    }
+
     public function rezimParametru(Request $request, KonkurenceParametr $parametr)
     {
         $parametr->update($request->validate(['rezim' => 'required|in:sledovat,tise,nesledovat']));

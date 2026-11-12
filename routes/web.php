@@ -177,6 +177,8 @@ Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('mastertea
 
     // Analýza konkurence v DB (modules/konkurence.md)
     Route::get('konkurence', [App\Http\Controllers\Masterteam\KonkurenceController::class, 'index'])->name('konkurence');
+    Route::get('konkurence/{konkurent:klic}/profil', [App\Http\Controllers\Masterteam\KonkurenceController::class, 'nahledProfilu'])->name('konkurence.profil');
+    Route::get('konkurence/{konkurent:klic}/srovnani', [App\Http\Controllers\Masterteam\KonkurenceController::class, 'nahledSrovnani'])->name('konkurence.srovnani');
     Route::patch('konkurence/parametr/{parametr}/rezim', [App\Http\Controllers\Masterteam\KonkurenceController::class, 'rezimParametru'])->name('konkurence.parametr.rezim');
     Route::patch('konkurence/konkurent/{konkurent}/rezim', [App\Http\Controllers\Masterteam\KonkurenceController::class, 'rezimKonkurenta'])->name('konkurence.konkurent.rezim');
 });

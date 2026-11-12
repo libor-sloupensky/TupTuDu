@@ -1,52 +1,68 @@
-# Srovnání s konkurencí — stránky „X vs TupTuDu"
+# Srovnání s konkurencí — profily nástrojů, „X vs TupTuDu“ a průvodce výběrem
 
-Stav k 3. 11. 2026: **odloženo do šuplíku, návrat cca 10. 11. 2026.** Nic není naprogramováno; existuje právní rozbor,
-ukázka tří rozvržení a Liborova rozhodnutí níže. Libor teď vylepšuje funkce TupTuDu (střecha, podlaží, export…),
-takže srovnání by rychle zastaralo. Při návratu nejdřív přečíst tento soubor a ukázku.
+## Stav (12. 11. 2026)
+Libor 12. 11. 2026 dal pokyn začít. Hotový je **náhled obou stránek v Masterteamu**, generovaný z analýzy konkurence
+(`modules/konkurence.md`): v přehledu Konkurence u každé aplikace odkazy „profil“ a „vs TupTuDu“
+(`/masterteam/konkurence/{klic}/profil`, `/srovnani`). Na veřejném webu zatím nic není. Co chybí ke zveřejnění, je
+v části Postup. Průvodce výběrem je odložený.
 
-## Cíl
+## Cíl a zásady (Libor 12. 11. 2026)
+- **Přitáhnout velkou základnu lidí**, kteří hledají nástroj na návrh domu, a nabídnout jim **objektivní srovnání**,
+  ať si vyberou sami. Část přijde k nám, část ne, a to je v pořádku.
+- **Netvrdíme, že jsme nejlepší.** Ukazujeme, kde je lepší kdo. Nejlepšími se chceme stát postupně: co mají ostatní
+  a my ne, je zároveň náš seznam práce (viz Jak se stát nejlepšími).
+- **Neslibujeme, co nemáme.** U TupTuDu jen to, co je nasazené na webu. Plánované funkce jsou „nemá“, bez „připravujeme“
+  (mění rozhodnutí z 3. 11., kdy „ne, připravujeme“ ještě šlo).
+- **Zákon a poctivost jdou stejným směrem** (viz Právní rámec). Objektivní srovnání je zároveň nejlepší SEO: stránka,
+  které čtenář věří, ho udrží a vrací se na ni.
 
-Informovat lidi, kteří hledají recenzi nebo alternativu konkurenčního nástroje, dovést je k objektivnímu srovnání
-s TupTuDu a část z nich získat, pokud sami usoudí, že se jim TupTuDu hodí víc. **Žádné přibarvování.** Objektivita je
-zároveň zákonná podmínka (viz právní rámec), takže zadání a zákon jdou stejným směrem.
+## Rozhodnutí Libora
+**3. 11. 2026:** rozvržení kombinací SR2 (průvodce po oblastech) a SR3 (podle potřeby čtenáře), ukázka
+https://claude.ai/artifact/6B5mSmoi57wqkCJQbKwFKy, zdroj v `services/srovnani-ukazka/`. Ceny nahoru nad tabulku.
+SEO je důležité: na jednoho konkurenta víc stránek s odlišným záměrem hledání, ne stejný obsah v různé délce.
 
-## Rozhodnutí Libora (3. 11. 2026)
+**12. 11. 2026:**
+1. **Profil pro každého sledovaného konkurenta** se sledovanými vlastnostmi, odkazuje na srovnání s TupTuDu.
+2. **„X vs TupTuDu“** s plusy a mínusy každého.
+3. **Průvodce výběrem (ODLOŽENO):** čtenář vyplní své priority a dostane nástroje, které jim odpovídají. Až po 1 a 2.
+4. „Sledovat“ v analýze = smí do těchto stránek. „Tiše“ nikdy.
 
-- Rozvržení: **kombinace SR2 (průvodce) a SR3 (podle potřeby)** z ukázky https://claude.ai/artifact/6B5mSmoi57wqkCJQbKwFKy.
-  Zdroj ukázky je v `services/srovnani-ukazka/` (šablona, data z analýzy, sestavovací skript `node services/srovnani-ukazka/sestav-srovnani.cjs`).
-- **Ceny dát nahoru**, nad tabulku vlastností (ne až za ni).
-- **SEO je důležité.** Na jednoho konkurenta víc stránek s odlišným záměrem hledání, ne stejný obsah v různé délce
-  (Google to hodnotí jako vstupní stránky a penalizuje).
-- **Profilové stránky nástrojů** („X: funkce, ceny a limity") s odkazy na srovnávač — doplněno do plánu níže.
-- Jedna stránka na každého konkurenta, např. „Ashampoo vs TupTuDu", „Homestyler vs TupTuDu".
+## Druhy stránek
+| Stránka | Pro koho (záměr hledání) | Obsah | Právně |
+|---|---|---|---|
+| **Profil X** „X: funkce, ceny a jazyky“ | „x recenze“, „x cena“, „x zdarma“, „x česky“ | co X je a pro koho, ceny a limity verze zdarma, jazyky, tabulka sledovaných vlastností X a u každé „kolik z N srovnávaných nástrojů to má“; odkaz na srovnání s TupTuDu a na podobné nástroje | nejtenčí led: bez verdiktu a hodnotících slov, jen fakta se zdrojem a datem; srovnání s trhem drží stránku v režimu věcného srovnání; slovo „recenze“ v titulku ne (slibuje nezávislost) |
+| **X vs TupTuDu** | hlavně čtenář z profilu, „x alternativa“, „x vs“ | ceny nahoře, „Co chceš udělat?“ (verdikt z dat), v čem je lepší X / v čem TupTuDu (stejně velké sloupce), co umí oba, všechny vlastnosti vedle sebe, metodika | srovnávací reklama § 2980 OZ, viz Právní rámec |
+| **Alternativy k X** (později) | „x alternativa“ | výběr podobných nástrojů z dat, včetně nás | stejná pravidla jako srovnání |
+| **Průvodce výběrem** (odloženo) | „program na návrh domu“, „jaký program na půdorys“ | dotazník priorit → nástroje, které jim odpovídají, s odkazy na profily | pořadí jen podle shody s tím, co čtenář zadal; TupTuDu bez zvýhodnění; žádný „vítěz“ |
 
-## Navržená stavba srovnávací stránky (kombinace SR2 + SR3, k doladění při návratu)
+## Jak se stránky tvoří (hotový náhled)
+- **Vše z dat analýzy**, nic se nepíše ručně ke konkrétnímu konkurentovi: `App\Support\KonkurenceSrovnani`, šablony
+  `resources/views/srovnani/profil.blade.php` a `vs.blade.php`. Bere jen aplikace a parametry v režimu Sledovat,
+  skupinu Vývoj nikdy.
+- **Plusy a mínusy jsou souměrné:** má 2, částečně 1, nemá 0; vyšší číslo je plus toho nástroje, rovnost nad nulou
+  „umí oba“, nezjištěné se nepočítá a stránka řekne kolik jich je.
+- **„Co chceš udělat?“:** šest situací (pozemek, celý dům, interiér, podklad pro projektanta, tablet, čeština),
+  každá má pevný seznam rozhodujících parametrů (`KonkurenceSrovnani::SITUACE`) a verdikt „víc toho má X / TupTuDu /
+  oba podobně“ se sečte z dat. Situace platí pro všechny konkurenty stejně, aby nešlo vybírat ty, kde vycházíme lépe.
+- **Řádek autorství nahoře** (výrobce jednoho ze srovnávaných nástrojů, stav k datu, odkaz na opravu) a **metodika
+  dole** (stejná pravidla pro všechny, zdroje, známková poznámka, výzva pro zástupce konkurenta).
+- Popis, kdy je vlastnost „má“, „částečně“ a „nemá“, je u parametru (`kriteria`) a na stránce v bublině názvu.
 
-1. Drobečky, H1 „X vs TupTuDu…", perex (Q1).
-2. **Řádek autorství**: „Sestavil tým TupTuDu, výrobce jednoho ze srovnávaných nástrojů“, stav k datu, verze konkurenta,
-   odkaz „Našli jste nepřesnost?“. Skrytá reklama je nekalá praktika — autor musí být jasný hned nahoře.
-3. **Situace čtenáře** (SR3): 4–6 karet „Co chcete udělat?“ s verdiktem z faktů (Homestyler / TupTuDu / obě, každá jinak).
-4. **Ceny** s tarify obou, podmínkami (období, DPH, měna, kurz ČNB s datem) — dle Libora nad tabulkou.
-5. **Tabulka vlastností po oblastech s komentářem** (SR2): 8 skupin × celkem 41 vlastností, legenda
-   ano / částečně / ne / neověřeno, u konkurenta **zdroj u každého řádku**, poznámka v zákaznickém jazyce.
-   U TupTuDu plánované funkce jen jako „ne, připravujeme“ (nikdy jako ano).
-6. „Co má jen X“ / „Co má jen TupTuDu“ a „Pro koho se co hodí“ (z faktů, ne hodnocení).
-7. Výzva (V1): zkusit TupTuDu zdarma + poctivý odkaz na web konkurenta.
-8. **Metodika**: odkud data, verze, co je neověřeno, stejná sada kritérií pro všechna srovnání; výzva k opravě
-   („Zastupujete X? Napište nám, opravíme a uvedeme datum opravy“); známková poznámka
-   („X je ochranná známka svého vlastníka, TupTuDu s ním není spojené“); poslední ověření + příští revize; seznam zdrojů.
+## SEO
+- **Samostatná sekce, ne blog.** Pravidla článků (do 500 slov, žádné zdroje a vnější odkazy) jdou proti zákonné
+  povinnosti uvádět zdroje a data. Srovnání proto dostane vlastní adresy, např. `/cs/srovnani/planner-5d` a
+  `/cs/srovnani/planner-5d-vs-tuptudu` (en `compare`, pl `porownanie` …), vlastní přehled a sitemapu.
+- **Návštěvnost přinese profil, ne „X vs TupTuDu“.** Na „X vs TupTuDu“ nikdo nehledá, dokud nás nezná. Lidé hledají
+  název nástroje s „cena“, „zdarma“, „česky“, „recenze“, „alternativa“. Profil chytá tyhle dotazy a vede na srovnání.
+  Pořadí konkurentů a jazyků podle skutečné hledanosti (viz Hledanost níže).
+- **Čerstvost:** datum stavu v titulku a v textu („stav 11/2026“), měsíční měření stránky samo aktualizuje.
+- **Jedna stránka na záměr**, žádné kopie v různé délce. Kanonická adresa, hreflang jen tam, kde jazyková verze
+  opravdu existuje. Strukturovaná data jen Article a BreadcrumbList, **žádné Review ani hvězdičky**.
+- Proklik: profil ↔ srovnání ↔ podobné nástroje; z článků jen tam, kde to čtenáři pomůže.
+- Později „X vs Y“ mezi dvěma konkurenty (lidé to hledají), se stejnými pravidly a TupTuDu jako třetím sloupcem.
 
-## Sada stránek na jednoho konkurenta (SEO)
-
-| Stránka | Záměr hledání | Právní režim |
-|---|---|---|
-| `X vs TupTuDu` | „x vs“, „x srovnání“ | srovnávací reklama § 2980 OZ — hlavní stránka, viz stavba výše |
-| `Alternativy k X` | „x alternativa“ | přehled více nástrojů včetně nás; stejná pravidla jako srovnání |
-| `X: funkce, ceny a limity` (profil) | „x recenze“, „x cena“ | **nejtenčí led**: mimo rámec srovnání ztrácí pravdivé, ale nepříjemné údaje ochranu § 2980 → jen neutrální popis bez verdiktu, jasně podepsaný TupTuDu (slovo „recenze“ v titulku ne — slibuje nezávislost), odkaz na srovnávač |
-
-Každá stránka má vlastní obsah, interní prolinkování (profil → srovnání → alternativy), datum ověření, hreflang
-podle jazyků webu. Žádná hodnocení hvězdičkami ani strukturovaná data typu Review (vlastní recenze konkurenta
-Google stejně nezobrazuje a právně je to slabé místo).
+### Hledanost (Plánovač klíčových slov, 12. 11. 2026)
+Doplní se z rešerše. Data jsou v `storage/app/konkurence/navstevnost.json` a v analýze jako tiché parametry.
 
 ## Právní rámec (rozbor 3. 11. 2026, není právní rada)
 
@@ -71,41 +87,48 @@ praxi placených výzev (Abmahnung) — do cizích jazyků pouštět jen stránk
 **Doporučení:** nechat šablonu a pravidla jednorázově posoudit advokátem na nekalou soutěž (odhad 5–12 tis. Kč),
 ne každou stránku. Podrobný rozbor je v chatu z 3. 11. 2026 a v paměti Claude (`tuptudu-srovnani-pravo`).
 
-## Datový tok a kontrola proti halucinacím (návrh)
+**Doplněno 12. 11. 2026:**
+- Signály vývoje konkurenta („stagnuje“) a hledanost jsou hodnocení a interní údaje, na web nikdy (proto skupina Vývoj
+  a parametry návštěvnosti jen v režimu Tiše).
+- Země sídla a provozovatel na stránku nepatří (o firmě ne, jen o produktu).
+- Na webu jen hodnota s dokladem a ověřením do 6 měsíců. Starší údaj se nezobrazí, místo něj „nezjištěno“.
 
-1. **Data první:** na konkurenta jeden JSON — pro každou vlastnost hodnota (ano/částečně/ne/neověřeno), poznámka
-   zákaznicky, zdroj URL, důkazní soubor, datum ověření, kdo ověřil, verze aplikace. Výchozí bod je matice z analýzy
-   konkurence (`services/srovnani-ukazka/konkurence-data.json`, 25 nástrojů × 41 vlastností, 1. 11. 2026), která ale
-   vznikla z dokumentace výrobců, ne z vlastního zkoušení → **před zveřejněním každý řádek ověřit se snímkem.**
-2. **Texty jen z dat** (generované bloky + ručně psané komentáře, které smí odkazovat jen na existující záznamy).
-3. **Skript porovná tvrzení v textu s daty** (funkce, čísla, ceny); při neshodě stránku nepustí.
-4. **Druhá kontrola:** nezávislý agent dostane jen data a text, vypíše každou větu bez opory v datech.
-5. **Liborovo čtení** před zveřejněním.
-   Příklad, co kontrola chytí: analýza přepočítala USD jiným kurzem, než sama uvádí (6,8 USD = 143 Kč místo 149 Kč
-   při kurzu 21,862) — v analýze zatím neopraveno.
+## Data a důkazy
+- Zdroj pravdy je produkční DB analýzy (`konkurence_hodnoty`). U hodnoty `doklad` (klíč snímku v archivu) a
+  `doklad_v`; `KonkurenceHodnota::lzeZverejnit()` = doklad + ověřeno v posledních 6 měsících. Náhled hodnoty bez
+  dokladu orámuje a pruh nahoře řekne, kolik jich je (12. 11. 2026 u Homestyleru vs TupTuDu 92, doklad zatím nemá nic).
+- Dosavadní data vznikla z dokumentace výrobců a rešerší, ne z vlastního zkoušení. **Před zveřejněním každý řádek
+  ověřit a pořídit snímek.**
+- **Poznámky jsou zatím interní** (zkratky, „dle webu“, odkazy na naše moduly). Na web potřebují zákaznickou podobu
+  v jazyce stránky, proto u hodnoty přibude veřejná poznámka po jazycích (zatím není).
+- **Archiv důkazů:** bucket S3 s verzováním a zámkem objektů (Object Lock), ke každému ověření celý snímek stránky,
+  HTML, URL, datum a kdo ověřil; manifest s otisky SHA‑256; veřejné ceníky navíc do Wayback Machine. Pořízení snímku
+  lokálním nástrojem (Chrome přes `services/import-test/prohlizec.cjs`), nahrání a zápis `doklad` importem.
+  `league/flysystem-aws-s3-v3` zatím chybí. Kvalifikované časové razítko manifestu (jednotky Kč) je volitelné.
+- **Texty jen z dat.** Ručně psaný úvod u konkurenta smí odkazovat jen na existující hodnoty. Před zveřejněním
+  nezávislý agent porovná každou větu s daty a vypíše, co v nich nemá oporu.
+- **Revize:** měsíční měření (`modules/konkurence.md`); oprava do pár dnů od podnětu, datum opravy na stránce.
 
-**Důkazy (archiv mimo web):** bucket S3 s verzováním a zámkem objektů (Object Lock), ke každému ověření celý snímek
-stránky, HTML, URL, datum, verze, kdo, postup; manifest se SHA‑256 otisky; pro jistotu času kvalifikované časové
-razítko manifestu (PostSignum / I.CA, jednotky Kč za razítko); veřejné ceníky navíc do Wayback Machine. Samostatná
-funkce v aplikaci není potřeba — bucket + artisan příkaz na pořízení a nahrání (napsat až při stavbě stránek).
-`config/filesystems.php` disk `s3` existuje, balík `league/flysystem-aws-s3-v3` zatím ne.
+## Postup
+1. **Hotovo 12. 11. 2026:** plán, kritéria parametrů, náhled profilu a srovnání z dat, pole pro doklad.
+2. **Libor** projde přepínače parametrů (na produkci) a náhled u 2–3 konkurentů.
+3. **Archiv důkazů** (bucket, nástroj na snímky) a **veřejné poznámky** po jazycích.
+4. **Ověření hodnot** u první dávky konkurentů podle hledanosti a vyrovnanosti srovnání: nejdřív nástroje, kde
+   srovnání vychází vyrovnaně a české (Homeplot, Sweet Home 3D, Planner 5D …), velcí hráči podle hledanosti.
+5. **Advokát** posoudí šablonu a pravidla (jednorázově, 5–12 tis. Kč) před prvním zveřejněním.
+6. **Zveřejnění v češtině:** veřejné adresy, texty do `lang/*/srovnani.php`, sitemap, Search Console.
+7. Další jazyky podle hledanosti (sk, en, pl), němčina poslední. Pak „Alternativy k X“ a „X vs Y“.
+8. **Průvodce výběrem** (odloženo): dotazník z těch samých parametrů, filtr nástrojů, odkazy na profily.
 
-**Revize:** datum ověření na každé stránce; čtvrtletně hlavní konkurenti, půlročně ostatní; oprava do pár dnů od podnětu.
+## Jak se stát nejlepšími
+Srovnání je zároveň mapa, co zlepšit. Každý měsíc z dat: kterou vlastnost má nejvíc sledovaných konkurentů a my ne,
+a v kolika srovnáních „X vs TupTuDu“ je to plus konkurenta. To je podklad pro pořadí práce na editoru
+(navazuje na nejpalčivější požadavky v analýze). Cílem je, aby se sloupec „v čem je lepší TupTuDu“ postupně
+prodlužoval poctivě, ne úpravou pravidel.
 
-## Pořadí a načasování
-
-- Poctivý stav (1. 11. 2026) Homestyler vs TupTuDu: Homestyler napřed ve 24 z 41 řádků, TupTuDu v 5 (katastr, terén,
-  mapa, okolní stavby, čeština), 11 shodně, 1 neověřeno. Našich 5 řádků je přesně to, co stavebník v ČR potřebuje →
-  scénářová část (SR3) vychází pro nás nejlépe bez přibarvování.
-- Stránky s velkými hráči (Homestyler, Planner 5D…) pustit až po střeše, podlažích a exportu. Dřív české nástroje
-  (Homeplot.ai, Online osazení DJT, AIkatastr) a desktopové nástroje bez pozemku, kde je obrázek vyrovnanější.
-
-## Otevřené body při návratu
-
-- Doladit kombinaci SR2 + SR3 s cenami nahoře (nová ukázka, pak teprve Blade).
-- Souhlas s bucketem S3 + manifestem pro důkazy; zda chceme časová razítka.
-- Pořadí konkurentů; které stránky ze sady dělat první.
-- DPH a fakturační období u cen konkurence (v ukázce štítek „k ověření“).
-- Opravit USD přepočty v artefaktu analýzy konkurence.
-- Jednorázová konzultace advokáta nad šablonou.
-- Prvky brandu pro srovnání: ikony ano/částečně/ne/neověřeno a blok metodiky (zatím jen v ukázce, ne v `app.css`).
+## Otevřené body
+- Souhlas s bucketem S3 pro důkazy a jestli chceme časová razítka.
+- Advokát: kdy a koho.
+- První dávka konkurentů a jazyků (po rešerši hledanosti).
+- DPH a období u cen konkurence (zahraniční ceníky většinou bez DPH, uvádět podmínky).
+- Opravit USD přepočty z původní analýzy (6,8 USD = 149 Kč při kurzu 21,862, ne 143 Kč).
