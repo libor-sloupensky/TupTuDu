@@ -16,7 +16,10 @@
     const OKO_MIN = -30, OKO_MAX = 60;
     const ZARAZKA = 0.1;            // oko u země: klesání se tu zastaví, pod zem až dalším stiskem
     const KROK = 0.5;               // schod, který panáček vyjde sám (m)
-    const VSTUP = 2.2;              // z terénu vystoupí na podlahu domu nad sebou nejvýš o tolik (vchod na svahu)
+    const VSTUP = 2.2;
+    const LAMPA_SILA = 0.3;         // lampa od oka uvnitř domu (venku nesvítí)
+    const LAMPA_SMER = new THREE.Vector3(0.45, -0.4, -1).normalize();   // v souřadnicích kamery: vpravo, dolů, dopředu
+    const NAHORU = new THREE.Vector3(0, 1, 0);              // z terénu vystoupí na podlahu domu nad sebou nejvýš o tolik (vchod na svahu)
     const RYCHLOST = 2, BEH = 5;    // chůze a se Shiftem (m/s)
     const OTACENI = 1.5;            // šipky vlevo a vpravo (rad/s)
     const OKO_RYCHLOST = 1.2;       // Q a E (m/s), se Shiftem čtyřikrát
@@ -189,6 +192,14 @@ void main() {
         let mapka = null, patro = null;
 
         const nebe = postavNebe();
+        // Lampa: uvnitř domu všechny stěny osvětluje jen rozptýlené světlo okolí a vypadají stejně, roh nejde poznat
+        // (Libor 12. 11. 2026, koupelna). Slabé světlo od oka jim dá jas podle natočení. Bez stínu; zůstává ve scéně
+        // i po procházce s nulovou silou, ať se materiály kvůli počtu světel nepřekládají při každém zapnutí.
+        const lampa = new THREE.DirectionalLight(0xffffff, 0);
+        lampa.castShadow = false;
+        lampa.userData.prochazka = true;
+        lampa.target.userData.prochazka = true;
+        let lampaCil = 0, lampaKontrola = 0;
         // Kroužek cíle: malý a vidět i přes zeď, za kterou vede
         const krouzek = new THREE.Mesh(new THREE.RingGeometry(0.11, 0.155, 32), new THREE.MeshBasicMaterial({
             color: new THREE.Color(barvaZnacky()), transparent: true, opacity: 0.9, depthWrite: false, depthTest: false, side: THREE.DoubleSide,
@@ -252,6 +263,18 @@ void main() {
             kamera.position.set(s.x, s.y + s.oko, s.z);
             kamera.rotation.set(s.sklon, s.smer, 0, 'YXZ');
             kamera.updateMatrixWorld();
+            // Lampa svítí přes pravé rameno ve směru pohledu
+            lampa.position.copy(kamera.position);
+            lampa.target.position.copy(LAMPA_SMER).applyQuaternion(kamera.quaternion).add(kamera.position);
+            lampa.target.updateMatrixWorld();
+        }
+
+        /** Je nad okem strop nebo střecha (panáček uvnitř domu)? */
+        function podStrechou() {
+            paprsek.set(bod.set(s.x, s.y + Math.max(s.oko, 0.1), s.z), NAHORU);
+            paprsek.near = 0;
+            paprsek.far = 60;
+            return paprsek.intersectObjects(o.cile?.() || [], false).some(h => viditelny(h.object));
         }
 
         /**
@@ -570,6 +593,17 @@ void main() {
                 else if (!cil && krouzek.visible) { krouzek.visible = false; zmena = true; }
             }
 
+            // Lampa jen pod střechou nebo stropem; přechod dveřmi plynule
+            if ((zmena && ted >= lampaKontrola) || lampaKontrola === 0) {
+                lampaKontrola = ted + 150;
+                lampaCil = podStrechou() ? LAMPA_SILA : 0;
+            }
+            if (Math.abs(lampa.intensity - lampaCil) > 0.002) {
+                lampa.intensity += (lampaCil - lampa.intensity) * Math.min(1, Math.max(dt, 1 / 60) * 6);
+                if (Math.abs(lampa.intensity - lampaCil) <= 0.002) lampa.intensity = lampaCil;
+                zmena = true;
+            }
+
             if (zmena) {
                 kameraZeStavu();
                 nebe.position.copy(kamera.position);
@@ -689,7 +723,7 @@ void main() {
 
         // ─── Rozhraní ─────────────────────────────────────
         function stav() {
-            return { x: s.x, y: s.y, z: s.z, smer: s.smer, sklon: s.sklon, oko: s.oko, patro: aktualniPatro()?.id ?? null, podZemi };
+            return { x: s.x, y: s.y, z: s.z, smer: s.smer, sklon: s.sklon, oko: s.oko, patro: aktualniPatro()?.id ?? null, podZemi, lampa: Math.round(lampa.intensity * 1000) / 1000 };
         }
         function zapni(st) {
             s.smer = st.smer || 0;
@@ -703,6 +737,8 @@ void main() {
             krouzek.material.color.set(barvaZnacky());
             o.scena.add(nebe);
             o.scena.add(krouzek);
+            if (!lampa.parent) o.scena.add(lampa, lampa.target);
+            lampaKontrola = 0;
             krouzek.visible = false;
             obal.hidden = false;
             platno.style.cursor = 'grab';
@@ -717,6 +753,8 @@ void main() {
             cil = null;
             o.scena.remove(nebe);
             o.scena.remove(krouzek);
+            lampa.intensity = 0;
+            lampaCil = 0;
             obal.hidden = true;
             platno.style.cursor = '';
             platno.style.touchAction = '';

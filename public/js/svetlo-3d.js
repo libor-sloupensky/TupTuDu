@@ -132,5 +132,71 @@ void main() {
         prekresliStiny(renderer) {
             renderer.shadowMap.needsUpdate = true;
         },
+
+        /**
+         * Vykreslí scénu s vyhlazením hran (FXAA): scéna do obrazu v paměti, pak jeden průchod přes celou plochu,
+         * který na kontrastních hranách zprůměruje pixely podél hrany. Vyhlazení přímo v grafice (antialias) dusilo
+         * slabší grafiku s modely nábytku (modules/katalog.md), tohle stojí jen jeden levný průchod navíc
+         * (Libor 12. 11. 2026: zuby na sprchovém koutu a dveřích). Obraz v paměti má kódování sRGB, r128 do něj
+         * tónuje i kóduje stejně jako na obrazovku, barvy se proto nemění. Přímé renderer.render (testy) jde dál bez něj.
+         */
+        kresli(renderer, scene, camera) {
+            let fx = vyhlazeni.get(renderer);
+            if (!fx) {
+                const cil = new THREE.WebGLRenderTarget(1, 1, {
+                    minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat,
+                    depthBuffer: true, stencilBuffer: true,   // maska země pod sníženými místnostmi kreslí do stencilu
+                });
+                cil.texture.encoding = THREE.sRGBEncoding;
+                cil.texture.generateMipmaps = false;
+                const material = new THREE.ShaderMaterial({
+                    uniforms: { obraz: { value: cil.texture }, krok: { value: new THREE.Vector2(1, 1) } },
+                    vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4( position.xy, 0.0, 1.0 ); }',
+                    fragmentShader: FXAA,
+                    depthTest: false, depthWrite: false, toneMapped: false,
+                });
+                const plocha = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+                plocha.frustumCulled = false;
+                const scena = new THREE.Scene();
+                scena.add(plocha);
+                fx = { cil, material, scena, kamera: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), rozmer: new THREE.Vector2() };
+                vyhlazeni.set(renderer, fx);
+            }
+            renderer.getDrawingBufferSize(fx.rozmer);
+            if (fx.cil.width !== fx.rozmer.x || fx.cil.height !== fx.rozmer.y) {
+                fx.cil.setSize(fx.rozmer.x, fx.rozmer.y);
+                fx.material.uniforms.krok.value.set(1 / fx.rozmer.x, 1 / fx.rozmer.y);
+            }
+            const puvodni = renderer.getRenderTarget();
+            renderer.setRenderTarget(fx.cil);
+            renderer.render(scene, camera);
+            renderer.setRenderTarget(puvodni);
+            renderer.render(fx.scena, fx.kamera);
+        },
     };
+
+    const vyhlazeni = new WeakMap();
+    // FXAA (Timothy Lottes, zjednodušená verze): jas v rozích pixelu určí směr hrany, podél ní se zprůměruje.
+    // Málo kontrastní místa (textury tašek, podlahy) zůstanou beze změny, ať se nerozmazávají.
+    const FXAA = `uniform sampler2D obraz; uniform vec2 krok; varying vec2 vUv;
+void main() {
+    const vec3 JAS = vec3( 0.299, 0.587, 0.114 );
+    vec4 stred = texture2D( obraz, vUv );
+    float jSZ = dot( texture2D( obraz, vUv + vec2( -1.0, 1.0 ) * krok ).rgb, JAS );
+    float jSV = dot( texture2D( obraz, vUv + vec2( 1.0, 1.0 ) * krok ).rgb, JAS );
+    float jJZ = dot( texture2D( obraz, vUv + vec2( -1.0, -1.0 ) * krok ).rgb, JAS );
+    float jJV = dot( texture2D( obraz, vUv + vec2( 1.0, -1.0 ) * krok ).rgb, JAS );
+    float jM = dot( stred.rgb, JAS );
+    float jMin = min( jM, min( min( jSZ, jSV ), min( jJZ, jJV ) ) );
+    float jMax = max( jM, max( max( jSZ, jSV ), max( jJZ, jJV ) ) );
+    if ( jMax - jMin < max( 0.0312, jMax * 0.125 ) ) { gl_FragColor = vec4( stred.rgb, 1.0 ); return; }
+    vec2 smer = vec2( -( ( jSZ + jSV ) - ( jJZ + jJV ) ), ( jSZ + jJZ ) - ( jSV + jJV ) );
+    float redukce = max( ( jSZ + jSV + jJZ + jJV ) * 0.03125, 1.0 / 128.0 );
+    float rcp = 1.0 / ( min( abs( smer.x ), abs( smer.y ) ) + redukce );
+    smer = clamp( smer * rcp, vec2( -8.0 ), vec2( 8.0 ) ) * krok;
+    vec3 a = 0.5 * ( texture2D( obraz, vUv + smer * ( 1.0 / 3.0 - 0.5 ) ).rgb + texture2D( obraz, vUv + smer * ( 2.0 / 3.0 - 0.5 ) ).rgb );
+    vec3 b = a * 0.5 + 0.25 * ( texture2D( obraz, vUv - smer * 0.5 ).rgb + texture2D( obraz, vUv + smer * 0.5 ).rgb );
+    float jB = dot( b, JAS );
+    gl_FragColor = vec4( ( jB < jMin || jB > jMax ) ? a : b, 1.0 );
+}`;
 })();

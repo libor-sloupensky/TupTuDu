@@ -46,6 +46,7 @@
     // Okraj nepřidává další barvu domu (fasáda, střecha, okna): čelo, žlaby a hřebenáče jsou v barvě
     // krytiny, čelo a žlab o ODSTIN_PLECHU tmavší, podbití v barvě fasády.
     const TLOUSTKA_STRECHY = 0.28;
+    const BARVA_STROPU = 0xffffff;   // jako vnitřní stěny
     // Strop pod šikmou střechou jen do této výšky místnosti; s nižším okapem jde o podkrovní prostor bez stropu
     const STROP_POD_STRECHOU_MIN = 2.2;
     const ODSTIN_PLECHU = 0.8;
@@ -3875,12 +3876,13 @@
                 }
                 st = dalsi;
             }
-            // Pod dveřmi a průchody podlaha přes celou tloušťku zdi: místnosti dorostou z obou stran a potkají se
-            // uprostřed, u vchodu jde podlaha místnosti až ven. Dřív jen dva pásy buněk od líců a v otvoru zuby
-            // (Libor 12. 11. 2026).
+            // Pod dveřmi, průchody a okny až k podlaze podlaha přes celou tloušťku zdi: místnosti dorostou z obou stran
+            // a potkají se uprostřed, u vchodu jde podlaha místnosti až ven. Dřív jen dva pásy buněk od líců a v otvoru
+            // zuby (Libor 12. 11. 2026, dveře a pak i okna s parapetem 0 ve vzorovém domě).
             const dvere = [];
             for (const op of eng.openings.values()) {
-                if (eng.constructor.prefixOtvoru?.(op.typ) !== 'D') continue;
+                const kPodlaze = eng.constructor.prefixOtvoru?.(op.typ) === 'D' || (window.minParapetOtvoru?.(op) ?? 1) <= 0.02;
+                if (!kPodlaze) continue;
                 const wl = eng.walls.get(op.wallId);
                 const A = wl && eng.nodes.get(wl.nodeA), B = wl && eng.nodes.get(wl.nodeB);
                 const L = A && B ? Math.hypot(B.x - A.x, B.y - A.y) : 0;
@@ -4285,7 +4287,9 @@
                 return m;
             };
             // Bok díry v podlaze je bílý jako vnitřní stěny: navazuje na něj zeď nad i pod deskou (nízká zídka místo zábradlí)
-            const matDesky = () => [new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.9 }), matFasady(), matVrchu(), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 })];
+            // Spodek desky je strop místností: stejná barva a povrch jako vnitřní stěny (matVnitrni v koncept-k-ui.js), dřív
+            // šedobéžová 0xd6d3d1 (Libor 12. 11. 2026: strop má opisovat barvu zdí). Až půjdou stěny místnosti barvit, strop převezme jejich barvu.
+            const matDesky = () => [new THREE.MeshStandardMaterial({ color: BARVA_STROPU, roughness: 0.85 }), matFasady(), matVrchu(), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 })];
             const st = this._strechaVypocet();
             // Otvor snížené místnosti může sahat přes desku: tam deska ustoupí
             const podUrovni = this._otvoryPodUrovni();

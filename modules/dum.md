@@ -150,7 +150,7 @@ Stěny (`_hranolStrany`, `_hranolPodStrechou`): co hledí do exteriéru, je fas�
 
 **Směr vzoru podlahy (Libor 11. 11. 2026):** dekor vede souběžně se stěnami kolem místnosti (`_smerDekoru`, nejdelší směr stěn po 90°, bez stěn osa domu), prkna po delší straně místnosti. Tlačítko „↻ 90°“ vedle dekoru v panelu místnosti otočí vzor napříč (`podlaha.otoceni = 90`, nula se neukládá). Dřív šly souřadnice textury podle os plátna: v natočeném domě šikmo a prkna často napříč. Test `test-barvy-domu-ui.cjs`, část 5.
 
-Podlahu kreslí jen `_podlahyMistnosti` (všechny místnosti, bez vlastního dekoru společná hladká). **Pod dveřmi a průchody** (otvory s předponou D) jde podlaha přes celou tloušťku zdi: buňky v obdélníku otvoru dorůstají ze sousedních místností, dokud se nepotkají, u vchodu jde podlaha místnosti až k vnějšímu líci. Dřív jen dva pásy buněk od líců a v otvoru zuby (Libor 12. 11. 2026, test `test-prochazka-ui` část 5c). Desky mají boky i vrch ve fasádě, spodek je bílý strop. **Proč:** obrys desky se počítá z rastru a může o milimetry přesáhnout líc zdi; bílý vrch desky pak dělal bílý lem všude, kde se patro nekrylo přesně se zdí pod ním. Nad terasou je proto zatím fasáda, barva terasy není řešená.
+Podlahu kreslí jen `_podlahyMistnosti` (všechny místnosti, bez vlastního dekoru společná hladká). **Pod dveřmi, průchody a okny až k podlaze** (otvory s předponou D a otvory s nejnižším parapetem do 2 cm, ve vzorovém domě O46–O48) jde podlaha přes celou tloušťku zdi: buňky v obdélníku otvoru dorůstají ze sousedních místností, dokud se nepotkají, u vchodu jde podlaha místnosti až k vnějšímu líci. Dřív jen dva pásy buněk od líců a v otvoru zuby (Libor 12. 11. 2026, test `test-prochazka-ui` část 5c). Desky mají boky i vrch ve fasádě, spodek je strop v barvě vnitřních stěn (`BARVA_STROPU`, bílá jako `matVnitrni`; dřív šedobéžová, Libor 12. 11. 2026: strop má opisovat barvu zdí, až půjdou stěny místnosti barvit, převezme jejich barvu). **Proč:** obrys desky se počítá z rastru a může o milimetry přesáhnout líc zdi; bílý vrch desky pak dělal bílý lem všude, kde se patro nekrylo přesně se zdí pod ním. Nad terasou je proto zatím fasáda, barva terasy není řešená.
 
 `mistnost.podlaha = {dekor, barva?}` (bez `barva` platí výchozí barva dekoru, `DEKORY_PODLAH`). Záznam `mistnost.barva` zůstává jen pro půdorys. Obdélníky podlahy přesahují dvě buňky pod stěny a oddělovače, výřezy zůstanou prázdné. Na zvýšené podlaze se dekor kreslí ve výšce zvýšení, nad schody zůstává dole (Libor 4. 11. 2026). Přenesené zvýšení z podlaží níž se řídí jeho obrysem. Snížená místnost: díra v desce o 3 cm přes obrys (`_otvoryDesky`), podlaha a deska v úrovni snížení, stěny dotažené dolů (`_behySnizeni`, s výřezem pro otvory jdoucí pod podlaží), schody k ní začínají na její podlaze. Země a mřížka leží nad ní, proto je nad těmito místnostmi nevykreslí maska ve stencil bufferu (`_maskaZeme3d`), v prohlížeči odkazu má země díry (`diry` v modelu). Plocha místnosti se nemění. Běžné schody do patra se začátkem ve snížené místnosti pořád začínají v úrovni podlaží.
 
@@ -248,6 +248,11 @@ Passeggiata). Ve všech tarifech. Měří se jako funkce `prochazka` (`App\Suppo
   (`prochazkaPodZemi` v `_jama3d`). Ve sklepě oko nad podlahou terén neskrývá.
 - **Mapka** v panelu vpravo nahoře: stěny, otvory a schody podlaží, na kterém panáček stojí (podle výšky podlahy), natočené
   jako půdorys podle kompasu, tečka s výsečí pohledu. Klik do mapky panáčka přenese na stejné podlaží.
+- **Lampa** (Libor 12. 11. 2026: v koupelně nešlo poznat roh, všechny stěny stejné): uvnitř domu stěny osvětluje jen rozptýlené
+  světlo okolí, které je pro všechny svislé plochy stejné. Pod stropem nebo střechou (paprsek z oka nahoru) proto svítí slabé
+  světlo od oka přes pravé rameno (`LAMPA_SILA` 0,3, bez stínu), venku plynule zhasne. Stěny dostanou jas podle natočení:
+  roh při pohledu do něj 210 proti 232 z 255. Zůstává ve scéně s nulovou silou, ať se materiály nepřekládají. Ve 3D ne,
+  tam stěny odliší slunce se stíny a kalibrovaný vzhled zvenku zůstává.
 - **Obloha:** koule kolem oka, nahoře modrá, pod obzorem barva země (pod zemí neutrální). Jen v procházce, do modelu odkazu
   nejde.
 - **Panáček** (`panacek` = `{x, z, podlazi, dy, smer, sklon, oko}`, metry scény, `dy` = nohy nad podlahou podlaží) se ukládá do
@@ -333,6 +338,11 @@ Editor i sdílený odkaz používají `public/js/svetlo-3d.js` (Libor 4. 11. 202
 - **Prostředí se nestahuje:** obloha, obzor a země jako `PMREMGenerator.fromScene`, plus slunce z jihozápadu. Výsledek na obrazovce proti vzorku: vodorovná plocha na slunci 1,02–1,12×, stěna na slunci 0,87–1,00×, odvrácená 0,73–0,76×. Hlídá `test-svetlo-3d-ui`. Změna konstant znamená znovu změřit.
 - **Tónování je vlastní:** do 0,85 lineárně beze změny, výš měkce stlačuje, ať se bílá nepřepálí. ACES by byl hezčí, ale posouvá odstíny a barva by neseděla se vzorkem.
 - **Matné nekovy skoro neodrážejí prostředí** (`tuOdraz`), jinak barva vybledne. Lesklé povrchy a kovy odráží plně, takže keramika a chrom fungují.
+- **Vyhlazení hran** (Libor 12. 11. 2026, zuby na sprchovém koutu a dveřích): `Svetlo3d.kresli` vykreslí scénu do obrazu
+  v paměti (kódování sRGB, r128 do něj tónuje i kóduje jako na obrazovku) a jedním průchodem FXAA na obrazovku. Málo
+  kontrastní místa (textury) zůstanou beze změny. Vyhlazení přímo v grafice (`antialias`) zůstává vypnuté, dusilo slabou
+  grafiku. Kreslí tak smyčka editoru, export obrázku i sdílený odkaz; testy, které čtou pixely po přímém `renderer.render`,
+  jdou bez vyhlazení.
 - **Stíny jen po změně:** `autoUpdate = false`, přepočet si vyžádá `Svetlo3d.prekresliStiny` po přestavbě, změně viditelnosti a dotažení modelu. Stín vrhá jen neprůhledný `MeshStandardMaterial` (`stinyObjektu`), mapa 4096, na dotykových zařízeních 2048.
 - **Normály musí mířit ven i u oboustranných materiálů.** `DoubleSide` obrácenou normálu ve světle schová, stín se ale podle ní odsazuje: zajede do plochy a ta si stíní sama. Plocha na slunci pak zůstane skoro tak tmavá jako ve stínu a má šikmý vzor, proto boky desek svítily proti stěnám a na stinné straně rozdíl vidět nebyl (opraveno 4. 11. 2026: `_obrysVen` u stěn, `_troj3d` u střechy a štítů). Nová geometrie s oboustranným materiálem si tohle musí ohlídat, měření na skutečném domě je v `test-svetlo-3d-ui`, bod 6.
 - **Stránka sdílení nesmí načítat nic z `/js/koncept-v3/`**, proto `svetlo-3d.js` a `katalog-3d.js` leží přímo v `public/js/`.

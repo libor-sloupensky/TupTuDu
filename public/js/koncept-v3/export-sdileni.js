@@ -315,7 +315,7 @@
             const puvodni = _3d.renderer.getPixelRatio();
             try {
                 _3d.renderer.setPixelRatio(Math.max(2, puvodni));
-                _3d.renderer.render(_3d.scene, kamera);
+                window.Svetlo3d.kresli(_3d.renderer, _3d.scene, kamera);
                 const zdroj = _3d.renderer.domElement;
                 const cv = document.createElement('canvas');
                 cv.width = zdroj.width;
@@ -326,7 +326,7 @@
                 if (postava) postava.visible = postavaVidet;
                 _3d.prochazka?.pomucky(true);
                 _3d.renderer.setPixelRatio(puvodni);
-                _3d.renderer.render(_3d.scene, kamera);
+                window.Svetlo3d.kresli(_3d.renderer, _3d.scene, kamera);
             }
         },
 

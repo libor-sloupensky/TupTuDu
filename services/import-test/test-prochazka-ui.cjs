@@ -219,6 +219,48 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
             const kryje = (x, z) => obd.some(([a, b, c, d]) => x >= a && x <= b && z >= c && z <= d);
             return { obdelniku: obd.length, osa: kryje(${dvere.x}, 8.0), uLice: kryje(${dvere.x}, 8.13), mimoDvere: kryje(${dvere.x} + 2, 8.0) }; })()`);
         kontrola('pod vchodovými dveřmi je podlaha přes celou tloušťku zdi (bez zubů), mimo dveře ve zdi ne', podDvermi.osa && podDvermi.uLice && !podDvermi.mimoDvere, JSON.stringify(podDvermi));
+        // Okno až k podlaze (parapet 0, vzorový dům O46–O48) má podlahu ve zdi taky, okno s parapetem ne
+        await p.vyhodnot(`(async () => { const d = ${D}; d.naPodlazi('P1'); const e = d.engine, X = e.PX_PER_M;
+            const vychod = [...e.walls.values()].find(w => { const a = e.nodes.get(w.nodeA), b = e.nodes.get(w.nodeB); return Math.abs(a.x - 10 * X) < 1 && Math.abs(b.x - 10 * X) < 1; });
+            const a = e.nodes.get(vychod.nodeA), od = (z) => Math.abs(z * X - a.y) / X;
+            e.addOpening(vychod.id, Math.min(od(2), od(3.2)), 1.2, 'okno', { presnaSirka: true, parapet: 0, vyska: 2.3 });
+            e.addOpening(vychod.id, Math.min(od(5), od(6.2)), 1.2, 'okno', { presnaSirka: true });
+            d.renderer.render(); d._build3d(); await new Promise(r => setTimeout(r, 400)); return true; })()`);
+        const podOknem = await p.vyhodnot(`(() => { const g = window._kk3d.podlaziSkupiny.get('P1'); const obd = [];
+            g.traverse(o => { const poz = o.isMesh && o.geometry.type === 'BufferGeometry' ? o.geometry.getAttribute('position') : null; if (!poz || poz.count % 6) return;
+                for (let i = 0; i < poz.count; i += 6) { const xs = [], ys = [], zs = []; for (let j = i; j < i + 6; j++) { xs.push(poz.getX(j)); ys.push(poz.getY(j)); zs.push(poz.getZ(j)); }
+                    if (Math.max(...ys) - Math.min(...ys) < 1e-4 && Math.abs(ys[0] - 0.025) < 0.002) obd.push([Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)]); } });
+            const kryje = (x, z) => obd.some(([a, b, c, d]) => x >= a && x <= b && z >= c && z <= d);
+            return { kPodlaze: kryje(10.0, 2.6) && kryje(10.13, 2.6), sParapetem: kryje(10.0, 5.6) }; })()`);
+        kontrola('pod oknem až k podlaze je podlaha přes celou zeď, pod oknem s parapetem ne', podOknem.kPodlaze && !podOknem.sParapetem, JSON.stringify(podOknem));
+        // Strop má barvu vnitřních stěn
+        const barvaStropu = await p.vyhodnot(`(() => { const _3d = window._kk3d; const m = _3d.dumSkupina.children.find(o => o.userData?.stropPod === 'P1');
+            let stena = null; _3d.podlaziSkupiny.get('P1').traverse(o => { for (const x of [].concat(o.material || [])) if (!stena && x.side === THREE.DoubleSide && !x.userData?.barva && x.color?.getHexString() === 'ffffff') stena = x.color.getHexString(); });
+            return { strop: m ? [].concat(m.material)[0].color.getHexString() : null, stena }; })()`);
+        kontrola('spodek stropní desky má barvu vnitřních stěn (bílá), dřív šedobéžová', barvaStropu.strop === 'ffffff' && barvaStropu.stena === 'ffffff', JSON.stringify(barvaStropu));
+
+        console.log('\n5d) Lampa od oka uvnitř a vyhlazení hran');
+        // Roh v přízemí pod patrem: obě stěny dřív stejně světlé, s lampou se liší
+        await p.vyhodnot(`(() => { window._kk3d.prochazka.zapni({ x: 3, z: 3, yOd: 0.5, smer: Math.PI / 4, sklon: 0, oko: 1.6 }); return true; })()`);
+        await pauza(1500);
+        const roh = await p.vyhodnot(`(() => { const _3d = window._kk3d, r = _3d.renderer, gl = r.getContext(); r.render(_3d.scene, _3d.prochazka.kamera);
+            const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight; const vzorek = (fx) => { const n = 10, b = new Uint8Array(n * n * 4); gl.readPixels(Math.floor(W * fx) - 5, Math.floor(H * 0.5) - 5, n, n, gl.RGBA, gl.UNSIGNED_BYTE, b); let s = 0; for (let i = 0; i < n * n; i++) s += b[i * 4]; return Math.round(s / (n * n)); };
+            return { leva: vzorek(0.3), prava: vzorek(0.7), lampa: _3d.prochazka.stav().lampa }; })()`);
+        kontrola('uvnitř svítí lampa a dvě stěny rohu mají různý jas (dřív stejný)', roh.lampa > 0.25 && Math.abs(roh.leva - roh.prava) >= 12, JSON.stringify(roh));
+        await snimek3d('05d-roh.png');
+        await p.vyhodnot(`(() => { window._kk3d.prochazka.zapni({ x: 5, z: 14, yOd: 0.5, smer: 0, sklon: 0, oko: 1.6 }); return true; })()`);
+        await pauza(1500);
+        s = await stav();
+        kontrola('venku lampa nesvítí', s.lampa === 0, JSON.stringify(s));
+        // Vyhlazení: smyčka kreslí přes Svetlo3d.kresli, obraz se liší jen na hranách a barvy zůstanou
+        const fxaa = await p.vyhodnot(`(() => { const _3d = window._kk3d, r = _3d.renderer, gl = r.getContext(), W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
+            const cti = () => { const b = new Uint8Array(W * H * 4); gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, b); return b; };
+            r.render(_3d.scene, _3d.prochazka.kamera); const a = cti(); window.Svetlo3d.kresli(r, _3d.scene, _3d.prochazka.kamera); const b = cti();
+            let soucet = 0, zmen = 0; for (let i = 0; i < a.length; i += 4) { const d = Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]); soucet += d; if (d > 12) zmen++; }
+            const puv = window.Svetlo3d.kresli; let volani = 0; window.Svetlo3d.kresli = function () { volani++; return puv.apply(this, arguments); };
+            _3d.kresliDo = performance.now() + 400;
+            return new Promise(ok => setTimeout(() => { window.Svetlo3d.kresli = puv; ok({ prumer: +(soucet / (a.length / 4) / 3).toFixed(3), zmen, volani }); }, 500)); })()`);
+        kontrola('vyhlazení hran: smyčka kreslí s ním, mění jen hrany a barvy nechá', fxaa.volani > 0 && fxaa.zmen > 50 && fxaa.prumer < 1, JSON.stringify(fxaa));
 
         console.log('\n6) Mapka a export z oka');
         const mapka = await p.vyhodnot(`(() => { const c = document.querySelector('[data-pr-mapka]'); const g = c.getContext('2d'); const b = g.getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < b.length; i += 4) if (b[i] > 0) n++;

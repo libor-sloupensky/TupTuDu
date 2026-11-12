@@ -7130,7 +7130,7 @@ function konceptKEditor(initialData) {
                 if (ted >= (_3d.kresliDo || 0) && ted - naposledy < KLID_MS) return;
                 if (_3d.renderer && _3d.scene && _3d.camera) {
                     naposledy = ted;
-                    _3d.renderer.render(_3d.scene, prochazka ? prochazka.kamera : _3d.camera);
+                    window.Svetlo3d.kresli(_3d.renderer, _3d.scene, prochazka ? prochazka.kamera : _3d.camera);   // s vyhlazením hran
                 }
             };
             animate();

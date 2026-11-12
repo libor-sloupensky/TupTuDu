@@ -217,7 +217,7 @@
         const aktivniKamera = () => (ovladac?.aktivni ? ovladac.kamera : camera);
         const smycka = () => {
             if (!ovladac?.aktivni) return;
-            if (ovladac.krok()) renderer.render(scene, ovladac.kamera);
+            if (ovladac.krok()) window.Svetlo3d.kresli(renderer, scene, ovladac.kamera);
             requestAnimationFrame(smycka);
         };
         /** Kde panáček začne: kde ho autor nechal, u starších odkazů před domem čelem k němu. */
@@ -244,7 +244,7 @@
         function vykresli() {
             if (kresliSe) return;
             kresliSe = true;
-            requestAnimationFrame(() => { kresliSe = false; renderer.render(scene, aktivniKamera()); });
+            requestAnimationFrame(() => { kresliSe = false; window.Svetlo3d.kresli(renderer, scene, aktivniKamera()); });
         }
         controls.addEventListener('change', vykresli);
 

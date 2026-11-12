@@ -181,7 +181,8 @@ async function main() {
             const poPusteni = { barva: m2.podlaha.barva, barva2d: m2.barva, kroku: d.historie.length - krok0 };
             const hex3d = '#' + najdi().material.color.getHexString();
             return { zaznam, plocha, textura, zacatek, zaTahu, poPusteni, hex3d, mistnost: d.renderer.plochaMistnosti(id) }; })()`);
-        kontrola('dekor se zapíše a ve 3D má plochu místnosti s texturou (navíc jen pruh pod stěnami)', /prkna/.test(podl.zaznam) && podl.textura && podl.plocha >= podl.mistnost && podl.plocha - podl.mistnost < 1.1, JSON.stringify({ zaznam: podl.zaznam, plocha: podl.plocha, mistnost: podl.mistnost }));
+        // Navíc pruh pod stěnami a od 12. 11. 2026 i podlaha přes celou tloušťku zdi pod dveřmi (dřív zuby)
+        kontrola('dekor se zapíše a ve 3D má plochu místnosti s texturou (navíc jen pruh pod stěnami a pod dveřmi)', /prkna/.test(podl.zaznam) && podl.textura && podl.plocha >= podl.mistnost && podl.plocha - podl.mistnost < 1.6, JSON.stringify({ zaznam: podl.zaznam, plocha: podl.plocha, mistnost: podl.mistnost }));
         // Směr vzoru (Libor 11. 11. 2026): podél stěn, prkna po delší straně místnosti, tlačítko 90° napříč
         const smer = await p.vyhodnot(`(async () => { const d = ${D}; const eng = { walls: new Map(), nodes: new Map(), PX_PER_M: 100, smerRastru: () => 0 };
             const sirsi = d._smerDekoru([{ x0: 0, x1: 400, y0: 0, y1: 200 }], 0, 0, 1, eng, null), hlubsi = d._smerDekoru([{ x0: 0, x1: 200, y0: 0, y1: 400 }], 0, 0, 1, eng, null), otocena = d._smerDekoru([{ x0: 0, x1: 400, y0: 0, y1: 200 }], 0, 0, 1, eng, { podlaha: { otoceni: 90 } });
