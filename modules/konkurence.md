@@ -64,7 +64,8 @@ php artisan konkurence:import cesta.json --prepsat-rezim
 ```
 Páruje se podle klíčů, jde pustit opakovaně. Režim u existujících řádků nepřepíše (nastavuje ho Libor),
 jen s `--prepsat-rezim`. Tvar je popsaný v `App\Support\KonkurenceImport`. Výchozí import 12. 11. 2026 sestavil
-skript z dat stránky analýzy, katalogu parametrů a rešerší (pomocné skripty byly jen v dočasné složce sezení).
+skript z dat stránky analýzy, katalogu parametrů a rešerší. Rešerše (JSON se zdroji pro strojové měření),
+katalog a skript leží v `storage/app/konkurence/reserse-2026-11-12/` (jen lokálně, mimo git).
 
 Pozor: `services/srovnani-ukazka/konkurence-data.json` (stav 1. 11. 2026) je v repozitáři od 3. 11. 2026, tedy veřejně.
 
