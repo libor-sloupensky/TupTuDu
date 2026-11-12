@@ -67,7 +67,7 @@
                  data-text-napoveda-3d="{{ __('sdileni.napoveda_3d') }}"
                  data-text-napoveda-prochazka="{{ __('sdileni.napoveda_prochazka') }}"
                  data-text-prochazka="{{ json_encode([
-                     'oko' => __('ed_sablona.prochazka.oko'), 'okoTip' => __('ed_sablona.prochazka.oko_tip'),
+                     'oko' => __('ed_sablona.prochazka.oko'), 'okoTip' => __('ed_sablona.prochazka.oko_tip'), 'okoVychozi' => __('ed_sablona.prochazka.oko_vychozi'),
                      'mapkaTip' => __('ed_sablona.prochazka.mapka_tip'),
                      'patroVys' => __('ed_sablona.prochazka.patro_vys'), 'patroNiz' => __('ed_sablona.prochazka.patro_niz'),
                      'pad_vpred' => __('ed_sablona.prochazka.vpred'), 'pad_vzad' => __('ed_sablona.prochazka.vzad'),

@@ -104,6 +104,7 @@
         vpravo: IKONA('<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>'),
         vys: IKONA('<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>'),
         niz: IKONA('<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>'),
+        vychozi: IKONA('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'),
     };
 
     /** Obloha kolem oka: nahoře modrá, u obzoru světlá, pod obzorem barva země (pod zemí neutrální). */
@@ -187,12 +188,12 @@ void main() {
         let mapka = null, patro = null;
 
         const nebe = postavNebe();
-        const krouzek = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.28, 40), new THREE.MeshBasicMaterial({
-            color: new THREE.Color(barvaZnacky()), transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide,
-            polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+        // Kroužek cíle: malý a vidět i přes zeď, za kterou vede
+        const krouzek = new THREE.Mesh(new THREE.RingGeometry(0.11, 0.155, 32), new THREE.MeshBasicMaterial({
+            color: new THREE.Color(barvaZnacky()), transparent: true, opacity: 0.9, depthWrite: false, depthTest: false, side: THREE.DoubleSide,
         }));
         krouzek.rotation.x = -Math.PI / 2;
-        krouzek.renderOrder = 5;
+        krouzek.renderOrder = 50;
         krouzek.visible = false;
         krouzek.userData.prochazka = true;
 
@@ -232,7 +233,11 @@ void main() {
             kamera.updateMatrixWorld();
         }
 
-        /** Kam vede bod na obrazovce: podlaha nebo terén pod ním, u zdi kousek před ní. */
+        /**
+         * Kam vede bod na obrazovce: první podlaha nebo terén pod okem podél paprsku. Zdi, boky, nábytek ani střecha
+         * ho nezastaví, zdmi se prochází (Libor 12. 11. 2026: kroužek má jít i přes zeď). Plochy nad okem se
+         * přeskočí, kliknutím do stropu se do patra neskočí.
+         */
         function cilZObrazovky(cx, cy) {
             const r = o.platno.getBoundingClientRect();
             if (!r.width || !r.height) return null;
@@ -240,15 +245,14 @@ void main() {
             paprsek.setFromCamera(new THREE.Vector2((cx - r.left) / r.width * 2 - 1, -(cy - r.top) / r.height * 2 + 1), kamera);
             paprsek.near = 0.05;
             paprsek.far = 2000;
-            const zasah = paprsek.intersectObjects(o.cile?.() || [], false).find(h => h.face && viditelny(h.object));
-            if (!zasah || o.nepochozi?.(zasah.object)) return null;
-            normala.copy(zasah.face.normal).transformDirection(zasah.object.matrixWorld);
-            if (Math.abs(normala.y) >= 0.5) return { x: zasah.point.x, y: zasah.point.y, z: zasah.point.z };
-            // Zeď nebo bok: k její patě o kus blíž k oku
-            const smer = paprsek.ray.direction, L = Math.hypot(smer.x, smer.z) || 1;
-            const x = zasah.point.x - smer.x / L * 0.4, z = zasah.point.z - smer.z / L * 0.4;
-            const y = zemPod(x, z, zasah.point.y);
-            return y === null ? null : { x, y, z };
+            const yOka = kamera.position.y;
+            for (const h of paprsek.intersectObjects(o.cile?.() || [], false)) {
+                if (!h.face || h.point.y > yOka - 0.05 || !viditelny(h.object) || o.nepochozi?.(h.object)) continue;
+                // Jen vrch vodorovné plochy: spodek desky (strop) a svislé plochy paprsek propustí
+                normala.copy(h.face.normal).transformDirection(h.object.matrixWorld);
+                if (normala.y >= 0.5) return { x: h.point.x, y: h.point.y, z: h.point.z };
+            }
+            return null;
         }
 
         // ─── Panel: patro, mapka, výška oka, tlačítka na dotyk ─
@@ -266,7 +270,7 @@ void main() {
 <div class="tt-pr-panel" data-prochazka-panel>
   <div class="tt-pr-patro"><button type="button" data-pr-patro="-1">${IKONY.dolu}</button><span data-pr-nazev></span><button type="button" data-pr-patro="1">${IKONY.nahoru}</button></div>
   <canvas class="tt-pr-mapka" data-pr-mapka></canvas>
-  <label class="tt-pr-oko"><span data-pr-oko-text></span><input type="number" step="0.1" min="${OKO_MIN}" max="${OKO_MAX}" data-pr-oko><span>m</span></label>
+  <div class="tt-pr-oko"><label data-pr-oko-text></label><input type="number" step="0.1" min="${OKO_MIN}" max="${OKO_MAX}" data-pr-oko><span>m</span><button type="button" data-pr-oko-vychozi>${IKONY.vychozi}</button></div>
 </div>
 <div class="tt-pr-pad" data-pr-pad hidden>
   <span></span><button type="button" data-pr-drz="vpred">${IKONY.nahoru}</button><button type="button" data-pr-drz="vys">${IKONY.vys}</button>
@@ -276,8 +280,21 @@ void main() {
         o.vrstva.appendChild(obal);
         const el = (sel) => obal.querySelector(sel);
         const poleOka = el('[data-pr-oko]'), platnoMapky = el('[data-pr-mapka]'), nazevPatra = el('[data-pr-nazev]');
+        const tlacitkoOka = el('[data-pr-oko-vychozi]');
+        poleOka.id = 'tt-pr-oko-' + Math.random().toString(36).slice(2, 8);
         el('[data-pr-oko-text]').textContent = t.oko || 'Oko';
+        el('[data-pr-oko-text]').htmlFor = poleOka.id;
         poleOka.title = t.okoTip || '';
+        tlacitkoOka.title = t.okoVychozi || '';
+        tlacitkoOka.setAttribute('aria-label', t.okoVychozi || '');
+        // Výchozí výška oka jedním klikem (Libor 12. 11. 2026)
+        tlacitkoOka.addEventListener('click', () => {
+            s.oko = OKO;
+            zarazkaPovolena = false;
+            vynutit = true;
+            ukazOko(true);
+            o.probud?.();
+        });
         platnoMapky.title = t.mapkaTip || '';
         el('[data-pr-patro="1"]').title = t.patroVys || '';
         el('[data-pr-patro="-1"]').title = t.patroNiz || '';
@@ -325,6 +342,7 @@ void main() {
         });
 
         function ukazOko(vzdy) {
+            tlacitkoOka.disabled = Math.abs(s.oko - OKO) < 0.005;
             if (!vzdy && document.activeElement === poleOka) return;
             const v = String(Math.round(s.oko * 100) / 100);
             if (poleOka.value !== v) poleOka.value = v;
@@ -486,12 +504,18 @@ void main() {
                 dx += -sin * k;
                 dz += -cos * k;
             } else kolecko = 0;
+            let doslo = null;
             if (cil) {
                 const vx = cil.x - s.x, vz = cil.z - s.z, L = Math.hypot(vx, vz);
                 const d = Math.max(3, L * 2.5) * dt;
-                if (L <= d) { dx += vx; dz += vz; cil = null; krouzek.visible = false; } else { dx += vx / L * d; dz += vz / L * d; }
+                if (L <= d) { dx += vx; dz += vz; doslo = cil; cil = null; krouzek.visible = false; } else { dx += vx / L * d; dz += vz / L * d; }
             }
             if (dx || dz) { s.x += dx; s.z += dz; posun = true; }
+            // V cíli stojí tam, kam kroužek ukazoval (třeba na zemi pod oknem patra), je-li to pochozí plocha
+            if (doslo) {
+                const y = zemPod(s.x, s.z, doslo.y + 0.05);
+                if (y !== null && Math.abs(y - doslo.y) < 0.1) { s.y = y; usazeno = false; zmena = true; }
+            }
 
             const oko = (drzene.has('vys') ? 1 : 0) - (drzene.has('niz') ? 1 : 0);
             if (oko) {

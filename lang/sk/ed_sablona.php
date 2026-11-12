@@ -856,6 +856,7 @@ return [
         'napoveda' => 'W A S D alebo šípky = chôdza · ťahanie = rozhliadanie · Q / E = výška oka · dvojklik = choď tam · Esc = koniec',
         'oko' => 'Oko',
         'oko_tip' => 'Výška oka nad tým, na čom panáčik stojí. Pod nulou sa pozeráš zospodu, pod terénom sa terén skryje.',
+        'oko_vychozi' => 'Predvolená výška oka 1,6 m',
         'mapka_tip' => 'Klikni do mapky a panáčik sa tam presunie.',
         'patro_vys' => 'O podlažie vyššie',
         'patro_niz' => 'O podlažie nižšie',

@@ -856,6 +856,7 @@ return [
         'napoveda' => 'W A S D lub strzałki = chodzenie · przeciąganie = rozglądanie · Q / E = wysokość oczu · dwuklik = idź tam · Esc = koniec',
         'oko' => 'Oczy',
         'oko_tip' => 'Wysokość oczu nad tym, na czym stoi ludzik. Poniżej zera patrzysz od spodu, pod ziemią teren się ukrywa.',
+        'oko_vychozi' => 'Domyślna wysokość oczu 1,6 m',
         'mapka_tip' => 'Kliknij w mapkę, a ludzik się tam przeniesie.',
         'patro_vys' => 'Kondygnacja wyżej',
         'patro_niz' => 'Kondygnacja niżej',

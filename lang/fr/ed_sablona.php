@@ -856,6 +856,7 @@ return [
         'napoveda' => 'Z Q S D ou flèches = marcher · glisser = regarder autour · A / E = hauteur des yeux · double-clic = y aller · Échap = quitter',
         'oko' => 'Yeux',
         'oko_tip' => 'Hauteur des yeux au-dessus de ce sur quoi se tient le personnage. Sous zéro, vous regardez par en dessous ; sous le sol, le terrain est masqué.',
+        'oko_vychozi' => 'Hauteur des yeux par défaut 1,6 m',
         'mapka_tip' => 'Cliquez sur la carte pour y déplacer le personnage.',
         'patro_vys' => 'Niveau au-dessus',
         'patro_niz' => 'Niveau en dessous',

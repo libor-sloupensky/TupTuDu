@@ -856,6 +856,7 @@ return [
         'napoveda' => 'W A S D o flechas = caminar · arrastrar = mirar alrededor · Q / E = altura de los ojos · doble clic = ir allí · Esc = salir',
         'oko' => 'Ojos',
         'oko_tip' => 'Altura de los ojos sobre lo que pisa la figura. Por debajo de cero miras desde abajo; bajo tierra, el terreno se oculta.',
+        'oko_vychozi' => 'Altura de los ojos predeterminada 1,6 m',
         'mapka_tip' => 'Haz clic en el mapa para llevar la figura allí.',
         'patro_vys' => 'Una planta más arriba',
         'patro_niz' => 'Una planta más abajo',

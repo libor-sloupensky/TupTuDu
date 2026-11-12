@@ -127,6 +127,18 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         await pauza(1800);
         s = await stav();
         kontrola('dvojklik pod obzor posune panáčka dopředu po zemi', s.z < pred.z - 0.8 && blizko(s.y, 0, 0.02), `${pred.z.toFixed(2)} → ${s.z.toFixed(2)}`);
+        // Uvnitř čelem k jižní zdi (z = 8 m): paprsek pod obzorem projde zdí a dopadne na zem venku
+        await p.vyhodnot(`(() => { const o = window._kk3d.prochazka; o.zapni({ x: 5, z: 4, yOd: ${0.5}, smer: Math.PI, sklon: 0, oko: 1.6 }); return true; })()`);
+        await pauza(300);
+        const presZed = await p.vyhodnot(`(() => { const c = window._kk3d.renderer.domElement, r = c.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height * 0.7;
+            c.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse', buttons: 0, clientX: x, clientY: y, bubbles: true }));
+            return new Promise(ok => setTimeout(() => { const k = window._kk3d.scene.children.find(o => o.geometry?.type === 'RingGeometry');
+                const vys = { videt: !!k?.visible, z: k?.position.z, polomer: k?.geometry.parameters.outerRadius, pres: k?.material.depthTest === false };
+                c.dispatchEvent(new MouseEvent('dblclick', { clientX: x, clientY: y, bubbles: true })); ok(vys); }, 300)); })()`);
+        kontrola('kroužek pod myší je malý, vidět přes zeď a leží za ní venku', presZed.videt && presZed.z > 8.3 && presZed.polomer < 0.2 && presZed.pres, JSON.stringify(presZed));
+        await pauza(2500);
+        s = await stav();
+        kontrola('dvojklik přes zeď dovede panáčka ven na zem za ní', s.z > 8.3 && blizko(s.y, 0, 0.03), JSON.stringify(s));
 
         console.log('\n5) Výtah přes řádek podlaží, schody a pád z patra');
         await p.vyhodnot(`(() => { const o = window._kk3d.prochazka; o.zapni({ x: 7, z: 5, yOd: ${uvod.y0} + 0.5, smer: 0, sklon: 0, oko: 1.6 }); return true; })()`);
@@ -182,6 +194,26 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         const pole = await p.vyhodnot(`({ kurzor: document.activeElement === document.querySelector('[data-pr-oko]'), text: document.querySelector('[data-pr-oko]').value })`);
         kontrola('pole Oko: 0,8 platí bez odchodu z pole, kurzor zůstal, W při psaní nehne', blizko(s.oko, 0.8, 0.001) && pole.kurzor && blizko(s.x, pred.x, 0.001) && blizko(s.z, pred.z, 0.001), JSON.stringify({ oko: s.oko, pole }));
         await p.vyhodnot(`document.querySelector('[data-pr-oko]').blur(); true`);
+        const vychozi = await p.vyhodnot(`(() => { const b = document.querySelector('[data-pr-oko-vychozi]'); const pred = b.disabled; b.click();
+            return new Promise(ok => setTimeout(() => ok({ pred, po: b.disabled, oko: window._kk3d.prochazka.stav().oko, pole: document.querySelector('[data-pr-oko]').value, tip: b.title }), 300)); })()`);
+        kontrola('tlačítko u pole Oko vrátí výchozí 1,6 m a pak zešedne', !vychozi.pred && vychozi.po && blizko(vychozi.oko, 1.6, 0.001) && vychozi.pole === '1.6' && vychozi.tip.length > 0, JSON.stringify(vychozi));
+
+        console.log('\n6b) Rozložení: editor až dolů, plátno 3D přes celou plochu i na celé obrazovce, souřadnice jen ve 2D');
+        const ROZMERY = `(() => { const w = document.getElementById('kk-canvas-wrap').getBoundingClientRect(), e = document.querySelector('.kk-editor').getBoundingClientRect();
+            const t = document.querySelector('#kk-3d-container canvas').getBoundingClientRect(), k = document.querySelector('.kk-coords');
+            return { okno: innerHeight, editorDole: Math.round(e.bottom), wrap: Math.round(w.height), gl: Math.round(t.height), glDole: Math.round(t.bottom), wrapDole: Math.round(w.bottom), souradnice: !!k.offsetParent, posuvnik: document.documentElement.scrollHeight > innerHeight + 1 }; })()`;
+        let roz = await p.vyhodnot(ROZMERY);
+        kontrola('editor sahá ke spodnímu okraji okna (nejvýš 12 px), stránka se neposouvá', roz.okno - roz.editorDole <= 12 && roz.okno - roz.editorDole >= 0 && !roz.posuvnik, JSON.stringify(roz));
+        kontrola('plátno 3D vyplní plochu až dolů, souřadnice ve 3D nejsou', Math.abs(roz.gl - roz.wrap) <= 1 && Math.abs(roz.glDole - roz.wrapDole) <= 1 && !roz.souradnice, JSON.stringify(roz));
+        await p.vyhodnot(`${D}.prepniFullscreen(); true`);
+        await pauza(800);
+        roz = await p.vyhodnot(ROZMERY);
+        kontrola('na celé obrazovce plátno 3D vyplní celou plochu', Math.abs(roz.gl - roz.wrap) <= 1 && roz.editorDole === roz.okno, JSON.stringify(roz));
+        await snimek3d('06b-cela-obrazovka.png');
+        await p.vyhodnot(`${D}.prepniFullscreen(); true`);
+        await pauza(800);
+        roz = await p.vyhodnot(ROZMERY);
+        kontrola('po návratu z celé obrazovky zase až dolů', Math.abs(roz.gl - roz.wrap) <= 1 && roz.okno - roz.editorDole <= 12, JSON.stringify(roz));
 
         console.log('\n7) Esc: zpátky do 2D, poloha uložená k projektu, panáček v půdorysu');
         const kompasPred = await p.vyhodnot(`${D}.kompasUhel`);
@@ -191,6 +223,9 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         kontrola('Esc vrátí do 2D, odkud procházka začala', !po.rezim && !po.r3d && !po.aktivni, JSON.stringify(po));
         kontrola('poloha panáčka je uložená (podlaží, výška nad podlahou, směr) a kompas se nezměnil', po.panacek && blizko(po.panacek.x, s.x, 0.01) && typeof po.panacek.dy === 'number' && po.kompas === kompasPred, JSON.stringify(po.panacek));
         kontrola('v půdorysu je panáček', po.deti === 1);
+        const ve2d = await p.vyhodnot(`(() => { const w = document.getElementById('kk-canvas-wrap').getBoundingClientRect(), k = document.querySelector('#kk-container .konvajs-content').getBoundingClientRect();
+            return { souradnice: !!document.querySelector('.kk-coords').offsetParent, wrap: Math.round(w.height), konva: Math.round(k.height) }; })()`);
+        kontrola('ve 2D souřadnice zůstaly a půdorys vyplní plochu', ve2d.souradnice && Math.abs(ve2d.wrap - ve2d.konva) <= 1, JSON.stringify(ve2d));
         await p.snimek(path.join(vystup, '07-pudorys.png'));
         const tah = await p.vyhodnot(`(() => { const d = ${D}; const g = d.renderer.panacekLayer.getChildren()[0]; const X = d.engine.PX_PER_M;
             g.position({ x: 4 * X, y: 4 * X }); g.fire('dragend'); return JSON.parse(JSON.stringify(d.panacek)); })()`);

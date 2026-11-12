@@ -856,6 +856,7 @@ return [
         'napoveda' => 'W A S D o frecce = cammina · trascina = guardati intorno · Q / E = altezza degli occhi · doppio clic = vai lì · Esc = esci',
         'oko' => 'Occhi',
         'oko_tip' => 'Altezza degli occhi sopra ciò su cui si trova l’omino. Sotto lo zero guardi dal basso; sotto terra, il terreno si nasconde.',
+        'oko_vychozi' => 'Altezza degli occhi predefinita 1,6 m',
         'mapka_tip' => 'Fai clic sulla mappa per spostare lì l’omino.',
         'patro_vys' => 'Un piano più su',
         'patro_niz' => 'Un piano più giù',

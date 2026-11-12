@@ -856,6 +856,7 @@ return [
         'napoveda' => 'W A S D oder Pfeiltasten = gehen · Ziehen = umsehen · Q / E = Augenhöhe · Doppelklick = dorthin gehen · Esc = beenden',
         'oko' => 'Auge',
         'oko_tip' => 'Augenhöhe über dem, worauf die Figur steht. Unter null siehst du von unten, unter der Erde wird das Gelände ausgeblendet.',
+        'oko_vychozi' => 'Standard-Augenhöhe 1,6 m',
         'mapka_tip' => 'Klicke in die Karte, um die Figur dorthin zu versetzen.',
         'patro_vys' => 'Ein Geschoss höher',
         'patro_niz' => 'Ein Geschoss tiefer',

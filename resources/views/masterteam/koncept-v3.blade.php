@@ -550,7 +550,8 @@
                 <span class="kk-pole-jed"><input type="number" min="0" step="1" x-ref="kotaInput" title="{{ __('ed_sablona.platno.kota_tip') }}" @keydown.enter.prevent="$event.target.blur()" @keydown.escape.prevent="kotaEdit = null" @blur="kotaPotvrd($event.target.value)"><span>cm</span></span>
             </div>
             <div class="kk-status-row">
-                <div class="kk-coords" x-text="'X: ' + kurzorX.toFixed(2) + ' Y: ' + kurzorY.toFixed(2)"></div>
+                {{-- Souřadnice kurzoru jen v půdorysu, ve 3D a procházce by ukazovaly polohu myši z 2D --}}
+                <div class="kk-coords" x-show="!rezim3d" x-text="'X: ' + kurzorX.toFixed(2) + ' Y: ' + kurzorY.toFixed(2)"></div>
                 <div class="kk-3d-help" x-show="rezim3d && !rezimProchazka" x-cloak>{{ __('ed_sablona.platno.napoveda_3d') }}</div>
                 <div class="kk-3d-help" x-show="rezimProchazka" x-cloak data-prochazka-napoveda>{{ __('ed_sablona.prochazka.napoveda') }}</div>
             </div>

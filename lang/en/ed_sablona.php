@@ -861,6 +861,7 @@ return [
         'napoveda' => 'W A S D or arrows = walk · drag = look around · Q / E = eye height · double-click = go there · Esc = exit',
         'oko' => 'Eye',
         'oko_tip' => 'Eye height above whatever the figure stands on. Below zero you look from underneath; below the ground the terrain is hidden.',
+        'oko_vychozi' => 'Default eye height 1.6 m',
         'mapka_tip' => 'Click the map to move the figure there.',
         'patro_vys' => 'One floor up',
         'patro_niz' => 'One floor down',

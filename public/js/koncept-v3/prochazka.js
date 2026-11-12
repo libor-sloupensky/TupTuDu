@@ -184,7 +184,7 @@
                 nepochozi: (o) => { for (; o; o = o.parent) if (o.userData?.strecha) return true; return false; },
                 teren: (x, z) => (_3d.terrainHeights ? this._terrainHeightAt(x, z) : (_3d.ground ? 0 : null)),
                 texty: {
-                    oko: k('oko'), okoTip: k('oko_tip'), mapkaTip: k('mapka_tip'), patroVys: k('patro_vys'), patroNiz: k('patro_niz'),
+                    oko: k('oko'), okoTip: k('oko_tip'), okoVychozi: k('oko_vychozi'), mapkaTip: k('mapka_tip'), patroVys: k('patro_vys'), patroNiz: k('patro_niz'),
                     pad_vpred: k('vpred'), pad_vzad: k('vzad'), pad_otocVlevo: k('otoc_vlevo'), pad_otocVpravo: k('otoc_vpravo'),
                     pad_vys: k('oko_vys'), pad_niz: k('oko_niz'),
                 },

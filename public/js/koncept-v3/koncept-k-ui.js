@@ -1619,6 +1619,12 @@ function konceptKEditor(initialData) {
                     this.renderer.renderGrid();
                 });
                 ro.observe(wrap);
+                // Výška editoru podle okna: hned po rozvržení stránky a při každé změně okna (_prepocitejVysku)
+                this.$nextTick(() => this._prepocitejVysku());
+                window.addEventListener('resize', () => {
+                    cancelAnimationFrame(this._vyskaSnimek);
+                    this._vyskaSnimek = requestAnimationFrame(() => this._prepocitejVysku());
+                });
 
                 // Context menu
                 wrap.addEventListener('contextmenu', e => e.preventDefault());
@@ -6861,10 +6867,32 @@ function konceptKEditor(initialData) {
             } else {
                 if (header) header.style.display = '';
                 if (footer) footer.style.display = '';
-                this.editorHeight = Math.max(400, window.innerHeight - 80);
                 document.body.style.overflow = '';
             }
-            this.$nextTick(() => this.resizeKonva());
+            this.$nextTick(() => { this._prepocitejVysku(); this.resizeKonva(); });
+        },
+
+        /**
+         * Editor vyplní okno až dolů: od místa, kde na stránce začíná, po spodní okraj, bez toho, co je pod ním
+         * (odsazení obsahu, patička aplikace). Dřív pevně okno − 80 px, ve Masterteamu bez horní lišty tak dole
+         * zbývalo ~70 px prázdných a na změnu okna editor nereagoval (Libor 12. 11. 2026).
+         */
+        _prepocitejVysku() {
+            if (this.celaObrazovka) { this.editorHeight = window.innerHeight; return; }
+            const el = document.querySelector('.kk-editor');
+            if (!el) return;
+            const nahore = el.getBoundingClientRect().top + window.scrollY;
+            let pod = 0;
+            const obsah = el.closest('main');
+            if (obsah) {
+                pod += parseFloat(getComputedStyle(obsah).paddingBottom) || 0;
+                for (let n = obsah.nextElementSibling; n; n = n.nextElementSibling) {
+                    const s = getComputedStyle(n);
+                    if (s.display === 'none' || s.position === 'fixed' || s.position === 'absolute') continue;
+                    pod += n.getBoundingClientRect().height + (parseFloat(s.marginTop) || 0) + (parseFloat(s.marginBottom) || 0);
+                }
+            }
+            this.editorHeight = Math.max(400, Math.floor(window.innerHeight - nahore - pod));
         },
 
         startDrag(e) {
@@ -7009,6 +7037,8 @@ function konceptKEditor(initialData) {
             const renderer = new THREE.WebGLRenderer({ antialias: false });
             renderer.setSize(w, h);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            // Blokově: řádkové plátno by pod sebou nechalo pár px na účaří písma
+            renderer.domElement.style.display = 'block';
             container.appendChild(renderer.domElement);
 
             // Controls
@@ -7060,8 +7090,9 @@ function konceptKEditor(initialData) {
             // Ladicí osy (AxesHelper) tu byly od začátku — v počátku kresby trčela
             // z podlahy zelená čára, kterou viděl i zákazník. Pryč.
 
-            // Nápověda 3D — přesunuta do Blade .kk-3d-help (řádek vedle kk-coords)
-            container.style.position = 'relative';
+            // Kontejner zůstává absolutně přes celé plátno (inset: 0 v Blade). Dřív se tu přepínal na relative:
+            // výšku pak držel podle plátna 3D, ne podle obalu, a po zvětšení plochy (celá obrazovka, zavřená
+            // hláška, větší okno) zůstal pod obrazem prázdný pruh (Libor 12. 11. 2026).
 
             _3d.scene = scene;
             _3d.camera = camera;
