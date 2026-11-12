@@ -1,7 +1,9 @@
 {{-- Blok článku `::kalkulacka-zeminy`. Výpočet a dosazování čísel: public/js/kalkulacka-zemina.js, výchozí hodnoty
      odpovídají editoru (modules/zemina.md). Pole v cm mají data-meritko 0.01, kalkulačka počítá v metrech.
      Verze článku pro jinou zemi přepíše výchozí hodnoty parametry, např. `::kalkulacka-zeminy spara=80 | ornice=30`
-     (klíče jako data-pole níž, cm v cm). Úvod kalkulačky jmenuje země z hlavičky článku (`zeme:`). --}}
+     (klíče jako data-pole níž, cm v cm). Úvod kalkulačky jmenuje země z hlavičky článku (`zeme:`).
+     `skladba` platí pro pasy, skladbu pro nosnou desku dává `skladbaDeska` (výchozí 70 cm); přepnutí druhu základů
+     dosadí tu svou, dokud ji čtenář sám nepřepíše. --}}
 @php
     $vlastni = [];
     foreach ($parametry ?? [] as $parametr) {
@@ -78,7 +80,7 @@
                     @foreach ($podrobnosti as $p)
                         <div @if ($p['podminka'] === 'pasy') data-pouze-pasy @elseif ($p['podminka'] === 'sklep') data-pouze-sklep hidden @endif>
                             <label for="kalk-{{ $p['klic'] }}">{{ $p['popisek'] }}</label>
-                            <input type="number" inputmode="decimal" id="kalk-{{ $p['klic'] }}" data-pole="{{ $p['klic'] }}" data-meritko="{{ $p['meritko'] }}" value="{{ $p['hodnota'] }}" min="{{ $p['min'] }}" max="{{ $p['max'] }}" step="{{ $p['krok'] }}" @if ($p['klic'] === 'skladba') data-vychozi-pasy="45" data-vychozi-deska="70" @endif>
+                            <input type="number" inputmode="decimal" id="kalk-{{ $p['klic'] }}" data-pole="{{ $p['klic'] }}" data-meritko="{{ $p['meritko'] }}" value="{{ $p['hodnota'] }}" min="{{ $p['min'] }}" max="{{ $p['max'] }}" step="{{ $p['krok'] }}" @if ($p['klic'] === 'skladba') data-vychozi-pasy="{{ $p['hodnota'] }}" data-vychozi-deska="{{ $vlastni['skladbaDeska'] ?? 70 }}" @endif>
                         </div>
                     @endforeach
                 </div>
