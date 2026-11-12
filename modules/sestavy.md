@@ -1,6 +1,7 @@
 # Nábytková sestava – kuchyňská linka a vestavěná skříň
 
-Hotovo lokálně 11. 11. 2026 (fe28def, překlady abebc70), na web zatím nenasazené. Plán a Liborova rozhodnutí jsou
+Hotovo 11. 11. 2026 (fe28def, překlady abebc70, tvar U a pevné šířky 7def2bf, potvrzení mazání dcde860), na webu
+od nočního nasazení 11.–12. 11. 2026. Plán a Liborova rozhodnutí jsou
 v `modules/katalog.md`, oddíl Plán 2. Libor: „udělej to celé a pak to odladíme“.
 
 ## Rozhodnuto (Libor 11. 11. 2026)
