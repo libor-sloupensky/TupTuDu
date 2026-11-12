@@ -86,6 +86,7 @@ return [
         'es' => 'španělština',
         'it' => 'italština',
         'en' => 'angličtina',
+        'eu' => 'baskičtina',
         'nl' => 'nizozemština',
         'pt' => 'portugalština',
         'ru' => 'ruština',

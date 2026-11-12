@@ -1,10 +1,31 @@
 # Srovnání s konkurencí — profily nástrojů, „X vs TupTuDu“ a průvodce výběrem
 
-## Stav (12. 11. 2026)
-Libor 12. 11. 2026 dal pokyn začít. Hotový je **náhled obou stránek v Masterteamu**, generovaný z analýzy konkurence
-(`modules/konkurence.md`): v přehledu Konkurence u každé aplikace odkazy „profil“ a „vs TupTuDu“
-(`/masterteam/konkurence/{klic}/profil`, `/srovnani`). Na veřejném webu zatím nic není. Co chybí ke zveřejnění, je
-v části Postup. Průvodce výběrem je odložený.
+## Stav (na webu od 12. 11. 2026 v noci)
+Libor 12. 11. 2026: připravit a rovnou zveřejnit, advokáta vynechat, němčinu zatím ne (tvrdá praxe výzev).
+- **137 stránek** v 7 jazycích (cs, sk, pl, en, fr, es, it): v každém jazyce přehled `/{jazyk}/{segment}`, profil
+  `/{jazyk}/{segment}/{adresa}` a `/{jazyk}/{segment}/{adresa}-vs-tuptudu`. Segmenty a zveřejněné jazyky
+  v `config/srovnani.php`. Seznam adres vypíše `php storage/app/konkurence/srovnani/vsechny-adresy.php`.
+- **Nástroje:** SketchUp, Planner 5D, Sweet Home 3D, Homestyler, Floorplanner, HomeByMe, RoomSketcher, magicplan,
+  Cedreo ve všech 7 jazycích; Dům jedním tahem a Pozemkov jen česky (české služby). Výběr podle hledanosti; malé
+  nástroje (Live Home 3D, Ashampoo, Homeplot, Rayon, Maket, AIkatastr, Plan7Architekt) stránky nemají.
+- **Němčina připravená:** texty `lang/de/srovnani.php` i poznámky jsou přeložené, zapne se přidáním `de`
+  do `config('srovnani.jazyky')`.
+- Masterteam: náhled u každé aplikace („profil“, „vs TupTuDu“) ukazuje i hodnoty bez dokladu (orámované).
+- Průvodce výběrem je odložený.
+
+### Jak vznikla data (12. 11. 2026)
+1. Ověřovací agenti prošli u 11 nástrojů všech 52 sledovaných parametrů jen na stránkách výrobce
+   (`storage/app/konkurence/srovnani/ZADANI-overeni.md` → `overeno-<klic>.json`). Co nešlo doložit, je „?“ a na web nejde.
+2. Nezávislá kontrola veřejných textů (hodnotící slova, firma místo produktu, interní žargon), 52 oprav.
+3. Snímky všech zdrojů (224 adres) do soukromého S3 `tuptudu-katalog-dukazy`: `node services/konkurence/dukazy.cjs
+   snimej adresy.json dukazy.json` (JPEG celé stránky + HTML, denní manifest s SHA-256). Nápovědy RoomSketcheru
+   a HomeByMe mají ochranu proti robotům; neobcházíme ji, zdroje se nahradily stránkami na hlavních webech,
+   zbylé hodnoty bez snímku se nezobrazí.
+4. Překlady poznámek a textů do 7 jazyků (`ZADANI-preklad.md`, `poznamky-<jazyk>.json`) a nezávislá kontrola.
+5. Import `storage/app/konkurence/reserse-2026-11-12/sestav_import.py` (+ `srovnani_import.py`) a přenos na produkci.
+   Stránka vznikne jen u nástroje s aspoň 20 doloženými hodnotami.
+- TupTuDu: hodnoty ze stavu na webu (`overeno-tuptudu.json`), doklad = commit (`tuptudu:<hash>`).
+- „Nemá“ = výrobce funkci ve svém popisu, ceníku a nápovědě neuvádí nebo výslovně píše, že ji nemá (metodika na stránce).
 
 ## Cíl a zásady (Libor 12. 11. 2026)
 - **Přitáhnout velkou základnu lidí**, kteří hledají nástroj na návrh domu, a nabídnout jim **objektivní srovnání**,
@@ -144,15 +165,13 @@ ne každou stránku. Podrobný rozbor je v chatu z 3. 11. 2026 a v paměti Claud
 - **Revize:** měsíční měření (`modules/konkurence.md`); oprava do pár dnů od podnětu, datum opravy na stránce.
 
 ## Postup
-1. **Hotovo 12. 11. 2026:** plán, kritéria parametrů, náhled profilu a srovnání z dat, pole pro doklad.
-2. **Libor** projde přepínače parametrů (na produkci) a náhled u 2–3 konkurentů.
-3. **Archiv důkazů** (bucket, nástroj na snímky) a **veřejné poznámky** po jazycích.
-4. **Ověření hodnot** u první dávky konkurentů podle hledanosti a vyrovnanosti srovnání: nejdřív nástroje, kde
-   srovnání vychází vyrovnaně a české (Homeplot, Sweet Home 3D, Planner 5D …), velcí hráči podle hledanosti.
-5. **Advokát** posoudí šablonu a pravidla (jednorázově, 5–12 tis. Kč) před prvním zveřejněním.
-6. **Zveřejnění v češtině:** veřejné adresy, texty do `lang/*/srovnani.php`, sitemap, Search Console.
-7. Další jazyky podle hledanosti (sk, en, pl), němčina poslední. Pak „Alternativy k X“ a „X vs Y“.
-8. **Průvodce výběrem** (odloženo): dotazník z těch samých parametrů, filtr nástrojů, odkazy na profily.
+1. **Hotovo 12. 11. 2026:** plán, kritéria, ověření 11 nástrojů, archiv snímků, překlady, 137 stránek na webu.
+2. **Měsíčně:** nové měření (`modules/konkurence.md`), u změněných hodnot nový snímek a překlad poznámky,
+   import a přenos na produkci. Hodnota starší 6 měsíců z webu sama zmizí, proto to nesmí vypadnout.
+3. **Search Console:** sledovat indexaci a dotazy na nové adresy (agent marketing-data).
+4. **Němčina** až po usazení dat a prvních opravách: `de` do `config('srovnani.jazyky')`.
+5. Další nástroje, když vzroste hledanost (Live Home 3D, Homeplot …); „Alternativy k X“ a „X vs Y“.
+6. **Průvodce výběrem** (odloženo): dotazník z těch samých parametrů, filtr nástrojů, odkazy na profily.
 
 ## Jak se stát nejlepšími
 Srovnání je zároveň mapa, co zlepšit. Každý měsíc z dat: kterou vlastnost má nejvíc sledovaných konkurentů a my ne,
@@ -161,8 +180,8 @@ a v kolika srovnáních „X vs TupTuDu“ je to plus konkurenta. To je podklad 
 prodlužoval poctivě, ne úpravou pravidel.
 
 ## Otevřené body
-- Souhlas s bucketem S3 pro důkazy a jestli chceme časová razítka.
-- Advokát: kdy a koho.
-- První dávka konkurentů a jazyků (po rešerši hledanosti).
-- DPH a období u cen konkurence (zahraniční ceníky většinou bez DPH, uvádět podmínky).
-- Opravit USD přepočty z původní analýzy (6,8 USD = 149 Kč při kurzu 21,862, ne 143 Kč).
+- Bucket `tuptudu-katalog-dukazy`: klíč projektu nesmí zapnout verzování ani zámek objektů. Neměnnost zatím
+  drží manifest s otisky SHA-256. Zapnout verzování v konzoli AWS (S3 → bucket → Properties → Bucket Versioning).
+- Advokát vynechán (Libor 12. 11. 2026). Při první výzvě od výrobce opravit do pár dnů a uvést datum opravy.
+- Nejisté hodnoty ponechané ve prospěch konkurence: Sweet Home 3D kóty a terén (pluginy), HomeByMe export CAD
+  (přes DraftSight), Planner 5D náklady (odhad přes AI).
