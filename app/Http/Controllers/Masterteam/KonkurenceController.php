@@ -30,10 +30,13 @@ class KonkurenceController extends Controller
         $mereni = KonkurenceMereni::posledni();
         $predchozi = $mereni?->predchozi();
 
-        // Hodnoty posledního měření: [konkurent_id][parametr_id] => hodnota
+        // Hodnoty posledního měření: [konkurent_id][parametr_id] => hodnota. Parametr se přiřadí z už
+        // načteného katalogu, aby kratce() v popiscích nedotazovala DB u každé buňky.
         $hodnoty = [];
         if ($mereni) {
+            $parametryPodleId = $parametry->keyBy('id');
             foreach (KonkurenceHodnota::where('mereni_id', $mereni->id)->get() as $h) {
+                $h->setRelation('parametr', $parametryPodleId[$h->parametr_id] ?? null);
                 $hodnoty[$h->konkurent_id][$h->parametr_id] = $h;
             }
         }

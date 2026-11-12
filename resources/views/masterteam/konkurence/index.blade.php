@@ -2,10 +2,31 @@
      s režimem sledovat / tiše / nesledovat, matice posledního měření a události. Barvy jen z proměnných brandu. --}}
 @use('App\Http\Controllers\Masterteam\KonkurenceController', 'KC')
 @use('App\Models\Konkurent')
+@use('App\Models\KonkurenceHodnota')
 @php
     $zalozky = ['prehled' => 'Přehled', 'parametry' => 'Parametry', 'matice' => 'Matice', 'udalosti' => 'Události'];
     $rezimPoradi = ['sledovat' => 0, 'tise' => 1, 'nesledovat' => 2];
     $stavZnacka = fn ($v) => match ($v) { 'ano' => 'ano', 'castecne' => 'cast', 'ne' => 'ne', 'skryte' => 'skr', default => 'q' };
+    // Popisek hodnoty po najetí (matice i značka TupTuDu v Parametrech): kdo · parametr, stav, hodnota, poznámka, zdroj, ověření
+    $popisHodnoty = function ($k, $p, $h) {
+        if (! $h) {
+            return '';
+        }
+        $radky = [($k->kratky ?: $k->nazev) . ' · ' . $p->nazev];
+        if ($p->typ === 'stav' && $h->hodnota) {
+            $radky[] = (KonkurenceHodnota::STAVY[$h->hodnota] ?? $h->hodnota) . ($h->placene ? ', jen placené' : '');
+        }
+        foreach ([$h->kratce(), $h->poznamka, $h->zdroj] as $t) {
+            if ((string) $t !== '') {
+                $radky[] = $t;
+            }
+        }
+        if ($h->overeno) {
+            $radky[] = 'ověřeno ' . $h->overeno->format('j. n. Y');
+        }
+
+        return implode("\n", $radky);
+    };
 @endphp
 <x-layouts.app title="Konkurence — TupTuDu">
 <style>
@@ -68,6 +89,7 @@
     .kn-matice td.kn-text { font-size: 11px; max-width: 30px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--c-text-secondary); }
     .kn-matice tr.kn-skupina th { background: color-mix(in srgb, var(--c-text) 5%, var(--c-surface)); text-align: left; padding: 7px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--c-text-secondary); position: sticky; left: 0; }
     .kn-matice .kn-my { background: var(--c-primary-10); }
+    .kn-my-stav { flex: none; align-self: center; min-width: 34px; height: 26px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; background: var(--c-primary-10); font-size: 11px; color: var(--c-text-secondary); white-space: nowrap; cursor: default; }
 </style>
 
 <div class="kn" x-data="{ filtr: 'vse', vsePodrobnosti: false }">
@@ -219,6 +241,7 @@
                 }
             }
             $pocetKonk = $konkurenti->count();
+            $my = $konkurenti->first(fn ($k) => $k->jeTuptudu());
         @endphp
         <div class="mb-3 flex flex-wrap gap-2 items-center" role="group" aria-label="Filtr parametrů">
             @foreach(['vse' => 'Vše', 'sledovat' => 'Sledovat', 'tise' => 'Tiše', 'nesledovat' => 'Nesledovat', 'nove' => 'Nové návrhy'] as $f => $nazev)
@@ -227,7 +250,7 @@
             <label class="kn-tlumene text-xs ml-2 inline-flex items-center gap-1.5" style="cursor:pointer">
                 <input type="checkbox" x-model="vsePodrobnosti" style="accent-color: var(--c-primary)"> Rozbalit popis u všech
             </label>
-            <span class="kn-tlumene text-xs ml-2">Klepnutím na název se ukáže, co parametr vyhodnocuje. Přepnutí režimu se uloží hned.</span>
+            <span class="kn-tlumene text-xs ml-2">Klepnutím na název se ukáže, co parametr vyhodnocuje. Značka na podbarveném místě je stav TupTuDu, najetím se ukážou podrobnosti. Přepnutí režimu se uloží hned.</span>
         </div>
 
         <div class="grid gap-4">
@@ -252,10 +275,18 @@
                             </div>
                             @if($p->popis)<div class="kn-tlumene text-xs mt-0.5">{{ $p->popis }}</div>@endif
                             <div class="kn-detail kn-tlumene" x-show="otevreno || vsePodrobnosti" x-cloak>
-                                @if($p->kriteria)<div><b>Co hodnotíme:</b> {{ $p->kriteria }}</div>@endif
-                                @if($p->jak_merit)<div class="mt-1"><b>Odkud:</b> {{ $p->jak_merit }}</div>@endif
-                                @unless($p->kriteria || $p->jak_merit)<div>Popis zatím chybí.</div>@endunless
+                                {{-- Jen co hodnotíme; zdroj měření (jak_merit) zůstává v DB jako návod k měření, na stránce se neukazuje --}}
+                                @if($p->kriteria)<div><b>Co hodnotíme:</b> {{ $p->kriteria }}</div>@else<div>Popis zatím chybí.</div>@endif
                             </div>
+                        </div>
+                        {{-- Jak si v parametru stojí TupTuDu: stejná značka jako v matici, podrobnosti v popisku --}}
+                        @php $hMy = $my ? ($hodnoty[$my->id][$p->id] ?? null) : null; @endphp
+                        <div class="kn-my-stav kn-cislo" title="{{ $hMy ? $popisHodnoty($my, $p, $hMy) : 'TupTuDu · ' . $p->nazev . "\nneměřeno" }}">
+                            @if($hMy && $p->typ === 'stav')
+                                @if($hMy->hodnota)<i class="kn-d {{ $stavZnacka($hMy->hodnota) }} {{ $hMy->placene ? 'pl' : '' }}"></i>@endif
+                            @elseif($hMy)
+                                {{ $p->typ === 'seznam' ? count($hMy->data ?? []) : \Illuminate\Support\Str::limit($hMy->kratce(), 8, '…') }}
+                            @endif
                         </div>
                         <div class="kn-tlumene text-xs kn-cislo text-right" style="width:74px" title="U kolika aplikací je hodnota zjištěná">
                             {{ $vyplneno[$p->id] ?? 0 }} / {{ $pocetKonk }}
@@ -305,10 +336,7 @@
                         <tr>
                             <th class="kn-radek" title="{{ $p->kriteria ?: $p->popis }}">{{ $p->nazev }}@if($p->rezim === 'tise') <span class="kn-stitek sedy">tiše</span>@endif</th>
                             @foreach($sloupce as $k)
-                                @php $h = $hodnoty[$k->id][$p->id] ?? null; @endphp
-                                @php
-                                    $titulek = $h ? trim(($k->kratky ?: $k->nazev) . ' · ' . $p->nazev . "\n" . ($h->kratce() ? $h->kratce() . "\n" : '') . ($h->poznamka ?? '') . ($h->zdroj ? "\n" . $h->zdroj : '') . ($h->overeno ? "\nověřeno " . $h->overeno->format('j. n. Y') : '')) : '';
-                                @endphp
+                                @php $h = $hodnoty[$k->id][$p->id] ?? null; $titulek = $popisHodnoty($k, $p, $h); @endphp
                                 @if($p->typ === 'stav')
                                     <td class="{{ $k->jeTuptudu() ? 'kn-my' : '' }}" title="{{ $titulek }}">@if($h && $h->hodnota)<i class="kn-d {{ $stavZnacka($h->hodnota) }} {{ $h->placene ? 'pl' : '' }}"></i>@endif</td>
                                 @else

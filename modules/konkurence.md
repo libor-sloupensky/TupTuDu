@@ -38,11 +38,14 @@ a neslibujeme ho) a AI dispozice (`h_ai_dispozice`, rozhodnuto bez AI).
   Od druhého měření sloupec Změny = počet hodnot, které se proti minulému měření liší.
 - **Parametry:** katalog po skupinách s přepínačem, štítkem „nový“ (přidán po začátku měření), typem hodnoty,
   štítkem „strojově“ a počtem aplikací, u kterých je hodnota zjištěná. Filtr Vše / režimy / Nové návrhy.
-  Klepnutí na název rozbalí **Co hodnotíme** (`kriteria`: kdy je „má“, „částečně“ a „nemá“) a **Odkud** (`jak_merit`),
-  zaškrtávátko je rozbalí u všech (Libor 12. 11. 2026: samotné „jak měřit“ nestačilo).
+  Klepnutí na název rozbalí **Co hodnotíme** (`kriteria`: kdy je „má“, „částečně“ a „nemá“),
+  zaškrtávátko je rozbalí u všech (Libor 12. 11. 2026: samotné „jak měřit“ nestačilo). Zdroj měření (`jak_merit`)
+  se na stránce neukazuje, Libor ho tam má za zbytečný; zůstává v DB jako návod pro měření.
+  Před počtem je na podbarveném místě **stav TupTuDu** stejnou značkou jako v matici (u čísla a textu zkrácená
+  hodnota, u seznamu počet), najetí ukáže stav slovem, poznámku, zdroj v kódu a datum ověření.
 - Tabulky Přehledu a Událostí rolují uvnitř karty, hlavička zůstává nahoře.
 - **Matice:** poslední měření, parametry a aplikace v režimu Sledovat, přepínačem i Tiše. Najetí na buňku
-  ukáže poznámku, zdroj a datum ověření. U seznamu je v buňce počet.
+  ukáže stav slovem, poznámku, zdroj a datum ověření. U seznamu je v buňce počet.
 - **Události:** vydání, nové funkce, změny cen a obsahu po měsících.
 
 ## Datový model
