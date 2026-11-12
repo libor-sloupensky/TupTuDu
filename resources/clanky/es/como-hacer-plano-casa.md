@@ -21,7 +21,7 @@ zeme: ES
 - ESTAV.cz: Tvoříme interiér, ložnice (kolem lůžka aspoň 60 cm) | https://www.estav.cz/cz/7111.tvorime-interier-s-ceskou-designerkou-loznice
 - ČESKÉSTAVBY.cz: Skladba stěn a příček dřevostaveb (obvodová 262 mm) | https://www.ceskestavby.cz/clanky/jaka-je-skladba-sten-a-pricek-drevostaveb-19838.html
 - Kalkulačka TupTuDu (článek calcular-escaleras): 2,90 m = 17 výšek po 171 mm, nášlap 289 mm, přímé rameno 4,62 m | interní
-- TupTuDu, editor: výchozí obvodová stěna 30 cm, rozpoznání místností a ploch, import PDF a obrázku s měřítkem, vektorové PDF, katastr a parcela jen v Česku (config/lokalizace.php), tarif zdarma 30 úprav denně a 1 projekt (config/tarify.php) | interní
+- TupTuDu, editor: výchozí obvodová stěna 30 cm, rozpoznání místností a ploch, import PDF a obrázku s měřítkem, vektorové PDF, parcela z katastru výběrem na mapě i ve Španělsku, Baskicko a Navarra mají vlastní katastr a pozemek se tam obkreslí, výšky terénu ve Španělsku nejsou (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026), tarif zdarma 30 úprav denně a 1 projekt (config/tarify.php) | interní
 ---
 ::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Plano de la planta baja de una vivienda unifamiliar con cotas en centímetros y con los nombres y superficies de las estancias: salón 19,0 m², cocina 14,3 m², habitación 12,1 m², dormitorio 10,6 m², baño 8,8 m², despacho 8,1 m², cortavientos 5,8 m², aseo 1,8 m². | Planta baja de la casa de ejemplo, de 12,54 × 8,23 m, una casa de madera de bajo consumo con paredes exteriores de 30 cm, con cotas, estancias y superficies, editor TupTuDu | 1200 | 857
 
@@ -63,7 +63,7 @@ En TupTuDu [dibujas el plano](aplikace:) con el ratón en el ordenador: cada par
 
 ::obrazek /img/clanky/jak-nakreslit-pudorys-domu/dum-3d-bez-strechy.webp | La misma casa en 3D desde arriba y sin tejado: estancias, puertas, ventanas y muebles. | El mismo plano en 3D sin tejado, con muebles del catálogo, editor TupTuDu | 1200 | 700
 
-¿Tienes un plano del arquitecto o de un catálogo? Súbelo en PDF o como imagen, ajusta la escala con una cota conocida y cálcalo; de un PDF vectorial el editor reconoce las paredes solo. El solar aún no se puede dibujar en España: la parcela del catastro funciona de momento solo en Chequia.
+¿Tienes un plano del arquitecto o de un catálogo? Súbelo en PDF o como imagen, ajusta la escala con una cota conocida y cálcalo; de un PDF vectorial el editor reconoce las paredes solo. En el mapa eliges la parcela del catastro (en el País Vasco y Navarra la dibujas) y ves la casa en su solar.
 
 El plan Gratis tiene un proyecto y 30 cambios al día; cuenta cada pared, hueco, mueble, desplazamiento o cambio de medida. Las paredes, ventanas y puertas de una casa pequeña de una planta te llevarán un día si fijas las medidas desde el principio, dos con correcciones.
 ::vyzva Dibuja tu plano | Empieza por las paredes exteriores con su grosor real, añade ventanas, puertas y muebles y mira la casa en 3D. El plan Gratis tiene 30 cambios al día y un proyecto.

@@ -20,7 +20,7 @@ zeme: FR
 - Habitatpresto, RE 2020 (isolant de mur de 12 à 20 cm selon le matériau) | https://www.habitatpresto.com/mag/isolation/re-2020
 - La Maison Saint-Gobain, Comment aménager sa chambre (60 cm autour du lit) | https://www.lamaisonsaintgobain.fr/chambres/conseils/decoration-de-la-chambre/comment-amenager-sa-chambre
 - Calculateur TupTuDu (article Calcul escalier) : 2,80 m de sol à sol = 16 marches de 175 mm, giron 280 mm, reculement 4,20 m ; 3,00 m = 17 marches, 4,43 m | https://www.tuptudu.com
-- TupTuDu, éditeur : mur extérieur de 30 cm par défaut, pièces reconnues avec leur surface, import PDF et image, reconnaissance des murs dans un PDF vectoriel, cadastre seulement en Tchéquie (config/lokalizace.php), export PNG et partage par lien dans la formule Gratuit (modules/platby.md) | interní
+- TupTuDu, éditeur : mur extérieur de 30 cm par défaut, pièces reconnues avec leur surface, import PDF et image, reconnaissance des murs dans un PDF vectoriel, parcelle choisie sur la carte du cadastre, en France aussi avec le relief du modèle 1 m (config/pozemky.php, modules/lokalizace.md, état au 12. 11. 2026), export PNG et partage par lien dans la formule Gratuit (modules/platby.md) | interní
 ---
 ::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Plan du rez-de-chaussée d’une maison avec cotes en centimètres, noms et surfaces des pièces : séjour 19,0 m², cuisine 14,3 m², pièce 12,1 m², chambre 10,6 m², salle de bain 8,8 m², bureau 8,1 m², sas d’entrée 5,8 m², WC 1,8 m². | Rez-de-chaussée de la maison exemple, 12,54 × 8,23 m, une maison à ossature bois basse consommation aux murs extérieurs de 30 cm, avec cotes, pièces et surfaces, éditeur TupTuDu | 1200 | 857
 
@@ -62,7 +62,7 @@ Dans TupTuDu, vous [dessinez le plan](aplikace:) à la souris sur ordinateur, ch
 
 ::obrazek /img/clanky/jak-nakreslit-pudorys-domu/dum-3d-bez-strechy.webp | La même maison en 3D vue de dessus, sans toit : pièces, portes, fenêtres et meubles. | Le même plan en 3D sans toit, avec les meubles du catalogue, éditeur TupTuDu | 1200 | 700
 
-Vous avez déjà un plan d’architecte ou de catalogue ? Importez-le en PDF ou en image, réglez l’échelle sur une cote connue et décalquez-le ; dans un PDF vectoriel, l’éditeur reconnaît les murs lui-même. Le terrain du cadastre n’existe pour l’instant qu’en Tchéquie : en France, vous dessinez la maison sans sa parcelle.
+Vous avez déjà un plan d’architecte ou de catalogue ? Importez-le en PDF ou en image, réglez l’échelle sur une cote connue et décalquez-le ; dans un PDF vectoriel, l’éditeur reconnaît les murs lui-même. En France, choisissez ensuite votre parcelle sur la carte du cadastre : vous voyez la maison sur son vrai terrain.
 
 La formule Gratuit permet un projet et 30 modifications par jour : chaque mur, ouverture ou meuble ajouté, chaque déplacement et chaque changement de dimension compte. Les murs, fenêtres et portes d’une petite maison de plain-pied se font en une journée environ si vous saisissez les dimensions tout de suite, en deux avec les corrections. Le plan s’exporte en image ou se partage par lien.
 

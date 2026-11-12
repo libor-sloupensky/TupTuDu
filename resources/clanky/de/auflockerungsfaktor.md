@@ -16,6 +16,7 @@ zeme: DE, AT
 - Bauprofessor: Auflockerungsfaktor (Definition nach dem Lösen, Beispiel Lehm fS = 1,3; Mutterboden 2000 m³ ergeben 2400 m³ Miete) | https://www.bauprofessor.de/auflockerungsfaktor/
 - fertighaus.de: Erdaushub entsorgen (Deponie nach Tonnen, Wertstoffhöfe nach Kubikmetern) | https://www.fertighaus.de/ratgeber/hausbau/erdaushub-entsorgung-und-kosten/
 - TupTuDu, Rechner für den Erdaushub: public/js/kalkulacka-zemina.js (Auflockerung 1,25 als Vorgabe) | interní
+- TupTuDu, editor: zemina (rostlý a nakypřený objem) v panelu Fundament, jakmile je vybraný pozemek na mapě, v DE z katastru mimo Bavorsko, v AT a Bavorsku obkreslení; výchozí hodnoty z české praxe pro všechny země: spára 1,0 m, svah 1 : 0,5, odkop 0,8 m, skladba 45 cm (u desky 70 cm), ornice 25 cm, nakypření 1,25, pod dům výkopek (public/js/koncept-v3/zemina.js, VYCHOZI) (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::nakypreni
 
@@ -42,6 +43,6 @@ Im Boden wiegt Erde etwa 1,5 bis 2,0 t pro m³, Lehm um 1,8 t, nasser Boden mehr
 
 ## Was bei deinem Haus übrig bleibt
 
-Wie viel bei deinem Haus anfällt, hängt von Grundfläche, Fundament und Keller ab. Zeichnest du den [Grundriss in TupTuDu](aplikace:), hast du die genauen Außenmaße und die Länge der tragenden Wände für den [Rechner für den Erdaushub](clanek:erdaushub-berechnen). Die Erdmengen selbst rechnet der Editor vorerst nur bei Grundstücken in Tschechien, wo er das amtliche Geländemodell lädt.
+Wie viel bei deinem Haus anfällt, hängt von Grundfläche, Fundament und Keller ab. Zeichnest du den [Grundriss in TupTuDu](aplikace:), hast du die genauen Außenmaße und die Länge der tragenden Wände für den [Rechner für den Erdaushub](clanek:erdaushub-berechnen). Wählst du im Editor dazu dein Grundstück auf der Karte, rechnet er die Erdmengen selbst, fest und aufgelockert. Er startet mit Werten aus der tschechischen Praxis, etwa Gründungstiefe 1,0 m und Böschung 1 : 0,5, deine Werte stellst du im Bereich Fundament ein.
 
 ::vyzva Erst der Grundriss, dann der Aushub | Zeichne dein Haus in echten Maßen und sieh es dir in 3D an. Mit den Außenmaßen rechnest du im Erdaushub-Rechner aus, was übrig bleibt. Die Gratis-Version hat 30 Änderungen pro Tag und ein Projekt.

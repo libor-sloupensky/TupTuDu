@@ -5,7 +5,7 @@ popis: Zjisti, o kolik víc místa zabere zemina po vykopání. Koeficienty pro 
 perex: Koeficient nakypření zeminy říká, o kolik víc místa zabere zemina po vykopání. U běžné hlíny je asi 1,25, tedy zhruba o čtvrtinu víc, u rozpojené skály skoro o polovinu. Z 10 m³ výkopu v hlíně je tak na korbě asi 12,5 m³.
 publikovano: 2026-11-09
 overeno: 2026-11-09
-revize: 2026-11-09
+revize: 2026-11-12
 autor: Libor z TupTuDu
 stav: zverejneno
 souvisejici: kolik-zeminy-z-vykopu, jak-nakreslit-pudorys-domu
@@ -14,6 +14,7 @@ souvisejici: kolik-zeminy-z-vykopu, jak-nakreslit-pudorys-domu
 - FAST VUT: Zemní práce (nakypření, ornice 20 %) | https://www.fce.vutbr.cz/tst/x_txt_predmet_bw51_1_zemni-prace.pdf
 - Kolik materiálu: Kalkulačka výkopu (nakypření 1,25) | https://kolikmaterialu.cz/vykop/
 - Ceník odvozu (příklad, účtování podle jízd a hodin) | https://dovoz-odvoz.cz/cenik/
+- TupTuDu, editor: parcela výběrem na mapě ve všech zemích (katastr v CZ, SK, PL, FR, ES, IT a DE mimo Bavorsko, jinde obkreslení), panel Základy s rostlým a nakypřeným objemem, koeficient v Podrobnostech (maZaklady v public/js/koncept-v3/dum.js) (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::nakypreni
 
@@ -41,6 +42,6 @@ Orientačně 1,5 až 1,9 t na m³ rostlé zeminy, běžná hlína kolem 1,8 t, m
 
 ## Kolik zeminy budeš odvážet ty
 
-Kolik se u tvého domu vykope a kolik z toho zbude, spočítá [kalkulačka zeminy](clanek:kolik-zeminy-z-vykopu). Když si dům [nakreslíš v TupTuDu](aplikace:) a vybereš k němu parcelu, zatím jen v Česku, v panelu Základy vidíš rostlý i nakypřený objem. Koeficient nastavíš v Podrobnostech, jeden pro ornici i výkopek, a nakypřený objem se hned přepočítá.
+Kolik se u tvého domu vykope a kolik z toho zbude, spočítá [kalkulačka zeminy](clanek:kolik-zeminy-z-vykopu). Když si dům [nakreslíš v TupTuDu](aplikace:) a vybereš k němu parcelu, v panelu Základy vidíš rostlý i nakypřený objem. Koeficient nastavíš v Podrobnostech, jeden pro ornici i výkopek, a nakypřený objem se hned přepočítá.
 
-::vyzva Zkus to na svém domě | Nakresli půdorys, v Česku k němu vyber parcelu a nastav koeficient nakypření podle své zeminy. Verze zdarma má 30 úprav denně a jeden projekt.
+::vyzva Zkus to na svém domě | Nakresli půdorys, vyber k němu parcelu a nastav koeficient nakypření podle své zeminy. Verze zdarma má 30 úprav denně a jeden projekt.

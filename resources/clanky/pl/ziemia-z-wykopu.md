@@ -21,7 +21,7 @@ zeme: PL
 - kb.pl: Cennik nawiezienia ziemi na działkę (sklápěče asi 5, 12 a 20 t) | https://kb.pl/cenniki/uslugi/cennik-nawiezienia-ziemi-na-dzialke-zakup-i-transport/
 - Adibud: Jak oszacować ilość ziemi do wywozu (3osý sklápěč 10–12 m³, 4osý 16–18 m³) | https://adibud.pl/blog/jak-oszacowac-ilosc-ziemi-do-wywozu-po-wykopach/
 - TupTuDu, kalkulačka zeminy: public/js/kalkulacka-zemina.js, příklady spočítané 11. 11. 2026 (spára 1,0 m: výkopek navíc 8 m³, se štěrkem či pískem 20 m³, sklep 368 m³; spára 0,8 m: 3 m³, 1,2 m: 14 m³, 1,4 m: 19 m³) | interní
-- TupTuDu, editor: řádek Fundamenty jen s parcelou (maZaklady v public/js/koncept-v3/dum.js), katastr jen CZ (config/lokalizace.php), vzorový projekt má parcelu i výškový profil a kopii dostane každý uživatel (App\Support\VzorovyProjekt) | interní
+- TupTuDu, editor: řádek Fundamenty jen s parcelou (maZaklady v public/js/koncept-v3/dum.js), parcela z katastru (GUGiK ULDK) a výšky terénu NMT 1 m i v PL (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026), vzorový projekt má parcelu i výškový profil a kopii dostane každý uživatel (App\Support\VzorovyProjekt) | interní
 ---
 ::kalkulacka-zeminy spara=100
 
@@ -67,7 +67,7 @@ Do własnego szacunku zsumuj w kalkulatorze nadmiar humusu i urobku po spulchnie
 
 ## Na stoku wyjdzie inaczej
 
-Kalkulator liczy teren płaski. Na stoku ławy wykonuje się schodkowo, a od dolnej strony fundament bywa wyższy. O objętości najbardziej decyduje, jak wysoko osadzisz dom. Edytor [TupTuDu](aplikace:) zna teren działki z danych wysokościowych, na razie tylko w Czechach i w projekcie przykładowym. Schodków nie liczy i pod domem zawsze dosypuje, przy wysokim fundamencie zasypka jest więc raczej górnym szacunkiem.
+Kalkulator liczy teren płaski. Na stoku ławy wykonuje się schodkowo, a od dolnej strony fundament bywa wyższy. O objętości najbardziej decyduje, jak wysoko osadzisz dom. W Polsce edytor [TupTuDu](aplikace:) pobiera wysokości terenu twojej działki z numerycznego modelu terenu o siatce 1 m i uwzględnia rzeczywisty spadek. Schodków nie liczy i pod domem zawsze dosypuje, przy wysokim fundamencie zasypka jest więc raczej górnym szacunkiem.
 
 ::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | Dom parterowy w 3D na stoku, z oknami ze wszystkich stron i wejściem od górnej strony, szary fundament jest od dolnej strony wyższy | Dom na lekko pochyłej działce: fundament (dla czytelności szary) od dolnej strony sięga od terenu aż pod podłogę, edytor TupTuDu | 1200 | 700
 

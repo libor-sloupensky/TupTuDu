@@ -23,7 +23,7 @@ souvisejici: koeficient-nakyprenia-zeminy, kreslenie-podorysu-domu
 - ESTAV.cz: Ako si postaviť rodinný dom, zemné práce (pásy, ryhy po daždi skoro o polovicu širšie, ornica zostala, odvezených 9 áut) | https://www.estav.cz/cz/548.jak-si-postavit-rodinny-dum-zemni-prace
 - FAST VUT: Zemné práce (ornicu skladovať najviac do 1,5 m, odporúča sa 1,2 m) | https://www.fce.vutbr.cz/tst/x_txt_predmet_bw51_1_zemni-prace.pdf
 - TupTuDu, kalkulačka public/js/kalkulacka-zemina.js, výchozí hodnoty overené pre Slovensko 11. 11. 2026 (spára 100 cm, ornica 25 cm, pracovný priestor 80 cm), príklad prepočítaný: vykopané 59,6 m³, vráti sa 21,3 m³, zostane 38,3 m³, ornica 30,0, výkopok 8,3, ryhy 20,3, hromada 74,4; pivnica 651,6 / 30,0 / 367,5 / 814,5 | interní
-- TupTuDu, editor: riadok Základy len s parcelou z katastra (maZaklady v public/js/koncept-v3/dum.js), katastrálne služby len pre Česko (config/lokalizace.php) | interní
+- TupTuDu, editor: riadok Základy len s parcelou (maZaklady v public/js/koncept-v3/dum.js), parcela z katastra a výšky DMR 5.0 1 m aj na Slovensku (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::kalkulacka-zeminy spara=100 | ornice=25 | odkop=80
 
@@ -62,13 +62,13 @@ To je ideálny prípad, v praxi počítaj s rezervou. Ryhy bývajú širšie, č
 
 Pre vlastný odhad spočítaj v kalkulačke nakyprenú ornicu navyše a nakyprený výkopok navyše a vydeľ siedmimi. Najväčšiu hromadu nepočítaj, časť sa z nej vráti. Koľko auto odvezie, povie dopravca.
 
-::vyzva Nakresli dom v skutočných rozmeroch | Kalkulačka počíta obdĺžnik. V editore nakreslíš skutočný pôdorys, kóty ti ukážu rozmery domu aj dĺžky stien na zadanie do kalkulačky a dom uvidíš v 3D. Verzia Zadarmo má 30 úprav denne a jeden projekt.
+::vyzva Nakresli dom v skutočných rozmeroch | Kalkulačka počíta obdĺžnik. V editore nakreslíš skutočný pôdorys, kóty ti ukážu rozmery domu aj dĺžky stien na zadanie do kalkulačky a dom uvidíš v 3D. Keď k nemu vyberieš na mape parcelu, výkop spočíta editor sám. Verzia Zadarmo má 30 úprav denne a jeden projekt.
 
 ## Na svahu to vyjde inak
 
-Kalkulačka počíta rovinu. Na svahu sa základy robia po stupňoch a dole bývajú vyššie. O objeme najviac rozhoduje, ako vysoko dom osadíš.
+Kalkulačka počíta rovinu. Na svahu sa základy robia po stupňoch a dole bývajú vyššie. O objeme najviac rozhoduje, ako vysoko dom osadíš. Editor po výbere parcely na mape spočíta výkop podľa skutočného terénu, stupne však nepočíta a pod domom vždy dosype, pri vysokom základe je zásyp skôr horný odhad.
 
-::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | 3D pohľad na prízemný dom na svahu s oknami na všetkých stranách a vchodom na hornej strane svahu, sivý základ je na dolnej strane vyšší | Dom na mierne svahovitej parcele: základ (pre názornosť sivý) sa na dolnej strane pretiahne od terénu až pod podlahu. Terén parcely pozná editor TupTuDu zatiaľ len v Česku | 1200 | 700
+::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | 3D pohľad na prízemný dom na svahu s oknami na všetkých stranách a vchodom na hornej strane svahu, sivý základ je na dolnej strane vyšší | Dom na mierne svahovitej parcele: základ (pre názornosť sivý) sa na dolnej strane pretiahne od terénu až pod podlahu. Editor TupTuDu pozná terén parcely z výškového modelu, aj na Slovensku | 1200 | 700
 
 ## Kam so zeminou
 

@@ -16,7 +16,7 @@ zeme: ES
 - CTE DB SE-C, Anejo D, tabla D.27 (objemová tíha: štěrk 19–22, písek 17–20, hlína 17–20, jíl 15–22, ornice v násypu 17 kN/m³) | https://www.codigotecnico.org/pdf/Documentos/SE/DBSE-C.pdf
 - FAST VUT: Zemní práce (nakypření podle zemin, ornice 20 %) | https://www.fce.vutbr.cz/tst/x_txt_predmet_bw51_1_zemni-prace.pdf
 - RTS, HSV 800-1: Zemní práce (nakypření a objemová hmotnost podle tříd) | https://www.cenovasoustava.cz/files/HSV_800-1.pdf
-- TupTuDu, editor: panel Cimentación (rostlý a nakypřený objem, koeficient v Detalles) jen s parcelou z katastru, katastr jen v Česku (maZaklady v public/js/koncept-v3/dum.js, config/lokalizace.php) | interní
+- TupTuDu, editor: panel Cimentación (rostlý a nakypřený objem, koeficient v Detalles) jen s parcelou (maZaklady v public/js/koncept-v3/dum.js); parcela výběrem na mapě i ve Španělsku, výšky terénu tam nejsou a terén je rovina; výchozí hodnoty z české praxe pro všechny země: spára 1,0 m, svah 1 : 0,5, odkop 0,8 m, skladba 45 cm, nakypření 1,25 (public/js/koncept-v3/zemina.js, VYCHOZI) (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::nakypreni
 
@@ -44,6 +44,6 @@ El Código Técnico da para los suelos un peso de 15 a 22 kN/m³, es decir, de 1
 
 ## Cuánta tierra vas a retirar tú
 
-Cuánto se excava en tu casa y cuánto sobra lo calcula la [calculadora de tierras](clanek:volumen-de-excavacion), en la que también cambias el coeficiente de esponjamiento. En el editor de TupTuDu, el panel Cimentación muestra el volumen en banco y el esponjado según la forma real de la casa, pero de momento solo con una parcela del catastro de Chequia. En España puedes [dibujar tu casa en TupTuDu](aplikace:) y llevar sus medidas a la calculadora.
+Cuánto se excava en tu casa y cuánto sobra lo calcula la [calculadora de tierras](clanek:volumen-de-excavacion), en la que también cambias el coeficiente de esponjamiento. En el editor de TupTuDu, el panel Cimentación muestra el volumen en banco y el esponjado según la forma real de la casa en cuanto eliges su parcela en el mapa. El editor parte de valores de la práctica checa, como la zapata a 1,0 m de profundidad, que cambias en ese mismo panel. En España no conoce el relieve y toma el terreno como llano. Puedes [dibujar tu casa en TupTuDu](aplikace:) y llevar sus medidas también a la calculadora.
 
 ::vyzva Dibuja tu casa a escala real | Dibuja la planta, activa las cotas y lleva las medidas exteriores y la longitud de los muros de carga a la calculadora de tierras. El plan Gratis tiene 30 cambios al día y un proyecto.

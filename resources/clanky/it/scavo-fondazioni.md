@@ -26,6 +26,7 @@ zeme: IT
 - Autocarro ribaltabile a tre assi in vendita: massa complessiva 26.000 kg, portata utile 14.170 kg (esempio di mezzo) | https://www.machineseeker.it/iveco-stralis+420+ribaltabile+3+latoi+euro6/i-18013266
 - D.Lgs. 3 aprile 2006 n. 152, art. 193 (trasporto dei rifiuti con il formulario di identificazione) e art. 212 (Albo nazionale gestori ambientali) | https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2006-04-03;152~art193
 - TupTuDu, calcolatore dello scavo: public/js/kalkulacka-zemina.js, parametri dell'articolo per l'Italia skladba 60 cm (vespaio aerato su travi), skladbaDeska 100 cm (vespaio su platea), altri valori predefiniti; esempi calcolati 11. 11. 2026 (66 / 11 / 55 m³, cantina 688 / 30 / 386 / 861 m³, fossa della cantina 3,35 m, lo schema rez-sklepu è un esempio con 3,2 m) | interní
+- TupTuDu, editor: výpočet zeminy, jakmile je vybraný pozemek na mapě, v IT katastr Agenzia Entrate (provincie Trento a Bolzano bez katastru, obkreslení), výšky terénu v IT nejsou, terén je rovina; výchozí hodnoty z české praxe pro všechny země: spára 1,0 m, svah 1 : 0,5, odkop 0,8 m, skladba 45 cm (u desky 70 cm), ornice 25 cm, nakypření 1,25, pod dům výkopek (public/js/koncept-v3/zemina.js, VYCHOZI); skladba 60 cm s vespaio z článku se nastaví v panelu Fondazioni (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::kalkulacka-zeminy skladba=60 | skladbaDeska=100
 
@@ -64,13 +65,13 @@ Sul cassone la terra occupa circa un quarto in più che nel terreno, lo spiega i
 
 È il caso ideale: nella realtà tieni un margine, perché una parte della terra non è adatta al rinterro e in cantiere può mancare lo spazio. Per una stima veloce dividi per 8 l'eccesso in sito del calcolatore. Quanto porta il camion lo sa il trasportatore.
 
-::vyzva Prima disegna la tua casa | Disegna la pianta nelle misure reali e guardala in 3D: le misure esterne e quelle dei muri portanti ti servono nel calcolatore. La versione Gratis ha 30 modifiche al giorno e un progetto.
+::vyzva Prima disegna la tua casa | Disegna la pianta nelle misure reali e guardala in 3D: le misure esterne e quelle dei muri portanti ti servono nel calcolatore. Se scegli anche il lotto sulla mappa, l'editor calcola lo scavo da solo, partendo da valori della pratica ceca: 45 cm dal pavimento al fondo del magrone invece dei 60 del vespaio, da cambiare nel pannello Fondazioni. La versione Gratis ha 30 modifiche al giorno e un progetto.
 
 ## In pendenza i conti cambiano
 
-Il calcolatore considera un terreno in piano. In pendenza le fondazioni si fanno a gradoni e a valle vengono più alte. Sul volume conta soprattutto la quota a cui metti la casa.
+Il calcolatore considera un terreno in piano. In pendenza le fondazioni si fanno a gradoni e a valle vengono più alte. Sul volume conta soprattutto la quota a cui metti la casa. In Italia l'editor TupTuDu calcola lo scavo come se il lotto fosse in piano: in pendenza è una stima, come col calcolatore.
 
-::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | Vista 3D di una casa a un piano su un terreno in pendenza, con finestre su tutti i lati e ingresso a monte; la fondazione grigia è più alta sul lato a valle. | Casa su un lotto in leggera pendenza: a valle la fondazione (in grigio per chiarezza) scende dal pavimento fino al terreno. Il profilo del terreno l'editor TupTuDu lo conosce per ora solo con le particelle ceche | 1200 | 700
+::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | Vista 3D di una casa a un piano su un terreno in pendenza, con finestre su tutti i lati e ingresso a monte; la fondazione grigia è più alta sul lato a valle. | Casa su un lotto in leggera pendenza: a valle la fondazione (in grigio per chiarezza) scende dal pavimento fino al terreno. Editor TupTuDu su un lotto ceco, con le quote del terreno | 1200 | 700
 
 ## Dove mettere la terra
 

@@ -20,7 +20,7 @@ zeme: PL
 - Murator: Strefa nocna (kolem postele ze tří stran aspoň 60 cm, mezi postelí a skříní aspoň 80 cm) | https://muratordom.pl/wnetrza/sypialnia/strefa-nocna-jak-ja-wydzielic-i-urzadzic-rady-architekta-aa-qpnx-Gz5i-YY8U.html
 - Porta, zárubeň pro dveře 80 v nabídce Leroy Merlin (otvor ve zdi asi 89 cm) | https://www.leroymerlin.pl/produkty/oscieznica-regulowana-kompletna-bezprzylgowa-porta-80-prawa-do-skrzydla-uni-f1-kaszmir-cashmere-zakres-95-115-mm-94374051.html
 - kb.pl: Jakie są optymalne wymiary schodów (prostor nad schody nejméně 205 cm) | https://kb.pl/porady/jakie-sa-optymalne-wymiary-schodow/
-- TupTuDu, editor: katastr a hledání parcely jen CZ, jinde panel Siatka (config/lokalizace.php, @funkce v koncept-v3.blade.php); import PDF a obrázku bez omezení zemí; vzorový dům 12,54 × 8,23 m, plochy z polské varianty obrázku | interní
+- TupTuDu, editor: pozemek výběrem na mapě ve všech zemích, v PL parcely z katastru (GUGiK ULDK) i výšky terénu 1 m, hledání podle katastrálního území a čísla jen CZ (config/pozemky.php, config/lokalizace.php, modules/lokalizace.md, stav 12. 11. 2026); import PDF a obrázku bez omezení zemí; vzorový dům 12,54 × 8,23 m, plochy z polské varianty obrázku | interní
 ---
 ::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Rzut parteru domu jednorodzinnego z wymiarami w centymetrach oraz nazwami i powierzchniami pomieszczeń: salon 19,0 m², kuchnia 14,3 m², pokój 12,1 m², sypialnia 10,6 m², łazienka 8,8 m², gabinet 8,1 m², wiatrołap 5,8 m², WC 1,8 m². | Parter przykładowego domu 12,54 × 8,23 m, energooszczędnego domu szkieletowego ze ścianami zewnętrznymi 30 cm, z wymiarami, pomieszczeniami i powierzchniami. Drzwi WC otwierają się tu do środka, w Polsce dałbyś drzwi otwierane na zewnątrz albo przesuwne. Edytor TupTuDu | 1200 | 857
 
@@ -62,7 +62,7 @@ W TupTuDu [narysujesz rzut](aplikace:) myszką na komputerze, ścianę przeciąg
 
 ::obrazek /img/clanky/jak-nakreslit-pudorys-domu/dum-3d-bez-strechy.webp | Ten sam dom w 3D z góry, bez dachu: pomieszczenia, drzwi, okna i meble. | Ten sam rzut w 3D bez dachu, z meblami z katalogu, edytor TupTuDu | 1200 | 700
 
-Masz rzut od architekta albo z katalogu projektów? Wgraj go jako PDF albo obraz, ustaw skalę według znanego wymiaru i obrysuj go. Z wektorowego PDF edytor sam rozpozna ściany. Działkę z katastru wybierzesz na razie tylko w Czechach, w Polsce rysujesz dom na siatce, bez działki.
+Masz rzut od architekta albo z katalogu projektów? Wgraj go jako PDF albo obraz, ustaw skalę według znanego wymiaru i obrysuj go. Z wektorowego PDF edytor sam rozpozna ściany. Potem wybierzesz na mapie swoją działkę ewidencyjną i zobaczysz dom na prawdziwej działce.
 
 Plan Darmowy ma jeden projekt i 30 edycji dziennie. Edycją jest każda nowa ściana, otwór, mebel, przesunięcie albo zmiana grubości lub wymiaru. Ściany, okna i drzwi małego domu parterowego zrobisz mniej więcej w jeden dzień, gdy wymiary ustawisz od razu. Z poprawkami licz dwa dni. Gotowy rzut pobierzesz jako obraz albo wyślesz linkiem.
 

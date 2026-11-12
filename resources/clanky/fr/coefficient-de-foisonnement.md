@@ -18,6 +18,7 @@ zeme: FR
 - Union des Villes et Communes de Wallonie, guide GRGT (coefficient forfaitaire 1,2 pour simplifier, le foisonnement varie selon le sol, l’humidité et la profondeur) | https://uvcw.be/environnement/vos-questions/art-7817
 - Institut Agro Rennes-Angers, synthèse SCIENCIL 2013 (densité apparente sèche des horizons de surface 1,1 à 1,4, 1,4 à 1,6 entre 30 et 60 cm) | https://urbasol.institut-agro-rennes-angers.fr/files/fichiers/portfolios/SCIENCIL_Synthese_Sol-2013.pdf
 - HelloPro, dimensions d’une benne TP (charge utile 10 à 17 t selon le porteur, la charge limite souvent avant le volume) | https://conseils.hellopro.fr/quelles-sont-les-dimensions-d-une-benne-tp-5515.html
+- TupTuDu, editor: rostlý a nakypřený objem v panelu Fondations, jakmile je vybraná parcela na mapě, ve FR katastr a výšky terénu 1 m; výchozí hodnoty z české praxe pro všechny země: spára 1,0 m, svah 1 : 0,5, odkop 0,8 m, skladba 45 cm (u desky 70 cm), ornice 25 cm, nakypření 1,25, pod dům výkopek (public/js/koncept-v3/zemina.js, VYCHOZI) (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::nakypreni
 
@@ -45,6 +46,6 @@ En place, un mètre cube de terre pèse en général 1,5 à 1,9 t, environ 1,8 t
 
 ## Combien de terre aurez-vous à évacuer
 
-Le [calculateur de volume de terre](clanek:calcul-volume-terre) estime ce que laissera votre maison, terre végétale et déblais séparés, en place et foisonnés. Dans l’éditeur TupTuDu, ces volumes s’affichent dans le panneau Fondations dès que la maison est posée sur une parcelle du cadastre, ce qui n’est possible pour l’instant qu’en Tchéquie. En France, vous pouvez [dessiner le plan de votre maison](aplikace:) et la voir en 3D.
+Le [calculateur de volume de terre](clanek:calcul-volume-terre) estime ce que laissera votre maison, terre végétale et déblais séparés, en place et foisonnés. Dans l’éditeur TupTuDu, ces volumes s’affichent dans le panneau Fondations dès que la maison est posée sur sa parcelle, choisie sur la carte du cadastre. Les valeurs de départ viennent de la pratique tchèque (fond des semelles à 1,0 m, talus 1 : 0,5, espace de travail de 0,8 m) : réglez les vôtres dans ce même panneau. Vous pouvez [dessiner le plan de votre maison](aplikace:) et la voir en 3D.
 
 ::vyzva Dessinez d’abord votre maison | Tracez le plan, les niveaux et le toit, puis reportez les dimensions dans le calculateur de terre. La formule Gratuit permet 30 modifications par jour et un projet.

@@ -21,6 +21,7 @@ zeme: FR
 - HelloPro, dimensions d’une benne TP (porteur 6x4 : 10 à 12 t de charge utile, 10 à 15 m³ ; 8x4 : 16,5 à 17 t, 12,5 à 16 m³ ; la charge utile limite souvent avant le volume) | https://conseils.hellopro.fr/quelles-sont-les-dimensions-d-une-benne-tp-5515.html
 - Futura Sciences, Aménager son terrain avant la construction d’une maison (terrassement, déblais et remblais) | https://www.futura-sciences.com/maison/questions-reponses/batiment-amenager-son-terrain-avant-construction-maison-1746/
 - TupTuDu, calculateur de terre : public/js/kalkulacka-zemina.js, mêmes règles que l’éditeur (modules/zemina.md) ; valeurs France en paramètres du bloc : fond des semelles 0,80 m, talus 1/1, espace de travail 1 m, hauteur d’étage du sous-sol 2,70 m ; camions : 10 à 17 t de charge utile divisées par 1,8 t/m³ en place et foisonnement 1,25, soit 7 à 12 m³ foisonnés | interní
+- TupTuDu, editor: výpočet zeminy, jakmile je vybraná parcela na mapě, ve FR katastr (API Carto) a výšky terénu RGE ALTI 1 m; výchozí hodnoty z české praxe pro všechny země: spára 1,0 m, svah 1 : 0,5, odkop 0,8 m, skladba 45 cm (u desky 70 cm), ornice 25 cm, nakypření 1,25, pod dům výkopek (public/js/koncept-v3/zemina.js, VYCHOZI); hodnoty článku (spára 0,80 m, svah 1/1, odkop 1 m) se nastaví v panelu Fondations (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::kalkulacka-zeminy spara=80 | svah=1 | odkop=100 | vyskaSklepu=270
 
@@ -53,7 +54,7 @@ Dans la benne, la terre prend environ un quart de volume en plus. Selon sa taill
 
 C’est le cas idéal : des tranchées plus larges, une terre impropre au remblai comme l’argile ou le manque de place augmentent l’excédent. Pour votre estimation, divisez les excédents foisonnés du calculateur par la capacité du camion que donnera le transporteur.
 
-::vyzva Mesurez votre maison avant de calculer | Dessinez le plan de votre maison dans TupTuDu : ses cotes vous donnent les dimensions et la longueur des murs porteurs à reporter dans le calculateur. Le calcul de la fouille d’après la parcelle et le terrain n’existe pour l’instant qu’en Tchéquie. La formule Gratuit permet 30 modifications par jour et un projet.
+::vyzva Mesurez votre maison avant de calculer | Dessinez le plan de votre maison dans TupTuDu : ses cotes vous donnent les dimensions et la longueur des murs porteurs à reporter dans le calculateur. Choisissez aussi votre parcelle sur la carte : l’éditeur calcule alors lui-même la fouille, en France avec le relief réel du terrain. Ses valeurs de départ viennent de la pratique tchèque (fond des semelles à 1,0 m, talus 1 : 0,5, espace de travail de 0,8 m) : réglez celles de cet article dans le panneau Fondations. La formule Gratuit permet 30 modifications par jour et un projet.
 
 ## Sur un terrain en pente
 

@@ -15,7 +15,7 @@ zeme: PL
 - Adibud: Jak oszacować ilość ziemi do wywozu (písky 1,10–1,15, hlinité zeminy 1,20–1,30, těžké jíly 1,35–1,45, mokrý jíl až 2 t/m³) | https://adibud.pl/blog/jak-oszacowac-ilosc-ziemi-do-wywozu-po-wykopach/
 - ATC, ćwiczenia z technologii robót (kategorie zemin a nakypření, 1 m³ písku 1,8 t) | https://www.atcgrupa.pl/wp-content/uploads/2025/09/%C4%86wiczenia-z-technologii-rob%C3%B3t-rozwi%C4%85zanie.pdf
 - kb.pl: Cennik nawiezienia ziemi na działkę (velký sklápěč asi 20 t) | https://kb.pl/cenniki/uslugi/cennik-nawiezienia-ziemi-na-dzialke-zakup-i-transport/
-- TupTuDu, editor: koeficient nakypření v Podrobnostech řádku Fundamenty (Szczegóły, Spulchnienie), řádek jen s parcelou, katastr jen CZ, vzorový projekt s parcelou dostane každý uživatel | interní
+- TupTuDu, editor: koeficient nakypření v Podrobnostech řádku Fundamenty (Szczegóły, Spulchnienie), řádek jen s parcelou, parcela výběrem na mapě i v PL (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026), vzorový projekt s parcelou dostane každý uživatel | interní
 ---
 ::nakypreni
 
@@ -43,6 +43,6 @@ Orientacyjnie 1,6 do 2,0 t na m³ gruntu rodzimego. Piasek waży ok. 1,8 t, mokr
 
 ## Ile ziemi będziesz wywozić ty
 
-Ile przy twoim domu się wykopie i ile z tego zostanie, policzy [kalkulator ziemi z wykopu](clanek:ziemia-z-wykopu). W [TupTuDu](aplikace:) zobaczysz objętość w gruncie i po spulchnieniu na projekcie przykładowym, który dostaje każdy nowy użytkownik: w panelu Kondygnacje i powierzchnie kliknij wiersz Fundamenty. Współczynnik ustawisz w Szczegółach, jeden dla humusu i urobku, a objętość po spulchnieniu od razu się przeliczy. Podpowiedź w edytorze podaje wartości ogólne, dla swojego gruntu weź wartość z tabeli wyżej. We własnym projekcie edytor liczy ziemię tylko z działką z katastru, a ta jest na razie dostępna w Czechach.
+Ile przy twoim domu się wykopie i ile z tego zostanie, policzy [kalkulator ziemi z wykopu](clanek:ziemia-z-wykopu). W [TupTuDu](aplikace:) zobaczysz objętość w gruncie i po spulchnieniu na projekcie przykładowym, który dostaje każdy nowy użytkownik: w panelu Kondygnacje i powierzchnie kliknij wiersz Fundamenty. Współczynnik ustawisz w Szczegółach, jeden dla humusu i urobku, a objętość po spulchnieniu od razu się przeliczy. Podpowiedź w edytorze podaje wartości ogólne, dla swojego gruntu weź wartość z tabeli wyżej. We własnym projekcie edytor policzy ziemię, gdy wybierzesz na mapie swoją działkę.
 
 ::vyzva Wypróbuj na projekcie przykładowym | Otwórz projekt przykładowy, kliknij wiersz Fundamenty i ustaw współczynnik spulchnienia według swojego gruntu. Zmiany w nim nie wliczają się do limitu planu Darmowy.

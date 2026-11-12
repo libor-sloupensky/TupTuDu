@@ -18,6 +18,7 @@ klic: koeficient-nakypreni-zeminy
 - FAST VUT: Zemní práce (bulking, topsoil 20 %) | https://www.fce.vutbr.cz/tst/x_txt_predmet_bw51_1_zemni-prace.pdf
 - Mainland Aggregates, grab hire: up to 16 tonnes, approx. 10 m³ per load | https://www.mainlandaggregates.co.uk/grab-hire.html
 - GOV.UK: Landfill Tax rates (charged per tonne) | https://www.gov.uk/government/publications/rates-and-allowances-landfill-tax/landfill-tax-rates-from-1-april-2013
+- TupTuDu, editor: rostlý a nakypřený objem v panelu Foundations, jakmile je vybraný pozemek na mapě (ve všech zemích, z katastru nebo obkreslený); výchozí hodnoty z české praxe pro všechny země: spára 1,0 m, svah 1 : 0,5, odkop 0,8 m, skladba 45 cm (u desky 70 cm), ornice 25 cm, nakypření 1,25, pod dům výkopek (public/js/koncept-v3/zemina.js, VYCHOZI) (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::nakypreni
 
@@ -45,6 +46,6 @@ Roughly 1.5 to 1.9 t per m³ in the ground, ordinary soil around 1.8 t, wet soil
 
 ## How much soil you will move
 
-How much your own house digs out and leaves over is worked out by the [excavation calculator](clanek:excavation-calculator), where you set the bulking factor in Details. It needs the length and width of the house and the length of the internal load-bearing walls, which you get when you [draw the floor plan in TupTuDu](aplikace:). For plots in Czechia, the editor also shows bank and loose volumes in its Foundations panel.
+How much your own house digs out and leaves over is worked out by the [excavation calculator](clanek:excavation-calculator), where you set the bulking factor in Details. It needs the length and width of the house and the length of the internal load-bearing walls, which you get when you [draw the floor plan in TupTuDu](aplikace:). Once you add your plot on the map, the editor also shows bank and loose volumes in its Foundations panel. It starts with values from Czech practice, such as footings 1 m deep and a dig slope of 1 : 0.5, which you change in the same panel.
 
 ::vyzva Start with your floor plan | Draw the outline of your house and its load-bearing walls and use the dimensions in the excavation calculator. The free plan has 30 edits a day and one project.

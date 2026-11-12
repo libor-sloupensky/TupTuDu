@@ -24,6 +24,7 @@ zeme: IT
 - eStav: Tvoříme interiér, ložnice (intorno al letto almeno 60 cm; ergonomia valida ovunque) | https://www.estav.cz/cz/7111.tvorime-interier-s-ceskou-designerkou-loznice
 - eStav: Správná orientace domu (camere a est, soggiorno a sud o a ovest) | https://www.estav.cz/cz/1112.spravna-orientace-domu-prispeje-k-prijemnejsimu-bydleni
 - Calcolatore TupTuDu (articolo Calcolo scale, parametri per l'Italia): 3,00 m tra i pavimenti = 17 alzate da 176 mm, pedata 277 mm, rampa dritta 4,43 m; altezza libera consigliata 2,10 m | interní
+- TupTuDu, editor: pozemek výběrem na mapě, v IT parcely z katastru Agenzia Entrate, provincie Trento a Bolzano mají vlastní katastr a pozemek se tam obkreslí (app/Services/Pozemky/Zdroje/Italie.php) (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Pianta del piano terra di una casa con quote in centimetri, nomi e superfici delle stanze: soggiorno 19,0 m², cucina 14,3 m², camera 12,1 m², camera da letto 10,6 m², bagno 8,8 m², studio 8,1 m², antingresso 5,8 m², WC 1,8 m². | Piano terra della casa di esempio, 12,54 × 8,23 m: una casa in legno a basso consumo, progettata in Repubblica Ceca, con muri perimetrali da 30 cm, quote, stanze e superfici. In Italia entrambe le camere, da 12,1 e 10,6 m², sarebbero camere singole, editor TupTuDu | 1200 | 857
 
@@ -65,7 +66,7 @@ In TupTuDu [disegni la planimetria](aplikace:) con il mouse sul computer, trasci
 
 ::obrazek /img/clanky/jak-nakreslit-pudorys-domu/dum-3d-bez-strechy.webp | La stessa casa in 3D dall'alto, senza tetto: stanze, porte, finestre e arredi. | La stessa pianta in 3D senza tetto, con gli arredi del catalogo, editor TupTuDu | 1200 | 700
 
-Hai la pianta dell'architetto o di un catalogo? Caricala in PDF o come immagine, imposta la scala con una quota nota e ricalcala; dal PDF vettoriale i muri li riconosce da solo. La particella dal catasto per ora si carica solo in Repubblica Ceca: in Italia disegni la casa senza il lotto. Il progetto per il permesso di costruire lo firma un tecnico abilitato, la tua pianta gli serve come base.
+Hai la pianta dell'architetto o di un catalogo? Caricala in PDF o come immagine, imposta la scala con una quota nota e ricalcala; dal PDF vettoriale i muri li riconosce da solo. Poi scegli sulla mappa la particella del catasto e vedi la casa sul suo lotto reale. Nelle province di Trento e Bolzano, che hanno un catasto proprio, il lotto lo disegni tu. Il progetto per il permesso di costruire lo firma un tecnico abilitato, la tua pianta gli serve come base.
 
 La versione Gratis ha un progetto e 30 modifiche al giorno: conta come modifica ogni nuovo muro, apertura o arredo, ogni spostamento e cambio di misura. Muri, finestre e porte di una piccola casa a un piano li disegni in circa un giorno se imposti subito le misure, con le correzioni in due. La pianta finita la scarichi come immagine o la condividi con un link.
 

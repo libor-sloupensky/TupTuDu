@@ -17,7 +17,7 @@ souvisejici: vykop-zakladov, kreslenie-podorysu-domu
 - Kolik materiálu: Kalkulačka výkopu (nakyprenie 1,25) | https://kolikmaterialu.cz/vykop/
 - Vodárne, cenník Výkony dopravy platný od 1. 8. 2025 (sklápacie automobily účtované za km a za hodinu) | https://www.vodarne.eu/upload/docs/cenniky/vykony-dopravy/vykony-dopravy.pdf
 - Nariadenie vlády 330/2018 Z. z. (sadzby poplatkov za uloženie odpadov na skládku v eurách za tonu) | https://www.zakonypreludi.sk/zz/2018-330
-- TupTuDu, editor: objem výkopu a nakyprenie len s parcelou z katastra, ktorý je len pre Česko (maZaklady v public/js/koncept-v3/dum.js, config/lokalizace.php) | interní
+- TupTuDu, editor: objem výkopu a nakyprenie len s parcelou (maZaklady v public/js/koncept-v3/dum.js), parcela z katastra a výšky DMR 5.0 1 m aj na Slovensku (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::nakypreni
 
@@ -45,6 +45,6 @@ Objemová hmotnosť zeminy je orientačne 1,5 až 1,9 t na m³ rastlej zeminy, b
 
 ## Koľko zeminy budeš odvážať ty
 
-Koľko sa pri tvojom dome vykope a koľko z toho zostane, vypočíta [kalkulačka zeminy](clanek:vykop-zakladov). Rozmery, ktoré do nej zadáš, ti dá [pôdorys nakreslený v TupTuDu](aplikace:) v skutočných rozmeroch. Výkop podľa parcely a terénu počíta editor zatiaľ len v Česku, na Slovensku použi kalkulačku.
+Koľko sa pri tvojom dome vykope a koľko z toho zostane, vypočíta [kalkulačka zeminy](clanek:vykop-zakladov). Rozmery, ktoré do nej zadáš, ti dá [pôdorys nakreslený v TupTuDu](aplikace:) v skutočných rozmeroch. Keď k domu vyberieš na mape parcelu z katastra, editor spočíta výkop podľa terénu sám a v paneli Základy ukáže rastlý aj nakyprený objem.
 
 ::vyzva Zisti rozmery svojho domu | Nakresli pôdorys v skutočných rozmeroch a kóty ti ukážu rozmery domu aj dĺžky stien, ktoré zadáš do kalkulačky zeminy. Verzia Zadarmo má 30 úprav denne a jeden projekt.

@@ -26,6 +26,7 @@ klic: jak-nakreslit-pudorys-domu
 - Approved Document K (England): headroom over stairs 2 m | https://assets.publishing.service.gov.uk/media/60d5bdcde90e07716f516cfd/Approved_Document_K.pdf
 - TupTuDu stair calculator (article Stair calculator): 2.90 m = 17 risers, straight flight 4.62 m; 3.10 m = 4.85 m | https://www.tuptudu.com
 - TupTuDu, sample project: ground floor 12.54 × 8.23 m, timber frame with 30 cm external walls, room areas from snimky-clanky-dum.cjs | interní
+- TupTuDu, editor: pozemek výběrem na mapě ve všech zemích, parcely z katastru v CZ, SK, PL, FR, ES (bez Baskicka a Navarry), IT (bez provincií Trento a Bolzano) a DE (bez Bavorska), jinde obkreslení (app/Services/Pozemky/Zdroje) (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::obrazek /img/clanky/jak-nakreslit-pudorys-domu/pudorys-prizemi.webp | Ground floor plan of a house with dimensions in centimetres and the names and areas of rooms: living room 19.0 m², kitchen 14.3 m², room 12.1 m², bedroom 10.6 m², bathroom 8.8 m², study 8.1 m², draught lobby 5.8 m², toilet 1.8 m². | The ground floor of the sample house, 12.54 × 8.23 m, a low-energy timber-frame house with 30 cm external walls, with dimensions, rooms and areas, TupTuDu editor | 1200 | 857
 
@@ -68,7 +69,7 @@ In TupTuDu you [draw the floor plan](aplikace:) with a mouse on a computer, each
 
 ::obrazek /img/clanky/jak-nakreslit-pudorys-domu/dum-3d-bez-strechy.webp | The same house in 3D from above without the roof: rooms, doors, windows and furniture. | The same floor plan in 3D without the roof, with furniture from the catalogue, TupTuDu editor | 1200 | 700
 
-Have a plan from an architect or a catalogue? Upload it as a PDF or image, set the scale from a known dimension and trace it. From a vector PDF, the editor finds the walls itself. Placing the house on its real plot from the land registry works only in Czechia for now.
+Have a plan from an architect or a catalogue? Upload it as a PDF or image, set the scale from a known dimension and trace it. From a vector PDF, the editor finds the walls itself. You can also place the house on its real plot: find it on the map and click the parcel in Czechia, Slovakia, Poland, France and most of Spain, Italy and Germany, or trace its boundary anywhere else.
 
 With 30 edits a day on the free plan, the walls, windows and doors of a small single-storey house take about a day if you set the sizes straight away, two with corrections. Every new wall, opening or piece of furniture, every move and resize is an edit. You download the finished plan as an image or share it by link.
 

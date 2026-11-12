@@ -19,7 +19,7 @@ zeme: ES
 - Franquet Bernis, Querol Gómez: Esponjamiento, compactación y compensación de tierras (objem na korbě = rostlý objem × nakypření, korby sklápěčů asi 13,5 m³, návěsy 24 m³) | https://www.eumed.net/libros-gratis/2011b/967/esponjamiento%20compactacion%20y%20compensacion%20de%20tierras.html
 - FAST VUT: Zemní práce (ornici skladovat nejvýš do 1,5 m) | https://www.fce.vutbr.cz/tst/x_txt_predmet_bw51_1_zemni-prace.pdf
 - TupTuDu, kalkulačka zeminy: public/js/kalkulacka-zemina.js, příklad 12 × 10 m se spárou 0,8 m: vykopáno 54,15 m³, zpět 21,30, zbude 32,85 (ornice 30, výkopek 2,85), se štěrkem výkopek 14,85 a štěrk 12, hromada 67,7; sklep 3,05 m: 651,6 / 397,5 / 814,5 | interní
-- TupTuDu, editor: výpočet zeminy jen s parcelou z katastru (maZaklady v public/js/koncept-v3/dum.js, modules/zemina.md), katastr jen v Česku (config/lokalizace.php) | interní
+- TupTuDu, editor: výpočet zeminy jen s parcelou (maZaklady v public/js/koncept-v3/dum.js, modules/zemina.md); parcela výběrem na mapě i ve Španělsku, výšky terénu tam nejsou, terén je rovina a na svahu je výsledek jen odhad pro rovinu; výchozí hodnoty z české praxe pro všechny země: spára 1,0 m (článek 0,80 m), svah 1 : 0,5, odkop 0,8 m, skladba 45 cm, pod dům výkopek (public/js/koncept-v3/zemina.js, VYCHOZI), mění se v panelu Cimentación (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::kalkulacka-zeminy spara=80
 
@@ -62,7 +62,7 @@ Es el caso ideal: las zanjas salen más anchas y parte de la tierra no sirve par
 La calculadora supone terreno llano. En pendiente, las zapatas se escalonan y la cimentación sale más alta en la parte baja.
 ::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | Vista 3D de una casa de una planta en una parcela en pendiente, con ventanas en todos los lados y la entrada en la parte alta; la cimentación gris es más alta en la parte baja | Casa en una parcela con poca pendiente: la cimentación (en gris para que se vea) baja hasta el terreno y es más alta en la parte baja. Editor TupTuDu con el terreno de una parcela del catastro checo | 1200 | 700
 
-En el [editor de TupTuDu](aplikace:) la excavación según la casa y el terreno se calcula de momento solo con parcelas del catastro de Chequia. En España dibujas la casa a escala y sacas de ella las medidas para la calculadora.
+El [editor de TupTuDu](aplikace:) calcula la excavación según la casa en cuanto eliges su parcela en el mapa. Parte de valores de la práctica checa (fondo de zapata a 1,0 m), que cambias en el panel Cimentación. En España no conoce el relieve: toma el terreno como llano y en pendiente da, como la calculadora, solo una estimación.
 
 ::vyzva Antes de excavar, dibuja tu casa | Dibuja la planta real con sus muros de carga y activa las cotas: tendrás las medidas exteriores para la calculadora y verás la casa en 3D. El plan Gratis tiene 30 cambios al día y un proyecto.
 

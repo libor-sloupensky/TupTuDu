@@ -24,6 +24,7 @@ klic: kolik-zeminy-z-vykopu
 - GOV.UK: Decide if a material is waste or not (excavated soil used elsewhere is likely waste, CL:AIRE code as the non-waste route) | https://www.gov.uk/government/publications/legal-definition-of-waste-guidance/decide-if-a-material-is-waste-or-not
 - GOV.UK: Waste duty of care code of practice (waste only to authorised businesses, transfer documentation) | https://www.gov.uk/government/publications/waste-duty-of-care-code-of-practice
 - Dům a zahrada: Svažitý pozemek (stepped footings on a slope) | https://www.dumazahrada.cz/stavba/svazity-pozemek-jak-cist-svah-orientace-odvodneni-zaklady/
+- TupTuDu, editor: výpočet zeminy, jakmile je vybraný pozemek na mapě (ve všech zemích, katastr v CZ, SK, PL, FR, ES, IT a DE mimo Bavorsko, jinde obkreslení); výšky terénu z modelu 1 m v CZ, SK, PL, FR, AT a v 6 spolkových zemích DE (BY, NW, HE, BB, BE, MV), jinde rovina; výchozí hodnoty z české praxe pro všechny země: spára 1,0 m, svah 1 : 0,5, odkop 0,8 m, skladba 45 cm (u desky 70 cm), ornice 25 cm, nakypření 1,25, pod dům výkopek (public/js/koncept-v3/zemina.js, VYCHOZI), stejné jako výchozí hodnoty kalkulačky (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::kalkulacka-zeminy
 
@@ -35,7 +36,7 @@ That formula gives the soil dug out, not what goes back and what has to leave th
 
 ::rez-vykopu
 
-Example: a 12 × 10 m house with one internal load-bearing wall, the floor 30 cm above ground, 45 cm from the floor to the bottom of the sub-base, 25 cm of topsoil, an 80 cm working space around the house and footings 1 m deep. These are the calculator's defaults, common practice in Czechia, where TupTuDu comes from.
+Example: a 12 × 10 m house with one internal load-bearing wall, the floor 30 cm above ground, 45 cm from the floor to the bottom of the sub-base, 25 cm of topsoil, an 80 cm working space around the house and footings 1 m deep. These are the calculator's and the editor's defaults, common practice in Czechia, where TupTuDu comes from; you change them in the editor's Foundations panel.
 
 - **Topsoil:** about 39 m³ is stripped. 9 m³ goes back around the house, none under it, so 30 m³ is left, roughly the house area × the topsoil depth.
 - **Footing trenches:** about 54 m of footings × 0.5 m × 0.75 m = 20 m³ of subsoil, the soil below the topsoil. Concrete fills the trench, so all of it is left over. The depth depends on frost and soil: in England at least 0.45 m, in shrinkable clay 0.75 to 1 m, more near trees.
@@ -61,13 +62,13 @@ On a lorry, soil takes about a quarter more space than in the ground. A lorry ta
 
 That is the ideal case, so allow a margin: trenches end up wider, some soil is unsuitable for backfill and space on the plot runs out. One self-builder in Czechia sent away 9 loads although the topsoil stayed: rain had widened his trenches by almost half.
 
-::vyzva Get the numbers for your house | Draw the real floor plan with external and load-bearing walls and take its dimensions into the calculator. On plots in Czechia, the editor works out the excavation itself, including the terrain. The free plan has 30 edits a day and one project.
+::vyzva Get the numbers for your house | Draw the real floor plan with external and load-bearing walls and take its dimensions into the calculator. Add your plot on the map and the editor works out the excavation itself. The free plan has 30 edits a day and one project.
 
 ## On a slope it works out differently
 
-The calculator assumes flat ground. On a slope, footings are stepped and the foundation is taller downhill. The volume depends most on how high you set the house.
+The calculator assumes flat ground. On a slope, footings are stepped and the foundation is taller downhill. The volume depends most on how high you set the house. The editor knows the real terrain in Czechia, Slovakia, Poland, France, Austria and six German states. Elsewhere it treats the ground as level, so on a slope it gives, like the calculator, only a flat-ground estimate.
 
-::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | 3D view of a single-storey house on a slope with windows on all sides and the entrance uphill; the grey foundation is taller on the downhill side | A house on a gentle slope: the foundation (grey for clarity) runs from the ground up to the floor and is taller downhill. TupTuDu editor on a plot in Czechia, where it loads the terrain | 1200 | 700
+::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | 3D view of a single-storey house on a slope with windows on all sides and the entrance uphill; the grey foundation is taller on the downhill side | A house on a gentle slope: the foundation (grey for clarity) runs from the ground up to the floor and is taller downhill. TupTuDu editor on a plot in Czechia with its terrain loaded | 1200 | 700
 
 ## Where the soil goes
 

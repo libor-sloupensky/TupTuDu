@@ -18,6 +18,7 @@ zeme: IT
 - FAST VUT: Zemní práce (rigonfiamento, terreno vegetale 20 %) | https://www.fce.vutbr.cz/tst/x_txt_predmet_bw51_1_zemni-prace.pdf
 - Codice della strada, art. 62 (massa limite degli autoveicoli isolati a tre assi 25 t) | https://www.brocardi.it/codice-della-strada/titolo-iii/capo-i/art62.html
 - Autocarro ribaltabile a tre assi in vendita: massa complessiva 26.000 kg, portata utile 14.170 kg (esempio di mezzo) | https://www.machineseeker.it/iveco-stralis+420+ribaltabile+3+latoi+euro6/i-18013266
+- TupTuDu, editor: rostlý a nakypřený objem v panelu Fondazioni, jakmile je vybraný pozemek na mapě, v IT katastr Agenzia Entrate (provincie Trento a Bolzano bez katastru, obkreslení), výšky terénu v IT nejsou, terén je rovina; výchozí hodnoty z české praxe pro všechny země: spára 1,0 m, svah 1 : 0,5, odkop 0,8 m, skladba 45 cm (u desky 70 cm), ornice 25 cm, nakypření 1,25, pod dům výkopek (public/js/koncept-v3/zemina.js, VYCHOZI) (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::nakypreni
 
@@ -47,6 +48,6 @@ Quando ordini il camion conta quello che si riempie prima, il cassone o la porta
 
 ## Quanta terra porterai via tu
 
-Quanta terra scavi per la tua casa e quanta ne resta lo calcola il [calcolatore dello scavo delle fondazioni](clanek:scavo-fondazioni), con il coefficiente che scegli tu. Il calcolo dentro l'editor TupTuDu per ora funziona solo con le particelle del catasto ceco. In Italia [disegna la casa in TupTuDu](aplikace:) e le misure vere le inserisci nel calcolatore.
+Quanta terra scavi per la tua casa e quanta ne resta lo calcola il [calcolatore dello scavo delle fondazioni](clanek:scavo-fondazioni), con il coefficiente che scegli tu. Lo stesso conto lo fa l'editor TupTuDu sulla tua casa: [disegnala](aplikace:), scegli il lotto sulla mappa e nel pannello Fondazioni vedi il volume in sito e quello smosso. Parte da valori della pratica ceca, per esempio 45 cm dal pavimento al fondo del magrone invece dei circa 60 cm con il vespaio, e li cambi nello stesso pannello. In Italia l'editor non ha le quote del terreno e considera il lotto in piano.
 
 ::vyzva Disegna la tua casa | Disegna la pianta nelle misure reali, aggiungi i piani e guarda la casa in 3D. Le misure esterne e quelle dei muri portanti ti servono nel calcolatore dello scavo. La versione Gratis ha 30 modifiche al giorno e un progetto.

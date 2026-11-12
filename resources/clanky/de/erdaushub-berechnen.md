@@ -23,6 +23,7 @@ zeme: DE, AT
 - Abfallwirtschaftsgesetz 2002 Österreich, § 3 Abs. 1 Z 8 (gleiche Ausnahme) | https://www.jusline.at/gesetz/awg/paragraf/3
 - fertighaus.de: Erdaushub entsorgen (Mutterboden nach § 202 BauGB erhalten, bei Verdacht auf Belastung Gutachter, belasteter Boden teurer) | https://www.fertighaus.de/ratgeber/hausbau/erdaushub-entsorgung-und-kosten/
 - Deutschland-Rechner: Erdaushub-Rechner (Dreiachser etwa 8 m³, Vierachser 12 bis 16 m³ lose; Auflockerung 15 bis 60 %) | https://www.deutschland-rechner.de/erdaushub-rechner
+- TupTuDu, editor: výpočet zeminy, jakmile je vybraný pozemek na mapě, v DE z katastru mimo Bavorsko, v AT a Bavorsku obkreslení; výšky terénu z modelu 1 m v AT a v BY, NW, HE, BB, BE, MV, v ostatních spolkových zemích rovina; výchozí hodnoty z české praxe pro všechny země: spára 1,0 m, svah 1 : 0,5, odkop 0,8 m, skladba 45 cm (u desky 70 cm), ornice 25 cm, nakypření 1,25, pod dům výkopek (public/js/koncept-v3/zemina.js, VYCHOZI); hodnoty článku (spára 0,8 m, svah 1 : 0,6) se nastaví v panelu Fundament (config/pozemky.php, modules/lokalizace.md, stav 12. 11. 2026) | interní
 ---
 ::kalkulacka-zeminy spara=80 | svah=0.6 | vyskaSklepu=275
 
@@ -62,11 +63,11 @@ Das ist der Idealfall, in der Praxis rechnest du mit Reserve. Gräben werden bre
 
 Für deine Schätzung zählst du im Rechner aufgelockerten Oberboden und Aushub zusammen und teilst durch die Ladung, die dir das Fuhrunternehmen nennt. Den größten Haufen zählst du nicht, ein Teil davon kommt zurück. Außenmaße und tragende Wände liest du aus deinem [Grundriss](clanek:grundriss-zeichnen) ab.
 
-::vyzva Zeichne dein Haus in echten Maßen | Für die Schätzung brauchst du die Außenmaße und die Länge der tragenden Wände. Im Editor zeichnest du den Grundriss und siehst das Haus in 3D. Die Erdmengen rechnet er vorerst nur bei Grundstücken in Tschechien. Die Gratis-Version hat 30 Änderungen pro Tag und ein Projekt.
+::vyzva Zeichne dein Haus in echten Maßen | Für die Schätzung brauchst du die Außenmaße und die Länge der tragenden Wände. Im Editor zeichnest du den Grundriss und siehst das Haus in 3D. Wählst du dazu dein Grundstück auf der Karte, rechnet er die Erdmengen selbst. Er startet mit Werten aus der tschechischen Praxis, Gründungstiefe 1,0 m und Böschung 1 : 0,5, die Werte von oben stellst du im Bereich Fundament ein. Die Gratis-Version hat 30 Änderungen pro Tag und ein Projekt.
 
 ## Am Hang sieht es anders aus
 
-Der Rechner geht von ebenem Gelände aus. Am Hang werden Fundamente abgetreppt und sind talseitig höher. Über die Menge entscheidet vor allem, wie hoch du das Haus setzt. Das Gelände kennt der Editor vorerst nur bei Grundstücken in Tschechien, wo er das amtliche Geländemodell lädt.
+Der Rechner geht von ebenem Gelände aus. Am Hang werden Fundamente abgetreppt und sind talseitig höher. Über die Menge entscheidet vor allem, wie hoch du das Haus setzt. Das Gelände kennt der Editor in Österreich, Bayern, Nordrhein-Westfalen, Hessen, Brandenburg, Berlin und Mecklenburg-Vorpommern. In den übrigen Bundesländern rechnet er wie der Rechner mit ebenem Gelände.
 
 ::obrazek /img/clanky/kolik-zeminy-z-vykopu/zaklad-svah.webp | 3D-Ansicht eines eingeschossigen Hauses am Hang mit Fenstern auf allen Seiten und dem Eingang auf der Bergseite, das graue Fundament ist talseitig höher | Haus auf einem leicht geneigten Grundstück in Tschechien: Das Fundament (zur Verdeutlichung grau) reicht talseitig vom Gelände bis unter den Fußboden, Editor TupTuDu | 1200 | 700
 
