@@ -252,9 +252,11 @@ překlad, ale o verzi pro zemi:
   ne převodem z češtiny.
 - **Hodnoty podle země.** Fyzika a postup se přeloží, číslo z předpisu nebo praxe se vezme pro zemi jazyka
   (`modules/stavebni-parametry.md`, tři stavy: ověřeno, závisí na regionu, neověřeno). Česká hodnota nikdy jako náhrada.
-- **Možnosti aplikace v zemi.** Co aplikace v zemi neumí, článek neslibuje: katastr a hledání parcely jsou jen v Česku
-  (parcely přes INSPIRE jsou v plánu, `modules/lokalizace.md`), ruční pozemek zatím není, jednotky jen metrické. Výzvu
-  do aplikace upravit na to, co tam funguje, nebo omezení jednou větou přiznat.
+- **Možnosti aplikace v zemi.** Co aplikace v zemi neumí, článek neslibuje. Stav od 12. 11. 2026 (`modules/lokalizace.md`,
+  Pozemky v Evropě): pozemek se vybírá na mapě všude, parcely z katastru v CZ, SK, PL, FR, ES, IT a DE kromě Bavorska
+  (jinde se obkreslí), výšky terénu v CZ, SK, PL, FR, AT a 6 spolkových zemích DE (jinde rovina, výšku nad terénem zadá
+  uživatel). Hledání podle čísla parcely jen v Česku, jednotky jen metrické. Výzvu do aplikace upravit na to, co tam
+  funguje, nebo omezení jednou větou přiznat.
 - **Téma čistě národní** (odstup od hranice, katastr) se pro jinou zemi píše znovu podle jejích pravidel, nebo tam nevyjde.
 - Obrázky s textem vygenerovat pro každý jazyk (část Obrázky a překlad). Odborná revize zvlášť pro každou zemi.
 
