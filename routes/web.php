@@ -167,6 +167,11 @@ Route::middleware(['subdomena:masterteam', 'auth', 'master'])->prefix('mastertea
     // 404 — ztracené URL (záložka v přehledu bugů)
     Route::get('seo-404', [Seo404Controller::class, 'index'])->name('seo404');
     Route::delete('seo-404/{seo404}', [Seo404Controller::class, 'smazat'])->name('seo404.smazat');
+
+    // Analýza konkurence v DB (modules/konkurence.md)
+    Route::get('konkurence', [App\Http\Controllers\Masterteam\KonkurenceController::class, 'index'])->name('konkurence');
+    Route::patch('konkurence/parametr/{parametr}/rezim', [App\Http\Controllers\Masterteam\KonkurenceController::class, 'rezimParametru'])->name('konkurence.parametr.rezim');
+    Route::patch('konkurence/konkurent/{konkurent}/rezim', [App\Http\Controllers\Masterteam\KonkurenceController::class, 'rezimKonkurenta'])->name('konkurence.konkurent.rezim');
 });
 
 // ───────── Veřejný web: titulka, ceník, právní stránky a kontakt ─────────
