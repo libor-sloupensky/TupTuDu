@@ -795,21 +795,25 @@ window.KonceptImport = {
     /** Přizpůsobí pohled tak, aby byl vidět celý podklad. */
     podkladNaObrazovku() {
         if (!this.podklad || !this.stage) return;
+        // Skryté plátno (editor ve 3D) má rozměr 1 px, měřítko by vyšlo záporné. Srovná se po návratu do 2D.
+        if (this.rezim3d || this.stage.width() < 50 || this.stage.height() < 50) {
+            this._fitPoNavratu = true;
+            return;
+        }
+        this._fitPoNavratu = false;
 
         const pxNaM = this.engine?.PX_PER_M || 80;
         const sirkaPx = this.podklad.sirkaM * pxNaM;
         const vyskaPx = this.podklad.vyskaM * pxNaM;
-        const okraj = 40;
+        const okraj = Math.min(40, Math.floor(Math.min(this.stage.width(), this.stage.height()) / 6));
         const zoom = Math.min(
             (this.stage.width() - okraj * 2) / (sirkaPx || 1),
             (this.stage.height() - okraj * 2) / (vyskaPx || 1),
         );
 
         this.stage.scale({ x: zoom, y: zoom });
-        this.stage.position({
-            x: this.stage.width() / 2 - (this.podklad.stredX || 0) * zoom,
-            y: this.stage.height() / 2 - (this.podklad.stredY || 0) * zoom,
-        });
+        // S natočením kompasem a jeho pivotem (koncept-k-ui.js)
+        this._stredNaObrazovku(this.podklad.stredX || 0, this.podklad.stredY || 0, zoom);
         this.zoom = zoom;
         this.renderer?.renderGrid();
         this.stage.batchDraw();
@@ -896,22 +900,31 @@ window.KonceptImport = {
         this.podkladUloz();
     },
 
-    /** Uloží stav podkladu do metadat konceptu (bez verzování kresby). */
+    /**
+     * Uloží stav podkladu do metadat konceptu (bez verzování kresby). Jde přes společnou frontu
+     * s kresbou (ulozit): verzi zvyšuje kresba, souběžný zápis podkladu by se jí jevil jako změna odjinud.
+     */
     async podkladUloz() {
-        if (!this.projektId || this._konfliktVerze != null) return;
+        if (this._konfliktVerze != null) return;
         this._podkladZapis(this.podklad);
+        return this.ulozit('podklad');
+    },
+
+    /** Vlastní zápis podkladu, volá ho jen fronta v ulozit. Bez konceptu počká, založí ho uložení kresby. */
+    async _ulozitPodkladTed() {
+        if (!this.projektId || this._konfliktVerze != null) return;
         try {
-            // Až po běžícím uložení kresby: verzi zvyšuje ono a podklad patří ke kresbě
-            await this._ukladaniBezi;
-            if (this._konfliktVerze != null) return;
             const resp = await fetch(_kkInitData.routes.ulozit.replace(':id', this.projektId), {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': _kkInitData.csrf, 'Accept': 'application/json' },
                 body: JSON.stringify({ metadata: this.metadata, verze: this.verze }),
             });
             if (resp.status === 409) this._konfliktUlozeni((await resp.json().catch(() => ({}))).verze);
+            else if (!resp.ok && resp.status !== 402) {
+                window.zalogujChybu?.('Uložení podkladu selhalo (HTTP ' + resp.status + ')', 'import podkladu — uložení', { projektId: this.projektId, verze: this.verze, status: resp.status });
+            }
         } catch (e) {
-            window.zalogujChybu?.(e, 'import podkladu — uložení');
+            window.zalogujChybu?.(e, 'import podkladu — uložení', { projektId: this.projektId, verze: this.verze });
         }
     },
 };

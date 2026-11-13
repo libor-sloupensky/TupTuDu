@@ -60,6 +60,11 @@ async function main() {
         kontrola('souběžná uložení se nepředbíhají a konflikt nehlásí', soubeh.verze > soubeh.v0 && soubeh.konflikt === null && !soubeh.dialog && soubeh.neodeslane === 0, JSON.stringify(soubeh));
         const podklad = await p.vyhodnot(`(async () => { const d = ${D}; const e = d.engine; const X = e.PX_PER_M; e.addWall(0, 5*X, 5*X, 5*X, 0.2, 'pricka'); d._zapisKrok('D'); d.ulozit(); await d.podkladUloz(); await new Promise(r => setTimeout(r, 300)); return { konflikt: d._konfliktVerze ?? null }; })()`);
         kontrola('podklad při běžícím uložení konflikt nevyvolá', podklad.konflikt === null, JSON.stringify(podklad));
+        // Import stěn: podklad a hned po něm kresba v témže kroku (Libor 13. 11. 2026 — hláška v jediném okně)
+        const importPoradi = await p.vyhodnot(`(async () => { const d = ${D}; const e = d.engine; const X = e.PX_PER_M; e.addWall(0, 7*X, 5*X, 7*X, 0.2, 'pricka'); d._zapisKrok('E');
+            const a = d.podkladUloz(); const b = d.ulozit(); await Promise.all([a, b]); await new Promise(r => setTimeout(r, 300));
+            return { konflikt: d._konfliktVerze ?? null, dialog: !!document.getElementById('kk-konflikt-dialog'), neodeslane: d._neodeslaneKroky.length }; })()`);
+        kontrola('podklad a hned kresba (import) konflikt nevyvolají', importPoradi.konflikt === null && !importPoradi.dialog && importPoradi.neodeslane === 0, JSON.stringify(importPoradi));
         const prejmenovani = await p.vyhodnot(`(async () => { const d = ${D}; const u = _kkInitData.routes.ulozit.replace(':id', d.projektId); const r = await fetch(u, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': _kkInitData.csrf, Accept: 'application/json' }, body: JSON.stringify({ nazev: d.projektNazev }) }); return r.status; })()`);
         kontrola('přejmenování bez verze projde', prejmenovani === 200, String(prejmenovani));
 

@@ -5,6 +5,9 @@
 function konceptKEditor(initialData) {
     // Obnovit uložený stav (vše na jednom místě)
     const _s = JSON.parse(localStorage.getItem('kv3_state') || '{}');
+    // Pohled (zoom, posun, natočení kompasu) patří projektu, ze kterého je uložený. Nový nebo jiný
+    // projekt ho nedědí: dřív se otevřel natočený a posunutý podle předchozího a dům byl mimo obrazovku.
+    const _pohledTentyz = _s.lastProjekt != null && String(_s.lastProjekt) === String(initialData.projektId);
     return {
         // ─── Projekt ────────────────────────────────────────────
         projektId: initialData.projektId,
@@ -41,7 +44,7 @@ function konceptKEditor(initialData) {
         layoutMode: (_s.layoutMode ?? 0) % 2,
         splitPct: _s.splitPct ?? 60,
         editorHeight: Math.max(400, window.innerHeight - 80),
-        zoom: _s.zoom ?? 1,
+        zoom: _pohledTentyz && _s.zoom > 0 ? _s.zoom : 1,
         kurzorX: 0,
         kurzorY: 0,
 
@@ -155,7 +158,8 @@ function konceptKEditor(initialData) {
         zobrazMrizkuTerenu: _s.showMrizkaTerenu ?? false,
         vyskovyProfil: null,
         katastrMapaPodklad: _s.mapaPodklad || 'zadny',
-        kompasUhel: _s.kompasUhel ?? 0,
+        // Natočení kompasu je uložené v projektu (metadata.katastr), z prohlížeče jen pro tentýž projekt
+        kompasUhel: _pohledTentyz ? (_s.kompasUhel ?? 0) : 0,
         _katastrData: null,
         _katastrOkolni: null,
         _katastrDruhCz: {
@@ -1516,15 +1520,15 @@ function konceptKEditor(initialData) {
                     this.stage.scale({ x: this.zoom, y: this.zoom });
                 }
                 const _saved = JSON.parse(localStorage.getItem('kv3_state') || '{}');
-                if (_saved.stageOffsetX !== undefined && _saved.stageOffsetY !== undefined) {
+                if (_pohledTentyz && _saved.stageOffsetX !== undefined && _saved.stageOffsetY !== undefined) {
                     this.stage.offsetX(_saved.stageOffsetX);
                     this.stage.offsetY(_saved.stageOffsetY);
                 }
-                if (_saved.stageX !== undefined && _saved.stageY !== undefined) {
+                if (_pohledTentyz && _saved.stageX !== undefined && _saved.stageY !== undefined) {
                     this.stage.position({ x: _saved.stageX, y: _saved.stageY });
                 }
-                // Vzorový projekt: uložený pohled patří jinému projektu, ukázat celý dům (až po natočení kompasem)
-                if (this.jeVzorKopie) setTimeout(() => this.fitView(), 400);
+                // Vzorový nebo jiný projekt: uložený pohled k němu nepatří, ukázat celý dům (až po natočení kompasem)
+                if (this.jeVzorKopie || !_pohledTentyz) setTimeout(() => this.fitView(), 400);
 
                 // Mřížka
                 this.renderer.renderGrid();
@@ -1687,7 +1691,8 @@ function konceptKEditor(initialData) {
                     const kat = this.metadata.katastr;
                     if (kat.parcely) this.katastrParcely = kat.parcely;
                     if (kat.ku) { this.katastrVybraneKu = kat.ku; this.katastrKuHledani = kat.ku.n + ' (' + kat.ku.o + ')'; }
-                    if (kat.kompasUhel && !this.kompasUhel) this.kompasUhel = kat.kompasUhel;
+                    // Platí natočení uložené v projektu, prohlížeč mohl mít hodnotu z jiného zařízení nebo starší
+                    if (typeof kat.kompasUhel === 'number') this.kompasUhel = kat.kompasUhel;
                     this.katastrBezVysek = !!kat.bezVysek;
                     if (this.katastrParcely.length > 0) {
                         // Načíst stavby a okolní parcely (neukládají se do DB)
@@ -4041,28 +4046,82 @@ function konceptKEditor(initialData) {
         },
 
         fitView() {
+            // Skryté plátno (editor ve 3D) má rozměr 1 px: měřítko by vyšlo záporné a obrátilo 2D i 3D
+            // (dům ve 3D vzhůru nohama, ve 2D prázdno). 2D se srovná po návratu, ve 3D se zamíří kamera.
+            if (this.rezim3d || this.stage.width() < 50 || this.stage.height() < 50) {
+                this._fitPoNavratu = true;
+                this._ramujDum3d();
+                return;
+            }
+            this._fitPoNavratu = false;
             if (!this.engine || this.engine.walls.size === 0) {
-                this.stage.position({ x: this.stage.width() / 2, y: this.stage.height() / 2 });
                 this.stage.scale({ x: 1, y: 1 });
+                this._stredNaObrazovku(0, 0, 1);
                 this.zoom = 1;
                 this.renderer.renderGrid();
                 return;
             }
+            // Rozsah ve směru obrazovky: půdorys natočený kompasem se musí vejít celý
+            const rot = (this.stage.rotation() || 0) * Math.PI / 180;
+            const cos = Math.cos(rot), sin = Math.sin(rot);
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             for (const node of this.engine.nodes.values()) {
-                minX = Math.min(minX, node.x); minY = Math.min(minY, node.y);
-                maxX = Math.max(maxX, node.x); maxY = Math.max(maxY, node.y);
+                const x = node.x * cos - node.y * sin, y = node.x * sin + node.y * cos;
+                minX = Math.min(minX, x); minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
             }
-            const pad = 100;
+            // Okraj 100 px, na malém plátně (telefon) menší, ať zbyde kladná plocha
+            const pad = Math.min(100, Math.floor(Math.min(this.stage.width(), this.stage.height()) / 6));
             const cw = this.stage.width() - pad * 2;
             const ch = this.stage.height() - pad * 2;
             const scale = Math.min(cw / (maxX - minX || 1), ch / (maxY - minY || 1), 2);
-            const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+            // Střed zpět do souřadnic půdorysu
+            const sx = (minX + maxX) / 2, sy = (minY + maxY) / 2;
             this.stage.scale({ x: scale, y: scale });
-            this.stage.position({ x: this.stage.width() / 2 - cx * scale, y: this.stage.height() / 2 - cy * scale });
+            this._stredNaObrazovku(sx * cos + sy * sin, -sx * sin + sy * cos, scale);
             this.zoom = scale;
             this.renderer.poZmeneZoomu();   // mřížka, kóty, označení, úhly
             this._updateSpojMadlo();   // madlo má pevnou velikost na obrazovce
+        },
+
+        /**
+         * Posune plátno, aby bod půdorysu (x, y) byl uprostřed obrazovky při měřítku s.
+         * Počítá s natočením kompasem i s jeho pivotem (offset), které Konva přičítá před posunem.
+         */
+        _stredNaObrazovku(x, y, s) {
+            const rot = (this.stage.rotation() || 0) * Math.PI / 180;
+            const cos = Math.cos(rot), sin = Math.sin(rot);
+            const dx = (x - this.stage.offsetX()) * s, dy = (y - this.stage.offsetY()) * s;
+            this.stage.position({
+                x: this.stage.width() / 2 - (dx * cos - dy * sin),
+                y: this.stage.height() / 2 - (dx * sin + dy * cos),
+            });
+        },
+
+        /** Ve 3D: kamera míří na celý dům (natočení pohledu zůstane), měřítko podle plátna 3D. */
+        _ramujDum3d() {
+            const _3d = window._kk3d;
+            if (!this.rezim3d || !_3d?.camera || !_3d.controls || !this.engine?.nodes.size) return;
+            const el = _3d.renderer?.domElement;
+            const w = el?.clientWidth || 0, h = el?.clientHeight || 0;
+            if (w < 50 || h < 50) return;
+            const pxM = this.PX_PER_M;
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const n of this.engine.nodes.values()) {
+                minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
+                maxX = Math.max(maxX, n.x); maxY = Math.max(maxY, n.y);
+            }
+            // Úhlopříčka v metrech: dům se vejde v libovolném natočení pohledu
+            const d = Math.max(Math.hypot(maxX - minX, maxY - minY) / pxM, 1);
+            const zoom = Math.min(Math.min(w, h) / (d * 1.15 * pxM), 2);
+            const posun = _3d.camera.position.clone().sub(_3d.controls.target);
+            _3d.controls.target.set((minX + maxX) / 2 / pxM, 1.5, (minY + maxY) / 2 / pxM);
+            _3d.camera.position.copy(_3d.controls.target).add(posun);
+            _3d.camera.zoom = zoom;
+            _3d.camera.updateProjectionMatrix();
+            _3d.controls.update();
+            _3d.cameraInitialized = true;
+            this.zoom = zoom;
         },
 
         /** Výchozí tloušťka zvoleného typu stěny (z definic v enginu). */
@@ -6502,6 +6561,8 @@ function konceptKEditor(initialData) {
                 this.verze = 1;
                 localStorage.setItem('kv3_lastProjekt', String(d.id));
                 this.doplnKonceptDoSeznamu(d.id, nazev);
+                // Podklad vložený před založením konceptu se uloží hned po kresbě (fronta v ulozit)
+                if (this.metadata?.podklad || this.metadata?.podklady) this._cekaPodklad = true;
             } catch (e) {
                 chybaUzivateli(e, 'Koncept V3: založení konceptu pro uložení práce');
             } finally {
@@ -6526,24 +6587,34 @@ function konceptKEditor(initialData) {
         },
 
         /**
-         * Uložení jedno po druhém: dvě souběžná by poslala stejnou verzi a druhé by vypadalo jako
-         * změna odjinud. Co přijde během běžícího, uloží se hned po něm.
+         * Uložení jedno po druhém, kresba i podklad v jedné frontě: dvě souběžná by poslala stejnou
+         * verzi a druhé by vypadalo jako změna odjinud (import stěn ukládá podklad a hned po něm kresbu,
+         * dřív to končilo hláškou „projekt se změnil jinde“). Co přijde během běžícího, uloží se hned po něm.
+         * `co === 'podklad'` uloží jen metadata podkladu (podkladUloz), jinak kresbu.
          */
-        async ulozit() {
-            if (this._ukladaniBezi) {
-                this._ulozitZnovu = true;
-                return this._ukladaniBezi;
+        ulozit(co) {
+            if (co === 'podklad') this._cekaPodklad = true;
+            else this._cekaKresba = true;
+            if (!this._ukladaniBezi) {
+                this._ukladaniBezi = (async () => {
+                    // Požadavky z téhož kroku (podklad a kresba při importu) se sejdou, kresba jde první
+                    await null;
+                    try {
+                        while ((this._cekaKresba || this._cekaPodklad) && this._konfliktVerze == null) {
+                            if (this._cekaKresba) {
+                                this._cekaKresba = false;
+                                await this._ulozitTed();
+                            } else {
+                                this._cekaPodklad = false;
+                                await this._ulozitPodkladTed?.();
+                            }
+                        }
+                    } finally {
+                        this._ukladaniBezi = null;
+                    }
+                })();
             }
-            this._ukladaniBezi = this._ulozitTed();
-            try {
-                await this._ukladaniBezi;
-            } finally {
-                this._ukladaniBezi = null;
-            }
-            if (this._ulozitZnovu) {
-                this._ulozitZnovu = false;
-                return this.ulozit();
-            }
+            return this._ukladaniBezi;
         },
 
         async _ulozitTed() {
@@ -6986,6 +7057,11 @@ function konceptKEditor(initialData) {
                 }
                 self.resizeKonva(true);
                 if (self._kompasZmenenV3d) { self._kompasZmenenV3d = false; self.aplikujRotaci(); }
+                // Celý dům vyžádaný ve 3D (import, otevření jiného projektu): až teď má plátno rozměr
+                if (self._fitPoNavratu) {
+                    if (!self.engine?.walls.size && self.podklad) self.podkladNaObrazovku();
+                    else self.fitView();
+                }
                 if (self.renderer) {
                     // Explicitní rebuild všech vrstev
                     self.renderer.renderWalls();
