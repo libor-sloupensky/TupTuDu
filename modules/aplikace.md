@@ -97,7 +97,7 @@ nedaří najít volný, prodlouží se (sloupec má 12 znaků).
 - `components/layouts/web` — veřejný web (vitrína, právní stránky, kontakt); vlastní styly do slotu `hlava`.
 - Právní stránky: `pravni/stranka` + `pravni/{podminky,soukromi}-{jazyk}` (chybí-li jazyk → en).
 - Patička `partials/paticka` (podmínky, soukromí, kontakt, nastavení cookies, © a povinný odkaz DB-IP) — na webu,
-  přihlašovacích stránkách a v aplikaci. Editor (`fullWidth`) má jen odkaz DB-IP (`partials/poloha-zdroj`).
+  přihlašovacích stránkách a v aplikaci. Editor (`fullWidth`) má jen odkaz DB-IP (`partials/poloha-zdroj`), a to jen když stránka zemi podle IP použila.
 - Cookie lišta + GA4 `partials/cookies-lista` — na konci `<body>` všech tří zákaznických layoutů
   (web, přihlášení, zakaznik), masterteam ne. Zobrazí se jen s `GA4_MEASUREMENT_ID` (viz `modules/marketing.md`).
 

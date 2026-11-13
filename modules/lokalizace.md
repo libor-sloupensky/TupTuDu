@@ -55,6 +55,8 @@ Masterteam je interní a **vždy česky** — nepřekládá se.
   hosting volá `/cron/bugy/{token}` à 15 min — nic dalšího se nenastavuje). Bez databáze je země příchodu neznámá → jazyk `en`, země `CZ`.
 - **Licence CC BY 4.0:** každá stránka, která výsledek používá, musí mít odkaz
   „IP Geolocation by DB-IP" → je v patičce `partials/paticka`, v editoru samostatně `partials/poloha-zdroj`.
+  Middleware `NastavLokalizaci` se na polohu ptá jen když ji potřebuje (uživatel bez země nebo jazyka v účtu)
+  a použití označí `request()->attributes->get('poloha_db_ip')`. Editor ukáže odkaz jen tehdy, jako tenký řádek.
 - Lokálně má 127.0.0.1 zemi neznámou → `en`.
 - Přepínač ukládá volbu do session a přihlášenému i do účtu.
 
