@@ -28,6 +28,7 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
     const vystup = process.argv[2] || path.join(__dirname, 'vystup', 'prochazka');
     fs.mkdirSync(vystup, { recursive: true });
     const p = await otevriProhlizec({ sirka: 1500, vyska: 950 });
+    let adresaEditoru = null;   // test končí ve sdíleném odkazu: úklid konceptu (p.zavri) potřebuje stránku editoru
     const stav = () => p.vyhodnot(`window._kk3d.prochazka.stav()`);
     // Klávesa držená po dobu ms (posluchač procházky je na window)
     const drz = async (kod, ms, shift = false) => {
@@ -528,6 +529,7 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
             await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-sdileni=vytvorit]').click(); return true; })()`);
         await p.cekej(`!!(${D}.sdileni && ${D}.sdileni.aktivni)`, 40000, 'odkaz');
         const adresa = await p.vyhodnot(`${D}.sdileni.url`);
+        adresaEditoru = await p.vyhodnot('location.href');
         await p.jdiNa(adresa);
         await p.cekej(`!!window.__sdileniScena?.ovladac`, 30000, 'prohlížeč');
         await p.vyhodnot(`document.querySelector('[data-pohled=prochazka]').click(); true`);
@@ -557,6 +559,8 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         console.log('   CHYBA ' + e.message);
         try { await p.snimek(path.join(vystup, 'chyba.png')); } catch { /* nic */ }
     } finally {
+        // Zpátky do editoru, ať p.zavri() najde testovací koncept a smaže ho (dřív zůstával po každém běhu)
+        try { if (adresaEditoru && !(await p.vyhodnot('!!window._kkInitData'))) await p.jdiNa(adresaEditoru); } catch { /* smaže obecný úklid */ }
         await p.zavri();
     }
     console.log(chyb ? `\n${chyb} chyb` : '\nVše v pořádku');
