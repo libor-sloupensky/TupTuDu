@@ -67,6 +67,16 @@ Ladí se nejdřív Planner 5D v češtině, pak se pravidla promítnou do ostatn
 4. **Nadpis bloku je větší než obsah** (`.sr-karta-nadpis` 17 px tučně, obsah 15 px).
 5. **Jazyk s kódem:** „V tvém jazyce (čeština, cs)“, v seznamu jazyků „němčina (de)“.
 6. **TupTuDu je i v přehledu**, první, se štítkem „náš nástroj“, odkaz na titulku.
+7. **Autorství:** nahoře jen krátká věta (připravil TupTuDu, výrobce jednoho ze srovnávaných programů, stav k datu)
+   s odkazem na metodiku; celé autorství s výzvou k opravě je dole v metodice. Krátká věta nahoře zůstává kvůli
+   průhlednosti (skrytá reklama), nebyla by poznat až po dočtení.
+8. **Značky:** má = zelený kroužek, částečně = půlený oranžový, nemá = červený, nezjištěno = prázdný kroužek
+   (i v Masterteamu).
+9. **Sloupec „Kolik programů to umí“:** buňka „7 z 11 + 2 částečně“, úvodní věta s počtem programů a bublina ⓘ,
+   co je „srovnávaný program“ a že se počítají jen doložené údaje.
+10. **Bublina u každé vlastnosti:** česky kritéria (kdy má / částečně / nemá, bez interních dovětků), v ostatních
+    jazycích zatím krátký popis, dokud se kritéria nepřeloží (`KonkurenceSrovnani::tip`).
+11. **Tlačítko „Srovnej X s TupTuDu“** (rozkaz, ne „Srovnání …“).
 Stav 13. 11. 2026: šablony platí pro všechny nástroje a jazyky; texty v odrážkách zatím jen Planner 5D a TupTuDu česky.
 
 ## Jak se stránky tvoří (hotový náhled)
