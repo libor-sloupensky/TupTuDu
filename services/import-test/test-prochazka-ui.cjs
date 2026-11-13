@@ -36,6 +36,15 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         await p.vyhodnot(`window.dispatchEvent(new KeyboardEvent('keyup', { code: '${kod}', key: '${kod}', shiftKey: false, bubbles: true })); true`);
         await pauza(150);
     };
+    // Drží klávesu, dokud neplatí podmínka (nejvýš limit ms) a pak ještě chvíli: krok se počítá z času mezi
+    // snímky, při zatíženém počítači pevná doba nestačila
+    const drzDokud = async (kod, podminka, limit = 8000, navic = 300) => {
+        await p.vyhodnot(`window.dispatchEvent(new KeyboardEvent('keydown', { code: '${kod}', key: '${kod}', bubbles: true })); true`);
+        try { await p.cekej(podminka, limit, kod); } catch { /* vyhodnotí kontrola */ }
+        await pauza(navic);
+        await p.vyhodnot(`window.dispatchEvent(new KeyboardEvent('keyup', { code: '${kod}', key: '${kod}', bubbles: true })); true`);
+        await pauza(150);
+    };
     const snimek3d = async (jmeno) => {
         await pauza(400);
         const r = await p.vyhodnot(`(() => { const c = document.getElementById('kk-3d-container').getBoundingClientRect(); return { x: c.left, y: c.top, w: c.width, h: c.height }; })()`);
@@ -103,11 +112,11 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         await drz('ArrowRight', 500);
         s = await stav();
         kontrola('šipka vpravo otočí zpátky', blizko(s.smer, pred.smer, 0.3), s.smer.toFixed(3));
-        await drz('KeyQ', 1800);
+        await drzDokud('KeyQ', 'window._kk3d.prochazka.stav().oko <= 0.1001', 8000, 500);
         s = await stav();
         kontrola('Q: oko klesá a u země se zastaví na 10 cm', blizko(s.oko, 0.1, 0.001) && !s.podZemi, JSON.stringify(s));
         await snimek3d('02-oko-u-zeme.png');
-        await drz('KeyQ', 1200);
+        await drzDokud('KeyQ', 'window._kk3d.prochazka.stav().oko < -0.6', 8000, 100);
         s = await stav();
         const pod = await p.vyhodnot(`({ d: ${D}.prochazkaPodZemi, zem: window._kk3d.ground.visible })`);
         kontrola('další stisk Q: oko pod zem, terén se sám skryje', s.oko < -0.5 && s.podZemi && pod.d && pod.zem === false, JSON.stringify({ oko: s.oko, pod }));

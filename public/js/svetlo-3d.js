@@ -19,6 +19,7 @@
     const SLUNCE_BARVA = 0xfff6ea;
     const SLUNCE_SILA = 0.52;
     const SMER_SLUNCE = new THREE.Vector3(-7, 14, 11).normalize();
+    const NEROVNOST_OBLOHY = 0.35;  // obloha na jasnější straně o tolik jasnější, naproti o tolik tmavší
 
     THREE.ShaderChunk.common += `
 vec3 tuVzorekNaLin( vec3 c ) { return mix( c / 12.92, pow( ( c + 0.055 ) / 1.055, vec3( 2.4 ) ), step( 0.04045, c ) ); }
@@ -61,12 +62,22 @@ vec3 tuVzorekNaLin( vec3 c ) { return mix( c / 12.92, pow( ( c + 0.055 ) / 1.055
                 nebe: { value: new THREE.Vector3(...NEBE) },
                 obzor: { value: new THREE.Vector3(...OBZOR) },
                 zem: { value: new THREE.Vector3(...ZEM) },
+                // Jasnější strana oblohy kolmo na slunce (o 90° doleva při pohledu ke slunci)
+                jasnejsi: { value: new THREE.Vector2(SMER_SLUNCE.z, -SMER_SLUNCE.x).normalize() },
             },
             vertexShader: 'varying vec3 vSmer; void main() { vSmer = position; gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }',
-            fragmentShader: `varying vec3 vSmer; uniform vec3 nebe; uniform vec3 obzor; uniform vec3 zem;
+            fragmentShader: `varying vec3 vSmer; uniform vec3 nebe; uniform vec3 obzor; uniform vec3 zem; uniform vec2 jasnejsi;
 void main() {
-    float v = normalize( vSmer ).y;
+    vec3 d = normalize( vSmer );
+    float v = d.y;
     vec3 c = v > 0.0 ? mix( obzor, nebe, smoothstep( 0.0, 0.5, v ) ) : mix( obzor, zem, smoothstep( 0.0, 0.15, -v ) );
+    // Obloha je z jedné strany jasnější a z druhé tmavší: stěny ve stínu se tak liší podle natočení a hrany domu
+    // jsou vidět i na odvrácené straně (Libor 13. 11. 2026). Strana je kolmo na slunce: dvě stěny rohu odvráceného
+    // od slunce se pak liší nejvíc, kde by se lišily nejmíň, rozhodne slunce. K zenitu rozdíl slábne, země zůstává
+    // stejná a průměr se nemění, vodorovné plochy proto drží kalibraci.
+    float delka = length( d.xz );
+    float kJasu = delka > 1e-4 ? dot( d.xz / delka, jasnejsi ) : 0.0;
+    if ( v > -0.05 ) c *= 1.0 + ${NEROVNOST_OBLOHY.toFixed(3)} * kJasu * ( 1.0 - 0.6 * max( v, 0.0 ) );
     gl_FragColor = vec4( c, 1.0 );
     #include <encodings_fragment>
 }`,

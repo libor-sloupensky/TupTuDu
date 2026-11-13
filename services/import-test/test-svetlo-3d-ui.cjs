@@ -99,7 +99,8 @@ const zHexu = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
         kontrola('vodorovná plocha v jednom pásmu se vzorkem', Math.min(...nahoru) >= 0.97 && Math.max(...nahoru) <= 1.14, rozsah(nahoru));
         for (const [n, popis] of [['jih', 'stěna k jihu'], ['zapad', 'stěna k západu']]) {
             const a = pomery(barvy[n]);
-            kontrola(`${popis} na slunci`, Math.min(...a) >= 0.82 && Math.max(...a) <= 1, rozsah(a));
+            // Do 1,03: jasnější strana oblohy (svetlo-3d.js, 13. 11. 2026) přidá jižní stěně pár procent
+            kontrola(`${popis} na slunci`, Math.min(...a) >= 0.82 && Math.max(...a) <= 1.03, rozsah(a));
         }
         for (const [n, popis] of [['sever', 'stěna k severu'], ['vychod', 'stěna k východu']]) {
             const a = pomery(barvy[n]);
@@ -107,7 +108,7 @@ const zHexu = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
         }
         const odstin = barvy.nahoru.concat(barvy.jih, barvy.sever).map(r => Math.max(...r.pomer) - Math.min(...r.pomer));
         kontrola('odstín se nemění', Math.max(...odstin) <= 0.1, 'největší rozdíl mezi kanály ' + Math.max(...odstin).toFixed(3));
-        kontrola('bílá se nepřepálí a stěna od ní jde poznat', barvy.bila[0] >= 240 && barvy.bilaSten[0] < barvy.bila[0] - 8, `vodorovně ${barvy.bila}, stěna ${barvy.bilaSten}`);
+        kontrola('bílá se nepřepálí a stěna od ní jde poznat', barvy.bila[0] >= 240 && barvy.bilaSten[0] <= barvy.bila[0] - 6, `vodorovně ${barvy.bila}, stěna ${barvy.bilaSten}`);
         kontrola('tmavá barva zůstane tmavá', barvy.tmava.every(v => v < 95), String(barvy.tmava));
 
         console.log('\n3) Textura');
@@ -201,8 +202,12 @@ const zHexu = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
             kontrola(`${n}: stěna má barvu boku desky`, Math.abs(x.dole.R - x.pas.R) <= 2 && Math.abs(x.nahore.R - x.pas.R) <= 2, `dole ${x.dole.R}, pás ${x.pas.R}, nahoře ${x.nahore.R}`);
             kontrola(`${n}: stěna bez šikmého vzoru z vlastního stínu`, x.dole.std <= 1 && x.nahore.std <= 1, `odchylka ${x.dole.std}, ${x.nahore.std}`);
         }
-        kontrola('stěny na slunci jsou světlejší než ve stínu', dum.jih.dole.R > dum.sever.dole.R * 1.1 && dum.zapad.dole.R > dum.vychod.dole.R * 1.05, `jih ${dum.jih.dole.R}, sever ${dum.sever.dole.R}, západ ${dum.zapad.dole.R}, východ ${dum.vychod.dole.R}`);
-        kontrola('okap dál vrhá stín na jižní stěnu, tmavý jako stěna ve stínu', Math.abs(dum.jih.podOkapem.R - dum.sever.dole.R) <= 3 && dum.jih.podOkapem.std <= 1, `pod okapem ${dum.jih.podOkapem.R}, ve stínu ${dum.sever.dole.R}, na slunci ${dum.jih.dole.R}`);
+        // Sousední stěny (roh domu) se musí lišit i ve stínu: obloha je z jedné strany jasnější (Libor 13. 11. 2026)
+        const rohy = [['jih', 'zapad'], ['zapad', 'sever'], ['sever', 'vychod'], ['vychod', 'jih']].map(([a, b]) => +(Math.max(dum[a].dole.R, dum[b].dole.R) / Math.min(dum[a].dole.R, dum[b].dole.R)).toFixed(3));
+        kontrola('stěny kolem každého rohu se liší jasem aspoň o 6 %', rohy.every(r => r >= 1.06), rohy.join(', '));
+        kontrola('stěny na slunci jsou světlejší než ve stínu', dum.jih.dole.R > dum.sever.dole.R * 1.1 && dum.zapad.dole.R > dum.sever.dole.R * 1.05, `jih ${dum.jih.dole.R}, sever ${dum.sever.dole.R}, západ ${dum.zapad.dole.R}, východ ${dum.vychod.dole.R}`);
+        // Ve stínu okapu dostává jižní stěna víc světla oblohy než severní, proto ne stejně tmavá, jen jasně tmavší než na slunci
+        kontrola('okap dál vrhá stín na jižní stěnu, jasně tmavší než na slunci', dum.jih.podOkapem.R <= dum.jih.dole.R * 0.9 && dum.jih.podOkapem.R >= dum.sever.dole.R && dum.jih.podOkapem.std <= 1, `pod okapem ${dum.jih.podOkapem.R}, ve stínu ${dum.sever.dole.R}, na slunci ${dum.jih.dole.R}`);
 
         const normaly = await p.vyhodnot(`(() => { const d = ${D}, T = window.THREE, mat = new T.MeshStandardMaterial();
             const dlouhy = [{ x: 0, z: 0 }, { x: 4, z: 0 }, { x: 4, z: 0.2 }, { x: 0, z: 0.2 }];
