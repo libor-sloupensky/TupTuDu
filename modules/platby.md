@@ -172,6 +172,10 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
 - Ověření: nahrání 2400 × 900 → WebP 800 × 300 (7 kB), SVG odmítnuto, zápatí exportu, odkaz, odstranění.
 
 ## Nápady na později
+- **Zkušební verze zdarma na 14 dní** (Libor 13. 11. 2026, zatím jen zaznamenat, nestavět). K rozhodnutí: který tarif
+  (Stavebník, Profi, oba), s kartou předem (zkušební doba u cen v Paddlu, pak se platí samo) nebo bez karty (jen v aplikaci,
+  po 14 dnech zpět na Zdarma), co s verzí Zdarma a jak zabránit opakovaným zkouškám přes nové účty. Po zavedení upravit
+  `config/tarify.php`, ceny v Paddlu (`paddle:katalog`), ceník a podmínky ve všech jazycích.
 - Masterteam: přehled předplatitelů a využití (počty úprav jsou v `denni_upravy`).
 - Interní e-mail o novém předplatném (událost Cashieru `SubscriptionCreated`).
 - Změna e-mailu v účtu se do Paddlu nepropisuje (zákazník tam má původní e-mail na doklady).
