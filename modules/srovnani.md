@@ -179,6 +179,18 @@ a v kolika srovnáních „X vs TupTuDu“ je to plus konkurenta. To je podklad 
 (navazuje na nejpalčivější požadavky v analýze). Cílem je, aby se sloupec „v čem je lepší TupTuDu“ postupně
 prodlužoval poctivě, ne úpravou pravidel.
 
+## Otázka k posouzení: německá verze a rozhodné právo (Libor 13. 11. 2026)
+Němčina je zatím vypnutá kvůli riziku placených výzev (Abmahnung) podle německého UWG. Libor to zpochybňuje
+(není právník, chce samostatné posouzení v jiném sezení):
+1. Němčina ≠ Německo. Německy se mluví i v Rakousku (a ve Švýcarsku), stránka nemusí cílit jen na Německo.
+2. Hodnocení konkurence v němčině automaticky neznamená, že se spor řídí německým právem.
+3. Když německy popisujeme konkurenta odjinud (např. z Polska), který je oblíbený v Německu, nemusí ho právo
+   posuzovat jako německý subjekt.
+4. Jsme česká firma, otázka je, jestli spor nespadá pod český zákon.
+5. Rozdíl mezi **srovnáním nás s konkurencí** a **neutrálním popisem konkurence** s propagací TupTuDu uvnitř
+   článku. Libor má za to, že druhá cesta napadnutelná není.
+Výsledek posouzení zapsat sem a podle něj rozhodnout o `de` v `config('srovnani.jazyky')`.
+
 ## Otevřené body
 - Bucket `tuptudu-katalog-dukazy`: klíč projektu nesmí zapnout verzování ani zámek objektů. Neměnnost zatím
   drží manifest s otisky SHA-256. Zapnout verzování v konzoli AWS (S3 → bucket → Properties → Bucket Versioning).
