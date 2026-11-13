@@ -33,7 +33,16 @@ class NastavLokalizaci
         // Lokální UI testy běží na holém 127.0.0.1, adresa /masterteam tam taky znamená Masterteam
         $jeMasterteam = Domeny::jeMasterteam($request) || (Domeny::jeNeutralniLokalne($request) && $request->is('masterteam*'));
         $pevnyJazyk = $jeMasterteam ? config('lokalizace.masterteam_jazyk') : null;
-        $zemePrichodu = $domena['zeme'] ?? ($pevnyJazyk ? null : $this->zemePodleIp($request));
+        // Poloha podle IP až když je potřeba: přihlášený uživatel má zemi i jazyk v účtu a stránka pak
+        // DB-IP nepoužije, takže nepotřebuje ani odkaz na ni (v editoru zabíral místo, Libor 13. 11. 2026)
+        $ip = false;
+        $zemePrichodu = function () use (&$ip, $domena, $pevnyJazyk, $request) {
+            if ($ip === false) {
+                $ip = $domena['zeme'] ?? ($pevnyJazyk ? null : $this->zemePodleIp($request));
+            }
+
+            return $ip;
+        };
 
         // Jazyk v adrese webu: parametr routy, u článků první část adresy (routes/web.php). Controllery ho nepotřebují.
         $jazykAdresy = $request->route()?->parameter('jazyk');
@@ -43,28 +52,31 @@ class NastavLokalizaci
             $jazykAdresy = $request->segment(1);
         }
 
+        $jeJazyk = fn ($kod) => Lokalizace::jeJazyk($kod);
         $jazyk = $pevnyJazyk ?? collect([
             $jazykAdresy,
             $uzivatel?->jazyk,
             $request->hasSession() ? $request->session()->get('jazyk') : null,
             $domena['jazyk'] ?? null,
-            ...(array) config('lokalizace.jazyk_zeme.' . $zemePrichodu, []),
-        ])->first(fn ($kod) => Lokalizace::jeJazyk($kod))
+        ])->first($jeJazyk)
+            ?? collect((array) config('lokalizace.jazyk_zeme.' . $zemePrichodu(), []))->first($jeJazyk)
             ?? config('lokalizace.vychozi_jazyk');
 
+        // Země z účtu má přednost, zemi příchodu (a s ní polohu podle IP) pak není třeba zjišťovat
+        $zeme = $uzivatel?->zeme;
         if ($jazykAdresy !== null && Lokalizace::jeJazyk($jazykAdresy)) {
             if ($request->hasSession()) {
                 $request->session()->put('jazyk', $jazykAdresy);
             }
             $domov = config('lokalizace.zeme_jazyka.' . $jazykAdresy);
-            if ($domov && ! in_array($jazykAdresy, (array) config('lokalizace.jazyk_zeme.' . $zemePrichodu, []), true)) {
-                $zemePrichodu = $domov;
+            if (! $zeme && $domov && ! in_array($jazykAdresy, (array) config('lokalizace.jazyk_zeme.' . $zemePrichodu(), []), true)) {
+                $zeme = $domov;
             }
         }
 
         App::setLocale($jazyk);
         URL::defaults(['jazyk' => $jazyk]);
-        Lokalizace::nastavZemi($uzivatel?->zeme ?? $zemePrichodu);
+        Lokalizace::nastavZemi($zeme ?? $zemePrichodu());
 
         return $next($request);
     }
@@ -76,6 +88,9 @@ class NastavLokalizaci
         if (preg_match('/^[A-Z]{2}$/', $cloudflare) && $cloudflare !== 'XX') {
             return $cloudflare;
         }
+
+        // Stránka výsledek z DB-IP použila → licence žádá odkaz (partials/poloha-zdroj)
+        $request->attributes->set('poloha_db_ip', true);
 
         return PolohaIp::zeme($request->ip());
     }

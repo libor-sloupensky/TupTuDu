@@ -371,7 +371,7 @@ ol.tt-postup p { font-size: .93rem; color: var(--c-text-secondary); margin: 0; }
 .tt-jazyky strong { color: var(--c-text); font-weight: 600; }
 
 /* Odkaz na zdroj polohy podle IP (partials/poloha-zdroj) — licence DB-IP */
-.tt-poloha-zdroj { text-align: center; padding: 1rem; font-size: .7rem; }
+.tt-poloha-zdroj { text-align: right; padding: 0 .75rem .15rem; font-size: .65rem; line-height: 1.2; }
 .tt-poloha-zdroj a { color: var(--c-text-secondary); text-decoration: none; }
 
 /* Patička (partials/paticka) */
