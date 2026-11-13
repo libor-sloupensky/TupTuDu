@@ -179,3 +179,6 @@
     });
 })();
 </script>
+
+{{-- Na lokálu značka před titulkem stránky (všechny layouty vkládají tenhle partial) --}}
+@include('partials.lokal-titulek')
