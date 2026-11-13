@@ -44,12 +44,15 @@
         </div>
     </header>
 
-    <main class="tt-zakaznik-obsah" style="{{ $fullWidth ? 'padding:.5rem;' : 'padding:2rem 1.5rem; max-width:48rem; margin:0 auto;' }}">
+    {{-- Editor (fullWidth) bez okraje, každý pixel plochy se hodí (Libor 13. 11. 2026) --}}
+    <main class="tt-zakaznik-obsah" style="{{ $fullWidth ? 'padding:0;' : 'padding:2rem 1.5rem; max-width:48rem; margin:0 auto;' }}">
         {{ $slot }}
     </main>
 
-    {{-- Editor (fullWidth) zabírá celé okno — místo patičky jen povinný odkaz na DB-IP --}}
-    @include($fullWidth ? 'partials.poloha-zdroj' : 'partials.paticka')
+    {{-- Editor (fullWidth) zabírá celé okno: bez patičky, povinný odkaz na DB-IP má v pravém panelu --}}
+    @unless ($fullWidth)
+        @include('partials.paticka')
+    @endunless
     @include('partials.error-tracker')
     @include('partials.lokalizace-js')
     @include('partials.cookies-lista')

@@ -31,7 +31,8 @@
 <body style="background: var(--c-bg);">
     <div class="tt-layout">
         @include('partials.sidebar')
-        <main class="tt-main" style="{{ $fullWidth ? 'padding:.5rem;' : 'padding:2rem 1.5rem; max-width:72rem; margin:0 auto;' }}">
+        {{-- Editor (fullWidth) bez okraje, každý pixel plochy se hodí (Libor 13. 11. 2026) --}}
+        <main class="tt-main" style="{{ $fullWidth ? 'padding:0;' : 'padding:2rem 1.5rem; max-width:72rem; margin:0 auto;' }}">
             {{ $slot }}
         </main>
     </div>

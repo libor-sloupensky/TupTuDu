@@ -2027,6 +2027,8 @@
                 </template>
             </div>
         </details>
+        {{-- Odkaz na DB-IP pod panely, ne pod celou plochou (jen když stránka zemi podle IP použila) --}}
+        @include('partials.poloha-zdroj')
     </div>{{-- /Panel B --}}
 
     </div>{{-- /grid wrapper --}}
