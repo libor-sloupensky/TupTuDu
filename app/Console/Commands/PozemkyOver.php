@@ -228,6 +228,58 @@ class PozemkyOver extends Command
 
         if (!$this->option('bez-srovnani')) {
             $this->srovnej($profil['body']);
+            $this->srovnejMapy($profil['body']);
+        }
+    }
+
+    /**
+     * Srovnání s výškovým API Mapy.com (Libor 13. 11. 2026). Je hrubé: na prazích drah medián 0,3–1,5 m,
+     * na svahu se tvarem liší až o 6,7 m od DMR 5G, jako zdroj výšek se nehodí. Velké chyby (nuly, výška
+     * nad elipsoidem, posunuté místo) ale chytí spolehlivě. 4 kredity za dotaz do 256 bodů.
+     */
+    private function srovnejMapy(array $body): void
+    {
+        $klic = config('services.mapycz.api_key');
+        if (!$klic) {
+            $this->warn('    srovnání s Mapy.com: chybí MAPYCZ_API_KEY');
+
+            return;
+        }
+        $vzorek = [];
+        $krok = max(1, intdiv(count($body), 50));
+        for ($i = 0; $i < count($body) && count($vzorek) < 50; $i += $krok) {
+            $vzorek[] = $body[$i];
+        }
+        try {
+            $ref = array_column(Http::timeout(30)->get('https://api.mapy.com/v1/elevation', [
+                'positions' => implode(';', array_map(fn ($b) => sprintf('%.7f,%.7f', $b[1], $b[0]), $vzorek)),
+                'apikey' => $klic,
+            ])->throw()->json('items') ?? [], 'elevation');
+        } catch (\Throwable $e) {
+            $this->warn('    srovnání s Mapy.com nedostupné: ' . mb_substr($e->getMessage(), 0, 120));
+
+            return;
+        }
+        $rozdily = [];
+        foreach ($vzorek as $i => $b) {
+            if (isset($ref[$i]) && $ref[$i] > -1000) {
+                $rozdily[] = $b[2] - $ref[$i];
+            }
+        }
+        if (!$rozdily) {
+            $this->warn('    srovnání s Mapy.com: bez dat');
+
+            return;
+        }
+        sort($rozdily);
+        $median = $rozdily[intdiv(count($rozdily), 2)];
+        $text = sprintf('srovnání s Mapy.com: medián rozdílu %+.1f m (%d bodů)', $median, count($rozdily));
+        if (abs($median) < 4) {
+            $this->ok(true, $text);
+        } elseif (abs($median) < 10) {
+            $this->line("    <fg=yellow>! {$text}</>");
+        } else {
+            $this->chyba($text);
         }
     }
 
