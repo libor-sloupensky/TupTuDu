@@ -204,7 +204,17 @@ Nástroj Sloup (klávesa 9) postaví sloup 20 × 20 cm na aktivní podlaží. Oz
 
 ## Ukládání ze dvou míst
 
-Klient posílá `verze`, ze které vychází. Když je na serveru jiná, `ulozit` vrátí 409 a nic nezapíše (zámek řádku hlídá i souběh). Editor přestane ukládat a dialog nabídne načíst aktuální verzi, nebo ji přepsat tou svou (`_konfliktUlozeni`). Uložení běží jedno po druhém (`ulozit` a `_ulozitTed`), jinak by se editor předbíhal sám se sebou. Podklad čeká na běžící uložení kresby. Přejmenování a katastr se neporovnávají. Test `test-konflikt-ulozeni-ui.cjs`.
+Klient posílá `verze`, ze které vychází. Když je na serveru jiná, `ulozit` vrátí 409 a nic nezapíše (zámek řádku hlídá i souběh). Editor přestane ukládat a dialog nabídne načíst aktuální verzi, nebo ji přepsat tou svou (`_konfliktUlozeni`). Uložení běží jedno po druhém, kresba i podklad v jedné frontě (`ulozit`, `ulozit('podklad')` z `podkladUloz`, výkon `_ulozitTed` a `_ulozitPodkladTed`), kresba první. Dřív import stěn uložil podklad a kresbu současně a v jediném okně vyskočil konflikt (13. 11. 2026). Podklad vložený před založením konceptu se uloží hned po něm. Přejmenování a katastr se neporovnávají. Test `test-konflikt-ulozeni-ui.cjs`.
+
+## Pohled po otevření (13. 11. 2026)
+
+- Zoom, posun a natočení z prohlížeče (`kv3_state`) platí jen pro projekt, ze kterého jsou (`lastProjekt`). Jiný nebo nový projekt ukáže celý dům, natočení kompasu je z projektu (`metadata.katastr.kompasUhel`).
+- `fitView` a `podkladNaObrazovku` počítají s natočením a pivotem (`_stredNaObrazovku`). Na skrytém plátně (editor ve 3D má 2D plátno 1 px) se 2D srovná až po návratu (`_fitPoNavratu`) a ve 3D zamíří kamera na dům (`_ramujDum3d`). Dřív vyšel záporný zoom: dům ve 3D vzhůru nohama, ve 2D bílé plátno.
+- Uložený pohled téhož projektu se po načtení ověří (`_zkontrolujPohled`): je-li z domu vidět méně než pětina nebo je měřítko neplatné, ukáže se celý dům.
+
+## Lišta editoru (13. 11. 2026)
+
+Jedna lišta: vlevo nástroje a magnet, vpravo podklad, 2D/3D/procházka, kroky, zoom, nápověda (tlačítko ? s plovoucím okénkem přes plochu), rozložení a celá obrazovka. Na úzké ploše se pravá část zalomí, pořád vpravo. Název konceptu v liště není (je ve volbě konceptu). Editor (`fullWidth`) nemá kolem plochy okraj, odkaz DB-IP je na konci pravého panelu jen při použití polohy podle IP.
 
 ## Rotace domu
 
@@ -221,6 +231,8 @@ Jeden úhel `kompasUhel` pro obě zobrazení: dům je ve 3D natočený stejně j
   do 3D se pohled natočí podle kompasu.
 
 ## Procházka (Libor 12. 11. 2026)
+
+- Rozhlížení tahem levým i pravým tlačítkem (13. 11. 2026, pravé jako 3D programy), kontextová nabídka se nezobrazí, klik na kliku a dvojklik jen levým.
 
 Pohled okem panáčka, oddělený od 3D, aby se nemíchal s ortografickým pohledem svázaným s 2D. Třetí díl přepínače v liště
 (2D | 3D | ikona panáčka, název Procházka, v ostatních jazycích Walk, Rundgang, Prechádzka, Spacer, Visite, Recorrido,
