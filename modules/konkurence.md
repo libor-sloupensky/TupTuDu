@@ -132,6 +132,9 @@ z dat původní analýzy, katalogu (`katalog.py`), popisů parametrů (`kriteria
   (hlavička X-WP-Total), RSS changelogů (Floorplanner, magicplan na Canny, Structure Studios), Zendesk API nápovědy.
 
 ## Měsíční měření (návrh, nepostaveno)
+**Pravidlo „ne“ / „nenalezeno“ (13. 11. 2026):** „ne“ jen se zdrojem, který zápor sám říká (výslovně, úplným výčtem
+nebo popsaným jiným postupem); zápor odvozený z mlčení je „?“ (na webu „nenalezeno“). Každé nové „ne“ před
+zveřejněním ověří druhý agent nad snímkem. Zadání pro agenty: `storage/app/konkurence/srovnani/ZADANI-overeni.md`.
 1. **Strojová část** (cron na produkci přes `PlanovaneUlohy`, jednou měsíčně, zdarma): nové kolo jako kopie
    minulého, App Store lookup API (verze, datum, počet hodnocení, jazyky), RSS a sitemap.xml (počet článků),
    Wayback CDX (změny titulní stránky a ceníku), otisk stránky ceníku a novinek. Změněné stránky označí k ověření.

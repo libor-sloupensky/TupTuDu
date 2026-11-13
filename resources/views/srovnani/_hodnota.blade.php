@@ -5,12 +5,13 @@
     $slova = ($odpoved ?? false) ? 'srovnani.odpoved.' : 'srovnani.stav.';
 @endphp
 @if(! $h)
-    <span class="sr-h sr-tlumene"><i class="sr-d q"></i> {{ __('srovnani.nezjisteno') }}</span>
+    {{-- nenalezeno: v popisu, ceníku ani nápovědě výrobce jsme zmínku nenašli (modules/srovnani.md, Doplnění B) --}}
+    <span class="sr-h sr-tlumene sr-tip" title="{{ __('srovnani.nenalezeno_tip') }}"><i class="sr-d q"></i> {{ __('srovnani.nezjisteno') }}</span>
 @else
     <span @class(['sr-bez-dokladu' => $bezDokladu]) @if($bezDokladu) title="Bez dokladu nebo starší než 6 měsíců – na webu by se nezobrazilo" @endif>
         @if($p->typ === 'stav')
             @php $v = $h->hodnota === 'skryte' ? 'ne' : ($h->hodnota ?? '?'); @endphp
-            <span class="sr-h"><i class="sr-d {{ $v === '?' ? 'q' : $v }}"></i> {{ __($slova . $v) }}</span>
+            <span @class(['sr-h', 'sr-tip' => $v === '?']) @if($v === '?') title="{{ __('srovnani.nenalezeno_tip') }}" @endif><i class="sr-d {{ $v === '?' ? 'q' : $v }}"></i> {{ __($slova . $v) }}</span>
             @if($h->placene) <span class="sr-stitek">{{ __('srovnani.placene') }}</span>@endif
         @elseif($p->typ === 'seznam')
             {{ collect($h->data ?? [])->map(fn ($j) => \Illuminate\Support\Facades\Lang::has('srovnani.jazyk.' . $j) ? __('srovnani.jazyk.' . $j) : $j)->implode(', ') ?: __('srovnani.nezjisteno') }}
