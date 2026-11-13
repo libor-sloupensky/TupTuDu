@@ -195,6 +195,7 @@ ne každou stránku. Podrobný rozbor je v chatu z 3. 11. 2026 a v paměti Claud
 4. **Němčina** až po úkolech níže: `de` do `config('srovnani.jazyky')`, důvody v části „Posouzení“ a „Doplnění“ (13. 11. 2026).
 
 ### Úkoly ze 13. 11. 2026: upravit a stránky skutečně přegenerovat (Libor schválil do plánu)
+**Stav 13. 11. 2026 večer:** A hotovo pro všechny jazyky (ze 91 „ne“ zůstalo 18, každé ověřené druhým agentem,ostatní „nenalezeno“ s bublinou; zadání `ZADANI-overeni.md` upravené). B: Libor rozhodl, že srovnání se vypínájen v němčině, ostatní jazyky zůstávají; němčina je vypnutá celá, úkoly B čekají na její zapnutí. C (Provozovatel)zatím neuděláno. České stránky mají ceník a omezení verze zdarma v odrážkách, ostatní jazyky ještě ne.
 Vyplývají z posouzení němčiny (část Doplnění). Dělá je samostatné sezení. **Nestačí změnit texty, všechny
 stránky ve všech jazycích se musí znovu vygenerovat a přenést na produkci.** Hotovo je až po kontrole
 živého webu (bod E).
