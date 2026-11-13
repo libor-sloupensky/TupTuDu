@@ -78,6 +78,13 @@ class NastavLokalizaci
         URL::defaults(['jazyk' => $jazyk]);
         Lokalizace::nastavZemi($zeme ?? $zemePrichodu());
 
+        // Účet bez země: zjištěnou zemi do něj rovnou uložit. Formulář účtu ji jinak jen předvyplnil a vypadalo to,
+        // že uložená je (Libor 13. 11. 2026), a poloha podle IP by se zjišťovala při každém požadavku.
+        $zjistena = $uzivatel && ! $uzivatel->zeme ? ($zeme ?? $zemePrichodu()) : null;
+        if ($zjistena && array_key_exists(strtoupper($zjistena), (array) __('zeme'))) {
+            $uzivatel->forceFill(['zeme' => strtoupper($zjistena)])->saveQuietly();
+        }
+
         return $next($request);
     }
 
