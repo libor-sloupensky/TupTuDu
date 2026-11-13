@@ -1529,6 +1529,8 @@ function konceptKEditor(initialData) {
                 }
                 // Vzorový nebo jiný projekt: uložený pohled k němu nepatří, ukázat celý dům (až po natočení kompasem)
                 if (this.jeVzorKopie || !_pohledTentyz) setTimeout(() => this.fitView(), 400);
+                // Tentýž projekt: uložený pohled ověřit (až po natočení kompasem), ve 3D až po návratu do 2D
+                else setTimeout(() => this._zkontrolujPohled(), 450);
 
                 // Mřížka
                 this.renderer.renderGrid();
@@ -4082,6 +4084,34 @@ function konceptKEditor(initialData) {
             this.zoom = scale;
             this.renderer.poZmeneZoomu();   // mřížka, kóty, označení, úhly
             this._updateSpojMadlo();   // madlo má pevnou velikost na obrazovce
+        },
+
+        /**
+         * Pohled obnovený po načtení stránky musí ukazovat dům. Uložený mohl vzniknout za chyby
+         * (převrácené měřítko, posun z jiného projektu) a po natočení kompasem dům skončil mimo
+         * obrazovku — uživatel viděl jen bílé plátno i po obnovení stránky (Libor 13. 11. 2026).
+         * Když je z domu vidět méně než pětina nebo je měřítko neplatné, ukáže celý dům.
+         */
+        _zkontrolujPohled() {
+            if (!this.stage || !this.engine?.nodes.size) return;
+            const w = this.stage.width(), h = this.stage.height();
+            if (this.rezim3d || w < 50 || h < 50) { this._kontrolaPohledu = true; return; }
+            this._kontrolaPohledu = false;
+            const st = this.stage;
+            if (!(st.scaleX() > 0) || ![st.x(), st.y(), st.offsetX(), st.offsetY()].every(Number.isFinite)) {
+                this.fitView();
+                return;
+            }
+            const T = st.getAbsoluteTransform();
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const n of this.engine.nodes.values()) {
+                const q = T.point(n);
+                minX = Math.min(minX, q.x); minY = Math.min(minY, q.y);
+                maxX = Math.max(maxX, q.x); maxY = Math.max(maxY, q.y);
+            }
+            const plocha = Math.max(maxX - minX, 1) * Math.max(maxY - minY, 1);
+            const videt = Math.max(0, Math.min(maxX, w) - Math.max(minX, 0)) * Math.max(0, Math.min(maxY, h) - Math.max(minY, 0));
+            if (videt < plocha * 0.2) this.fitView();
         },
 
         /**
@@ -7061,6 +7091,9 @@ function konceptKEditor(initialData) {
                 if (self._fitPoNavratu) {
                     if (!self.engine?.walls.size && self.podklad) self.podkladNaObrazovku();
                     else self.fitView();
+                } else if (self._kontrolaPohledu) {
+                    // Stránka načtená ve 3D: uložený pohled 2D se ověří až teď, kdy má plátno rozměr
+                    self._zkontrolujPohled();
                 }
                 if (self.renderer) {
                     // Explicitní rebuild všech vrstev
