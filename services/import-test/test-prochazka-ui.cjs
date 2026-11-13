@@ -114,6 +114,23 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         s = await stav();
         // Jen směr: o kolik, záleží na rychlosti snímků (při zatíženém počítači se pevná doba nedala porovnat)
         kontrola('šipka vpravo otočí doprava', s.smer < poLeve.smer - 0.2 && blizko(s.x, poLeve.x, 0.01), `${poLeve.smer.toFixed(2)} → ${s.smer.toFixed(2)}`);
+        // Tah myší: levé i pravé tlačítko otáčí stejně, pravé bez kontextové nabídky (Libor 13. 11. 2026)
+        const tahMysi = async (tlacitko) => {
+            const r = await p.vyhodnot(`(() => { const b = window._kk3d.renderer.domElement.getBoundingClientRect(); window._kontextNabidka = null;
+                window.addEventListener('contextmenu', (e) => { window._kontextNabidka = e.defaultPrevented; }, { once: true }); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; })()`);
+            const maska = tlacitko === 'left' ? 1 : 2;
+            const pred = await stav();
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mousePressed', x: r.x, y: r.y, button: tlacitko, buttons: maska, clickCount: 1 });
+            for (let i = 1; i <= 6; i++) await p.cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: r.x + i * 20, y: r.y, button: tlacitko, buttons: maska });
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mouseReleased', x: r.x + 120, y: r.y, button: tlacitko, buttons: 0, clickCount: 1 });
+            await pauza(300);
+            const po = await stav();
+            return { otoceni: +(po.smer - pred.smer).toFixed(3), posun: +Math.hypot(po.x - pred.x, po.z - pred.z).toFixed(3), nabidka: await p.vyhodnot('window._kontextNabidka') };
+        };
+        const tahL = await tahMysi('left'), tahP = await tahMysi('right');
+        kontrola('tah levým tlačítkem otočí pohledem na místě', Math.abs(tahL.otoceni) > 0.1 && tahL.posun < 0.01, JSON.stringify(tahL));
+        kontrola('tah pravým tlačítkem otočí stejně jako levým', blizko(tahP.otoceni, tahL.otoceni, 0.01) && tahP.posun < 0.01, JSON.stringify(tahP));
+        kontrola('pravé tlačítko neotevře kontextovou nabídku prohlížeče', tahP.nabidka !== false, JSON.stringify(tahP.nabidka));
         await drzDokud('KeyQ', 'window._kk3d.prochazka.stav().oko <= 0.1001', 8000, 500);
         s = await stav();
         kontrola('Q: oko klesá a u země se zastaví na 10 cm', blizko(s.oko, 0.1, 0.001) && !s.podZemi, JSON.stringify(s));

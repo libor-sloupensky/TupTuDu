@@ -657,12 +657,14 @@ void main() {
         const platno = o.platno;
         const ukazatele = new Map();
         let tah = null, stipnuti = null;
+        // Otáčí levé i pravé tlačítko: levé jako Street View a pohled 3D, pravé jako 3D programy
+        // a herní editory (Libor 13. 11. 2026). Klik na kliku a dvojklik zůstávají jen levému.
         platno.addEventListener('pointerdown', (e) => {
-            if (!aktivni || (e.pointerType === 'mouse' && e.button !== 0)) return;
+            if (!aktivni || (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2)) return;
             ukazatele.set(e.pointerId, { x: e.clientX, y: e.clientY });
             platno.setPointerCapture?.(e.pointerId);
             if (ukazatele.size === 1) {
-                tah = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t: performance.now(), dotyk: e.pointerType !== 'mouse', pohnul: false };
+                tah = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t: performance.now(), dotyk: e.pointerType !== 'mouse', pohnul: false, prave: e.pointerType === 'mouse' && e.button === 2 };
                 platno.style.cursor = 'grabbing';
             } else if (ukazatele.size === 2) {
                 const [a, b] = [...ukazatele.values()];
@@ -702,7 +704,7 @@ void main() {
             if (ukazatele.size < 2) stipnuti = null;
             if (tah && !ukazatele.size) {
                 // Klik nebo ťuknutí na kliku ji přepne; jinak ťuknutí = dojdi tam (myš na to má dvojklik)
-                if (e.type === 'pointerup' && !tah.pohnul && performance.now() - tah.t < 500) {
+                if (e.type === 'pointerup' && !tah.pohnul && !tah.prave && performance.now() - tah.t < 500) {
                     const u = najdiUchop(e.clientX, e.clientY);
                     if (u) {
                         clearTimeout(cekaPrepnuti);
@@ -715,6 +717,8 @@ void main() {
         };
         platno.addEventListener('pointerup', pust);
         platno.addEventListener('pointercancel', pust);
+        // Pravé tlačítko otáčí: kontextová nabídka prohlížeče by po puštění vyskočila přes pohled
+        platno.addEventListener('contextmenu', (e) => { if (aktivni) e.preventDefault(); });
         platno.addEventListener('dblclick', (e) => {
             if (!aktivni) return;
             e.preventDefault();
