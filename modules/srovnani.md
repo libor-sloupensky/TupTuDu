@@ -215,11 +215,10 @@ Výsledek posouzení zapsat sem a podle něj rozhodnout o `de` v `config('srovna
   SDEU Pippig C‑44/01). Podmínky § 6 UWG, § 2a rakouského UWG a § 2980 OZ jsou stejné, takže co je dovolené
   česky, je dovolené i německy. **Liší se vymáhání:** v Německu je výzva (Abmahnung) levná a rychlá a náklady platí
   ten, kdo porušil pravidla. Rakušané žalují rovnou a chtějí, aby se rozsudek zveřejnil.
-- **Neutrální profil napadnutelný je.** I on je srovnávací reklama, a to je dobře: chrání ho § 2980 OZ. Mimo něj
-  by dopadl § 2984 odst. 2 OZ (zlehčování i pravdivým údajem). Riziko má ale nižší než „X vs TupTuDu“.
+- **Neutrální profil bez srovnání s TupTuDu je nejbezpečnější cesta** (upřesněno níže v části Doplnění).
+  Bezpečný je ale jen tehdy, když jsou údaje doložitelné a věta o TupTuDu je pro všechny profily stejná.
 - **Doporučení:** němčinu zapnout pro všechny německy mluvící země, bez cílení „jen Rakousko“ a bez vylučování
-  Německa. Napřed provést čtyři úpravy obsahu (níže). Profily mohou jít hned, „X vs TupTuDu“ až o 1–2 měsíce
-  později. Zbývající riziko je malé a dá se odhadnout: jedna oprávněná výzva stojí řádově 50–100 tis. Kč
+  Německa. V němčině jen profily, „X vs TupTuDu“ ne. Napřed provést úpravy obsahu (níže). Zbývající riziko je malé a dá se odhadnout: jedna oprávněná výzva stojí řádově 50–100 tis. Kč
   (náklady obou advokátů), pokud vadnou stránku hned opravíme.
 
 **1. Podle čeho se určuje rozhodné právo**
@@ -270,7 +269,9 @@ Výsledek posouzení zapsat sem a podle něj rozhodnout o `de` v `config('srovna
   trh řešil český soud, použije také německé právo, protože Řím II platí i u nás.
 
 **4. Profil vs. „X vs TupTuDu“: je neutrální profil nenapadnutelný?**
-**Není.** Riziko je ale nižší. Důvody:
+*Rozbor platí pro dnešní profil, který odkazuje na srovnání s TupTuDu. Profil bez tohoto odkazu, jak ho Libor
+navrhuje pro němčinu, rozebírá část Doplnění níže, a vychází líp.* Dnešní profil napadnutelný je, riziko má
+ale nižší. Důvody:
 - **I profil je srovnávací reklama.** Stačí, že reklama konkurenta *přímo nebo nepřímo označuje* (§ 2980 odst. 1
   OZ, § 6 odst. 1 UWG, čl. 2 písm. c) směrnice; SDEU Toshiba C‑112/99, De Landtsheer C‑381/05). Profil zveřejňuje
   výrobce konkurenčního nástroje, odkazuje na „Srovnání X s TupTuDu →“ a ukazuje sloupec „má z 11 nástrojů“.
@@ -322,32 +323,90 @@ Výsledek posouzení zapsat sem a podle něj rozhodnout o `de` v `config('srovna
 **Návrh, jak němčinu zapnout**
 1. `de` do `config('srovnani.jazyky')` pro všechny německy mluvící země, bez de-AT a bez vylučování Německa.
 2. **Před zapnutím:**
-   - a) **„nein“ přejmenovat** v `lang/de/srovnani.php` na „laut Hersteller nicht angegeben“ (nebo krátce
-     „nicht angegeben“ s vysvětlením v bublině). Text přesně odpovídá metodice a ze sporného tvrzení
-     o konkurentovi dělá tvrzení o dokumentaci. Vhodné je zvážit totéž i v ostatních jazycích.
+   - a) **„nemá“ rozdělit na „ne“ a „nenalezeno“**, viz Doplnění níže (nahrazuje původní návrh
+     „laut Hersteller nicht angegeben“).
    - b) **Ceny v němčině jen čerstvé**, ověřené v posledním měsíčním měření. Jinak cenu nezobrazit, jen odkaz
      na ceník výrobce.
    - c) **Nezávislá kontrola německého textu** na hodnoticí slova, která mohou vzniknout překladem
      („nur“, „leider“, „sogar“, „veraltet“, „das beste“). Zkontrolovat i „Co chceš udělat?“ a „v čem je lepší“.
    - d) Řádek autorství a odkaz na opravu nechat nahoře. V metodice uvést kontakt pro výrobce s lhůtou opravy
      („innerhalb weniger Tage“).
-3. **Postupně:** nejdřív profily, „X vs TupTuDu“ v němčině až po 1–2 měsících bez podnětů. To vyžaduje drobnou
-   úpravu kódu: samostatný seznam jazyků pro stránky vs. Jinak zapnout obojí najednou, riziko je pořád nízké.
-4. **Mimo srovnání, ale související:** německý web už běží (od 5. 11. 2026), takže formální důvody k výzvě
-   existují bez ohledu na srovnání. Údaje o provozovateli jsou dnes jen v obchodních podmínkách. Odkaz
-   „Impressum“ v německé patičce (stačí název, adresa, IČO a kontakt) je levná pojistka. Pro českého
-   provozovatele v zásadě platí české povinnosti (země původu), v Německu je ale Impressum nejčastější
-   důvod výzvy.
+3. **V němčině jen profily** (Libor 13. 11.): bez stránek „X vs TupTuDu“ a bez odkazu „Srovnání X s TupTuDu →“.
+   To vyžaduje drobnou úpravu kódu: samostatný seznam jazyků, ve kterých se srovnání s TupTuDu zveřejňuje.
+4. **Mimo srovnání, ale související: stránka Provozovatel / Impressum**, viz Doplnění níže.
 5. Volitelně jednorázová konzultace německého advokáta (*Fachanwalt für gewerblichen Rechtsschutz*)
    nad jednou profilovou a jednou srovnávací stránkou, odhad 1–2 tis. € (25–50 tis. Kč). Stojí méně než jedno
    předběžné opatření. Libor advokáta 12. 11. vynechal, proto jen jako možnost.
+
+### Doplnění po Liborových dotazech (13. 11. 2026)
+
+**A. Profil bez srovnání s TupTuDu, jen s větou o TupTuDu: je bezpečnější?**
+**Ano, s podmínkami.** Původní rozbor bod 4 jsem bral příliš přísně podle široké evropské definice
+srovnávací reklamy. Německý BGH k ní navíc vyžaduje, aby reklama *stavěla vedle sebe* zaměnitelné produkty
+(BGH I ZR 147/09 *Coaching‑Newsletter*, 2011; I ZR 200/17, 2019). Profil s výpisem vlastností jednoho nástroje
+a obecnou větou o TupTuDu takovou konfrontací není. Posuzuje se jen podle obecných pravidel: snižování
+(§ 4 č. 1 UWG), nedoložená tvrzení o konkurentovi (§ 4 č. 2), klamání (§ 5) a skrytá reklama (§ 5a odst. 4).
+Věcné a pravdivé informace o produktu, na kterých má čtenář zájem, snižováním nejsou. V Česku teoreticky zbývá
+§ 2984 odst. 2 OZ (zlehčování i pravdou), každá forma nekalé soutěže ale musí splnit i obecnou podmínku
+rozporu s dobrými mravy (§ 2976 odst. 1). Neutrální údaje o produktu se zdrojem a datem tu podmínku těžko
+naplní. Riziko je proto výrazně nižší než u „X vs TupTuDu“ a v praxi závisí skoro jen na správnosti údajů.
+
+Aby to platilo:
+- **Věta o TupTuDu je stejná na všech profilech** a popisuje TupTuDu samo o sobě („Navrhuješ dům? TupTuDu:
+  půdorys, patra, střecha a 3D, v základu zdarma“). Nesmí jmenovat právě to, co profilovanému nástroji
+  chybí, například „TupTuDu umí češtinu“ u nástroje bez češtiny. Taková věta by z profilu udělala skryté
+  srovnání, a to navíc jednostranné, protože by vybírala jen naše plusy (Lidl v. Vierzon).
+- **Věta je vizuálně oddělená** jako sdělení autora („Od autorů této stránky“) a řádek autorství nahoře zůstává.
+  Jinak hrozí skrytá reklama.
+- **Sloupec „má z N nástrojů“** může zůstat. Srovnává s anonymním trhem, ne s konkrétním konkurentem,
+  a ukazuje, že chybějící vlastnost je běžná, takže konkurenta spíš chrání. Pokud je TupTuDu mezi
+  těmi N nástroji, nevadí to.
+- Na profilu v němčině není odkaz na „X vs TupTuDu“ a ta stránka v němčině neexistuje.
+
+**B. Jak psát „nemá“, aby chyba (i chyba AI) neznamenala nepravdivé tvrzení**
+Data (12. 11. 2026, `overeno-*.json`, bez TupTuDu): 239 má, 83 částečně, 91 nemá, 106 nezjištěno. Hrubé
+roztřídění poznámek u 91× „nemá“:
+- **asi 50 je odvozených z mlčení**: „výrobce neuvádí“, „postup … neobsahuje“, „v přehledu nástrojů není“;
+- **asi 40 má pozitivní oporu ve zdroji**: uzavřený výčet (seznam jazyků nebo platforem), výrobce popisuje
+  jiný postup („typový dům se vkládá hotový, půdorys se nekreslí“, „hranice pozemku se kreslí ručně“), nebo
+  výslovné vyjádření („uvádí, že rozpoznávání obrazu nepoužívá“).
+
+Návrh: **dvě záporné hodnoty místo jedné**, aby se do „nenalezeno“ nedostalo to, co víme jistě:
+- **„ne“** (de „nein“) jen tam, kde zdroj zápor *sám říká*: výslovná věta, uzavřený výčet nebo popsaný jiný
+  postup. Poznámka u hodnoty tu oporu ukáže („Jazyky podle výrobce: …“). Tvrzení se pak dá doložit
+  snímkem.
+- **„nenalezeno“** (de „keine Angabe gefunden“, en „not found“) pro vše odvozené z mlčení a zároveň pro dnešní
+  „nezjištěno“. Pro čtenáře znamenají obojí totéž: nevíme. Legenda a bublina: *„V popisu, ceníku ani nápovědě
+  výrobce jsme k datu ověření zmínku nenašli. Neznamená to, že ji nástroj nemá. Víš, že ji má? Napiš nám
+  a do pár dnů to opravíme.“* Takové tvrzení je vždy pravdivé (je o našem hledání, ne o produktu) a doložitelné
+  snímky. Napadnout se dá jen tehdy, kdyby celkový dojem stránky klamal, a tomu legenda brání.
+- Proti chybě AI navíc: každé „ne“ před zveřejněním v novém jazyce ověří druhý, nezávislý agent nad
+  snímkem. Hodnot je málo (asi 40), takže je to levné. Čtenář vidí „nenalezeno“ častěji, stránka je tím ale
+  poctivější. Do počtu „má z N“ se nic nepočítá jinak.
+- Zavést to **ve všech jazycích**, ne jen v němčině. Riziko je stejné všude, Německo ho jen vymáhá snadněji.
+  Práce: přetřídit 91 hodnot (agent + kontrola), nový stav v `konkurence_hodnoty`, texty legendy
+  v `lang/*/srovnani.php`, u „X vs TupTuDu“ počítat „nenalezeno“ jako nezjištěné.
+
+**C. Stránka Provozovatel / Impressum**
+Impressum je v Německu povinná stránka s údaji o provozovateli webu: firma, adresa sídla, IČO a zápis
+v rejstříku, e‑mail a další rychlý kontakt. Musí na ni vést odkaz z každé stránky, obvykle v patičce, nazvaný
+„Impressum“ nebo „Kontakt“ (BGH I ZR 228/03 *Anbieterkennzeichnung im Internet*, 2006). Stejnou povinnost má
+každý web v EU podle směrnice 2000/31/ES čl. 5, v Česku § 5 zák. 480/2004 Sb. Všechny údaje už máme
+v obchodních podmínkách (`resources/views/pravni/podminky-*.blade.php`, včetně chráněného e‑mailu a telefonu).
+Chybí jen samostatná stránka, na kterou vede odkaz z patičky. Údaje schované v článku podmínek německé
+soudy obvykle neberou jako „snadno dosažitelné“, a chybějící Impressum je v Německu nejčastějším důvodem
+výzvy vůbec. Návrh: jedna malá stránka pro všechny jazyky (cs „Provozovatel“, de „Impressum“, en „Legal
+notice“) se stejnými údaji jako v podmínkách a odkaz v patičce. Nový veřejný e‑mail to nevyžaduje, stačí
+chráněný e‑mail z podmínek (`partials.email-chraneny`). Netýká se jen srovnání, německý web běží
+od 5. 11. 2026.
 
 **Zdroje:** nařízení Řím II (ES) 864/2007 čl. 4 a 6; směrnice 2006/114/ES čl. 2 a 4; směrnice 2000/31/ES čl. 3;
 nařízení Brusel Ia (EU) 1215/2012 čl. 4, 7 odst. 2, 36, 39; OZ § 2976, 2980, 2984 (zakonyprolidi.cz, znění
 od 1. 1. 2026); UWG (DE) § 4, 5, 5a, 6, 8, 8b, 13, 13a (gesetze-im-internet.de); § 3 DDG; UWG (AT) § 2a, 7a
 (RIS, BGBl. I Nr. 58/2026), § 25; SDEU C‑44/01 Pippig, C‑112/99 Toshiba, C‑381/05 De Landtsheer,
 C‑159/09 Lidl v. Vierzon, C‑509/09 a C‑161/10 eDate, C‑585/08 a C‑144/09 Pammer/Alpenhof, C‑170/12 Pinckney,
-C‑441/13 Hejduk, C‑194/16 Bolagsupplysningen, C‑251/20 Gtflix; BGH I ZR 24/03, I ZR 131/12;
+C‑441/13 Hejduk, C‑194/16 Bolagsupplysningen, C‑251/20 Gtflix; BGH I ZR 24/03, I ZR 131/12, I ZR 147/09,
+I ZR 200/17, I ZR 228/03; zák. 480/2004 Sb. § 5;
 it-recht-kanzlei.de „Teure Klagen aus Österreich“ (23. 7. 2026). Částky za výzvy a řízení jsou odhad podle tabulky
 RVG a běžné praxe, ne citace.
 
