@@ -774,6 +774,11 @@
                 this._selectionTick++;
                 return;
             }
+            this._aktivujPodlazi(id);
+        },
+
+        /** Kreslí se na podlaží `id` (bez 3D přepínání viditelnosti): řádek podlaží ve 2D, výběr objektu z procházky. */
+        _aktivujPodlazi(id) {
             if (this.isDraggingWall || this.isDraggingNode || this.isDraggingOpening || this.isRotating || this._domTah) return;
             if (this.rezimStrecha && this.podlaziUprava === 'strecha') this.podlaziUprava = null;
             this.rezimStrecha = false;
@@ -3800,8 +3805,11 @@
             return meshe;
         },
 
-        /** Hranol s otvory z půdorysu (m) mezi výškami; souřadnice scény jako u stěn. */
-        _deska3d(obrys, otvory, yOd, yDo, mat, userData) {
+        /**
+         * Hranol s otvory z půdorysu (m) mezi výškami; souřadnice scény jako u stěn. `obrysVen` (díl desky z _deskaSVyrezy):
+         * boky mimo tento vnější obrys jsou boky děr a dostanou čtvrtý materiál jako díry v celé desce.
+         */
+        _deska3d(obrys, otvory, yOd, yDo, mat, userData, obrysVen = null) {
             const THREE = window.THREE;
             const shape = new THREE.Shape();
             // ExtrudeGeometry srovná směr děr jen u obrysu proti směru hodinek. Jinak by boky děr
@@ -3827,6 +3835,23 @@
                 if (mat[3] && otvory?.length && hran * 6 < boky.count) {
                     geom.addGroup(boky.start, hran * 6, 1);
                     geom.addGroup(boky.start + hran * 6, boky.count - hran * 6, 3);
+                } else if (mat[3] && obrysVen) {
+                    // Po čtyřúhelnících (6 vrcholů): střed na vnějším obrysu = líc domu, jinak bok díry
+                    const poz = geom.attributes.position;
+                    const naObrysu = (x, y) => obrysVen.some((a, i) => {
+                        const b = obrysVen[(i + 1) % obrysVen.length], dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+                        if (L2 < 1e-12) return false;
+                        const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / L2));
+                        return Math.hypot(x - a.x - t * dx, y - a.y - t * dy) < 0.002;
+                    });
+                    let od = boky.start, mi = -1;
+                    for (let v = boky.start; v < boky.start + boky.count; v += 6) {
+                        let x = 0, y = 0;
+                        for (let k = 0; k < 6; k++) { x += poz.getX(v + k); y -= poz.getY(v + k); }
+                        const m = naObrysu(x / 6, y / 6) ? 1 : 3;
+                        if (m !== mi) { if (mi >= 0) geom.addGroup(od, v - od, mi); od = v; mi = m; }
+                    }
+                    if (mi >= 0) geom.addGroup(od, boky.start + boky.count - od, mi);
                 } else geom.addGroup(boky.start, boky.count, 1);
             }
             const m = new THREE.Mesh(geom, mat);
@@ -3875,6 +3900,30 @@
                     if (s) dalsi[i] = s;
                 }
                 st = dalsi;
+            }
+            // Místnost bez podlahy: buňky u jejího okraje dostane podlaha sousední místnosti a výřez (obrys plochy) ji ořízne
+            // přesně, zbytek buněk podlahu nemá. Dřív zůstaly buňky za zjednodušeným obrysem jako šedé proužky podlahy
+            // (Klemov 13. 11. 2026: světlé tečky pod prvním stupněm schodů nad plochou bez podlahy).
+            const bez = new Set();
+            for (const a of this.engine.dum.plochy) {
+                if (a.podlazi !== podl.id || a.typ !== 'bez_podlahy' || !a.mistnost) continue;
+                const m = (eng.mistnosti || []).find(x => x.id === a.mistnost);
+                const s = m?.kotva ? R.stitekVBode(rastr, m.kotva.x, m.kotva.y) : 0;
+                if (s >= 2) bez.add(s);
+            }
+            if (bez.size) {
+                const jina = (j) => st[j] >= 2 && !bez.has(st[j]);
+                for (let pruchod = 0; pruchod < 3; pruchod++) {
+                    const dalsi = Int32Array.from(st);
+                    for (let i = 0; i < w * h; i++) {
+                        if (!bez.has(st[i])) continue;
+                        const x = i % w;
+                        const s = (x > 0 && jina(i - 1) && st[i - 1]) || (x < w - 1 && jina(i + 1) && st[i + 1]) || (i >= w && jina(i - w) && st[i - w]) || (i < w * (h - 1) && jina(i + w) && st[i + w]);
+                        if (s) dalsi[i] = s;
+                    }
+                    st = dalsi;
+                }
+                for (let i = 0; i < w * h; i++) if (bez.has(st[i])) st[i] = 0;
             }
             const pxM = eng.PX_PER_M;
             // Výřezy (prostupy, schody zdola): pryč jen buňky celé uvnitř, okrajové zůstanou a podlaha se podle výřezu
@@ -4018,7 +4067,9 @@
                         continue;
                     }
                     let dily = [[{ x: ax, y: az }, { x: bx, y: az }, { x: bx, y: bz }, { x: ax, y: bz }]];
-                    for (const c of zasah) dily = dily.flatMap(P => odectiKonvexni(P, c.poly) ?? [P]);
+                    // Práh plochy 1 mm²: s výchozím 1 cm² ořez přeskočil roh buňky zasahující do výřezu jen pár mm a buňka
+                    // zůstala celá, na šikmé hraně zuby do 9 mm (prosvítaly pod prvním stupněm schodů, Libor 13. 11. 2026)
+                    for (const c of zasah) dily = dily.flatMap(P => odectiKonvexni(P, c.poly, 1e-6) ?? [P]);
                     dily.forEach(konvexni);
                 }
                 prahyTady.forEach(q => konvexni(q.poly));
@@ -4379,12 +4430,18 @@
                 const matSvisle = new THREE.MeshStandardMaterial({ color: barva.clone().multiplyScalar(JAS_SVISLE), roughness: 0.8 });
                 matSvisle.userData.barva = klic;
                 matSvisle.userData.jas = JAS_SVISLE;
-                for (const u of g.stupne) {
+                // První podstupnice sahá do tloušťky desky pod podlahou (1 cm nad její spodek, ať se nepere se stropem):
+                // začínají-li schody na hraně díry v podlaze, nebude milimetrovou spárou mezi podlahou a stupněm vidět
+                // bok díry (Klemov 13. 11. 2026, světlé tečky pod prvním stupněm). Ze snížené místnosti ne: její deska
+                // je jinak silná a podstupnice by mohla vyčuhovat do stropu pod ní.
+                const podSchody = e.podlaziPod(s.odPodlazi);
+                const doDesky = plochaSchodu?.typ === 'snizena' ? 0 : Math.max(0, (podSchody ? podSchody.vyska - e.svetlaVyska(podSchody) : 0.15) - 0.01);
+                g.stupne.forEach((u, i) => {
                     dum.add(this._deska3d(naM(u.poly), [], kota + u.z - TL_NASLAPU, kota + u.z, [matSvisle, matSvisle, matNaslap], { podlazi: s.odPodlazi, schody: s.id }));
                     // Podstupnice až po spodek předchozího stupně: na té se oba stupně i zespodu dotýkají
-                    // celou tloušťkou, jinak by se potkaly jen v hraně. První končí na podlaze.
-                    dum.add(this._deska3d(naM(u.celo), [], kota + Math.max(0, u.z - g.v - TL_NASLAPU), kota + u.z - TL_NASLAPU, matSvisle, { podlazi: s.odPodlazi, schody: s.id, podstupnice: true }));
-                }
+                    // celou tloušťkou, jinak by se potkaly jen v hraně
+                    dum.add(this._deska3d(naM(u.celo), [], kota + (i ? Math.max(0, u.z - g.v - TL_NASLAPU) : -doDesky), kota + u.z - TL_NASLAPU, matSvisle, { podlazi: s.odPodlazi, schody: s.id, podstupnice: true }));
+                });
                 // Točité schody drží sloupek uprostřed, sahá po podlahu horního podlaží
                 if (g.sloupek) dum.add(this._deska3d(naM(g.sloupek), [], kota, kota + g.n * g.v, matSvisle, { podlazi: s.odPodlazi, schody: s.id }));
             }
@@ -4730,9 +4787,16 @@
             return vysledek;
         },
 
-        /** Deska s výřezy: bez nich jedna deska s dírami, s nimi konvexní díly, protože výřez může přetnout obrys. */
+        /**
+         * Deska s výřezy: bez nich jedna deska s dírami, s nimi konvexní díly, protože výřez může přetnout obrys.
+         * Konvexní díly i u děr, které se překrývají (plocha bez podlahy nad schody zdola): tvar s dírami přes sebe
+         * má v průniku zase desku (Klemov 13. 11. 2026: pod schody do podkroví zůstal kus stropu nad schody do sklepa).
+         */
         _deskaSVyrezy(obrys, otvory, vyrezy, yOd, yDo, mat, userData) {
-            if (!vyrezy.length) return [this._deska3d(obrys, otvory, yOd, yDo, mat, userData)];
+            const obal = (h) => ({ x0: Math.min(...h.map(q => q.x)), x1: Math.max(...h.map(q => q.x)), y0: Math.min(...h.map(q => q.y)), y1: Math.max(...h.map(q => q.y)) });
+            const obaly = otvory.map(obal);
+            const prekryv = obaly.some((a, i) => obaly.some((b, j) => j > i && a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1));
+            if (!vyrezy.length && !prekryv) return [this._deska3d(obrys, otvory, yOd, yDo, mat, userData)];
             let dily = window.Strecha.konvexniDily(kladnaOrientace(obrys));
             for (const h of [...otvory, ...vyrezy]) {
                 for (const C of window.Strecha.konvexniDily(kladnaOrientace(h))) {
@@ -4742,7 +4806,7 @@
                     });
                 }
             }
-            return dily.map(q => this._deska3d(q, [], yOd, yDo, mat, userData));
+            return dily.map(q => this._deska3d(q, [], yOd, yDo, mat, userData, obrys));
         },
 
         /** Snížené místnosti nad terénem (sklep leží pod zemí celý): obrysy v m, y dolů, s rezervou pod stěny. */

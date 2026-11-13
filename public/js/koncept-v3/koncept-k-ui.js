@@ -7639,9 +7639,10 @@ function konceptKEditor(initialData) {
 
         /**
          * Madlo posuvného křídla (Libor 13. 11. 2026): svislá tyč na dvou držácích. `strany` = na které strany křídla (±1),
-         * `pul` = půl tloušťky křídla, `mat` = materiál (null = stříbrný kov jako klika dveří).
+         * `pul` = půl tloušťky křídla, `mat` = materiál (null = stříbrný kov jako klika dveří). `zapustene`: dveře zajíždějí
+         * do zdi, madlo proto jen kovový rámeček s tmavou prohlubní v líci křídla, vystoupí nejvýš 4 mm (Libor 13. 11. 2026).
          */
-        _madlo3d(g, x, y, strany, pul, mat) {
+        _madlo3d(g, x, y, strany, pul, mat, zapustene = false) {
             const THREE = window.THREE;
             const kov = mat || new THREE.MeshStandardMaterial({ color: 0xc9ccd0, metalness: 0.85, roughness: 0.32 });
             const dil = (w, h, d, px, py, pz) => {
@@ -7650,6 +7651,17 @@ function konceptKEditor(initialData) {
                 m.userData.klika = true;
                 g.add(m);
             };
+            if (zapustene) {
+                const tma = new THREE.MeshStandardMaterial({ color: 0x3a3c3f, metalness: 0.4, roughness: 0.6 });
+                for (const z of strany) {
+                    dil(0.042, 0.2, 0.003, x, y, z * (pul + 0.0015));                   // rámeček
+                    const m = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.17, 0.002), tma);   // prohlubeň
+                    m.position.set(x, y, z * (pul + 0.0035));
+                    m.userData.klika = true;
+                    g.add(m);
+                }
+                return;
+            }
             for (const z of strany) {
                 const lic = z * pul;
                 dil(0.022, 0.4, 0.022, x, y, lic + z * 0.045);               // tyč
@@ -7931,6 +7943,15 @@ function konceptKEditor(initialData) {
                 // Každý díl má vlastní rám (dva sousední svislé rámy tvoří sloupek) — díly
                 // mohou mít různý parapet, horní hrana je společná
                 const celkem = kridla.reduce((a, k) => a + k.sirka, 0) || sirka;
+                // Procházka: místo pro úpravu otvoru nahoře uprostřed v rovině líce zdi z obou stran (ostění ho šikmo
+                // nezakryje), obal přes celou tloušťku zdi pro značku (prochazka.js)
+                const naUpravu = Math.max(minParapetOtvoru(op) + 0.1, vrsek - 0.14);
+                const licZdi = (wall.tloustka || 0.3) / 2;
+                g.userData.otvor = {
+                    id: op.id, podlazi: podl.id,
+                    obal: new THREE.Box3(new THREE.Vector3(-sirka / 2, minParapetOtvoru(op), -licZdi - 0.03), new THREE.Vector3(sirka / 2, vrsek, licZdi + 0.03)),
+                    body: [1, -1].map(z => new THREE.Vector3(0, naUpravu, z * (licZdi + 0.01))),
+                };
                 let x = -sirka / 2;
                 kridla.forEach((k, iKridla) => {
                     const w = Math.max(0.02, k.sirka * sirka / celkem);
@@ -7977,7 +7998,7 @@ function konceptKEditor(initialData) {
                             if (op.typ === 'dvere' && kridloG && posuvne && vnitrniV > 1.4) {
                                 // Madlo u hrany, která zůstane vidět (proti směru posunu), na obou stranách
                                 const kx = kamPosunout < 0 ? x + w - RAM - 0.06 : x + RAM + 0.06, ky = Math.min(1.05, yOd + vnitrniV - 0.35);
-                                this._madlo3d(kridloG, kx - kridloG.position.x, ky, [1, -1], 0.0225, null);
+                                this._madlo3d(kridloG, kx - kridloG.position.x, ky, [1, -1], 0.0225, null, true);
                                 for (const z of [1, -1]) poKlice(new THREE.Vector3(kx - kridloG.position.x, ky, z * 0.06));
                             } else if (op.typ === 'dvere' && kridloG && vnitrniW > 0.3 && vnitrniV > 1.4) {
                                 const smer = panty === 'levy' ? -1 : 1;

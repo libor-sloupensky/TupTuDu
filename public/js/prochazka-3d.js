@@ -604,7 +604,10 @@ void main() {
                 hover = null;
                 const u = najdiUchop(h.x, h.y);
                 ukazUchop(u, h.x, h.y);
-                ukazMisto(u || objektPodMysi(h.x, h.y), !!u);
+                // Značky u všech objektů pod myší; ten v dosahu (u) mezi nimi, i když myš jeho obal míjí
+                const pod = objektyPodMysi(h.x, h.y);
+                if (u && !pod.some(x => x.id === u.id)) pod.unshift(u);
+                ukazMista(pod, u?.id ?? null);
                 if (!tah) platno.style.cursor = u ? 'pointer' : 'grab';
                 const c = cil || u ? null : cilZObrazovky(h.x, h.y);
                 if (c) { krouzek.position.set(c.x, c.y + 0.02, c.z); krouzek.visible = true; zmena = true; }
@@ -789,17 +792,28 @@ void main() {
 
         // Značka místa pro klik (Libor 13. 11. 2026): nad objektem (obal úchopu) se ukáže, kam kliknout; ikona u kurzoru
         // až v dosahu zóny. Obal = kvádr v souřadnicích objektu (u.obal.box, u.obal.vSvete = box už ve světě).
-        const znackaMista = obal.querySelector('[data-pr-misto]');
-        let misto = null;   // { bod: Vector3, vDosahu }
+        // Značky pro víc objektů naráz (dveře a jejich křídlo, postel a koberec pod ní); první je v šabloně
+        const znackyMist = [obal.querySelector('[data-pr-misto]')];
+        const znackaMista = (i) => {
+            while (znackyMist.length <= i) {
+                const z = znackyMist[0].cloneNode(false);
+                z.hidden = true;
+                znackyMist[0].after(z);
+                znackyMist.push(z);
+            }
+            return znackyMist[i];
+        };
+        let mista = [];   // [{ bod: Vector3, vDosahu }]
         const INV = new THREE.Matrix4(), PAPRSEK = new THREE.Ray(), ZASAH = new THREE.Vector3();
-        function objektPodMysi(cx, cy) {
+        /** Všechny objekty pod myší (obal zasažený paprskem, nezakrytý zdí), od nejbližšího, nejvýš čtyři. */
+        function objektyPodMysi(cx, cy) {
             const seznam = o.uchopy?.();
-            if (!seznam?.length) return null;
+            if (!seznam?.length) return [];
             const r = o.platno.getBoundingClientRect();
-            if (!r.width || !r.height) return null;
+            if (!r.width || !r.height) return [];
             kameraZeStavu();
             paprsek.setFromCamera(new THREE.Vector2((cx - r.left) / r.width * 2 - 1, -(cy - r.top) / r.height * 2 + 1), kamera);
-            let nej = null;
+            const zasazene = [];
             for (const u of seznam) {
                 if (!u.obal || (u.objekt && !viditelny(u.objekt))) continue;
                 PAPRSEK.copy(paprsek.ray);
@@ -807,33 +821,39 @@ void main() {
                 if (!PAPRSEK.intersectBox(u.obal.box, ZASAH)) continue;
                 if (!u.obal.vSvete) ZASAH.applyMatrix4(u.objekt.matrixWorld);
                 const d = ZASAH.distanceTo(paprsek.ray.origin);
-                if (d > 15 || (nej && d >= nej.d)) continue;
-                nej = { u, d };
+                if (d <= 15) zasazene.push({ u, d });
             }
-            if (!nej) return null;
+            if (!zasazene.length) return [];
+            zasazene.sort((a, b) => a.d - b.d);
+            // Zeď před objektem ho zakryje; objekty za sebou (postel na koberci) se ukážou všechny
             paprsek.near = 0.05;
-            paprsek.far = nej.d;
-            const zakryti = paprsek.intersectObjects(o.cile?.() || [], false).find(h => viditelny(h.object) && !jeVKridle(h.object, nej.u.objekt));
+            paprsek.far = zasazene[zasazene.length - 1].d;
+            const steny = paprsek.intersectObjects(o.cile?.() || [], false).filter(h => viditelny(h.object));
             paprsek.far = 2000;
-            return zakryti && zakryti.distance < nej.d - 0.05 ? null : nej.u;
+            return zasazene.filter(z => !steny.some(h => h.distance < z.d - 0.05 && !jeVKridle(h.object, z.u.objekt))).slice(0, 4).map(z => z.u);
         }
-        /** Značka na bodu úchopu bližším k oku (dveře mají kliku z obou stran). */
-        function ukazMisto(u, vDosahu) {
-            if (!u) { misto = null; if (!znackaMista.hidden) znackaMista.hidden = true; return; }
+        /** Značky na bodech úchopů (u každého ten bližší k oku, dveře mají kliku z obou stran); `vDosahu` = id úchopu v zóně. */
+        function ukazMista(seznam, vDosahu) {
             kameraZeStavu();
-            const bod = u.body.reduce((a, b) => (b.distanceTo(kamera.position) < a.distanceTo(kamera.position) ? b : a));
-            misto = { bod: bod.clone(), vDosahu };
+            mista = seznam.map(u => ({
+                bod: u.body.reduce((a, b) => (b.distanceTo(kamera.position) < a.distanceTo(kamera.position) ? b : a)).clone(),
+                vDosahu: u.id === vDosahu,
+            }));
             umistiMisto();
         }
         function umistiMisto() {
-            if (!misto) return;
-            const r = obal.getBoundingClientRect(), v = BOD.copy(misto.bod).project(kamera);
-            if (v.z > 1) { znackaMista.hidden = true; return; }
-            znackaMista.style.left = ((v.x + 1) / 2 * r.width) + 'px';
-            znackaMista.style.top = ((1 - v.y) / 2 * r.height) + 'px';
-            znackaMista.classList.toggle('tt-pr-v-dosahu', !!misto.vDosahu);
-            znackaMista.hidden = false;
+            const r = obal.getBoundingClientRect();
+            mista.forEach((m, i) => {
+                const z = znackaMista(i), v = BOD.copy(m.bod).project(kamera);
+                if (v.z > 1) { z.hidden = true; return; }
+                z.style.left = ((v.x + 1) / 2 * r.width) + 'px';
+                z.style.top = ((1 - v.y) / 2 * r.height) + 'px';
+                z.classList.toggle('tt-pr-v-dosahu', !!m.vDosahu);
+                z.hidden = false;
+            });
+            for (let i = mista.length; i < znackyMist.length; i++) if (!znackyMist[i].hidden) znackyMist[i].hidden = true;
         }
+        const ukazMisto = (u) => ukazMista(u ? [u] : [], null);
         function ukazUchop(u, cx, cy) {
             uchop = u;
             if (!u) { if (!znackaUchopu.hidden) znackaUchopu.hidden = true; return; }

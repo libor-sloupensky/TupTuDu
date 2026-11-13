@@ -129,6 +129,42 @@ async function main() {
         await p.snimek(path.join(vystup, 'dira-zidka.png'));
         await p.vyhodnot(`(() => { const d = ${D}; d.prepni2d(); return true; })()`);
 
+        console.log('\n5) Plocha bez podlahy za šikmým oddělovačem přes otvor schodů zdola (Klemov 13. 11. 2026)');
+        // Pod schody do podkroví prosvítaly světlé tečky: šedé proužky podlahy místnosti bez podlahy za zjednodušeným
+        // obrysem a kus stropu v průniku dvou děr (plocha a otvor schodů)
+        await p.vyhodnot(`(async () => { const d = ${D}; const e = d.engine; const X = e.PX_PER_M; await new Promise(r => setTimeout(r, 300));
+            e.dum.plochy = []; d.naPodlazi('P2'); d.renderer.render(); await new Promise(r => setTimeout(r, 300));
+            for (const w of [...e.walls.values()]) { const a = e.nodes.get(w.nodeA), b = e.nodes.get(w.nodeB); if (Math.abs(a.x - 7 * X) < 1 && Math.abs(b.x - 7 * X) < 1) e.removeWall(w.id); }
+            d.renderer.render(); await new Promise(r => setTimeout(r, 300));
+            const u1 = e.najdiUchytOddelovace(4 * X, 0.15 * X, 0.5 * X), u2 = e.najdiUchytOddelovace(6.5 * X, 7.85 * X, 0.5 * X);
+            e.addOddelovac({ x: u1.bod.x, y: u1.bod.y, host: u1.host }, { x: u2.bod.x, y: u2.bod.y, host: u2.host });
+            d.renderer.render(); await new Promise(r => setTimeout(r, 400));
+            const m = e.mistnosti.slice().sort((a, b) => b.kotva.x - a.kotva.x);
+            d.renderer.setSelection([], [], [], [], [], [], [m[0].id]); d._selectionTick++; d.setMistnostUroven('typ', 'bez_podlahy');
+            d.renderer.setSelection([], [], [], [], [], [], [m[m.length - 1].id]); d.setMistnostPodlaha({ dekor: 'hladka', barva: '#cc2222' });
+            d.renderer.clearSelection();
+            e.dum.schodiste.push({ id: 'S1', odPodlazi: 'P1', doPodlazi: 'P2', tvar: 'prime', x: 4.6, y: -4, uhel: 0, sirka: 1, strana: 1 });
+            d.naPodlazi('P1'); d.renderer.render(); await new Promise(r => setTimeout(r, 300));
+            await d.prepni3d(); await new Promise(r => setTimeout(r, 800)); d.skryte3d = []; d.zobrazStrechu3d = false; d._nastavViditelnost3d(); return true; })()`);
+        await pauza(500);
+        // Mřížka po 0,5 m přes plochu bez podlahy (vpravo od oddělovače): strop P1 tam nikde být nesmí. Tvar s dírami
+        // přes sebe nechal desku na 32 bodech mřížky (hlavně kolem otvoru schodů).
+        const strop5 = await p.vyhodnot(`(() => { const f = ${PAPRSEK}; const out = []; let bodu = 0;
+            for (let x = 5.5; x < 9.8; x += 0.5) for (let z = 0.5; z < 7.8; z += 0.5) { if (x < 4 + 2.5 * (z - 0.15) / 7.7 + 0.1) continue; bodu++;
+                const h = f([x, 3.4, z], [0, -1, 0], 3); if (h?.ud?.stropPod) out.push([x, z]); }
+            return { bodu, deska: out.length, ukazka: out.slice(0, 5) }; })()`);
+        kontrola('strop pod plochou bez podlahy je otevřený i tam, kde se kryje s otvorem schodů', strop5.bodu > 50 && strop5.deska === 0, JSON.stringify(strop5));
+        // Šedá společná podlaha (místnost bez vlastního dekoru) na patře být nemá: sousední místnost má vlastní dekor
+        // a místnost bez podlahy podlahu nemá. Bez opravy tu zbylo 0,7 m² proužků a buněk za obrysem plochy.
+        const sede = await p.vyhodnot(`(() => { const g = window._kk3d.podlaziSkupiny.get('P2'); const out = []; g.children.forEach(o => {
+            if (!o.isMesh || Array.isArray(o.material) || o.material.color?.getHexString() !== 'd6d3d1') return; o.geometry.computeBoundingBox(); const b = o.geometry.boundingBox; if (b.max.y - b.min.y > 1e-4) return;
+            const poz = o.geometry.attributes.position; let a = 0; for (let i = 0; i < poz.count; i += 3) a += Math.abs((poz.getX(i + 1) - poz.getX(i)) * (poz.getZ(i + 2) - poz.getZ(i)) - (poz.getX(i + 2) - poz.getX(i)) * (poz.getZ(i + 1) - poz.getZ(i))) / 2;
+            out.push({ trojuh: poz.count / 3, plocha_cm2: +(a * 1e4).toFixed(1) }); }); return out; })()`);
+        kontrola('podlaha sousední místnosti sahá až k ploše bez podlahy, šedé proužky podlahy za jejím obrysem nezbyly', sede.length === 0, JSON.stringify(sede));
+        await pohled(22, 16, 20, 5, 2.5, 4, 2.4);
+        await p.snimek(path.join(vystup, 'bez-podlahy-sikmo.png'));
+        await p.vyhodnot(`(() => { const d = ${D}; d.prepni2d(); return true; })()`);
+
         const vazne = p.chybyDetail.filter(c => !/404/.test(c.text));
         kontrola('bez chyb v konzoli', vazne.length === 0, vazne.slice(0, 3).map(c => (c.text || '').slice(0, 200)).join(' | '));
 

@@ -268,7 +268,30 @@
                 }
                 return { id, objekt: g, otevreno: (this._otevrena?.get(id)?.cil || 0) > 0.5, obal: { box: u.obal }, body: u.kliky.map(b => g.localToWorld(b.clone())) };
             });
-            return [...kridla, ...this._prochazkaVybaveni()];
+            return [...kridla, ...this._prochazkaOtvory(), ...this._prochazkaVybaveni()];
+        },
+
+        /** Místa pro úpravu dveří a oken (Libor 13. 11. 2026): nahoře uprostřed otvoru, klik ukáže panel otvoru. */
+        _prochazkaOtvory() {
+            const _3d = window._kk3d, out = [];
+            if (!_3d?.wallGroup) return out;
+            if (!_3d._otvory) {
+                const o = [];
+                _3d.wallGroup.traverse(g => { if (g.userData?.otvor) o.push(g); });
+                _3d._otvory = o;
+            }
+            for (const g of _3d._otvory) {
+                const u = g.userData.otvor;
+                g.updateMatrixWorld();
+                out.push({ id: 'otvor:' + u.podlazi + ':' + u.id, objekt: g, ikona: 'upravit', polomer: 0.1, obal: { box: u.obal }, body: u.body.map(b => g.localToWorld(b.clone())) });
+            }
+            return out;
+        },
+
+        /** Podlaží, na kterém leží objekt scény (skupina podlaží nebo záznam sestavy). */
+        _podlaziObjektu(o) {
+            for (; o; o = o.parent) if (o.userData?.podlazi) return o.userData.podlazi;
+            return null;
         },
 
         /** Nábytek a sestavy: jeden bod ve středu kusu (půl výšky, nejvýš 1,1 m), zóna 12–15 cm, ikona úprav. */
@@ -293,14 +316,29 @@
         },
 
         _prochazkaPrepniKridlo(id) {
-            // Nábytek a sestava: klik na zónu nad středem otevře panel jako klik ve 3D
+            // Nábytek, sestava a otvor: klik na místo pro úpravu otevře panel jako klik ve 3D. Objekt z jiného podlaží:
+            // editor nejdřív přepne kreslení na jeho podlaží, jinak by výběr neměl co najít.
+            const _3d = window._kk3d;
+            const naPodlazi = (pid) => { if (pid && pid !== this.engine.dum.aktivni) this._aktivujPodlazi(pid); };
+            if (id.startsWith('otvor:')) {
+                const [, pid, oid] = id.split(':');
+                naPodlazi(pid);
+                this.renderer.setSelection([], [], [oid]);
+                this.renderer.render();
+                this._selectionTick++;
+                return;
+            }
             if (id.startsWith('kus:')) {
+                let kus = null;
+                _3d?.wallGroup?.traverse(o => { if (o.userData?.kus === id.slice(4)) kus = o; });
+                naPodlazi(this._podlaziObjektu(kus));
                 this.renderer.setSelection([], [], [], [id.slice(4)]);
                 this.renderer.render();
                 this._selectionTick++;
                 return;
             }
             if (id.startsWith('sestava:')) {
+                naPodlazi(_3d?.sestavySkupina?.children.find(g => g.userData?.sestava === id.slice(8))?.userData.podlazi);
                 this.renderer.setSelection([]);
                 this.renderer.selectedSestavy?.add(id.slice(8));
                 this.renderer.render();
@@ -358,6 +396,7 @@
             _3d._prochazkaSite = null;
             // Přestavěné otvory dostanou zpátky svůj stav otevření
             _3d._kridla = null;
+            _3d._otvory = null;
             if (this._otevrena?.size) this._prochazkaNastavKridla();
             const y0 = _3d.wallGroup.position.y;
             if (this.rezimProchazka && _3d.prochazka) {

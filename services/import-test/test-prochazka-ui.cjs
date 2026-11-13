@@ -344,11 +344,45 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
             const a = e.nodes.get(z.nodeA); const op = e.addOpening(z.id, Math.min(Math.abs(5 * X - a.y), Math.abs(5.9 * X - a.y)) / X, 0.9, 'dvere', { presnaSirka: true, kridla: [{ sirka: 0.9, otv: 'posuvne' }] });
             d.renderer.render(); d._build3d(); await new Promise(r => setTimeout(r, 500));
             const g = d._prochazkaKridla().find(x => x.userData.kridlo.otvor === op.id); if (!g) return { chyba: 'křídlo nenalezeno', kridla: JSON.stringify(op.kridla) };
-            let madel = 0; g.traverse(o => { if (o.userData?.klika) madel++; });
-            const x0 = g.position.x, id = d._idKridla(g.userData.kridlo); d._prochazkaPrepniKridlo(id); await new Promise(r => setTimeout(r, 1200));
-            const otevreno = g.position.x; d._prochazkaPrepniKridlo(id); await new Promise(r => setTimeout(r, 1200));
-            return { madel, posun: +(otevreno - x0).toFixed(2), zpet: +(g.position.x - x0).toFixed(3), body: g.userData.kridlo.kliky.length }; })()`);
-        kontrola('posuvné dveře mají madlo z obou stran a v procházce se odsunou a zase zasunou', posuvne.madel === 6 && Math.abs(posuvne.posun) > 0.7 && Math.abs(posuvne.zpet) < 0.005 && posuvne.body === 2, JSON.stringify(posuvne));
+            let madel = 0, vystup = 0; g.traverse(o => { if (o.userData?.klika) { madel++; vystup = Math.max(vystup, Math.abs(o.position.z) + o.geometry.parameters.depth / 2 - 0.0225); } });
+            // Animace jde po snímcích, pod zátěží trvá déle než 0,6 s: čekat na konec, nejvýš 5 s
+            const dojed = async (hotovo) => { for (let t = 0; t < 50 && !hotovo(); t++) await new Promise(r => setTimeout(r, 100)); };
+            const x0 = g.position.x, id = d._idKridla(g.userData.kridlo), cil = g.userData.kridlo.posun; d._prochazkaPrepniKridlo(id);
+            await dojed(() => Math.abs(g.position.x - x0 - cil) < 0.001);
+            const otevreno = g.position.x; d._prochazkaPrepniKridlo(id);
+            await dojed(() => Math.abs(g.position.x - x0) < 0.001);
+            return { op: op.id, madel, vystup: +(vystup * 1000).toFixed(1), posun: +(otevreno - x0).toFixed(2), zpet: +(g.position.x - x0).toFixed(3), body: g.userData.kridlo.kliky.length }; })()`);
+        kontrola('posuvné dveře mají madlo z obou stran a v procházce se odsunou a zase zasunou', posuvne.madel === 4 && Math.abs(posuvne.posun) > 0.7 && Math.abs(posuvne.zpet) < 0.005 && posuvne.body === 2, JSON.stringify(posuvne));
+        kontrola('madlo posuvných dveří je zapuštěné (z líce křídla vystoupí nejvýš 5 mm)', posuvne.vystup > 0 && posuvne.vystup <= 5, JSON.stringify(posuvne));
+
+        // Místo pro úpravu dveří nahoře uprostřed otvoru; myš na křídle ukáže značky obou objektů (křídlo i otvor)
+        const otvorUchop = await p.vyhodnot(`(() => { const _3d = window._kk3d; _3d.prochazka.zapni({ x: 1.7, z: 5.45, yOd: 0.5, smer: Math.PI / 2, sklon: 0, oko: 1.6 });
+            const u = ${D}._prochazkaUchopy().find(x => x.id === 'otvor:P1:${posuvne.op}'); if (!u) return null;
+            const b = u.body.reduce((a, c) => (c.distanceTo(_3d.prochazka.kamera.position) < a.distanceTo(_3d.prochazka.kamera.position) ? c : a));
+            return { ikona: u.ikona, bod: b.toArray().map(v => +v.toFixed(3)) }; })()`);
+        kontrola('dveře mají v procházce místo pro úpravu (ikona úprav)', otvorUchop && otvorUchop.ikona === 'upravit' && otvorUchop.bod[1] > 1.6, JSON.stringify(otvorUchop));
+        if (otvorUchop) {
+            await pauza(500);
+            const naKridle = await p.vyhodnot(`(() => { const _3d = window._kk3d, r = _3d.renderer.domElement.getBoundingClientRect(); const v = new THREE.Vector3(0.02, 1.0, 5.45).project(_3d.prochazka.kamera);
+                return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; })()`);
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: naKridle.x, y: naKridle.y });
+            await pauza(400);
+            const dveZnacky = await p.vyhodnot(`[...document.querySelectorAll('[data-pr-misto]')].filter(z => !z.hidden).map(z => [Math.round(parseFloat(z.style.left)), Math.round(parseFloat(z.style.top))])`);
+            kontrola('nad křídlem dveří se ukážou značky u obou objektů (madlo a místo pro úpravu otvoru)', dveZnacky.length === 2, JSON.stringify(dveZnacky));
+            const naUpravu = await p.vyhodnot(`(() => { const _3d = window._kk3d, r = _3d.renderer.domElement.getBoundingClientRect(); const v = new THREE.Vector3(${otvorUchop.bod.join(',')}).project(_3d.prochazka.kamera);
+                return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; })()`);
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: naUpravu.x, y: naUpravu.y });
+            await pauza(400);
+            const ikonaOtvoru = await p.vyhodnot(`(() => { const z = document.querySelector('[data-pr-uchop]'); return { videt: !z.hidden, ikona: z.dataset.ikona }; })()`);
+            await klik(naUpravu);
+            await pauza(700);
+            const vybranyOtvor = await p.vyhodnot(`[...${D}.renderer.selectedOpenings]`);
+            const staleProchazka = await p.vyhodnot(`${D}.rezimProchazka`);
+            kontrola('klik na místo pro úpravu dveří vybere otvor a nechá procházku', ikonaOtvoru.videt && ikonaOtvoru.ikona === 'upravit' && vybranyOtvor.includes(posuvne.op) && staleProchazka,
+                JSON.stringify({ ikonaOtvoru, vybranyOtvor }));
+            await snimek3d('05f-dvere-uprava.png');
+            await p.vyhodnot(`(() => { const d = ${D}; d.renderer.clearSelection(); d.renderer.render(); d._selectionTick++; return true; })()`);
+        }
         // Postel v místnosti: klik mimo střed panel neotevře, zóna nad středem ano (s ikonou úprav)
         await p.vyhodnot(`(async () => { const d = ${D}; if (!d.katalog?.polozky?.length) await d._katalogNacti(); return true; })()`);   // bez panelu: ten přepne do 2D
         await p.cekej(`${D}.katalog?.polozky?.length > 0`, 30000, 'katalog');
