@@ -77,7 +77,7 @@ Ladí se nejdřív Planner 5D v češtině, pak se pravidla promítnou do ostatn
 10. **Bublina u každé vlastnosti:** česky kritéria (kdy má / částečně / nemá, bez interních dovětků), v ostatních
     jazycích zatím krátký popis, dokud se kritéria nepřeloží (`KonkurenceSrovnani::tip`).
 11. **Tlačítko „Srovnej X s TupTuDu“** (rozkaz, ne „Srovnání …“).
-Stav 13. 11. 2026: šablony platí pro všechny nástroje a jazyky; texty v odrážkách zatím jen Planner 5D a TupTuDu česky.
+Stav 13. 11. 2026 večer: pravidla promítnutá do všech 11 nástrojů a 7 zveřejněných jazyků (i připravené němčiny): odrážky, „nenalezeno“, kritéria v bublinách (`lang/*/srovnani.php`, pole `kr`), v přehledu kód jazyka a kroužek „nenalezeno“ bez textu.
 
 ## Jak se stránky tvoří (hotový náhled)
 - **Vše z dat analýzy**, nic se nepíše ručně ke konkrétnímu konkurentovi: `App\Support\KonkurenceSrovnani`, šablony
