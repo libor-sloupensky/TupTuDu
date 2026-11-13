@@ -24,7 +24,7 @@ return [
     'profil_je_zdarma' => 'Je zdarma?',
     'profil_limity' => 'Co omezuje verze zdarma',
     'profil_jazyky' => 'Jazyky',
-    'profil_v_jazyce' => 'V tvém jazyce (:jazyk)',
+    'profil_v_jazyce' => 'V tvém jazyce (:jazyk, :kod)',
     'profil_bezi' => 'Běží na',
     'profil_cena' => 'Ceny',
     'profil_cta' => 'Srovnání :nazev s TupTuDu',
@@ -306,4 +306,12 @@ return [
         'j_firmy' => 'týmy, více uživatelů',
         'j_cilovka' => 'komu se nástroj nabízí',
     ],
+    'odpoved' => [
+        'ano' => 'ano',
+        'castecne' => 'částečně',
+        'ne' => 'ne',
+        '?' => 'nezjištěno',
+    ],
+    'profil_zdarma' => 'Verze zdarma',
+    'prehled_my' => 'náš nástroj',
 ];

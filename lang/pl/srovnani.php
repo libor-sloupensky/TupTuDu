@@ -24,7 +24,7 @@ return [
     'profil_je_zdarma' => 'Czy jest za darmo?',
     'profil_limity' => 'Co ogranicza wersja darmowa',
     'profil_jazyky' => 'Języki',
-    'profil_v_jazyce' => 'W twoim języku (:jazyk)',
+    'profil_v_jazyce' => 'W twoim języku (:jazyk, :kod)',
     'profil_bezi' => 'Działa na',
     'profil_cena' => 'Ceny',
     'profil_cta' => 'Porównanie :nazev z TupTuDu',
@@ -306,4 +306,12 @@ return [
         'j_firmy' => 'zespoły, wielu użytkowników',
         'j_cilovka' => 'do kogo skierowane jest narzędzie',
     ],
+    'odpoved' => [
+        'ano' => 'tak',
+        'castecne' => 'częściowo',
+        'ne' => 'nie',
+        '?' => 'nieustalone',
+    ],
+    'profil_zdarma' => 'Wersja darmowa',
+    'prehled_my' => 'nasze narzędzie',
 ];

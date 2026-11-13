@@ -29,13 +29,20 @@
         <table class="sr-tab">
             <thead><tr><th></th><th>{{ $jmeno }}</th><th>TupTuDu</th></tr></thead>
             <tbody>
-            @foreach(['h_zdarma', 'j_limity_zdarma', 'j_cenik'] as $klic)
-                @php $p = $s->parametr($klic); @endphp
-                @continue(! $p || (! $s->hodnota($k, $p) && ! $s->hodnota($s->my, $p)))
-                <tr><th style="min-width:110px">{{ $nazevP($p) }}</th>
-                    <td>@include('srovnani._hodnota', ['h' => $s->hodnota($k, $p), 'p' => $p])</td>
-                    <td>@include('srovnani._hodnota', ['h' => $s->hodnota($s->my, $p), 'p' => $p])</td></tr>
-            @endforeach
+            {{-- Verze zdarma: odpověď + co omezuje v jednom řádku; ceník v odrážkách (Libor 13. 11. 2026) --}}
+            @php $pZ = $s->parametr('h_zdarma'); $pL = $s->parametr('j_limity_zdarma'); $pC = $s->parametr('j_cenik'); @endphp
+            <tr><th style="min-width:110px">{{ __('srovnani.profil_zdarma') }}</th>
+                @foreach([$k, $s->my] as $kdo)
+                    @php $lim = $s->hodnota($kdo, $pL); @endphp
+                    <td>@include('srovnani._hodnota', ['h' => $s->hodnota($kdo, $pZ), 'p' => $pZ, 'odpoved' => true, 'poznamka' => ! $lim])
+                        @if($lim)@include('srovnani._text', ['text' => $s->text($lim)])@endif</td>
+                @endforeach
+            </tr>
+            @if($pC)
+                <tr><th>{{ $nazevP($pC) }}</th>
+                    <td>@include('srovnani._hodnota', ['h' => $s->hodnota($k, $pC), 'p' => $pC])</td>
+                    <td>@include('srovnani._hodnota', ['h' => $s->hodnota($s->my, $pC), 'p' => $pC])</td></tr>
+            @endif
             </tbody>
         </table>
     </div>
@@ -45,7 +52,7 @@
         <div class="sr-karty">
             @foreach($sit as $klic => $x)
                 <div class="sr-karta">
-                    <b>{{ __('srovnani.situace.' . $klic) }}</b>
+                    <div class="sr-karta-nadpis">{{ __('srovnani.situace.' . $klic) }}</div>
                     <div style="margin:6px 0;font-weight:700;color:var(--c-primary-text)">
                         {{ $x['kdo'] === 'oba' ? __('srovnani.vs_oba') : ($x['kdo'] === 'x' ? __('srovnani.vs_vic_x', ['nazev' => $jmeno]) : __('srovnani.vs_vic_my')) }}
                     </div>

@@ -8,7 +8,12 @@
     .sr-autor { font-size: 14px; color: var(--c-text-secondary); border-left: 3px solid var(--c-primary); padding: 6px 12px; margin: 12px 0 20px; }
     .sr-nahled { position: sticky; top: 0; z-index: 30; background: var(--c-chip); color: var(--c-text); border: 1px dashed var(--c-warn); border-radius: 8px; padding: 8px 14px; font-size: 14px; margin-bottom: 16px; }
     .sr-karty { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; }
-    .sr-karta { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px; padding: 14px 16px; }
+    .sr-karta { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px; padding: 14px 16px; font-size: 15px; }
+    /* Nadpis karty je výraznější než obsah (Libor 13. 11. 2026) */
+    .sr-karta-nadpis { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--c-text); }
+    .sr-odrazky { margin: 6px 0 4px; padding-left: 1.2em; }
+    .sr-odrazky li { margin: 3px 0; line-height: 1.45; }
+    .sr-my { background: var(--c-primary-10); }
     .sr-dve { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 720px) { .sr-dve { grid-template-columns: 1fr; } }
     .sr-tab { width: 100%; border-collapse: collapse; font-size: 14.5px; }

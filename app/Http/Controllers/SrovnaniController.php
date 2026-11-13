@@ -66,7 +66,11 @@ class SrovnaniController extends Controller
         $data = $nastroje->map(fn ($k) => KonkurenceSrovnani::pro($k, $jazyk, true));
         $verze = self::verzePrehledu();
 
-        return view('srovnani.prehled', ['data' => $data, 'jazyk' => $jazyk, 'verze' => $verze, 'prepinac' => self::prepinac($verze)]);
+        // TupTuDu je v přehledu taky, první a označené jako náš nástroj (Libor 13. 11. 2026)
+        $tup = Konkurent::where('klic', 'tuptudu')->first();
+        $my = $tup ? KonkurenceSrovnani::pro($tup, $jazyk, true) : null;
+
+        return view('srovnani.prehled', ['data' => $data, 'my' => $my, 'jazyk' => $jazyk, 'verze' => $verze, 'prepinac' => self::prepinac($verze)]);
     }
 
     public function detail(string $adresa)

@@ -29,19 +29,20 @@
 
     <h2>{{ __('srovnani.profil_rychle') }}</h2>
     <div class="sr-karty">
-        <div class="sr-karta"><div class="sr-tlumene" style="font-size:13px">{{ __('srovnani.profil_je_zdarma') }}</div>
-            @include('srovnani._hodnota', ['h' => $zdarma, 'p' => $s->parametr('h_zdarma')])</div>
-        @if($s->parametr('j_limity_zdarma') && $hv('j_limity_zdarma'))
-            <div class="sr-karta"><div class="sr-tlumene" style="font-size:13px">{{ __('srovnani.profil_limity') }}</div>
-                @include('srovnani._hodnota', ['h' => $hv('j_limity_zdarma'), 'p' => $s->parametr('j_limity_zdarma')])</div>
-        @endif
+        {{-- Verze zdarma: odpověď a hned pod ní, co omezuje (Libor 13. 11. 2026: jeden blok, odrážky) --}}
+        @php $limity = $hv('j_limity_zdarma'); @endphp
+        <div class="sr-karta"><div class="sr-karta-nadpis">{{ __('srovnani.profil_zdarma') }}</div>
+            @include('srovnani._hodnota', ['h' => $zdarma, 'p' => $s->parametr('h_zdarma'), 'odpoved' => true, 'poznamka' => ! $limity])
+            @if($limity)@include('srovnani._text', ['text' => $s->text($limity)])@endif
+        </div>
         @if($jazykyNastroje)
-            <div class="sr-karta"><div class="sr-tlumene" style="font-size:13px">{{ __('srovnani.profil_v_jazyce', ['jazyk' => __('srovnani.jazyk.' . $j)]) }}</div>
-                <span class="sr-h"><i class="sr-d {{ in_array($j, $jazykyNastroje, true) ? 'ano' : 'ne' }}"></i> {{ in_array($j, $jazykyNastroje, true) ? __('srovnani.ano') : __('srovnani.ne') }}</span>
-                <span class="sr-pozn">{{ __('srovnani.profil_jazyky') }}: {{ collect($jazykyNastroje)->map(fn ($x) => Lang::has('srovnani.jazyk.' . $x) ? __('srovnani.jazyk.' . $x) : $x)->implode(', ') }}</span></div>
+            <div class="sr-karta"><div class="sr-karta-nadpis">{{ __('srovnani.profil_jazyky') }}</div>
+                <div>{{ __('srovnani.profil_v_jazyce', ['jazyk' => __('srovnani.jazyk.' . $j), 'kod' => $j]) }}:
+                    <span class="sr-h"><i class="sr-d {{ in_array($j, $jazykyNastroje, true) ? 'ano' : 'ne' }}"></i> {{ in_array($j, $jazykyNastroje, true) ? __('srovnani.ano') : __('srovnani.ne') }}</span></div>
+                <span class="sr-pozn">{{ collect($jazykyNastroje)->map(fn ($x) => (Lang::has('srovnani.jazyk.' . $x) ? __('srovnani.jazyk.' . $x) : $x) . ' (' . $x . ')')->implode(', ') }}</span></div>
         @endif
         @if($platformy = $k->verejne('platformy', $j))
-            <div class="sr-karta"><div class="sr-tlumene" style="font-size:13px">{{ __('srovnani.profil_bezi') }}</div>{{ $platformy }}</div>
+            <div class="sr-karta"><div class="sr-karta-nadpis">{{ __('srovnani.profil_bezi') }}</div>{{ $platformy }}</div>
         @endif
     </div>
 

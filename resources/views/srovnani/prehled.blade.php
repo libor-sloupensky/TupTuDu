@@ -14,15 +14,17 @@
                 <th>{{ __('srovnani.prehled_jazyk') }}</th><th>{{ __('srovnani.prehled_bezi') }}</th><th>{{ __('srovnani.prehled_stranky') }}</th>
             </tr></thead>
             <tbody>
-            @foreach($data as $s)
+            @foreach(collect([$my])->filter()->concat($data) as $s)
                 @php
                     $k = $s->konkurent;
+                    $jeMy = $k->jeTuptudu();
                     $jazyky = $s->hodnota($k, $s->parametr('i_jazyky_nastroj'))?->data;
+                    $odkaz = $jeMy ? \App\Support\Lokalizace::adresaWebu('/') : SrovnaniController::adresa($k, $jazyk);
                 @endphp
-                <tr>
-                    <td><a href="{{ SrovnaniController::adresa($k, $jazyk) }}"><b>{{ $k->jmeno() }}</b></a>
+                <tr @class(['sr-my' => $jeMy])>
+                    <td><a href="{{ $odkaz }}"><b>{{ $k->jmeno() }}</b></a>@if($jeMy) <span class="sr-stitek">{{ __('srovnani.prehled_my') }}</span>@endif
                         @if($popis = $k->verejne('popis', $jazyk))<span class="sr-pozn">{{ \Illuminate\Support\Str::limit($popis, 120) }}</span>@endif</td>
-                    <td>@include('srovnani._hodnota', ['h' => $s->hodnota($k, $s->parametr('h_zdarma')), 'p' => $s->parametr('h_zdarma'), 'poznamka' => false])</td>
+                    <td>@include('srovnani._hodnota', ['h' => $s->hodnota($k, $s->parametr('h_zdarma')), 'p' => $s->parametr('h_zdarma'), 'poznamka' => false, 'odpoved' => true])</td>
                     <td>
                         @if($jazyky === null)
                             <span class="sr-tlumene">{{ __('srovnani.nezjisteno') }}</span>
@@ -31,7 +33,7 @@
                         @endif
                     </td>
                     <td style="font-size:13.5px">{{ $k->verejne('platformy', $jazyk) }}</td>
-                    <td style="white-space:nowrap"><a href="{{ SrovnaniController::adresa($k, $jazyk) }}">{{ __('srovnani.profil') }}</a> · <a href="{{ SrovnaniController::adresa($k, $jazyk, true) }}">{{ __('srovnani.srovnani_s') }}</a></td>
+                    <td style="white-space:nowrap">@unless($jeMy)<a href="{{ SrovnaniController::adresa($k, $jazyk) }}">{{ __('srovnani.profil') }}</a> · <a href="{{ SrovnaniController::adresa($k, $jazyk, true) }}">{{ __('srovnani.srovnani_s') }}</a>@endunless</td>
                 </tr>
             @endforeach
             </tbody>

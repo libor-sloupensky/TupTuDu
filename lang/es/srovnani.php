@@ -24,7 +24,7 @@ return [
     'profil_je_zdarma' => '¿Es gratis?',
     'profil_limity' => 'Qué limita la versión gratuita',
     'profil_jazyky' => 'Idiomas',
-    'profil_v_jazyce' => 'En tu idioma (:jazyk)',
+    'profil_v_jazyce' => 'En tu idioma (:jazyk, :kod)',
     'profil_bezi' => 'Funciona en',
     'profil_cena' => 'Precios',
     'profil_cta' => 'Comparación de :nazev con TupTuDu',
@@ -306,4 +306,12 @@ return [
         'j_firmy' => 'equipos, varios usuarios',
         'j_cilovka' => 'a quién se ofrece la herramienta',
     ],
+    'odpoved' => [
+        'ano' => 'sí',
+        'castecne' => 'en parte',
+        'ne' => 'no',
+        '?' => 'no comprobado',
+    ],
+    'profil_zdarma' => 'Versión gratuita',
+    'prehled_my' => 'nuestra herramienta',
 ];
