@@ -473,8 +473,7 @@ it-recht-kanzlei.de „Teure Klagen aus Österreich“ (23. 7. 2026). Částky z
 RVG a běžné praxe, ne citace.
 
 ## Otevřené body
-- Bucket `tuptudu-katalog-dukazy`: klíč projektu nesmí zapnout verzování ani zámek objektů. Neměnnost zatím
-  drží manifest s otisky SHA-256. Zapnout verzování v konzoli AWS (S3 → bucket → Properties → Bucket Versioning).
+- Bucket `tuptudu-katalog-dukazy`: verzování a zámek objektů (governance, 2 roky) zapnuté 13. 11. 2026 (IAM pravidlo `dukazy-verzovani` u uživatele tuptudu-katalog). Platí pro snímky nahrané od té doby; starší (12.–13. 11.) chrání jen manifest s otisky SHA-256.
 - Advokát vynechán (Libor 12. 11. 2026). Při první výzvě od výrobce opravit do pár dnů a uvést datum opravy.
 - Nejisté hodnoty ponechané ve prospěch konkurence: Sweet Home 3D kóty a terén (pluginy), HomeByMe export CAD
   (přes DraftSight), Planner 5D náklady (odhad přes AI).
