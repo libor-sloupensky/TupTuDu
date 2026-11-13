@@ -6,7 +6,7 @@
 @endphp
 @if(! $h)
     {{-- nenalezeno: v popisu, ceníku ani nápovědě výrobce jsme zmínku nenašli (modules/srovnani.md, Doplnění B) --}}
-    <span class="sr-h sr-tlumene sr-tip" title="{{ __('srovnani.nenalezeno_tip') }}"><i class="sr-d q"></i> {{ __('srovnani.nezjisteno') }}</span>
+    @include('srovnani._nenalezeno', ['kompaktni' => $kompaktni ?? false])
 @else
     <span @class(['sr-bez-dokladu' => $bezDokladu]) @if($bezDokladu) title="Bez dokladu nebo starší než 6 měsíců – na webu by se nezobrazilo" @endif>
         @if($p->typ === 'stav')

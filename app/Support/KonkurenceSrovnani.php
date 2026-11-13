@@ -204,6 +204,10 @@ class KonkurenceSrovnani
      */
     public function tip(KonkurenceParametr $p): string
     {
+        // Přeložená kritéria v lang/*/srovnani.php (kr.*); nový parametr bez překladu: české kritérium, jinak popis
+        if (\Illuminate\Support\Facades\Lang::has('srovnani.kr.' . $p->klic)) {
+            return __('srovnani.kr.' . $p->klic);
+        }
         if ($this->jazyk === 'cs' && $p->kriteria) {
             return trim(preg_replace('/\s*Jen interně:.*$/us', '', $p->kriteria));
         }

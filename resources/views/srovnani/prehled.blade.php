@@ -12,7 +12,7 @@
         <table class="sr-tab">
             <thead><tr>
                 <th>{{ __('srovnani.prehled_nastroj') }}</th><th>{{ __('srovnani.prehled_zdarma') }}</th>
-                <th>{{ __('srovnani.prehled_jazyk') }}</th><th>{{ __('srovnani.prehled_bezi') }}</th><th>{{ __('srovnani.prehled_stranky') }}</th>
+                <th>{{ __('srovnani.prehled_jazyk') }} ({{ $jazyk }})</th><th>{{ __('srovnani.prehled_bezi') }}</th><th>{{ __('srovnani.prehled_stranky') }}</th>
             </tr></thead>
             <tbody>
             @foreach(collect([$my])->filter()->concat($data) as $s)
@@ -25,10 +25,10 @@
                 <tr @class(['sr-my' => $jeMy])>
                     <td><a href="{{ $odkaz }}"><b>{{ $k->jmeno() }}</b></a>@if($jeMy) <span class="sr-stitek">{{ __('srovnani.prehled_my') }}</span>@endif
                         @if($popis = $k->verejne('popis', $jazyk))<span class="sr-pozn">{{ \Illuminate\Support\Str::limit($popis, 120) }}</span>@endif</td>
-                    <td>@include('srovnani._hodnota', ['h' => $s->hodnota($k, $s->parametr('h_zdarma')), 'p' => $s->parametr('h_zdarma'), 'poznamka' => false, 'odpoved' => true])</td>
+                    <td>@include('srovnani._hodnota', ['h' => $s->hodnota($k, $s->parametr('h_zdarma')), 'p' => $s->parametr('h_zdarma'), 'poznamka' => false, 'odpoved' => true, 'kompaktni' => true])</td>
                     <td>
                         @if($jazyky === null)
-                            <span class="sr-tlumene">{{ __('srovnani.nezjisteno') }}</span>
+                            @include('srovnani._nenalezeno', ['kompaktni' => true])
                         @else
                             <span class="sr-h"><i class="sr-d {{ in_array($jazyk, $jazyky, true) ? 'ano' : 'ne' }}"></i> {{ in_array($jazyk, $jazyky, true) ? __('srovnani.ano') : __('srovnani.ne') }}</span>
                         @endif
