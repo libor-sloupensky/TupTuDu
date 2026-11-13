@@ -333,59 +333,9 @@
                         @click="zavreno = true; try { localStorage.setItem('tt_vzor_hlaska_sablona', den) } catch (e) {}">&times;</button>
             </div>
         @endif
-        {{-- Toolbar — řádek 1: název, 2D/3D, zoom, layout, fullscreen --}}
-        <div class="kk-lista flex items-center px-3 py-1.5 border-b border-gray-200 gap-1.5">
-            <span class="text-sm font-medium text-gray-700 truncate max-w-[200px]" x-text="projektNazev || preloz('ed_sablona.lista.novy_nazev')"></span>
-            {{-- Na jakém podlaží se kreslí, když je panel vpravo sbalený --}}
-            <span class="text-xs text-gray-500 whitespace-nowrap" x-show="seznamPodlazi.length > 1 && !rezim3d" x-cloak x-text="'· ' + nazevAktivniho"></span>
-            <div class="flex-1"></div>
-            {{-- Mapový podklad (Mapy.com, celá Evropa) --}}
-            <select x-model="katastrMapaPodklad"
-                    @change="if (katastrParcely.length === 0 && katastrMapaPodklad !== 'zadny') { katastrMapaPodklad = 'zadny'; alert(preloz('ed_sablona.lista.nejprve_parcela')); } else { katastrZmenPodklad(); ulozitNastaveni(); }"
-                    class="kk-pole">
-                <option value="zadny">{{ __('ed_sablona.lista.podklad_zadny') }}</option>
-                <option value="zakladni">{{ __('ed_sablona.lista.podklad_zakladni') }}</option>
-                <option value="ortofoto">{{ __('ed_sablona.lista.podklad_ortofoto') }}</option>
-                <option value="turisticka">{{ __('ed_sablona.lista.podklad_turisticka') }}</option>
-            </select>
-            {{-- 2D/3D přepínač --}}
-            <div class="kk-skupina kk-skupina-dily">
-                <button @click="if (rezimProchazka) ukonciProchazku('2d'); else { rezim3d = false; prepni2d() }" :class="!rezim3d && 'kk-tl-aktivni'">2D</button>
-                <button @click="if (rezimProchazka) ukonciProchazku('3d'); else { rezim3d = true; prepni3d(); zmerFunkci('pohled_3d') }" :class="rezim3d && !rezimProchazka && 'kk-tl-aktivni'">3D</button>
-                {{-- Procházka: klik, nebo přetažení panáčka do půdorysu (prochazka.js) --}}
-                <button @pointerdown="prochazkaStisk($event)" @click="prochazkaKlik()" :class="rezimProchazka && 'kk-tl-aktivni'" data-prochazka
-                        data-tip-below="{{ __('ed_sablona.prochazka.tlacitko_tip') }}" aria-label="{{ __('ed_sablona.prochazka.nazev') }}">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="m9 21 3-6 3 6"/><path d="m6 9 6 2 6-2"/><path d="M12 11v4"/></svg>
-                </button>
-            </div>
-            <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="kk-tl" data-tip-below="{{ __('ed_sablona.lista.zpet') }}">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
-            </button>
-            <button @click="redo()" data-historie-vpred :disabled="historiePozice >= historie.length - 1" class="kk-tl" data-tip-below="{{ __('ed_sablona.lista.vpred') }}">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
-            </button>
-            <div class="kk-skupina">
-                <button @click="zoomOut()" data-tip-below="{{ __('ed_sablona.lista.oddalit') }}" aria-label="{{ __('ed_sablona.lista.oddalit') }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.9-4.9M8 10.5h5"/></svg></button>
-                <span x-text="Math.round(zoom * 100) + ' %'"></span>
-                <button @click="zoomIn()" data-tip-below="{{ __('ed_sablona.lista.priblizit') }}" aria-label="{{ __('ed_sablona.lista.priblizit') }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.9-4.9M8 10.5h5M10.5 8v5"/></svg></button>
-            </div>
-            <span class="kk-oddelovac"></span>
-            {{-- Layout --}}
-            <button @click="cyklujLayout()" class="kk-tl" :data-tip-below="layoutTip">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="2.5" y="3" width="19" height="18" rx="2"/>
-                    <g x-show="layoutMode === 0"><path d="M14 3v18M16.5 7.5h2.5M16.5 11h2.5M16.5 14.5h1.5"/></g>
-                    <g x-show="layoutMode === 1"><path d="M10 3v18M5 7.5h2.5M5 11h2.5M5 14.5h1.5"/></g>
-                </svg>
-            </button>
-            {{-- Fullscreen --}}
-            <button @click="prepniFullscreen()" class="kk-tl" :data-tip-below="celaObrazovka ? preloz('ed_sablona.lista.zmensit') : preloz('ed_sablona.lista.cela_obrazovka')">
-                <svg x-show="!celaObrazovka" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
-                <svg x-show="celaObrazovka" x-cloak width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
-            </button>
-        </div>
-        {{-- Toolbar — řádek 2: nástroje + nápověda --}}
-        <div class="kk-lista flex items-center px-3 py-1.5 gap-2 border-b border-gray-200">
+        {{-- Jedna lišta (Libor 13. 11. 2026): vlevo nástroje, vpravo pohled. Název konceptu tu není, je ve volbě konceptu.
+             Na úzké ploše se pravá část zalomí na druhý řádek, pořád vpravo. --}}
+        <div class="kk-lista flex flex-wrap items-center px-3 py-1.5 gap-x-2 gap-y-1.5 border-b border-gray-200">
             <div class="flex items-center gap-1.5">
                 {{-- Výběr --}}
                 {{-- Rozsvícená je vždy jen jedna ikona: s otevřeným katalogem svítí Katalog místo Výběru --}}
@@ -468,76 +418,118 @@
                     <p class="mt-2 text-gray-500">{{ __('ed_sablona.lista.magnet_alt') }}</p>
                 </div>
             </div>
-            {{-- Volby stěny nejsou v liště — jsou v panelu na plátně jako volby otvoru (Libor 1. 11. 2026). --}}
-
-            {{-- Volby otvoru nejsou v liště — jsou v panelu na plátně pod tlačítkem Otvor,
-                 stejně jako vlastnosti vybraného otvoru (Libor, 1. 11. 2026). --}}
-            {{-- Nápověda toggle --}}
-            <button @click="napovedaOtevrena = !napovedaOtevrena"
-                    class="ml-auto text-xs text-gray-500 hover:text-primary transition flex items-center gap-1">
-                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                {{ __('ed_sablona.lista.napoveda') }}
-                <svg class="h-3 w-3 transition-transform" :class="napovedaOtevrena && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-            </button>
-        </div>
-        <style>
-            .napoveda-tabulka td { border: 1px dashed #d1d5db; padding: 2px 8px; }
-        </style>
-        <div x-show="napovedaOtevrena" x-collapse class="px-3 pb-2 text-xs text-gray-500 border-b border-gray-100 overflow-x-auto">
-            <div class="flex gap-4 mt-1 flex-wrap min-w-0">
-                <div>
-                    <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.navigace') }}</div>
-                    <table class="napoveda-tabulka" style="border-collapse:collapse">
-                        <tr><td><strong>{{ __('ed_sablona.napoveda.kolecko') }}</strong></td><td>{{ __('ed_sablona.napoveda.zoom') }}</td></tr>
-                        <tr><td><strong>6 / O</strong></td><td>{{ __('ed_sablona.napoveda.otvor_do_steny') }}</td></tr>
-                        <tr><td><strong>{{ __('ed_sablona.napoveda.prave_tah') }}</strong></td><td>{{ __('ed_sablona.napoveda.posun_platna') }}</td></tr>
-                        <tr><td><strong>{{ __('ed_sablona.napoveda.kompas') }}</strong></td><td>{{ __('ed_sablona.napoveda.kompas_tah') }}</td></tr>
-                        <tr><td><strong>{{ __('ed_sablona.napoveda.kompas_dvojklik') }}</strong></td><td>{{ __('ed_sablona.napoveda.reset_pozice') }}</td></tr>
-                    </table>
+            <div class="ml-auto flex items-center gap-1.5">
+                {{-- Na jakém podlaží se kreslí, když je panel vpravo sbalený --}}
+                <span class="text-xs text-gray-500 whitespace-nowrap" x-show="seznamPodlazi.length > 1 && !rezim3d" x-cloak x-text="nazevAktivniho"></span>
+                {{-- Mapový podklad (Mapy.com, celá Evropa) --}}
+                <select x-model="katastrMapaPodklad"
+                        @change="if (katastrParcely.length === 0 && katastrMapaPodklad !== 'zadny') { katastrMapaPodklad = 'zadny'; alert(preloz('ed_sablona.lista.nejprve_parcela')); } else { katastrZmenPodklad(); ulozitNastaveni(); }"
+                        class="kk-pole">
+                    <option value="zadny">{{ __('ed_sablona.lista.podklad_zadny') }}</option>
+                    <option value="zakladni">{{ __('ed_sablona.lista.podklad_zakladni') }}</option>
+                    <option value="ortofoto">{{ __('ed_sablona.lista.podklad_ortofoto') }}</option>
+                    <option value="turisticka">{{ __('ed_sablona.lista.podklad_turisticka') }}</option>
+                </select>
+                {{-- 2D/3D přepínač --}}
+                <div class="kk-skupina kk-skupina-dily">
+                    <button @click="if (rezimProchazka) ukonciProchazku('2d'); else { rezim3d = false; prepni2d() }" :class="!rezim3d && 'kk-tl-aktivni'">2D</button>
+                    <button @click="if (rezimProchazka) ukonciProchazku('3d'); else { rezim3d = true; prepni3d(); zmerFunkci('pohled_3d') }" :class="rezim3d && !rezimProchazka && 'kk-tl-aktivni'">3D</button>
+                    {{-- Procházka: klik, nebo přetažení panáčka do půdorysu (prochazka.js) --}}
+                    <button @pointerdown="prochazkaStisk($event)" @click="prochazkaKlik()" :class="rezimProchazka && 'kk-tl-aktivni'" data-prochazka
+                            data-tip-below="{{ __('ed_sablona.prochazka.tlacitko_tip') }}" aria-label="{{ __('ed_sablona.prochazka.nazev') }}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="m9 21 3-6 3 6"/><path d="m6 9 6 2 6-2"/><path d="M12 11v4"/></svg>
+                    </button>
                 </div>
-                <div>
-                    <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.vyber') }}</div>
-                    <table class="napoveda-tabulka" style="border-collapse:collapse">
-                        <tr><td><strong>{{ __('ed_sablona.napoveda.klik') }}</strong></td><td>{{ __('ed_sablona.napoveda.vybrat_prvek') }}</td></tr>
-                        <tr><td><strong>{{ __('ed_sablona.napoveda.ctrl_klik') }}</strong></td><td>{{ __('ed_sablona.napoveda.pridat_odebrat') }}</td></tr>
-                        <tr><td><strong>{{ __('ed_sablona.napoveda.tah_prazdno') }}</strong></td><td>{{ __('ed_sablona.napoveda.vyber_oblasti') }}</td></tr>
-                        <tr><td><strong>Ctrl+A</strong></td><td>{{ __('ed_sablona.napoveda.vybrat_vse') }}</td></tr>
-                        <tr><td><strong>Escape</strong></td><td>{{ __('ed_sablona.napoveda.zrusit_vyber') }}</td></tr>
-                    </table>
+                <button @click="undo()" data-historie-zpet :disabled="historiePozice <= 0" class="kk-tl" data-tip-below="{{ __('ed_sablona.lista.zpet') }}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+                </button>
+                <button @click="redo()" data-historie-vpred :disabled="historiePozice >= historie.length - 1" class="kk-tl" data-tip-below="{{ __('ed_sablona.lista.vpred') }}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+                </button>
+                <div class="kk-skupina">
+                    <button @click="zoomOut()" data-tip-below="{{ __('ed_sablona.lista.oddalit') }}" aria-label="{{ __('ed_sablona.lista.oddalit') }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.9-4.9M8 10.5h5"/></svg></button>
+                    <span x-text="Math.round(zoom * 100) + ' %'"></span>
+                    <button @click="zoomIn()" data-tip-below="{{ __('ed_sablona.lista.priblizit') }}" aria-label="{{ __('ed_sablona.lista.priblizit') }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.9-4.9M8 10.5h5M10.5 8v5"/></svg></button>
                 </div>
-                <div>
-                    <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.upravy') }}</div>
-                    <table class="napoveda-tabulka" style="border-collapse:collapse">
-                        <tr><td><strong>R</strong></td><td>{{ __('ed_sablona.napoveda.otocit_90') }}</td></tr>
-                        <tr><td><strong>{{ __('ed_sablona.napoveda.alt_tah') }}</strong></td><td>{{ __('ed_sablona.napoveda.bez_magnetu') }}</td></tr>
-                        <tr><td><strong>Delete</strong></td><td>{{ __('ed_sablona.napoveda.smazat_vybrane') }}</td></tr>
-                        <tr><td><strong>Ctrl+Z</strong></td><td>{{ __('ed_sablona.napoveda.zpet') }}</td></tr>
-                    </table>
+                <span class="kk-oddelovac"></span>
+                {{-- Nápověda: tlačítko a plovoucí okénko přes plochu, plochu neposouvá (Libor 13. 11. 2026) --}}
+                <div class="relative" @click.outside="napovedaOtevrena = false" @keydown.escape.window="napovedaOtevrena = false">
+                    <button type="button" @click="napovedaOtevrena = !napovedaOtevrena" class="kk-tl" :class="napovedaOtevrena && 'kk-tl-aktivni'"
+                            data-napoveda-tlacitko data-tip-below="{{ __('ed_sablona.lista.napoveda') }}" aria-label="{{ __('ed_sablona.lista.napoveda') }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.2a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.6-2.8 2.6M12 17h.01"/></svg>
+                    </button>
+                    <style>
+                        .napoveda-tabulka td { border: 1px dashed #d1d5db; padding: 2px 8px; }
+                    </style>
+                    <div x-show="napovedaOtevrena" x-cloak data-napoveda
+                         class="absolute right-0 top-full z-40 mt-1 rounded-lg border border-gray-300 bg-white p-3 text-xs text-gray-500 shadow-lg overflow-auto"
+                         style="width: max-content; max-width: min(46rem, 80vw); max-height: 70vh;">
+                    <div class="flex gap-4 mt-1 flex-wrap min-w-0">
+                        <div>
+                            <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.navigace') }}</div>
+                            <table class="napoveda-tabulka" style="border-collapse:collapse">
+                                <tr><td><strong>{{ __('ed_sablona.napoveda.kolecko') }}</strong></td><td>{{ __('ed_sablona.napoveda.zoom') }}</td></tr>
+                                <tr><td><strong>6 / O</strong></td><td>{{ __('ed_sablona.napoveda.otvor_do_steny') }}</td></tr>
+                                <tr><td><strong>{{ __('ed_sablona.napoveda.prave_tah') }}</strong></td><td>{{ __('ed_sablona.napoveda.posun_platna') }}</td></tr>
+                                <tr><td><strong>{{ __('ed_sablona.napoveda.kompas') }}</strong></td><td>{{ __('ed_sablona.napoveda.kompas_tah') }}</td></tr>
+                                <tr><td><strong>{{ __('ed_sablona.napoveda.kompas_dvojklik') }}</strong></td><td>{{ __('ed_sablona.napoveda.reset_pozice') }}</td></tr>
+                            </table>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.vyber') }}</div>
+                            <table class="napoveda-tabulka" style="border-collapse:collapse">
+                                <tr><td><strong>{{ __('ed_sablona.napoveda.klik') }}</strong></td><td>{{ __('ed_sablona.napoveda.vybrat_prvek') }}</td></tr>
+                                <tr><td><strong>{{ __('ed_sablona.napoveda.ctrl_klik') }}</strong></td><td>{{ __('ed_sablona.napoveda.pridat_odebrat') }}</td></tr>
+                                <tr><td><strong>{{ __('ed_sablona.napoveda.tah_prazdno') }}</strong></td><td>{{ __('ed_sablona.napoveda.vyber_oblasti') }}</td></tr>
+                                <tr><td><strong>Ctrl+A</strong></td><td>{{ __('ed_sablona.napoveda.vybrat_vse') }}</td></tr>
+                                <tr><td><strong>Escape</strong></td><td>{{ __('ed_sablona.napoveda.zrusit_vyber') }}</td></tr>
+                            </table>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.upravy') }}</div>
+                            <table class="napoveda-tabulka" style="border-collapse:collapse">
+                                <tr><td><strong>R</strong></td><td>{{ __('ed_sablona.napoveda.otocit_90') }}</td></tr>
+                                <tr><td><strong>{{ __('ed_sablona.napoveda.alt_tah') }}</strong></td><td>{{ __('ed_sablona.napoveda.bez_magnetu') }}</td></tr>
+                                <tr><td><strong>Delete</strong></td><td>{{ __('ed_sablona.napoveda.smazat_vybrane') }}</td></tr>
+                                <tr><td><strong>Ctrl+Z</strong></td><td>{{ __('ed_sablona.napoveda.zpet') }}</td></tr>
+                            </table>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.kresleni') }}</div>
+                            <table class="napoveda-tabulka" style="border-collapse:collapse">
+                                <tr><td><strong>1 / 2 / 3 / 4</strong></td><td>{{ __('ed_sablona.napoveda.nastroje') }}</td></tr>
+                                <tr><td><strong>Alt</strong></td><td>{{ __('ed_sablona.napoveda.alt_stena') }}</td></tr>
+                                <tr><td><strong>{{ __('ed_sablona.napoveda.shift_klik') }}</strong></td><td>{{ __('ed_sablona.napoveda.rovna_cara') }}</td></tr>
+                                <tr><td><strong>Ctrl+C / V / D</strong></td><td>{{ __('ed_sablona.napoveda.kopirovat') }}</td></tr>
+                                <tr><td><strong>Ctrl+F</strong></td><td>{{ __('ed_sablona.napoveda.cela_obrazovka') }}</td></tr>
+                            </table>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.prochazka.nazev') }}</div>
+                            <table class="napoveda-tabulka" style="border-collapse:collapse">
+                                <tr><td><strong>{{ __('ed_sablona.prochazka.klavesy_wasd') }}</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_chuze') }}</td></tr>
+                                <tr><td><strong>← →</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_otoceni') }}</td></tr>
+                                <tr><td><strong>{{ __('ed_sablona.prochazka.klavesy_qe') }}</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_oko') }}</td></tr>
+                                <tr><td><strong>Shift</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_rychle') }}</td></tr>
+                                <tr><td><strong>{{ __('ed_sablona.prochazka.dvojklik') }}</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_dojdi') }}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    </div>
                 </div>
-                <div>
-                    <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.napoveda.kresleni') }}</div>
-                    <table class="napoveda-tabulka" style="border-collapse:collapse">
-                        <tr><td><strong>1 / 2 / 3 / 4</strong></td><td>{{ __('ed_sablona.napoveda.nastroje') }}</td></tr>
-                        <tr><td><strong>Alt</strong></td><td>{{ __('ed_sablona.napoveda.alt_stena') }}</td></tr>
-                        <tr><td><strong>{{ __('ed_sablona.napoveda.shift_klik') }}</strong></td><td>{{ __('ed_sablona.napoveda.rovna_cara') }}</td></tr>
-                        <tr><td><strong>Ctrl+C / V / D</strong></td><td>{{ __('ed_sablona.napoveda.kopirovat') }}</td></tr>
-                        <tr><td><strong>Ctrl+F</strong></td><td>{{ __('ed_sablona.napoveda.cela_obrazovka') }}</td></tr>
-                    </table>
-                </div>
-                <div>
-                    <div class="font-semibold text-gray-600 mb-1">{{ __('ed_sablona.prochazka.nazev') }}</div>
-                    <table class="napoveda-tabulka" style="border-collapse:collapse">
-                        <tr><td><strong>{{ __('ed_sablona.prochazka.klavesy_wasd') }}</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_chuze') }}</td></tr>
-                        <tr><td><strong>← →</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_otoceni') }}</td></tr>
-                        <tr><td><strong>{{ __('ed_sablona.prochazka.klavesy_qe') }}</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_oko') }}</td></tr>
-                        <tr><td><strong>Shift</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_rychle') }}</td></tr>
-                        <tr><td><strong>{{ __('ed_sablona.prochazka.dvojklik') }}</strong></td><td>{{ __('ed_sablona.prochazka.klavesy_dojdi') }}</td></tr>
-                    </table>
-                </div>
+                {{-- Layout --}}
+                <button @click="cyklujLayout()" class="kk-tl" :data-tip-below="layoutTip">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2.5" y="3" width="19" height="18" rx="2"/>
+                        <g x-show="layoutMode === 0"><path d="M14 3v18M16.5 7.5h2.5M16.5 11h2.5M16.5 14.5h1.5"/></g>
+                        <g x-show="layoutMode === 1"><path d="M10 3v18M5 7.5h2.5M5 11h2.5M5 14.5h1.5"/></g>
+                    </svg>
+                </button>
+                {{-- Fullscreen --}}
+                <button @click="prepniFullscreen()" class="kk-tl" :data-tip-below="celaObrazovka ? preloz('ed_sablona.lista.zmensit') : preloz('ed_sablona.lista.cela_obrazovka')">
+                    <svg x-show="!celaObrazovka" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                    <svg x-show="celaObrazovka" x-cloak width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
+                </button>
             </div>
         </div>
 
