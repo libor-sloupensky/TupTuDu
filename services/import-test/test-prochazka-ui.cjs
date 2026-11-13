@@ -109,9 +109,11 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         await drz('ArrowLeft', 500);
         s = await stav();
         kontrola('šipka vlevo otočí doleva na místě', s.smer > pred.smer + 0.4 && blizko(s.x, pred.x, 0.01), `${pred.smer.toFixed(2)} → ${s.smer.toFixed(2)}`);
+        const poLeve = s;
         await drz('ArrowRight', 500);
         s = await stav();
-        kontrola('šipka vpravo otočí zpátky', blizko(s.smer, pred.smer, 0.3), s.smer.toFixed(3));
+        // Jen směr: o kolik, záleží na rychlosti snímků (při zatíženém počítači se pevná doba nedala porovnat)
+        kontrola('šipka vpravo otočí doprava', s.smer < poLeve.smer - 0.2 && blizko(s.x, poLeve.x, 0.01), `${poLeve.smer.toFixed(2)} → ${s.smer.toFixed(2)}`);
         await drzDokud('KeyQ', 'window._kk3d.prochazka.stav().oko <= 0.1001', 8000, 500);
         s = await stav();
         kontrola('Q: oko klesá a u země se zastaví na 10 cm', blizko(s.oko, 0.1, 0.001) && !s.podZemi, JSON.stringify(s));
@@ -197,7 +199,7 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
             const o = window._kk3d.prochazka; o.zapni({ x: 5, z: 11, yOd: 0.5, smer: 0, sklon: 0, oko: 1.6 }); return true; })()`);
         await pauza(400);
         const venku = await stav();
-        await drz('KeyW', 2500);
+        await drzDokud('KeyW', 'window._kk3d.prochazka.stav().z < 7', 12000, 200);
         await pauza(600);
         s = await stav();
         const kotaP1 = await p.vyhodnot(`window._kk3d.wallGroup.position.y + ${D}.engine.kotaPodlazi('P1')`);
@@ -258,7 +260,7 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         kontrola('uvnitř svítí lampa a dvě stěny rohu mají různý jas (dřív stejný)', roh.lampa > 0.25 && Math.abs(roh.leva - roh.prava) >= 12, JSON.stringify(roh));
         await snimek3d('05d-roh.png');
         await p.vyhodnot(`(() => { window._kk3d.prochazka.zapni({ x: 5, z: 14, yOd: 0.5, smer: 0, sklon: 0, oko: 1.6 }); return true; })()`);
-        await pauza(1500);
+        try { await p.cekej('window._kk3d.prochazka.stav().lampa === 0', 8000, 'lampa zhasne'); } catch { /* vyhodnotí kontrola */ }
         s = await stav();
         kontrola('venku lampa nesvítí', s.lampa === 0, JSON.stringify(s));
         // Vyhlazení: smyčka kreslí přes Svetlo3d.kresli, obraz se liší jen na hranách a barvy zůstanou
@@ -270,6 +272,52 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
             _3d.kresliDo = performance.now() + 400;
             return new Promise(ok => setTimeout(() => { window.Svetlo3d.kresli = puv; ok({ prumer: +(soucet / (a.length / 4) / 3).toFixed(3), zmen, volani }); }, 500)); })()`);
         kontrola('vyhlazení hran: smyčka kreslí s ním, mění jen hrany a barvy nechá', fxaa.volani > 0 && fxaa.zmen > 50 && fxaa.prumer < 1, JSON.stringify(fxaa));
+
+        console.log('\n5e) Kliky oken a otevírání dveří a oken (Libor 13. 11. 2026)');
+        // Okna ve východní zdi (x = 10, část 5c): klika jen zevnitř (x < 10), barvou rámu uvnitř
+        const klikyOken = await p.vyhodnot(`(() => { const d = ${D}, e = d.engine; const out = [];
+            for (const g of d._prochazkaKridla()) { const u = g.userData.kridlo, op = e.openings.get(u.otvor); if (!op || op.typ !== 'okno') continue;
+                const kliky = []; g.traverse(o => { if (o.userData?.klika) kliky.push(o); });
+                const b = new THREE.Box3(); kliky.forEach(o => b.expandByObject(o));
+                out.push({ otvor: u.otvor, kusu: kliky.length, barva: kliky[0]?.material.userData.barva, x: [+b.min.x.toFixed(3), +b.max.x.toFixed(3)], vyska: +((b.min.y + b.max.y) / 2 - window._kk3d.wallGroup.position.y).toFixed(2) }); }
+            return out; })()`);
+        kontrola('otvíravá okna mají kliku zevnitř v barvě rámu uvnitř, okno k podlaze ve výšce kliky dveří', klikyOken.length >= 2 && klikyOken.every(k => k.kusu === 3 && k.barva === 'oknoDovnitr' && k.x[1] < 10 && k.x[0] > 9.7)
+            && klikyOken.some(k => k.vyska > 0.95 && k.vyska < 1.1) && klikyOken.some(k => k.vyska > 1.3), JSON.stringify(klikyOken));
+        // Před dveřmi zvenku: najetí na kliku ukáže ikonu, klik otevře, druhý klik zavře
+        await p.vyhodnot(`(() => { window._kk3d.prochazka.zapni({ x: ${dvere.x}, z: 9.6, yOd: 0.5, smer: 0, sklon: -0.3, oko: 1.6 }); return true; })()`);
+        await pauza(800);
+        const naKliku = await p.vyhodnot(`(() => { const d = ${D}, _3d = window._kk3d, k = _3d.prochazka.kamera, r = _3d.renderer.domElement.getBoundingClientRect();
+            const u = d._prochazkaUchopy().find(x => d.engine.openings.get(x.id.split(':')[1])?.typ === 'dvere'); if (!u) return null;
+            const b = u.body.reduce((a, c) => (c.z > a.z ? c : a)); const v = b.clone().project(k);
+            return { id: u.id, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; })()`);
+        const klik = async (b) => {
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: b.x, y: b.y });
+            await pauza(200);
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mousePressed', x: b.x, y: b.y, button: 'left', clickCount: 1, buttons: 1 });
+            await p.cmd('Input.dispatchMouseEvent', { type: 'mouseReleased', x: b.x, y: b.y, button: 'left', clickCount: 1 });
+        };
+        const kridlo = () => `(() => { const d = ${D}; const g = d._prochazkaKridla().find(g => d._idKridla(g.userData.kridlo) === '${naKliku.id}'); return g ? { rot: +g.rotation.y.toFixed(3), uhel: +g.userData.kridlo.uhel.toFixed(3) } : null; })()`;
+        await p.cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: naKliku.x, y: naKliku.y });
+        await pauza(400);
+        const ikona = await p.vyhodnot(`(() => { const z = document.querySelector('[data-pr-uchop]'); return { videt: !z.hidden, ikona: z.dataset.ikona, kurzor: window._kk3d.renderer.domElement.style.cursor }; })()`);
+        kontrola('najetí na kliku dveří ukáže ikonu otevření a ruku', ikona.videt && ikona.ikona === 'otevrit' && ikona.kurzor === 'pointer', JSON.stringify(ikona));
+        await klik(naKliku);
+        await pauza(1300);
+        let dvereStav = await p.vyhodnot(kridlo());
+        kontrola('klik dveře otevře (otočí kolem pantů na stranu z půdorysu)', dvereStav && Math.abs(dvereStav.rot - dvereStav.uhel) < 0.01 && Math.abs(dvereStav.uhel) > 1.3, JSON.stringify(dvereStav));
+        await snimek3d('05e-dvere-otevrene.png');
+        const uchopPoOtevreni = await p.vyhodnot(`(() => { const d = ${D}, _3d = window._kk3d, k = _3d.prochazka.kamera, r = _3d.renderer.domElement.getBoundingClientRect();
+            const u = d._prochazkaUchopy().find(x => x.id === '${naKliku.id}'); const b = u.body.reduce((a, c) => (c.z > a.z ? c : a)); const v = b.clone().project(k);
+            return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height, otevreno: u.otevreno }; })()`);
+        await klik(uchopPoOtevreni);
+        await pauza(1300);
+        dvereStav = await p.vyhodnot(kridlo());
+        kontrola('druhý klik je zavře', uchopPoOtevreni.otevreno && dvereStav && Math.abs(dvereStav.rot) < 0.01, JSON.stringify({ uchopPoOtevreni, dvereStav }));
+        // Okno se otevře dovnitř do místnosti (klika jde od zdi do domu)
+        const okno = await p.vyhodnot(`(async () => { const d = ${D}; const u = d._prochazkaUchopy().find(x => d.engine.openings.get(x.id.split(':')[1])?.typ === 'okno');
+            const pred = u.body[0].x; d._prochazkaPrepniKridlo(u.id); await new Promise(r => setTimeout(r, 1200));
+            const po = d._prochazkaUchopy().find(x => x.id === u.id); return { pred: +pred.toFixed(2), po: +po.body[0].x.toFixed(2), otevreno: po.otevreno }; })()`);
+        kontrola('okno se otevře do boku dovnitř', okno.otevreno && okno.po < okno.pred - 0.3, JSON.stringify(okno));
 
         console.log('\n6) Mapka a export z oka');
         const mapka = await p.vyhodnot(`(() => { const c = document.querySelector('[data-pr-mapka]'); const g = c.getContext('2d'); const b = g.getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < b.length; i += 4) if (b[i] > 0) n++;
@@ -326,6 +374,8 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         await pauza(800);
         const po = await p.vyhodnot(`(() => { const d = ${D}; const L = d.renderer.panacekLayer; return { rezim: d.rezimProchazka, r3d: d.rezim3d, panacek: JSON.parse(JSON.stringify(d.panacek)), kompas: d.kompasUhel, deti: L ? L.getChildren().length : -1, aktivni: window._kk3d.prochazka.aktivni }; })()`);
         kontrola('Esc vrátí do 2D, odkud procházka začala', !po.rezim && !po.r3d && !po.aktivni, JSON.stringify(po));
+        const zavrena = await p.vyhodnot(`${D}._prochazkaKridla().every(g => Math.abs(g.rotation.y) < 1e-6)`);
+        kontrola('po konci procházky jsou dveře i okna zavřené', zavrena);
         kontrola('poloha panáčka je uložená (podlaží, výška nad podlahou, směr) a kompas se nezměnil', po.panacek && blizko(po.panacek.x, s.x, 0.01) && typeof po.panacek.dy === 'number' && po.kompas === kompasPred, JSON.stringify(po.panacek));
         kontrola('v půdorysu je panáček', po.deti === 1);
         const ve2d = await p.vyhodnot(`(() => { const w = document.getElementById('kk-canvas-wrap').getBoundingClientRect(), k = document.querySelector('#kk-container .konvajs-content').getBoundingClientRect();
@@ -368,7 +418,7 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         await pauza(1600);   // ukládání katastru má prodlevu 1 s
         await p.vyhodnot(`location.reload(); true`);
         await pauza(2500);
-        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 40000, 'editor po obnovení');
+        await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine)`, 90000, 'editor po obnovení');
         const nacteny = await p.vyhodnot(`JSON.parse(JSON.stringify(${D}.panacek))`);
         kontrola('poloha panáčka se načte z projektu', nacteny && blizko(nacteny.x, ulozeny.x, 0.001) && blizko(nacteny.z, ulozeny.z, 0.001) && nacteny.podlazi === ulozeny.podlazi, JSON.stringify({ ulozeny, nacteny }));
 

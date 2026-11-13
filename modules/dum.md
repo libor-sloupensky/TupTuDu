@@ -146,7 +146,9 @@ kuchyně, jídelna, koupelna, WC, chodba, zádveří, šatna, pracovna, technick
 
 Ve 3D nese materiál klíč v `userData.barva` a barvu dosadí `_nastavBarvy3d` (na konci `_build3d`, s přepisem i za tahu). Rám a plná výplň otvoru jsou dvě půlky tloušťky; stranu ven určí `_stranaVen` z rastru.
 
-**Klika** (Libor 12. 11. 2026, zatím stříbrná bez volby): plné dveře (`dvere`) s panty mají na obou stranách křídla štítek, krček a páku (`_klika3d`, `userData.klika`), 6,5 cm od volné hrany ve výšce 1,05 m, páka míří k pantům (`kridloPanty`: `levy` = panty na začátku křídla od uzlu A). Posuvné dveře, vrata a průchod kliku nemají.
+**Klika** (Libor 12. 11. 2026, zatím stříbrná bez volby): plné dveře (`dvere`) s panty mají na obou stranách křídla štítek, krček a páku (`_klika3d`, `userData.klika`), 6,5 cm od volné hrany ve výšce 1,05 m, páka míří k pantům (`kridloPanty`: `levy` = panty na začátku křídla od uzlu A). Posuvné dveře, vrata a průchod kliku nemají. **Okna** (13. 11. 2026) s otvíravým křídlem, i francouzské okno, mají kliku jen zevnitř na volné hraně křídla v barvě rámu uvnitř (`_klikaOkna3d`: rozeta, krček, páka dolů): uprostřed výšky křídla, u dílu k podlaze ve výšce kliky dveří.
+
+**Křídlo na pantech** je ve 3D vlastní skupina s osou v pantech (`userData.kridlo = {otvor, i, podlazi, uhel, kliky}`), rám a pevné díly zůstávají v otvoru. `uhel` otevře volný konec na stranu z půdorysu (`stranaOtvoru`, osa z otvoru = normála zdi), okna dovnitř; dveře 85°, okna 79°, okna jen do boku (sklopení ne). `kliky` jsou body pro procházku.
 
 Stěny (`_hranolStrany`, `_hranolPodStrechou`): co hledí do exteriéru, je fasáda, všechno ostatní bílé, i vnitřní líc obvodové stěny (Libor 3. 11. 2026, volba vnitřní barvy může přibýt). Rozhoduje rastr pro každých 25 cm boku, takže stěna může být fasádou jen po části délky. Díl stěny se krájí po půlkách tloušťky: půlka u exteriéru má v barvě fasády i ostění, parapet a korunu. Plot a zídka mají barvu svého typu.
 
@@ -271,6 +273,13 @@ Passeggiata). Ve všech tarifech. Měří se jako funkce `prochazka` (`App\Suppo
   puštění procházka začne tam. **Ve 3D** stojí postava 1,75 m v barvě značky (měřítko), v procházce a v exportu ne. Přepínač
   Panáček je v panelu Objekty (`kv3_prochazka` v localStorage), v sekci Export chybí.
 - **Export obrázku** v procházce bere pohled oka, bez kroužku a postavy.
+- **Dveře a okna** (Libor 13. 11. 2026: projít dveřmi a pocítit místnost, otevřít okno): po najetí myší na kliku se u kurzoru
+  ukáže ikona otevření nebo zavření a kurzor ruka, klik křídlo otevře a další klik zavře (dvojklik na klice přepne jednou,
+  jinde dál dovede na místo, ťuknutí na dotyk taky). Klika se hledá v toleranci kolem paprsku (7 cm, dál úměrně), zakrytá
+  zdí se nenabízí (`najdiUchop` v `prochazka-3d.js`, hostitel dodá `uchopy` a `prepni`). Křídlo dojede za 0,6 s
+  s plynulým rozjezdem, stíny se přepočítají na konci. Stav drží editor (`_otevrena`, přežije přestavbu scény), při konci
+  procházky se vše zavře, ať 3D, export ani odkaz nemají pootevřené dveře. Sdílený odkaz otevírání nemá (model jsou jen
+  trojúhelníky).
 
 ## Kóty u výběru
 

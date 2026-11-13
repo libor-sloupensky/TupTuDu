@@ -7523,6 +7523,23 @@ function konceptKEditor(initialData) {
             }
         },
 
+        /**
+         * Klika okna zevnitř (Libor 13. 11. 2026): rozeta, krček a páka dolů jako v zavřené poloze, barva rámu uvnitř.
+         * `z` = líc křídla, `zn` = strana ven z líce (do místnosti).
+         */
+        _klikaOkna3d(g, x, y, z, zn, mat) {
+            const THREE = window.THREE;
+            const dil = (w, h, d, px, py, pz) => {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+                m.position.set(px, py, pz);
+                m.userData.klika = true;
+                g.add(m);
+            };
+            dil(0.034, 0.075, 0.01, x, y, z + zn * 0.005);              // rozeta
+            dil(0.016, 0.016, 0.035, x, y + 0.015, z + zn * 0.027);     // krček
+            dil(0.018, 0.115, 0.016, x, y - 0.035, z + zn * 0.045);     // páka dolů
+        },
+
         /** Stěny (rozřezané otvory) a výplně otvorů jednoho podlaží do skupiny `group`. */
         _build3dPodlazi(eng, podl, group) {
             const THREE = window.THREE;
@@ -7749,11 +7766,14 @@ function konceptKEditor(initialData) {
                 const tStred = op.pozice + sirka / 2;
                 g.position.set(A.x + ux * tStred, nula, A.z + uz * tStred);
                 g.rotation.y = Math.atan2(-uz, ux);
+                // Otvíravé křídlo má vlastní skupinu s osou v pantech (procházka ho otevře), díly se do ní
+                // kladou relativně k ose; rám a pevné díly zůstávají v g
+                let rodic = g;
                 const kvadr = (w, h, d, x, y, z, mat) => {
                     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-                    m.position.set(x, y, z);
+                    m.position.set(x - (rodic === g ? 0 : rodic.position.x), y, z);
                     m.castShadow = true;
-                    g.add(m);
+                    rodic.add(m);
                 };
                 // Rám a plná výplň: půlka tloušťky do exteriéru barvou „venku", zbytek „uvnitř".
                 // Otvor mezi místnostmi má jednu barvu.
@@ -7770,12 +7790,15 @@ function konceptKEditor(initialData) {
                 const RAM = 0.06;                                  // profil rámu
                 const HL = Math.min(wall.tloustka || 0.3, 0.1);    // hloubka rámu v ostění
                 const plne = op.typ === 'dvere' || op.typ === 'garazova_vrata';
+                // Kam se křídlo otvírá (osa z otvoru = normála zdi jako v půdorysu): dveře podle půdorysu, okna dovnitř
+                const stranaPudorys = (eng.stranaOtvoru ? eng.stranaOtvoru(op) : (op.strana || 'in')) === 'in' ? 1 : -1;
+                const kamOtevrit = plne || !ven ? stranaPudorys : -ven;
 
                 // Každý díl má vlastní rám (dva sousední svislé rámy tvoří sloupek) — díly
                 // mohou mít různý parapet, horní hrana je společná
                 const celkem = kridla.reduce((a, k) => a + k.sirka, 0) || sirka;
                 let x = -sirka / 2;
-                kridla.forEach((k) => {
+                kridla.forEach((k, iKridla) => {
                     const w = Math.max(0.02, k.sirka * sirka / celkem);
                     const spodek = Math.min(parapetKridla(op, k), vrsek - 0.05);
                     const v = vrsek - spodek;
@@ -7789,14 +7812,28 @@ function konceptKEditor(initialData) {
                     const yOd = spodek + (spodniRam ? RAM : 0);
                     const vnitrniV = vrsek - RAM - yOd;
                     const vnitrniW = w - 2 * RAM;
+                    // Křídlo na pantech (ne pevné, posuvné ani vrata) jde v procházce otevřít (Libor 13. 11. 2026)
+                    const panty = op.typ !== 'garazova_vrata' && typeof kridloPanty === 'function' ? kridloPanty(k.otv) : null;
+                    let kridloG = null;
+                    if (panty && vnitrniV > 0.3 && vnitrniW > 0.15) {
+                        kridloG = new THREE.Group();
+                        kridloG.position.x = panty === 'levy' ? x + RAM : x + w - RAM;
+                        const UHEL = plne ? Math.PI * 0.47 : Math.PI * 0.44;
+                        // Křídlo od osy po +x (panty vlevo) nebo po −x; otočení pošle jeho volný konec na stranu kamOtevrit
+                        kridloG.userData.kridlo = { otvor: op.id, i: iKridla, podlazi: podl.id, uhel: (panty === 'levy' ? -1 : 1) * kamOtevrit * UHEL, kliky: [] };
+                        g.add(kridloG);
+                        rodic = kridloG;
+                    }
+                    const poKlice = (bod) => kridloG?.userData.kridlo.kliky.push(bod);
                     if (vnitrniV > 0.02 && vnitrniW > 0.02) {
                         if (plne) {
                             dvoubarevny(vnitrniW, vnitrniV, 0.045, x + w / 2, yOd + vnitrniV / 2, 0, 0.7);
                             // Klika u volné hrany, páka míří k pantům (Libor 12. 11. 2026: zatím stříbrná bez volby)
-                            const panty = op.typ === 'dvere' && typeof kridloPanty === 'function' ? kridloPanty(k.otv) : null;
-                            if (panty && vnitrniW > 0.3 && vnitrniV > 1.4) {
+                            if (op.typ === 'dvere' && kridloG && vnitrniW > 0.3 && vnitrniV > 1.4) {
                                 const smer = panty === 'levy' ? -1 : 1;
-                                this._klika3d(g, panty === 'levy' ? x + w - RAM - 0.065 : x + RAM + 0.065, Math.min(1.05, yOd + vnitrniV - 0.35), smer, 0.0225);
+                                const kx = panty === 'levy' ? x + w - RAM - 0.065 : x + RAM + 0.065, ky = Math.min(1.05, yOd + vnitrniV - 0.35);
+                                this._klika3d(kridloG, kx - kridloG.position.x, ky, smer, 0.0225);
+                                for (const z of [1, -1]) poKlice(new THREE.Vector3(kx - kridloG.position.x + smer * 0.05, ky, z * 0.07));
                             }
                         } else {
                             kvadr(vnitrniW, vnitrniV, 0.012, x + w / 2, yOd + vnitrniV / 2, 0, skloTypu(op.typ));
@@ -7807,9 +7844,20 @@ function konceptKEditor(initialData) {
                                 ram(KR, vnitrniV, 0.04, x + w - RAM - KR / 2, yOd + vnitrniV / 2, 0);
                                 ram(vnitrniW - 2 * KR, KR, 0.04, x + w / 2, yOd + vnitrniV - KR / 2, 0);
                                 ram(vnitrniW - 2 * KR, KR, 0.04, x + w / 2, yOd + KR / 2, 0);
+                                // Klika okna zevnitř na volné hraně křídla, barvou rámu uvnitř (Libor 13. 11. 2026): uprostřed
+                                // výšky křídla, u francouzského okna a dílu k podlaze ve výšce kliky dveří
+                                if (kridloG) {
+                                    const kx = panty === 'levy' ? x + w - RAM - KR / 2 : x + RAM + KR / 2;
+                                    const ky = spodek < 0.3 ? Math.min(1.05, yOd + vnitrniV - 0.2) : yOd + vnitrniV / 2;
+                                    const zUvnitr = ven ? -ven : kamOtevrit;
+                                    const mat = ven ? materialOtvoru(skupina + 'Dovnitr', 0.4) : materialOtvoru(this.barvaVnitrniho(op.typ), 0.4);
+                                    this._klikaOkna3d(kridloG, kx - kridloG.position.x, ky, zUvnitr * 0.02, zUvnitr, mat);
+                                    poKlice(new THREE.Vector3(kx - kridloG.position.x, ky - 0.04, zUvnitr * 0.06));
+                                }
                             }
                         }
                     }
+                    rodic = g;
                     x += w;
                 });
                 group.add(g);

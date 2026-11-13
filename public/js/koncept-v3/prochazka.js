@@ -107,6 +107,12 @@
                 this.prochazkaPodZemi = false;
                 this._nastavViditelnost3d?.();
             }
+            // Otevřené dveře a okna se zavřou: 3D, export i odkaz ukazují dům zavřený
+            if (this._otevrena?.size) {
+                this._otevrena.clear();
+                this._prochazkaNastavKridla();
+                if (_3d) window.Svetlo3d.prekresliStiny(_3d.renderer);
+            }
             this._panacek3d();
             if (_3d) _3d.kresliDo = performance.now() + 300;
             const cil = kam || this._prochazkaOdkud;
@@ -198,6 +204,8 @@
                     this._panacekCasovac = setTimeout(() => { if (this.rezimProchazka) this._prochazkaUlozPolohu(); }, 1500);
                 },
                 konec: () => this.ukonciProchazku(),
+                uchopy: () => this._prochazkaUchopy(),
+                prepni: (id) => this._prochazkaPrepniKridlo(id),
                 probud: () => { _3d.kresliDo = performance.now() + 300; },
             });
             return _3d.prochazka;
@@ -226,11 +234,79 @@
             return { pochozi: s.pochozi, cile: [...s.cile, _3d.terrain, _3d.ground, _3d.jama].filter(o => o?.isMesh) };
         },
 
+        // ─── Otevírání dveří a oken (Libor 13. 11. 2026) ──────
+        /** Křídla na pantech ve scéně (skupiny s userData.kridlo, _build3dPodlazi). */
+        _prochazkaKridla() {
+            const _3d = window._kk3d;
+            if (!_3d?.wallGroup) return [];
+            if (!_3d._kridla) {
+                const k = [];
+                _3d.wallGroup.traverse(o => { if (o.userData?.kridlo) k.push(o); });
+                _3d._kridla = k;
+            }
+            return _3d._kridla;
+        },
+
+        _idKridla(u) { return u.podlazi + ':' + u.otvor + ':' + u.i; },
+
+        /** Kliky pro procházku: body ve světě (obě strany dveří, okno zevnitř), id a jestli je křídlo otevřené. */
+        _prochazkaUchopy() {
+            return this._prochazkaKridla().filter(g => g.userData.kridlo.kliky.length).map(g => {
+                const u = g.userData.kridlo, id = this._idKridla(u);
+                g.updateMatrixWorld();
+                return { id, objekt: g, otevreno: (this._otevrena?.get(id)?.cil || 0) > 0.5, body: u.kliky.map(b => g.localToWorld(b.clone())) };
+            });
+        },
+
+        _prochazkaPrepniKridlo(id) {
+            if (!this._otevrena) this._otevrena = new Map();
+            const st = this._otevrena.get(id) || { stav: 0, cil: 0 };
+            st.cil = st.cil > 0.5 ? 0 : 1;
+            this._otevrena.set(id, st);
+            this._prochazkaAnimujKridla();
+        },
+
+        /** Křídla dojedou ke svému cíli za 0,6 s; stíny se přepočítají až na konci. */
+        _prochazkaAnimujKridla() {
+            if (this._kridlaBezi) return;
+            this._kridlaBezi = true;
+            let posledni = performance.now();
+            const krok = () => {
+                const _3d = window._kk3d, ted = performance.now(), dt = Math.min(0.1, (ted - posledni) / 1000);
+                posledni = ted;
+                let pohyb = false;
+                for (const st of this._otevrena?.values() || []) {
+                    if (st.stav === st.cil) continue;
+                    const d = st.cil - st.stav;
+                    st.stav += Math.sign(d) * Math.min(Math.abs(d), dt / 0.6);
+                    if (Math.abs(st.cil - st.stav) < 1e-3) st.stav = st.cil;
+                    pohyb = true;
+                }
+                this._prochazkaNastavKridla();
+                if (_3d) _3d.kresliDo = ted + 300;
+                if (pohyb) { requestAnimationFrame(krok); return; }
+                this._kridlaBezi = false;
+                if (_3d) window.Svetlo3d.prekresliStiny(_3d.renderer);
+            };
+            requestAnimationFrame(krok);
+        },
+
+        _prochazkaNastavKridla() {
+            for (const g of this._prochazkaKridla()) {
+                const u = g.userData.kridlo, st = this._otevrena?.get(this._idKridla(u));
+                const f = st ? st.stav : 0;
+                g.rotation.y = u.uhel * f * f * (3 - 2 * f);   // plynulý rozjezd i dojezd
+            }
+        },
+
         /** Konec _build3d: nové meshe, panáček se znovu usadí a mapka ukáže změněný dům. */
         _prochazkaPoStavbe() {
             const _3d = window._kk3d;
             if (!_3d) return;
             _3d._prochazkaSite = null;
+            // Přestavěné otvory dostanou zpátky svůj stav otevření
+            _3d._kridla = null;
+            if (this._otevrena?.size) this._prochazkaNastavKridla();
             const y0 = _3d.wallGroup.position.y;
             if (this.rezimProchazka && _3d.prochazka) {
                 // Dům se posunul svisle (dotažené výšky terénu po startu procházky, posun výšky): panáček s ním.

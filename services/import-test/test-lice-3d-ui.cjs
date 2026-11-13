@@ -82,7 +82,7 @@ const ZASAH = `(od, smer) => { const _3d = window._kk3d, y0 = _3d.wallGroup.posi
         await snimek3d('01-pristavek.png');
 
         console.log('\n3) Kliky');
-        const kliky = await p.vyhodnot(`(() => { const _3d = window._kk3d, g = _3d.podlaziSkupiny.get('P1'); const m = []; g.traverse(o => { if (o.userData?.klika) m.push(o); });
+        const kliky = await p.vyhodnot(`(() => { const _3d = window._kk3d, g = _3d.podlaziSkupiny.get('P1'); const m = []; g.traverse(o => { if (o.userData?.klika && o.material.metalness > 0.5) m.push(o); });   // jen stříbrné kliky dveří, okno má svou
             const b = new THREE.Box3(); m.forEach(o => b.expandByObject(o)); const y0 = _3d.wallGroup.position.y;
             return { pocet: m.length, kov: m[0]?.material.metalness, vyska: +((b.min.y + b.max.y) / 2 - y0).toFixed(2), x: [+b.min.x.toFixed(2), +b.max.x.toFixed(2)], z: [+b.min.z.toFixed(2), +b.max.z.toFixed(2)] }; })()`);
         // Dveře x 2,0–2,9 na jižní zdi (z = 8): klika na obou stranách u jedné hrany, kolem výšky 1 m

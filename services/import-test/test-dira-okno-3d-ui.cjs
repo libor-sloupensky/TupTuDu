@@ -69,7 +69,8 @@ async function main() {
         const barvyBoku = Object.values(bok);
         kontrola('bok díry má přes celých 25 cm jednu barvu', barvyBoku.every(c => Math.abs(c[0] - barvyBoku[0][0]) < 3 && c[0] > 120), JSON.stringify(bok));
         const skrz = await p.vyhodnot(`(() => { const f = ${BARVA}; return { pod: f(6.02, 2.7, 4), nad: f(6.02, 3.1, 4) }; })()`);
-        kontrola('bok má stejný odstín jako bílá zeď pod deskou', Math.abs(skrz.pod[0] - barvyBoku[0][0]) < 4, JSON.stringify(skrz));
+        // Do 8 odstínů: obloha je z jedné strany jasnější (svetlo-3d.js, 13. 11. 2026) a bok a zeď mohou hledět na jiné strany
+        kontrola('bok má stejný odstín jako bílá zeď pod deskou', Math.abs(skrz.pod[0] - barvyBoku[0][0]) < 8, JSON.stringify(skrz));
         await p.snimek(path.join(vystup, 'dira-bok.png'));
         const uvnitr = await p.vyhodnot(`(() => { const f = ${PAPRSEK}; return f([8, 2.92, 4], [-1, 0, 0]); })()`);
         kontrola('paprsek z díry narazí na desku na její hraně, bok má barvu vnitřní zdi', uvnitr && Math.abs(uvnitr.d - 1.98) < 0.05 && uvnitr.ud.stropPod === 'P1' && uvnitr.barva === 'ffffff', JSON.stringify(uvnitr));
