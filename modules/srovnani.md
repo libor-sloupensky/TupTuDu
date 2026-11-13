@@ -56,6 +56,19 @@ SEO je důležité: na jednoho konkurenta víc stránek s odlišným záměrem h
 | **Alternativy k X** (později) | „x alternativa“ | výběr podobných nástrojů z dat, včetně nás | stejná pravidla jako srovnání |
 | **Průvodce výběrem** (odloženo) | „program na návrh domu“, „jaký program na půdorys“ | dotazník priorit → nástroje, které jim odpovídají, s odkazy na profily | pořadí jen podle shody s tím, co čtenář zadal; TupTuDu bez zvýhodnění; žádný „vítěz“ |
 
+## Pravidla vzhledu a textů (ladění na Planner 5D česky, Libor 13. 11. 2026)
+Ladí se nejdřív Planner 5D v češtině, pak se pravidla promítnou do ostatních nástrojů a nakonec do překladů.
+1. **Otázka = odpověď ano / částečně / ne** (např. „Verze zdarma“), ne „má / nemá“. „Má“ zůstává u vlastností.
+2. **Verze zdarma v jednom bloku:** odpověď a pod ní, co omezuje (`j_limity_zdarma`). Poznámka u `h_zdarma` se pak
+   nezobrazuje, aby se to neopakovalo.
+3. **Odrážky:** ceník a omezení verze zdarma po řádcích. V datech `text_cs` (a překladech `t`) řádek „- …“ = odrážka,
+   řádek bez pomlčky = drobná poznámka pod odrážkami (měna, DPH, kurz). Šablona `srovnani/_text.blade.php`.
+   Ceník: jedna odrážka na tarif („Premium: 19,99 $ měsíčně (asi 440 Kč) nebo …“).
+4. **Nadpis bloku je větší než obsah** (`.sr-karta-nadpis` 17 px tučně, obsah 15 px).
+5. **Jazyk s kódem:** „V tvém jazyce (čeština, cs)“, v seznamu jazyků „němčina (de)“.
+6. **TupTuDu je i v přehledu**, první, se štítkem „náš nástroj“, odkaz na titulku.
+Stav 13. 11. 2026: šablony platí pro všechny nástroje a jazyky; texty v odrážkách zatím jen Planner 5D a TupTuDu česky.
+
 ## Jak se stránky tvoří (hotový náhled)
 - **Vše z dat analýzy**, nic se nepíše ručně ke konkrétnímu konkurentovi: `App\Support\KonkurenceSrovnani`, šablony
   `resources/views/srovnani/profil.blade.php` a `vs.blade.php`. Bere jen aplikace a parametry v režimu Sledovat,
