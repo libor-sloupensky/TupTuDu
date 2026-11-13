@@ -184,18 +184,27 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
   měl předplatné (i zrušené). Opakované zkoušky přes nové účty se neřeší: nedají víc projektů ani zdrojová data.
 - **Zapnutí** jen kliknutím, ne samo při registraci (14 dní by propadlo lidem, kteří se jen podívali):
   `POST /billing/trial` (`PredplatneController::zkouska`, `Tarif::zacniZkousku`, podmínka přímo v UPDATE proti
-  dvojkliku). Nabízí se na třech místech:
+  dvojkliku). Nabízí se na třech místech, nejviditelněji přímo v editoru:
   - **Předplatné** `/billing` — tlačítko „Vyzkoušet 14 dní zdarma“ v kartě Stavebník (`#zkouska`), nákup je pak vedlejší tlačítko.
     Během zkoušky „Stavebník – zkouška zdarma“ a do kdy platí, po konci „Zkouška zdarma skončila …“.
   - **Ceník** `tuptudu.com/pricing` — stejné tlačítko u Stavebníku vede na `/billing?tarif=stavebnik#zkouska`
     (nepřihlášeného přes přihlášení/registraci), plus řádek v poznámkách. Podmínky čl. 4 mají bod o zkoušce (8 jazyků).
-  - **Editor** — okno „Dnešní limit úprav je vyčerpaný“ nabídne zkoušku (`limit-tarifu.js`, `_limitZacniZkousku`),
-    zapne ji přes JSON bez opuštění editoru a limit úprav hned zmizí. `initialData.limit` má `zkouska_mozna`,
-    `zkouska_dni`, `zkouska_delka`, `zkouska_url`.
+  - **Editor** (Libor 13. 11. 2026: laik ji nemá dohledávat v nastavení) — **štítek nad plátnem** „Vyzkoušej 14 dní
+    bez omezení zdarma“ u každého, komu jde zkouška zapnout; klik otevře krátkou nabídku s tlačítkem. Když zbývá ≤ 10 úprav,
+    štítek ukáže i počet („Dnes zbývá 5 z 30 úprav · Vyzkoušej…“). Okno „Dnešní limit úprav je vyčerpaný“ nabídne totéž.
+    Zapne se přes JSON bez opuštění editoru, limit úprav hned zmizí a štítek pak ukazuje „Zkouška zdarma: zbývá N dní“
+    (`limit-tarifu.js`: `_limitOdznak`, `limitDialog('zkouska')`, `_limitZacniZkousku`). `initialData.limit` má
+    `zkouska_mozna`, `zkouska_dni`, `zkouska_delka`, `zkouska_url`.
+- **E-mail 2 dny před koncem** (`App\Notifications\ZkouskaKonci`, příkaz `zkouska:upozorneni`, plánovač každou hodinu):
+  kdy zkouška končí, že se pak nic neplatí a projekty zůstanou (jen zase 30 úprav denně), cena Stavebníku v měně země
+  a tlačítko „Pokračovat se Stavebníkem“ (`/billing?tarif=stavebnik`), na konci „pokud nechceš, nemusíš nic dělat“.
+  Jednou na uživatele (`uzivatele.zkouska_mail_v`), jen ověřeným adresám a jen komu zkouška pořád běží (kdo mezitím
+  zaplatil, mail nedostane). Jazyk podle účtu, texty `lang/*/emaily.php` (`zkouska_konci_*`). `--dry-run` vypíše adresáty.
 - **Masterteam ▸ Přehled:** v dlaždici Platících teď řádek „ve zkoušce zdarma N (celkem M)“.
-- **Test:** `node services/import-test/test-zkouska-ui.cjs` (předplatné, ceník, editor, druhé zapnutí 409, konec zkoušky).
-  Testovací uživatel má smyšleného zákazníka Cashieru, aby stránka předplatného nezakládala zákazníka v ostrém Paddlu.
-- **Nezahrnuto (na výzvu):** e-mail před koncem zkoušky; účinnost podmínek („Účinné od“) se neměnila.
+- **Test:** `node services/import-test/test-zkouska-ui.cjs` (předplatné, ceník, štítek a okno v editoru, druhé zapnutí 409,
+  konec zkoušky). Testovací uživatel má smyšleného zákazníka Cashieru, aby stránka předplatného nezakládala zákazníka
+  v ostrém Paddlu.
+- Účinnost podmínek („Účinné od“) se kvůli zkoušce neměnila.
 
 ## Nápady na později
 - **Exporty podle tarifu** (Libor 13. 11. 2026, zatím žádný z nových exportů není hotový):

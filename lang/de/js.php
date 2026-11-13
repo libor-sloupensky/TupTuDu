@@ -28,5 +28,9 @@ return [
         'zkouska_popis' => 'Ohne Karte und ohne Verpflichtung. Unbegrenzt ändern, ein Projekt. Danach wechselt dein Konto automatisch zu Gratis.',
         'zkouska_nadpis' => 'Dein kostenloser Test läuft',
         'zkouska_chyba' => 'Der Test konnte nicht gestartet werden. Bitte versuche es noch einmal.',
+        'zkouska_odznak' => ':dni Tage ohne Limit kostenlos testen',
+        'zkouska_zbyva' => 'one=Kostenloser Test: noch :pocet Tag|other=Kostenloser Test: noch :pocet Tage',
+        'zkouska_nabidka_nadpis' => 'Teste Home :dni Tage kostenlos',
+        'zkouska_nabidka_text' => 'Im Tarif Gratis ist die Zahl der Änderungen pro Tag begrenzt. Im Test zeichnest und änderst du ohne Limit. Ein Klick genügt, du musst nichts ausfüllen.',
     ],
 ];

@@ -33,6 +33,9 @@ final class PlanovaneUlohy
         // Kopie vzorového projektu zpět do výchozího stavu ve 3:00 místního času uživatele (modules/aplikace.md)
         'vzor:obnovit' => 0,
 
+        // E-mail 2 dny před koncem zkoušky zdarma, jednou na uživatele (modules/platby.md)
+        'zkouska:upozorneni' => 3600,
+
         // Počet zaindexovaných adres ze sitemapy pro graf v Masterteamu (modules/statistiky.md).
         // Každou adresu kontroluje jednou denně; hodinový běh dobere, co se minule nestihlo.
         'indexace:kontrola' => 3600,

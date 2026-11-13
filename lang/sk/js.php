@@ -28,5 +28,9 @@ return [
         'zkouska_popis' => 'Bez karty a bez záväzku. Upravuješ bez obmedzenia, projekt máš jeden. Potom sa účet sám vráti na Zadarmo.',
         'zkouska_nadpis' => 'Skúška zadarmo beží',
         'zkouska_chyba' => 'Skúšku sa nepodarilo zapnúť. Skús to prosím znova.',
+        'zkouska_odznak' => 'Vyskúšaj :dni dní bez obmedzenia zadarmo',
+        'zkouska_zbyva' => 'one=Skúška zadarmo: zostáva :pocet deň|few=Skúška zadarmo: zostávajú :pocet dni|many=Skúška zadarmo: zostáva :pocet dňa|other=Skúška zadarmo: zostáva :pocet dní',
+        'zkouska_nabidka_nadpis' => 'Vyskúšaj Home :dni dní zadarmo',
+        'zkouska_nabidka_text' => 'Vo verzii Zadarmo je počet úprav za deň obmedzený. V skúške kreslíš a upravuješ bez obmedzenia. Stačí kliknúť, nič nevypĺňaš.',
     ],
 ];

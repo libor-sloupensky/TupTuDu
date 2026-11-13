@@ -24,5 +24,9 @@ return [
         'zkouska_popis' => 'No card, no commitment. Unlimited edits, one project. Afterwards your account goes back to Free automatically.',
         'zkouska_nadpis' => 'Your free trial has started',
         'zkouska_chyba' => 'The free trial could not be started. Please try again.',
+        'zkouska_odznak' => 'Try :dni days with no limits, free',
+        'zkouska_zbyva' => 'one=Free trial: :pocet day left|other=Free trial: :pocet days left',
+        'zkouska_nabidka_nadpis' => 'Try Home free for :dni days',
+        'zkouska_nabidka_text' => 'On the Free plan, the number of edits per day is limited. During the trial you draw and edit without limits. Just one click, nothing to fill in.',
     ],
 ];

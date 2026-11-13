@@ -28,5 +28,9 @@ return [
         'zkouska_popis' => 'Bez karty i bez zobowiązań. Edytujesz bez limitu, masz jeden projekt. Potem konto samo wraca do planu Darmowy.',
         'zkouska_nadpis' => 'Darmowy okres próbny trwa',
         'zkouska_chyba' => 'Nie udało się włączyć okresu próbnego. Spróbuj ponownie.',
+        'zkouska_odznak' => 'Wypróbuj za darmo :dni dni bez limitu',
+        'zkouska_zbyva' => 'one=Okres próbny: został :pocet dzień|few=Okres próbny: zostały :pocet dni|many=Okres próbny: zostało :pocet dni|other=Okres próbny: zostało :pocet dnia',
+        'zkouska_nabidka_nadpis' => 'Wypróbuj Home za darmo przez :dni dni',
+        'zkouska_nabidka_text' => 'W planie Darmowy liczba edycji dziennie jest ograniczona. W okresie próbnym rysujesz i edytujesz bez limitu. Wystarczy kliknąć, niczego nie wypełniasz.',
     ],
 ];

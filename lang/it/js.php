@@ -28,5 +28,9 @@ return [
         'zkouska_popis' => 'Senza carta e senza impegno. Modifiche illimitate, un progetto. Poi il tuo account torna da solo al piano Gratis.',
         'zkouska_nadpis' => 'La tua prova gratuita è iniziata',
         'zkouska_chyba' => 'Non è stato possibile attivare la prova. Riprova.',
+        'zkouska_odznak' => 'Prova :dni giorni senza limiti, gratis',
+        'zkouska_zbyva' => 'one=Prova gratuita: manca :pocet giorno|many=Prova gratuita: mancano :pocet giorni|other=Prova gratuita: mancano :pocet giorni',
+        'zkouska_nabidka_nadpis' => 'Prova Home gratis per :dni giorni',
+        'zkouska_nabidka_text' => 'Con il piano Gratis il numero di modifiche al giorno è limitato. Durante la prova disegni e modifichi senza limiti. Basta un clic, non devi compilare nulla.',
     ],
 ];

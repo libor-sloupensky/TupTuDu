@@ -77,10 +77,17 @@ window.KonceptLimit = {
                     <a class="btn btn-primary"></a>
                 </div>
             </div>`;
-        pozadi.querySelector('h2').textContent = preloz(projekty ? 'tarify.limit_projektu_nadpis' : 'tarify.limit_uprav_nadpis');
-        pozadi.querySelector('p').textContent = projekty
-            ? preloz('tarify.limit_projektu_text', { limit: l.projektu ?? '' })
-            : preloz('tarify.limit_uprav_text', { limit: l.kroku_denne ?? '' });
+        // typ 'zkouska' = nabídka ze štítku nad plátnem, limit ještě vyčerpaný není
+        const nabidka = typ === 'zkouska';
+        const dni = l.zkouska_delka ?? 14;
+        pozadi.querySelector('h2').textContent = nabidka
+            ? preloz('tarify.zkouska_nabidka_nadpis', { dni })
+            : preloz(projekty ? 'tarify.limit_projektu_nadpis' : 'tarify.limit_uprav_nadpis');
+        pozadi.querySelector('p').textContent = nabidka
+            ? preloz('tarify.zkouska_nabidka_text')
+            : projekty
+                ? preloz('tarify.limit_projektu_text', { limit: l.projektu ?? '' })
+                : preloz('tarify.limit_uprav_text', { limit: l.kroku_denne ?? '' });
         const zavrit = pozadi.querySelector('[data-zavrit]');
         zavrit.textContent = preloz('tarify.zavrit');
         const odkaz = pozadi.querySelector('a');
@@ -150,12 +157,20 @@ window.KonceptLimit = {
         }
     },
 
-    /** Štítek „Dnes zbývá N z 30 úprav“ nad plátnem — jen když zbývá málo. */
+    /**
+     * Štítek nad plátnem. Laik nemá zkoušku hledat v nastavení, proto je vidět přímo v editoru:
+     * - zkoušku jde zapnout → „Vyzkoušej 14 dní bez omezení zdarma“, klik otevře nabídku s tlačítkem,
+     * - zkouška běží → „Zkouška zdarma: zbývá N dní“ (odkaz na předplatné),
+     * - zbývá málo úprav → „Dnes zbývá N z 30 úprav“ (s nabídkou zkoušky spojené tečkou).
+     */
     _limitOdznak() {
         const l = this._limit();
         const platno = document.getElementById('kk-canvas-wrap');
         let odznak = document.getElementById('kk-limit-odznak');
-        if (!l || l.zbyva === null || l.zbyva > 10 || !platno) {
+        const malo = !!l && l.zbyva !== null && l.zbyva !== undefined && l.zbyva <= 10;
+        const nabidka = !!l?.zkouska_mozna;
+        const bezi = !!l?.zkouska_dni;
+        if (!platno || !(malo || nabidka || bezi)) {
             odznak?.remove();
             return;
         }
@@ -166,9 +181,17 @@ window.KonceptLimit = {
             odznak.className = 'kk-limit-odznak';
             platno.appendChild(odznak);
         }
+        const casti = [];
+        if (malo) casti.push(preloz('tarify.zbyva_uprav', { zbyva: l.zbyva, limit: l.kroku_denne }));
+        if (nabidka) casti.push(preloz('tarify.zkouska_odznak', { dni: l.zkouska_delka ?? 14 }));
+        else if (bezi) casti.push(prelozPocet('tarify.zkouska_zbyva', l.zkouska_dni));
         odznak.href = l.predplatne_url || '/billing';
-        odznak.textContent = preloz('tarify.zbyva_uprav', { zbyva: l.zbyva, limit: l.kroku_denne });
-        odznak.classList.toggle('vycerpano', l.zbyva === 0);
+        odznak.textContent = casti.join(' · ');
+        odznak.onclick = nabidka
+            ? (e) => { e.preventDefault(); this.limitDialog(l.zbyva === 0 ? 'upravy' : 'zkouska'); }
+            : null;
+        odznak.classList.toggle('vycerpano', malo && l.zbyva === 0);
+        odznak.classList.toggle('nabidka', nabidka);
     },
 
     _limitStyly() {
@@ -191,7 +214,8 @@ window.KonceptLimit = {
                 padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap;
                 background: var(--c-surface); color: var(--c-text-secondary); border: 1px solid var(--c-border); }
             .kk-limit-odznak:hover { color: var(--c-primary-text); text-decoration: none; }
-            .kk-limit-odznak.vycerpano { color: var(--c-primary-text); border-color: var(--c-primary); }`;
+            .kk-limit-odznak.vycerpano, .kk-limit-odznak.nabidka { color: var(--c-primary-text); border-color: var(--c-primary); }
+            .kk-limit-odznak.nabidka { cursor: pointer; }`;
         document.head.appendChild(styl);
     },
 };

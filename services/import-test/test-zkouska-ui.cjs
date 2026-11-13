@@ -24,13 +24,13 @@ const kontrola = (popis, ok, detail = '') => {
 const tinker = (kod) => execFileSync('php', ['artisan', 'tinker', '--execute=' + kod], { cwd: KOREN, encoding: 'utf8' }).trim();
 const json = (kod) => JSON.parse(tinker(kod).split('\n').pop());
 
-// Uživatel bez zkoušky, s jedním projektem a vyčerpaným dnešním limitem úprav
+// Uživatel bez zkoušky, s jedním projektem a 10 z 30 dnešních úprav (vyčerpání test nasimuluje v editoru)
 const zaloz = () => json(`
     $u = App\\Models\\Uzivatel::where('email', '${EMAIL}')->first() ?? new App\\Models\\Uzivatel;
     $u->forceFill(['jmeno' => 'ClaudeTest', 'prijmeni' => 'Zkouska', 'email' => '${EMAIL}', 'heslo' => '${HESLO}', 'email_overen_v' => now(), 'zeme' => 'CZ', 'jazyk' => 'cs', 'zkouska_od' => null, 'zkouska_do' => null])->save();
     App\\Models\\KonceptV3::where('uzivatel_id', $u->id)->delete();
     $k = App\\Models\\KonceptV3::create(['uzivatel_id' => $u->id, 'nazev' => 'ClaudeTest zkouška', 'data' => []]);
-    Illuminate\\Support\\Facades\\DB::table('denni_upravy')->updateOrInsert(['uzivatel_id' => $u->id, 'den' => today()->toDateString()], ['pocet' => 30]);
+    Illuminate\\Support\\Facades\\DB::table('denni_upravy')->updateOrInsert(['uzivatel_id' => $u->id, 'den' => today()->toDateString()], ['pocet' => 10]);
     // Smyšlený zákazník Cashieru: stránka předplatného pak nezakládá zákazníka v Paddlu (lokálně je ostrý klíč)
     Illuminate\\Support\\Facades\\DB::table('customers')->updateOrInsert(['billable_type' => App\\Models\\Uzivatel::class, 'billable_id' => $u->id], ['paddle_id' => 'ctm_claudetest_zkouska', 'name' => 'ClaudeTest Zkouska', 'email' => '${EMAIL}', 'created_at' => now(), 'updated_at' => now()]);
     echo json_encode(['id' => $u->id, 'kod' => $k->fresh()->kod]);`);
@@ -76,8 +76,21 @@ async function main() {
         await p.jdiNa(ZAKLAD + '/projects/' + kod);
         await p.cekej(`!!(window.Alpine && document.querySelector('#kk-canvas-wrap') && ${D}.engine)`, 20000, 'editor');
         await pauza(1500);
+        // Štítek nad plátnem nabízí zkoušku i před vyčerpáním limitu (laik ji nemá hledat v nastavení)
+        const s0 = await p.vyhodnot(`(() => {
+            const o = document.getElementById('kk-limit-odznak');
+            o?.click();
+            const okno = document.getElementById('kk-limit-dialog');
+            const r = { odznak: o?.textContent || null, nadpis: okno?.querySelector('h2')?.textContent || null, tlacitko: [...(okno?.querySelectorAll('button') || [])].some(b => b.textContent === 'Vyzkoušet 14 dní zdarma') };
+            return r;
+        })()`);
+        kontrola('štítek „Vyzkoušej 14 dní bez omezení zdarma“, klik otevře nabídku s tlačítkem', s0.odznak === 'Vyzkoušej 14 dní bez omezení zdarma' && s0.nadpis === 'Vyzkoušej Stavebníka 14 dní zdarma' && s0.tlacitko, JSON.stringify(s0));
+        await p.snimek(path.join(vystup, 'zkouska-3a-editor-stitek.png'));
+        await p.vyhodnot(`document.querySelector('#kk-limit-dialog [data-zavrit]').click(); true`);
         const e1 = await p.vyhodnot(`(() => {
             const k = ${D};
+            k._limit().zbyva = 0;   // limit vyčerpaný (server má 30 z 30)
+            k._limitOdznak();
             const smi = k._limitPovolKrok();
             const okno = document.getElementById('kk-limit-dialog');
             return { smi, okno: !!okno, tlacitka: [...(okno?.querySelectorAll('button, a') || [])].map(b => b.textContent.trim()), odznak: document.getElementById('kk-limit-odznak')?.textContent || null };
@@ -89,11 +102,11 @@ async function main() {
         const e2 = await p.vyhodnot(`(() => {
             const k = ${D};
             const l = k._limit();
-            return { text: document.querySelector('#kk-limit-dialog p')?.textContent, zbyva: l.zbyva, kroku: l.kroku_denne, tarif: l.tarif, mozna: l.zkouska_mozna, odznak: !!document.getElementById('kk-limit-odznak'), smi: (document.getElementById('kk-limit-dialog').remove(), k._limitPovolKrok()), url: location.pathname };
+            return { text: document.querySelector('#kk-limit-dialog p')?.textContent, zbyva: l.zbyva, kroku: l.kroku_denne, tarif: l.tarif, mozna: l.zkouska_mozna, odznak: document.getElementById('kk-limit-odznak')?.textContent || null, smi: (document.getElementById('kk-limit-dialog').remove(), k._limitPovolKrok()), url: location.pathname };
         })()`);
         const db1 = zkouska(uid);
         kontrola('zkouška zapnutá v DB, editor zůstal otevřený', db1.tarif === 'zkouska' && db1.od && db1.do && e2.url === '/projects/' + kod, JSON.stringify({ db1, url: e2.url }));
-        kontrola('limit úprav zmizel, štítek pryč, další úprava projde', e2.zbyva === null && e2.kroku === null && e2.tarif === 'zkouska' && e2.mozna === false && !e2.odznak && e2.smi === true, JSON.stringify(e2));
+        kontrola('limit úprav zmizel, štítek ukazuje zbývající dny, další úprava projde', e2.zbyva === null && e2.kroku === null && e2.tarif === 'zkouska' && e2.mozna === false && e2.odznak === 'Zkouška zdarma: zbývá 14 dní' && e2.smi === true, JSON.stringify(e2));
         kontrola('okno ukáže, do kdy zkouška platí', /^Zkouška zdarma běží do .+\. Upravuj bez omezení\.$/.test(e2.text || ''), e2.text);
 
         console.log('\n4) Předplatné během zkoušky');

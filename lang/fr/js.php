@@ -28,5 +28,9 @@ return [
         'zkouska_popis' => 'Sans carte ni engagement. Modifications illimitées, un projet. Ensuite, votre compte repasse automatiquement en Gratuit.',
         'zkouska_nadpis' => 'Votre essai gratuit a commencé',
         'zkouska_chyba' => 'Impossible d’activer l’essai. Veuillez réessayer.',
+        'zkouska_odznak' => 'Essayez :dni jours sans limite, gratuitement',
+        'zkouska_zbyva' => 'one=Essai gratuit : encore :pocet jour|many=Essai gratuit : encore :pocet jours|other=Essai gratuit : encore :pocet jours',
+        'zkouska_nabidka_nadpis' => 'Essayez Home gratuitement pendant :dni jours',
+        'zkouska_nabidka_text' => 'Avec la formule Gratuit, le nombre de modifications par jour est limité. Pendant l’essai, vous dessinez et modifiez sans limite. Un clic suffit, rien à remplir.',
     ],
 ];
