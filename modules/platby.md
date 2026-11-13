@@ -61,7 +61,7 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
   Měna podle země: CZ → Kč (pevná cena pro Česko), ostatní → eura.
 - Úprava = krok historie editoru (nová stěna, posun stěny/otvoru, smazání…). Prohlížení,
   Zpět/Vpřed a výchozí krok „Začátek" se nepočítají. Den podle časové zóny aplikace.
-- Budoucí funkce jen v placených tarifech, kromě obrázků PNG a sdílení odkazem, ty jsou i ve verzi zdarma (Libor 4. 11. 2026). PDF, DWG/DXF a 3D model zatím nejsou; rozhodnutí ze 4. 11., že je nedáváme, Libor 13. 11. 2026 odvolal (todo „Kde zaostáváme za konkurencí“). Master tým má vždy Profi.
+- Budoucí funkce jen v placených tarifech, kromě obrázků PNG a sdílení odkazem, ty jsou i ve verzi zdarma (Libor 4. 11. 2026). PDF, DWG/DXF a 3D model zatím nejsou; rozhodnutí ze 4. 11., že je nedáváme, Libor 13. 11. 2026 odvolal (todo „Kde zaostáváme za konkurencí“). Rozdělení podle tarifu je v Nápadech na později (Exporty podle tarifu): zdarma obrázky a ploché PDF, zdrojová data jen placené. Master tým má vždy Profi.
 - Typický stavebník aplikaci používá 3–12 měsíců → roční předplatné se vyplatí od 6 měsíců.
 - Limity a ceny jen v `config/tarify.php` (ceník i `paddle:katalog` z nich berou).
 
@@ -172,10 +172,21 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
 - Ověření: nahrání 2400 × 900 → WebP 800 × 300 (7 kB), SVG odmítnuto, zápatí exportu, odkaz, odstranění.
 
 ## Nápady na později
-- **Zkušební verze zdarma na 14 dní** (Libor 13. 11. 2026, zatím jen zaznamenat, nestavět). K rozhodnutí: který tarif
-  (Stavebník, Profi, oba), s kartou předem (zkušební doba u cen v Paddlu, pak se platí samo) nebo bez karty (jen v aplikaci,
-  po 14 dnech zpět na Zdarma), co s verzí Zdarma a jak zabránit opakovaným zkouškám přes nové účty. Po zavedení upravit
-  `config/tarify.php`, ceny v Paddlu (`paddle:katalog`), ceník a podmínky ve všech jazycích.
+- **Zkušební verze zdarma na 14 dní** (Libor 13. 11. 2026, rozhodnuto, zatím jen zaznamenat, nestavět):
+  - Jen tarif **Stavebník**, **bez karty**. Běží jen v aplikaci, Paddle se jí netýká (žádná zkušební doba u cen).
+  - Ve zkoušce: **neomezené úpravy**, ale dál **jen 1 projekt** (kopie vzorového projektu se nepočítá, už dnes
+    `Tarif::pocetProjektu`) a **žádné exporty zdrojových dat** (viz Exporty níže).
+  - Po 14 dnech zpět na **Zdarma jako dnes** (30 úprav denně, 1 projekt), nic se nemaže.
+  - Opakované zkoušky přes nové účty se neřeší zvlášť: zkouška nedává víc projektů ani zdrojová data, takže z ní nic
+    nevynese. Cíl: zdarma si uživatel může hrát a ladit skoro bez omezení, ale bez placené verze návrh ze systému
+    nevyjme, kromě obrázků a plochého PDF.
+  - Při zavedení upravit `config/tarify.php`, `App\Support\Tarif`, ceník a podmínky ve všech jazycích (Paddle kontroluje,
+    že web neslibuje nic, co aplikace neumí).
+- **Exporty podle tarifu** (Libor 13. 11. 2026, zatím žádný z nových exportů není hotový):
+  - **Zdarma i zkouška:** obrázky (PNG) a **PDF jen ploché, bez vrstev** (stránka jako obrázek, žádné vektory ani vrstvy,
+    aby se z PDF nedaly vyčíst údaje).
+  - **Jen placené tarify:** zdrojová data ve formátech, které jde nahrát do jiných programů (DWG/DXF, 3D model,
+    PDF s vrstvami a podobné).
 - Masterteam: přehled předplatitelů a využití (počty úprav jsou v `denni_upravy`).
 - Interní e-mail o novém předplatném (událost Cashieru `SubscriptionCreated`).
 - Změna e-mailu v účtu se do Paddlu nepropisuje (zákazník tam má původní e-mail na doklady).
