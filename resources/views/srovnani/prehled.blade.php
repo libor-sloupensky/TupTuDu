@@ -6,7 +6,8 @@
 <main class="sr">
     <h1>{{ __('srovnani.prehled_h1') }}</h1>
     <p style="font-size:18px">{{ __('srovnani.prehled_uvod') }}</p>
-    <p class="sr-autor">{{ __('srovnani.autor', ['datum' => \App\Support\Lokalizace::datum($data->map->overeno()->filter()->max()) ?? '—']) }}</p>
+    @php $datumOvereni = \App\Support\Lokalizace::datum($data->map->overeno()->filter()->max()) ?? '—'; @endphp
+    <p class="sr-autor-kratce">{{ __('srovnani.autor_kratce', ['datum' => $datumOvereni]) }} <a href="#metodika">{{ __('srovnani.metodika_nadpis') }}</a></p>
     <div class="sr-obal">
         <table class="sr-tab">
             <thead><tr>
@@ -39,8 +40,9 @@
             </tbody>
         </table>
     </div>
-    <section class="sr-metodika">
+    <section class="sr-metodika" id="metodika">
         <h2 style="font-size:18px;margin-top:0">{{ __('srovnani.metodika_nadpis') }}</h2>
+        <p class="sr-autor">{{ __('srovnani.autor', ['datum' => $datumOvereni]) }} <a href="{{ \App\Support\Lokalizace::adresaWebu('/contact') }}">{{ __('srovnani.oprava') }}</a></p>
         <p>{{ __('srovnani.metodika_1') }}</p>
         <p>{{ __('srovnani.metodika_2') }}</p>
     </section>

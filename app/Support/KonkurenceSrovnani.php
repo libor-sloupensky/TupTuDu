@@ -198,6 +198,19 @@ class KonkurenceSrovnani
         return $this->sledovani->where('segment', $this->konkurent->segment)->where('id', '!=', $this->konkurent->id)->values();
     }
 
+    /**
+     * Bublina u názvu vlastnosti: co znamená „má“, „částečně“ a „nemá“ (kritéria analýzy, česky). Interní dovětky
+     * („Jen interně: …“) se odstraní. V jiných jazycích zatím krátký popis, dokud se kritéria nepřeloží.
+     */
+    public function tip(KonkurenceParametr $p): string
+    {
+        if ($this->jazyk === 'cs' && $p->kriteria) {
+            return trim(preg_replace('/\s*Jen interně:.*$/us', '', $p->kriteria));
+        }
+
+        return \Illuminate\Support\Facades\Lang::has('srovnani.pp.' . $p->klic) ? __('srovnani.pp.' . $p->klic) : (string) $p->popis;
+    }
+
     /** Datum posledního ověření hodnot konkurenta, které se na stránce ukazují (do řádku autorství). */
     public function overeno(): ?\Carbon\Carbon
     {

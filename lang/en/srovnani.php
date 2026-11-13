@@ -29,8 +29,8 @@ return [
     'profil_cena' => 'Prices',
     'profil_cta' => 'Compare :nazev with TupTuDu',
     'profil_vlastnosti' => 'What :nazev can do',
-    'profil_trh_uvod' => 'The column on the right shows how many of the compared tools have the feature, so you can see what is common and what is rare.',
-    'profil_trh' => 'How many of :n tools have it',
+    'profil_trh_uvod' => 'The column on the right shows how many of the :n tools in our comparison have the feature, so you can see what is common and what is rare.',
+    'profil_trh' => 'How many tools have it',
     'profil_trh_castecne' => '+ :n partly',
     'podobne' => 'Other tools in the comparison',
     'vs_titulek' => ':nazev vs TupTuDu: features and prices compared (:rok)',
@@ -314,4 +314,7 @@ return [
     ],
     'profil_zdarma' => 'Free version',
     'prehled_my' => 'our tool',
+    'autor_kratce' => 'Prepared by the TupTuDu team, the maker of one of the compared tools. Status as of :datum.',
+    'profil_trh_tip' => 'We compare :n house design tools, listed on the Software comparison page. The number shows how many of them have the feature; “partly” means tools that have it only in a limited form. Only facts documented on the makers’ websites are counted.',
+    'profil_trh_bunka' => ':ma of :n',
 ];

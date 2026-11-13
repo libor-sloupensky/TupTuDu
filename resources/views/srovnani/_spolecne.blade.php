@@ -5,6 +5,9 @@
     .sr h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 8px 0 12px; }
     .sr h2 { font-size: 22px; margin: 36px 0 12px; }
     .sr-tlumene { color: var(--c-text-secondary); }
+    .sr-autor-kratce { font-size: 13px; color: var(--c-text-secondary); margin: 4px 0 14px; }
+    /* Bublina s vysvětlením: tečkované podtržení a kurzor nápovědy */
+    .sr-tip { text-decoration: underline dotted var(--c-text-secondary); text-underline-offset: 3px; cursor: help; }
     .sr-autor { font-size: 14px; color: var(--c-text-secondary); border-left: 3px solid var(--c-primary); padding: 6px 12px; margin: 12px 0 20px; }
     .sr-nahled { position: sticky; top: 0; z-index: 30; background: var(--c-chip); color: var(--c-text); border: 1px dashed var(--c-warn); border-radius: 8px; padding: 8px 14px; font-size: 14px; margin-bottom: 16px; }
     .sr-karty { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; }
@@ -25,8 +28,8 @@
     .sr-d { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: none; }
     .sr-d.ano { background: var(--c-ok); }
     .sr-d.castecne { border: 2px solid var(--c-warn); background: linear-gradient(90deg, var(--c-warn) 50%, transparent 50%); }
-    .sr-d.ne { border: 1.5px solid var(--c-border-strong); }
-    .sr-d.q { border: 1.5px dashed var(--c-text-secondary); }
+    .sr-d.ne { background: var(--c-error); }
+    .sr-d.q { border: 1.5px solid var(--c-text-secondary); }  /* nezjištěno: prázdný kroužek (Libor 13. 11. 2026) */
     .sr-pozn { display: block; font-size: 12.5px; color: var(--c-text-secondary); line-height: 1.4; margin-top: 2px; }
     .sr-bez-dokladu { outline: 1.5px dashed var(--c-warn); outline-offset: 2px; border-radius: 4px; }
     .sr-stitek { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 5px; background: var(--c-primary-10); color: var(--c-primary-text); }

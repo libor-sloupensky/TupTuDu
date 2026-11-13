@@ -1,5 +1,6 @@
-{{-- Pruh náhledu (jen v Masterteamu) a řádek autorství. Autorství musí být vidět hned nahoře: stránku píše
-     výrobce jednoho ze srovnávaných nástrojů, skrytá reklama je nekalá praktika (modules/srovnani.md, Právní rámec). --}}
+{{-- Pruh náhledu (jen v Masterteamu) a krátké autorství. Celé autorství s výzvou k opravě je dole v metodice
+     (Libor 13. 11. 2026: nahoře rušilo). Krátká věta nahoře zůstává, aby bylo od začátku jasné, že stránku píše výrobce
+     jednoho ze srovnávaných nástrojů (skrytá reklama je nekalá praktika, modules/srovnani.md, Právní rámec). --}}
 @if(! $s->verejne)
     <div class="sr-nahled">
         <b>Náhled z Masterteamu.</b> Generováno z analýzy konkurence (jen parametry a aplikace v režimu Sledovat).
@@ -8,7 +9,7 @@
         <a href="/masterteam/konkurence" style="color:inherit">← Zpět na analýzu</a>
     </div>
 @endif
-<p class="sr-autor">
-    {{ __('srovnani.autor', ['datum' => \App\Support\Lokalizace::datum($s->overeno()) ?? '—']) }}
-    <a href="{{ \App\Support\Lokalizace::adresaWebu('/contact') }}">{{ __('srovnani.oprava') }}</a>
+<p class="sr-autor-kratce">
+    {{ __('srovnani.autor_kratce', ['datum' => \App\Support\Lokalizace::datum($s->overeno()) ?? '—']) }}
+    <a href="#metodika">{{ __('srovnani.metodika_nadpis') }}</a>
 </p>

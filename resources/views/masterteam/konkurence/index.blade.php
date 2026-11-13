@@ -61,10 +61,9 @@
     .kn-d { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; }
     .kn-d.ano { background: var(--c-ok); }
     .kn-d.cast { border: 2px solid var(--c-warn); background: linear-gradient(90deg, var(--c-warn) 50%, transparent 50%); }
-    .kn-d.ne { width: 7px; height: 7px; border: 1.5px solid var(--c-border-strong); }
+    .kn-d.ne { background: var(--c-error); }
     .kn-d.skr { border: 2px dashed var(--c-text-secondary); }
-    .kn-d.q { width: auto; height: auto; border-radius: 0; color: var(--c-text-secondary); font-size: 11px; font-weight: 700; }
-    .kn-d.q::before { content: "?"; }
+    .kn-d.q { border: 1.5px solid var(--c-text-secondary); }
     .kn-d.pl { box-shadow: 0 0 0 2px var(--c-surface), 0 0 0 3.5px var(--c-primary); }
     .kn-mesice { display: inline-grid; grid-template-columns: repeat(12, 7px); gap: 2px; vertical-align: middle; }
     .kn-mesice i { width: 7px; height: 14px; border-radius: 2px; border: 1px solid var(--c-border); }

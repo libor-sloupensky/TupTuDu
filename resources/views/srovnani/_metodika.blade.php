@@ -1,7 +1,11 @@
 {{-- Metodika a zdroje: povinná část každé srovnávací stránky (modules/srovnani.md, Právní rámec). --}}
 @php $jmeno = $s->konkurent->jmeno(); $zdroje = $s->zdroje($s->konkurent); @endphp
-<section class="sr-metodika">
+<section class="sr-metodika" id="metodika">
     <h2 style="font-size:18px;margin-top:0">{{ __('srovnani.metodika_nadpis') }}</h2>
+    <p class="sr-autor">
+        {{ __('srovnani.autor', ['datum' => \App\Support\Lokalizace::datum($s->overeno()) ?? '—']) }}
+        <a href="{{ \App\Support\Lokalizace::adresaWebu('/contact') }}">{{ __('srovnani.oprava') }}</a>
+    </p>
     <p>{{ __('srovnani.metodika_1') }}</p>
     <p>{{ __('srovnani.metodika_2') }}</p>
     <p><a href="{{ \App\Support\Lokalizace::adresaWebu('/contact') }}">{{ __('srovnani.metodika_zastupce', ['nazev' => $jmeno]) }}</a></p>

@@ -13,6 +13,7 @@
     $vsAdresa = $s->verejne ? SrovnaniController::adresa($k, $j, true) : route('masterteam.konkurence.srovnani', $k);
     $nazevP = fn ($p) => Lang::has('srovnani.p.' . $p->klic) ? __('srovnani.p.' . $p->klic) : $p->nazev;
     $popisP = fn ($p) => Lang::has('srovnani.pp.' . $p->klic) ? __('srovnani.pp.' . $p->klic) : $p->popis;
+    $tipP = fn ($p) => $s->tip($p);
     $pocetTrh = $s->sledovani->filter(fn ($x) => $s->hodnota($x, $s->parametr('a_steny')) || $s->hodnota($x, $s->parametr('h_zdarma')))->count();
 @endphp
 <x-layouts.web :title="__('srovnani.profil_titulek', ['nazev' => $jmeno, 'rok' => $rok])" :popis="__('srovnani.profil_popis', ['nazev' => $jmeno])"
@@ -53,22 +54,22 @@
     <p style="margin:22px 0"><a class="sr-cta" href="{{ $vsAdresa }}">{{ __('srovnani.profil_cta', ['nazev' => $jmeno]) }} →</a></p>
 
     <h2>{{ __('srovnani.profil_vlastnosti', ['nazev' => $jmeno]) }}</h2>
-    <p class="sr-tlumene" style="font-size:14px">{{ __('srovnani.profil_trh_uvod') }}</p>
+    <p class="sr-tlumene" style="font-size:14px">{{ __('srovnani.profil_trh_uvod', ['n' => $pocetTrh]) }}</p>
     <div class="sr-obal">
         <table class="sr-tab">
-            <thead><tr><th>{{ __('srovnani.vlastnost') }}</th><th>{{ $jmeno }}</th><th>{{ __('srovnani.profil_trh', ['n' => $pocetTrh]) }}</th></tr></thead>
+            <thead><tr><th>{{ __('srovnani.vlastnost') }}</th><th>{{ $jmeno }}</th><th><span class="sr-tip" title="{{ __('srovnani.profil_trh_tip', ['n' => $pocetTrh]) }}">{{ __('srovnani.profil_trh') }} ⓘ</span></th></tr></thead>
             <tbody>
             @foreach($s->vlastnosti()->groupBy('skupina') as $skupina => $vSkupine)
                 <tr class="sr-skupina"><th colspan="3">{{ __('srovnani.skupina.' . $skupina) }}</th></tr>
                 @foreach($vSkupine as $p)
                     @continue($p->typ === 'seznam' || $p->klic === 'h_zdarma')
                     <tr>
-                        <td @if(! $s->verejne) title="{{ $p->kriteria }}" @endif><b>{{ $nazevP($p) }}</b>@if($popisP($p))<span class="sr-pozn">{{ $popisP($p) }}</span>@endif</td>
+                        <td><b class="sr-tip" title="{{ $tipP($p) }}">{{ $nazevP($p) }}</b>@if($popisP($p))<span class="sr-pozn">{{ $popisP($p) }}</span>@endif</td>
                         <td>@include('srovnani._hodnota', ['h' => $s->hodnota($k, $p), 'p' => $p])</td>
                         <td class="sr-tlumene" style="white-space:nowrap">
                             @if($p->typ === 'stav')
                                 @php $t = $s->trh($p); @endphp
-                                {{ $t['ma'] }}@if($t['castecne']) {{ __('srovnani.profil_trh_castecne', ['n' => $t['castecne']]) }}@endif
+                                {{ __('srovnani.profil_trh_bunka', ['ma' => $t['ma'], 'n' => $pocetTrh]) }}@if($t['castecne']) {{ __('srovnani.profil_trh_castecne', ['n' => $t['castecne']]) }}@endif
                             @endif
                         </td>
                     </tr>

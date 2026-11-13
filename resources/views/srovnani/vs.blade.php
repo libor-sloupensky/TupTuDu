@@ -10,6 +10,7 @@
     $r = $s->rozdily();
     $sit = $s->situace();
     $nazevP = fn ($p) => Lang::has('srovnani.p.' . $p->klic) ? __('srovnani.p.' . $p->klic) : $p->nazev;
+    $tipP = fn ($p) => $s->tip($p);
     $profil = $s->verejne ? SrovnaniController::adresa($k, $j) : route('masterteam.konkurence.profil', $k);
 @endphp
 <x-layouts.web :title="__('srovnani.vs_titulek', ['nazev' => $jmeno, 'rok' => $rok])" :popis="__('srovnani.vs_popis', ['nazev' => $jmeno])"
@@ -91,7 +92,7 @@
                 <tr class="sr-skupina"><th colspan="3">{{ __('srovnani.skupina.' . $skupina) }}</th></tr>
                 @foreach($vSkupine as $p)
                     <tr>
-                        <td @if(! $s->verejne) title="{{ $p->kriteria }}" @endif><b>{{ $nazevP($p) }}</b></td>
+                        <td><b class="sr-tip" title="{{ $tipP($p) }}">{{ $nazevP($p) }}</b></td>
                         <td>@include('srovnani._hodnota', ['h' => $s->hodnota($k, $p), 'p' => $p])</td>
                         <td>@include('srovnani._hodnota', ['h' => $s->hodnota($s->my, $p), 'p' => $p])</td>
                     </tr>
