@@ -15,6 +15,15 @@ use App\Services\Pozemky\Zdroje;
  * Každou službu ověřuje `php artisan pozemky:over` (skutečné dotazy na náhodná místa).
  */
 return [
+    // Mezipaměť dat z národních služeb na našem serveru (App\Services\Pozemky\Mezipamet, tabulka pozemky_cache).
+    // Tichá obnova v plánovači (pozemky:obnovit): záznam starší než stari_dni, který editor chtěl
+    // v posledních pouzito_do_dni dnech, nejvýš na_beh záznamů za jeden běh (každých 15 min).
+    'mezipamet' => [
+        'stari_dni' => ['okoli' => 30, 'stavby' => 30, 'vysky' => 365],
+        'pouzito_do_dni' => 90,
+        'na_beh' => 10,
+    ],
+
     'zeme' => [
         'CZ' => [
             'parcely' => Zdroje\Cesko::class,

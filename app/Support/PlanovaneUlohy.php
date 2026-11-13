@@ -36,6 +36,9 @@ final class PlanovaneUlohy
         // Počet zaindexovaných adres ze sitemapy pro graf v Masterteamu (modules/statistiky.md).
         // Každou adresu kontroluje jednou denně; hodinový běh dobere, co se minule nestihlo.
         'indexace:kontrola' => 3600,
+
+        // Tichá obnova dat pozemků z národních služeb (výšky, okolní parcely, stavby), modules/lokalizace.md
+        'pozemky:obnovit' => 900,
     ];
 
     /** Po neúspěšném běhu dlouhé úlohy to zkusit znovu nejpozději za hodinu, ne až po celém intervalu. */

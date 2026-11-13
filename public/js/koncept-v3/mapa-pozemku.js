@@ -195,6 +195,9 @@
             if (w.crs && w.crs !== 'EPSG:3857') volby.crs = L.extend({}, L.CRS.EPSG4326, { code: w.crs });
             // Slovensko zakazuje své obrázky na cizích stránkách (Cross-Origin-Resource-Policy): přes náš server
             const url = w.proxy ? window._kkInitData.routes.katastrDlazdice.replace(':zeme', info.zeme) : w.url;
+            // Přes náš server čtvrtina dotazů (dlaždice 512 px): pomalá cizí služba jinak drží obslužné procesy
+            // serveru a ostatní dotazy editoru čekají ve frontě (13. 11. 2026, slovenská vrstva až 13 s)
+            if (w.proxy) volby.tileSize = 512;
             vrstvaWms = L.tileLayer.wms(url, volby).addTo(mapa);
         },
 

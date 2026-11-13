@@ -51,7 +51,7 @@ async function main() {
         // Informace z předchozího místa smazat, jinak by test četl starou zemi
         await p.vyhodnot(`(() => { ${D}.mapaInfo = null; window.__kkMapaPozemku.setView([${lat}, ${lon}], ${zoom}, { animate: false }); return true; })()`);
         await pauza(400);
-        await p.cekej(`${D}.mapaInfo !== null`, 15000, 'informace o místě');
+        await p.cekej(`${D}.mapaInfo !== null`, 30000, 'informace o místě');
     };
 
     try {
@@ -73,7 +73,7 @@ async function main() {
         console.log('\n1) Otevření mapy z panelu Parcela');
         kontrola('tlačítko „Vybrat pozemek na mapě“ je v panelu', await p.vyhodnot(`!!document.querySelector('[data-mapa-otevrit]')`));
         await p.vyhodnot(`(() => { ${D}.panelOpen.parcela = true; document.querySelector('[data-mapa-otevrit]').click(); return true; })()`);
-        await p.cekej(`!!(window.L && window.__kkMapaPozemku && document.querySelector('[data-mapa-pozemku].leaflet-container'))`, 20000, 'Leaflet');
+        await p.cekej(`!!(window.L && window.__kkMapaPozemku && document.querySelector('[data-mapa-pozemku].leaflet-container'))`, 60000, 'Leaflet');
         kontrola('mapa se otevřela', await p.vyhodnot(`${D}.mapaPozemku === true`));
 
         console.log('\n1b) Podklad Mapy.com a hledání místa (potřebuje MAPYCZ_API_KEY)');
@@ -104,7 +104,8 @@ async function main() {
             // Dlaždice vrstvy parcel se v prohlížeči opravdu načetly (server je smí poslat na cizí stránku)
             const wmsDlazdice = `(() => { let n = 0, ok = 0; window.__kkMapaPozemku.eachLayer(l => { if (!l.wmsParams) return;
                 for (const k in l._tiles) { n++; const t = l._tiles[k]; if (t.loaded && t.el.complete && t.el.naturalWidth > 0) ok++; } }); return { n, ok }; })()`;
-            try { await p.cekej(`${wmsDlazdice}.ok > 0`, 20000, 'dlaždice vrstvy parcel'); } catch { /* vyhodnotí kontrola */ }
+            // Národní WMS občas na chvíli vrací chybu místo obrázku (Polsko 13. 11. 2026), proto delší čekání
+            try { await p.cekej(`${wmsDlazdice}.ok > 0`, 45000, 'dlaždice vrstvy parcel'); } catch { /* vyhodnotí kontrola */ }
             const dl = await p.vyhodnot(wmsDlazdice);
             kontrola(`${m.nazev}: vrstva hranic parcel se načetla v prohlížeči`, dl.ok > 0, `${dl.ok} z ${dl.n} dlaždic`);
             await pauza(1000);
@@ -112,11 +113,22 @@ async function main() {
             await p.vyhodnot(`(() => { ${D}.mapaHlaska = ''; return true; })()`);
             const pred = await p.vyhodnot(`${D}.mapaVybrane.length`);
             const t0 = Date.now();
-            await klikni(await naObrazovku(m.lat, m.lon));
-            await p.cekej(`!${D}.mapaNacitani && (${D}.mapaVybrane.length > ${pred} || ${D}.mapaHlaska)`, 60000, 'parcela ' + m.nazev);
+            let hlaska = '';
+            // Výpadek národní služby (hláška „Katastr teď neodpovídá“) není chyba aplikace: jednou znovu, pak jen upozornit
+            for (let pokus = 1; pokus <= 2; pokus++) {
+                await p.vyhodnot(`(() => { ${D}.mapaHlaska = ''; return true; })()`);
+                await klikni(await naObrazovku(m.lat, m.lon));
+                await p.cekej(`!${D}.mapaNacitani && (${D}.mapaVybrane.length > ${pred} || ${D}.mapaHlaska)`, 60000, 'parcela ' + m.nazev);
+                hlaska = await p.vyhodnot(`${D}.mapaHlaska`);
+                if (!/neodpovídá/.test(hlaska)) break;
+                if (pokus === 1) await pauza(5000);
+            }
             const sekund = ((Date.now() - t0) / 1000).toFixed(1);
             const vybrana = await p.vyhodnot(`JSON.parse(JSON.stringify(${D}.mapaVybrane[${pred}] || null))`);
-            const hlaska = await p.vyhodnot(`${D}.mapaHlaska`);
+            if (!vybrana && /neodpovídá/.test(hlaska)) {
+                console.log(`   !    ${m.nazev}: národní katastr teď neodpovídá ani na druhý pokus (výpadek služby, editor ukázal hlášku), ${sekund} s`);
+                continue;
+            }
             const uvnitr = vybrana && await p.vyhodnot(`${D}._bodVPolygonu(${m.lat}, ${m.lon}, ${D}.mapaVybrane[${pred}].polygon_wgs84)`);
             kontrola(`${m.nazev}: parcela ${vybrana?.cislo ?? '—'} (${vybrana?.vymera ?? '?'} m²), země ${vybrana?.zeme}, vrstva parcel ${info.wms ? 'ano' : 'ne'}`,
                 vybrana && vybrana.zeme === m.zeme && uvnitr && info.wms, (hlaska ? hlaska + ', ' : '') + sekund + ' s');
@@ -162,6 +174,9 @@ async function main() {
         await p.cekej(`!!(window.Alpine && ${D} && ${D}.engine && ${D}.katastrParcely.length === 1)`, 30000, 'editor po obnovení');
         await p.cekej(`!${D}.katastrNacitaniProfil && !!${D}._vyskyNactene`, 60000, 'profil po obnovení');
         kontrola('po obnovení stránky jsou výšky pořád vypnuté', await p.vyhodnot(`${D}.katastrBezVysek === true && ${D}.vyskovyProfil === null`));
+        // Radon a geologie z ČGS se ukládají k parcele, při otevření projektu se znovu nenačítají
+        kontrola('radon a geologie zůstaly uložené v projektu', await p.vyhodnot(`!!(${D}.katastrParcely[0].radon || ${D}.katastrParcely[0].geologie)`),
+            await p.vyhodnot(`String(${D}.katastrParcely[0].radon || '') + ' | ' + String(${D}.katastrParcely[0].geologie || '').slice(0, 40)`));
         await p.vyhodnot(`(() => { ${D}.panelOpen.parcela = true; document.querySelector('[data-vysky-prepinac] input').click(); return true; })()`);
         await pauza(300);
         kontrola('po zapnutí se výšky vrátí', await p.vyhodnot(`${D}.katastrBezVysek === false && !!${D}.vyskovyProfil?.body?.length`));

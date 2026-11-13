@@ -71,14 +71,37 @@ class Pozemky
         ];
     }
 
+    /** Okolní parcely, z mezipaměti serveru (Mezipamet), národní služba jen poprvé a při tiché obnově. */
     public function parcelyVOblasti(string $zeme, array $obalka): array
     {
-        return $this->zdrojParcel($zeme)?->parcelyVOblasti($obalka) ?? [];
+        if (!$this->zdrojParcel($zeme)) {
+            return [];
+        }
+
+        return app(Mezipamet::class)->ziskej('okoli', $zeme, $obalka, fn () => $this->spoctiCerstve('okoli', $zeme, $obalka));
     }
 
+    /** Stavby v okolí, z mezipaměti serveru jako okolní parcely. */
     public function stavbyVOblasti(string $zeme, array $obalka): array
     {
-        return $this->zdrojParcel($zeme)?->stavbyVOblasti($obalka) ?? [];
+        if (!$this->zdrojParcel($zeme)) {
+            return [];
+        }
+
+        return app(Mezipamet::class)->ziskej('stavby', $zeme, $obalka, fn () => $this->spoctiCerstve('stavby', $zeme, $obalka));
+    }
+
+    /**
+     * Data přímo z národní služby, bez mezipaměti (první načtení a tichá obnova pozemky:obnovit).
+     * @param string $druh vysky | okoli | stavby
+     */
+    public function spoctiCerstve(string $druh, string $zeme, array $parametry): array
+    {
+        return match ($druh) {
+            'okoli' => $this->zdrojParcel($zeme)?->parcelyVOblasti($parametry) ?? [],
+            'stavby' => $this->zdrojParcel($zeme)?->stavbyVOblasti($parametry) ?? [],
+            'vysky' => $this->vyskovyProfilCerstvy($zeme, $parametry),
+        };
     }
 
     /**
@@ -86,6 +109,15 @@ class Pozemky
      * Tvar výstupu jako u ČR (Dmr5gService): body [[lat, lon, z], ...] a souhrny.
      */
     public function vyskovyProfil(string $zeme, array $polygony): array
+    {
+        if (!$this->zdrojVysek($zeme)) {
+            throw new RuntimeException(__('ed_nastroje.katastr.vysky_zeme_nejsou'));
+        }
+
+        return app(Mezipamet::class)->ziskej('vysky', $zeme, $polygony, fn () => $this->vyskovyProfilCerstvy($zeme, $polygony));
+    }
+
+    private function vyskovyProfilCerstvy(string $zeme, array $polygony): array
     {
         $zdroj = $this->zdrojVysek($zeme);
         if (!$zdroj) {

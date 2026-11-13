@@ -48,11 +48,7 @@ class Spanelsko implements ZdrojParcel
 
     public function stavbyVOblasti(array $obalka): array
     {
-        try {
-            $xml = $this->wfs(self::WFS_BU, 'BU:Building', $obalka);
-        } catch (\Throwable) {
-            return [];
-        }
+        $xml = $this->wfs(self::WFS_BU, 'BU:Building', $obalka);
         $vystup = [];
         foreach (InspireGml::prvky($xml, true) as $p) {
             foreach ($p['polygony'] as $polygon) {
@@ -69,7 +65,7 @@ class Spanelsko implements ZdrojParcel
         // spojení často shodí (cURL 56), i s plnou hlavičkou prohlížeče občas. Opakování pak projde (12. 11. 2026).
         $odpoved = Http::timeout(20)
             ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')
-            ->retry([300, 800, 1600, 3000], 0, fn ($e) => $e instanceof \Illuminate\Http\Client\ConnectionException)
+            ->retry([500, 1000, 2000, 3000, 4000], 0, fn ($e) => $e instanceof \Illuminate\Http\Client\ConnectionException)
             ->get($url, [
             'service' => 'WFS',
             'version' => '2.0.0',

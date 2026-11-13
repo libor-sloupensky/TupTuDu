@@ -113,9 +113,11 @@ class CuzkWfsClient
             'count' => 50, // Limit — nechceme stovky parcel
         ]);
 
+        // Chyba služby není „nic tu není“: výsledek se ukládá do mezipaměti pozemků (Pozemky\Mezipamet)
         if (!$response->successful()) {
-            return [];
+            throw new \RuntimeException('ČÚZK WFS: HTTP ' . $response->status());
         }
+        \App\Services\Pozemky\InspireGml::over($response->body(), 'ČÚZK');
 
         return $this->parseViceParcelGml($response->body());
     }
@@ -184,9 +186,11 @@ class CuzkWfsClient
             'filter' => $filter,
         ]);
 
+        // Chyba služby není „nic tu není“: výsledek se ukládá do mezipaměti pozemků (Pozemky\Mezipamet)
         if (!$response->successful()) {
-            return [];
+            throw new \RuntimeException('ČÚZK WFS: HTTP ' . $response->status());
         }
+        \App\Services\Pozemky\InspireGml::over($response->body(), 'ČÚZK');
 
         return $this->parseStavbyGml($response->body(), true);
     }

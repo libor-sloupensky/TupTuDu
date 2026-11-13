@@ -5466,6 +5466,9 @@ function konceptKEditor(initialData) {
             const forceAi = !!opts.force;
             // Radon a geologie z ČGS jen pro pozemky v Česku
             if ((parcela.zeme || 'CZ') !== 'CZ') return;
+            // Uložené v projektu (od 13. 11. 2026): při otevření se ČGS znovu neptá, mapy radonu a geologie se mění
+            // zřídka. Nově přidaná parcela (force) se načte vždy.
+            if (!forceAi && (parcela.radon || parcela.geologie || parcela.ig_rajon)) return;
             const poly = parcela.polygon_wgs84;
             if (!poly || poly.length === 0) return;
             // Centroid parcely
@@ -5955,6 +5958,8 @@ function konceptKEditor(initialData) {
                                     // Pozemky v Evropě (výběr na mapě): země zdroje, id, místo, obkreslený pozemek
                                     zeme: p.zeme, id: p.id, ku_kod: p.ku_kod, ku_nazev: p.ku_nazev, obec: p.obec,
                                     rucni: p.rucni, vymera_vypoctena: p.vymera_vypoctena,
+                                    // Radon a geologie z ČGS, ať se při otevření projektu nenačítají znovu
+                                    radon: p.radon, geologie: p.geologie, ig_rajon: p.ig_rajon,
                                 })),
                                 ku: this.katastrVybraneKu,
                                 podklad: this.katastrMapaPodklad,

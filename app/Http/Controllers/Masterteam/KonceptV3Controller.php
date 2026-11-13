@@ -594,7 +594,7 @@ class KonceptV3Controller extends Controller
         }
 
         try {
-            $odpoved = \Illuminate\Support\Facades\Http::timeout(20)->get($w['url'], [
+            $odpoved = \Illuminate\Support\Facades\Http::timeout(10)->get($w['url'], [
                 'service' => 'WMS', 'request' => 'GetMap', 'version' => $w['verze'] ?? '1.3.0',
                 'layers' => $w['vrstvy'], 'styles' => '', 'format' => 'image/png', 'transparent' => 'true',
                 'crs' => $w['crs'] ?? 'EPSG:3857', 'width' => $sirka, 'height' => $vyska,

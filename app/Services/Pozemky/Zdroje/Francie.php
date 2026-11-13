@@ -69,11 +69,9 @@ class Francie implements ZdrojParcel, ZdrojVysek
             'count' => 300,
             'bbox' => "{$o['min_lat']},{$o['min_lon']},{$o['max_lat']},{$o['max_lon']},urn:ogc:def:crs:EPSG::4326",
         ]);
-        if (!$odpoved->successful()) {
-            return [];
-        }
+        $odpoved->throw();
         $vystup = [];
-        foreach ($odpoved->json('features') ?? [] as $f) {
+        foreach (InspireGml::overJson($odpoved->json(), 'BD TOPO') as $f) {
             foreach (Geo::zGeoJson($f['geometry'] ?? null) as $polygon) {
                 $vystup[] = ['polygon_wgs84' => Parcela::uklid($polygon)];
             }
