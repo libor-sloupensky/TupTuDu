@@ -48,6 +48,8 @@ class Uzivatel extends Authenticatable implements MustVerifyEmail, HasLocalePref
             'heslo' => 'hashed',
             'notifikace_poptavky' => 'boolean',
             'posledni_prihlaseni' => 'datetime',
+            'zkouska_od' => 'datetime',
+            'zkouska_do' => 'datetime',
         ];
     }
 

@@ -7,6 +7,7 @@ return [
         'zdarma' => 'Gratis',
         'stavebnik' => 'Home',
         'profi' => 'Pro',
+        'zkouska' => 'Home – kostenloser Test',
     ],
     'pro_koho' => [
         'zdarma' => 'Zum Ausprobieren',
@@ -55,6 +56,7 @@ return [
     'cenik_obnova' => 'Das Abo verlängert sich automatisch. Du kannst es jederzeit in der App kündigen, es gilt dann bis zum Ende des bezahlten Zeitraums.',
     'cenik_uprava' => 'Änderung = ein Zeichenschritt: neue Wand, Wand oder Öffnung verschieben, löschen … Ansehen zählt nicht.',
     'cenik_vraceni' => 'Regeln zur Rückerstattung',
+    'cenik_zkouska' => 'Kostenloser Test: :dni Tage Tarif Home ohne Karte, einmal pro Konto. Unbegrenzt ändern, ein Projekt. Danach wechselt das Konto zu Gratis und es wird nichts berechnet.',
 
     // Předplatné (aplikace)
     'predplatne_titulek' => 'Abo – TupTuDu',
@@ -120,4 +122,12 @@ return [
     'limit_projektu_nadpis' => 'Dein Tarif erlaubt kein weiteres Projekt',
     'limit_projektu_text' => 'Anzahl der Projekte in deinem Tarif: :limit. Ein höherer Tarif erlaubt mehr Projekte – oder lösche ein Projekt, das du nicht mehr brauchst.',
     'exporty_jen_placene' => 'Export und Teilen per Link gibt es in den bezahlten Tarifen.',
+
+    // Zkušební verze Stavebníku (14 dní bez karty, App\Support\Tarif::zacniZkousku)
+    'zkouska_tlacitko' => ':dni Tage kostenlos testen',
+    'zkouska_popis' => 'Ohne Karte und ohne Verpflichtung. Unbegrenzt ändern, ein Projekt. Danach wechselt dein Konto automatisch zu Gratis.',
+    'zkouska_bezi' => 'Dein kostenloser Test läuft bis :datum. Danach wechselt dein Konto automatisch zu Gratis – es wird nichts berechnet und deine Projekte bleiben.',
+    'zkouska_skoncila' => 'Dein kostenloser Test ist am :datum abgelaufen.',
+    'zkouska_zapnuta' => 'Dein kostenloser Test läuft bis :datum. Ändere ohne Limit.',
+    'zkouska_nelze' => 'Den kostenlosen Test kannst du nur einmal und nur ohne Abo starten.',
 ];

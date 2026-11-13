@@ -39,6 +39,12 @@
     <li>Il servizio può essere utilizzato gratuitamente in misura limitata (piano Gratis). I piani a pagamento (abbonamento
         mensile o annuale) estendono i limiti e rendono disponibili ulteriori funzioni. La portata e i prezzi aggiornati dei piani
         sono indicati nella <a href="{{ \App\Support\Domeny::url('web', '/pricing') }}">pagina dei prezzi</a>.</li>
+    {{-- Zkušební verze tarifu Stavebník (config/tarify.php, zkouska) --}}
+    <li>Il piano Home può essere provato gratuitamente per 14 giorni una sola volta per account, senza inserire dati
+        di pagamento. Durante la prova le modifiche non sono limitate; il numero di progetti e le altre funzioni
+        corrispondono al piano Gratis. Dopo 14 giorni l’account torna automaticamente al piano Gratis; non viene
+        addebitato nulla, non nasce alcun abbonamento e i progetti restano conservati. La prova non è disponibile per
+        gli account che hanno già avuto un abbonamento.</li>
     <li><strong>Il nostro processo di ordine è gestito dal nostro rivenditore online Paddle.com. Paddle.com è il Merchant of
         Record per tutti i nostri ordini.</strong> Paddle gestisce tutte le richieste di assistenza clienti e i rimborsi.
         Il contratto di acquisto è concluso con Paddle.com Market Limited, che accetta i pagamenti, emette le ricevute

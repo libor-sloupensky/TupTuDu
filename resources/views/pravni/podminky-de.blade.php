@@ -39,6 +39,12 @@
     <li>Der Dienst kann in begrenztem Umfang kostenlos genutzt werden (Tarif Gratis). Bezahlte Tarife (Monats- oder
         Jahresabonnement) erweitern die Limits und schalten weitere Funktionen frei. Den aktuellen Umfang und die Preise
         der Tarife nennt die <a href="{{ \App\Support\Domeny::url('web', '/pricing') }}">Preisseite</a>.</li>
+    {{-- Zkušební verze tarifu Stavebník (config/tarify.php, zkouska) --}}
+    <li>Der Tarif Home kann einmal pro Konto 14 Tage lang kostenlos getestet werden, ohne Angabe von Zahlungsdaten.
+        Während des Tests sind Änderungen nicht begrenzt; die Anzahl der Projekte und die übrigen Funktionen entsprechen
+        dem Tarif Gratis. Nach 14 Tagen wechselt das Konto automatisch zum Tarif Gratis; es wird nichts berechnet, es
+        entsteht kein Abonnement und die Projekte bleiben erhalten. Konten, die bereits ein Abonnement hatten, steht
+        der Test nicht zur Verfügung.</li>
     <li><strong>Unser Bestellprozess wird von unserem Online-Händler Paddle.com abgewickelt. Paddle.com ist der Merchant
         of Record für alle unsere Bestellungen.</strong> Paddle bearbeitet alle Kundendienstanfragen und wickelt Rückgaben ab.
         Der Kaufvertrag kommt mit Paddle.com Market Limited zustande; das Unternehmen nimmt Zahlungen entgegen, stellt Belege

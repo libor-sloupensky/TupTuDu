@@ -78,6 +78,7 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
 | Ceník `tuptudu.com/pricing` | `CenikController`, `resources/views/vitrina/cenik.blade.php` |
 | Vrácení peněz `tuptudu.com/refunds` | `PravniController@vraceni`, `pravni/vraceni-{cs,en}` |
 | Texty | `lang/{cs,en}/tarify.php`, pro JS `lang/{cs,en}/js.php` → `tarify.*` |
+| Zkušební verze Stavebníku | `uzivatele.zkouska_od/do`, `Tarif::zacniZkousku`, `POST /billing/trial` (viz část Zkušební verze) |
 | Zakládání produktů a cen v Paddlu | `php artisan paddle:katalog` (`app/Console/Commands/PaddleKatalog.php`) |
 | Zprávy z Paddlu | `POST /paddle/webhook` (Laravel Cashier), pojistka `App\Http\Middleware\PaddleJenSPodpisem` |
 | Tabulky Cashieru | `customers`, `subscriptions`, `subscription_items`, `transactions` |
@@ -85,6 +86,7 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
 ## Jak to funguje
 - **Laravel Cashier Paddle** (`laravel/cashier-paddle` ^2.8): `Uzivatel` má trait `Billable`
   (`paddleName()` = jméno a příjmení). Předplatné typu `default`.
+- **Bez platného předplatného** je tarif `zkouska`, dokud běží zkušební verze (`uzivatele.zkouska_do` v budoucnu), jinak Zdarma.
 - **Tarif** = produkt v platném předplatném (`Tarif::uzivatele`): Stavebník a Profi mají každý
   svůj produkt (`PADDLE_PRODUKT_*`) se dvěma cenami (`PADDLE_CENA_*_MESIC/ROK`). Po zdražení
   (nová cena téhož produktu) se tarif pozná dál. Neznámý produkt → Stavebník + `Log::error`.
@@ -171,22 +173,37 @@ odvádí DPH ve všech zemích, vyřizuje vrácení peněz a dotazy k platbám. 
 - **Po skončení tarifu** logo zůstane uložené, jen se nepoužívá. Při smazání účtu soubor zatím zůstává (firma může mít časem další členy).
 - Ověření: nahrání 2400 × 900 → WebP 800 × 300 (7 kB), SVG odmítnuto, zápatí exportu, odkaz, odstranění.
 
+## Zkušební verze Stavebníku (13. 11. 2026, lokálně, nenasazeno)
+- **Rozhodl Libor 13. 11. 2026:** jen tarif **Stavebník**, **14 dní**, **bez karty**, jednou na účet. Běží jen v aplikaci,
+  Paddle o ní neví (žádná zkušební doba u cen, nic se nestrhne). Cíl: zdarma si uživatel může hrát a ladit skoro bez
+  omezení, ale bez placené verze návrh ze systému nevyjme, kromě obrázků a plochého PDF.
+- **Co ve zkoušce platí:** tarif `zkouska` v `config/tarify.php` — úpravy bez omezení, ale **1 projekt** (kopie vzorového
+  se nepočítá) a **bez zdrojových dat** (`zdrojova_data` false). Obrázky PNG a sdílení odkazem jako Zdarma.
+  Po 14 dnech `Tarif::uzivatele` sám vrátí **Zdarma** (30 úprav denně), nic se nemaže, žádná úloha cronu není potřeba.
+- **Kdo ji dostane:** `Tarif::muzeZacitZkousku` — ne master tým, ne kdo ji už měl (`uzivatele.zkouska_od`), ne kdo už
+  měl předplatné (i zrušené). Opakované zkoušky přes nové účty se neřeší: nedají víc projektů ani zdrojová data.
+- **Zapnutí** jen kliknutím, ne samo při registraci (14 dní by propadlo lidem, kteří se jen podívali):
+  `POST /billing/trial` (`PredplatneController::zkouska`, `Tarif::zacniZkousku`, podmínka přímo v UPDATE proti
+  dvojkliku). Nabízí se na třech místech:
+  - **Předplatné** `/billing` — tlačítko „Vyzkoušet 14 dní zdarma“ v kartě Stavebník (`#zkouska`), nákup je pak vedlejší tlačítko.
+    Během zkoušky „Stavebník – zkouška zdarma“ a do kdy platí, po konci „Zkouška zdarma skončila …“.
+  - **Ceník** `tuptudu.com/pricing` — stejné tlačítko u Stavebníku vede na `/billing?tarif=stavebnik#zkouska`
+    (nepřihlášeného přes přihlášení/registraci), plus řádek v poznámkách. Podmínky čl. 4 mají bod o zkoušce (8 jazyků).
+  - **Editor** — okno „Dnešní limit úprav je vyčerpaný“ nabídne zkoušku (`limit-tarifu.js`, `_limitZacniZkousku`),
+    zapne ji přes JSON bez opuštění editoru a limit úprav hned zmizí. `initialData.limit` má `zkouska_mozna`,
+    `zkouska_dni`, `zkouska_delka`, `zkouska_url`.
+- **Masterteam ▸ Přehled:** v dlaždici Platících teď řádek „ve zkoušce zdarma N (celkem M)“.
+- **Test:** `node services/import-test/test-zkouska-ui.cjs` (předplatné, ceník, editor, druhé zapnutí 409, konec zkoušky).
+  Testovací uživatel má smyšleného zákazníka Cashieru, aby stránka předplatného nezakládala zákazníka v ostrém Paddlu.
+- **Nezahrnuto (na výzvu):** e-mail před koncem zkoušky; účinnost podmínek („Účinné od“) se neměnila.
+
 ## Nápady na později
-- **Zkušební verze zdarma na 14 dní** (Libor 13. 11. 2026, rozhodnuto, zatím jen zaznamenat, nestavět):
-  - Jen tarif **Stavebník**, **bez karty**. Běží jen v aplikaci, Paddle se jí netýká (žádná zkušební doba u cen).
-  - Ve zkoušce: **neomezené úpravy**, ale dál **jen 1 projekt** (kopie vzorového projektu se nepočítá, už dnes
-    `Tarif::pocetProjektu`) a **žádné exporty zdrojových dat** (viz Exporty níže).
-  - Po 14 dnech zpět na **Zdarma jako dnes** (30 úprav denně, 1 projekt), nic se nemaže.
-  - Opakované zkoušky přes nové účty se neřeší zvlášť: zkouška nedává víc projektů ani zdrojová data, takže z ní nic
-    nevynese. Cíl: zdarma si uživatel může hrát a ladit skoro bez omezení, ale bez placené verze návrh ze systému
-    nevyjme, kromě obrázků a plochého PDF.
-  - Při zavedení upravit `config/tarify.php`, `App\Support\Tarif`, ceník a podmínky ve všech jazycích (Paddle kontroluje,
-    že web neslibuje nic, co aplikace neumí).
 - **Exporty podle tarifu** (Libor 13. 11. 2026, zatím žádný z nových exportů není hotový):
   - **Zdarma i zkouška:** obrázky (PNG) a **PDF jen ploché, bez vrstev** (stránka jako obrázek, žádné vektory ani vrstvy,
     aby se z PDF nedaly vyčíst údaje).
   - **Jen placené tarify:** zdrojová data ve formátech, které jde nahrát do jiných programů (DWG/DXF, 3D model,
-    PDF s vrstvami a podobné).
+    PDF s vrstvami a podobné). Příznak je připravený: `zdrojova_data` v `config/tarify.php`, `Tarif::maZdrojovaData()`;
+    nový export ho musí hlídat i na serveru.
 - Masterteam: přehled předplatitelů a využití (počty úprav jsou v `denni_upravy`).
 - Interní e-mail o novém předplatném (událost Cashieru `SubscriptionCreated`).
 - Změna e-mailu v účtu se do Paddlu nepropisuje (zákazník tam má původní e-mail na doklady).

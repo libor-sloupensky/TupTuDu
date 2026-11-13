@@ -7,6 +7,7 @@ return [
         'zdarma' => 'Darmowy',
         'stavebnik' => 'Home',
         'profi' => 'Pro',
+        'zkouska' => 'Home – darmowy okres próbny',
     ],
     'pro_koho' => [
         'zdarma' => 'Do wypróbowania',
@@ -55,6 +56,7 @@ return [
     'cenik_obnova' => 'Subskrypcja odnawia się automatycznie. Możesz ją anulować w każdej chwili w aplikacji i obowiązuje wtedy do końca opłaconego okresu.',
     'cenik_uprava' => 'Edycja = jeden krok rysowania: nowa ściana, przesunięcie ściany lub otworu, usunięcie… Przeglądanie się nie liczy.',
     'cenik_vraceni' => 'Zasady zwrotu pieniędzy',
+    'cenik_zkouska' => 'Darmowy okres próbny: :dni dni planu Home bez karty, raz na konto. Edytujesz bez limitu, masz jeden projekt. Potem konto wraca do planu Darmowy i nic nie płacisz.',
 
     // Předplatné (aplikace)
     'predplatne_titulek' => 'Subskrypcja — TupTuDu',
@@ -120,4 +122,12 @@ return [
     'limit_projektu_nadpis' => 'Twój plan nie pozwala na kolejny projekt',
     'limit_projektu_text' => 'Liczba projektów w twoim planie: :limit. Wyższy plan pozwala na więcej projektów — możesz też usunąć projekt, którego już nie potrzebujesz.',
     'exporty_jen_placene' => 'Eksport i udostępnianie linkiem są dostępne w płatnych planach.',
+
+    // Zkušební verze Stavebníku (14 dní bez karty, App\Support\Tarif::zacniZkousku)
+    'zkouska_tlacitko' => 'Wypróbuj za darmo przez :dni dni',
+    'zkouska_popis' => 'Bez karty i bez zobowiązań. Edytujesz bez limitu, masz jeden projekt. Potem konto samo wraca do planu Darmowy.',
+    'zkouska_bezi' => 'Darmowy okres próbny trwa do :datum. Potem konto samo wraca do planu Darmowy, nic nie płacisz, a projekty zostają.',
+    'zkouska_skoncila' => 'Darmowy okres próbny zakończył się :datum.',
+    'zkouska_zapnuta' => 'Darmowy okres próbny trwa do :datum. Edytuj bez limitu.',
+    'zkouska_nelze' => 'Darmowy okres próbny możesz włączyć tylko raz i tylko bez subskrypcji.',
 ];

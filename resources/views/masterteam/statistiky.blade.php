@@ -84,6 +84,7 @@
                     <div class="text-xs uppercase tracking-wider text-gray-500">Platících teď <span class="tt-tip" tabindex="0" data-tip="Zákazníci s běžícím předplatným k dnešku a jejich podíl ze všech uživatelů.">?</span></div>
                     <div class="mt-0.5 text-2xl font-bold text-gray-900" x-text="reg.platiciTed">–</div>
                     <div class="text-xs text-gray-500"><span x-text="reg.podil">–</span> uživatelů</div>
+                    <div class="text-xs text-gray-500">ve zkoušce zdarma <span x-text="reg.zkouska">–</span> <span class="tt-tip" tabindex="0" data-tip="Uživatelé, kterým teď běží 14denní zkouška Stavebníku bez karty, a v závorce kolik ji kdy zapnulo celkem.">?</span></div>
                 </div>
                 <div class="rounded border border-gray-100 bg-gray-50 p-3">
                     <div class="text-xs uppercase tracking-wider text-gray-500">Tržby za období <span class="tt-tip" tabindex="0" data-tip="Zaplacené platby ve zvoleném období bez DPH. Poplatky Paddlu a vrácené platby odečtené nejsou.">?</span></div>
@@ -338,7 +339,7 @@
                 chyba: { navstevy: '', vyhledavani: '', cesta: '' },
                 cesta: { kroky: [], funkce: [] },
                 nav: { navstevnici: '–', relace: '–', zobrazeni: '–', pocet: null },
-                reg: { celkem: '–', prumer: '–', uzivatelu: '–', platiciTed: '–', podil: '–', trzby: '–', pocet: null },
+                reg: { celkem: '–', prumer: '–', uzivatelu: '–', platiciTed: '–', podil: '–', zkouska: '–', trzby: '–', pocet: null },
                 vyh: { zobrazeni: '–', kliknuti: '–', pozice: '–', index: '–', zkontrolovano: '', vyrazy: [], vIndexu: [], chybi: [] },
 
                 // Kolik návštěvníků se zaregistrovalo — jen když jsou obě čísla ze stejného období.
@@ -412,6 +413,7 @@
                         uzivatelu: d.uzivatelu,
                         platiciTed: d.platici_ted,
                         podil: procenta(d.platici_ted, d.uzivatelu),
+                        zkouska: `${d.ve_zkousce ?? 0} (${d.zkouska_celkem ?? 0})`,
                         trzby: meny.length ? meny.map(([mena, hodnota]) => castka(hodnota, mena)).join(' + ') : castka(0, 'CZK'),
                         pocet: d.celkem,
                     };

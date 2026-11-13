@@ -51,6 +51,12 @@
         @if ($uzivatel->jeMaster())
             <p class="muted">{{ __('tarify.master') }}</p>
         @endif
+        {{-- Zkušební verze Stavebníku (Tarif::zacniZkousku): běží → do kdy, skončila → kdy --}}
+        @if ($stav['tarif'] === Tarif::ZKOUSKA)
+            <p>{{ __('tarify.zkouska_bezi', ['datum' => $datum($uzivatel->zkouska_do)]) }}</p>
+        @elseif ($stav['tarif'] === Tarif::ZDARMA && $uzivatel->zkouska_do)
+            <p class="muted">{{ __('tarify.zkouska_skoncila', ['datum' => $datum($uzivatel->zkouska_do)]) }}</p>
+        @endif
         @if ($limitUprav !== null)
             <p>{{ __('tarify.vyuziti_uprav', ['pouzito' => min($upravDnes, $limitUprav), 'limit' => $limitUprav]) }}</p>
         @endif
@@ -144,12 +150,23 @@
                                     @endif
                                 </div>
                             @endforeach
-                        @elseif ($nabidky)
-                            <button type="button" class="btn btn-primary" @click="otevriPlatbu(@js($tarif), obdobi)">
-                                {{ __('tarify.vybrat', ['tarif' => __('tarify.nazev.' . $tarif)]) }}
-                            </button>
                         @else
-                            <button type="button" class="btn" disabled>{{ __('tarify.vybrat', ['tarif' => __('tarify.nazev.' . $tarif)]) }}</button>
+                            @php $nabidnoutZkousku = $tarif === Tarif::STAVEBNIK && $stav['zkouska_mozna']; @endphp
+                            @if ($nabidnoutZkousku)
+                                {{-- Zkouška zdarma bez karty, jednou na účet (PredplatneController::zkouska) --}}
+                                <form method="POST" action="{{ route('app.predplatne.zkouska') }}" id="zkouska" class="tt-zkouska">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary">{{ __('tarify.zkouska_tlacitko', ['dni' => config('tarify.tarify.zkouska.dni')]) }}</button>
+                                    <p class="tt-napoveda">{{ __('tarify.zkouska_popis', ['projektu' => Tarif::limit(Tarif::ZKOUSKA, 'projektu')]) }}</p>
+                                </form>
+                            @endif
+                            @if ($nabidky)
+                                <button type="button" class="btn {{ $nabidnoutZkousku ? '' : 'btn-primary' }}" @click="otevriPlatbu(@js($tarif), obdobi)">
+                                    {{ __('tarify.vybrat', ['tarif' => __('tarify.nazev.' . $tarif)]) }}
+                                </button>
+                            @else
+                                <button type="button" class="btn" disabled>{{ __('tarify.vybrat', ['tarif' => __('tarify.nazev.' . $tarif)]) }}</button>
+                            @endif
                         @endif
                     </div>
                 @endforeach

@@ -443,6 +443,9 @@ ol.tt-postup p { font-size: .93rem; color: var(--c-text-secondary); margin: 0; }
 .tt-tarif li { position: relative; padding-left: 20px; }
 .tt-tarif li::before { content: ""; position: absolute; left: 1px; top: .58em; width: 9px; height: 9px; border-radius: 2.5px; background: var(--c-primary); }
 .tt-tarif .btn, .tt-tarif form { align-self: flex-start; }
+/* Zkouška zdarma nad tlačítkem nákupu (předplatné i ceník) */
+.tt-tarif .tt-zkouska { margin-bottom: .75rem; }
+.tt-tarif .tt-zkouska .tt-napoveda { margin: .4rem 0 0; }
 .tt-tarif.zvyrazneny { border-color: var(--c-primary); box-shadow: 0 0 0 3px var(--c-primary-10), var(--s-shadow); }
 .tt-tarify-hlava { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .tt-tarify-hlava h2 { margin: 0; font-size: 1.1rem; }

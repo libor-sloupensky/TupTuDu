@@ -24,5 +24,9 @@ return [
         'zbyva_uprav' => 'Dziś pozostało: :zbyva z :limit edycji',
         'zobrazit_predplatne' => 'Zobacz subskrypcję',
         'zavrit' => 'Zamknij',
+        'zkouska_tlacitko' => 'Wypróbuj za darmo przez :dni dni',
+        'zkouska_popis' => 'Bez karty i bez zobowiązań. Edytujesz bez limitu, masz jeden projekt. Potem konto samo wraca do planu Darmowy.',
+        'zkouska_nadpis' => 'Darmowy okres próbny trwa',
+        'zkouska_chyba' => 'Nie udało się włączyć okresu próbnego. Spróbuj ponownie.',
     ],
 ];

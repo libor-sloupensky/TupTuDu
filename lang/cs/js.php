@@ -24,5 +24,9 @@ return [
         'zbyva_uprav' => 'Dnes zbývá :zbyva z :limit úprav',
         'zobrazit_predplatne' => 'Zobrazit předplatné',
         'zavrit' => 'Zavřít',
+        'zkouska_tlacitko' => 'Vyzkoušet :dni dní zdarma',
+        'zkouska_popis' => 'Bez karty a bez závazku. Upravuješ bez omezení, projekt máš jeden. Pak se účet sám vrátí na Zdarma.',
+        'zkouska_nadpis' => 'Zkouška zdarma běží',
+        'zkouska_chyba' => 'Zkoušku se nepodařilo zapnout. Zkus to prosím znovu.',
     ],
 ];

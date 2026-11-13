@@ -7,6 +7,7 @@ return [
         'zdarma' => 'Zdarma',
         'stavebnik' => 'Stavebník',
         'profi' => 'Profi',
+        'zkouska' => 'Stavebník – zkouška zdarma',
     ],
     'pro_koho' => [
         'zdarma' => 'Na vyzkoušení',
@@ -55,6 +56,7 @@ return [
     'cenik_obnova' => 'Předplatné se obnovuje automaticky. Zrušit ho můžeš kdykoli v aplikaci a platí do konce zaplaceného období.',
     'cenik_uprava' => 'Úprava = jeden krok kresby: nová stěna, posun stěny nebo otvoru, smazání… Prohlížení se nepočítá.',
     'cenik_vraceni' => 'Pravidla vrácení peněz',
+    'cenik_zkouska' => 'Zkouška zdarma: :dni dní tarifu Stavebník bez karty, jednou na účet. Upravuješ bez omezení, projekt máš jeden. Pak se účet sám vrátí na Zdarma a nic se neplatí.',
 
     // Předplatné (aplikace)
     'predplatne_titulek' => 'Předplatné — TupTuDu',
@@ -120,4 +122,12 @@ return [
     'limit_projektu_nadpis' => 'Další projekt tvůj tarif nedovoluje',
     'limit_projektu_text' => 'Počet projektů ve tvém tarifu: :limit. Vyšší tarif dovolí víc projektů — nebo smaž projekt, který už nepotřebuješ.',
     'exporty_jen_placene' => 'Export a sdílení odkazem jsou v placených tarifech.',
+
+    // Zkušební verze Stavebníku (14 dní bez karty, App\Support\Tarif::zacniZkousku)
+    'zkouska_tlacitko' => 'Vyzkoušet :dni dní zdarma',
+    'zkouska_popis' => 'Bez karty a bez závazku. Upravuješ bez omezení, projekt máš jeden. Pak se účet sám vrátí na Zdarma.',
+    'zkouska_bezi' => 'Zkouška zdarma platí do :datum. Pak se účet sám vrátí na Zdarma, nic se neplatí a projekty zůstanou.',
+    'zkouska_skoncila' => 'Zkouška zdarma skončila :datum.',
+    'zkouska_zapnuta' => 'Zkouška zdarma běží do :datum. Upravuj bez omezení.',
+    'zkouska_nelze' => 'Zkoušku zdarma jde zapnout jen jednou a jen bez předplatného.',
 ];

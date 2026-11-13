@@ -39,6 +39,11 @@
     <li>The service can be used free of charge to a limited extent (the Free plan). Paid plans (monthly or yearly
         subscription) extend the limits and unlock further features. The current scope and prices of the plans
         are shown on the <a href="{{ \App\Support\Domeny::url('web', '/pricing') }}">pricing page</a>.</li>
+    {{-- Zkušební verze tarifu Stavebník (config/tarify.php, zkouska) --}}
+    <li>The Home plan can be tried free of charge for 14 days once per account, without entering payment details.
+        During the trial, edits are not limited; the number of projects and other features match the Free plan. After
+        14 days the account automatically returns to the Free plan; nothing is charged, no subscription is created and
+        projects are kept. The trial is not available to accounts that have already had a subscription.</li>
     <li><strong>Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of
         Record for all our orders.</strong> Paddle provides all customer service inquiries and handles returns.
         The purchase contract is concluded with Paddle.com Market Limited, which accepts payments, issues receipts

@@ -24,5 +24,9 @@ return [
         'zbyva_uprav' => 'Hoy te quedan :zbyva de :limit cambios',
         'zobrazit_predplatne' => 'Ver suscripción',
         'zavrit' => 'Cerrar',
+        'zkouska_tlacitko' => 'Probar gratis :dni días',
+        'zkouska_popis' => 'Sin tarjeta y sin compromiso. Cambios ilimitados, un proyecto. Después tu cuenta vuelve sola al plan Gratis.',
+        'zkouska_nadpis' => 'Tu prueba gratis ha empezado',
+        'zkouska_chyba' => 'No se pudo activar la prueba. Inténtalo de nuevo.',
     ],
 ];

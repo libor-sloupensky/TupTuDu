@@ -39,6 +39,12 @@
     <li>Le service peut être utilisé gratuitement dans une mesure limitée (formule Gratuit). Les formules payantes (abonnement mensuel
         ou annuel) étendent les limites et donnent accès à des fonctionnalités supplémentaires. L’étendue et les prix en vigueur des formules
         figurent sur la page <a href="{{ \App\Support\Domeny::url('web', '/pricing') }}">Tarifs</a>.</li>
+    {{-- Zkušební verze tarifu Stavebník (config/tarify.php, zkouska) --}}
+    <li>La formule Home peut être essayée gratuitement pendant 14 jours, une fois par compte, sans saisir de données
+        de paiement. Pendant l’essai, les modifications ne sont pas limitées ; le nombre de projets et les autres
+        fonctionnalités correspondent à la formule Gratuit. Après 14 jours, le compte repasse automatiquement à la
+        formule Gratuit ; rien n’est facturé, aucun abonnement n’est créé et les projets sont conservés. L’essai n’est
+        pas proposé aux comptes ayant déjà eu un abonnement.</li>
     <li><strong>Notre processus de commande est géré par notre revendeur en ligne Paddle.com. Paddle.com est le Merchant of
         Record (vendeur officiel) pour toutes nos commandes.</strong> Paddle répond à toutes les demandes du service client et gère les retours.
         Le contrat d’achat est conclu avec Paddle.com Market Limited, qui encaisse les paiements, émet les reçus

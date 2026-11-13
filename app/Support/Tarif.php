@@ -19,6 +19,8 @@ final class Tarif
     public const ZDARMA = 'zdarma';
     public const STAVEBNIK = 'stavebnik';
     public const PROFI = 'profi';
+    /** Zkušební verze Stavebníku (14 dní bez karty, jen v aplikaci) — limity v config/tarify.php. */
+    public const ZKOUSKA = 'zkouska';
 
     /** Placené tarify od nejvyššího. */
     public const PLACENE = [self::PROFI, self::STAVEBNIK];
@@ -33,7 +35,7 @@ final class Tarif
 
         $predplatne = $uzivatel->subscription();
         if (! $predplatne || ! $predplatne->valid()) {
-            return self::ZDARMA;
+            return self::beziZkousku($uzivatel) ? self::ZKOUSKA : self::ZDARMA;
         }
 
         foreach (self::PLACENE as $tarif) {
@@ -62,10 +64,68 @@ final class Tarif
         return $hodnota === null ? null : (int) $hodnota;
     }
 
-    /** Export obrázků a sdílení odkazem: placené tarify (modules/platby.md). */
+    /** Export obrázků a sdílení odkazem (dnes všechny tarify, modules/platby.md). */
     public static function maExporty(Uzivatel $uzivatel): bool
     {
         return (bool) config('tarify.tarify.' . self::uzivatele($uzivatel) . '.exporty', false);
+    }
+
+    /**
+     * Export zdrojových dat, která jdou nahrát do jiných programů (DWG/DXF, 3D model,
+     * PDF s vrstvami) — jen placené tarify. Zdarma a zkouška smí jen obrázky a ploché PDF.
+     * Zatím žádný takový export není; nový ho musí hlídat tady (i na serveru).
+     */
+    public static function maZdrojovaData(Uzivatel $uzivatel): bool
+    {
+        return (bool) config('tarify.tarify.' . self::uzivatele($uzivatel) . '.zdrojova_data', false);
+    }
+
+    /** Běží uživateli zkušební verze? (Master tým ani předplatitel ji nepotřebují — řeší uzivatele().) */
+    private static function beziZkousku(Uzivatel $uzivatel): bool
+    {
+        return $uzivatel->zkouska_do !== null && $uzivatel->zkouska_do->isFuture();
+    }
+
+    /**
+     * Smí si zkoušku zapnout? Jednou na účet, ne master tým a ne kdo už předplatné měl
+     * (zkouška je pro nové zákazníky). Platby nemusí být zapnuté, zkouška Paddle nepotřebuje.
+     */
+    public static function muzeZacitZkousku(Uzivatel $uzivatel): bool
+    {
+        return ! $uzivatel->jeMaster()
+            && $uzivatel->zkouska_od === null
+            && ! $uzivatel->subscriptions()->exists();
+    }
+
+    /**
+     * Zapne zkoušku na config('tarify.tarify.zkouska.dni') dní. Vrátí false, když nesmí
+     * nebo ji mezitím zapnul souběžný požadavek (podmínka přímo v UPDATE).
+     */
+    public static function zacniZkousku(Uzivatel $uzivatel): bool
+    {
+        if (! self::muzeZacitZkousku($uzivatel)) {
+            return false;
+        }
+
+        $od = now();
+        $do = $od->copy()->addDays((int) config('tarify.tarify.zkouska.dni', 14));
+        $zmeneno = Uzivatel::whereKey($uzivatel->id)->whereNull('zkouska_od')
+            ->update(['zkouska_od' => $od, 'zkouska_do' => $do]);
+        if ($zmeneno) {
+            $uzivatel->forceFill(['zkouska_od' => $od, 'zkouska_do' => $do]);
+        }
+
+        return (bool) $zmeneno;
+    }
+
+    /** Kolik dní zkoušky zbývá (dnešek se počítá, takže poslední den = 1); null = neběží. */
+    public static function zbyvaDniZkousky(Uzivatel $uzivatel): ?int
+    {
+        if (! self::beziZkousku($uzivatel)) {
+            return null;
+        }
+
+        return max(1, (int) ceil(now()->diffInSeconds($uzivatel->zkouska_do) / 86400));
     }
 
     /** Úpravy v editoru dnes (den podle časové zóny aplikace). */
@@ -123,6 +183,11 @@ final class Tarif
             'zbyva' => self::zbyvaUprav($uzivatel, $tarif),
             'projektu' => self::limit($tarif, 'projektu'),
             'pocet_projektu' => self::pocetProjektu($uzivatel),
+            // Zkušební verze: kolik dní zbývá (jen když běží) a jestli ji jde nabídnout
+            'zkouska_dni' => self::zbyvaDniZkousky($uzivatel),
+            'zkouska_mozna' => $tarif === self::ZDARMA && self::muzeZacitZkousku($uzivatel),
+            'zkouska_delka' => (int) config('tarify.tarify.zkouska.dni', 14),
+            'zkouska_url' => route('app.predplatne.zkouska'),
             'predplatne_url' => route('app.predplatne'),
         ];
     }

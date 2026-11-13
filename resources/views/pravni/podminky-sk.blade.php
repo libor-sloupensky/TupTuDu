@@ -39,6 +39,11 @@
     <li>Službu možno používať bezplatne v obmedzenom rozsahu (tarifa Zadarmo). Platené tarify (mesačné alebo ročné
         predplatné) rozširujú limity a sprístupňujú ďalšie funkcie. Aktuálny rozsah a ceny taríf uvádza
         <a href="{{ \App\Support\Domeny::url('web', '/pricing') }}">cenník</a>.</li>
+    {{-- Zkušební verze tarifu Stavebník (config/tarify.php, zkouska) --}}
+    <li>Tarifu Home možno raz na účet vyskúšať zadarmo na 14 dní, bez zadania platobných údajov. V skúške nie sú
+        obmedzené úpravy, počet projektov a ďalšie funkcie zodpovedajú tarife Zadarmo. Po 14 dňoch účet sám prejde
+        na tarifu Zadarmo; nič sa neplatí, predplatné nevzniká a projekty zostávajú zachované. Skúška nie je dostupná
+        účtom, ktoré už predplatné mali.</li>
     <li><strong>Proces objednávania zabezpečuje náš online predajca Paddle.com. Paddle.com je obchodníkom
         (Merchant of Record) pre všetky naše objednávky.</strong> Paddle vybavuje všetky požiadavky zákazníkov
         a rieši vrátenie peňazí. Kúpnu zmluvu používateľ uzatvára so spoločnosťou Paddle.com Market Limited, ktorá

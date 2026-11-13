@@ -24,5 +24,9 @@ return [
         'zbyva_uprav' => 'Heute noch :zbyva von :limit Änderungen',
         'zobrazit_predplatne' => 'Abo ansehen',
         'zavrit' => 'Schließen',
+        'zkouska_tlacitko' => ':dni Tage kostenlos testen',
+        'zkouska_popis' => 'Ohne Karte und ohne Verpflichtung. Unbegrenzt ändern, ein Projekt. Danach wechselt dein Konto automatisch zu Gratis.',
+        'zkouska_nadpis' => 'Dein kostenloser Test läuft',
+        'zkouska_chyba' => 'Der Test konnte nicht gestartet werden. Bitte versuche es noch einmal.',
     ],
 ];

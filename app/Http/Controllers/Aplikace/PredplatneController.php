@@ -226,6 +226,32 @@ class PredplatneController extends Controller
         }
     }
 
+    /**
+     * Zapne zkušební verzi Stavebníku (14 dní bez karty, jednou na účet). Paddle se jí
+     * netýká; po konci zkoušky Tarif::uzivatele sám vrátí Zdarma.
+     */
+    public function zkouska(Request $request)
+    {
+        $uzivatel = $request->user();
+        if (! Tarif::zacniZkousku($uzivatel)) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'error' => __('tarify.zkouska_nelze')], 409);
+            }
+
+            return redirect()->route('app.predplatne')->with('chyba', __('tarify.zkouska_nelze'));
+        }
+
+        $zprava = __('tarify.zkouska_zapnuta', [
+            'datum' => \App\Support\Lokalizace::datum($uzivatel->zkouska_do->timezone(config('app.timezone'))),
+        ]);
+        // Z editoru (nabídka po vyčerpání limitu) se zapíná bez opuštění stránky
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'zprava' => $zprava, 'limit' => Tarif::stav($uzivatel)]);
+        }
+
+        return redirect()->route('app.predplatne')->with('stav', $zprava);
+    }
+
     /** Doklad k platbě (PDF od Paddlu) — jen k vlastní platbě. */
     public function doklad(Request $request, int $transakce)
     {

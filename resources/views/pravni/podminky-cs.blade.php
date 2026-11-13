@@ -39,6 +39,11 @@
     <li>Službu lze používat zdarma v omezeném rozsahu (tarif Zdarma). Placené tarify (měsíční nebo roční
         předplatné) rozšiřují limity a zpřístupňují další funkce. Aktuální rozsah a ceny tarifů uvádí
         <a href="{{ \App\Support\Domeny::url('web', '/pricing') }}">ceník</a>.</li>
+    {{-- Zkušební verze tarifu Stavebník (config/tarify.php, zkouska) --}}
+    <li>Tarif Stavebník lze jednou na účet vyzkoušet zdarma na 14 dní, bez zadání platebních údajů. Ve zkoušce
+        nejsou omezené úpravy, počet projektů a další funkce odpovídají tarifu Zdarma. Po 14 dnech účet sám přejde
+        na tarif Zdarma; nic se neplatí, předplatné nevzniká a projekty zůstávají zachované. Zkoušku nelze
+        zapnout u účtu, který už předplatné měl.</li>
     <li><strong>Objednávky placených tarifů vyřizuje náš online prodejce Paddle.com. Paddle.com je obchodníkem
         (Merchant of Record) pro všechny naše objednávky.</strong> Kupní smlouvu uživatel uzavírá se společností
         Paddle.com Market Limited, která přijímá platby, vystavuje doklady, odvádí DPH a vyřizuje dotazy k platbám

@@ -288,6 +288,9 @@ class StatistikyController extends Controller
             'celkem' => $celkem,
             'uzivatelu' => $zakaznici()->count(),
             'platici_ted' => $platici ? end($platici) : 0,
+            // Běžící zkouška Stavebníku zdarma (App\Support\Tarif::zacniZkousku) a kolik ji kdy zapnulo
+            've_zkousce' => $zakaznici()->where('zkouska_do', '>', now())->count(),
+            'zkouska_celkem' => $zakaznici()->whereNotNull('zkouska_od')->count(),
             'trzby' => $this->trzby($odGrafu),
             'prumer_den' => $dnu > 0 ? round($celkem / $dnu, 1) : 0,
             'dnu' => $dnu,

@@ -1,5 +1,6 @@
 {{-- Ceník na veřejném webu (CenikController). Paddle ho chce vidět při schvalování domény:
      popis produktu, funkce a ceny shodné s Paddlem (config/tarify.php, modules/platby.md).
+     Zkouška zdarma u Stavebníku je jen v aplikaci, Paddle se jí netýká.
      Přepínač měsíčně/ročně bez JS (rádio + CSS), web nemá Alpine. --}}
 @php
     use App\Support\Domeny;
@@ -59,8 +60,17 @@
                         <li>{{ __('tarify.funkce_export') }}</li>
                         @include('partials.tarif-funkce')
                     </ul>
+                    @if ($tarif === Tarif::STAVEBNIK)
+                        {{-- Zkouška zdarma: zapíná se v aplikaci (/billing, PredplatneController::zkouska) --}}
+                        <div class="tt-zkouska">
+                            <a class="btn btn-primary" href="{{ Domeny::url('app', '/billing?tarif=' . $tarif . '#zkouska') }}">
+                                {{ __('tarify.zkouska_tlacitko', ['dni' => $limity['zkouska']['dni']]) }}
+                            </a>
+                            <p class="tt-napoveda">{{ __('tarify.zkouska_popis', ['projektu' => $limity['zkouska']['projektu']]) }}</p>
+                        </div>
+                    @endif
                     @foreach (Tarif::OBDOBI as $obdobi)
-                        <a class="btn btn-primary tt-jen-{{ $obdobi }}" href="{{ Domeny::url('app', '/billing?tarif=' . $tarif . '&obdobi=' . $obdobi) }}">
+                        <a class="btn {{ $tarif === Tarif::STAVEBNIK ? '' : 'btn-primary' }} tt-jen-{{ $obdobi }}" href="{{ Domeny::url('app', '/billing?tarif=' . $tarif . '&obdobi=' . $obdobi) }}">
                             {{ __('tarify.vybrat', ['tarif' => __('tarify.nazev.' . $tarif)]) }}
                         </a>
                     @endforeach
@@ -79,6 +89,7 @@
 
         <ul class="tt-cenik-poznamky">
             <li>{{ __('tarify.cenik_uprava') }}</li>
+            <li>{{ __('tarify.cenik_zkouska', ['dni' => $limity['zkouska']['dni']]) }}</li>
             <li>{{ __('tarify.cenik_dph') }}</li>
             <li>{{ __('tarify.cenik_paddle') }}</li>
             <li>{{ __('tarify.cenik_obnova') }}</li>

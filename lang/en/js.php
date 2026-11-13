@@ -20,5 +20,9 @@ return [
         'zbyva_uprav' => ':zbyva of :limit edits left today',
         'zobrazit_predplatne' => 'View subscription',
         'zavrit' => 'Close',
+        'zkouska_tlacitko' => 'Try free for :dni days',
+        'zkouska_popis' => 'No card, no commitment. Unlimited edits, one project. Afterwards your account goes back to Free automatically.',
+        'zkouska_nadpis' => 'Your free trial has started',
+        'zkouska_chyba' => 'The free trial could not be started. Please try again.',
     ],
 ];

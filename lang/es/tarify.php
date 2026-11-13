@@ -7,6 +7,7 @@ return [
         'zdarma' => 'Gratis',
         'stavebnik' => 'Home',
         'profi' => 'Pro',
+        'zkouska' => 'Home – prueba gratis',
     ],
     'pro_koho' => [
         'zdarma' => 'Para probarlo',
@@ -55,6 +56,7 @@ return [
     'cenik_obnova' => 'La suscripción se renueva automáticamente. Puedes cancelarla en cualquier momento desde la aplicación y seguirá activa hasta que termine el periodo pagado.',
     'cenik_uprava' => 'Un cambio es un paso de dibujo: una pared nueva, mover una pared o un hueco, borrar… Ver los proyectos no cuenta.',
     'cenik_vraceni' => 'Política de reembolso',
+    'cenik_zkouska' => 'Prueba gratis: :dni días del plan Home sin tarjeta, una vez por cuenta. Cambios ilimitados, un proyecto. Después la cuenta vuelve al plan Gratis y no se cobra nada.',
 
     // Předplatné (aplikace)
     'predplatne_titulek' => 'Suscripción — TupTuDu',
@@ -120,4 +122,12 @@ return [
     'limit_projektu_nadpis' => 'Tu plan no permite más proyectos',
     'limit_projektu_text' => 'Número de proyectos de tu plan: :limit. Un plan superior permite más proyectos; también puedes borrar uno que ya no necesites.',
     'exporty_jen_placene' => 'La exportación y el uso compartido por enlace están disponibles en los planes de pago.',
+
+    // Zkušební verze Stavebníku (14 dní bez karty, App\Support\Tarif::zacniZkousku)
+    'zkouska_tlacitko' => 'Probar gratis :dni días',
+    'zkouska_popis' => 'Sin tarjeta y sin compromiso. Cambios ilimitados, un proyecto. Después tu cuenta vuelve sola al plan Gratis.',
+    'zkouska_bezi' => 'Tu prueba gratis dura hasta el :datum. Después tu cuenta vuelve sola al plan Gratis: no se cobra nada y tus proyectos se conservan.',
+    'zkouska_skoncila' => 'Tu prueba gratis terminó el :datum.',
+    'zkouska_zapnuta' => 'Tu prueba gratis dura hasta el :datum. Haz cambios sin límite.',
+    'zkouska_nelze' => 'La prueba gratis solo se puede activar una vez y sin suscripción.',
 ];

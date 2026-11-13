@@ -39,6 +39,11 @@
     <li>Z serwisu można korzystać bezpłatnie w ograniczonym zakresie (plan Darmowy). Płatne plany (subskrypcja miesięczna
         lub roczna) rozszerzają limity i udostępniają dodatkowe funkcje. Aktualny zakres i ceny planów podaje
         <a href="{{ \App\Support\Domeny::url('web', '/pricing') }}">cennik</a>.</li>
+    {{-- Zkušební verze tarifu Stavebník (config/tarify.php, zkouska) --}}
+    <li>Plan Home można raz na konto wypróbować bezpłatnie przez 14 dni, bez podawania danych płatniczych. W okresie
+        próbnym edycje nie są ograniczone, a liczba projektów i pozostałe funkcje odpowiadają planowi Darmowy. Po 14 dniach
+        konto samo przechodzi na plan Darmowy; nic nie jest pobierane, subskrypcja nie powstaje, a projekty pozostają
+        zachowane. Okres próbny nie przysługuje kontom, które miały już subskrypcję.</li>
     <li><strong>Zamówienia płatnych planów realizuje nasz sprzedawca internetowy Paddle.com. Paddle.com jest sprzedawcą
         (Merchant of Record) w przypadku wszystkich naszych zamówień.</strong> Umowę sprzedaży użytkownik zawiera ze spółką
         Paddle.com Market Limited, która przyjmuje płatności, wystawia dowody zakupu, odprowadza VAT i obsługuje zapytania dotyczące płatności

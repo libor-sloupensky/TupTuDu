@@ -289,6 +289,7 @@ Route::middleware(['subdomena:app', 'auth', 'verified'])->name('app.')->group(fu
         Route::post('change', 'zmenit')->middleware('throttle:10,1')->name('.zmenit');
         Route::post('cancel', 'zrusit')->middleware('throttle:10,1')->name('.zrusit');
         Route::post('resume', 'obnovit')->middleware('throttle:10,1')->name('.obnovit');
+        Route::post('trial', 'zkouska')->middleware('throttle:10,1')->name('.zkouska');
         Route::get('payment-method', 'karta')->middleware('throttle:10,1')->name('.karta');
         Route::get('invoices/{transakce}', 'doklad')->whereNumber('transakce')->name('.doklad');
     });

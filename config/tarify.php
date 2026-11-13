@@ -15,14 +15,28 @@ return [
             // nebo otvoru, smazání…). Prohlížení, Zpět/Vpřed a výchozí krok se nepočítá.
             'kroku_denne' => 30,
             'projektu' => 1,
-            // Obrázky PNG a sdílení odkazem. Jen grafické výstupy: SVG, PDF a formáty
-            // s parametry objektů neposkytujeme (Libor 4. 11. 2026, modules/sdileni.md).
+            // Obrázky PNG a sdílení odkazem (Libor 4. 11. 2026, modules/sdileni.md).
+            // Až bude PDF: zdarma jen ploché, bez vrstev (stránka jako obrázek).
             'exporty' => true,
+            // Zdrojová data, která jdou nahrát do jiných programů (DWG/DXF, 3D model,
+            // PDF s vrstvami) — jen placené tarify (Libor 13. 11. 2026). Zatím žádný takový export není.
+            'zdrojova_data' => false,
+        ],
+        // Zkušební verze Stavebníku: 14 dní bez karty, jednou na účet, jen v aplikaci
+        // (Paddle o ní neví). Úpravy bez omezení, ale projekt a zdrojová data jako Zdarma —
+        // návrh se bez placené verze nedá ze systému vyjmout. Pak zpět na Zdarma.
+        'zkouska' => [
+            'dni' => 14,
+            'kroku_denne' => null,
+            'projektu' => 1,
+            'exporty' => true,
+            'zdrojova_data' => false,
         ],
         'stavebnik' => [
             'kroku_denne' => null,
             'projektu' => 5,
             'exporty' => true,
+            'zdrojova_data' => true,
             'paddle' => [
                 'produkt' => env('PADDLE_PRODUKT_STAVEBNIK'),
                 'mesic' => env('PADDLE_CENA_STAVEBNIK_MESIC'),
@@ -33,6 +47,7 @@ return [
             'kroku_denne' => null,
             'projektu' => null,
             'exporty' => true,
+            'zdrojova_data' => true,
             'paddle' => [
                 'produkt' => env('PADDLE_PRODUKT_PROFI'),
                 'mesic' => env('PADDLE_CENA_PROFI_MESIC'),

@@ -7,6 +7,7 @@ return [
         'zdarma' => 'Gratis',
         'stavebnik' => 'Home',
         'profi' => 'Pro',
+        'zkouska' => 'Home – prova gratuita',
     ],
     'pro_koho' => [
         'zdarma' => 'Per provare',
@@ -55,6 +56,7 @@ return [
     'cenik_obnova' => 'L’abbonamento si rinnova automaticamente. Puoi annullarlo in qualsiasi momento nell’app e resta valido fino alla fine del periodo pagato.',
     'cenik_uprava' => 'Una modifica è un singolo passaggio nel disegno: una nuova parete, lo spostamento di una parete o di un’apertura, una cancellazione… Guardare il progetto non conta.',
     'cenik_vraceni' => 'Politica di rimborso',
+    'cenik_zkouska' => 'Prova gratuita: :dni giorni del piano Home senza carta, una volta per account. Modifiche illimitate, un progetto. Poi l’account torna al piano Gratis e non paghi nulla.',
 
     // Předplatné (aplikace)
     'predplatne_titulek' => 'Abbonamento — TupTuDu',
@@ -120,4 +122,12 @@ return [
     'limit_projektu_nadpis' => 'Il tuo piano non consente un altro progetto',
     'limit_projektu_text' => 'Numero di progetti del tuo piano: :limit. Un piano superiore ne consente di più, altrimenti elimina un progetto che non ti serve più.',
     'exporty_jen_placene' => 'L’esportazione e la condivisione tramite link sono disponibili nei piani a pagamento.',
+
+    // Zkušební verze Stavebníku (14 dní bez karty, App\Support\Tarif::zacniZkousku)
+    'zkouska_tlacitko' => 'Prova gratis per :dni giorni',
+    'zkouska_popis' => 'Senza carta e senza impegno. Modifiche illimitate, un progetto. Poi il tuo account torna da solo al piano Gratis.',
+    'zkouska_bezi' => 'La tua prova gratuita è valida fino al :datum. Poi il tuo account torna da solo al piano Gratis: non paghi nulla e i progetti restano.',
+    'zkouska_skoncila' => 'La tua prova gratuita è terminata il :datum.',
+    'zkouska_zapnuta' => 'La tua prova gratuita è attiva fino al :datum. Modifica senza limiti.',
+    'zkouska_nelze' => 'La prova gratuita si può attivare una sola volta e solo senza abbonamento.',
 ];

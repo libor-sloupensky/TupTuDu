@@ -24,5 +24,9 @@ return [
         'zbyva_uprav' => 'Il vous reste :zbyva modifications sur :limit aujourd’hui',
         'zobrazit_predplatne' => 'Voir l’abonnement',
         'zavrit' => 'Fermer',
+        'zkouska_tlacitko' => 'Essayer gratuitement pendant :dni jours',
+        'zkouska_popis' => 'Sans carte ni engagement. Modifications illimitées, un projet. Ensuite, votre compte repasse automatiquement en Gratuit.',
+        'zkouska_nadpis' => 'Votre essai gratuit a commencé',
+        'zkouska_chyba' => 'Impossible d’activer l’essai. Veuillez réessayer.',
     ],
 ];

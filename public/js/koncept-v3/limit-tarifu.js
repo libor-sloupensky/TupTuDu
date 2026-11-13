@@ -87,13 +87,67 @@ window.KonceptLimit = {
         odkaz.textContent = preloz('tarify.zobrazit_predplatne');
         odkaz.href = l.predplatne_url || '/billing';
 
+        // Zkouška Stavebníku zdarma (jednou na účet) — jen u limitu úprav, projekt zkouška nepřidá
+        let tlacitkoZkousky = null;
+        if (!projekty && l.zkouska_mozna && l.zkouska_url) {
+            odkaz.classList.remove('btn-primary');
+            tlacitkoZkousky = document.createElement('button');
+            tlacitkoZkousky.type = 'button';
+            tlacitkoZkousky.className = 'btn btn-primary';
+            tlacitkoZkousky.textContent = preloz('tarify.zkouska_tlacitko', { dni: l.zkouska_delka ?? 14 });
+            // Samostatný blok nad tlačítky (tři tlačítka by se do řady nevešla)
+            const nabidka = document.createElement('div');
+            nabidka.className = 'kk-limit-zkouska';
+            const popis = document.createElement('small');
+            popis.textContent = preloz('tarify.zkouska_popis', { projektu: l.projektu ?? 1 });
+            nabidka.append(tlacitkoZkousky, popis);
+            pozadi.querySelector('.kk-limit-okno').insertBefore(nabidka, pozadi.querySelector('.kk-limit-tlacitka'));
+            tlacitkoZkousky.addEventListener('click', () => this._limitZacniZkousku(pozadi, tlacitkoZkousky));
+        }
+
         const zavri = () => { pozadi.remove(); document.removeEventListener('keydown', naKlavesu, true); };
         const naKlavesu = (e) => { if (e.key === 'Escape') { e.stopPropagation(); zavri(); } };
         zavrit.addEventListener('click', zavri);
         pozadi.addEventListener('click', (e) => { if (e.target === pozadi) zavri(); });
         document.addEventListener('keydown', naKlavesu, true);
         document.body.appendChild(pozadi);
-        odkaz.focus();
+        (tlacitkoZkousky || odkaz).focus();
+    },
+
+    /** Zapne zkoušku (POST /billing/trial) a v okně ukáže, do kdy platí; limit úprav zmizí. */
+    async _limitZacniZkousku(pozadi, tlacitko) {
+        const l = this._limit() || {};
+        tlacitko.disabled = true;
+        const okno = pozadi.querySelector('.kk-limit-okno');
+        const text = okno.querySelector('p');
+        try {
+            const r = await fetch(l.zkouska_url, {
+                method: 'POST',
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': window._kkInitData?.csrf || '' },
+            });
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok || !d.ok) {
+                text.textContent = d.error || preloz('tarify.zkouska_chyba');
+                if (r.status !== 409) {
+                    window.zalogujChybu?.(new Error('Zkouška: HTTP ' + r.status), 'Editor: zapnutí zkoušky zdarma', { status: r.status });
+                }
+                return;
+            }
+            // Limity podle serveru (tarif zkouska: úpravy bez omezení, projekt dál jeden)
+            Object.assign(l, d.limit || {}, { zkouska_mozna: false });
+            this._limitOdznak();
+            okno.querySelector('h2').textContent = preloz('tarify.zkouska_nadpis');
+            text.textContent = d.zprava || '';
+            okno.querySelector('.kk-limit-zkouska')?.remove();
+            tlacitko.remove();
+            okno.querySelector('a')?.remove();
+            okno.querySelector('[data-zavrit]')?.focus();
+        } catch (e) {
+            text.textContent = preloz('tarify.zkouska_chyba');
+            window.zalogujChybu?.(e, 'Editor: zapnutí zkoušky zdarma', {});
+        } finally {
+            tlacitko.disabled = false;
+        }
     },
 
     /** Štítek „Dnes zbývá N z 30 úprav“ nad plátnem — jen když zbývá málo. */
@@ -128,6 +182,9 @@ window.KonceptLimit = {
                 border: 1px solid var(--c-border); border-radius: var(--s-radius-lg); box-shadow: var(--s-shadow); }
             .kk-limit-okno h2 { margin: 0 0 .5rem; font-size: 1.15rem; font-weight: 800; }
             .kk-limit-okno p { margin: 0 0 1.25rem; color: var(--c-text-secondary); }
+            .kk-limit-zkouska { display: flex; flex-direction: column; align-items: flex-start; gap: .4rem;
+                margin: 0 0 1.25rem; padding: .9rem 1rem; border: 1px solid var(--c-primary); border-radius: var(--s-radius); }
+            .kk-limit-zkouska small { color: var(--c-text-secondary); font-size: .85rem; line-height: 1.4; }
             .kk-limit-tlacitka { display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap; }
             .kk-limit-tlacitka .btn:focus { outline: none; box-shadow: 0 0 0 3px var(--c-primary-20); }
             .kk-limit-odznak { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 20;

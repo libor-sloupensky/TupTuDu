@@ -7,6 +7,7 @@ return [
         'zdarma' => 'Gratuit',
         'stavebnik' => 'Home',
         'profi' => 'Pro',
+        'zkouska' => 'Home – essai gratuit',
     ],
     'pro_koho' => [
         'zdarma' => 'Pour essayer',
@@ -55,6 +56,7 @@ return [
     'cenik_obnova' => 'L’abonnement se renouvelle automatiquement. Vous pouvez le résilier à tout moment dans l’application : il reste actif jusqu’à la fin de la période payée.',
     'cenik_uprava' => 'Une modification = une étape de dessin : nouveau mur, déplacement d’un mur ou d’une ouverture, suppression… La simple consultation n’est pas comptée.',
     'cenik_vraceni' => 'Politique de remboursement',
+    'cenik_zkouska' => 'Essai gratuit : :dni jours de la formule Home sans carte, une fois par compte. Modifications illimitées, un projet. Ensuite, le compte repasse en Gratuit et rien n’est facturé.',
 
     // Předplatné (aplikace)
     'predplatne_titulek' => 'Abonnement — TupTuDu',
@@ -120,4 +122,12 @@ return [
     'limit_projektu_nadpis' => 'Votre formule ne permet pas de créer un projet de plus',
     'limit_projektu_text' => 'Nombre de projets dans votre formule : :limit. Une formule supérieure permet d’en avoir davantage. Vous pouvez aussi supprimer un projet dont vous n’avez plus besoin.',
     'exporty_jen_placene' => 'L’export et le partage par lien sont inclus dans les formules payantes.',
+
+    // Zkušební verze Stavebníku (14 dní bez karty, App\Support\Tarif::zacniZkousku)
+    'zkouska_tlacitko' => 'Essayer gratuitement pendant :dni jours',
+    'zkouska_popis' => 'Sans carte ni engagement. Modifications illimitées, un projet. Ensuite, votre compte repasse automatiquement en Gratuit.',
+    'zkouska_bezi' => 'Votre essai gratuit est valable jusqu’au :datum. Ensuite, votre compte repasse automatiquement en Gratuit : rien n’est facturé et vos projets sont conservés.',
+    'zkouska_skoncila' => 'Votre essai gratuit a pris fin le :datum.',
+    'zkouska_zapnuta' => 'Votre essai gratuit est actif jusqu’au :datum. Modifiez sans limite.',
+    'zkouska_nelze' => 'L’essai gratuit ne peut être activé qu’une seule fois et uniquement sans abonnement.',
 ];
