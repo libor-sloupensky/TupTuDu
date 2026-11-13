@@ -65,6 +65,24 @@ class MeriPomaleRequesty
         return $vysledek;
     }
 
+    /**
+     * Provede volání vnější služby (Google, …) a jeho čas připíše requestu jako
+     * čekání mimo nás. Měření ho od trvání odečte: pomalý Google není pomalost
+     * našeho serveru (bug 23: statistiky vyhledávání 3,06 s, z toho DB 2 ms).
+     * Naše vlastní pomalost na téže cestě se hlásí dál.
+     */
+    public static function vnejsi(callable $volani): mixed
+    {
+        $t = microtime(true);
+        try {
+            return $volani();
+        } finally {
+            $request = request();
+            $request->attributes->set('vnejsi_ms',
+                (int) $request->attributes->get('vnejsi_ms', 0) + (int) round((microtime(true) - $t) * 1000));
+        }
+    }
+
     public function terminate(Request $request, Response $response): void
     {
         try {
@@ -92,7 +110,8 @@ class MeriPomaleRequesty
             }
 
             $ms = (int) round((microtime(true) - $start) * 1000);
-            if ($ms < (int) config('app.pomaly_request_ms', 3000)) {
+            $vnejsi = (int) $request->attributes->get('vnejsi_ms', 0);
+            if ($ms - $vnejsi < (int) config('app.pomaly_request_ms', 3000)) {
                 return;
             }
 
@@ -116,6 +135,7 @@ class MeriPomaleRequesty
                 'ip' => $request->ip(),
                 'kontext' => [
                     'trvani_ms' => $ms,
+                    'vnejsi_ms' => $vnejsi,
                     'db_connect_ms' => $request->attributes->get('db_connect_ms'),
                     'db_pocet_dotazu' => $request->attributes->get('db_pocet_dotazu'),
                     'db_suma_ms' => $request->attributes->get('db_suma_ms'),

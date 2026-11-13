@@ -32,7 +32,7 @@ synchronizaci je nepřepsat.
 | Fatální pád jen v laravel.log (paměť, disk, PHP Fatal) | `server` / error | `bugy:hlidac-logu` (denně z cronu) |
 | Hromadné 419 (rozbitá session) | `server` / warning | `bootstrap/app.php` → render 419 |
 | HTML odpověď bez layoutu | `server` / warning | `KontrolaHtmlLayoutu` (opt-out hlavičkou `X-Layout-Partial: 1`) |
-| Pomalá GET stránka > 3 s (jen mimo lokál) | `pomaly_request` / warning | `MeriPomaleRequesty` |
+| Pomalá GET stránka > 3 s (jen mimo lokál; čekání na vnější službu obalené `MeriPomaleRequesty::vnejsi()` se odečte) | `pomaly_request` / warning | `MeriPomaleRequesty` |
 | Pomalé DB dotazy (`mysql.slow_log`, na sdíleném hostingu bez práv tiše nic) | `pomaly_dotaz` / warning | `bugy:pomale-dotazy` |
 | 404 — ztracené URL | tabulka `seo_404` | `bootstrap/app.php` → render 404, záložka „404 (ztracené)" |
 

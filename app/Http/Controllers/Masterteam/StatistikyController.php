@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Masterteam;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\MeriPomaleRequesty;
 use App\Models\Uzivatel;
 use App\Services\Google\GoogleApi;
 use App\Support\Mereni;
@@ -42,7 +43,7 @@ class StatistikyController extends Controller
 
         try {
             $data = Cache::remember("statistiky-navstevy-{$od->toDateString()}", 1800,
-                fn () => $google->navstevy($od->toDateString(), 'today'));
+                fn () => MeriPomaleRequesty::vnejsi(fn () => $google->navstevy($od->toDateString(), 'today')));
         } catch (\Throwable $e) {
             return $this->chybaGoogle($e, 'návštěvy');
         }
@@ -73,7 +74,7 @@ class StatistikyController extends Controller
             // Po dnech, stránkách a výrazech jedním souběžným dotazem (bug 84: za sebou přelezly 30 s)
             ['dny' => $radky, 'stranky' => $poStrankach, 'vyrazy' => $poVyrazech] = Cache::remember(
                 "statistiky-vyhledavani-vse-{$od->toDateString()}", 3600,
-                fn () => $google->vyhledavaniVse($od->toDateString(), now()->toDateString()));
+                fn () => MeriPomaleRequesty::vnejsi(fn () => $google->vyhledavaniVse($od->toDateString(), now()->toDateString())));
         } catch (\Throwable $e) {
             return $this->chybaGoogle($e, 'vyhledávání');
         }
@@ -197,10 +198,6 @@ class StatistikyController extends Controller
     }
 
     /**
-     * Selhání Googlu: zápis do bugů (Log::error se zrcadlí) a srozumitelná odpověď pro stránku.
-     * Výpadek spojení (vypršel čas, nedostupný server) je šum sítě, ne chyba kódu: jen do laravel.log.
-     */
-    /**
      * Pojistka pro dotazy na Google: jeden smí trvat až 30 s (GoogleApi), výchozí limit PHP je také 30 s
      * a jeho překročení je fatální chyba, kterou catch nechytí (bug 84). S rezervou pomalý Google skončí
      * výjimkou a srozumitelnou hláškou.
@@ -212,6 +209,10 @@ class StatistikyController extends Controller
         }
     }
 
+    /**
+     * Selhání Googlu: zápis do bugů (Log::error se zrcadlí) a srozumitelná odpověď pro stránku.
+     * Výpadek spojení (vypršel čas, nedostupný server) je šum sítě, ne chyba kódu: jen do laravel.log.
+     */
     private function chybaGoogle(\Throwable $e, string $co): JsonResponse
     {
         $zprava = "Statistiky: {$co} z Googlu se nepodařilo načíst — " . $e->getMessage();
