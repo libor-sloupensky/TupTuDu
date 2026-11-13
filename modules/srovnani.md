@@ -169,7 +169,7 @@ ne každou stránku. Podrobný rozbor je v chatu z 3. 11. 2026 a v paměti Claud
 2. **Měsíčně:** nové měření (`modules/konkurence.md`), u změněných hodnot nový snímek a překlad poznámky,
    import a přenos na produkci. Hodnota starší 6 měsíců z webu sama zmizí, proto to nesmí vypadnout.
 3. **Search Console:** sledovat indexaci a dotazy na nové adresy (agent marketing-data).
-4. **Němčina** až po usazení dat a prvních opravách: `de` do `config('srovnani.jazyky')`.
+4. **Němčina** až po usazení dat a prvních opravách: `de` do `config('srovnani.jazyky')`, podmínky v části „Posouzení“ (13. 11. 2026).
 5. Další nástroje, když vzroste hledanost (Live Home 3D, Homeplot …); „Alternativy k X“ a „X vs Y“.
 6. **Průvodce výběrem** (odloženo): dotazník z těch samých parametrů, filtr nástrojů, odkazy na profily.
 
@@ -190,6 +190,153 @@ Němčina je zatím vypnutá kvůli riziku placených výzev (Abmahnung) podle n
 5. Rozdíl mezi **srovnáním nás s konkurencí** a **neutrálním popisem konkurence** s propagací TupTuDu uvnitř
    článku. Libor má za to, že druhá cesta napadnutelná není.
 Výsledek posouzení zapsat sem a podle něj rozhodnout o `de` v `config('srovnani.jazyky')`.
+
+### Posouzení (Claude 13. 11. 2026, rozbor práva, ne rada advokáta)
+
+**Ve zkratce**
+- **Rozhodné právo určuje trh, na který stránka působí.** Jazyk ani sídlo nás nebo konkurenta to přímo neurčují
+  (Řím II čl. 6 odst. 1). Německá stránka TupTuDu působí na německý trh, protože Němce už obsluhujeme (německý web,
+  aplikace, ceník v eurech, země DE → `de` v `config/lokalizace.php`). Pro dopad v Německu platí německé UWG
+  a pro Rakousko rakouské, každé pro svůj trh.
+- **Pravidla se tím skoro nemění.** Srovnávací reklama je v EU plně harmonizovaná (směrnice 2006/114/ES čl. 4,
+  SDEU Pippig C‑44/01). Podmínky § 6 UWG, § 2a rakouského UWG a § 2980 OZ jsou stejné, takže co je dovolené
+  česky, je dovolené i německy. **Liší se vymáhání:** v Německu je výzva (Abmahnung) levná a rychlá a náklady platí
+  ten, kdo porušil pravidla. Rakušané žalují rovnou a chtějí, aby se rozsudek zveřejnil.
+- **Neutrální profil napadnutelný je.** I on je srovnávací reklama, a to je dobře: chrání ho § 2980 OZ. Mimo něj
+  by dopadl § 2984 odst. 2 OZ (zlehčování i pravdivým údajem). Riziko má ale nižší než „X vs TupTuDu“.
+- **Doporučení:** němčinu zapnout pro všechny německy mluvící země, bez cílení „jen Rakousko“ a bez vylučování
+  Německa. Napřed provést čtyři úpravy obsahu (níže). Profily mohou jít hned, „X vs TupTuDu“ až o 1–2 měsíce
+  později. Zbývající riziko je malé a dá se odhadnout: jedna oprávněná výzva stojí řádově 50–100 tis. Kč
+  (náklady obou advokátů), pokud vadnou stránku hned opravíme.
+
+**1. Podle čeho se určuje rozhodné právo**
+- Řím II čl. 6 odst. 1: použije se právo státu, kde jsou nebo pravděpodobně budou dotčeny soutěžní vztahy
+  nebo kolektivní zájmy spotřebitelů (princip trhu, *Marktortprinzip*). Vybrat si právo nejde ani smlouvou,
+  ani podmínkami (čl. 6 odst. 4). Když stránka působí na víc trhů, platí pro každý trh jeho vlastní právo.
+- **Jazyk** není samostatné kritérium, ale je nejsilnějším vodítkem, na koho stránka míří. SDEU to tak bere
+  u zaměření činnosti (Pammer a Hotel Alpenhof, C‑585/08 a C‑144/09: jiný jazyk a měna než v zemi podnikatele,
+  mezinárodní klientela). Německé soudy chtějí znatelný dopad na domácí trh a stránku, která je pro Němce
+  zjevně určená (BGH I ZR 24/03 *Arzneimittelwerbung im Internet*, 2006). Podle BGH (I ZR 131/12
+  *Englischsprachige Pressemitteilung*, 2013) se k německému trhu může vztahovat i anglická zpráva, má-li web
+  také německou verzi. To rozhodnutí se týkalo příslušnosti soudu, ale kritérium je stejné.
+- **Pro nás:** stránka psaná německy stačí, aby platilo německé právo, i když na Německo výslovně necílí.
+  Tak by to bylo u každé firmy, která Němce opravdu obsluhuje. Rakousko a Švýcarsko se k Německu přidávají,
+  nenahrazují ho. Naopak anglická srovnání německé právo nespouštějí, dokud na ně německý web neodkazuje.
+  Patička dnes odkazuje na srovnání jen v zapnutých jazycích, tak to má zůstat.
+- **Princip země původu** (směrnice 2000/31/ES čl. 3, v Německu § 3 DDG, SDEU eDate C‑509/09 a C‑161/10):
+  Německo nesmí po poskytovateli online služby usazeném v jiném státě EU chtít víc, než chce jeho domácí
+  právo. Pro nás je to argument navíc („splňujeme § 2980 OZ, víc chtít nemůžete“). U harmonizované
+  srovnávací reklamy to ale vyjde nastejno. Německé řízení ani výzvu to nevylučuje a v soutěžních sporech
+  není jeho dosah v Německu jistý, proto ho brát jako obranu, ne jako jistotu.
+
+**2. Konkurent odjinud (např. z Polska), oblíbený v Německu**
+- Na tom nic nezávisí. Čl. 6 odst. 1 se neptá, kde sídlí konkurent ani my, ale kde se soutěží o zákazníka.
+  O německé uživatele soutěžíme s polskou firmou v Německu, a proto rozhoduje německé právo.
+- Výjimka čl. 6 odst. 2 (jednání, které postihuje *jen* konkrétního soutěžitele, odkáže na obecný čl. 4) míří
+  na „dvoustranné“ činy, např. vyzvědačství nebo přetahování zaměstnanců. Veřejná stránka pro zákazníky mezi ně
+  nepatří. I podle čl. 4 by ale škoda, tedy ztracení zákazníci, vznikla v Německu, a společné bydliště česká
+  a polská firma nemají. Ani tudy se k českému právu nedostaneme.
+- **Kdo může v Německu žalovat:** soutěžitel, který tam služby nabízí ve větším rozsahu a soustavně
+  (§ 8 odst. 3 č. 1 UWG). To splní každý velký nástroj z našeho seznamu. Dále zapsané hospodářské svazy
+  (§ 8 odst. 3 č. 2, § 8b, např. Wettbewerbszentrale), ale jen když mají členy na stejném trhu.
+- **Co pomáhá:** mezi nástroji se stránkou není žádný německý výrobce. Ashampoo a Plan7Architekt stránku nemají,
+  tak to v němčině nechat. Zahraniční výrobci výzvy v Německu posílají mnohem méně než tamní firmy a tamní
+  specializované kanceláře.
+
+**3. Kdy platí český zákon a kdy cizí**
+- **Hmotné právo:** český OZ (§ 2976 a násl.) se použije na dopad na český trh. Polské, francouzské, španělské,
+  italské a slovenské stránky už dnes podléhají právu svých zemí, zatím bez potíží. Němčina se od nich věcně
+  neliší, jen vymáháním.
+- **Soud:** žalovat nás lze vždy v Česku (Brusel Ia čl. 4) a také v zemi, kde škoda nastala (čl. 7 odst. 2).
+  U reklamy na internetu tak i v Německu, s pravomocí jen pro německý trh (eDate, Pinckney C‑170/12,
+  Hejduk C‑441/13). U žaloby na smazání nebo opravu obsahu SDEU připouští jen soud s plnou pravomocí
+  (Bolagsupplysningen C‑194/16, Gtflix C‑251/20). Jak to platí pro soutěžní zákaz (*Unterlassung*), není
+  vyjasněné, proto na to nespoléhat.
+- **Vymahatelnost:** německý rozsudek i předběžné opatření se v Česku vykonají bez dalšího řízení
+  (Brusel Ia čl. 36 a 39). Že jsme česká firma, nás před německým řízením nechrání. Kdyby spor o německý
+  trh řešil český soud, použije také německé právo, protože Řím II platí i u nás.
+
+**4. Profil vs. „X vs TupTuDu“: je neutrální profil nenapadnutelný?**
+**Není.** Riziko je ale nižší. Důvody:
+- **I profil je srovnávací reklama.** Stačí, že reklama konkurenta *přímo nebo nepřímo označuje* (§ 2980 odst. 1
+  OZ, § 6 odst. 1 UWG, čl. 2 písm. c) směrnice; SDEU Toshiba C‑112/99, De Landtsheer C‑381/05). Profil zveřejňuje
+  výrobce konkurenčního nástroje, odkazuje na „Srovnání X s TupTuDu →“ a ukazuje sloupec „má z 11 nástrojů“.
+  Je to obchodní sdělení na podporu TupTuDu, a musí proto splnit všech šest podmínek § 2980 odst. 2.
+- **Mimo srovnávací reklamu by na tom byl hůř.** § 2984 odst. 2 OZ považuje za zlehčování i pravdivý údaj
+  o konkurentovi, který mu může uškodit (např. „čeština: ne“, „verze zdarma bez exportu“). V Německu
+  § 4 č. 1 UWG (snižování) a § 4 č. 2 (tvrzení, jejichž pravdivost nejde doložit; dokazuje ten, kdo je
+  uvedl). Přípustná srovnávací reklama má přednost, protože co splní čl. 4 směrnice, nesmí národní pravidla
+  zakázat (Pippig). **Sloupec „má z N nástrojů“ proto drží profil v bezpečném režimu věcného srovnání,
+  nerušit ho.**
+- **Propagaci nesmí zakrývat zdání nezávislosti.** Reklama vydávaná za nezávislý popis by byla skrytou
+  reklamou (§ 5a odst. 4 UWG, směrnice 2005/29/ES čl. 7 odst. 2, u nás klamavé opomenutí podle zákona
+  o ochraně spotřebitele). Řádek autorství nahoře to řeší a v němčině musí zůstat nahoře.
+- **V čem je rozdíl:** profil nemá verdikt a mluví o konkurentovi jen vedle tržního průměru. „X vs TupTuDu“
+  vybírá situace a sčítá, „v čem je lepší kdo“. Tím se otevírá otázka objektivity a reprezentativnosti výběru
+  (Lidl v. Vierzon C‑159/09) a k tomu přibývají naše vlastní tvrzení o TupTuDu (§ 5 UWG). Odhad: profil nízké
+  riziko, „X vs TupTuDu“ nízké až střední.
+- **Hlavní věcné riziko obou stránek je „nemá“.** Podle metodiky znamená „výrobce to neuvádí“, ale „nein“
+  čte Němec jako tvrzení, že funkce chybí. Když ji nástroj má a jen ji nepopisuje, je údaj nepravdivý
+  (§ 5 i § 4 č. 2 UWG). Druhým nejčastějším spouštěčem je zastaralá cena.
+
+**5. Jak reálná je výzva (Abmahnung) a co by stála**
+- **Pravděpodobnost:** nízká, pokud platí pravidla z plánu. Je devět zahraničních výrobců, žádný německý,
+  žádná hodnoticí slova, každý údaj má zdroj a datum a stránka nabízí opravu. Spouštěčem bývá konkrétní chyba
+  (cena, „nein“ u funkce, kterou nástroj má, hodnocení vnesené překladem), ne srovnání jako takové.
+- **Náklady (orientačně, kurz 25 Kč/€):**
+  - *Oprávněná výzva:* hradíme advokáta druhé strany (§ 13 odst. 3 UWG), 1,3 poplatku podle RVG z hodnoty
+    sporu. Ta bývá u soutěžitelů 10–50 tis. €, takže vychází zhruba 0,9–2 tis. € (25–50 tis. Kč). K tomu
+    vlastní německý advokát za podobnou částku.
+  - *Smluvní pokuta v závazku zdržet se (Unterlassungserklärung):* u firmy pod 100 zaměstnanců a jen
+    nepodstatného porušení nejvýš 1 000 € (§ 13a odst. 3 UWG), jinak bývá 3–6 tis. € za každé porušení.
+  - *Odmítneme a dojde na předběžné opatření:* soud a dva advokáti zhruba 5–10 tis. € (125–250 tis. Kč),
+    řízení ve dvou stupních 15–30 tis. €.
+  - *Neoprávněná výzva:* naopak máme nárok na náhradu svých nákladů (§ 13 odst. 5 UWG).
+- **Největší past je podepsat předložený závazek.** Ten platí natrvalo, ale stránky se generují samy a každý
+  měsíc mění, takže by se mohl porušit znovu a pokaždé s pokutou. Postup při výzvě: stránku daného nástroje
+  v němčině do 24 hodin vypnout nebo opravit, závazek nepodepisovat bez německého advokáta (UWG)
+  a odpovědět ve lhůtě, která bývá 7–10 dní.
+- **Cílit jen na Rakousko (de-AT) nepomůže.** hreflang je jen nápověda pro Google, právně nic nemění.
+  Rakousko navíc není mírnější: výzva tam není nutná, žaluje se rovnou s návrhem na zveřejnění rozsudku
+  v novinách (§ 25 rak. UWG). Při okamžitém uznání to stojí 3–5 tis. € a se zveřejněním 40–50 tis. €
+  (it-recht-kanzlei.de, 23. 7. 2026, u spotřebitelských svazů). Nový § 7a rakouského UWG
+  (od 27. 9. 2026) míří jen na hromadné zneužívající výzvy, na skutečného konkurenta nedopadá.
+- **Vyloučit Německo věrohodně nejde.** Prohlášení „nicht für Deutschland“ platí, jen když se myslí vážně
+  a dodržuje (BGH *Arzneimittelwerbung im Internet*). TupTuDu ale Němcům prodává. Blokovat stránky pro
+  německé adresy by znamenalo přijít o většinu německy mluvícího trhu, kvůli kterému němčinu děláme.
+  Skutečnou pákou je obsah.
+
+**Návrh, jak němčinu zapnout**
+1. `de` do `config('srovnani.jazyky')` pro všechny německy mluvící země, bez de-AT a bez vylučování Německa.
+2. **Před zapnutím:**
+   - a) **„nein“ přejmenovat** v `lang/de/srovnani.php` na „laut Hersteller nicht angegeben“ (nebo krátce
+     „nicht angegeben“ s vysvětlením v bublině). Text přesně odpovídá metodice a ze sporného tvrzení
+     o konkurentovi dělá tvrzení o dokumentaci. Vhodné je zvážit totéž i v ostatních jazycích.
+   - b) **Ceny v němčině jen čerstvé**, ověřené v posledním měsíčním měření. Jinak cenu nezobrazit, jen odkaz
+     na ceník výrobce.
+   - c) **Nezávislá kontrola německého textu** na hodnoticí slova, která mohou vzniknout překladem
+     („nur“, „leider“, „sogar“, „veraltet“, „das beste“). Zkontrolovat i „Co chceš udělat?“ a „v čem je lepší“.
+   - d) Řádek autorství a odkaz na opravu nechat nahoře. V metodice uvést kontakt pro výrobce s lhůtou opravy
+     („innerhalb weniger Tage“).
+3. **Postupně:** nejdřív profily, „X vs TupTuDu“ v němčině až po 1–2 měsících bez podnětů. To vyžaduje drobnou
+   úpravu kódu: samostatný seznam jazyků pro stránky vs. Jinak zapnout obojí najednou, riziko je pořád nízké.
+4. **Mimo srovnání, ale související:** německý web už běží (od 5. 11. 2026), takže formální důvody k výzvě
+   existují bez ohledu na srovnání. Údaje o provozovateli jsou dnes jen v obchodních podmínkách. Odkaz
+   „Impressum“ v německé patičce (stačí název, adresa, IČO a kontakt) je levná pojistka. Pro českého
+   provozovatele v zásadě platí české povinnosti (země původu), v Německu je ale Impressum nejčastější
+   důvod výzvy.
+5. Volitelně jednorázová konzultace německého advokáta (*Fachanwalt für gewerblichen Rechtsschutz*)
+   nad jednou profilovou a jednou srovnávací stránkou, odhad 1–2 tis. € (25–50 tis. Kč). Stojí méně než jedno
+   předběžné opatření. Libor advokáta 12. 11. vynechal, proto jen jako možnost.
+
+**Zdroje:** nařízení Řím II (ES) 864/2007 čl. 4 a 6; směrnice 2006/114/ES čl. 2 a 4; směrnice 2000/31/ES čl. 3;
+nařízení Brusel Ia (EU) 1215/2012 čl. 4, 7 odst. 2, 36, 39; OZ § 2976, 2980, 2984 (zakonyprolidi.cz, znění
+od 1. 1. 2026); UWG (DE) § 4, 5, 5a, 6, 8, 8b, 13, 13a (gesetze-im-internet.de); § 3 DDG; UWG (AT) § 2a, 7a
+(RIS, BGBl. I Nr. 58/2026), § 25; SDEU C‑44/01 Pippig, C‑112/99 Toshiba, C‑381/05 De Landtsheer,
+C‑159/09 Lidl v. Vierzon, C‑509/09 a C‑161/10 eDate, C‑585/08 a C‑144/09 Pammer/Alpenhof, C‑170/12 Pinckney,
+C‑441/13 Hejduk, C‑194/16 Bolagsupplysningen, C‑251/20 Gtflix; BGH I ZR 24/03, I ZR 131/12;
+it-recht-kanzlei.de „Teure Klagen aus Österreich“ (23. 7. 2026). Částky za výzvy a řízení jsou odhad podle tabulky
+RVG a běžné praxe, ne citace.
 
 ## Otevřené body
 - Bucket `tuptudu-katalog-dukazy`: klíč projektu nesmí zapnout verzování ani zámek objektů. Neměnnost zatím
