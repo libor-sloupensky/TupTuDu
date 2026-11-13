@@ -3876,64 +3876,31 @@
                 }
                 st = dalsi;
             }
-            // Pod dveřmi, průchody a okny až k podlaze podlaha přes celou tloušťku zdi: místnosti dorostou z obou stran
-            // a potkají se uprostřed, u vchodu jde podlaha místnosti až ven. Dřív jen dva pásy buněk od líců a v otvoru
-            // zuby (Libor 12. 11. 2026, dveře a pak i okna s parapetem 0 ve vzorovém domě).
-            const dvere = [];
-            for (const op of eng.openings.values()) {
-                const kPodlaze = eng.constructor.prefixOtvoru?.(op.typ) === 'D' || (window.minParapetOtvoru?.(op) ?? 1) <= 0.02;
-                if (!kPodlaze) continue;
-                const wl = eng.walls.get(op.wallId);
-                const A = wl && eng.nodes.get(wl.nodeA), B = wl && eng.nodes.get(wl.nodeB);
-                const L = A && B ? Math.hypot(B.x - A.x, B.y - A.y) : 0;
-                if (L < 1) continue;
-                const ux = (B.x - A.x) / L, uy = (B.y - A.y) / L, pxM = eng.PX_PER_M;
-                const pul = ((wl.tloustka || 0.3) / 2 + 0.02) * pxM, a = op.pozice * pxM, b = (op.pozice + op.sirka) * pxM;
-                const bod = (t, k) => ({ x: A.x + ux * t - uy * k, y: A.y + uy * t + ux * k });
-                dvere.push([bod(a, pul), bod(b, pul), bod(b, -pul), bod(a, -pul)]);
-            }
-            if (dvere.length) {
-                const cv = document.createElement('canvas');
-                cv.width = w; cv.height = h;
-                const g = cv.getContext('2d', { willReadFrequently: true });
-                for (const poly of dvere) {
-                    g.beginPath();
-                    poly.forEach((p, i) => { const x = (p.x - x0) / krok, y = (p.y - y0) / krok; if (i === 0) g.moveTo(x, y); else g.lineTo(x, y); });
-                    g.closePath();
-                    g.fill();
-                }
-                const a = g.getImageData(0, 0, w, h).data;
-                let volne = [];
-                for (let i = 0; i < w * h; i++) if (st[i] === 0 && a[i * 4 + 3] > 127) volne.push(i);
-                // Postupně po buňkách ze sousedů, dokud je co doplnit (stěna 50 cm je kolem 13 kroků z každé strany)
-                for (let pruchod = 0; pruchod < 60 && volne.length; pruchod++) {
-                    const doplnit = [];
-                    for (const i of volne) {
-                        const x = i % w;
-                        const s = (x > 0 && st[i - 1] >= 2 && st[i - 1]) || (x < w - 1 && st[i + 1] >= 2 && st[i + 1]) || (i >= w && st[i - w] >= 2 && st[i - w]) || (i < w * (h - 1) && st[i + w] >= 2 && st[i + w]);
-                        if (s) doplnit.push([i, s]);
-                    }
-                    if (!doplnit.length) break;
-                    for (const [i, s] of doplnit) st[i] = s;
-                    volne = volne.filter(i => st[i] === 0);
-                }
-            }
+            const pxM = eng.PX_PER_M;
+            // Výřezy (prostupy, schody zdola): pryč jen buňky celé uvnitř, okrajové zůstanou a podlaha se podle výřezu
+            // ořízne přesně (dilyVyrezu). Dřív padla každá buňka se středem uvnitř a u otvoru schodů zůstal zubatý
+            // okraj po 2 cm rastru, v natočeném domě dobře vidět (Libor 13. 11. 2026).
             const vyrezy = this._maskyPodlazi(podl.id).vyrezy;
+            const dilyVyrezu = [];
             if (vyrezy.length) {
                 const cv = document.createElement('canvas');
                 cv.width = w; cv.height = h;
                 const g = cv.getContext('2d', { willReadFrequently: true });
                 for (const poly of vyrezy) {
                     g.beginPath();
-                    poly.forEach((p, i) => { const x = (p.x - x0) / krok, y = (p.y - y0) / krok; if (i === 0) g.moveTo(x, y); else g.lineTo(x, y); });
+                    this._odsadPolygon(poly, -krok * 0.75).forEach((p, i) => { const x = (p.x - x0) / krok, y = (p.y - y0) / krok; if (i === 0) g.moveTo(x, y); else g.lineTo(x, y); });
                     g.closePath();
                     g.fill();
+                    const vMetrech = kladnaOrientace(poly.map(q => ({ x: q.x / pxM, y: q.y / pxM })));
+                    for (const c of window.Strecha.konvexniDily(vMetrech)) {
+                        const k = kladnaOrientace(c);
+                        dilyVyrezu.push({ poly: k, minX: Math.min(...k.map(q => q.x)), maxX: Math.max(...k.map(q => q.x)), minY: Math.min(...k.map(q => q.y)), maxY: Math.max(...k.map(q => q.y)) });
+                    }
                 }
                 const a = g.getImageData(0, 0, w, h).data;
                 for (let i = 0; i < w * h; i++) if (a[i * 4 + 3] > 127) st[i] = 0;
             }
             const VYSKA = 0.025;   // nad deskou podlahy, ta končí 2 cm nad kótou
-            const pxM = eng.PX_PER_M;
             // Štítky s vlastním dekorem; ostatní buňky místností se sloučí pod štítek -1
             const vlastni = new Map();
             for (const m of eng.mistnosti || []) {
@@ -3973,6 +3940,42 @@
                     for (let i = 0; i < w * h; i++) if (urovne[i] > 0 && maska[i * 4 + 3] > 127) urovne[i] = 0;
                 }
             }
+            // Práh pod dveřmi, průchody a okny k podlaze (Libor 13. 11. 2026, dřív buňky dorůstaly z obou stran a potkaly se
+            // zubatě): otvor přes tloušťku zdi přesným obdélníkem, rozděleným v ose zdi. Každá půlka má podlahu místnosti
+            // na své straně a sahá 3,5 cm za líc, kde navazuje na její podlahu stejným vzorem; u vchodu jde podlaha
+            // místnosti až k vnějšímu líci. Buňky rastru v otvoru a 2 cm za líci se vynulují.
+            const prahy = [], nulovat = [];
+            for (const op of eng.openings.values()) {
+                const kPodlaze = eng.constructor.prefixOtvoru?.(op.typ) === 'D' || (window.minParapetOtvoru?.(op) ?? 1) <= 0.02;
+                if (!kPodlaze) continue;
+                const wl = eng.walls.get(op.wallId);
+                const A = wl && eng.nodes.get(wl.nodeA), B = wl && eng.nodes.get(wl.nodeB);
+                const L = A && B ? Math.hypot(B.x - A.x, B.y - A.y) : 0;
+                if (L < 1) continue;
+                const ux = (B.x - A.x) / L, uy = (B.y - A.y) / L;
+                const pul = (wl.tloustka || 0.3) / 2 * pxM, a = op.pozice * pxM, b = (op.pozice + op.sirka) * pxM;
+                const bod = (t, k) => ({ x: A.x + ux * t - uy * k, y: A.y + uy * t + ux * k });
+                const strana = (zn) => {
+                    const q = bod((a + b) / 2, zn * (pul + 0.1 * pxM));
+                    const ix = Math.floor((q.x - x0) / krok), iy = Math.floor((q.y - y0) / krok);
+                    if (ix < 0 || iy < 0 || ix >= w || iy >= h) return { s: 1, u: 0 };
+                    return { s: st[iy * w + ix], u: urovne[iy * w + ix] };
+                };
+                const s1 = strana(1), s2 = strana(-1);
+                const jeMistnost = (x) => x.s >= 2;
+                if (!jeMistnost(s1) && !jeMistnost(s2)) continue;
+                const okraj = 0.02 * pxM, presah = 0.035 * pxM;
+                nulovat.push([bod(a, pul + okraj), bod(b, pul + okraj), bod(b, -pul - okraj), bod(a, -pul - okraj)]);
+                for (const [zn, tady, naproti] of [[1, s1, s2], [-1, s2, s1]]) {
+                    const kdo = jeMistnost(tady) ? tady : naproti;
+                    const dal = jeMistnost(tady) ? pul + presah : pul;
+                    prahy.push({ s: kdo.s, u: kdo.u, poly: kladnaOrientace([bod(a, 0), bod(b, 0), bod(b, zn * dal), bod(a, zn * dal)].map(q => ({ x: q.x / pxM, y: q.y / pxM }))) });
+                }
+            }
+            if (nulovat.length) {
+                const maska = vykresli(nulovat);
+                for (let i = 0; i < w * h; i++) if (maska[i * 4 + 3] > 127) st[i] = 0;
+            }
             const vysky = [...new Set(urovne)];
             for (let i = 0; i < w * h; i++) if (st[i] >= 2 && !vlastni.has(st[i])) st[i] = -1;
             for (const [stitek, m] of [...vlastni, [-1, null]]) for (const uroven of vysky) {
@@ -3996,24 +3999,33 @@
                     for (const r of otevrene.values()) { r.y1 = y; obdelniky.push(r); }
                     otevrene = nove;
                 }
-                if (!obdelniky.length) continue;
+                const prahyTady = prahy.filter(q => (q.s >= 2 && !vlastni.has(q.s) ? -1 : q.s) === stitek && q.u === uroven);
+                if (!obdelniky.length && !prahyTady.length) continue;
                 const dekor = dekorPodlahy(m?.podlaha.dekor);
-                const pozice = new Float32Array(obdelniky.length * 18);
-                const uv = new Float32Array(obdelniky.length * 12);
                 // Vzor podél stěn místnosti, prkna po delší straně (_smerDekoru), dřív podle os plátna
-                const smer = dekor.id === 'hladka' ? 0 : this._smerDekoru(obdelniky, x0, y0, krok, eng, m);
+                const smer = dekor.id === 'hladka' || !obdelniky.length ? 0 : this._smerDekoru(obdelniky, x0, y0, krok, eng, m);
                 const cs = Math.cos(smer), sn = Math.sin(smer);
-                obdelniky.forEach((r, i) => {
+                const pozice = [], uv = [];
+                const vrchol = (x, z) => { pozice.push(x, VYSKA + uroven, z); uv.push((x * cs + z * sn) / dekor.metru, (z * cs - x * sn) / dekor.metru); };
+                // Konvexní mnohoúhelník s kladnou orientací vějířem, stejné pořadí vrcholů jako obdélníky
+                const konvexni = (P) => { for (let i = 1; i < P.length - 1; i++) { vrchol(P[0].x, P[0].y); vrchol(P[i + 1].x, P[i + 1].y); vrchol(P[i].x, P[i].y); } };
+                for (const r of obdelniky) {
                     const ax = (x0 + r.x0 * krok) / pxM, bx = (x0 + r.x1 * krok) / pxM;
                     const az = (y0 + r.y0 * krok) / pxM, bz = (y0 + r.y1 * krok) / pxM;
-                    [[ax, az], [ax, bz], [bx, bz], [ax, az], [bx, bz], [bx, az]].forEach(([x, z], j) => {
-                        pozice.set([x, VYSKA + uroven, z], i * 18 + j * 3);
-                        uv.set([(x * cs + z * sn) / dekor.metru, (z * cs - x * sn) / dekor.metru], i * 12 + j * 2);
-                    });
-                });
+                    const zasah = dilyVyrezu.filter(c => c.maxX > ax && c.minX < bx && c.maxY > az && c.minY < bz);
+                    if (!zasah.length) {
+                        for (const [x, z] of [[ax, az], [ax, bz], [bx, bz], [ax, az], [bx, bz], [bx, az]]) vrchol(x, z);
+                        continue;
+                    }
+                    let dily = [[{ x: ax, y: az }, { x: bx, y: az }, { x: bx, y: bz }, { x: ax, y: bz }]];
+                    for (const c of zasah) dily = dily.flatMap(P => odectiKonvexni(P, c.poly) ?? [P]);
+                    dily.forEach(konvexni);
+                }
+                prahyTady.forEach(q => konvexni(q.poly));
+                if (!pozice.length) continue;
                 const geom = new THREE.BufferGeometry();
-                geom.setAttribute('position', new THREE.BufferAttribute(pozice, 3));
-                geom.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+                geom.setAttribute('position', new THREE.Float32BufferAttribute(pozice, 3));
+                geom.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
                 geom.computeVertexNormals();
                 const textura = dekor.id === 'hladka' ? null : this._texturaDekoru(dekor.id);
                 const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(barvaPodlahy(m?.podlaha)), roughness: dekor.drsnost, map: textura, bumpMap: textura, bumpScale: textura ? 0.012 : 0 });

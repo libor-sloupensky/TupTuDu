@@ -101,6 +101,12 @@
 .tt-pr-uchop { position: absolute; width: 30px; height: 30px; margin: -36px 0 0 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   background: var(--c-primary, #2f6fed); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); pointer-events: none; }
 .tt-pr-uchop[hidden] { display: none; }
+.tt-pr-misto { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; pointer-events: none;
+  border: 2px solid var(--c-primary, #2f6fed); background: rgba(255,255,255,.55); box-shadow: 0 0 0 2px rgba(255,255,255,.7), 0 1px 4px rgba(0,0,0,.3); }
+.tt-pr-misto::after { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--c-primary, #2f6fed); }
+.tt-pr-misto.tt-pr-v-dosahu { background: var(--c-primary, #2f6fed); }
+.tt-pr-misto.tt-pr-v-dosahu::after { background: #fff; }
+.tt-pr-misto[hidden] { display: none; }
 `;
 
     const IKONA = (d) => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -111,6 +117,7 @@
         vpravo: IKONA('<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>'),
         vys: IKONA('<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>'),
         otevrit: IKONA('<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.561Z"/>'),
+        upravit: IKONA('<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>'),
         zavrit: IKONA('<path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"/><path d="M2 20h20"/><path d="M14 12v.01"/>'),
         niz: IKONA('<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>'),
         vychozi: IKONA('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'),
@@ -321,6 +328,7 @@ void main() {
   <canvas class="tt-pr-mapka" data-pr-mapka></canvas>
   <div class="tt-pr-oko"><label data-pr-oko-text></label><input type="number" step="0.1" min="${OKO_MIN}" max="${OKO_MAX}" data-pr-oko><span>m</span><button type="button" data-pr-oko-vychozi>${IKONY.vychozi}</button></div>
 </div>
+<div class="tt-pr-misto" data-pr-misto hidden></div>
 <div class="tt-pr-uchop" data-pr-uchop hidden></div>
 <div class="tt-pr-pad" data-pr-pad hidden>
   <span></span><button type="button" data-pr-drz="vpred">${IKONY.nahoru}</button><button type="button" data-pr-drz="vys">${IKONY.vys}</button>
@@ -596,6 +604,7 @@ void main() {
                 hover = null;
                 const u = najdiUchop(h.x, h.y);
                 ukazUchop(u, h.x, h.y);
+                ukazMisto(u || objektPodMysi(h.x, h.y), !!u);
                 if (!tah) platno.style.cursor = u ? 'pointer' : 'grab';
                 const c = cil || u ? null : cilZObrazovky(h.x, h.y);
                 if (c) { krouzek.position.set(c.x, c.y + 0.02, c.z); krouzek.visible = true; zmena = true; }
@@ -616,6 +625,7 @@ void main() {
             if (zmena) {
                 kameraZeStavu();
                 nebe.position.copy(kamera.position);
+                umistiMisto();   // značka drží místo i při pohybu oka
                 const ter = o.teren?.(s.x, s.z);
                 const pod = s.oko < 0 && ter != null && s.y + s.oko < ter - 0.02;
                 if (pod !== podZemi) {
@@ -730,6 +740,7 @@ void main() {
         platno.addEventListener('pointerleave', () => {
             if (!aktivni) return;
             ukazUchop(null);
+            ukazMisto(null);
             if (!cil && krouzek.visible) { krouzek.visible = false; vynutit = true; o.probud?.(); }
         });
         platno.addEventListener('wheel', (e) => {
@@ -762,7 +773,7 @@ void main() {
                     const t = BOD.copy(b).sub(pocatek).dot(smer);
                     if (t < 0.15 || t > 15) continue;
                     const vzdalenost = BOD.copy(smer).multiplyScalar(t).add(pocatek).distanceTo(b);
-                    if (vzdalenost <= Math.max(0.07, t * 0.018) && (!nej || t < nej.t)) nej = { u, t };
+                    if (vzdalenost <= Math.max(u.polomer ?? 0.07, t * 0.018) && (!nej || t < nej.t)) nej = { u, t };
                 }
             }
             if (!nej) return null;
@@ -775,14 +786,62 @@ void main() {
             return nej.u;
         }
         const jeVKridle = (obj, kridlo) => { for (; obj; obj = obj.parent) if (obj === kridlo) return true; return false; };
+
+        // Značka místa pro klik (Libor 13. 11. 2026): nad objektem (obal úchopu) se ukáže, kam kliknout; ikona u kurzoru
+        // až v dosahu zóny. Obal = kvádr v souřadnicích objektu (u.obal.box, u.obal.vSvete = box už ve světě).
+        const znackaMista = obal.querySelector('[data-pr-misto]');
+        let misto = null;   // { bod: Vector3, vDosahu }
+        const INV = new THREE.Matrix4(), PAPRSEK = new THREE.Ray(), ZASAH = new THREE.Vector3();
+        function objektPodMysi(cx, cy) {
+            const seznam = o.uchopy?.();
+            if (!seznam?.length) return null;
+            const r = o.platno.getBoundingClientRect();
+            if (!r.width || !r.height) return null;
+            kameraZeStavu();
+            paprsek.setFromCamera(new THREE.Vector2((cx - r.left) / r.width * 2 - 1, -(cy - r.top) / r.height * 2 + 1), kamera);
+            let nej = null;
+            for (const u of seznam) {
+                if (!u.obal || (u.objekt && !viditelny(u.objekt))) continue;
+                PAPRSEK.copy(paprsek.ray);
+                if (!u.obal.vSvete) PAPRSEK.applyMatrix4(INV.copy(u.objekt.matrixWorld).invert());
+                if (!PAPRSEK.intersectBox(u.obal.box, ZASAH)) continue;
+                if (!u.obal.vSvete) ZASAH.applyMatrix4(u.objekt.matrixWorld);
+                const d = ZASAH.distanceTo(paprsek.ray.origin);
+                if (d > 15 || (nej && d >= nej.d)) continue;
+                nej = { u, d };
+            }
+            if (!nej) return null;
+            paprsek.near = 0.05;
+            paprsek.far = nej.d;
+            const zakryti = paprsek.intersectObjects(o.cile?.() || [], false).find(h => viditelny(h.object) && !jeVKridle(h.object, nej.u.objekt));
+            paprsek.far = 2000;
+            return zakryti && zakryti.distance < nej.d - 0.05 ? null : nej.u;
+        }
+        /** Značka na bodu úchopu bližším k oku (dveře mají kliku z obou stran). */
+        function ukazMisto(u, vDosahu) {
+            if (!u) { misto = null; if (!znackaMista.hidden) znackaMista.hidden = true; return; }
+            kameraZeStavu();
+            const bod = u.body.reduce((a, b) => (b.distanceTo(kamera.position) < a.distanceTo(kamera.position) ? b : a));
+            misto = { bod: bod.clone(), vDosahu };
+            umistiMisto();
+        }
+        function umistiMisto() {
+            if (!misto) return;
+            const r = obal.getBoundingClientRect(), v = BOD.copy(misto.bod).project(kamera);
+            if (v.z > 1) { znackaMista.hidden = true; return; }
+            znackaMista.style.left = ((v.x + 1) / 2 * r.width) + 'px';
+            znackaMista.style.top = ((1 - v.y) / 2 * r.height) + 'px';
+            znackaMista.classList.toggle('tt-pr-v-dosahu', !!misto.vDosahu);
+            znackaMista.hidden = false;
+        }
         function ukazUchop(u, cx, cy) {
             uchop = u;
             if (!u) { if (!znackaUchopu.hidden) znackaUchopu.hidden = true; return; }
             const r = obal.getBoundingClientRect();
             znackaUchopu.style.left = (cx - r.left) + 'px';
             znackaUchopu.style.top = (cy - r.top) + 'px';
-            const ikona = u.otevreno ? IKONY.zavrit : IKONY.otevrit;
-            if (znackaUchopu.dataset.ikona !== (u.otevreno ? 'zavrit' : 'otevrit')) { znackaUchopu.innerHTML = ikona; znackaUchopu.dataset.ikona = u.otevreno ? 'zavrit' : 'otevrit'; }
+            const druh = u.ikona || (u.otevreno ? 'zavrit' : 'otevrit');
+            if (znackaUchopu.dataset.ikona !== druh) { znackaUchopu.innerHTML = IKONY[druh]; znackaUchopu.dataset.ikona = druh; }
             znackaUchopu.hidden = false;
         }
         function prepniUchop(u) {
@@ -790,6 +849,7 @@ void main() {
             cekaPrepnuti = null;
             o.prepni?.(u.id);
             ukazUchop(null);
+            ukazMisto(null);
             o.probud?.();
         }
 
@@ -839,6 +899,7 @@ void main() {
             lampaCil = 0;
             clearTimeout(cekaPrepnuti);
             ukazUchop(null);
+            ukazMisto(null);
             obal.hidden = true;
             platno.style.cursor = '';
             platno.style.touchAction = '';

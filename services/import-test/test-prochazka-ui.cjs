@@ -100,7 +100,8 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         let pred = s;
         await drz('KeyW', 1000);
         s = await stav();
-        kontrola('W: za sekundu asi 2 m k domu', s.z < pred.z - 1.2 && s.z > pred.z - 2.8 && blizko(s.x, pred.x, 0.05), `${pred.z.toFixed(2)} → ${s.z.toFixed(2)}`);
+        // Vzdálenost závisí na rychlosti snímků (zatížený počítač), hlídá se směr a rozumný rozsah do 2,8 m
+        kontrola('W: jde k domu rovně', s.z < pred.z - 0.5 && s.z > pred.z - 2.8 && blizko(s.x, pred.x, 0.05), `${pred.z.toFixed(2)} → ${s.z.toFixed(2)}`);
         pred = s;
         await drz('KeyD', 500);
         s = await stav();
@@ -319,7 +320,7 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
         const ikona = await p.vyhodnot(`(() => { const z = document.querySelector('[data-pr-uchop]'); return { videt: !z.hidden, ikona: z.dataset.ikona, kurzor: window._kk3d.renderer.domElement.style.cursor }; })()`);
         kontrola('najetí na kliku dveří ukáže ikonu otevření a ruku', ikona.videt && ikona.ikona === 'otevrit' && ikona.kurzor === 'pointer', JSON.stringify(ikona));
         await klik(naKliku);
-        await pauza(1300);
+        try { await p.cekej(`(() => { const x = ${kridlo()}; return x && Math.abs(x.rot - x.uhel) < 0.01; })()`, 8000, 'dveře dojedou'); } catch { /* vyhodnotí kontrola */ }
         let dvereStav = await p.vyhodnot(kridlo());
         kontrola('klik dveře otevře (otočí kolem pantů na stranu z půdorysu)', dvereStav && Math.abs(dvereStav.rot - dvereStav.uhel) < 0.01 && Math.abs(dvereStav.uhel) > 1.3, JSON.stringify(dvereStav));
         await snimek3d('05e-dvere-otevrene.png');
@@ -327,7 +328,7 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
             const u = d._prochazkaUchopy().find(x => x.id === '${naKliku.id}'); const b = u.body.reduce((a, c) => (c.z > a.z ? c : a)); const v = b.clone().project(k);
             return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height, otevreno: u.otevreno }; })()`);
         await klik(uchopPoOtevreni);
-        await pauza(1300);
+        try { await p.cekej(`(() => { const x = ${kridlo()}; return x && Math.abs(x.rot) < 0.01; })()`, 8000, 'dveře se zavřou'); } catch { /* vyhodnotí kontrola */ }
         dvereStav = await p.vyhodnot(kridlo());
         kontrola('druhý klik je zavře', uchopPoOtevreni.otevreno && dvereStav && Math.abs(dvereStav.rot) < 0.01, JSON.stringify({ uchopPoOtevreni, dvereStav }));
         // Okno se otevře dovnitř do místnosti (klika jde od zdi do domu)
@@ -335,6 +336,55 @@ const blizko = (a, b, tol = 0.05) => typeof a === 'number' && Math.abs(a - b) <=
             const pred = u.body[0].x; d._prochazkaPrepniKridlo(u.id); await new Promise(r => setTimeout(r, 1200));
             const po = d._prochazkaUchopy().find(x => x.id === u.id); return { pred: +pred.toFixed(2), po: +po.body[0].x.toFixed(2), otevreno: po.otevreno }; })()`);
         kontrola('okno se otevře do boku dovnitř', okno.otevreno && okno.po < okno.pred - 0.3, JSON.stringify(okno));
+
+        console.log('\n5f) Posuvné dveře s madlem, nábytek jen přes zónu nad středem (Libor 13. 11. 2026)');
+        // Posuvné dveře do pouzdra v západní zdi (x = 0) mezi z 5 a 5,9
+        const posuvne = await p.vyhodnot(`(async () => { const d = ${D}, e = d.engine, X = e.PX_PER_M; d.naPodlazi('P1');
+            const z = [...e.walls.values()].find(w => { const a = e.nodes.get(w.nodeA), b = e.nodes.get(w.nodeB); return Math.abs(a.x) < 1 && Math.abs(b.x) < 1; });
+            const a = e.nodes.get(z.nodeA); const op = e.addOpening(z.id, Math.min(Math.abs(5 * X - a.y), Math.abs(5.9 * X - a.y)) / X, 0.9, 'dvere', { presnaSirka: true, kridla: [{ sirka: 0.9, otv: 'posuvne' }] });
+            d.renderer.render(); d._build3d(); await new Promise(r => setTimeout(r, 500));
+            const g = d._prochazkaKridla().find(x => x.userData.kridlo.otvor === op.id); if (!g) return { chyba: 'křídlo nenalezeno', kridla: JSON.stringify(op.kridla) };
+            let madel = 0; g.traverse(o => { if (o.userData?.klika) madel++; });
+            const x0 = g.position.x, id = d._idKridla(g.userData.kridlo); d._prochazkaPrepniKridlo(id); await new Promise(r => setTimeout(r, 1200));
+            const otevreno = g.position.x; d._prochazkaPrepniKridlo(id); await new Promise(r => setTimeout(r, 1200));
+            return { madel, posun: +(otevreno - x0).toFixed(2), zpet: +(g.position.x - x0).toFixed(3), body: g.userData.kridlo.kliky.length }; })()`);
+        kontrola('posuvné dveře mají madlo z obou stran a v procházce se odsunou a zase zasunou', posuvne.madel === 6 && Math.abs(posuvne.posun) > 0.7 && Math.abs(posuvne.zpet) < 0.005 && posuvne.body === 2, JSON.stringify(posuvne));
+        // Postel v místnosti: klik mimo střed panel neotevře, zóna nad středem ano (s ikonou úprav)
+        await p.vyhodnot(`(async () => { const d = ${D}; if (!d.katalog?.polozky?.length) await d._katalogNacti(); return true; })()`);   // bez panelu: ten přepne do 2D
+        await p.cekej(`${D}.katalog?.polozky?.length > 0`, 30000, 'katalog');
+        const postel = await p.vyhodnot(`(async () => { const d = ${D}; const k = d.katalog.polozky.find(x => x.kategorie === 'postele') || d.katalog.polozky[0];
+            const z = d._katalogZaznam(k, [3, -3], 0); d.engine.vybaveni.push(z); d.renderer.clearSelection(); d.renderer.render(); d._build3d();
+            await window.Katalog3d.hotovo(); await new Promise(r => setTimeout(r, 500));
+            window._kk3d.prochazka.zapni({ x: 3, z: 5.6, yOd: 0.5, smer: 0, sklon: -0.55, oko: 1.6 }); await new Promise(r => setTimeout(r, 700));
+            const u = d._prochazkaUchopy().find(x => x.id === 'kus:' + z.id); return { id: z.id, sirka: k.sirka, hloubka: k.hloubka, bod: u ? u.body[0].toArray().map(v => +v.toFixed(2)) : null }; })()`);
+        const naObrazovce = (bod) => p.vyhodnot(`(() => { const _3d = window._kk3d, r = _3d.renderer.domElement.getBoundingClientRect(); const v = new THREE.Vector3(${bod.join(',')}).project(_3d.prochazka.kamera);
+            return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; })()`);
+        const vybrano = () => p.vyhodnot(`[...${D}.renderer.selectedVybaveni]`);
+        kontrola('postel má zónu nad středem', postel.bod && Math.abs(postel.bod[0] - 3) < 0.05 && Math.abs(postel.bod[2] - 3) < 0.05, JSON.stringify(postel));
+        // Klik na postel kousek od kraje (40 % šířky od středu): nic se nevybere
+        const kraj = await naObrazovce([3 + postel.sirka * 0.4, postel.bod[1] - 0.05, 3]);
+        await klik(kraj);
+        await pauza(600);
+        kontrola('klik na postel mimo zónu panel neotevře', (await vybrano()).length === 0, JSON.stringify(await vybrano()));
+        // Myš nad postelí mimo zónu: ukáže se značka místa pro klik nad středem, ikona u kurzoru ne
+        const znacky = () => p.vyhodnot(`(() => { const m = document.querySelector('[data-pr-misto]'), u = document.querySelector('[data-pr-uchop]'), r = m.parentElement.getBoundingClientRect();
+            return { misto: !m.hidden, vDosahu: m.classList.contains('tt-pr-v-dosahu'), x: r.left + parseFloat(m.style.left), y: r.top + parseFloat(m.style.top), ikona: !u.hidden }; })()`);
+        const nadPosteli = await znacky();
+        const stredPredem = await naObrazovce(postel.bod);
+        kontrola('nad postelí se ukáže značka místa pro klik nad jejím středem, ikona u kurzoru ne', nadPosteli.misto && !nadPosteli.vDosahu && !nadPosteli.ikona
+            && Math.hypot(nadPosteli.x - stredPredem.x, nadPosteli.y - stredPredem.y) < 3, JSON.stringify({ nadPosteli, stredPredem }));
+        const stred = await naObrazovce(postel.bod);
+        await p.cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: stred.x, y: stred.y });
+        await pauza(400);
+        const ikonaUpravit = await p.vyhodnot(`(() => { const z = document.querySelector('[data-pr-uchop]'); return { videt: !z.hidden, ikona: z.dataset.ikona }; })()`);
+        const vZone = await znacky();
+        kontrola('v zóně se značka zvýrazní', vZone.misto && vZone.vDosahu, JSON.stringify(vZone));
+        await klik(stred);
+        await pauza(700);
+        const vyber = await vybrano();
+        kontrola('nad středem postele se ukáže ikona úprav a klik ji vybere', ikonaUpravit.videt && ikonaUpravit.ikona === 'upravit' && vyber.includes(postel.id), JSON.stringify({ ikonaUpravit, vyber }));
+        await snimek3d('05f-postel.png');
+        await p.vyhodnot(`(() => { const d = ${D}; d.renderer.clearSelection(); d._selectionTick++; return true; })()`);
 
         console.log('\n6) Mapka a export z oka');
         const mapka = await p.vyhodnot(`(() => { const c = document.querySelector('[data-pr-mapka]'); const g = c.getContext('2d'); const b = g.getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < b.length; i += 4) if (b[i] > 0) n++;

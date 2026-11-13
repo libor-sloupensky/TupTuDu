@@ -249,16 +249,64 @@
 
         _idKridla(u) { return u.podlazi + ':' + u.otvor + ':' + u.i; },
 
-        /** Kliky pro procházku: body ve světě (obě strany dveří, okno zevnitř), id a jestli je křídlo otevřené. */
+        /**
+         * Úchopy pro procházku: kliky a madla křídel (obě strany dveří, okno zevnitř) a zóna nad středem nábytku
+         * a sestav (Libor 13. 11. 2026: klik kamkoli na kus otevíral jeho panel, rušilo to).
+         */
         _prochazkaUchopy() {
-            return this._prochazkaKridla().filter(g => g.userData.kridlo.kliky.length).map(g => {
+            const kridla = this._prochazkaKridla().filter(g => g.userData.kridlo.kliky.length).map(g => {
                 const u = g.userData.kridlo, id = this._idKridla(u);
                 g.updateMatrixWorld();
-                return { id, objekt: g, otevreno: (this._otevrena?.get(id)?.cil || 0) > 0.5, body: u.kliky.map(b => g.localToWorld(b.clone())) };
+                // Obal křídla v jeho souřadnicích: nad křídlem se ukáže značka na klice
+                if (!u.obal) {
+                    u.obal = new THREE.Box3();
+                    for (const m of g.children) {
+                        if (!m.geometry) continue;
+                        m.geometry.computeBoundingBox();
+                        u.obal.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrix));
+                    }
+                }
+                return { id, objekt: g, otevreno: (this._otevrena?.get(id)?.cil || 0) > 0.5, obal: { box: u.obal }, body: u.kliky.map(b => g.localToWorld(b.clone())) };
             });
+            return [...kridla, ...this._prochazkaVybaveni()];
+        },
+
+        /** Nábytek a sestavy: jeden bod ve středu kusu (půl výšky, nejvýš 1,1 m), zóna 12–15 cm, ikona úprav. */
+        _prochazkaVybaveni() {
+            const _3d = window._kk3d, THREE = window.THREE, out = [];
+            _3d?.wallGroup?.traverse((o) => {
+                const k = o.userData?.katalog;
+                if (!k || !o.userData.kus) return;
+                o.updateMatrixWorld();
+                const obal = new THREE.Box3(new THREE.Vector3(-k.sirka / 2, 0, -k.hloubka / 2), new THREE.Vector3(k.sirka / 2, k.vyska, k.hloubka / 2));
+                out.push({ id: 'kus:' + o.userData.kus, objekt: o, ikona: 'upravit', polomer: 0.12, obal: { box: obal }, body: [o.localToWorld(new THREE.Vector3(0, Math.min((k.vyska || 0.8) / 2, 1.1), 0))] });
+            });
+            for (const g of _3d?.sestavySkupina?.children || []) {
+                const id = g.userData?.sestava;
+                if (!id) continue;
+                const b = new THREE.Box3().setFromObject(g);
+                if (b.isEmpty()) continue;
+                const c = b.getCenter(new THREE.Vector3());
+                out.push({ id: 'sestava:' + id, objekt: g, ikona: 'upravit', polomer: 0.15, obal: { box: b, vSvete: true }, body: [new THREE.Vector3(c.x, b.min.y + Math.min(b.max.y - b.min.y, 0.95), c.z)] });
+            }
+            return out;
         },
 
         _prochazkaPrepniKridlo(id) {
+            // Nábytek a sestava: klik na zónu nad středem otevře panel jako klik ve 3D
+            if (id.startsWith('kus:')) {
+                this.renderer.setSelection([], [], [], [id.slice(4)]);
+                this.renderer.render();
+                this._selectionTick++;
+                return;
+            }
+            if (id.startsWith('sestava:')) {
+                this.renderer.setSelection([]);
+                this.renderer.selectedSestavy?.add(id.slice(8));
+                this.renderer.render();
+                this._selectionTick++;
+                return;
+            }
             if (!this._otevrena) this._otevrena = new Map();
             const st = this._otevrena.get(id) || { stav: 0, cil: 0 };
             st.cil = st.cil > 0.5 ? 0 : 1;
@@ -294,8 +342,12 @@
         _prochazkaNastavKridla() {
             for (const g of this._prochazkaKridla()) {
                 const u = g.userData.kridlo, st = this._otevrena?.get(this._idKridla(u));
-                const f = st ? st.stav : 0;
-                g.rotation.y = u.uhel * f * f * (3 - 2 * f);   // plynulý rozjezd i dojezd
+                const f = st ? st.stav : 0, e = f * f * (3 - 2 * f);   // plynulý rozjezd i dojezd
+                if (u.posun) {
+                    // Posuvné: nejdřív kousek na svou kolej, pak podél zdi
+                    g.position.x = u.x0 + u.posun * e;
+                    g.position.z = (u.posunZ || 0) * Math.min(1, e * 4);
+                } else g.rotation.y = u.uhel * e;
             }
         },
 

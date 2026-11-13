@@ -612,6 +612,8 @@
             let start = null;
             platno.addEventListener('pointerdown', (e) => { start = e.button === 0 ? { x: e.clientX, y: e.clientY, t: performance.now() } : null; });
             platno.addEventListener('pointerup', (e) => {
+                // V procházce jen přes zónu nad středem kusu s ikonou (prochazka.js), klik kamkoli rušil
+                if (this.rezimProchazka) { start = null; return; }
                 if (!start || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4 || performance.now() - start.t > 600) return;
                 start = null;
                 try {

@@ -7638,6 +7638,26 @@ function konceptKEditor(initialData) {
         },
 
         /**
+         * Madlo posuvného křídla (Libor 13. 11. 2026): svislá tyč na dvou držácích. `strany` = na které strany křídla (±1),
+         * `pul` = půl tloušťky křídla, `mat` = materiál (null = stříbrný kov jako klika dveří).
+         */
+        _madlo3d(g, x, y, strany, pul, mat) {
+            const THREE = window.THREE;
+            const kov = mat || new THREE.MeshStandardMaterial({ color: 0xc9ccd0, metalness: 0.85, roughness: 0.32 });
+            const dil = (w, h, d, px, py, pz) => {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), kov);
+                m.position.set(px, py, pz);
+                m.userData.klika = true;
+                g.add(m);
+            };
+            for (const z of strany) {
+                const lic = z * pul;
+                dil(0.022, 0.4, 0.022, x, y, lic + z * 0.045);               // tyč
+                for (const dy of [-0.16, 0.16]) dil(0.014, 0.014, 0.035, x, y + dy, lic + z * 0.0175);   // držáky
+            }
+        },
+
+        /**
          * Klika okna zevnitř (Libor 13. 11. 2026): rozeta, krček a páka dolů jako v zavřené poloze, barva rámu uvnitř.
          * `z` = líc křídla, `zn` = strana ven z líce (do místnosti).
          */
@@ -7928,13 +7948,24 @@ function konceptKEditor(initialData) {
                     const vnitrniW = w - 2 * RAM;
                     // Křídlo na pantech (ne pevné, posuvné ani vrata) jde v procházce otevřít (Libor 13. 11. 2026)
                     const panty = op.typ !== 'garazova_vrata' && typeof kridloPanty === 'function' ? kridloPanty(k.otv) : null;
+                    // Posuvné křídlo (Libor 13. 11. 2026): madlo místo kliky, v procházce se odsune. Samotné do pouzdra
+                    // ve zdi podle strany otvoru, víc křídel ke středu nebo podél pevného dílu (smerPosunuKridla).
+                    const posuvne = !panty && k.otv === 'posuvne' && op.typ !== 'garazova_vrata';
+                    const kamPosunout = !posuvne ? 0 : kridla.length === 1 ? ((op.strana || 'in') === 'in' ? -1 : 1)
+                        : (typeof smerPosunuKridla === 'function' ? smerPosunuKridla(kridla, iKridla) : 1);
                     let kridloG = null;
-                    if (panty && vnitrniV > 0.3 && vnitrniW > 0.15) {
+                    if ((panty || posuvne) && vnitrniV > 0.3 && vnitrniW > 0.15) {
                         kridloG = new THREE.Group();
-                        kridloG.position.x = panty === 'levy' ? x + RAM : x + w - RAM;
-                        const UHEL = plne ? Math.PI * 0.47 : Math.PI * 0.44;
-                        // Křídlo od osy po +x (panty vlevo) nebo po −x; otočení pošle jeho volný konec na stranu kamOtevrit
-                        kridloG.userData.kridlo = { otvor: op.id, i: iKridla, podlazi: podl.id, uhel: (panty === 'levy' ? -1 : 1) * kamOtevrit * UHEL, kliky: [] };
+                        if (posuvne) {
+                            kridloG.position.x = x + w / 2;
+                            // Víc křídel jede po vlastní koleji kousek před pevným dílem
+                            kridloG.userData.kridlo = { otvor: op.id, i: iKridla, podlazi: podl.id, x0: kridloG.position.x, posun: kamPosunout * (w - RAM), posunZ: kridla.length > 1 ? kamOtevrit * 0.05 : 0, kliky: [] };
+                        } else {
+                            kridloG.position.x = panty === 'levy' ? x + RAM : x + w - RAM;
+                            const UHEL = plne ? Math.PI * 0.47 : Math.PI * 0.44;
+                            // Křídlo od osy po +x (panty vlevo) nebo po −x; otočení pošle jeho volný konec na stranu kamOtevrit
+                            kridloG.userData.kridlo = { otvor: op.id, i: iKridla, podlazi: podl.id, uhel: (panty === 'levy' ? -1 : 1) * kamOtevrit * UHEL, kliky: [] };
+                        }
                         g.add(kridloG);
                         rodic = kridloG;
                     }
@@ -7943,7 +7974,12 @@ function konceptKEditor(initialData) {
                         if (plne) {
                             dvoubarevny(vnitrniW, vnitrniV, 0.045, x + w / 2, yOd + vnitrniV / 2, 0, 0.7);
                             // Klika u volné hrany, páka míří k pantům (Libor 12. 11. 2026: zatím stříbrná bez volby)
-                            if (op.typ === 'dvere' && kridloG && vnitrniW > 0.3 && vnitrniV > 1.4) {
+                            if (op.typ === 'dvere' && kridloG && posuvne && vnitrniV > 1.4) {
+                                // Madlo u hrany, která zůstane vidět (proti směru posunu), na obou stranách
+                                const kx = kamPosunout < 0 ? x + w - RAM - 0.06 : x + RAM + 0.06, ky = Math.min(1.05, yOd + vnitrniV - 0.35);
+                                this._madlo3d(kridloG, kx - kridloG.position.x, ky, [1, -1], 0.0225, null);
+                                for (const z of [1, -1]) poKlice(new THREE.Vector3(kx - kridloG.position.x, ky, z * 0.06));
+                            } else if (op.typ === 'dvere' && kridloG && vnitrniW > 0.3 && vnitrniV > 1.4) {
                                 const smer = panty === 'levy' ? -1 : 1;
                                 const kx = panty === 'levy' ? x + w - RAM - 0.065 : x + RAM + 0.065, ky = Math.min(1.05, yOd + vnitrniV - 0.35);
                                 this._klika3d(kridloG, kx - kridloG.position.x, ky, smer, 0.0225);
@@ -7960,7 +7996,15 @@ function konceptKEditor(initialData) {
                                 ram(vnitrniW - 2 * KR, KR, 0.04, x + w / 2, yOd + KR / 2, 0);
                                 // Klika okna zevnitř na volné hraně křídla, barvou rámu uvnitř (Libor 13. 11. 2026): uprostřed
                                 // výšky křídla, u francouzského okna a dílu k podlaze ve výšce kliky dveří
-                                if (kridloG) {
+                                if (kridloG && posuvne) {
+                                    // Posuvné okno (HS): madlo zevnitř u hrany proti směru posunu, barvou rámu uvnitř
+                                    const kx = kamPosunout < 0 ? x + w - RAM - KR / 2 : x + RAM + KR / 2;
+                                    const ky = spodek < 0.3 ? Math.min(1.05, yOd + vnitrniV - 0.2) : yOd + vnitrniV / 2;
+                                    const zUvnitr = ven ? -ven : kamOtevrit;
+                                    const mat = ven ? materialOtvoru(skupina + 'Dovnitr', 0.4) : materialOtvoru(this.barvaVnitrniho(op.typ), 0.4);
+                                    this._madlo3d(kridloG, kx - kridloG.position.x, ky, [zUvnitr], 0.02, mat);
+                                    poKlice(new THREE.Vector3(kx - kridloG.position.x, ky, zUvnitr * 0.06));
+                                } else if (kridloG) {
                                     const kx = panty === 'levy' ? x + w - RAM - KR / 2 : x + RAM + KR / 2;
                                     const ky = spodek < 0.3 ? Math.min(1.05, yOd + vnitrniV - 0.2) : yOd + vnitrniV / 2;
                                     const zUvnitr = ven ? -ven : kamOtevrit;
