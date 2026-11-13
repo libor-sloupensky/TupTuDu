@@ -50,7 +50,7 @@ catch (e) { chybaUzivateli(e, 'Uložení nastavení', { firmaIco }); }
 - Podrobnosti (co se zachytává, šum, příkazy, odchylky od Kalkulia, stav nasazení): `modules/bugy.md`.
 
 ## Bugy v systému — „oprav bugy / oprav chyby" workflow
-Když uživatel řekne **„oprav bugy"** (nebo „oprav chyby") bez podrobností, myslí **aktivní bugy na produkci** v [/masterteam/bugy](https://masterteam.tuptudu.com/masterteam/bugy) (tabulka `bugy`, model `App\Models\Bug`). Postup:
+Když uživatel řekne **„oprav bugy"** (nebo „oprav chyby") bez podrobností, myslí **aktivní bugy na produkci i na localhostu** v [/masterteam/bugy](https://masterteam.tuptudu.com/masterteam/bugy) (tabulka `bugy`, model `App\Models\Bug`). **Vždy projít obě databáze.** Lokální přes `php artisan tinker` (`App\Models\Bug::where('opraveno',0)->get()`), vyřešené označit tamtéž. Lokální bugy bývají z testů na `127.0.0.1:8002` a z rozdělané práce, často už opravené v kódu, proto ověřit, že se nevracejí. Postup pro produkci:
 1. Obsah z produkce přes `public/db-proxy.php` (převzato z Kalkulia): POST JSON `{"sql": "SELECT …"}`, hlavička `X-DB-Token` = produkční `CRON_TOKEN`. Ten je **jen v lokálním `.env` jako `PROD_CRON_TOKEN`** — nikdy ho nevypisovat ani necommitovat:
    ```bash
    T=$(grep ^PROD_CRON_TOKEN= .env | cut -d= -f2-)
