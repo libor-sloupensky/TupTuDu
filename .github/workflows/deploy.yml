@@ -132,6 +132,8 @@ jobs:
           ANTHROPIC_MODEL_SONNET=claude-sonnet-4-6
           ANTHROPIC_MODEL_OPUS=claude-opus-4-8
           VOYAGE_API_KEY=${{ secrets.VOYAGE_API_KEY }}
+          # Mapy.com: mapový podklad a hledání míst v editoru, výběr pozemku na mapě (klíč vidí i prohlížeč)
+          MAPYCZ_API_KEY=${{ secrets.MAPYCZ_API_KEY }}
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
           # Google Analytics 4 (property tuptudu.com) — měřicí ID není tajné, je i v HTML stránek.
