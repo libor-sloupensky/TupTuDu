@@ -182,7 +182,58 @@ ne každou stránku. Podrobný rozbor je v chatu z 3. 11. 2026 a v paměti Claud
 2. **Měsíčně:** nové měření (`modules/konkurence.md`), u změněných hodnot nový snímek a překlad poznámky,
    import a přenos na produkci. Hodnota starší 6 měsíců z webu sama zmizí, proto to nesmí vypadnout.
 3. **Search Console:** sledovat indexaci a dotazy na nové adresy (agent marketing-data).
-4. **Němčina** až po usazení dat a prvních opravách: `de` do `config('srovnani.jazyky')`, podmínky v části „Posouzení“ (13. 11. 2026).
+4. **Němčina** až po úkolech níže: `de` do `config('srovnani.jazyky')`, důvody v části „Posouzení“ a „Doplnění“ (13. 11. 2026).
+
+### Úkoly ze 13. 11. 2026: upravit a stránky skutečně přegenerovat (Libor schválil do plánu)
+Vyplývají z posouzení němčiny (část Doplnění). Dělá je samostatné sezení. **Nestačí změnit texty, všechny
+stránky ve všech jazycích se musí znovu vygenerovat a přenést na produkci.** Hotovo je až po kontrole
+živého webu (bod E).
+
+**A. „ne“ a „nenalezeno“ (všechny jazyky)**
+1. Přetřídit všech 91 hodnot „ne“ u konkurentů (`overeno-*.json` a produkční `konkurence_hodnoty`):
+   - **„ne“ zůstane** jen tam, kde zápor plyne ze zdroje: výslovná věta, uzavřený výčet (jazyky, platformy,
+     obsah tarifu) nebo výrobcem popsaný jiný postup. Poznámka tu oporu ukáže.
+   - **Ostatní hodnoty „ne“ a dnešní „?“ (nezjištěno) budou „nenalezeno“.** Jsou to hodnoty odvozené z mlčení
+     („neuvádí“, „neobsahuje“, „v přehledu není“).
+2. Každé zbylé „ne“ ověří druhý, nezávislý agent nad snímkem zdroje. Co nepotvrdí, bude „nenalezeno“.
+3. Kód: nový stav hodnoty (nebo sloučení s „?“), šablona `resources/views/srovnani/_hodnota.blade.php`,
+   náhled v Masterteamu. V „X vs TupTuDu“ se „nenalezeno“ počítá jako nezjištěné, tedy ani plus, ani mínus.
+4. Texty ve všech 8 jazycích (`lang/*/srovnani.php`): popisek (cs „nenalezeno“, de „keine Angabe gefunden“,
+   en „not found“), bublina a legenda podle znění v Doplnění B, úprava `metodika_1` („ne“ jen se zdrojem,
+   „nenalezeno“ = nenašli jsme zmínku). Pak `php artisan preklady:kontrola`.
+5. Budoucí měření: rozlišení „ne“ / „nenalezeno“ doplnit do `ZADANI-overeni.md`, do importu
+   (`sestav_import.py`, `srovnani_import.py`) a do měsíčního postupu v `modules/konkurence.md`.
+   Jinak se to při příštím měření vrátí.
+6. Totéž pravidlo zvážit u hodnot TupTuDu. U nich ale víme jistě, takže „ne“ zůstane.
+
+**B. Němčina jen jako profily**
+1. Samostatný seznam jazyků, ve kterých se zveřejňuje „X vs TupTuDu“ (např. `config('srovnani.jazyky_vs')`).
+   V němčině se stránka vs nezaregistruje (routes) a nebude v sitemapě ani v hreflang.
+2. Na profilu bez stránky vs nahradit odkaz „Srovnání X s TupTuDu →“ **jednotnou větou o TupTuDu**
+   ve vizuálně odděleném bloku („Od autorů této stránky“). Věta je pro všechny profily stejná, popisuje jen
+   TupTuDu a nesmí jmenovat, co profilovanému nástroji chybí. Řádek autorství zůstane nahoře.
+3. Ceny v němčině jen z posledního měsíčního měření, jinak místo ceny odkaz na ceník výrobce.
+4. Nezávislá kontrola německých textů a poznámek (`poznamky-de.json`) na hodnoticí slova
+   („nur“, „leider“, „sogar“, „veraltet“, „das beste“).
+5. Teprve potom přidat `de` do `config('srovnani.jazyky')`.
+6. **Otázka na Libora:** platí „srovnání s TupTuDu prozatím vynechat“ (13. 11.) jen pro němčinu, nebo se mají
+   stránky vs vypnout i v dnešních 7 jazycích? Do odpovědi zůstávají tam, kde jsou.
+
+**C. Stránka Provozovatel / Impressum (celý web, ne jen srovnání)**
+Jedna stránka ve všech jazycích (cs „Provozovatel“, de „Impressum“, en „Legal notice“) se stejnými údaji jako
+v podmínkách: firma, sídlo, IČO, zápis v rejstříku, chráněný e‑mail (`partials.email-chraneny`) a telefon.
+Odkaz v patičce na každé stránce. Žádný nový veřejný e‑mail.
+
+**D. Přegenerovat a přenést**
+Po A–C znovu sestavit import (`sestav_import.py`) a přenést na produkci. Vymazat cache
+`srovnani-jazyky-prehledu`. Seznam adres (`php storage/app/konkurence/srovnani/vsechny-adresy.php`) porovnat
+s očekávaným počtem: v de jen přehled a profily.
+
+**E. Kontrola na živém webu (podmínka „hotovo“)**
+Na náhodných profilech a stránkách vs ve všech jazycích ověřit:
+- „ne“ se zobrazuje jen u hodnot s oporou ve zdroji a bublina „nenalezeno“ má správný text;
+- v de neexistuje žádná adresa `…-vs-tuptudu`, odkaz na ni ani hreflang a patička vede na Impressum;
+- sitemap odpovídá seznamu adres.
 5. Další nástroje, když vzroste hledanost (Live Home 3D, Homeplot …); „Alternativy k X“ a „X vs Y“.
 6. **Průvodce výběrem** (odloženo): dotazník z těch samých parametrů, filtr nástrojů, odkazy na profily.
 
