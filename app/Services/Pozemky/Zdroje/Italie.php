@@ -33,15 +33,27 @@ class Italie implements ZdrojParcel
 
     private function dotaz(array $o, int $pocet, ?float $lat = null, ?float $lon = null): array
     {
-        // Služba odpovídá 8–32 s, i na prosté spočítání prvků (WFS 1.1 vrací jen „Richiesta non valida“)
-        $xml = Http::timeout(40)->get(self::WFS, [
-            'service' => 'WFS',
-            'version' => '2.0.0',
-            'request' => 'GetFeature',
-            'typeNames' => 'CP:CadastralParcel',
-            'count' => $pocet,
-            'bbox' => "{$o['min_lat']},{$o['min_lon']},{$o['max_lat']},{$o['max_lon']},urn:ogc:def:crs:EPSG::4326",
-        ])->throw()->body();
+        // Služba odpovídá 8–45 s, i na prosté spočítání prvků (WFS 1.1 vrací jen „Richiesta non valida“).
+        // Občas na platný dotaz vrátí hned „Richiesta non valida“ (13. 11. 2026: 1 z 12), druhý pokus projde.
+        for ($pokus = 1; ; $pokus++) {
+            $xml = Http::timeout(40)->get(self::WFS, [
+                'service' => 'WFS',
+                'version' => '2.0.0',
+                'request' => 'GetFeature',
+                'typeNames' => 'CP:CadastralParcel',
+                'count' => $pocet,
+                'bbox' => "{$o['min_lat']},{$o['min_lon']},{$o['max_lat']},{$o['max_lon']},urn:ogc:def:crs:EPSG::4326",
+            ])->throw()->body();
+            try {
+                InspireGml::over($xml, 'Agenzia delle Entrate');
+                break;
+            } catch (\RuntimeException $e) {
+                if ($pokus >= 2) {
+                    throw $e;
+                }
+                usleep(800000);
+            }
+        }
 
         $vystup = [];
         foreach (InspireGml::prvky($xml, true) as $p) {

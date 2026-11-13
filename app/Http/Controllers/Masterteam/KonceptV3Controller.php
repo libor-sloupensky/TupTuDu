@@ -542,7 +542,8 @@ class KonceptV3Controller extends Controller
             $v = app(Pozemky::class)->parcelaVBode((float) $request->input('lat'), (float) $request->input('lon'));
         } catch (ConnectionException $e) {
             return $this->katastrNedostupny($e);
-        } catch (\Illuminate\Http\Client\RequestException $e) {
+        } catch (\Illuminate\Http\Client\RequestException|\RuntimeException $e) {
+            // Chybová odpověď národní služby (HTTP chyba, ServiceExceptionReport místo parcel): není to chyba aplikace
             \Illuminate\Support\Facades\Log::warning('Katastr v bodě: ' . mb_substr($e->getMessage(), 0, 200));
 
             return response()->json(['ok' => false, 'error' => __('projekty.katastr_nedostupny')], 503);

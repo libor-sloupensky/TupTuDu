@@ -36,7 +36,7 @@ class Cesko implements ZdrojParcel
         ])->throw();
 
         $parcely = [];
-        foreach (InspireGml::prvky($odpoved->body(), true) as $p) {
+        foreach (InspireGml::prvky(InspireGml::over($odpoved->body(), 'ČÚZK'), true) as $p) {
             $parcely[] = $this->sestav($p, $lat, $lon);
         }
 

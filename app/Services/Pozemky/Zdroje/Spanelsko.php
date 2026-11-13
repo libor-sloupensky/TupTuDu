@@ -78,7 +78,7 @@ class Spanelsko implements ZdrojParcel
             'bbox' => "{$o['min_lat']},{$o['min_lon']},{$o['max_lat']},{$o['max_lon']}",
             'SRSname' => 'EPSG::4326',
         ])->throw();
-        $xml = $odpoved->body();
+        $xml = InspireGml::over($odpoved->body(), 'Catastro');
         // Odpověď je v ISO-8859-1, převést kvůli regulárním výrazům v UTF-8
         if (stripos(substr($xml, 0, 100), 'ISO-8859-1') !== false) {
             $xml = mb_convert_encoding($xml, 'UTF-8', 'ISO-8859-1');

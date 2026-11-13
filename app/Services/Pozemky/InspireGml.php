@@ -36,6 +36,31 @@ class InspireGml
         return $vystup;
     }
 
+    /**
+     * Odpověď WFS musí být FeatureCollection. Chybová zpráva služby (ServiceExceptionReport, HTML stránka)
+     * by se jinak tvářila jako „tady parcela není“. Itálie občas vrátí „Richiesta non valida“
+     * i na platný dotaz (12. 11. 2026), opakování projde.
+     */
+    public static function over(string $xml, string $sluzba): string
+    {
+        $zacatek = substr($xml, 0, 2000);
+        if (stripos($zacatek, 'FeatureCollection') === false || stripos($zacatek, 'ExceptionReport') !== false) {
+            throw new \RuntimeException("{$sluzba}: služba nevrátila parcely: " . mb_substr(trim(strip_tags(preg_replace('/<!\[CDATA\[(.*?)\]\]>/s', '$1', $zacatek))), 0, 160));
+        }
+
+        return $xml;
+    }
+
+    /** JSON odpověď WFS / API musí mít pole features, jinak jde o chybu služby. */
+    public static function overJson(?array $data, string $sluzba): array
+    {
+        if (!is_array($data) || !array_key_exists('features', $data)) {
+            throw new \RuntimeException("{$sluzba}: služba nevrátila parcely");
+        }
+
+        return $data['features'] ?? [];
+    }
+
     /** Text prvního prvku daného jména (bez předpony, bez ohledu na velikost písmen). */
     public static function text(string $xml, string $nazev): ?string
     {

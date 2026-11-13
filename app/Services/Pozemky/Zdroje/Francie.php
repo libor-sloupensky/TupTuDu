@@ -3,6 +3,7 @@
 namespace App\Services\Pozemky\Zdroje;
 
 use App\Services\Pozemky\Geo;
+use App\Services\Pozemky\InspireGml;
 use App\Services\Pozemky\Parcela;
 use App\Services\Pozemky\ZdrojParcel;
 use App\Services\Pozemky\ZdrojVysek;
@@ -40,7 +41,7 @@ class Francie implements ZdrojParcel, ZdrojVysek
         ])->throw();
 
         $vystup = [];
-        foreach ($odpoved->json('features') ?? [] as $f) {
+        foreach (InspireGml::overJson($odpoved->json(), 'API Carto') as $f) {
             $pr = $f['properties'] ?? [];
             $polygon = Geo::castSBodem(Geo::zGeoJson($f['geometry'] ?? null), $lat, $lon);
             if (count($polygon) < 3) {

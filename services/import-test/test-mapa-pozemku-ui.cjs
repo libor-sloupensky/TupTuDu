@@ -76,6 +76,27 @@ async function main() {
         await p.cekej(`!!(window.L && window.__kkMapaPozemku && document.querySelector('[data-mapa-pozemku].leaflet-container'))`, 20000, 'Leaflet');
         kontrola('mapa se otevřela', await p.vyhodnot(`${D}.mapaPozemku === true`));
 
+        console.log('\n1b) Podklad Mapy.com a hledání místa (potřebuje MAPYCZ_API_KEY)');
+        // Dlaždice podkladu: prohlížeč je opravdu načetl (bez klíče jde o obrázek „Chybí API klíč“, ten má jiný rozměr)
+        await p.vyhodnot(`(() => { window.__kkMapaPozemku.setView([49.9898, 14.6501], 17, { animate: false }); return true; })()`);
+        const podklad = `(() => { let n = 0, ok = 0; window.__kkMapaPozemku.eachLayer(l => { if (l.wmsParams || !l._tiles || !/mapy\\.c/.test(l._url || '')) return;
+            for (const k in l._tiles) { n++; const t = l._tiles[k]; if (t.loaded && t.el.complete && t.el.naturalWidth === 256) ok++; } }); return { n, ok }; })()`;
+        try { await p.cekej(`${podklad}.ok > 3`, 20000, 'dlaždice podkladu'); } catch { /* vyhodnotí kontrola */ }
+        const pd = await p.vyhodnot(podklad);
+        const klic = await p.vyhodnot(`(window._kkInitData.mapyczApiKey || '').length`);
+        kontrola('podklad Mapy.com se načetl (klíč je nastavený)', klic > 20 && pd.ok > 3, `klíč ${klic} znaků, dlaždic ${pd.ok} z ${pd.n}`);
+        await p.vyhodnot(`(() => { const d = ${D}; d.mapaHledani = 'Řevnice'; d.mapaHledej(); return true; })()`);
+        try { await p.cekej(`${D}.mapaNavrhy.length > 0`, 15000, 'návrhy hledání'); } catch { /* vyhodnotí kontrola */ }
+        const navrhy = await p.vyhodnot(`JSON.parse(JSON.stringify(${D}.mapaNavrhy.slice(0, 3)))`);
+        kontrola('hledání místa vrací návrhy', navrhy.length > 0, navrhy.map(n => n.nazev + ', ' + n.misto).join(' | '));
+        if (navrhy.length) {
+            await p.vyhodnot(`(() => { const d = ${D}; d.mapaVyberNavrh(d.mapaNavrhy[0]); return true; })()`);
+            await pauza(2500);
+            const st = await p.vyhodnot(`(() => { const c = window.__kkMapaPozemku.getCenter(); return { lat: +c.lat.toFixed(3), lon: +c.lng.toFixed(3) }; })()`);
+            kontrola('výběr návrhu posune mapu na místo (Řevnice 49,91 / 14,24)', Math.abs(st.lat - 49.91) < 0.05 && Math.abs(st.lon - 14.24) < 0.08, JSON.stringify(st));
+            await p.snimek(path.join(SNIMKY, 'mapa-hledani-Revnice.png'));
+        }
+
         console.log('\n2) Parcela kliknutím v každé zemi');
         for (const m of MISTA) {
             await najed(m.lat, m.lon);
